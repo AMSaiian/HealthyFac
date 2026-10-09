@@ -1,0 +1,110 @@
+name: healthyfac
+
+services:
+  postgres:
+    container_name: healthyfac-postgres
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    user: postgres
+    stop_signal: SIGINT
+    stop_grace_period: 30s
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-healthyfac_core}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # PostgreSQL 18 expects a single mount at /var/lib/postgresql, not at the data subdirectory.
+      # It then places the cluster in a major-version subdirectory, which keeps pg_upgrade workable.
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  keycloak:
+    container_name: healthyfac-keycloak
+    image: quay.io/keycloak/keycloak:26.8.0
+    restart: unless-stopped
+    command: ["start-dev", "--http-port=8080"]
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB:-keycloak}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  core:
+    container_name: healthyfac-core
+    build:
+      context: ./backend
+      dockerfile: src/Core/HealthyFac.Core.Web/Dockerfile
+    image: healthyfac/core:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - core-logs:/app/logs
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-healthyfac_core};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
+      IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      IdEncryption__Keys__0__Default: "true"
+      Proxy__KnownNetworks__0: 172.16.0.0/12
+      Tracing__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    ports:
+      - "${CORE_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+
+  lgtm:
+    container_name: healthyfac-lgtm
+    image: grafana/otel-lgtm:0.36.0
+    restart: unless-stopped
+    # The image defines no non-root user. This is a local-only tool, so it keeps the default user.
+    # Test a non-root user before you change it, because the /data volume must stay writable.
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+      - "${OTLP_GRPC_PORT:-4317}:4317"
+      - "${OTLP_HTTP_PORT:-4318}:4318"
+    volumes:
+      - lgtm-data:/data
+    healthcheck:
+      test: ["CMD", "/otel-lgtm/docker/healthcheck.sh"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  postgres-data:
+  lgtm-data:
+  core-logs:
