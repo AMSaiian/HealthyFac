@@ -1,0 +1,21 @@
+<Solution>
+    <Folder Name="/src/" />
+    <Folder Name="/src/Core/">
+        <Project Path="src/Core/HealthyFac.Core.Application/HealthyFac.Core.Application.csproj" />
+        <Project Path="src/Core/HealthyFac.Core.Domain/HealthyFac.Core.Domain.csproj" />
+        <Project Path="src/Core/HealthyFac.Core.Infrastructure/HealthyFac.Core.Infrastructure.csproj" />
+        <Project Path="src/Core/HealthyFac.Core.Web/HealthyFac.Core.Web.csproj" />
+    </Folder>
+    <Folder Name="/src/Shared/">
+        <Project Path="src/Shared/HealthyFac.Shared.Application/HealthyFac.Shared.Application.csproj" />
+        <Project Path="src/Shared/HealthyFac.Shared.Domain/HealthyFac.Shared.Domain.csproj" />
+        <Project Path="src/Shared/HealthyFac.Shared.Infrastructure/HealthyFac.Shared.Infrastructure.csproj" />
+        <Project Path="src/Shared/HealthyFac.Shared.Web/HealthyFac.Shared.Web.csproj" />
+    </Folder>
+    <Folder Name="/src/Tools/">
+        <Project Path="src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/HealthyFac.Shared.UnitTests/HealthyFac.Shared.UnitTests.csproj" />
+    </Folder>
+</Solution>
