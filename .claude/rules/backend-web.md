@@ -1,6 +1,6 @@
 ---
 description: "Rules for the Web layer."
-globs:
+paths:
   - "**/*.Web/**"
 ---
 @../../.agents/rules/backend-web.md

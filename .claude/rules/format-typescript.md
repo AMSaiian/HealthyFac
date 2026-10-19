@@ -1,6 +1,6 @@
 ---
 description: "TypeScript and JavaScript formatting rules."
-globs:
+paths:
   - "**/*.ts"
   - "**/*.tsx"
   - "**/*.js"

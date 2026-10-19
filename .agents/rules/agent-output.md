@@ -1,10 +1,10 @@
 ---
 trigger: always_on
-description: "Rules for agent output, responses, and documentation (80% ASD-STE100)."
+description: "Rules for agent output, responses, and documentation (ASD-STE100)."
 ---
-# Output Rules (80% ASD-STE100)
-Apply ~80% Simplified Technical English (ASD-STE100) rules to all output, explanations, and documentation:
-*   **Sentence Length:** Keep sentences short (maximum 20-25 words).
+# Output Rules (ASD-STE100)
+Apply Simplified Technical English (ASD-STE100) to all output, explanations, and documentation:
+*   **Sentence Length:** Write instructions in sentences of 20 words or fewer. Write descriptions in sentences of 25 words or fewer.
 *   **One Topic:** Write one topic or instruction per sentence.
 *   **Active Voice:** Use active voice. Use the imperative mood for instructions. Avoid passive voice.
 *   **Direct & Unambiguous:** Use direct words. Do not use filler words, conversational fluff, or idioms.

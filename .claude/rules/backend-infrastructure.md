@@ -1,6 +1,6 @@
 ---
 description: "Rules for the Infrastructure layer."
-globs:
+paths:
   - "**/*.Infrastructure/**"
 ---
 @../../.agents/rules/backend-infrastructure.md

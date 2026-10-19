@@ -1,6 +1,6 @@
 ---
 description: "C# formatting rules from .editorconfig."
-globs:
+paths:
   - "**/*.cs"
 ---
 @../../.agents/rules/format-csharp.md

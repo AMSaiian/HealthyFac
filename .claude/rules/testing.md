@@ -1,6 +1,6 @@
 ---
 description: "Rules for test projects, unit tests, and integration tests."
-globs:
+paths:
   - "backend/tests/**"
   - "**/*Tests/**"
   - "**/*Test/**"

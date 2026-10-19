@@ -1,6 +1,6 @@
 ---
 description: "Stylesheet formatting rules."
-globs:
+paths:
   - "**/*.css"
   - "**/*.scss"
   - "**/*.sass"

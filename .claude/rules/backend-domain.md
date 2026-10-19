@@ -1,6 +1,6 @@
 ---
 description: "Rules for the Domain layer."
-globs:
+paths:
   - "**/*.Domain/**"
 ---
 @../../.agents/rules/backend-domain.md

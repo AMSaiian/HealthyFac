@@ -20,6 +20,7 @@ Each rule file declares its scope in `globs` frontmatter. A rule with `trigger: 
 *   Read `.agents/rules/agent-output.md` first. It governs every response and all documentation.
 *   Read the layer rule for any path you touch (`backend-domain`, `backend-application`, `backend-infrastructure`, `backend-web`).
 *   Read `backend-general.md` and `format-csharp.md` for any C# file.
+*   Read `backend-packages.md` for `.csproj` and `.props` files.
 *   Read `testing.md` for test projects.
 *   Read `container.md` for Dockerfiles and Compose files.
 

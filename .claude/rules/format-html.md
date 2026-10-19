@@ -1,6 +1,6 @@
 ---
 description: "HTML formatting rules."
-globs:
+paths:
   - "**/*.html"
   - "**/*.htm"
 ---

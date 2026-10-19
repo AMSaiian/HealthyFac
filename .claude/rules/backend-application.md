@@ -1,6 +1,6 @@
 ---
 description: "Rules for the Application layer."
-globs:
+paths:
   - "**/*.Application/**"
 ---
 @../../.agents/rules/backend-application.md
