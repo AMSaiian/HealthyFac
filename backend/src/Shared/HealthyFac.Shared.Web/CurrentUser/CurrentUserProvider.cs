@@ -1,10 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using HealthyFac.Shared.Application.Interfaces;
+using HealthyFac.Shared.Application.CurrentUser;
 using UnauthorizedAccessException = HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException;
 
-namespace HealthyFac.Shared.Web.Providers;
+namespace HealthyFac.Shared.Web.CurrentUser;
 
 /// <summary>
 /// Resolves the current authenticated user from HTTP context claims.

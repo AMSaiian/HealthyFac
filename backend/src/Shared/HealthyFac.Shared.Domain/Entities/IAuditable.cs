@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Domain.Interfaces;
+namespace HealthyFac.Shared.Domain.Entities;
 
 /// <summary>
 /// Marks an entity that records who created and changed it, and when. The persistence layer sets these values

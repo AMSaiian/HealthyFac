@@ -1,6 +1,6 @@
 ---
 description: "Rules for Dockerfiles and Compose files."
-globs:
+paths:
   - "**/Dockerfile*"
   - "**/.dockerignore"
   - "**/docker-compose*.yml"

@@ -4,9 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Infrastructure.Database;
-using HealthyFac.Shared.Application.Interfaces;
+using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Infrastructure.Persistence;
-using HealthyFac.Shared.Infrastructure.Providers;
+using HealthyFac.Shared.Infrastructure.Time;
 
 namespace HealthyFac.Core.Infrastructure;
 

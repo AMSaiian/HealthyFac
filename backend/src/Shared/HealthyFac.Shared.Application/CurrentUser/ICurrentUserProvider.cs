@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Application.Interfaces;
+namespace HealthyFac.Shared.Application.CurrentUser;
 
 /// <summary>
 /// Provides access to the current authenticated user identifier.

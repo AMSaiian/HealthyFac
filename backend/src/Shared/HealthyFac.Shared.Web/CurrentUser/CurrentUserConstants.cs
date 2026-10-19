@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Web.Providers;
+namespace HealthyFac.Shared.Web.CurrentUser;
 
 /// <summary>
 /// Defines constants for current user resolution.

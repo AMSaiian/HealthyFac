@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Domain.Interfaces;
+using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Domain.Machines;
 

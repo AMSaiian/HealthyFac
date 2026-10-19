@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Domain.Interfaces;
+namespace HealthyFac.Shared.Domain.Entities;
 
 /// <summary>
 /// Marks a domain entity and gives it an identifier.
@@ -9,7 +9,7 @@ public interface IEntity<out TId> where TId : IEquatable<TId>
     /// <summary>The database generates the identifier, so it stays at its default until the first save.</summary>
     TId Id { get; }
 
-    bool IsNew => Id.Equals(default(TId));
+    bool IsNew => Id.Equals(default(TId?));
 }
 
 /// <summary>

@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Application.Interfaces;
+namespace HealthyFac.Shared.Application.Time;
 
 /// <summary>
 /// Supplies the current time in UTC. Application code reads time through this interface and never calls

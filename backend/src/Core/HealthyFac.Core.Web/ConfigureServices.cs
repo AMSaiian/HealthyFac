@@ -1,7 +1,7 @@
 using Serilog;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Web.Machines;
-using HealthyFac.Shared.Application.Interfaces;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.ErrorHandling;
 using HealthyFac.Shared.Web.Rpc;
@@ -12,7 +12,7 @@ using HealthyFac.Shared.Web.Https;
 using HealthyFac.Shared.Web.IdEncryption;
 using HealthyFac.Shared.Web.Logging;
 using HealthyFac.Shared.Web.OpenApi;
-using HealthyFac.Shared.Web.Providers;
+using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Shared.Web.Proxy;
 using HealthyFac.Shared.Web.Versioning;
 
