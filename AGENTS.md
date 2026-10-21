@@ -1,5 +1,7 @@
 # HealthyFac
 
+HealthyFac is a monitoring and maintenance system for industrial equipment. Read `README.md` for the product domain and goals before you design a feature.
+
 HealthyFac is built using a strict layered Clean Architecture: Domain, Application, Infrastructure, and Web.
 
 ## Repository Layout

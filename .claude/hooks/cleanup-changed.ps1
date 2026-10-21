@@ -1,6 +1,11 @@
 #Requires -Version 7
-# Runs JetBrains ReSharper code cleanup on C# files changed since HEAD.
-# Wired to the Stop hook so it runs once per turn, not once per edit.
+# Runs JetBrains ReSharper code cleanup on the given C# files (repository-relative paths).
+# Without -Files, it cleans every backend C# file changed since HEAD.
+# verify-changed.ps1 calls it from the Stop hook with the files touched this turn.
+
+param(
+  [string[]] $Files
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -18,18 +23,21 @@ if (-not $jb) {
 
 Push-Location $repo
 try {
-  $tracked = @(git diff --name-only HEAD -- '*.cs' 2>$null)
-  $untracked = @(git ls-files -o --exclude-standard -- '*.cs' 2>$null)
+  if (-not $Files) {
+    $tracked = @(git diff --name-only HEAD -- '*.cs' 2>$null)
+    $untracked = @(git ls-files -o --exclude-standard -- '*.cs' 2>$null)
+    $Files = @($tracked + $untracked)
+  }
 
-  $files = @($tracked + $untracked) |
-    Where-Object { $_ -like 'backend/*' } |
+  $targets = @($Files) |
+    Where-Object { $_ -like 'backend/*.cs' } |
     Sort-Object -Unique |
     Where-Object { Test-Path (Join-Path $repo $_) }
 
-  if ($files.Count -eq 0) { exit 0 }
+  if ($targets.Count -eq 0) { exit 0 }
 
   # --include paths are relative to the solution directory (backend/).
-  $include = ($files | ForEach-Object { $_ -replace '^backend/', '' }) -join ';'
+  $include = (@($targets) | ForEach-Object { $_ -replace '^backend/', '' }) -join ';'
 
   # "Built-in: Reformat Code" is formatting only. The default Full Cleanup profile
   # rewrites code: it drops `private set`, reorders members and strips XML doc indents.

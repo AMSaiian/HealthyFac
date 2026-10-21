@@ -1,5 +1,7 @@
 @AGENTS.md
 
+@README.md
+
 ## Claude Code Rule Loading
 `.claude/rules/` holds one small file per rule. Each file imports the rule body from `.agents/rules/`. A scoped file declares a `paths` frontmatter list. Claude Code reads only `paths`. It ignores `globs` and loads a file with `globs` in every session. Claude Code loads a scoped rule when it reads a file that its paths match. A file without `paths` loads in every session.
 
@@ -35,4 +37,4 @@ Repository rules override plugin skills and their workflows. This includes the T
 ## Verification Hook
 The Stop hook (`.claude/hooks/verify-changed.ps1`) reformats changed C# files and builds the solution. It reports build warnings and errors in those files. Fix every reported item before you finish the turn.
 
-This file imports `AGENTS.md` on purpose. Claude Code skips `AGENTS.md` when a `CLAUDE.md` exists, so the import keeps the shared project context in scope. Put shared, agent-agnostic content in `AGENTS.md`. Keep this file for Claude Code specifics only.
+This file imports `AGENTS.md` on purpose. Claude Code skips `AGENTS.md` when a `CLAUDE.md` exists, so the import keeps the shared project context in scope. It also imports `README.md`, so every session knows the product domain. Put shared, agent-agnostic content in `AGENTS.md`. Keep this file for Claude Code specifics only.
