@@ -11,6 +11,7 @@
 | --- | --- |
 | `agent-output` | always loaded |
 | `backend-general` | always loaded |
+| `git-commits` | always loaded |
 | `format-csharp` | `**/*.cs` |
 | `backend-packages` | `**/*.csproj`, `**/*.props` |
 | `format-json` | `**/*.json` |
