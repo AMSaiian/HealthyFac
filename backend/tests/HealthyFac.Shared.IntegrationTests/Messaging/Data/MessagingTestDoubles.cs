@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
@@ -23,6 +24,20 @@ public sealed class TestServiceDbContext(DbContextOptions<TestServiceDbContext> 
         modelBuilder.ApplyInboxConfiguration();
         modelBuilder.ToSnakeCaseConventions();
     }
+}
+
+public sealed record TestBusinessChange : IIntegrationMessage
+{
+    public static string MessageType => OutboxTestData.BusinessChangeMessageType;
+
+    public required string Text { get; init; }
+}
+
+public sealed record TestConcurrentPublish : IIntegrationMessage
+{
+    public static string MessageType => OutboxTestData.ConcurrentMessageType;
+
+    public required string Text { get; init; }
 }
 
 public sealed class FixedDateProvider : IDateProvider

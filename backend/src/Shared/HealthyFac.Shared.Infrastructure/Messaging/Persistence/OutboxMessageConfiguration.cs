@@ -25,6 +25,9 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
             .HasColumnType(MessagingPersistenceConstants.PayloadColumnType)
             .IsRequired();
 
+        builder.Property<uint>(MessagingPersistenceConstants.ConcurrencyToken)
+            .IsRowVersion();
+
         builder.HasIndex(message => message.NextAttemptOn)
             .HasFilter(MessagingPersistenceConstants.PendingFilter);
     }

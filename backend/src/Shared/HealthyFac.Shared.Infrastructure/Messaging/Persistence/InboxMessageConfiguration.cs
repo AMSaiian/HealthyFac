@@ -23,6 +23,9 @@ internal sealed class InboxMessageConfiguration : IEntityTypeConfiguration<Inbox
             .HasColumnType(MessagingPersistenceConstants.PayloadColumnType)
             .IsRequired();
 
+        builder.Property<uint>(MessagingPersistenceConstants.ConcurrencyToken)
+            .IsRowVersion();
+
         builder.HasIndex(message => message.NextAttemptOn)
             .HasFilter(MessagingPersistenceConstants.PendingFilter);
     }

@@ -12,4 +12,5 @@ public static class InboxTestData
     public static readonly Guid DuplicateMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000002");
     public static readonly Guid RolledBackMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000003");
     public static readonly Guid ProcessedMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000004");
+    public static readonly Guid ConcurrentMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000005");
 }
