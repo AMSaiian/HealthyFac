@@ -23,7 +23,7 @@ public static class DatabaseInitializationExtensions
         {
             using var scope = services.CreateScope();
 
-            var initializer = scope.ServiceProvider.GetRequiredService<IApplicationDbInitializer>();
+            var initializer = scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>();
             var seedingOptions = scope.ServiceProvider.GetRequiredService<IOptions<SeedingOptions>>().Value;
 
             await initializer.ApplyDatabaseStructureAsync(cancellationToken);

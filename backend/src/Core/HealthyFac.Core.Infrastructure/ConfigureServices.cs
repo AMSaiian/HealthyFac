@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Application.Time;
+using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Time;
 
@@ -34,7 +35,6 @@ public static class ConfigureServices
         {
             services.AddSingleton<IDateProvider, DateProvider>();
             services.AddScoped<AuditableEntityInterceptor>();
-            services.AddScoped<CoreDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -42,7 +42,7 @@ public static class ConfigureServices
                 throw new InvalidOperationException(DatabaseConstants.Errors.MissingConnectionString);
             }
 
-            services.AddDbContext<ApplicationDbContext>((provider, options) =>
+            services.AddMessagingDbContext<ICoreDbContext, CoreDbContext>((provider, options) =>
             {
                 options.UseNpgsql(
                     connectionString,
@@ -61,7 +61,7 @@ public static class ConfigureServices
             });
 
             services.Configure<SeedingOptions>(configuration.GetSection(SeedingOptions.SectionName));
-            services.AddScoped<IApplicationDbInitializer, ApplicationDbInitializer>();
+            services.AddScoped<ICoreDbInitializer, CoreDbInitializer>();
 
             return services;
         }

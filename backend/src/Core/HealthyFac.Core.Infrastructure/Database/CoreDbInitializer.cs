@@ -5,16 +5,16 @@ using Microsoft.Extensions.Logging;
 namespace HealthyFac.Core.Infrastructure.Database;
 
 /// <summary>
-/// Initializes the application database and performs data seeding operations.
+/// Initializes the core database and performs data seeding operations.
 /// </summary>
-public class ApplicationDbInitializer(
-    ILogger<ApplicationDbInitializer> logger,
-    ApplicationDbContext dbContext,
+public class CoreDbInitializer(
+    ILogger<CoreDbInitializer> logger,
+    CoreDbContext dbContext,
     IHostEnvironment environment
-) : IApplicationDbInitializer
+) : ICoreDbInitializer
 {
     /// <summary>
-    /// Applies database migrations to the application database context, only in the Development
+    /// Applies database migrations to the core database context, only in the Development
     /// environment. Other environments apply migrations in a deployment step, so a service never changes
     /// a shared schema while it starts.
     /// </summary>
@@ -46,7 +46,7 @@ public class ApplicationDbInitializer(
     }
 
     /// <summary>
-    /// Seeds required core data into the application database context.
+    /// Seeds required core data into the core database context.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
@@ -55,7 +55,7 @@ public class ApplicationDbInitializer(
         => Task.CompletedTask;
 
     /// <summary>
-    /// Seeds optional development and test data into the application database context.
+    /// Seeds optional development and test data into the core database context.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>

@@ -3,7 +3,7 @@ namespace HealthyFac.Core.Infrastructure.Database;
 /// <summary>
 /// Defines database initialization and data seeding operations.
 /// </summary>
-public interface IApplicationDbInitializer
+public interface ICoreDbInitializer
 {
     /// <summary>
     /// Applies database migrations to update the database schema.

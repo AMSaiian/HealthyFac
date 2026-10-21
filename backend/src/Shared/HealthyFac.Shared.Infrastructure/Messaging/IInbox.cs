@@ -1,0 +1,31 @@
+namespace HealthyFac.Shared.Infrastructure.Messaging;
+
+/// <summary>
+/// Stores received messages before the service handles them, so every consumer stays idempotent.
+/// </summary>
+public interface IInbox
+{
+    /// <summary>
+    /// Stores a received message unless the inbox already holds its ID. The insert runs at once with
+    /// <c>ON CONFLICT DO NOTHING</c>, so a duplicate delivery neither throws nor aborts an open transaction.
+    /// </summary>
+    /// <param name="messageId">The broker message ID, which is the outbox row ID of the sending service.</param>
+    /// <param name="type">The stable contract name of the message.</param>
+    /// <param name="payload">The message serialized as JSON.</param>
+    /// <param name="traceParent">
+    /// The trace context that the sender attached, or <see langword="null"/> when the sender sent none.
+    /// </param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
+    /// requests.</param>
+    /// <returns>
+    /// <see langword="true"/> when the inbox stored the message; <see langword="false"/> when it already held the
+    /// message ID.
+    /// </returns>
+    Task<bool> TryAddAsync(
+        Guid messageId,
+        string type,
+        string payload,
+        string? traceParent,
+        CancellationToken cancellationToken = default(CancellationToken)
+    );
+}

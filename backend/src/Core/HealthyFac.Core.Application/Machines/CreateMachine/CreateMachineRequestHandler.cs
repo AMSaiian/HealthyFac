@@ -10,7 +10,7 @@ public record CreateMachineRequest : IRequest<Guid>
     public required Guid TenantId { get; init; }
 }
 
-public class CreateMachineRequestHandler(CoreDbContext dbContext)
+public class CreateMachineRequestHandler(ICoreDbContext dbContext)
     : IRequestHandler<CreateMachineRequest, Guid>
 {
     public async Task<Guid> HandleAsync(

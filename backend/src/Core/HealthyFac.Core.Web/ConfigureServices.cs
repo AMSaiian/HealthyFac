@@ -75,7 +75,7 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedHealthChecks()
-                .AddDbContextCheck<ApplicationDbContext>(
+                .AddDbContextCheck<CoreDbContext>(
                     DatabaseConstants.HealthCheckName,
                     tags: [HealthCheckConstants.ReadyTag]);
 

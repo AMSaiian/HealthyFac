@@ -5,12 +5,12 @@ using Microsoft.EntityFrameworkCore.Design;
 namespace HealthyFac.Core.Infrastructure.Database;
 
 /// <summary>
-/// Builds an <see cref="ApplicationDbContext"/> for the Entity Framework Core tools.
+/// Builds a <see cref="CoreDbContext"/> for the Entity Framework Core tools.
 /// The factory keeps migrations independent of the web host, so a missing option or an unreachable service
-/// never blocks a schema change. Model configuration still comes from
-/// <see cref="ApplicationDbContext.OnModelCreating"/>, so a generated migration matches the running app.
+/// never blocks a schema change. Model configuration still comes from the context itself, so a generated
+/// migration matches the running app.
 /// </summary>
-public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+public sealed class CoreDbContextFactory : IDesignTimeDbContextFactory<CoreDbContext>
 {
     /// <summary>
     /// Creates the context for design-time tooling.
@@ -21,7 +21,7 @@ public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Ap
     /// Thrown when no connection string is configured. The factory never substitutes a placeholder, so a
     /// database command can never reach an unintended server.
     /// </exception>
-    public ApplicationDbContext CreateDbContext(string[] args)
+    public CoreDbContext CreateDbContext(string[] args)
     {
         DotEnvLoader.Load();
 
@@ -33,10 +33,10 @@ public sealed class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Ap
             throw new InvalidOperationException(DatabaseConstants.Errors.MissingConnectionString);
         }
 
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<CoreDbContext>()
             .UseNpgsql(connectionString)
             .Options;
 
-        return new ApplicationDbContext(options);
+        return new CoreDbContext(options);
     }
 }

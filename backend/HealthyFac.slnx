@@ -16,6 +16,7 @@
         <Project Path="src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.csproj" />
     </Folder>
     <Folder Name="/tests/">
+        <Project Path="tests/HealthyFac.Shared.IntegrationTests/HealthyFac.Shared.IntegrationTests.csproj" />
         <Project Path="tests/HealthyFac.Shared.UnitTests/HealthyFac.Shared.UnitTests.csproj" />
     </Folder>
 </Solution>
