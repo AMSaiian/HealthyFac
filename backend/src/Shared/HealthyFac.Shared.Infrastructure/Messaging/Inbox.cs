@@ -27,4 +27,14 @@ internal sealed class Inbox(IInboxDbContext dbContext, IDateProvider dateProvide
 
         return insertedCount > 0;
     }
+
+    public void MarkProcessed(InboxMessage message)
+    {
+        if (!dbContext.InboxMessages.Local.Contains(message))
+        {
+            throw MessagingErrors.InboxMessageNotTracked(message.Id);
+        }
+
+        message.MarkProcessed(dateProvider.GetUtc());
+    }
 }

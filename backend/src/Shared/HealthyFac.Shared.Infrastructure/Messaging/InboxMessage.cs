@@ -45,4 +45,24 @@ public sealed class InboxMessage
     public string? Error { get; private set; }
 
     public string? TraceParent { get; private set; }
+
+    /// <summary>
+    /// Marks the message as handled. Commit it in the same <c>SaveChangesAsync</c> call as the business change,
+    /// so the change and the processed state persist together or not at all.
+    /// Throws <see cref="InvalidOperationException"/> when the message is already processed.
+    /// </summary>
+    /// <param name="processedOn">The UTC time of the successful handling.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="ProcessedOn"/> already holds a value, because a second handling would repeat the
+    /// business change.
+    /// </exception>
+    public void MarkProcessed(DateTime processedOn)
+    {
+        if (ProcessedOn is not null)
+        {
+            throw MessagingErrors.InboxMessageAlreadyProcessed(Id);
+        }
+
+        ProcessedOn = processedOn;
+    }
 }

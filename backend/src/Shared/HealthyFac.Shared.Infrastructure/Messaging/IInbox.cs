@@ -28,4 +28,16 @@ public interface IInbox
         string? traceParent,
         CancellationToken cancellationToken = default(CancellationToken)
     );
+
+    /// <summary>
+    /// Marks <paramref name="message"/> as handled on the scoped service context. The next
+    /// <c>SaveChangesAsync</c> call commits the processed state together with the business change of the
+    /// handler. Throws <see cref="InvalidOperationException"/> when the scoped context does not track the message.
+    /// </summary>
+    /// <param name="message">A message loaded through the inbox set of the scoped service context.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the scoped service context does not track <paramref name="message"/>. The processed state would
+    /// then never save, and the processor would handle the message again.
+    /// </exception>
+    void MarkProcessed(InboxMessage message);
 }

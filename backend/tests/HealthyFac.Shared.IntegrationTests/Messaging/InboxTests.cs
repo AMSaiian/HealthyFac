@@ -74,6 +74,27 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
         (await CountMessagesAsync(InboxTestData.RolledBackMessageId)).Should().Be(0);
     }
 
+    [Fact]
+    public async Task MarkProcessed_WithMessageLoadedInScope_PersistsProcessedOnOnSave()
+    {
+        using var receiveScope = fixture.Services.CreateScope();
+        await receiveScope.ServiceProvider.GetRequiredService<IInbox>()
+            .TryAddAsync(
+                InboxTestData.ProcessedMessageId,
+                InboxTestData.MessageType,
+                InboxTestData.Payload,
+                InboxTestData.TraceParent);
+        using var processScope = fixture.Services.CreateScope();
+        var dbContext = processScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+        var message =
+            await dbContext.InboxMessages.SingleAsync(pending => pending.Id == InboxTestData.ProcessedMessageId);
+
+        processScope.ServiceProvider.GetRequiredService<IInbox>().MarkProcessed(message);
+        await processScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
+
+        (await ReadMessageAsync(InboxTestData.ProcessedMessageId))!.ProcessedOn.Should().Be(InboxTestData.Now);
+    }
+
     private async Task<InboxMessage?> ReadMessageAsync(Guid messageId)
     {
         using var scope = fixture.Services.CreateScope();
