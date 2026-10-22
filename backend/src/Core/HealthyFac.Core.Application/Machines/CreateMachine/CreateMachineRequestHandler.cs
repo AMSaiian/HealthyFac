@@ -1,5 +1,7 @@
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Machines.CreateMachine;
 
@@ -7,7 +9,8 @@ public record CreateMachineRequest : IRequest<Guid>
 {
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
-    public required Guid TenantId { get; init; }
+    public required Guid CompanyId { get; init; }
+    public required Guid DepartmentId { get; init; }
 }
 
 public class CreateMachineRequestHandler(ICoreDbContext dbContext)
@@ -18,11 +21,21 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext)
         CancellationToken ct = default(CancellationToken)
     )
     {
+        var isDepartmentInCompany = await dbContext.Departments.AnyAsync(
+            department => department.Id == request.DepartmentId && department.CompanyId == request.CompanyId,
+            ct);
+
+        if (!isDepartmentInCompany)
+        {
+            throw new NotFoundException(MachineErrors.DepartmentNotFound);
+        }
+
         var machine = new Machine
         {
             Name = request.Name,
             SerialNumber = request.SerialNumber,
-            TenantId = request.TenantId,
+            CompanyId = request.CompanyId,
+            DepartmentId = request.DepartmentId,
         };
 
         dbContext.Machines.Add(machine);

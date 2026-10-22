@@ -16,8 +16,12 @@ public class CreateMachineRequestValidator : AbstractValidator<CreateMachineRequ
             .WithMessage(MachineErrors.SerialNumberRequired)
             .MaximumLength(MachineValidationConstants.SerialNumberMaxLength);
 
-        RuleFor(x => x.TenantId)
+        RuleFor(x => x.CompanyId)
             .NotEmpty()
-            .WithMessage(MachineErrors.TenantIdRequired);
+            .WithMessage(MachineErrors.CompanyIdRequired);
+
+        RuleFor(x => x.DepartmentId)
+            .NotEmpty()
+            .WithMessage(MachineErrors.DepartmentIdRequired);
     }
 }

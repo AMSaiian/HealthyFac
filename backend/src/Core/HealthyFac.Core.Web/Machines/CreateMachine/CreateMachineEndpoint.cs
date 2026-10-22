@@ -31,7 +31,8 @@ public static class CreateMachineEndpoint
                         {
                             Name = request.Name,
                             SerialNumber = request.SerialNumber,
-                            TenantId = request.TenantId,
+                            CompanyId = request.CompanyId,
+                            DepartmentId = request.DepartmentId,
                         },
                         cancellationToken);
 

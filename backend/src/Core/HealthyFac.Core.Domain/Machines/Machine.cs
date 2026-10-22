@@ -10,7 +10,8 @@ public class Machine : IEntity, IAuditable
     public Guid Id { get; private set; } = Guid.Empty;
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
-    public required Guid TenantId { get; init; }
+    public required Guid CompanyId { get; init; }
+    public required Guid DepartmentId { get; init; }
     public MachineState State { get; private set; } = MachineState.Operational;
 
     public DateTime CreatedAt { get; }

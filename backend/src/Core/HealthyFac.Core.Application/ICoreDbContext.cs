@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using HealthyFac.Core.Domain.Companies;
+using HealthyFac.Core.Domain.Departments;
+using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Core.Domain.Roles;
 
 namespace HealthyFac.Core.Application;
 
@@ -10,6 +14,16 @@ namespace HealthyFac.Core.Application;
 /// </summary>
 public interface ICoreDbContext
 {
+    DbSet<Company> Companies { get; }
+
+    DbSet<Department> Departments { get; }
+
+    DbSet<Role> Roles { get; }
+
+    DbSet<Employee> Employees { get; }
+
+    DbSet<EmployeeInvite> EmployeeInvites { get; }
+
     DbSet<Machine> Machines { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken));
