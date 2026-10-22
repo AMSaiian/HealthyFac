@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Shared.Web.Configuration;
+namespace HealthyFac.Shared.Infrastructure.Configuration;
 
 /// <summary>
 /// Validates strongly-typed configuration options using FluentValidation.

@@ -1,7 +1,7 @@
+using HealthyFac.Shared.Infrastructure.Configuration;
 using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
-using HealthyFac.Shared.Web.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

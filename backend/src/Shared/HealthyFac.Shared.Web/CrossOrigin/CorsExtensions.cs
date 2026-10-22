@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Web.Configuration;
+using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.Configuration;

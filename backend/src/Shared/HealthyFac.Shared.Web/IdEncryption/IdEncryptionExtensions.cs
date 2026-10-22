@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.Configuration;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.AspNetCore.Http.Json;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
-using HealthyFac.Shared.Web.Configuration;
 using HealthyFac.Shared.Web.IdEncryption.Converters;
 
 namespace HealthyFac.Shared.Web.IdEncryption;

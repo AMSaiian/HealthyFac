@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Shared.Web.Configuration;
+namespace HealthyFac.Shared.Infrastructure.Configuration;
 
 public static class OptionsBuilderExtensions
 {

@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Web.Configuration;
+using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
