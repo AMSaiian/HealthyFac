@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Shared.Application.Time;
+using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Time;
@@ -60,7 +62,9 @@ public static class ConfigureServices
                 }
             });
 
-            services.Configure<SeedingOptions>(configuration.GetSection(SeedingOptions.SectionName));
+            services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
+                SeedingOptions.SectionName, configuration);
+            services.AddScoped<CoreDevelopmentDataSeeder>();
             services.AddScoped<ICoreDbInitializer, CoreDbInitializer>();
 
             return services;

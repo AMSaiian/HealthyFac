@@ -17,6 +17,8 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/HealthyFac.Core.ArchitectureTests/HealthyFac.Core.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.Core.IntegrationTests/HealthyFac.Core.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Core.UnitTests/HealthyFac.Core.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Shared.IntegrationTests/HealthyFac.Shared.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Testing/HealthyFac.Testing.csproj" />
     <Project Path="tests/HealthyFac.Shared.UnitTests/HealthyFac.Shared.UnitTests.csproj" />
