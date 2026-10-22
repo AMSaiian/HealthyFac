@@ -37,6 +37,7 @@ description: "General backend C# conventions for all layers."
 *   **Required Modifier:** Use `required` with `init` instead of dummy default values (e.g., avoid `= string.Empty;` or `= default!;`) for non-nullable properties. This guarantees compile-time initialization safety without silencing nullable analysis with placeholders.
     *   **Where:** DTOs, Requests, Responses, and entities with no invariants.
     *   **Entities with Invariants:** Set the properties in a constructor and use `private set`. C# rejects `required` on a property with a `private set` (CS9032).
+    *   **Navigation Exception:** A required reference navigation uses `= null!`, because EF Core sets it and it is not part of object creation. Read the **Navigations** rule in `backend-domain.md`.
 *   **Extension Method Prefixes:** Use the conventional prefixes for extension methods that configure and set up the application:
     *   Use `Add...` for extension methods that register services or configure options on `IServiceCollection` or `OptionsBuilder<TOptions>` (e.g., `AddIdEncryption`, `AddSharedExceptionHandling`, `AddValidatedOptions`).
     *   Use `Use...` for extension methods that configure middleware or the HTTP request pipeline on `IApplicationBuilder` or `WebApplication` (e.g., `UseSharedExceptionHandling`).
