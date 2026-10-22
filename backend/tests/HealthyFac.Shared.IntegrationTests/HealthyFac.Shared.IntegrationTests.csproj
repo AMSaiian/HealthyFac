@@ -11,7 +11,6 @@
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -24,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj" />
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Infrastructure\HealthyFac.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 
 </Project>

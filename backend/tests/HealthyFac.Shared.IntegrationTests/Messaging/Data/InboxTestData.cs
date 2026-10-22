@@ -2,7 +2,6 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
 public static class InboxTestData
 {
-    public const string PostgresImage = "postgres:18.6-alpine";
     public const string MessageType = "test.v1:Ping";
     public const string Payload = """{"text":"ping","count":2}""";
     public const string TraceParent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
