@@ -1,6 +1,6 @@
 # HealthyFac
 
-HealthyFac is a monitoring and maintenance system for industrial equipment. Read `README.md` for the product domain and goals before you design a feature.
+HealthyFac is a monitoring and maintenance system for industrial equipment. Read `README.md` for the product domain and goals before you design a feature. Read `docs/architecture.md` for the service boundaries, data ownership, messaging, and identity decisions. Update it when a decision changes.
 
 HealthyFac is built using a strict layered Clean Architecture: Domain, Application, Infrastructure, and Web.
 
@@ -8,6 +8,7 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 *   `backend/src/Core/` — the Core microservice (Domain, Application, Infrastructure, Web).
 *   `backend/src/Shared/` — shared layer libraries referenced by every microservice.
 *   `backend/tests/` — unit and integration test projects.
+*   `docs/` — architecture and design documents.
 *   `frontend/` — frontend application (not yet implemented).
 
 ## Build and Test
