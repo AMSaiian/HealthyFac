@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Domain\HealthyFac.Core.Domain.csproj" />
     <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Application\HealthyFac.Core.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Infrastructure\HealthyFac.Core.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Web\HealthyFac.Core.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -31,7 +31,7 @@ description: "Rules for the Infrastructure layer."
 *   **linq2db:** Use EF Core for every query and write by default. Use `linq2db.EntityFrameworkCore` only in Infrastructure, and only when EF Core cannot express the query.
     *   **Allowed Cases:** Row lock hints (e.g., `FOR UPDATE SKIP LOCKED` in the outbox and inbox claim queries), and other PostgreSQL query hints that EF Core does not support.
     *   **Not Allowed:** Do not use linq2db for a query that EF Core can express. Do not use it for writes: write through EF Core, so the interceptors, the `xmin` check, and the transaction apply.
-    *   **Layer Boundary:** Never use linq2db in Domain or Application. Never expose a `LinqToDB` type in a signature that Application can see. The architecture tests forbid the `LinqToDB` namespace in Domain and Application.
+    *   **Layer Boundary:** Never use linq2db in Domain, Application, or Web. Never expose a `LinqToDB` type in a signature that Application or Web can see. The architecture tests forbid the `LinqToDB` namespace in Domain, Application, and Web.
     *   **Package Reference:** Reference the package only in `HealthyFac.Shared.Infrastructure`. A service Infrastructure project gets it through that reference.
     *   **Query Start:** Start each linq2db query from an EF Core `DbSet` with `ToLinqToDB()`. Do not create a separate `DataConnection` or connection string. Then the query uses the connection and the transaction of the EF Core context.
     *   **Transactions:** Run the linq2db query inside the operation of `RunInTransactionAsync`, or a row lock ends at once.
