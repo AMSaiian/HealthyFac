@@ -367,8 +367,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
                         .HasColumnName("code");
 
                     b.Property<string>("Name")
@@ -384,7 +384,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.ToTable("roles", null, t =>
                         {
-                            t.HasCheckConstraint("ck_role_code_not_blank", "\"code\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_role_code_allowed", "\"code\" IN ('supervisor', 'worker')");
 
                             t.HasCheckConstraint("ck_role_name_not_blank", "\"name\" ~ '\\S'");
                         });

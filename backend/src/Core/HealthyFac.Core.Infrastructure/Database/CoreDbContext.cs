@@ -39,6 +39,7 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
     {
         configurationBuilder.HaveEnumerationConversion<MachineState>();
         configurationBuilder.HaveEnumerationConversion<EmployeeStatus>();
+        configurationBuilder.HaveEnumerationConversion<RoleCode>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -5,6 +5,5 @@ namespace HealthyFac.Core.Application.Roles;
 /// </summary>
 public static class RoleValidationConstants
 {
-    public const int CodeMaxLength = 50;
     public const int NameMaxLength = 100;
 }

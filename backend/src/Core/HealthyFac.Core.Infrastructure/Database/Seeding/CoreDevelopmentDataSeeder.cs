@@ -88,7 +88,7 @@ public sealed class CoreDevelopmentDataSeeder(
             AddEmployees(
                 EmployeeInviteFaker.WithProfile(
                     department,
-                    roleIds[RoleCodes.Supervisor],
+                    roleIds[RoleCode.Supervisor],
                     now,
                     inviteLifetime,
                     NextSeed()),
@@ -97,7 +97,7 @@ public sealed class CoreDevelopmentDataSeeder(
                 identityRandomizer);
 
             AddEmployees(
-                EmployeeInviteFaker.WithProfile(department, roleIds[RoleCodes.Worker], now, inviteLifetime, NextSeed()),
+                EmployeeInviteFaker.WithProfile(department, roleIds[RoleCode.Worker], now, inviteLifetime, NextSeed()),
                 _options.WorkersPerDepartment,
                 now,
                 identityRandomizer);
@@ -108,7 +108,7 @@ public sealed class CoreDevelopmentDataSeeder(
             dbContext.EmployeeInvites.AddRange(
                 EmployeeInviteFaker.Open(
                         companyDepartments.First(),
-                        roleIds[RoleCodes.Worker],
+                        roleIds[RoleCode.Worker],
                         now,
                         inviteLifetime,
                         NextSeed())

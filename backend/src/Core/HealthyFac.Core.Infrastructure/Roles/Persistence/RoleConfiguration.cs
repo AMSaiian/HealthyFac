@@ -17,7 +17,6 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.ConfigureEntity();
 
         builder.Property(role => role.Code)
-            .HasMaxLength(RoleValidationConstants.CodeMaxLength)
             .IsRequired();
 
         builder.Property(role => role.Name)
@@ -27,7 +26,7 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.HasIndex(role => role.Code)
             .IsUnique();
 
-        builder.HasNotBlankCheck(role => role.Code)
+        builder.HasEnumerationCheck(role => role.Code)
             .HasNotBlankCheck(role => role.Name);
     }
 }

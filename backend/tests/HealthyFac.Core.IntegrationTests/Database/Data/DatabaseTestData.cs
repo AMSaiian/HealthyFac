@@ -1,3 +1,4 @@
+using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 
@@ -22,5 +23,5 @@ public static class DatabaseTestData
         DevelopmentData = new DevelopmentDataOptions { IsRecreationForced = true },
     };
 
-    public static readonly string[] RoleCodes = [Domain.Roles.RoleCodes.Worker, Domain.Roles.RoleCodes.Supervisor];
+    public static readonly RoleCode[] RoleCodes = [RoleCode.Worker, RoleCode.Supervisor];
 }

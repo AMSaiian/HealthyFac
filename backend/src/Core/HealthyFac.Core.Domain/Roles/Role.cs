@@ -10,6 +10,6 @@ namespace HealthyFac.Core.Domain.Roles;
 public class Role : IEntity
 {
     public Guid Id { get; private set; } = Guid.Empty;
-    public required string Code { get; init; }
+    public required RoleCode Code { get; init; }
     public required string Name { get; init; }
 }

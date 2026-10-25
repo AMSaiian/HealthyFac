@@ -36,7 +36,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         {
             await changeScope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .Roles
-                .Where(role => role.Code == RoleCodes.Worker)
+                .Where(role => role.Code == RoleCode.Worker)
                 .ExecuteUpdateAsync(update => update.SetProperty(role => role.Name, DatabaseTestData.ChangedRoleName));
         }
 
@@ -45,7 +45,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         using var scope = fixture.Services.CreateScope();
         var workerName = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
-            .Where(role => role.Code == RoleCodes.Worker)
+            .Where(role => role.Code == RoleCode.Worker)
             .Select(role => role.Name)
             .SingleAsync();
         workerName.Should().NotBe(DatabaseTestData.ChangedRoleName);
