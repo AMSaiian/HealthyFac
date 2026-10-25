@@ -9,6 +9,7 @@ description: "General backend C# conventions for all layers."
     *   The variable captures the result of an `await` expression.
     *   The variable stores the result of a LINQ query or chained operation.
     *   The variable names a condition or an intermediate result with a business term (e.g., `isMaintenanceDue`, `remainingCapacity`). When no business term fits, inline the expression.
+*   **Awaited Results:** Store an awaited result in a variable before you use it. Never wrap an `await` in parentheses to read a member or chain a call (e.g., `(await LoadAsync()).Name` or `(await ReadAsync()).Where(...)`). Never write an expression-bodied async method whose body uses an awaited result; write a block body instead. Name an awaited condition (e.g., `var isEmailEmployed = await ...AnyAsync(...); if (isEmailEmployed)`). In tests, chain FluentAssertions on the awaited assertion task (`await act.Should().ThrowAsync<T>().WithMessage(...)`).
 *   **Boolean Naming:** Prefix every boolean variable, field, property, and parameter with `is`, `has`, or `can`, as the context requires (e.g., `isActive`, `hasOpenTickets`, `canSchedule`).
 *   **Documentation (All or Nothing):** Decide for each unit of code (type, method, property, field, or constant) on its own. Document a unit fully or not at all.
     *   **Trivial unit:** Write no comment. A unit is trivial when its name, signature, and types explain what it does.
@@ -21,7 +22,7 @@ description: "General backend C# conventions for all layers."
 *   **Layer Boundaries:** Keep strict Clean Architecture boundaries (Web -> Infrastructure -> Application -> Domain).
 *   **Screaming Architecture:** Name folders after what the code does, not after its technical type.
     *   **Shared Projects:** Group code by intent (e.g., `/IdEncryption/`, `/ErrorHandling/`, `/Logging/`).
-    *   **Service Projects:** Group code by business feature, then by use case (e.g., `/Machines/CreateMachine/`). Keep feature-wide definitions (e.g., `MachineErrors`, `MachineValidationConstants`) at the feature folder root.
+    *   **Service Projects:** Group code by business feature, then by use case (e.g., `/Machines/CreateMachine/`). The Web layer groups by feature only (`backend-web.md`, rule **Endpoint Grouping**). Keep feature-wide definitions (e.g., `MachineErrors`, `MachineValidationConstants`) at the feature folder root.
     *   **Plural Root Names:** Use plural nouns for root folders and their namespaces (e.g., `/Machines/`, `/Orders/`). A singular name collides with the singular entity class (CS0118) and forces fully qualified identifiers.
     *   **Technical Sub-folders:** When several files in a business folder serve the same technical matter, move them into a sub-folder named after that matter (e.g., `/Machines/Persistence/`). Never create root folders for technical concerns (e.g., `/Services/`, `/Models/`, `/Handlers/`).
 *   **Interfaces vs. Base Classes:**
@@ -33,7 +34,7 @@ description: "General backend C# conventions for all layers."
     *   **Always Inline:** `0`, `1`, `-1`, `true`, `false`, `null`, `string.Empty`, and `Guid.Empty`.
     *   **Log Messages:** Write log message templates inline, so a project search finds them.
 *   **Error Definitions:** Never inline error messages or instantiate ad-hoc exceptions with raw strings directly in logic. Define errors in dedicated `static class` definitions (e.g., `MachineErrors`, `AuthErrors`) scoped to their feature, exposing static error instances or factory methods, and reference them.
-*   **File Separation:** Do not co-locate API Request or Response contracts with Endpoints in the same file; keep them in separate files. In the Application layer, place an `IRequest`, its response, and its `IRequestHandler` in one use-case file. Classes/types may otherwise be inlined ONLY if they are utility/helper types used strictly within that file.
+*   **File Separation:** The Web layer defines no request or response contracts, except a body record for server-owned values, which shares its file with its `ToRequest` extension class; endpoints use the Application types (`backend-web.md`, rule **API Contracts**). In the Application layer, place an `IRequest`, its response, and its `IRequestHandler` in one use-case file. Classes/types may otherwise be inlined ONLY if they are utility/helper types used strictly within that file.
 *   **Required Modifier:** Use `required` with `init` instead of dummy default values (e.g., avoid `= string.Empty;` or `= default!;`) for non-nullable properties. This guarantees compile-time initialization safety without silencing nullable analysis with placeholders.
     *   **Where:** DTOs, Requests, Responses, and entities with no invariants.
     *   **Entities with Invariants:** Set the properties in a constructor and use `private set`. C# rejects `required` on a property with a `private set` (CS9032).
