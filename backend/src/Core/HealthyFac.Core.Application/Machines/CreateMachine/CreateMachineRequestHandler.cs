@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Machines.CreateMachine;
 
-public record CreateMachineRequest : IRequest<Guid>
+public record CreateMachineRequest : IRequest<CreateMachineResponse>
 {
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
@@ -13,10 +13,15 @@ public record CreateMachineRequest : IRequest<Guid>
     public required Guid DepartmentId { get; init; }
 }
 
-public class CreateMachineRequestHandler(ICoreDbContext dbContext)
-    : IRequestHandler<CreateMachineRequest, Guid>
+public record CreateMachineResponse
 {
-    public async Task<Guid> HandleAsync(
+    public required Guid Id { get; init; }
+}
+
+public class CreateMachineRequestHandler(ICoreDbContext dbContext)
+    : IRequestHandler<CreateMachineRequest, CreateMachineResponse>
+{
+    public async Task<CreateMachineResponse> HandleAsync(
         CreateMachineRequest request,
         CancellationToken ct = default(CancellationToken)
     )
@@ -41,6 +46,6 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext)
         dbContext.Machines.Add(machine);
         await dbContext.SaveChangesAsync(ct);
 
-        return machine.Id;
+        return new CreateMachineResponse { Id = machine.Id };
     }
 }

@@ -1,4 +1,6 @@
-using HealthyFac.Core.Web.Machines.CreateMachine;
+using HealthyFac.Core.Application.Machines.CreateMachine;
+using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.UseCases;
 
 namespace HealthyFac.Core.Web.Machines;
 
@@ -16,9 +18,27 @@ public static class MachineEndpoints
         public IEndpointRouteBuilder MapMachineEndpoints()
         {
             var group = app.MapGroup(MachineRoutes.BaseRoute);
-            group.MapCreateMachineEndpoint();
+            group.MapPost(MachineRoutes.Root, CreateAsync);
 
             return app;
         }
+    }
+
+    private static async Task<IResult> CreateAsync(
+        CreateMachineRequest request,
+        HttpRequest httpRequest,
+        IRequestHandler<CreateMachineRequest, CreateMachineResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(request, cancellationToken);
+
+        var location = string.Format(
+            MachineRoutes.ResourceLocationFormat,
+            httpRequest.Path.Value?.TrimEnd(MachineRoutes.PathSeparator),
+            idEncryptor.Encrypt(response.Id));
+
+        return Results.Created(location, response);
     }
 }
