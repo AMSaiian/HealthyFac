@@ -18,3 +18,5 @@ public sealed class AnonymousCurrentUserProvider : ICurrentUserProvider
 
     public Guid GetUserId() => throw new InvalidOperationException();
 }
+
+public sealed class TransactionTestException : Exception;

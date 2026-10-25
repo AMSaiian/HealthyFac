@@ -35,6 +35,34 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => RunInTransactionAsync(
+            async token =>
+            {
+                await operation(token);
+
+                return true;
+            },
+            cancellationToken);
+
+    public async Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+    {
+        if (ChangeTracker.HasChanges())
+        {
+            throw PersistenceErrors.UnsavedChangesBeforeTransaction();
+        }
+
+        return await Database
+            .CreateExecutionStrategy()
+            .ExecuteAsync(token => RunTransactionAttemptAsync(operation, token), cancellationToken);
+    }
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.HaveEnumerationConversion<MachineState>();
@@ -49,5 +77,29 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
         modelBuilder.ApplyInboxConfiguration();
         modelBuilder.ToSnakeCaseConventions();
         modelBuilder.HasPostgreSqlExtensions(DatabaseConstants.RequiredPostgresExtensions);
+    }
+
+    private async Task<TResult> RunTransactionAttemptAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken
+    )
+    {
+        ChangeTracker.Clear();
+        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+
+        var result = await operation(cancellationToken);
+        if (Database.CurrentTransaction != transaction)
+        {
+            throw PersistenceErrors.TransactionEndedByOperation();
+        }
+
+        if (ChangeTracker.HasChanges())
+        {
+            throw PersistenceErrors.UnsavedChangesAfterOperation();
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return result;
     }
 }

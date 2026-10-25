@@ -4,6 +4,7 @@ using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Shared.Application.Persistence;
 
 namespace HealthyFac.Core.Application;
 
@@ -12,7 +13,7 @@ namespace HealthyFac.Core.Application;
 /// implements it, so the Application layer needs no reference to Infrastructure. Declare every new
 /// <see cref="DbSet{TEntity}"/> here. Copy a <see cref="DbContext"/> member signature only when a use case calls it.
 /// </summary>
-public interface ICoreDbContext
+public interface ICoreDbContext : ITransactionalDbContext
 {
     DbSet<Company> Companies { get; }
 
