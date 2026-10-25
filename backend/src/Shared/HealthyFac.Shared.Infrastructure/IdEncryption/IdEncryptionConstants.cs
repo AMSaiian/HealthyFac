@@ -17,6 +17,7 @@ public static class IdEncryptionConstants
     public static class Conventions
     {
         public const string PropertySuffix = "Id";
+        public const string CollectionPropertySuffix = "Ids";
         public const string ExactPropertyName = "id";
     }
 }

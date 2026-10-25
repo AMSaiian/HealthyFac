@@ -40,7 +40,9 @@ public static class IdEncryptionExtensions
     }
 
     /// <summary>
-    /// Applies ID encryption converters to JSON object properties matching the ID naming convention.
+    /// Applies ID encryption converters to JSON object properties matching the ID naming convention: a
+    /// <see cref="Guid"/> or nullable <see cref="Guid"/> named <c>id</c> or <c>*Id</c>, and a <see cref="Guid"/>
+    /// collection named <c>*Ids</c> (an array, <see cref="List{T}"/>, or an interface that a list implements).
     /// </summary>
     public static void ApplyIdEncryption(JsonTypeInfo typeInfo, IIdEncryptor encryptor)
     {
@@ -53,6 +55,9 @@ public static class IdEncryptionExtensions
         {
             if (!property.Name.EndsWith(
                     IdEncryptionConstants.Conventions.PropertySuffix,
+                    StringComparison.OrdinalIgnoreCase)
+                && !property.Name.EndsWith(
+                    IdEncryptionConstants.Conventions.CollectionPropertySuffix,
                     StringComparison.OrdinalIgnoreCase)
                 && !property.Name.Equals(
                     IdEncryptionConstants.Conventions.ExactPropertyName,
@@ -85,9 +90,17 @@ public static class IdEncryptionExtensions
         {
             not null when propertyType == typeof(Guid) => new EncryptedGuidConverter(encryptor),
             not null when propertyType == typeof(Guid?) => new EncryptedNullableGuidConverter(encryptor),
+            not null when IsGuidCollection(propertyType) => (JsonConverter?)Activator.CreateInstance(
+                typeof(EncryptedGuidCollectionConverter<>).MakeGenericType(propertyType),
+                encryptor),
             _ => null,
         };
     }
+
+    private static bool IsGuidCollection(Type propertyType)
+        => propertyType == typeof(Guid[])
+            || (typeof(IEnumerable<Guid>).IsAssignableFrom(propertyType)
+                && propertyType.IsAssignableFrom(typeof(List<Guid>)));
 }
 
 internal sealed class IdEncryptionJsonOptionsConfigurator(IIdEncryptor encryptor) : IConfigureOptions<JsonOptions>
