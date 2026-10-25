@@ -22,6 +22,7 @@ public sealed class IdEncryptionOptionsValidator : AbstractValidator<IdEncryptio
                     .WithMessage(IdEncryptionValidationMessages.Prefix.Required);
 
                 key.RuleFor(k => k.Key)
+                    .Cascade(CascadeMode.Stop)
                     .NotEmpty()
                     .WithMessage(IdEncryptionValidationMessages.Key.Required)
                     .Must(BeValidBase64)

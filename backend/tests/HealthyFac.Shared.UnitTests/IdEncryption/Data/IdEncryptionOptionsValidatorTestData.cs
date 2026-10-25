@@ -22,6 +22,7 @@ public static class IdEncryptionOptionsValidatorTestData
 
     public static TheoryData<string, string> InvalidKeysWithExpectedError => new()
     {
+        { null!, IdEncryptionValidationMessages.Key.Required },
         { string.Empty, IdEncryptionValidationMessages.Key.Required },
         { WhitespaceKey, IdEncryptionValidationMessages.Key.Required },
         { NotBase64Key, IdEncryptionValidationMessages.Key.MustBeBase64 },
