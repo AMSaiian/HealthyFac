@@ -72,6 +72,10 @@ services:
       IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
       IdEncryption__Keys__0__Default: "true"
+      InviteTokens__LifetimeHours: ${InviteTokens__LifetimeHours:-72}
+      InviteTokens__Keys__0__Id: ${InviteTokens__Keys__0__Id:-k1}
+      InviteTokens__Keys__0__Secret: ${InviteTokens__Keys__0__Secret:?set InviteTokens__Keys__0__Secret in .env}
+      InviteTokens__Keys__0__IsDefault: "true"
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs

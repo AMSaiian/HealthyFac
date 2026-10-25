@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application;
+using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -18,6 +19,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 
     public IServiceScopeFactory ScopeFactory => _services.GetRequiredService<IServiceScopeFactory>();
 
+    public IInviteTokenService InviteTokenService => _services.GetRequiredService<IInviteTokenService>();
 
     public async Task InitializeAsync()
     {

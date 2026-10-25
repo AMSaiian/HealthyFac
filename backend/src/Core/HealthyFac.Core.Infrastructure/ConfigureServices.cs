@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using HealthyFac.Core.Application;
+using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -52,6 +55,7 @@ public static class ConfigureServices
                         DatabaseConstants.Retry.MaxCount,
                         TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
                         errorCodesToAdd: null));
+                options.UseExceptionProcessor();
 
                 options.AddInterceptors(provider.GetRequiredService<AuditableEntityInterceptor>());
 
@@ -61,6 +65,10 @@ public static class ConfigureServices
                     options.EnableDetailedErrors();
                 }
             });
+
+            services.AddValidatedOptions<InviteTokenOptions, InviteTokenOptionsValidator>(
+                InviteTokenOptions.SectionName, configuration);
+            services.AddSingleton<IInviteTokenService, HmacInviteTokenService>();
 
             services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
                 SeedingOptions.SectionName, configuration);

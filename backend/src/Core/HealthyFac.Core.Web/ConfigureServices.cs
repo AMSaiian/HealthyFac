@@ -1,5 +1,6 @@
 using Serilog;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Web.CrossOrigin;
@@ -118,6 +119,7 @@ public static class ConfigureServices
 
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapMachineEndpoints();
+            versionedGroup.MapEmployeeInviteEndpoints();
 
             return app;
         }

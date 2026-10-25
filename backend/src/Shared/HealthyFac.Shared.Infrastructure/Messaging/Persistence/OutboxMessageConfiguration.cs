@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,7 +24,7 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
             .HasColumnType(MessagingPersistenceConstants.PayloadColumnType)
             .IsRequired();
 
-        builder.Property<uint>(MessagingPersistenceConstants.ConcurrencyToken)
+        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
             .IsRowVersion();
 
         builder.HasIndex(message => message.NextAttemptOn)

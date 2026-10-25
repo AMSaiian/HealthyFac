@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.Decorators;
@@ -32,6 +33,8 @@ public static class ConfigureServices
 
             services.Decorate(typeof(IRequestHandler<,>), typeof(ValidationRequestHandlerDecorator<,>));
             services.Decorate(typeof(IRequestHandler<,>), typeof(LoggingRequestHandlerDecorator<,>));
+
+            services.AddScoped<EmployeeInviteResolver>();
 
             services.AddValidatorsFromAssembly(applicationAssembly);
 
