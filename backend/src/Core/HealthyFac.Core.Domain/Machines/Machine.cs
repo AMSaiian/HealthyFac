@@ -7,7 +7,7 @@ namespace HealthyFac.Core.Domain.Machines;
 /// </summary>
 public class Machine : IEntity, IAuditable
 {
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
     public required Guid CompanyId { get; init; }

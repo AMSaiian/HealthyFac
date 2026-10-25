@@ -8,7 +8,7 @@ namespace HealthyFac.Shared.Web.IdEncryption.Converters;
 
 /// <summary>
 /// Reads and writes a <see cref="Guid"/> as an encrypted identifier token.
-/// An absent or empty token reads as <see cref="Guid.Empty"/>, which marks an unsaved entity.
+/// An absent or empty token reads as <see cref="Guid.Empty"/>, which request validation then rejects.
 /// </summary>
 public sealed class EncryptedGuidConverter(IIdEncryptor encryptor) : JsonConverter<Guid>
 {

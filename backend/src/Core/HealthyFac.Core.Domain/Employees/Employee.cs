@@ -34,7 +34,7 @@ public class Employee : IEntity, IAuditable
         RoleId = roleId;
     }
 
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
     public Guid CompanyId { get; private set; }
 
     /// <summary>
@@ -185,15 +185,13 @@ public class Employee : IEntity, IAuditable
     }
 
     /// <summary>
-    /// Finds the assigned department that matches <paramref name="department"/>. A saved department matches by
-    /// identifier, because a second query can load another instance of the same row. An unsaved department has
-    /// no identifier yet, so it matches only the same instance.
+    /// Finds the assigned department that matches <paramref name="department"/> by identifier, because a second
+    /// query can load another instance of the same row.
     /// </summary>
     /// <param name="department">The department to find.</param>
     /// <returns>The assigned instance, or <see langword="null"/> when the department is not assigned.</returns>
     private Department? FindDepartment(Department department)
-        => _departments.FirstOrDefault(assigned => ReferenceEquals(assigned, department)
-            || (assigned.Id != Guid.Empty && assigned.Id == department.Id));
+        => _departments.FirstOrDefault(assigned => assigned.Id == department.Id);
 
     private void EnsureStatus(EmployeeStatus requiredStatus, EmployeeStatus targetStatus)
     {

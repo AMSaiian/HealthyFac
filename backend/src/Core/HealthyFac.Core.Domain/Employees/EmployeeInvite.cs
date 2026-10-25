@@ -62,7 +62,7 @@ public class EmployeeInvite : IEntity, IAuditable
         ExpiresAt = expiresAt;
     }
 
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
     public Guid CompanyId { get; private set; }
     public string Email { get; private set; }
     public Guid RoleId { get; private set; }

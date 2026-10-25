@@ -1,4 +1,3 @@
-using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,8 +13,7 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         builder.HasKey(message => message.Id);
 
         builder.Property(message => message.Id)
-            .HasDefaultValueSql(PersistenceConstants.IdentifierSql)
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         builder.Property(message => message.Type)
             .HasMaxLength(MessagingPersistenceConstants.TypeMaxLength)

@@ -29,10 +29,10 @@ public sealed class OutboxMessage
     }
 
     /// <summary>
-    /// The database generates the identifier. The processor sends it as the broker message ID, so a receiver
+    /// The application generates the identifier. The processor sends it as the broker message ID, so a receiver
     /// can drop a duplicate delivery.
     /// </summary>
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
 
     public string Type { get; private set; }
 

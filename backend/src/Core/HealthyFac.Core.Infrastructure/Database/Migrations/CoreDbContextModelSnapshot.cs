@@ -25,10 +25,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Companies.Company", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -63,10 +61,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Departments.Department", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -118,10 +114,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.Employee", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -207,10 +201,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.EmployeeInvite", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone")
@@ -290,10 +282,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Machines.Machine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -360,10 +350,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Roles.Role", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -448,10 +436,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("integer")
