@@ -13,7 +13,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationSavesInside_CommitsAndReturnsGeneratedId()
     {
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
         var companyId = await dbContext.RunInTransactionAsync(async cancellationToken =>
@@ -25,14 +25,16 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
             return company.Id;
         });
 
+        var companyCount = await CountCompaniesAsync(TransactionTestData.CommittedCompanyName);
+
         companyId.Should().NotBeEmpty();
-        (await CountCompaniesAsync(TransactionTestData.CommittedCompanyName)).Should().Be(1);
+        companyCount.Should().Be(1);
     }
 
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationThrowsAfterSave_CommitsNothing()
     {
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(async cancellationToken =>
@@ -44,13 +46,16 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
         });
 
         await act.Should().ThrowAsync<TransactionTestException>();
-        (await CountCompaniesAsync(TransactionTestData.RolledBackCompanyName)).Should().Be(0);
+
+        var companyCount = await CountCompaniesAsync(TransactionTestData.RolledBackCompanyName);
+
+        companyCount.Should().Be(0);
     }
 
     [Fact]
     public async Task RunInTransactionAsync_WithUnsavedChangesBeforeCall_ThrowsWithoutRunningOperation()
     {
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
         dbContext.Companies.Add(new Company { Name = TransactionTestData.UnsavedCompanyName });
         var isOperationRun = false;
@@ -71,7 +76,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationLeavesUnsavedChanges_ThrowsAndCommitsNothing()
     {
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(_ =>
@@ -84,13 +89,16 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
         await act.Should()
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(PersistenceErrors.UnsavedChangesAfterOperation().Message);
-        (await CountCompaniesAsync(TransactionTestData.UnsavedAfterOperationCompanyName)).Should().Be(0);
+
+        var companyCount = await CountCompaniesAsync(TransactionTestData.UnsavedAfterOperationCompanyName);
+
+        companyCount.Should().Be(0);
     }
 
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationCommitsTransaction_ThrowsAndSavesNothingAfterIt()
     {
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(async cancellationToken =>
@@ -102,12 +110,15 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
         await act.Should()
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(PersistenceErrors.TransactionEndedByOperation().Message);
-        (await CountCompaniesAsync(TransactionTestData.EndedTransactionCompanyName)).Should().Be(0);
+
+        var companyCount = await CountCompaniesAsync(TransactionTestData.EndedTransactionCompanyName);
+
+        companyCount.Should().Be(0);
     }
 
     private async Task<int> CountCompaniesAsync(string name)
     {
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Companies

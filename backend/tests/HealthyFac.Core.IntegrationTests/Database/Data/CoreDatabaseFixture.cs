@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application;
 using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -13,7 +14,10 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 {
     private readonly PostgreSqlTestDatabase _database = new();
 
-    public ServiceProvider Services { get; private set; } = null!;
+    private ServiceProvider _services = null!;
+
+    public IServiceScopeFactory ScopeFactory => _services.GetRequiredService<IServiceScopeFactory>();
+
 
     public async Task InitializeAsync()
     {
@@ -35,15 +39,17 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddSingleton<ICurrentUserProvider, AnonymousCurrentUserProvider>();
         services.AddInfrastructureServices(configuration, environment);
-        Services = services.BuildServiceProvider(validateScopes: true);
+        services.AddApplicationServices();
+        _services = services.BuildServiceProvider(validateScopes: true);
 
-        using var scope = Services.CreateScope();
+        using var scope = _services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<CoreDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();
     }
 
     public async Task DisposeAsync()
     {
-        await Services.DisposeAsync();
+        await _services.DisposeAsync();
         await _database.DisposeAsync();
     }
 }

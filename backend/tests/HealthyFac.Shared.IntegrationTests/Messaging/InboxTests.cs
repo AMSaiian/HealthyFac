@@ -52,9 +52,11 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
                 InboxTestData.Payload,
                 InboxTestData.TraceParent);
 
+        var messageCount = await CountMessagesAsync(InboxTestData.DuplicateMessageId);
+
         isFirstStored.Should().BeTrue();
         isSecondStored.Should().BeFalse();
-        (await CountMessagesAsync(InboxTestData.DuplicateMessageId)).Should().Be(1);
+        messageCount.Should().Be(1);
     }
 
     [Fact]
@@ -72,7 +74,9 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
                 InboxTestData.TraceParent);
         await transaction.RollbackAsync();
 
-        (await CountMessagesAsync(InboxTestData.RolledBackMessageId)).Should().Be(0);
+        var messageCount = await CountMessagesAsync(InboxTestData.RolledBackMessageId);
+
+        messageCount.Should().Be(0);
     }
 
     [Fact]
@@ -93,7 +97,9 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
         processScope.ServiceProvider.GetRequiredService<IInbox>().MarkProcessed(message);
         await processScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
 
-        (await ReadMessageAsync(InboxTestData.ProcessedMessageId))!.ProcessedOn.Should().Be(InboxTestData.Now);
+        var processedMessage = await ReadMessageAsync(InboxTestData.ProcessedMessageId);
+
+        processedMessage!.ProcessedOn.Should().Be(InboxTestData.Now);
     }
 
     [Fact]
@@ -119,7 +125,10 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
         var act = () => secondScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
 
         await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
-        (await CountOutboxMessagesAsync(OutboxTestData.BusinessChangeMessageType)).Should().Be(0);
+
+        var outboxMessageCount = await CountOutboxMessagesAsync(OutboxTestData.BusinessChangeMessageType);
+
+        outboxMessageCount.Should().Be(0);
     }
 
     private static Task<InboxMessage> LoadMessageAsync(IServiceScope scope, Guid messageId)

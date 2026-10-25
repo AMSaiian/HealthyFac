@@ -11,7 +11,7 @@ public sealed class EmployeeDepartmentTests(CoreDatabaseFixture fixture) : IClas
     public async Task AssignDepartment_WithSameDepartmentFromAnotherQuery_KeepsOneLink()
     {
         await SeedAsync();
-        using var scope = fixture.Services.CreateScope();
+        using var scope = fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var employee = await dbContext.Employees.Include(employee => employee.Departments).FirstAsync();
         var assignedDepartmentId = employee.Departments.First().Id;
@@ -28,10 +28,7 @@ public sealed class EmployeeDepartmentTests(CoreDatabaseFixture fixture) : IClas
 
     private async Task SeedAsync()
     {
-        using var scope = fixture.Services.CreateScope();
-        var initializer = scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>();
-
-        await initializer.SeedRequiredDataAsync();
-        await initializer.SeedOptionalDataAsync();
+        using var scope = fixture.ScopeFactory.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedOptionalDataAsync();
     }
 }
