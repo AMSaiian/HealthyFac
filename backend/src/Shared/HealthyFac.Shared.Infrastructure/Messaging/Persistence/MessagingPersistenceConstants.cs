@@ -7,6 +7,7 @@ internal static class MessagingPersistenceConstants
 {
     public const int TypeMaxLength = 200;
     public const string PayloadColumnType = "jsonb";
+    public const int ErrorMaxLength = 2000;
 
     /// <summary>
     /// Limits an index to the rows that still wait for a processor. The column name is the snake case form of

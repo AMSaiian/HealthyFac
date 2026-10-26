@@ -10,6 +10,8 @@ using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Time;
 
@@ -23,14 +25,15 @@ public static class ConfigureServices
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registers infrastructure database context, interceptors, and database initializers.
+        /// Registers infrastructure database context, interceptors, database initializers, and the message
+        /// runtime: the RabbitMQ transport and the outbox and inbox processors.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance containing database
-        /// connection settings.</param>
+        /// and broker connection settings.</param>
         /// <param name="environment">The host environment deciding whether verbose database logging runs.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the database connection string is missing or blank.
+        /// Thrown when the database or the RabbitMQ connection string is missing or blank.
         /// </exception>
         public IServiceCollection AddInfrastructureServices(
             IConfiguration configuration,
@@ -64,6 +67,9 @@ public static class ConfigureServices
                     options.EnableDetailedErrors();
                 }
             });
+
+            services.AddMessagingTransport(configuration);
+            services.AddMessageProcessors();
 
             services.AddValidatedOptions<InviteTokenOptions, InviteTokenOptionsValidator>(
                 InviteTokenOptions.SectionName, configuration);

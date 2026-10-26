@@ -3,6 +3,7 @@ using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,8 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 
     private ServiceProvider _services = null!;
 
-    public IServiceScopeFactory ScopeFactory => _services.GetRequiredService<IServiceScopeFactory>();
+    public IServiceScopeFactory ScopeFactory =>
+        new SystemActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
 
     public IInviteTokenService InviteTokenService => _services.GetRequiredService<IInviteTokenService>();
 
@@ -39,12 +41,12 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IHostEnvironment>(environment);
-        services.AddSingleton<ICurrentUserProvider, AnonymousCurrentUserProvider>();
+        services.AddActorContext();
         services.AddInfrastructureServices(configuration, environment);
         services.AddApplicationServices();
         _services = services.BuildServiceProvider(validateScopes: true);
 
-        using var scope = _services.CreateScope();
+        using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<CoreDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();
     }

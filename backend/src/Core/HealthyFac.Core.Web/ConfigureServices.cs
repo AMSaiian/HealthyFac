@@ -2,7 +2,7 @@ using Serilog;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Machines;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.ErrorHandling;
 using HealthyFac.Shared.Web.Rpc;
@@ -39,8 +39,7 @@ public static class ConfigureServices
             services.AddApiContracts(configuration);
             services.AddApiObservability(configuration);
 
-            services.AddHttpContextAccessor();
-            services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+            services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
             services.AddSharedGrpc(environment);
 
@@ -75,10 +74,12 @@ public static class ConfigureServices
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
+
             services.AddSharedHealthChecks()
                 .AddDbContextCheck<CoreDbContext>(
                     DatabaseConstants.HealthCheckName,
-                    tags: [HealthCheckConstants.ReadyTag]);
+                    tags: [HealthCheckConstants.ReadyTag])
+                .AddBrokerHealthCheck([HealthCheckConstants.ReadyTag]);
 
             return services;
         }
@@ -102,6 +103,7 @@ public static class ConfigureServices
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();
+            app.UseActorContext();
 
             return app;
         }

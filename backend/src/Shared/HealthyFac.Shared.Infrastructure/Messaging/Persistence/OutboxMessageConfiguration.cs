@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Persistence;
+using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +24,14 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         builder.Property(message => message.Payload)
             .HasColumnType(MessagingPersistenceConstants.PayloadColumnType)
             .IsRequired();
+
+        builder.Property(message => message.ActorId)
+            .IsRequired();
+
+        builder.HasNotEmptyGuidCheck(message => message.ActorId);
+
+        builder.Property(message => message.Error)
+            .HasMaxLength(MessagingPersistenceConstants.ErrorMaxLength);
 
         builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
             .IsRowVersion();

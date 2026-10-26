@@ -15,6 +15,8 @@ public interface IInbox
     /// <param name="traceParent">
     /// The trace context that the sender attached, or <see langword="null"/> when the sender sent none.
     /// </param>
+    /// <param name="actorId">The actor from the message header, which the processor restores.</param>
+    /// <param name="companyId">The company from the message header, or <see langword="null"/>.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>
@@ -26,6 +28,8 @@ public interface IInbox
         string type,
         string payload,
         string? traceParent,
+        Guid actorId,
+        Guid? companyId,
         CancellationToken cancellationToken = default(CancellationToken)
     );
 

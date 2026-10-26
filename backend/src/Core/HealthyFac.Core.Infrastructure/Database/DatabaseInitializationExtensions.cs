@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -14,14 +16,16 @@ public static class DatabaseInitializationExtensions
     {
         /// <summary>
         /// Applies database migrations (Development only), seeds the required data, then seeds the optional
-        /// data when the seeding section enables it.
+        /// data when the seeding section enables it. The scope runs as the system actor, so seeded rows carry
+        /// <see cref="SystemActor.Id"/>.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
         /// requests.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task InitializeDatabaseAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            using var scope = services.CreateScope();
+            using var scope = services.GetRequiredService<IServiceScopeFactory>()
+                .CreateActorScope(SystemActor.Create());
 
             var initializer = scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>();
             var seedingOptions = scope.ServiceProvider.GetRequiredService<IOptions<SeedingOptions>>().Value;

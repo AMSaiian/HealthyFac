@@ -7,7 +7,7 @@ namespace HealthyFac.Shared.Infrastructure.Messaging;
 /// interfaces against one instance, so the insert uses the same connection and transaction as the service.
 /// </summary>
 /// <param name="dbContext">The scoped service context.</param>
-/// <param name="dateProvider">The clock for the time of the delivery.</param>
+/// <param name="timeProvider">The clock for the time of the delivery.</param>
 internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider) : IInbox
 {
     public async Task<bool> TryAddAsync(
@@ -15,11 +15,21 @@ internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider
         string type,
         string payload,
         string? traceParent,
+        Guid actorId,
+        Guid? companyId,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         var insertedCount = await dbContext.InboxMessages
-            .Upsert(new InboxMessage(messageId, type, payload, timeProvider.GetUtcNow().UtcDateTime, traceParent))
+            .Upsert(
+                new InboxMessage(
+                    messageId,
+                    type,
+                    payload,
+                    timeProvider.GetUtcNow().UtcDateTime,
+                    traceParent,
+                    actorId,
+                    companyId))
             .On(message => message.Id)
             .NoUpdate()
             .RunAsync(cancellationToken);

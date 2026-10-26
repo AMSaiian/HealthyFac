@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Time.Testing;
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,12 +14,23 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
 
     public ServiceProvider Services { get; private set; } = null!;
 
+    /// <summary>
+    /// Creates a scope that holds <paramref name="actor"/>, or the system actor when the argument is null.
+    /// </summary>
+    public IServiceScope CreateScope(ActorContext? actor = null)
+    {
+        return Services.GetRequiredService<IServiceScopeFactory>().CreateActorScope(actor ?? SystemActor.Create());
+    }
+
+    public IServiceScope CreateScopeWithoutActor() => Services.CreateScope();
+
     public async Task InitializeAsync()
     {
         await _database.StartAsync();
 
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(InboxTestData.Now)));
+        services.AddActorContext();
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(_database.ConnectionString));
         Services = services.BuildServiceProvider(validateScopes: true);

@@ -17,6 +17,18 @@ public sealed class TestServiceDbContext(DbContextOptions<TestServiceDbContext> 
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => throw new NotSupportedException();
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => throw new NotSupportedException();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyOutboxConfiguration();
