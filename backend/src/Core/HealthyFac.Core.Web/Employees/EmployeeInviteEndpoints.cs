@@ -42,7 +42,7 @@ public static class EmployeeInviteEndpoints
 
         var location = string.Format(
             EmployeeInviteRoutes.ResourceLocationFormat,
-            httpRequest.Path.Value?.TrimEnd(EmployeeInviteRoutes.PathSeparator),
+            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(EmployeeInviteRoutes.PathSeparator),
             idEncryptor.Encrypt(response.Id));
 
         return Results.Created(location, response);

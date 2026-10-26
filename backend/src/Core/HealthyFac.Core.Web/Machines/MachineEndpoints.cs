@@ -36,7 +36,7 @@ public static class MachineEndpoints
 
         var location = string.Format(
             MachineRoutes.ResourceLocationFormat,
-            httpRequest.Path.Value?.TrimEnd(MachineRoutes.PathSeparator),
+            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(MachineRoutes.PathSeparator),
             idEncryptor.Encrypt(response.Id));
 
         return Results.Created(location, response);

@@ -6,6 +6,9 @@
     <Project Path="src/Core/HealthyFac.Core.Infrastructure/HealthyFac.Core.Infrastructure.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Web/HealthyFac.Core.Web.csproj" />
   </Folder>
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/HealthyFac.Gateway.Web/HealthyFac.Gateway.Web.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/HealthyFac.Shared.Application/HealthyFac.Shared.Application.csproj" />
     <Project Path="src/Shared/HealthyFac.Shared.Domain/HealthyFac.Shared.Domain.csproj" />
@@ -17,6 +20,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/HealthyFac.Core.ArchitectureTests/HealthyFac.Core.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.Gateway.IntegrationTests/HealthyFac.Gateway.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Core.IntegrationTests/HealthyFac.Core.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Core.UnitTests/HealthyFac.Core.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Shared.IntegrationTests/HealthyFac.Shared.IntegrationTests.csproj" />

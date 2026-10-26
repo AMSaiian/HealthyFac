@@ -47,6 +47,44 @@ services:
       postgres:
         condition: service_healthy
 
+  redis:
+    container_name: healthyfac-redis
+    image: redis:8.10.1-alpine
+    restart: unless-stopped
+    user: redis
+    read_only: true
+    # Redis reads its config from stdin. The password then stays out of the process arguments, and the read-only
+    # root file system needs no config file.
+    command:
+      - sh
+      - -c
+      - |
+        exec redis-server - <<EOF
+        requirepass $$REDIS_PASSWORD
+        save ""
+        appendonly no
+        EOF
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # No volume: every key expires or can be rebuilt, so Redis keeps no data across restarts.
+    tmpfs:
+      - /data
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
   core:
     container_name: healthyfac-core
     build:
@@ -84,6 +122,40 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      lgtm:
+        condition: service_healthy
+
+  gateway:
+    container_name: healthyfac-gateway
+    build:
+      context: ./backend
+      dockerfile: src/Gateway/HealthyFac.Gateway.Web/Dockerfile
+    image: healthyfac/gateway:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ReverseProxy__Clusters__core__Destinations__main__Address: http://core:8080/
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Proxy__KnownNetworks__0: 172.16.0.0/12
+      Tracing__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    ports:
+      - "${GATEWAY_PORT:-8000}:8080"
+    # Redis and Core are soft dependencies of the gateway: it serves with a local limiter and answers 503 alone.
+    depends_on:
+      core:
+        condition: service_started
+      redis:
+        condition: service_started
       lgtm:
         condition: service_healthy
 
