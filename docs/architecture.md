@@ -6,7 +6,7 @@ This document records the service boundaries and the decisions that connect the 
 
 | Service | Owns | Status |
 | --- | --- | --- |
-| **Gateway** (YARP) | The only public entry point. Routing, TLS, rate limiting, the edge JWT check, and the token revocation check. | Planned |
+| **Gateway** (YARP) | The only public entry point. Routing, TLS, rate limiting, the edge JWT check, and the token revocation check. | Exists |
 | **Auth** | A thin back channel to Keycloak: user provisioning, organization membership, and role assignment through the Keycloak Admin API. It does not log users in or handle passwords. It may have its own tables when it needs them. | Planned |
 | **Core** | Business data: companies, departments, employees, employee invites, roles, machines, metric definitions, and campaigns. | Exists |
 | **Telemetry** | Metric intake from the machines (a mock machine service for now). It writes the received data and nothing else. | Planned |
@@ -25,6 +25,21 @@ This document records the service boundaries and the decisions that connect the 
 - **Client to service:** the SPA calls the gateway. The gateway forwards to the service. Every service validates the JWT again.
 - **Service to service, asynchronous:** RabbitMQ with Rebus. Every service uses the transactional outbox and inbox (`backend-infrastructure.md`, rule **Outbox and Inbox**). A message type name has the form `<service>.v<version>:<Name>` (e.g., `core.v1:EmployeeInvited`).
 - **Service to service, synchronous:** OAuth 2.0 Token Exchange when the call acts for a user, or Client Credentials when the service acts for itself. Never put a token into a message.
+
+## Public Paths
+
+- The public path has the form `/api/<service>/v{version}/...` (e.g., `/api/core/v1/machines`).
+- A service routes under `/v{version}`, without `/api`. The gateway removes the whole `/api/<service>` prefix.
+- The gateway sends `X-Forwarded-Prefix: /api/<service>`. A service accepts this header from trusted proxies only (`Proxy:KnownNetworks`). Its `PathBase` then becomes the public prefix, so every link that it builds (e.g., the `Location` header) shows the public path.
+
+## Gateway Failure Policy
+
+- Redis is not a hard dependency of the gateway. When Redis fails, rate limiting falls back to a local limiter per instance. With N instances, the effective limit can reach N times the configured limit during an outage.
+- A circuit breaker skips Redis for 30 seconds after a failure. Then one request tests Redis, and the others keep the local limiter until the test succeeds. The gateway logs one warning when the breaker opens and one when it closes.
+- `/health/ready` reports `Degraded` with status `200` while Redis is down. The gateway readiness does not check the services behind it.
+- Every error response of the gateway is `application/problem+json`: `429` (rate limit), `502` (destination unreachable or broken response), `503` (no healthy destination), `504` (destination timeout), and `500` (gateway exception, without details). A client cancellation gets no body.
+- The gateway never retries a request. A `POST` request is not idempotent, so the client decides on a retry.
+- The gateway skips a destination that the health checks mark unhealthy. It does not fall back to all destinations.
 
 ## Identity
 
