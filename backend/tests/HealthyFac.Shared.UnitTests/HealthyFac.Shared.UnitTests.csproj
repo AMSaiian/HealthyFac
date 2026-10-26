@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj" />
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Infrastructure\HealthyFac.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj" />
+    <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
+using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.UnitTests.UseCases;
