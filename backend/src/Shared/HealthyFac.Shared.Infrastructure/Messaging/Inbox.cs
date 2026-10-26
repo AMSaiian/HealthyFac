@@ -1,4 +1,3 @@
-using HealthyFac.Shared.Application.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging;
@@ -9,7 +8,7 @@ namespace HealthyFac.Shared.Infrastructure.Messaging;
 /// </summary>
 /// <param name="dbContext">The scoped service context.</param>
 /// <param name="dateProvider">The clock for the time of the delivery.</param>
-internal sealed class Inbox(IInboxDbContext dbContext, IDateProvider dateProvider) : IInbox
+internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider) : IInbox
 {
     public async Task<bool> TryAddAsync(
         Guid messageId,
@@ -20,7 +19,7 @@ internal sealed class Inbox(IInboxDbContext dbContext, IDateProvider dateProvide
     )
     {
         var insertedCount = await dbContext.InboxMessages
-            .Upsert(new InboxMessage(messageId, type, payload, dateProvider.GetUtc(), traceParent))
+            .Upsert(new InboxMessage(messageId, type, payload, timeProvider.GetUtcNow().UtcDateTime, traceParent))
             .On(message => message.Id)
             .NoUpdate()
             .RunAsync(cancellationToken);
@@ -35,6 +34,6 @@ internal sealed class Inbox(IInboxDbContext dbContext, IDateProvider dateProvide
             throw MessagingErrors.InboxMessageNotTracked(message.Id);
         }
 
-        message.MarkProcessed(dateProvider.GetUtc());
+        message.MarkProcessed(timeProvider.GetUtcNow().UtcDateTime);
     }
 }

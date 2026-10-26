@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -38,9 +37,4 @@ public sealed record TestConcurrentPublish : IIntegrationMessage
     public static string MessageType => OutboxTestData.ConcurrentMessageType;
 
     public required string Text { get; init; }
-}
-
-public sealed class FixedDateProvider : IDateProvider
-{
-    public DateTime GetUtc() => InboxTestData.Now;
 }

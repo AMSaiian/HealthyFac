@@ -4,7 +4,6 @@ using HealthyFac.Core.Infrastructure.Companies.Seeding;
 using HealthyFac.Core.Infrastructure.Departments.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
-using HealthyFac.Shared.Application.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,7 +23,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 /// <param name="logger">The logger for the forced recreation warning.</param>
 public sealed class CoreDevelopmentDataSeeder(
     CoreDbContext dbContext,
-    IDateProvider dateProvider,
+    TimeProvider timeProvider,
     IOptions<SeedingOptions> seedingOptions,
     ILogger<CoreDevelopmentDataSeeder> logger
 )
@@ -60,7 +59,7 @@ public sealed class CoreDevelopmentDataSeeder(
         }
 
         var roleIds = await dbContext.Roles.ToDictionaryAsync(role => role.Code, role => role.Id, cancellationToken);
-        var now = dateProvider.GetUtc();
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         var inviteLifetime = TimeSpan.FromDays(_options.InviteLifetimeDays);
         var identityRandomizer = new Randomizer(_options.RandomSeed);
 

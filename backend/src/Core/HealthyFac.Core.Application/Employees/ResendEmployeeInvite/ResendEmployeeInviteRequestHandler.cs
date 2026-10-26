@@ -2,7 +2,6 @@ using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +22,7 @@ public class ResendEmployeeInviteRequestHandler(
     ICoreDbContext dbContext,
     IInviteTokenService tokenService,
     IOutbox outbox,
-    IDateProvider dateProvider
+    TimeProvider timeProvider
 ) : IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>
 {
     public async Task<ResendEmployeeInviteResponse> HandleAsync(
@@ -41,7 +40,7 @@ public class ResendEmployeeInviteRequestHandler(
             throw new ConflictException(EmployeeInviteErrors.Rejections.InviteAlreadyAccepted);
         }
 
-        invite.Renew(tokenService.CreateSalt(), tokenService.GetExpiresAt(dateProvider.GetUtc()));
+        invite.Renew(tokenService.CreateSalt(), tokenService.GetExpiresAt(timeProvider.GetUtcNow().UtcDateTime));
         outbox.Add(
             new EmployeeInvited
             {

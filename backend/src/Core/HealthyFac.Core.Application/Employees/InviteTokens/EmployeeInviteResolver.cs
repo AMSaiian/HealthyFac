@@ -1,6 +1,5 @@
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Shared.Application.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Employees.InviteTokens;
@@ -8,7 +7,7 @@ namespace HealthyFac.Core.Application.Employees.InviteTokens;
 public class EmployeeInviteResolver(
     ICoreDbContext dbContext,
     IInviteTokenService tokenService,
-    IDateProvider dateProvider
+    TimeProvider timeProvider
 )
 {
     /// <summary>
@@ -36,7 +35,7 @@ public class EmployeeInviteResolver(
 
         if (invite is null
             || !tokenService.IsValid(token, invite.TokenSalt)
-            || !invite.CanAccept(dateProvider.GetUtc()))
+            || !invite.CanAccept(timeProvider.GetUtcNow().UtcDateTime))
         {
             throw CreateInvalidLinkException();
         }

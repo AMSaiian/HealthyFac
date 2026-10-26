@@ -3,7 +3,6 @@ using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +24,7 @@ public class AcceptEmployeeInviteRequestHandler(
     ICoreDbContext dbContext,
     EmployeeInviteResolver inviteResolver,
     IOutbox outbox,
-    IDateProvider dateProvider
+    TimeProvider timeProvider
 ) : IRequestHandler<AcceptEmployeeInviteRequest, AcceptEmployeeInviteResponse>
 {
     public async Task<AcceptEmployeeInviteResponse> HandleAsync(
@@ -47,7 +46,7 @@ public class AcceptEmployeeInviteRequestHandler(
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.RoleNotFound);
 
         invite.UpdateProfile(request.FirstName, request.LastName);
-        var employee = invite.Accept(dateProvider.GetUtc());
+        var employee = invite.Accept(timeProvider.GetUtcNow().UtcDateTime);
         dbContext.Employees.Add(employee);
         outbox.Add(
             new EmployeeAccepted

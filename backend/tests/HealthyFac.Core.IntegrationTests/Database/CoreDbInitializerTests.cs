@@ -2,7 +2,6 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Shared.Application.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -92,7 +91,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         using var recreateScope = fixture.ScopeFactory.CreateScope();
         var seeder = new CoreDevelopmentDataSeeder(
             recreateScope.ServiceProvider.GetRequiredService<CoreDbContext>(),
-            recreateScope.ServiceProvider.GetRequiredService<IDateProvider>(),
+            recreateScope.ServiceProvider.GetRequiredService<TimeProvider>(),
             Options.Create(DatabaseTestData.ForcedRecreationOptions),
             NullLogger<CoreDevelopmentDataSeeder>.Instance);
 

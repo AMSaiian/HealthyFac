@@ -8,7 +8,6 @@ using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
@@ -38,7 +37,7 @@ public static class ConfigureServices
             IHostEnvironment environment
         )
         {
-            services.AddSingleton<IDateProvider, DateProvider>();
+            services.AddSharedTime();
             services.AddScoped<AuditableEntityInterceptor>();
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);

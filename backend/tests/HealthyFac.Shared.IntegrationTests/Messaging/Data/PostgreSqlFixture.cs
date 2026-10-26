@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.Time;
+using Microsoft.Extensions.Time.Testing;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +17,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         await _database.StartAsync();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDateProvider, FixedDateProvider>();
+        services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(InboxTestData.Now)));
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(_database.ConnectionString));
         Services = services.BuildServiceProvider(validateScopes: true);

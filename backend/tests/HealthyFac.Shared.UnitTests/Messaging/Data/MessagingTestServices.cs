@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.Time;
+using Microsoft.Extensions.Time.Testing;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +11,7 @@ public static class MessagingTestServices
     {
         var services = new ServiceCollection();
 
-        services.AddSingleton<IDateProvider, FixedDateProvider>();
+        services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(MessagingTestData.Now)));
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(MessagingTestData.ConnectionString));
 

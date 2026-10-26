@@ -2,13 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
 public sealed class AuditableEntityInterceptor(
-    IDateProvider dateProvider,
+    TimeProvider timeProvider,
     ICurrentUserProvider currentUserProvider
 ) : SaveChangesInterceptor
 {
@@ -41,7 +40,7 @@ public sealed class AuditableEntityInterceptor(
         }
 
         var userId = currentUserProvider.TryGetUserId() ?? Guid.Empty;
-        var utcNow = dateProvider.GetUtc();
+        var utcNow = timeProvider.GetUtcNow().UtcDateTime;
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
         {

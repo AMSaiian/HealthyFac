@@ -5,7 +5,6 @@ using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +27,7 @@ public class CreateEmployeeInviteRequestHandler(
     ICoreDbContext dbContext,
     IInviteTokenService tokenService,
     IOutbox outbox,
-    IDateProvider dateProvider
+    TimeProvider timeProvider
 ) : IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse>
 {
     public async Task<CreateEmployeeInviteResponse> HandleAsync(
@@ -75,7 +74,7 @@ public class CreateEmployeeInviteRequestHandler(
             roleId,
             departments,
             tokenService.CreateSalt(),
-            tokenService.GetExpiresAt(dateProvider.GetUtc()));
+            tokenService.GetExpiresAt(timeProvider.GetUtcNow().UtcDateTime));
         dbContext.EmployeeInvites.Add(invite);
         outbox.Add(
             new EmployeeInvited
