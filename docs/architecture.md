@@ -26,6 +26,34 @@ This document records the service boundaries and the decisions that connect the 
 - **Service to service, asynchronous:** RabbitMQ with Rebus. Every service uses the transactional outbox and inbox (`backend-infrastructure.md`, rule **Outbox and Inbox**). A message type name has the form `<service>.v<version>:<Name>` (e.g., `core.v1:EmployeeInvited`).
 - **Service to service, synchronous:** OAuth 2.0 Token Exchange when the call acts for a user, or Client Credentials when the service acts for itself. Never put a token into a message.
 
+## Messaging
+
+- **Transport:** Rebus sends one message type, `IntegrationEnvelope`. It holds the message type name and the JSON payload.
+- **Broker:** all topics share one RabbitMQ topic exchange, `RebusTopics`. The routing key is the message type name.
+- **Queue:** each service owns one input queue (`Messaging:QueueName`). It subscribes to each message type that the service handles.
+- **Outbox processor:** it locks one pending row with `FOR UPDATE SKIP LOCKED`, publishes it, and marks it in one transaction. The row ID is the Rebus message ID. A run ends when no row is due or when a publish fails. The next run starts after the polling interval.
+- **Inbox:** a Rebus handler stores each delivery in the inbox. A duplicate message ID creates no second row. The insert runs under the retrying execution strategy of the service context, so a short database outage during delivery is retried inside each Rebus attempt.
+- **Inbox processor:** it locks one row per transaction, restores the actor, and calls `IIntegrationMessageHandler<TMessage>`. A failure rolls back the transaction and schedules a retry.
+- **Inbox attempt limit:** an inbox row stops after `Messaging:InboxMaxAttemptCount` failed attempts (default 10, about 13 minutes) and gets `failed_on`. The processor never claims it again and logs one `Error` entry for it. The outbox has no limit, because its failures are broker outages.
+- **Run a failed row again:** after a fix, set `failed_on = NULL`, `attempt_count = 0`, and `next_attempt_on = now()` for that row.
+- **Retry delay:** the delay doubles from two seconds and stops at five minutes.
+- **Delivery:** the guarantee is at least once. A crash after the publish and before the commit sends a message twice. The inbox drops the duplicate.
+- **One handler:** each message type has exactly one handler per service. A second registration of the same type throws at start-up. When two steps must react to one message, one handler runs both, or it saves a new message through the outbox.
+- **Broker health:** `/health/ready` checks RabbitMQ on one cached connection. A failure reports `Degraded` with status `200`, because the outbox accepts writes while the broker is down. The check times out in 3 seconds, below the gateway probe timeout.
+- **Throughput and backlog:** both processors handle one message per transaction. This is enough for business events. Before production, add OpenTelemetry metrics for each processor: the pending row count and the age of the oldest pending row. When the age grows under normal load, change the outbox processor to claim a batch of rows in one transaction. The inbox stays one message per transaction, so a failed handler rolls back only its own message.
+- **Actor headers:** `healthyfac-actor-id`, `healthyfac-company-id`, and `traceparent`. A message without a valid actor header, message ID, or company header goes to the `error` queue at the first attempt. No retry can fix it.
+- **Delivery retries:** other delivery failures get 20 attempts, and each attempt retries transient database failures, so a database outage of about 10 minutes loses no message. The `error` queue is final: a message in it is lost.
+- **Error logs:** each move to the `error` queue writes an `Error` log entry with the message ID. Rebus logs reach the application logger without extra configuration.
+
+## Actor Context
+
+- Each DI scope has one actor: the user ID, the company ID, the employee ID, and a system flag. `ICurrentUserProvider` reads it.
+- An HTTP request, an inbox message, or a job enters the actor once. A second enter throws until the first lease ends.
+- A scope outside an HTTP request starts with `CreateActorScope`. It is the only way to start a job scope, a processor step, or the database start-up.
+- Only Infrastructure and Web can set the actor. `ActorContextHolder` lives in Shared.Infrastructure, so an Application handler cannot replace the actor.
+- The system actor has a fixed GUID. It is not a Keycloak user. Until authentication exists, every HTTP request runs as the system actor.
+- `Outbox.Add` stores the actor in the row. The inbox processor restores the original actor, so audit fields show who started the work.
+
 ## Public Paths
 
 - The public path has the form `/api/<service>/v{version}/...` (e.g., `/api/core/v1/machines`).
