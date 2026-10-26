@@ -10,4 +10,5 @@ public static class TestImages
 {
     public const string Postgres = "postgres:18.6-alpine";
     public const string Redis = "redis:8.10.1-alpine";
+    public const string RabbitMq = "rabbitmq:4.3.5-management-alpine";
 }
