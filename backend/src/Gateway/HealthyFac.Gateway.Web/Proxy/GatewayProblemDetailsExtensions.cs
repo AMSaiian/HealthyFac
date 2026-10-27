@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthyFac.Gateway.Web.Proxy;
@@ -40,7 +41,7 @@ public static class GatewayProblemDetailsExtensions
             return response.WriteAsJsonAsync(
                 problem,
                 options: null,
-                contentType: GatewayProblemDetailsConstants.MediaType,
+                contentType: MediaTypeNames.Application.ProblemJson,
                 cancellationToken);
         }
     }

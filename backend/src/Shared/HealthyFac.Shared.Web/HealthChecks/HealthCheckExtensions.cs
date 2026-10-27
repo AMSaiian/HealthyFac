@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -63,18 +64,14 @@ public static class HealthCheckExtensions
 
     private static Task WriteLivenessAsync(HttpContext context, HealthReport report)
     {
-        context.Response.ContentType = HealthCheckConstants.ContentTypes.PlainText;
+        context.Response.ContentType = MediaTypeNames.Text.Plain;
 
-        return context.Response.WriteAsync(
-            report.Status == HealthStatus.Healthy
-                ? HealthCheckConstants.HealthyResponse
-                : report.Status.ToString(),
-            context.RequestAborted);
+        return context.Response.WriteAsync(report.Status.ToString(), context.RequestAborted);
     }
 
     private static async Task WriteDetailedAsync(HttpContext context, HealthReport report)
     {
-        context.Response.ContentType = HealthCheckConstants.ContentTypes.Json;
+        context.Response.ContentType = $"{MediaTypeNames.Application.Json}; charset=utf-8";
 
         using var stream = new MemoryStream();
         await using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });

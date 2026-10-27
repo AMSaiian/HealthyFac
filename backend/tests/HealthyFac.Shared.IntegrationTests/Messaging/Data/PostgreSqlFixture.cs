@@ -14,6 +14,8 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
 
     public ServiceProvider Services { get; private set; } = null!;
 
+    public string ConnectionString => _database.ConnectionString;
+
     /// <summary>
     /// Creates a scope that holds <paramref name="actor"/>, or the system actor when the argument is null.
     /// </summary>

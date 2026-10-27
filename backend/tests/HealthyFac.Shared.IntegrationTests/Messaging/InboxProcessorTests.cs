@@ -54,6 +54,46 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
     }
 
     [Fact]
+    public async Task Process_WithInvalidPayload_FailsAtFirstAttempt()
+    {
+        await fixture.AddPingInboxRowAsync(
+            InboxProcessorTestData.InvalidPayloadRowId,
+            InboxProcessorTestData.InvalidPayload);
+        var callsBefore = fixture.Recorder.Count;
+        var processor = fixture.Create<InboxProcessor>();
+
+        await processor.RunAsync(CancellationToken.None);
+
+        var row = await fixture.ReadInboxRowAsync(InboxProcessorTestData.InvalidPayloadRowId);
+        var errors = fixture.ReadErrorLogs(InboxProcessorTestData.InvalidPayloadRowId);
+
+        row.FailedOn.Should().NotBeNull();
+        row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
+        fixture.Recorder.Count.Should().Be(callsBefore);
+        errors.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Process_WithUnreadablePayload_FailsAtFirstAttempt()
+    {
+        await fixture.AddPingInboxRowAsync(
+            InboxProcessorTestData.UnreadablePayloadRowId,
+            InboxProcessorTestData.UnreadablePayload);
+        var callsBefore = fixture.Recorder.Count;
+        var processor = fixture.Create<InboxProcessor>();
+
+        await processor.RunAsync(CancellationToken.None);
+
+        var row = await fixture.ReadInboxRowAsync(InboxProcessorTestData.UnreadablePayloadRowId);
+        var errors = fixture.ReadErrorLogs(InboxProcessorTestData.UnreadablePayloadRowId);
+
+        row.FailedOn.Should().NotBeNull();
+        row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
+        fixture.Recorder.Count.Should().Be(callsBefore);
+        errors.Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task InboxProcessor_WhenHandlerThrows_RollsBackAndSchedulesRetry()
     {
         await fixture.AddPendingInboxRowAsync(

@@ -10,7 +10,7 @@ namespace HealthyFac.Shared.Application.UseCases.Decorators;
 /// The activity owns the duration, so the decorator measures no elapsed time itself. It logs one
 /// information entry per use case, and the payloads only at debug level.
 /// </summary>
-public class LoggingRequestHandlerDecorator<TRequest, TResponse>(
+internal sealed class LoggingRequestHandlerDecorator<TRequest, TResponse>(
     IRequestHandler<TRequest, TResponse> innerHandler,
     ILogger<LoggingRequestHandlerDecorator<TRequest, TResponse>> logger
 ) : IRequestHandler<TRequest, TResponse>

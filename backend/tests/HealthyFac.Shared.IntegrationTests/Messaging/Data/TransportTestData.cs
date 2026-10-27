@@ -8,6 +8,9 @@ public static class TransportTestData
     public const string ErrorQueueName = "error";
     public const string PingMessageType = "test.v1:Ping";
     public const string PingPayload = """{"text":"ping"}""";
+    public const string BlankTextPayload = """{"text":""}""";
+    public const string NotJsonPayload = "{";
+    public const string NullCharacterEscapePayload = """{"name":"\u0000"}""";
     public const string BrokerConnectionStringKey = "ConnectionStrings:RabbitMq";
     public const string QueueNameKey = "Messaging:QueueName";
     public const string PollingIntervalKey = "Messaging:PollingIntervalMilliseconds";
@@ -27,6 +30,10 @@ public static class TransportTestData
     public static readonly Guid SentinelMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000103");
     public static readonly Guid LoggedMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000106");
     public static readonly Guid HeaderlessMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000104");
+    public static readonly Guid InvalidPayloadMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000107");
+    public static readonly Guid InvalidSentinelMessageId = Guid.Parse("019a0000-0000-7000-8000-00000000010a");
+    public static readonly Guid NotJsonMessageId = Guid.Parse("019a0000-0000-7000-8000-00000000010b");
+    public static readonly Guid NullCharacterMessageId = Guid.Parse("019a0000-0000-7000-8000-00000000010c");
 
     public static Dictionary<string, string> ActorHeaders() =>
         new()

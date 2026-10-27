@@ -1,14 +1,12 @@
 namespace HealthyFac.Shared.Web.HealthChecks;
 
 /// <summary>
-/// Defines routes, tags, content types, and payload keys for the health check endpoints.
+/// Defines routes, tags, and payload keys for the health check endpoints.
 /// </summary>
 public static class HealthCheckConstants
 {
     /// <summary>Marks checks that decide whether the service can serve traffic.</summary>
     public const string ReadyTag = "ready";
-
-    public const string HealthyResponse = "Healthy";
 
     public static class Routes
     {
@@ -20,12 +18,6 @@ public static class HealthCheckConstants
 
         /// <summary>Detailed route. Runs every check and reports each result.</summary>
         public const string Detailed = "/hc";
-    }
-
-    public static class ContentTypes
-    {
-        public const string PlainText = "text/plain";
-        public const string Json = "application/json; charset=utf-8";
     }
 
     public static class Properties

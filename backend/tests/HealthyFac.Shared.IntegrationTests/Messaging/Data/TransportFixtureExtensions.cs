@@ -23,7 +23,7 @@ public static class TransportFixtureExtensions
             return fixture.ReadErrorLogs(messageId);
         }
 
-        private List<string> ReadErrorLogs(Guid messageId) =>
+        public List<string> ReadErrorLogs(Guid messageId) =>
             fixture.Logs.Entries
                 .Where(entry => entry.Level == LogLevel.Error && entry.Message.Contains(messageId.ToString()))
                 .Select(entry => entry.Message)

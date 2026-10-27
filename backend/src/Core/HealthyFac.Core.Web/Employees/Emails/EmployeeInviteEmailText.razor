@@ -1,0 +1,12 @@
+@preservewhitespace true
+You are invited to join HealthyFac.
+
+Open this link to set up your account:
+@Model.Link
+
+The link works until @EmployeeInviteEmailFormat.Expiry(Model.ExpiresAt).
+If you did not expect this email, ignore it.
+@code {
+  [Parameter, EditorRequired]
+  public required EmployeeInviteEmailModel Model { get; set; }
+}

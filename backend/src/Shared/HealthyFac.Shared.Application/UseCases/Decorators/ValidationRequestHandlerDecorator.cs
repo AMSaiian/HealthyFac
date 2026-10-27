@@ -11,7 +11,7 @@ namespace HealthyFac.Shared.Application.UseCases.Decorators;
 /// Entry and exit are logged at trace level, because they describe pipeline mechanics rather than a
 /// business event.
 /// </summary>
-public class ValidationRequestHandlerDecorator<TRequest, TResponse>(
+internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
     IRequestHandler<TRequest, TResponse> innerHandler,
     IEnumerable<IValidator<TRequest>> validators,
     ILogger<ValidationRequestHandlerDecorator<TRequest, TResponse>> logger

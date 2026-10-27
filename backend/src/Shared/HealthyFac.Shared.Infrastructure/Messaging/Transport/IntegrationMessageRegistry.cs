@@ -1,15 +1,16 @@
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging.Transport;
 
 /// <summary>
-/// Deserializes a stored payload and calls the typed handler of one message type.
+/// Deserializes a stored payload and calls the typed use case of one message type.
 /// </summary>
 /// <param name="services">The service provider of the scope that runs the message.</param>
 /// <param name="payload">The message serialized as JSON.</param>
 /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
-/// <returns>A task that completes when the handler finishes.</returns>
+/// <returns>A task that completes when the use case finishes.</returns>
 public delegate Task IntegrationMessageDispatch(
     IServiceProvider services,
     string payload,
@@ -29,19 +30,19 @@ public sealed class IntegrationMessageRegistry
     public IReadOnlyCollection<string> MessageTypes => _registrations.Keys;
 
     /// <summary>
-    /// Adds a message contract and its typed dispatch. A service has exactly one handler for each message type:
-    /// when two steps must react to one message, one handler runs both, or it saves a new message through the
+    /// Adds a message contract and its typed dispatch. A service has exactly one use case for each message type:
+    /// when two steps must react to one message, one use case runs both, or it saves a new message through the
     /// outbox.
     /// </summary>
     /// <typeparam name="TMessage">The message contract. Its <see cref="IIntegrationMessage.MessageType"/> is the
     /// registered name.</typeparam>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the name of <typeparamref name="TMessage"/> is already registered. The same CLR type means a
-    /// second handler, which the dispatcher would never call. Another CLR type means that a payload would
-    /// deserialize to the wrong contract.
+    /// second registration, which changes nothing. Another CLR type means that a payload would deserialize to the
+    /// wrong contract.
     /// </exception>
     public void Register<TMessage>()
-        where TMessage : IIntegrationMessage
+        where TMessage : IIntegrationMessage, IRequest
     {
         var messageType = TMessage.MessageType;
         if (_registrations.TryGetValue(messageType, out var registration))

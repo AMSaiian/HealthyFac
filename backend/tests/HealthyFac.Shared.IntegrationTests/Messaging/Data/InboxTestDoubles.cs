@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -36,14 +37,14 @@ public sealed class TestAuditedEntityConfiguration : IEntityTypeConfiguration<Te
     }
 }
 
-public sealed record TestRecorded : IIntegrationMessage
+public sealed record TestRecorded : IIntegrationMessage, IRequest
 {
     public static string MessageType => InboxProcessorTestData.RecordedMessageType;
 
     public required string Text { get; init; }
 }
 
-public sealed record TestFailing : IIntegrationMessage
+public sealed record TestFailing : IIntegrationMessage, IRequest
 {
     public static string MessageType => InboxProcessorTestData.FailingMessageType;
 
@@ -58,6 +59,17 @@ public sealed record HandledCall(string Text, ActorContext? Actor);
 public sealed class HandlerRecorder
 {
     private readonly List<HandledCall> _calls = [];
+
+    public int Count
+    {
+        get
+        {
+            lock (_calls)
+            {
+                return _calls.Count;
+            }
+        }
+    }
 
     public List<HandledCall> CallsFor(string text)
     {
@@ -80,23 +92,23 @@ public sealed class RecordingHandler(
     ITestServiceDbContext dbContext,
     ICurrentUserProvider currentUserProvider,
     HandlerRecorder recorder
-) : IIntegrationMessageHandler<TestRecorded>
+) : RequestHandler<TestRecorded>
 {
-    public async Task HandleAsync(TestRecorded message, CancellationToken cancellationToken)
+    protected override async Task HandleInternalAsync(TestRecorded request, CancellationToken ct)
     {
-        dbContext.AuditedEntities.Add(new TestAuditedEntity(message.Text));
-        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
+        await dbContext.SaveChangesAsync(ct);
 
-        recorder.Record(new HandledCall(message.Text, currentUserProvider.TryGetActor()));
+        recorder.Record(new HandledCall(request.Text, currentUserProvider.TryGetActor()));
     }
 }
 
-public sealed class FailingHandler(ITestServiceDbContext dbContext) : IIntegrationMessageHandler<TestFailing>
+public sealed class FailingHandler(ITestServiceDbContext dbContext) : RequestHandler<TestFailing>
 {
-    public async Task HandleAsync(TestFailing message, CancellationToken cancellationToken)
+    protected override async Task HandleInternalAsync(TestFailing request, CancellationToken ct)
     {
-        dbContext.AuditedEntities.Add(new TestAuditedEntity(message.Text));
-        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
+        await dbContext.SaveChangesAsync(ct);
 
         throw new InvalidOperationException(InboxProcessorTestData.HandlerFailureText);
     }

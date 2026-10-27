@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using HealthyFac.Gateway.Web.Proxy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,7 @@ public sealed class GatewayExceptionHandlerTests
 
         isHandled.Should().BeTrue();
         context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
-        context.Response.ContentType.Should().StartWith(GatewayProblemDetailsConstants.MediaType);
+        context.Response.ContentType.Should().StartWith(MediaTypeNames.Application.ProblemJson);
         body.Should().Contain(GatewayProblemDetailsConstants.InternalServerError.Title);
         body.Should().NotContain(SecretDetail);
     }

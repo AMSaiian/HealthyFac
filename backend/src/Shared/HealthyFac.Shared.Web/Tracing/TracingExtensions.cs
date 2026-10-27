@@ -50,6 +50,10 @@ public static class TracingExtensions
                     tracing
                         .AddSource(ObservabilityConstants.Sources.UseCases)
                         .AddSource(ObservabilityConstants.Sources.IdEncryption)
+                        .AddSource(ObservabilityConstants.Sources.Messaging)
+                        .AddSource(ObservabilityConstants.Sources.Rendering)
+                        .AddSource(ObservabilityConstants.Sources.Email)
+                        .AddSource(MailKit.Telemetry.SmtpClient.ActivitySourceName)
                         .AddSource(options.AdditionalSources)
                         .AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()

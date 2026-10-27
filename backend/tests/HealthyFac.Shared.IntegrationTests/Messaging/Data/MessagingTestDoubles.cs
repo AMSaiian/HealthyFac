@@ -1,4 +1,7 @@
+using FluentValidation;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -103,14 +106,32 @@ public sealed record TestActorStamped : IIntegrationMessage
     public required string Text { get; init; }
 }
 
-public sealed record TestPing : IIntegrationMessage
+public sealed record TestPing : IIntegrationMessage, IRequest
 {
     public static string MessageType => TransportTestData.PingMessageType;
 
     public required string Text { get; init; }
 }
 
-public sealed class TestPingHandler : IIntegrationMessageHandler<TestPing>
+public sealed class TestPingHandler(HandlerRecorder recorder, ICurrentUserProvider currentUserProvider)
+    : RequestHandler<TestPing>
 {
-    public Task HandleAsync(TestPing message, CancellationToken cancellationToken) => Task.CompletedTask;
+    protected override Task HandleInternalAsync(TestPing request, CancellationToken ct)
+    {
+        recorder.Record(new HandledCall(request.Text, currentUserProvider.TryGetActor()));
+
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class TestPingValidator : AbstractValidator<TestPing>
+{
+    public const int TextMaxLength = 20;
+
+    public TestPingValidator()
+    {
+        RuleFor(ping => ping.Text)
+            .NotEmpty()
+            .MaximumLength(TextMaxLength);
+    }
 }

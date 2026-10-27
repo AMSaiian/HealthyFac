@@ -2,6 +2,7 @@ using EntityFramework.Exceptions.Common;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
@@ -10,8 +11,11 @@ namespace HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 
 public record AcceptEmployeeInviteRequest : IRequest<AcceptEmployeeInviteResponse>
 {
+    [SensitiveData]
     public required string Token { get; init; }
+
     public required string FirstName { get; init; }
+
     public required string LastName { get; init; }
 }
 

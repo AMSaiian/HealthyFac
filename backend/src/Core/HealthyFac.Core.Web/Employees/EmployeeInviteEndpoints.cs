@@ -3,6 +3,7 @@ using HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
 using HealthyFac.Core.Application.Employees.ResendEmployeeInvite;
 using HealthyFac.Core.Application.Employees.VerifyEmployeeInvite;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
 
 namespace HealthyFac.Core.Web.Employees;
@@ -42,7 +43,7 @@ public static class EmployeeInviteEndpoints
 
         var location = string.Format(
             EmployeeInviteRoutes.ResourceLocationFormat,
-            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(EmployeeInviteRoutes.PathSeparator),
+            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(LinkConstants.PathSeparator),
             idEncryptor.Encrypt(response.Id));
 
         return Results.Created(location, response);

@@ -19,6 +19,7 @@
     <PackageVersion Include="Grpc.AspNetCore" Version="2.84.0" />
     <PackageVersion Include="Grpc.AspNetCore.Server.Reflection" Version="2.84.0" />
     <PackageVersion Include="linq2db.EntityFrameworkCore" Version="10.6.0" />
+    <PackageVersion Include="MailKit" Version="4.18.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.12" />
@@ -52,6 +53,8 @@
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="4.15.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="4.15.0" />
+    <!-- Overrides the transitive 10.0.0 from MailKit and MimeKit (GHSA-2fmv-rv2c-59x7, GHSA-846f-f764-76mx). 10.0.13 is the oldest patched version. Remove this pin when MailKit depends on a patched version. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />

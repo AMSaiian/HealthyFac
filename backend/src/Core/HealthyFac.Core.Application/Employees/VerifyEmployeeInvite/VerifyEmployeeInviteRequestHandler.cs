@@ -1,6 +1,7 @@
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace HealthyFac.Core.Application.Employees.VerifyEmployeeInvite;
 
 public record VerifyEmployeeInviteRequest : IRequest<VerifyEmployeeInviteResponse>
 {
+    [SensitiveData]
     public required string Token { get; init; }
 }
 

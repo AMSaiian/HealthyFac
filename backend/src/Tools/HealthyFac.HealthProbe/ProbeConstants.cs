@@ -1,17 +1,11 @@
 namespace HealthyFac.HealthProbe;
 
 /// <summary>
-/// Defines the timeout, schemes, exit codes, and texts of the health probe.
+/// Defines the timeout, exit codes, and texts of the health probe.
 /// </summary>
 public static class ProbeConstants
 {
     public const int TimeoutSeconds = 3;
-
-    public static class Schemes
-    {
-        public const string Http = "http";
-        public const string Https = "https";
-    }
 
     public static class ExitCodes
     {

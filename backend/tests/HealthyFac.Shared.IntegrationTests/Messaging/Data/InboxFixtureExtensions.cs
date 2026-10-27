@@ -32,6 +32,16 @@ public static class InboxFixtureExtensions
             await dbContext.SaveChangesAsync();
         }
 
+        public Task AddPingInboxRowAsync(Guid messageId, string payload) => fixture.AddInboxRowAsync(
+            new InboxMessage(
+                messageId,
+                TransportTestData.PingMessageType,
+                payload,
+                InboxTestData.Now,
+                traceParent: null,
+                InboxProcessorTestData.UserActorId,
+                InboxProcessorTestData.UserCompanyId));
+
         public async Task AddInboxRowAsync(InboxMessage row)
         {
             using var scope = fixture.CreateScope();

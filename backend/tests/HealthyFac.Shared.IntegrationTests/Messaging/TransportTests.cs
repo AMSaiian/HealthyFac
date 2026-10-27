@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
@@ -69,6 +70,82 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
             TransportTestData.WaitTimeout);
 
         var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.HeaderlessMessageId);
+
+        errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
+        messageCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RebusDelivery_InvalidPayloadTwice_StoresOneFailedRow()
+    {
+        await fixture.PublishAsync(
+            TransportTestData.PingMessageType,
+            TransportTestData.BlankTextPayload,
+            TransportTestData.InvalidPayloadMessageId,
+            TransportTestData.ActorHeaders());
+        await fixture.PublishAsync(
+            TransportTestData.PingMessageType,
+            TransportTestData.BlankTextPayload,
+            TransportTestData.InvalidPayloadMessageId,
+            TransportTestData.ActorHeaders());
+        await fixture.PublishAsync(
+            TransportTestData.PingMessageType,
+            TransportTestData.PingPayload,
+            TransportTestData.InvalidSentinelMessageId,
+            TransportTestData.ActorHeaders());
+        await fixture.WaitForInboxMessageAsync(TransportTestData.InvalidSentinelMessageId);
+        await fixture.WaitForQueueToSettleAsync();
+        var processor = fixture.Create<InboxProcessor>();
+
+        await processor.RunAsync(CancellationToken.None);
+
+        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.InvalidPayloadMessageId);
+        var row = await fixture.ReadInboxRowAsync(TransportTestData.InvalidPayloadMessageId);
+
+        messageCount.Should().Be(1);
+        row.FailedOn.Should().NotBeNull();
+        row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
+    }
+
+    [Fact]
+    public async Task RebusDelivery_WithPayloadNotJson_FailsFastToErrorQueue()
+    {
+        await fixture.PublishAsync(
+            TransportTestData.PingMessageType,
+            TransportTestData.NotJsonPayload,
+            TransportTestData.NotJsonMessageId,
+            TransportTestData.ActorHeaders());
+
+        var errorDetails = await RabbitMqQueueReader.ReadHeaderAsync(
+            fixture.BrokerConnectionString,
+            TransportTestData.ErrorQueueName,
+            TransportTestData.NotJsonMessageId,
+            TransportTestData.ErrorDetailsHeader,
+            TransportTestData.WaitTimeout);
+
+        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.NotJsonMessageId);
+
+        errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
+        messageCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RebusDelivery_WithNullCharacterEscape_FailsFastToErrorQueue()
+    {
+        await fixture.PublishAsync(
+            TransportTestData.PingMessageType,
+            TransportTestData.NullCharacterEscapePayload,
+            TransportTestData.NullCharacterMessageId,
+            TransportTestData.ActorHeaders());
+
+        var errorDetails = await RabbitMqQueueReader.ReadHeaderAsync(
+            fixture.BrokerConnectionString,
+            TransportTestData.ErrorQueueName,
+            TransportTestData.NullCharacterMessageId,
+            TransportTestData.ErrorDetailsHeader,
+            TransportTestData.WaitTimeout);
+
+        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.NullCharacterMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
         messageCount.Should().Be(0);

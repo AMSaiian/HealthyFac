@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,8 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 /// work of one message in its own transaction. A failure rolls that unit back, and a fresh scope records the
 /// attempt and the next attempt time, because the scope that failed still tracks the rolled back changes. At
 /// <see cref="MessagingOptions.InboxMaxAttemptCount"/> attempts the row gets the failed state, the processor
-/// stops claiming it, and one <c>Error</c> log entry reports it. A run ends when no row is due. A failed row gets
+/// stops claiming it, and one <c>Error</c> log entry reports it. A permanent failure (an invalid message) gets the
+/// failed state at the first attempt. A run ends when no row is due. A failed row gets
 /// a later attempt time or the failed state, so the same run cannot claim it again.
 /// </summary>
 /// <param name="scopeFactory">Creates the scopes of each message.</param>
@@ -115,10 +117,17 @@ internal sealed class InboxProcessor(
             return;
         }
 
-        message.RecordFailure(
-            timeProvider.GetUtcNow().UtcDateTime,
-            exception.Message,
-            options.Value.InboxMaxAttemptCount);
+        if (IsPermanent(exception))
+        {
+            message.RecordPermanentFailure(timeProvider.GetUtcNow().UtcDateTime, exception.Message);
+        }
+        else
+        {
+            message.RecordFailure(
+                timeProvider.GetUtcNow().UtcDateTime,
+                exception.Message,
+                options.Value.InboxMaxAttemptCount);
+        }
 
         try
         {
@@ -139,6 +148,17 @@ internal sealed class InboxProcessor(
 
     private void LogFailure(InboxMessage message, Exception exception)
     {
+        if (IsPermanent(exception))
+        {
+            logger.LogError(
+                exception,
+                "Inbox message {MessageId} of type {MessageType} is invalid. The processor does not retry it.",
+                message.Id,
+                message.Type);
+
+            return;
+        }
+
         if (message.FailedOn is null)
         {
             logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", message.Id);
@@ -154,4 +174,15 @@ internal sealed class InboxProcessor(
             message.Type,
             message.AttemptCount);
     }
+
+    /// <summary>
+    /// Tells a failure that no retry can fix from one that a later attempt can fix. A payload that does not
+    /// deserialize and a request that fails stateless validation are permanent. Every other rejection (e.g., a
+    /// missing entity) keeps the normal retries, because the order of messages is not guaranteed and the entity can
+    /// appear later.
+    /// </summary>
+    /// <param name="exception">The failure of the handling attempt.</param>
+    /// <returns><see langword="true"/> when the processor must not retry the row.</returns>
+    private static bool IsPermanent(Exception exception) =>
+        exception is InvalidIntegrationMessageException or AppValidationException;
 }

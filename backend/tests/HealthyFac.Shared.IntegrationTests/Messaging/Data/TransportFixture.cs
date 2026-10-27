@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
@@ -65,9 +66,10 @@ public class TransportFixture : IAsyncLifetime
         builder.Services.AddScoped<OutboxMessagePublisher>();
         builder.Services.AddScoped<InboxMessageRunner>();
         builder.Services.AddSingleton(Recorder);
-        builder.Services.AddIntegrationMessageHandler<TestPing, TestPingHandler>();
-        builder.Services.AddIntegrationMessageHandler<TestRecorded, RecordingHandler>();
-        builder.Services.AddIntegrationMessageHandler<TestFailing, FailingHandler>();
+        builder.Services.AddUseCases(typeof(TestPing).Assembly);
+        builder.Services.AddIntegrationMessage<TestPing>();
+        builder.Services.AddIntegrationMessage<TestRecorded>();
+        builder.Services.AddIntegrationMessage<TestFailing>();
         ConfigureServices(builder.Services);
 
         _host = builder.Build();

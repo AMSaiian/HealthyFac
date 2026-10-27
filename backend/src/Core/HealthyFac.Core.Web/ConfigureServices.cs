@@ -1,9 +1,12 @@
 using Serilog;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Web.Employees;
+using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.CrossOrigin;
+using HealthyFac.Shared.Web.Rendering;
 using HealthyFac.Shared.Web.ErrorHandling;
 using HealthyFac.Shared.Web.Rpc;
 using HealthyFac.Shared.Web.Serialization;
@@ -42,6 +45,9 @@ public static class ConfigureServices
             services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
             services.AddSharedGrpc(environment);
+
+            services.AddRazorRendering();
+            services.AddScoped<IEmployeeInviteEmailBuilder, RazorEmployeeInviteEmailBuilder>();
 
             return services;
         }

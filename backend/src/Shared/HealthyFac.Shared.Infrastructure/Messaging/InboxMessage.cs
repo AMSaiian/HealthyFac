@@ -108,15 +108,7 @@ public sealed class InboxMessage
     /// </exception>
     public void RecordFailure(DateTime now, string error, int maxAttemptCount)
     {
-        if (ProcessedOn is not null)
-        {
-            throw MessagingErrors.InboxMessageAlreadyProcessed(Id);
-        }
-
-        if (FailedOn is not null)
-        {
-            throw MessagingErrors.InboxMessageAlreadyFailed(Id);
-        }
+        EnsureOpen();
 
         AttemptCount++;
         Error = MessageRetryPolicy.TruncateError(error);
@@ -128,6 +120,39 @@ public sealed class InboxMessage
         else
         {
             NextAttemptOn = MessageRetryPolicy.NextAttemptOn(now, AttemptCount);
+        }
+    }
+
+    /// <summary>
+    /// Records a failure that no retry can fix, for example a payload that does not deserialize. It counts the
+    /// attempt, stores the error, and sets <see cref="FailedOn"/> at once, so the processor never claims the message
+    /// again.
+    /// </summary>
+    /// <param name="now">The UTC time of the failure.</param>
+    /// <param name="error">The text of the failure. Text beyond the column size is cut.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="ProcessedOn"/> already holds a value, because a handled message never retries.
+    /// Also thrown when <see cref="FailedOn"/> already holds a value, because a failed message is never handled.
+    /// </exception>
+    public void RecordPermanentFailure(DateTime now, string error)
+    {
+        EnsureOpen();
+
+        AttemptCount++;
+        Error = MessageRetryPolicy.TruncateError(error);
+        FailedOn = now;
+    }
+
+    private void EnsureOpen()
+    {
+        if (ProcessedOn is not null)
+        {
+            throw MessagingErrors.InboxMessageAlreadyProcessed(Id);
+        }
+
+        if (FailedOn is not null)
+        {
+            throw MessagingErrors.InboxMessageAlreadyFailed(Id);
         }
     }
 }

@@ -4,11 +4,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using HealthyFac.Core.Application;
+using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Employees.InviteLinks;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Infrastructure.Email;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
@@ -54,9 +58,10 @@ public static class ConfigureServices
                 options.UseNpgsql(
                     connectionString,
                     npgsql => npgsql.EnableRetryOnFailure(
-                        DatabaseConstants.Retry.MaxCount,
-                        TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
-                        errorCodesToAdd: null));
+                            DatabaseConstants.Retry.MaxCount,
+                            TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
+                            errorCodesToAdd: null)
+                        .ConfigureParentOnlyTracing());
                 options.UseExceptionProcessor();
 
                 options.AddInterceptors(provider.GetRequiredService<AuditableEntityInterceptor>());
@@ -74,6 +79,11 @@ public static class ConfigureServices
             services.AddValidatedOptions<InviteTokenOptions, InviteTokenOptionsValidator>(
                 InviteTokenOptions.SectionName, configuration);
             services.AddSingleton<IInviteTokenService, HmacInviteTokenService>();
+
+            services.AddSmtpEmail(configuration);
+            services.AddValidatedOptions<InviteLinkOptions, InviteLinkOptionsValidator>(
+                InviteLinkOptions.SectionName, configuration);
+            services.AddIntegrationMessage<EmployeeInvited>();
 
             services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
                 SeedingOptions.SectionName, configuration);

@@ -1,8 +1,10 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,8 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
     private readonly PostgreSqlTestDatabase _database = new();
 
     private ServiceProvider _services = null!;
+
+    public RecordingEmailSender EmailSender { get; } = new();
 
     public IServiceScopeFactory ScopeFactory =>
         new SystemActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
@@ -42,8 +46,11 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         services.AddLogging();
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddActorContext();
-        services.AddInfrastructureServices(configuration, environment);
         services.AddApplicationServices();
+        services.AddInfrastructureServices(configuration, environment);
+        services.AddSingleton<IEmailSender>(EmailSender);
+        services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
+
         _services = services.BuildServiceProvider(validateScopes: true);
 
         using var scope = ScopeFactory.CreateScope();

@@ -10,6 +10,5 @@ public static class EmployeeInviteRoutes
     public const string Resend = "/resend";
     public const string Verify = "/verify";
     public const string Accept = "/accept";
-    public const char PathSeparator = '/';
     public const string ResourceLocationFormat = "{0}/{1}";
 }

@@ -1,3 +1,4 @@
+using System.Net;
 using FluentValidation;
 
 namespace HealthyFac.Shared.Web.Https;
@@ -12,7 +13,7 @@ public sealed class HttpsOptionsValidator : AbstractValidator<HttpsOptions>
             .WithMessage(HttpsValidationMessages.RedirectPortRequired);
 
         RuleFor(options => options.RedirectPort)
-            .InclusiveBetween(HttpsConstants.MinPort, HttpsConstants.MaxPort)
+            .InclusiveBetween(IPEndPoint.MinPort, IPEndPoint.MaxPort)
             .WithMessage(HttpsValidationMessages.PortOutOfRange);
 
         RuleFor(options => options.HstsMaxAgeDays)

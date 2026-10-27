@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Shared.Infrastructure.Configuration;
 
 namespace HealthyFac.Shared.Web.CrossOrigin;
 
@@ -29,8 +30,7 @@ public sealed class CorsPolicyOptionsValidator : AbstractValidator<CorsPolicyOpt
         => origin == CorsConstants.Wildcard || IsOrigin(origin);
 
     private static bool IsOrigin(string value)
-        => Uri.TryCreate(value, UriKind.Absolute, out var uri)
-            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+        => UriRuleBuilderExtensions.TryCreateAbsoluteHttpUri(value, out var uri)
             && uri.PathAndQuery == CorsConstants.RootPath
             && !value.EndsWith(CorsConstants.RootPath);
 }

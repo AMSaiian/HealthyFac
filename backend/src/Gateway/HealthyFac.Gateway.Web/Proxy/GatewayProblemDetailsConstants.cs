@@ -6,8 +6,6 @@ namespace HealthyFac.Gateway.Web.Proxy;
 /// </summary>
 public static class GatewayProblemDetailsConstants
 {
-    public const string MediaType = "application/problem+json";
-
     public static class TooManyRequests
     {
         public const string Title = "Too Many Requests";

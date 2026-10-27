@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Machines.CreateMachine;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
 
 namespace HealthyFac.Core.Web.Machines;
@@ -36,7 +37,7 @@ public static class MachineEndpoints
 
         var location = string.Format(
             MachineRoutes.ResourceLocationFormat,
-            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(MachineRoutes.PathSeparator),
+            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(LinkConstants.PathSeparator),
             idEncryptor.Encrypt(response.Id));
 
         return Results.Created(location, response);

@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Infrastructure.Messaging.Persistence;
 using Rebus.Extensions;
 using Rebus.Handlers;
 using Rebus.Messages;
@@ -12,6 +15,9 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Transport;
 /// <item>An invalid message ID (not a GUID, or the empty GUID), an invalid actor header, or an invalid company
 /// header throws <see cref="InvalidIntegrationMessageException"/>. No retry can fix these, so Rebus moves the
 /// message to the <c>error</c> queue at the first attempt.</item>
+/// <item>A payload that the <c>jsonb</c> column cannot store (not JSON text, or a <c>\u0000</c> escape in a string)
+/// throws <see cref="InvalidIntegrationMessageException"/> too. The insert would fail on every attempt, so Rebus
+/// moves the message to the <c>error</c> queue at the first attempt.</item>
 /// <item>The insert runs inside <c>RunInTransactionAsync</c>, because the Upsert SQL alone does not use the
 /// retrying execution strategy. Each delivery attempt then waits out a transient database failure.</item>
 /// </list>
@@ -29,8 +35,36 @@ internal sealed class IntegrationEnvelopeHandler(
     public async Task Handle(IntegrationEnvelope message)
     {
         var headers = messageContext.Headers;
-
         var rawMessageId = headers.GetValueOrDefault(Headers.MessageId) ?? string.Empty;
+        var receivedTraceParent = headers.GetValueOrDefault(MessageHeaders.TraceParent);
+
+        using var activity = MessagingActivitySource.Instance.StartMessagingActivity(
+            ObservabilityConstants.Messaging.Operations.Receive,
+            ActivityKind.Consumer,
+            message.Type,
+            rawMessageId,
+            receivedTraceParent);
+
+        try
+        {
+            await StoreAsync(message, headers, rawMessageId, activity?.Id ?? receivedTraceParent);
+            activity.MarkSuccess();
+        }
+        catch (Exception exception) when (!messageContext.GetCancellationToken().IsCancellationRequested)
+        {
+            activity.MarkException(exception);
+
+            throw;
+        }
+    }
+
+    private async Task StoreAsync(
+        IntegrationEnvelope message,
+        Dictionary<string, string> headers,
+        string rawMessageId,
+        string? traceParent
+    )
+    {
         var isMessageIdValid = Guid.TryParse(rawMessageId, out var messageId);
         if (!isMessageIdValid || messageId == Guid.Empty)
         {
@@ -45,12 +79,17 @@ internal sealed class IntegrationEnvelopeHandler(
 
         var companyId = ReadCompanyId(headers, rawMessageId);
 
+        if (!message.Payload.IsStorableAsJsonb())
+        {
+            throw MessagingErrors.PayloadNotStorable(rawMessageId, message.Type);
+        }
+
         await dbContext.RunInTransactionAsync(
             token => inbox.TryAddAsync(
                 messageId,
                 message.Type,
                 message.Payload,
-                headers.GetValueOrDefault(MessageHeaders.TraceParent),
+                traceParent,
                 actorId,
                 companyId,
                 token),

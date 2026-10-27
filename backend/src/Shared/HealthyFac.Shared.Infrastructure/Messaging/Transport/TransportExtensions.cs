@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using Microsoft.Extensions.Configuration;
@@ -20,9 +21,9 @@ public static class TransportExtensions
         /// serialization. Rebus keeps its default <c>error</c> queue, makes
         /// <see cref="MessagingConstants.MaxDeliveryAttempts"/> delivery attempts, and moves an
         /// <see cref="InvalidIntegrationMessageException"/> to the queue at the first attempt. The envelope handler stores
-        /// each delivery in the inbox, and the dispatcher calls the handler of an inbox row. The subscription service
+        /// each delivery in the inbox, and the dispatcher calls the use case of an inbox row. The subscription service
         /// binds the queue to every message type that
-        /// <see cref="AddIntegrationMessageHandler{TMessage,THandler}"/> registers. The host starts the bus. The
+        /// <see cref="AddIntegrationMessage{TMessage}"/> registers. The host starts the bus. The
         /// method also registers the <see cref="BrokerConnectionProvider"/> of the readiness check.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
@@ -65,22 +66,27 @@ public static class TransportExtensions
 
         /// <summary>
         /// Adds the message type to the registry, so the transport subscribes to its topic and the inbox
-        /// processor dispatches its rows, and registers the scoped handler of the type. A service has exactly one
-        /// handler for each message type.
+        /// processor dispatches its rows to the use case of the type. The method registers no handler:
+        /// <c>AddUseCases</c> already did. Call <c>AddUseCases</c> (the service <c>AddApplicationServices</c>)
+        /// before this method, because the method checks the registered use cases.
         /// </summary>
-        /// <typeparam name="TMessage">The message contract.</typeparam>
-        /// <typeparam name="THandler">The handler of the message.</typeparam>
+        /// <typeparam name="TMessage">The message contract. It is also the request of its use case.</typeparam>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when <typeparamref name="TMessage"/> is already registered. The check runs before the handler is
-        /// added, so a rejected registration leaves no second handler in the container.
+        /// Thrown when no use case handles <typeparamref name="TMessage"/> yet (see
+        /// <see cref="MessagingErrors.MessageHandlerMissing"/>), or when the message type is already registered.
         /// </exception>
-        public IServiceCollection AddIntegrationMessageHandler<TMessage, THandler>()
-            where TMessage : IIntegrationMessage
-            where THandler : class, IIntegrationMessageHandler<TMessage>
+        public IServiceCollection AddIntegrationMessage<TMessage>()
+            where TMessage : IIntegrationMessage, IRequest
         {
+            var isHandlerRegistered = services.Any(descriptor =>
+                descriptor.ServiceType == typeof(IRequestHandler<TMessage, Unit>));
+            if (!isHandlerRegistered)
+            {
+                throw MessagingErrors.MessageHandlerMissing(TMessage.MessageType);
+            }
+
             services.AddIntegrationMessageRegistry().Register<TMessage>();
-            services.AddScoped<IIntegrationMessageHandler<TMessage>, THandler>();
 
             return services;
         }

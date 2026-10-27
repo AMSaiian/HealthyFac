@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;
@@ -65,18 +67,27 @@ internal sealed class OutboxMessagePublisher(
 
     private async Task<bool> TryPublishAsync(OutboxMessage message, DateTime now, CancellationToken cancellationToken)
     {
+        using var activity = MessagingActivitySource.Instance.StartMessagingActivity(
+            ObservabilityConstants.Messaging.Operations.Send,
+            ActivityKind.Producer,
+            message.Type,
+            message.Id.ToString(),
+            message.TraceParent);
+
         try
         {
             await bus.Advanced.Topics.Publish(
                 message.Type,
                 new IntegrationEnvelope { Type = message.Type, Payload = message.Payload },
-                CreateHeaders(message));
+                CreateHeaders(message, activity));
             message.MarkPublished(now);
+            activity.MarkSuccess();
 
             return true;
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
+            activity.MarkException(exception);
             logger.LogWarning(
                 exception,
                 "Publishing outbox message {MessageId} of type {MessageType} failed.",
@@ -88,7 +99,7 @@ internal sealed class OutboxMessagePublisher(
         }
     }
 
-    private static Dictionary<string, string> CreateHeaders(OutboxMessage message)
+    private static Dictionary<string, string> CreateHeaders(OutboxMessage message, Activity? sendActivity)
     {
         var headers = new Dictionary<string, string>
         {
@@ -101,9 +112,10 @@ internal sealed class OutboxMessagePublisher(
             headers[MessageHeaders.CompanyId] = message.CompanyId.Value.ToString();
         }
 
-        if (message.TraceParent is not null)
+        var traceParent = sendActivity?.Id ?? message.TraceParent;
+        if (traceParent is not null)
         {
-            headers[MessageHeaders.TraceParent] = message.TraceParent;
+            headers[MessageHeaders.TraceParent] = traceParent;
         }
 
         return headers;

@@ -1,5 +1,8 @@
+using System.Diagnostics;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 
@@ -14,16 +17,19 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 /// <param name="dispatcher">Calls the typed handler of the message.</param>
 /// <param name="holder">The holder of the actor of the scope.</param>
 /// <param name="timeProvider">The clock for the due time of the rows.</param>
+/// <param name="logger">The logger of the runner.</param>
 internal sealed class InboxMessageRunner(
     IInboxDbContext dbContext,
     IInbox inbox,
     IntegrationMessageDispatcher dispatcher,
     ActorContextHolder holder,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    ILogger<InboxMessageRunner> logger
 )
 {
     /// <summary>
-    /// Claims the next due row and handles it.
+    /// Claims the next due row and handles it. After the transaction commits, the runner logs the handled message
+    /// at <c>Information</c>. A retried or rolled-back attempt never logs it.
     /// </summary>
     /// <param name="onClaimed">Receives the ID of the claimed row, so the processor can schedule a retry after a
     /// failure.</param>
@@ -33,7 +39,7 @@ internal sealed class InboxMessageRunner(
     /// </returns>
     public async Task<bool> RunNextAsync(Action<Guid> onClaimed, CancellationToken cancellationToken)
     {
-        return await dbContext.RunInTransactionAsync(
+        var handled = await dbContext.RunInTransactionAsync<(Guid Id, string Type)?>(
             async token =>
             {
                 var message = await dbContext.ClaimNextInboxMessageAsync(
@@ -41,19 +47,55 @@ internal sealed class InboxMessageRunner(
                     token);
                 if (message is null)
                 {
-                    return false;
+                    return null;
                 }
 
                 onClaimed(message.Id);
-                using var actorScope = holder.Enter(RestoreActor(message));
+                await HandleAsync(message, token);
 
-                await dispatcher.DispatchAsync(message.Type, message.Payload, token);
-                inbox.MarkProcessed(message);
-                await dbContext.SaveChangesAsync(token);
-
-                return true;
+                return (message.Id, message.Type);
             },
             cancellationToken);
+
+        if (handled is null)
+        {
+            return false;
+        }
+
+        logger.LogInformation(
+            "Inbox message {MessageId} of type {MessageType} handled.",
+            handled.Value.Id,
+            handled.Value.Type);
+
+        return true;
+    }
+
+    private async Task HandleAsync(InboxMessage message, CancellationToken cancellationToken)
+    {
+        using var activity = MessagingActivitySource.Instance
+            .StartMessagingActivity(
+                ObservabilityConstants.Messaging.Operations.Process,
+                ActivityKind.Consumer,
+                message.Type,
+                message.Id.ToString(),
+                message.TraceParent)
+            .WithTag(ObservabilityConstants.Messaging.Tags.AttemptCount, message.AttemptCount);
+
+        try
+        {
+            using var actorScope = holder.Enter(RestoreActor(message));
+
+            await dispatcher.DispatchAsync(message.Type, message.Payload, cancellationToken);
+            inbox.MarkProcessed(message);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            activity.MarkSuccess();
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            activity.MarkException(exception);
+
+            throw;
+        }
     }
 
     private static ActorContext RestoreActor(InboxMessage message) =>

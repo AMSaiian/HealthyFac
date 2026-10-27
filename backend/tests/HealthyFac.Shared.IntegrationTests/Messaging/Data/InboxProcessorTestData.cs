@@ -14,6 +14,8 @@ public static class InboxProcessorTestData
     public const string FailingText = "failing message";
     public const string ValidAfterUnregisteredText = "valid after unregistered";
     public const string EndToEndText = "end to end message";
+    public const string InvalidPayload = """{"text":"this text is longer than twenty characters"}""";
+    public const string UnreadablePayload = """{"text":123}""";
     public const string LimitSql = "LIMIT";
     public const string ForUpdateSkipLockedSql = "FOR UPDATE SKIP LOCKED";
     public const string AtLimitText = "at attempt limit";
@@ -36,6 +38,8 @@ public static class InboxProcessorTestData
     public static readonly Guid AtLimitRowId = Guid.Parse("019a0000-0000-7000-8000-000000000206");
     public static readonly Guid FailedRowId = Guid.Parse("019a0000-0000-7000-8000-000000000207");
     public static readonly Guid ValidAfterFailedRowId = Guid.Parse("019a0000-0000-7000-8000-000000000208");
+    public static readonly Guid InvalidPayloadRowId = Guid.Parse("019a0000-0000-7000-8000-000000000209");
+    public static readonly Guid UnreadablePayloadRowId = Guid.Parse("019a0000-0000-7000-8000-00000000020a");
 
     public static readonly int MaxAttemptCount =
         new MessagingOptions { QueueName = QueueName }.InboxMaxAttemptCount;
