@@ -33,17 +33,19 @@ This document records the service boundaries and the decisions that connect the 
 - **Queue:** each service owns one input queue (`Messaging:QueueName`). It subscribes to each message type that the service handles.
 - **Outbox processor:** it locks one pending row with `FOR UPDATE SKIP LOCKED`, publishes it, and marks it in one transaction. The row ID is the Rebus message ID. A run ends when no row is due or when a publish fails. The next run starts after the polling interval.
 - **Inbox:** a Rebus handler stores each delivery in the inbox. A duplicate message ID creates no second row. The insert runs under the retrying execution strategy of the service context, so a short database outage during delivery is retried inside each Rebus attempt.
-- **Inbox processor:** it locks one row per transaction, restores the actor, and calls `IIntegrationMessageHandler<TMessage>`. A failure rolls back the transaction and schedules a retry.
+- **Inbox processor:** it locks one row per transaction, restores the actor, and calls the use case `IRequestHandler<TMessage>` through the validation and logging decorators. A failure rolls back the transaction and schedules a retry.
 - **Inbox attempt limit:** an inbox row stops after `Messaging:InboxMaxAttemptCount` failed attempts (default 10, about 13 minutes) and gets `failed_on`. The processor never claims it again and logs one `Error` entry for it. The outbox has no limit, because its failures are broker outages.
 - **Run a failed row again:** after a fix, set `failed_on = NULL`, `attempt_count = 0`, and `next_attempt_on = now()` for that row.
 - **Retry delay:** the delay doubles from two seconds and stops at five minutes.
 - **Delivery:** the guarantee is at least once. A crash after the publish and before the commit sends a message twice. The inbox drops the duplicate.
-- **One handler:** each message type has exactly one handler per service. A second registration of the same type throws at start-up. When two steps must react to one message, one handler runs both, or it saves a new message through the outbox.
+- **One use case:** each message type has exactly one use case per service. `AddUseCases` throws at start-up when one request has two handlers. When two steps must react to one message, one use case runs both, or it saves a new message through the outbox. A use case without a result derives from `RequestHandler<TRequest>`, and a caller injects `IRequestHandler<TRequest>`: an internal adapter calls the decorated pipeline, so validation and logging always run.
 - **Broker health:** `/health/ready` checks RabbitMQ on one cached connection. A failure reports `Degraded` with status `200`, because the outbox accepts writes while the broker is down. The check times out in 3 seconds, below the gateway probe timeout.
 - **Throughput and backlog:** both processors handle one message per transaction. This is enough for business events. Before production, add OpenTelemetry metrics for each processor: the pending row count and the age of the oldest pending row. When the age grows under normal load, change the outbox processor to claim a batch of rows in one transaction. The inbox stays one message per transaction, so a failed handler rolls back only its own message.
-- **Actor headers:** `healthyfac-actor-id`, `healthyfac-company-id`, and `traceparent`. A message without a valid actor header, message ID, or company header goes to the `error` queue at the first attempt. No retry can fix it.
+- **Actor headers:** `healthyfac-actor-id`, `healthyfac-company-id`, and `traceparent`. A message without a valid actor header, message ID, or company header goes to the `error` queue at the first attempt. The `error` queue holds only messages that the inbox cannot store: these header faults and a payload that `jsonb` cannot store (see **Invalid messages**). No retry can fix them.
+- **Invalid messages:** a payload that does not deserialize, or that fails the validator of its contract, gets `failed_on` at the first attempt, with no retries, and the processor writes one `Error` log entry. The payload stays in the database, where it can be queried and run again. The inbox key drops every later copy of the same message ID, so one invalid message gives one row and one log entry. Other rejections (e.g., a missing entity) keep the normal retries, because message order is not guaranteed. A payload that `jsonb` cannot store (not JSON, or a `\u0000` escape in a string) goes to the `error` queue at the first attempt, because the insert would fail on every attempt.
 - **Delivery retries:** other delivery failures get 20 attempts, and each attempt retries transient database failures, so a database outage of about 10 minutes loses no message. The `error` queue is final: a message in it is lost.
 - **Error logs:** each move to the `error` queue writes an `Error` log entry with the message ID. Rebus logs reach the application logger without extra configuration.
+- **Tracing:** the `HealthyFac.Messaging` source writes the spans `send`, `receive`, and `process`. Each span is the parent of the next, so one trace goes from the HTTP request through the handler. The inbox logs `Information` for each handled message. An SQL span is recorded only under a parent span (`ConfigureParentOnlyTracing`), so the idle polls of the processors create no trace. Processor health comes from metrics (Session 8).
 
 ## Actor Context
 
@@ -53,6 +55,18 @@ This document records the service boundaries and the decisions that connect the 
 - Only Infrastructure and Web can set the actor. `ActorContextHolder` lives in Shared.Infrastructure, so an Application handler cannot replace the actor.
 - The system actor has a fixed GUID. It is not a Keycloak user. Until authentication exists, every HTTP request runs as the system actor.
 - `Outbox.Add` stores the actor in the row. The inbox processor restores the original actor, so audit fields show who started the work.
+
+## Email
+
+- A service sends email through `IEmailSender` (Shared.Application). The host picks the implementation with one registration method. `AddSmtpEmail` registers the SMTP sender (MailKit). A later provider adds its own `Add...Email` method.
+- Development uses Mailpit. It catches all email, and its web UI shows the messages (`MAILPIT_UI_PORT`, default `8025`). Mailpit keeps the messages in the `mailpit-data` volume, and `docker compose down -v` removes them. Compose sets the `Smtp__*` variables of `core`.
+- Other deployments set `Smtp__Host`, `Smtp__Port`, `Smtp__Security`, `Smtp__UserName`, `Smtp__Password`, `Smtp__FromAddress`, and `Smtp__FromName`.
+- **Invite email:** Core consumes `core.v1:EmployeeInvited` and emails the invited person the link `{InviteLinks:SpaBaseUrl}/invite#token={token}`. The token is in the fragment, so no server log or proxy records it.
+- **Rendering:** the email bodies are Razor components in the Web layer. `RazorComponentRenderer` (`Shared.Web/Rendering`) renders them with `HtmlRenderer`, outside an HTTP request. It is not email-specific: a later feature can reuse it for other output. The Application layer sees only `IEmployeeInviteEmailBuilder`. The text body is the HTML-decoded render of its own component.
+- **Spans:** the `HealthyFac.Rendering` source writes `Razor.Render` for each rendered body. The `HealthyFac.Email` source writes `Email.Send` for each message. The MailKit source `MailKit.Net.SmtpClient` adds the SMTP steps under `Email.Send`. No span holds a recipient, a body, or a link.
+- **Token at send time:** the handler builds the token from the current salt of the invite. The token never enters the database, the outbox, or a log. Two messages for one invite send two links that both work.
+- **Skipped invites:** the handler sends nothing and completes when the invite is missing, accepted, or expired. A supervisor resends an expired invite.
+- **Failures:** a sender failure makes the inbox retry the message. After `Messaging:InboxMaxAttemptCount` attempts, the inbox row gets `failed_on`. A crash after the send and before the commit sends the email again.
 
 ## Public Paths
 
