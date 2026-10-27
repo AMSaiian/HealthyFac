@@ -116,6 +116,36 @@ services:
       retries: 10
       start_period: 30s
 
+  mailpit:
+    container_name: healthyfac-mailpit
+    image: axllent/mailpit:v1.31.5
+    restart: unless-stopped
+    user: "65534:65534"
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Mailpit catches every email in development and keeps the messages in the mailpit-data volume across restarts.
+    # `docker compose down -v` removes them. The image has no /data directory, and a new volume at /data belongs to
+    # root, so Mailpit (user 65534) gets "permission denied" there. The volume mounts at /tmp instead: the image
+    # directory /tmp has mode 1777, and Docker copies that mode into a new named volume, so user 65534 can write.
+    environment:
+      MP_DATABASE: /tmp/mailpit.db
+    volumes:
+      - mailpit-data:/tmp
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
   core:
     container_name: healthyfac-core
     build:
@@ -148,6 +178,12 @@ services:
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       Messaging__QueueName: core
+      Smtp__Host: mailpit
+      Smtp__Port: 1025
+      Smtp__Security: None
+      Smtp__FromAddress: ${Smtp__FromAddress:-no-reply@healthyfac.local}
+      Smtp__FromName: ${Smtp__FromName:-HealthyFac}
+      InviteLinks__SpaBaseUrl: ${InviteLinks__SpaBaseUrl:-http://localhost:4200}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
@@ -157,6 +193,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
       lgtm:
         condition: service_healthy
@@ -221,3 +259,4 @@ volumes:
   rabbitmq-data:
   lgtm-data:
   core-logs:
+  mailpit-data:

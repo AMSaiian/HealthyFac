@@ -18,4 +18,5 @@ description: "C# Formatting rules extracted from .editorconfig"
 *   **Blank Lines:** Max 1 consecutive blank line inside code blocks.
 *   **Primary Constructors:** Wrap primary constructor parameters to separate lines if there are more than 4 parameters.
 *   **Access Modifiers:** Always explicitly declare access modifiers (e.g., private, internal, public) for classes, methods, and fields. Do not omit them and rely on C# defaults.
+*   **Private Field Names:** Name private instance fields in camelCase with the `_` prefix (e.g., `_dbContext`, `_isStarted`).
 *   **Method Order:** Order methods by access modifier: public first, then internal, protected, and private. Never place a private method between two public methods. Within one modifier group, put a caller above the helpers it calls. The file then reads from the overview to the details. Fields, constructors, and properties stay above all methods.
