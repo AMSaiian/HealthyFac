@@ -5,7 +5,6 @@ public static class ProxyFailureTestData
     public const string ClosedPortAddress = "http://127.0.0.1:1/";
     public const string MachinesRoute = "/api/core/v1/machines";
     public const string ProblemJsonMediaType = "application/problem+json";
-    public const string SecretToken = "secret-token-value-123";
     public const string RouteIdKey = "RouteId";
     public const string CoreRouteId = "core";
 

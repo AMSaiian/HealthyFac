@@ -1,4 +1,8 @@
 using Bogus;
+using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Domain.Companies;
+using HealthyFac.Core.Domain.Departments;
+using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Companies.Seeding;
 using HealthyFac.Core.Infrastructure.Departments.Seeding;
@@ -15,26 +19,33 @@ namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 /// invites. <see cref="DevelopmentDataOptions"/> sets the amounts and the shapes. Each faker gets the next seed
 /// from the configured base, so every run produces the same data, and screenshots and bug reports stay
 /// comparable. Seeded employees are active with a random identity ID. No Keycloak user exists for them, so nobody
-/// can sign in as a seeded employee.
+/// can sign in as a seeded employee. The only exception is the optional test tenant (<see cref="TestTenantOptions"/>):
+/// its supervisor has the fixed IDs of the Keycloak realm import and can sign in.
 /// </summary>
 /// <param name="dbContext">The core database context.</param>
 /// <param name="dateProvider">The clock for invite expiry and acceptance times.</param>
 /// <param name="seedingOptions">The validated seeding options.</param>
 /// <param name="logger">The logger for the forced recreation warning.</param>
+/// <param name="inviteTokenService">The service that creates the salt of the test tenant invite.</param>
 public sealed class CoreDevelopmentDataSeeder(
     CoreDbContext dbContext,
     TimeProvider timeProvider,
     IOptions<SeedingOptions> seedingOptions,
-    ILogger<CoreDevelopmentDataSeeder> logger
+    ILogger<CoreDevelopmentDataSeeder> logger,
+    IInviteTokenService inviteTokenService
 )
 {
+    private const int TestTenantDepartmentCount = 2;
+
     private readonly DevelopmentDataOptions _options = seedingOptions.Value.DevelopmentData;
+    private readonly IInviteTokenService _inviteTokenService = inviteTokenService;
     private int _seedOffset;
 
     /// <summary>
-    /// Adds the development data when the database holds no company yet, so a restart does not duplicate it.
-    /// With <see cref="DevelopmentDataOptions.IsRecreationForced"/>, it first deletes the existing business data
-    /// and then adds the data again. Run it after the required roles exist.
+    /// Adds the development data. The generated data enters only when the database holds no company yet, so a
+    /// restart does not duplicate it. The test tenant enters when its company does not exist yet. With
+    /// <see cref="DevelopmentDataOptions.IsRecreationForced"/>, it first deletes the existing business data and then
+    /// adds everything again. Run it after the required roles exist.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
@@ -49,13 +60,21 @@ public sealed class CoreDevelopmentDataSeeder(
 
             await DeleteBusinessDataAsync(cancellationToken);
         }
-        else
+
+        await SeedGeneratedDataAsync(cancellationToken);
+
+        if (_options.TestTenant is not null)
         {
-            var hasCompanies = await dbContext.Companies.AnyAsync(cancellationToken);
-            if (hasCompanies)
-            {
-                return;
-            }
+            await SeedTestTenantAsync(_options.TestTenant, cancellationToken);
+        }
+    }
+
+    private async Task SeedGeneratedDataAsync(CancellationToken cancellationToken)
+    {
+        var hasCompanies = await dbContext.Companies.AnyAsync(cancellationToken);
+        if (hasCompanies)
+        {
+            return;
         }
 
         var roleIds = await dbContext.Roles.ToDictionaryAsync(role => role.Code, role => role.Id, cancellationToken);
@@ -113,6 +132,56 @@ public sealed class CoreDevelopmentDataSeeder(
                         NextSeed())
                     .Generate(_options.OpenInvitesPerCompany));
         }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task SeedTestTenantAsync(TestTenantOptions tenant, CancellationToken cancellationToken)
+    {
+        var isCompanySeeded = await dbContext.Companies.AnyAsync(
+            company => company.Id == tenant.CompanyId,
+            cancellationToken);
+        if (isCompanySeeded)
+        {
+            return;
+        }
+
+        var supervisorRoleId = await dbContext.Roles
+            .Where(role => role.Code == RoleCode.Supervisor)
+            .Select(role => role.Id)
+            .SingleAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        var company = new Company { Name = tenant.CompanyName };
+        dbContext.Entry(company).Property(entity => entity.Id).CurrentValue = tenant.CompanyId;
+        dbContext.Companies.Add(company);
+
+        var departments = _options.GetDepartmentNames()
+            .Take(TestTenantDepartmentCount)
+            .Select((name, index) => new Department
+            {
+                CompanyId = tenant.CompanyId,
+                Name = name,
+                TimeZoneId = _options.GetTimeZoneIds()[index % _options.GetTimeZoneIds().Count],
+            })
+            .ToList();
+        dbContext.Departments.AddRange(departments);
+
+        var invite = new EmployeeInvite(
+            tenant.CompanyId,
+            tenant.SupervisorEmail,
+            supervisorRoleId,
+            departments,
+            _inviteTokenService.CreateSalt(),
+            now.AddDays(_options.InviteLifetimeDays));
+        invite.UpdateProfile(tenant.SupervisorFirstName, tenant.SupervisorLastName);
+
+        var supervisor = invite.Accept(now);
+        dbContext.Entry(supervisor).Property(entity => entity.Id).CurrentValue = tenant.SupervisorEmployeeId;
+        supervisor.Activate(tenant.SupervisorIdentityId);
+
+        dbContext.EmployeeInvites.Add(invite);
+        dbContext.Employees.Add(supervisor);
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

@@ -22,4 +22,11 @@ public sealed class CorsPolicyOptions
     /// backend for frontend. Enabling it also forbids the wildcard origin.
     /// </summary>
     public bool AllowCredentials { get; init; }
+
+    /// <summary>
+    /// How long, in seconds, the browser keeps the answer to a preflight. The browser then sends no preflight before
+    /// each call. While the policy is enabled, the value must be greater than 0 and at most
+    /// <see cref="CorsConstants.MaxPreflightMaxAgeSeconds"/>.
+    /// </summary>
+    public int PreflightMaxAgeSeconds { get; init; }
 }

@@ -93,7 +93,8 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             recreateScope.ServiceProvider.GetRequiredService<CoreDbContext>(),
             recreateScope.ServiceProvider.GetRequiredService<TimeProvider>(),
             Options.Create(DatabaseTestData.ForcedRecreationOptions),
-            NullLogger<CoreDevelopmentDataSeeder>.Instance);
+            NullLogger<CoreDevelopmentDataSeeder>.Instance,
+            fixture.InviteTokenService);
 
         await seeder.SeedAsync(CancellationToken.None);
 

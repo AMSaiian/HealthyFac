@@ -5,7 +5,6 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
-using HealthyFac.Testing.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
@@ -91,21 +90,29 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     }
 
     [Fact]
-    public async Task ResendAsync_TwiceInParallel_EachCallSucceedsOrConflicts()
+    public async Task ResendAsync_TwiceInParallel_SucceedsOnceAndConflictsOnce()
     {
         var (companyId, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendParallelEmail,
             DateTime.UtcNow.AddHours(1));
+        var countBefore = await CountInvitedMessagesAsync(inviteId);
+        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
-        var failures = await Task.WhenAll(TryResendAsync(companyId, inviteId), TryResendAsync(companyId, inviteId));
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => ResendAsync(companyId, inviteId)),
+            race.RunAsync(() => ResendAsync(companyId, inviteId)));
 
-        failures.Count(failure => failure is null).Should().BeGreaterThanOrEqualTo(1);
-        failures.Where(failure => failure is not null)
+        var countAfter = await CountInvitedMessagesAsync(inviteId);
+
+        race.SaveCounts.Should().Equal(1, 1);
+        failures.Count(failure => failure is null).Should().Be(1);
+        failures.Single(failure => failure is not null)
             .Should()
-            .AllSatisfy(failure => failure.Should()
-                .BeOfType<ConflictException>()
-                .Which.Message.Should()
-                .Be(EmployeeInviteErrors.Rejections.InviteChanged));
+            .BeOfType<ConflictException>()
+            .Which.Message.Should()
+            .Be(EmployeeInviteErrors.Rejections.InviteChanged);
+
+        countAfter.Should().Be(countBefore + 1);
     }
 
     private async Task<(Guid CompanyId, Guid InviteId, string Token)> ArrangeInviteAsync(
@@ -127,9 +134,6 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
         return messages.Count(message => message.InviteId == inviteId);
     }
-
-    private Task<Exception?> TryResendAsync(Guid companyId, Guid inviteId) =>
-        ExceptionCapture.CaptureAsync(() => ResendAsync(companyId, inviteId));
 
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {

@@ -52,6 +52,7 @@ public static class CorsExtensions
 
                     policy.AllowAnyHeader();
                     policy.AllowAnyMethod();
+                    policy.SetPreflightMaxAge(TimeSpan.FromSeconds(options.PreflightMaxAgeSeconds));
 
                     if (options.AllowCredentials)
                     {
@@ -66,16 +67,21 @@ public static class CorsExtensions
     extension(IApplicationBuilder app)
     {
         /// <summary>
-        /// Applies the shared cross-origin policy when it was registered. Call this after the forwarded
-        /// headers middleware and before authorization.
+        /// Adds the CORS middleware. The policy applies only to an endpoint that asks for it. Use a YARP route with
+        /// <c>"CorsPolicy"</c>, or call <c>RequireCors</c> with <see cref="CorsConstants.PolicyName"/>. Without a
+        /// registered policy, the middleware does nothing.
         /// </summary>
+        /// <remarks>
+        /// Call it before <c>UseAuthentication</c>. A preflight request has no <c>Authorization</c> header, so it must
+        /// never meet authentication, the rate limiter, or authorization.
+        /// </remarks>
         /// <returns>The <see cref="IApplicationBuilder"/> instance for chained configuration.</returns>
         public IApplicationBuilder UseSharedCors()
         {
             var policyProvider = app.ApplicationServices
                 .GetService<ICorsService>();
 
-            return policyProvider is null ? app : app.UseCors(CorsConstants.PolicyName);
+            return policyProvider is null ? app : app.UseCors();
         }
     }
 }

@@ -43,4 +43,5 @@ public static class InviteTestData
 
     public const int ExpectedSaltBytes = 32;
     public const int ExpectedLifetimeHours = 72;
+    public const int RaceParticipantCount = 2;
 }

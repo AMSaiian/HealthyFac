@@ -13,6 +13,13 @@ public static class GatewayProblemDetailsConstants
         public const string Detail = "The request limit is reached. Retry after the time in the Retry-After header.";
     }
 
+    public static class Unauthorized
+    {
+        public const string Title = "Unauthorized";
+        public const string TypeUrl = "https://tools.ietf.org/html/rfc7235#section-3.1";
+        public const string Detail = "The access token is not valid. Sign in again.";
+    }
+
     public static class BadGateway
     {
         public const string Title = "Bad Gateway";

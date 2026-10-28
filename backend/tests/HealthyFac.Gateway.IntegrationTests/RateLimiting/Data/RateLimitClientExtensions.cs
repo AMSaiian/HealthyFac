@@ -15,6 +15,14 @@ public static class RateLimitClientExtensions
             return client.SendAsync(request);
         }
 
+        public async Task SpendDefaultLimitAsync()
+        {
+            for (var attempt = 0; attempt < RateLimitTestData.DefaultPermitLimit; attempt++)
+            {
+                using var response = await client.GetAsync(RateLimitTestData.MachinesRoute);
+            }
+        }
+
         public async Task SpendStrictLimitAsync()
         {
             for (var attempt = 0; attempt < RateLimitTestData.StrictPermitLimit; attempt++)

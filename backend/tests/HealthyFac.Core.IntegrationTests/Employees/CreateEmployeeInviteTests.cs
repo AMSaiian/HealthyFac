@@ -7,7 +7,6 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
-using HealthyFac.Testing.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
@@ -115,15 +114,17 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     public async Task CreateAsync_TwiceInParallelForSameEmail_CreatesOneInviteAndOneConflict()
     {
         var (companyId, departmentIds) = await ArrangeCompanyAsync();
+        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
-            TryCreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds),
-            TryCreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds));
+            race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds)),
+            race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds)));
 
         var inviteCount = await fixture.CountInvitesAsync(
             companyId,
             InviteTestData.CreateParallelEmail);
 
+        race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(1);
         failures.Single(failure => failure is not null)
             .Should()
@@ -162,9 +163,6 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
         return messages.Where(message => message.InviteId == inviteId).ToList();
     }
-
-    private Task<Exception?> TryCreateAsync(Guid companyId, string email, IReadOnlyList<Guid> departmentIds) =>
-        ExceptionCapture.CaptureAsync(() => CreateAsync(companyId, email, departmentIds));
 
     private async Task<Guid> CreateAsync(Guid companyId, string email, IReadOnlyList<Guid> departmentIds)
     {

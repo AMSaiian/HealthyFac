@@ -16,4 +16,15 @@ public sealed class ActorContextMiddlewareTests
 
         userId.Should().Be(SystemActor.Id.ToString());
     }
+
+    [Fact]
+    public async Task Request_WithAuthenticatedUser_RunsAsUserOfTheToken()
+    {
+        using var host = await ActorHostFactory.StartAsync(ActorClaimsTestData.ValidPrincipal);
+        using var client = host.GetTestClient();
+
+        var userId = await client.GetStringAsync(ActorHostFactory.UserIdPath);
+
+        userId.Should().Be(ActorTestData.UserId.ToString());
+    }
 }

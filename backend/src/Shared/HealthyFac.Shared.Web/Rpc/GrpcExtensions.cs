@@ -49,7 +49,7 @@ public static class GrpcExtensions
             var environment = app.ServiceProvider.GetRequiredService<IHostEnvironment>();
             if (environment.IsDevelopment())
             {
-                app.MapGrpcReflectionService();
+                app.MapGrpcReflectionService().AllowAnonymous();
             }
 
             return app;

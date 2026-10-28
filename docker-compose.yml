@@ -30,9 +30,13 @@ services:
     container_name: healthyfac-keycloak
     image: quay.io/keycloak/keycloak:26.8.0
     restart: unless-stopped
-    command: ["start-dev", "--http-port=8080"]
+    command: ["start-dev", "--http-port=8080", "--import-realm"]
     stop_signal: SIGTERM
     stop_grace_period: 30s
+    # The import skips a realm that already exists in the keycloak database. After you change the realm file, run
+    # `docker compose down -v`, or delete the healthyfac realm in the admin console, and start Keycloak again.
+    volumes:
+      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
@@ -41,10 +45,40 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_HEALTH_ENABLED: "true"
+      # The public URL is the auth name of the gateway (api., auth., and app. names are in docs/architecture.md).
+      # KC_HOSTNAME_BACKCHANNEL_DYNAMIC lets services read the metadata from the
+      # internal address, and the metadata then holds internal back-channel URLs such as the JWKS URI.
+      KC_HOSTNAME: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}
+      # The admin console stays on the local port. The gateway has no route to it.
+      KC_HOSTNAME_ADMIN: http://localhost:${KEYCLOAK_PORT:-8081}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
+      # Keycloak replaces each placeholder of the realm import file with the variable of the same name.
+      HEALTHYFAC_SPA_URL: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      HEALTHYFAC_TEST_COMPANY_ID: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_PASSWORD: ${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD:?set HEALTHYFAC_TEST_SUPERVISOR_PASSWORD in .env}
+      KEYCLOAK_AUTH_CLIENT_SECRET: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
     ports:
       - "${KEYCLOAK_PORT:-8081}:8080"
+    # The image has no curl. Bash opens a TCP connection to the management port and reads the readiness answer.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/localhost/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
     depends_on:
       postgres:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   redis:
@@ -183,14 +217,33 @@ services:
       Smtp__Security: None
       Smtp__FromAddress: ${Smtp__FromAddress:-no-reply@healthyfac.local}
       Smtp__FromName: ${Smtp__FromName:-HealthyFac}
-      InviteLinks__SpaBaseUrl: ${InviteLinks__SpaBaseUrl:-http://localhost:4200}
+      InviteLinks__SpaBaseUrl: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      # The issuer is the public URL of the realm (the gateway). Core reads the metadata and the signing keys from
+      # the internal address of Keycloak.
+      Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
+      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
+      Jwt__IsHttpsMetadataRequired: "false"
+      # The test company and supervisor. Keycloak imports the same values (see the keycloak service), so the
+      # supervisor can sign in. Core seeds them only when SeedOptionalData is true (the Development default).
+      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      Seeding__DevelopmentData__TestTenant__CompanyName: Test Company
+      Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
+      Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
+      Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
+      Seeding__DevelopmentData__TestTenant__SupervisorFirstName: Test
+      Seeding__DevelopmentData__TestTenant__SupervisorLastName: Supervisor
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # The health port (8090 in the container) is internal. It binds to the loopback address of the host, so only
+    # this machine reaches it. The container port equals HealthEndpoints:Port in appsettings.json.
     ports:
       - "${CORE_PORT:-8080}:8080"
+      - "127.0.0.1:${CORE_HEALTH_PORT:-8091}:8090"
     depends_on:
       postgres:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -217,16 +270,44 @@ services:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # The health port stays on HTTP. The public port serves HTTPS with the certificate from docker/certs.
+      ASPNETCORE_HTTP_PORTS: "8090"
+      ASPNETCORE_HTTPS_PORTS: "8443"
+      Kestrel__Certificates__Default__Path: /certs/healthyfac.test.pem
+      Kestrel__Certificates__Default__KeyPath: /certs/healthyfac.test-key.pem
       ReverseProxy__Clusters__core__Destinations__main__Address: http://core:8080/
+      # The active health check of the cluster calls the health port of Core, not the API port.
+      ReverseProxy__Clusters__core__Destinations__main__Health: http://core:8090/
+      ReverseProxy__Clusters__keycloak__Destinations__main__Address: http://keycloak:8080/
+      Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
+      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
+      Jwt__IsHttpsMetadataRequired: "false"
+      Cors__AllowedOrigins__0: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      # Each public route answers one logical name. A host without a port matches every port.
+      ReverseProxy__Routes__core__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__core-invite-public__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__keycloak-realm__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__keycloak-resources__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # The public port is HTTPS only; plain HTTP is not published. The health port (8090 in the container) is
+    # internal and binds to the loopback address of the host.
     ports:
-      - "${GATEWAY_PORT:-8000}:8080"
-    # Redis and Core are soft dependencies of the gateway: it serves with a local limiter and answers 503 alone.
+      - "${GATEWAY_PORT:-443}:8443"
+      - "127.0.0.1:${GATEWAY_HEALTH_PORT:-8090}:8090"
+    # The certificate and the key come from a local certificate authority (docker/certs/README.md). Git ignores
+    # them, and the image does not hold them.
+    volumes:
+      - ./docker/certs:/certs:ro
+    # Redis, Core, and Keycloak are soft dependencies of the gateway: it serves with a local limiter, answers 503 for
+    # Core alone, and reads the signing keys of Keycloak at the first token.
     depends_on:
       core:
+        condition: service_started
+      keycloak:
         condition: service_started
       redis:
         condition: service_started

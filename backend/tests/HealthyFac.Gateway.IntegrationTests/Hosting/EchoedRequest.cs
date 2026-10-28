@@ -5,6 +5,8 @@ namespace HealthyFac.Gateway.IntegrationTests.Hosting;
 /// </summary>
 public sealed class EchoedRequest
 {
+    public required string Method { get; init; }
+
     public required string Path { get; init; }
 
     public required string Query { get; init; }

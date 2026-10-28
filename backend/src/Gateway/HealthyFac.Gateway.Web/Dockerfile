@@ -43,15 +43,16 @@ RUN dotnet publish src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.cspro
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.12-noble-chiseled AS final
 WORKDIR /app
 
-# Kestrel binds 8080, because a non-root user cannot bind a privileged port.
-ENV ASPNETCORE_HTTP_PORTS=8080 \
+# Kestrel binds 8080 (the API) and 8090 (the health endpoints), because a non-root user cannot bind a privileged
+# port. Keep 8090 equal to HealthEndpoints:Port in appsettings.json.
+ENV ASPNETCORE_HTTP_PORTS=8080;8090 \
     DOTNET_NOLOGO=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 COPY --from=publish --chown=$APP_UID:$APP_UID /app ./
 COPY --from=publish --chown=$APP_UID:$APP_UID /probe ./probe/
 
-EXPOSE 8080
+EXPOSE 8080 8090
 
 # The chiseled images define APP_UID as a non-root account. The app never runs as root.
 USER $APP_UID
@@ -61,8 +62,8 @@ USER $APP_UID
 # kill the container with SIGKILL after the stop timeout, losing graceful shutdown.
 ENTRYPOINT ["dotnet", "HealthyFac.Gateway.Web.dll"]
 
-# The probe takes the URI to call. Keep the port equal to ASPNETCORE_HTTP_PORTS above,
-# because the exec form cannot expand variables. The probe exits 0 on a success status. Kubernetes ignores
-# this instruction and uses its own probes.
+# The probe takes the URI to call. Keep the port equal to the health port in ASPNETCORE_HTTP_PORTS above and to
+# HealthEndpoints:Port in appsettings.json, because the exec form cannot expand variables. The probe exits 0 on a
+# success status. Kubernetes ignores this instruction and uses its own probes.
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
-    CMD ["dotnet", "probe/HealthyFac.HealthProbe.dll", "http://127.0.0.1:8080/health/ready"]
+    CMD ["dotnet", "probe/HealthyFac.HealthProbe.dll", "http://127.0.0.1:8090/health/ready"]

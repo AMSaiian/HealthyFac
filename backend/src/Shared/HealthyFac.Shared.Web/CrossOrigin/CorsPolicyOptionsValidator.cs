@@ -19,6 +19,12 @@ public sealed class CorsPolicyOptionsValidator : AbstractValidator<CorsPolicyOpt
                     .Must(BeWildcardOrOrigin)
                     .WithMessage(CorsValidationMessages.OriginInvalid);
 
+                RuleFor(options => options.PreflightMaxAgeSeconds)
+                    .GreaterThan(0)
+                    .WithMessage(CorsValidationMessages.PreflightMaxAgeRequired)
+                    .LessThanOrEqualTo(CorsConstants.MaxPreflightMaxAgeSeconds)
+                    .WithMessage(CorsValidationMessages.PreflightMaxAgeAboveBrowserLimit);
+
                 RuleFor(options => options.AllowedOrigins)
                     .Must(origins => !origins.Contains(CorsConstants.Wildcard))
                     .When(options => options.AllowCredentials)

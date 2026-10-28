@@ -40,7 +40,7 @@ public sealed class RateLimitRedisOutageTests : IAsyncLifetime
         await using var core = new EchoServer();
         await core.StartAsync();
         await using var gateway = CreateGateway(core);
-        using var client = gateway.CreateClient();
+        using var client = gateway.CreateAuthenticatedClient();
 
         var statusCodes = new List<HttpStatusCode>();
         for (var attempt = 0; attempt < RateLimitTestData.DefaultRequestsDuringOutage; attempt++)

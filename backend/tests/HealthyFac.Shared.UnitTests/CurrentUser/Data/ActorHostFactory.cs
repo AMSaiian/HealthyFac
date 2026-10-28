@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.AspNetCore.Builder;
@@ -17,13 +18,23 @@ public static class ActorHostFactory
 {
     public const string UserIdPath = "/user-id";
 
-    public static Task<IHost> StartAsync() =>
+    public static Task<IHost> StartAsync(ClaimsPrincipal? user = null) =>
         new HostBuilder()
             .ConfigureWebHost(web => web
                 .UseTestServer()
                 .ConfigureServices(services => services.AddActorContextMiddleware())
                 .Configure(app =>
                 {
+                    if (user is not null)
+                    {
+                        app.Use((context, next) =>
+                        {
+                            context.User = user;
+
+                            return next(context);
+                        });
+                    }
+
                     app.UseActorContext();
                     app.Run(context => context.Response.WriteAsync(
                         context.RequestServices.GetRequiredService<ICurrentUserProvider>().GetUserId().ToString()));

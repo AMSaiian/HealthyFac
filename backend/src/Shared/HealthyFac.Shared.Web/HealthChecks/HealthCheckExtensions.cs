@@ -3,55 +3,76 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
+using HealthyFac.Shared.Infrastructure.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Shared.Web.HealthChecks;
 
 /// <summary>
-/// Provides extension methods for registering and exposing health check endpoints.
+/// Provides extension methods for registering the health checks and serving them on the health port.
 /// </summary>
 public static class HealthCheckExtensions
 {
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registers the health check service so each microservice can append its own checks.
-        /// Tag a check with <see cref="HealthCheckConstants.ReadyTag"/> to include it in readiness.
+        /// Registers the health check service and the validated port of the health endpoints. Each service appends
+        /// its own checks. Tag a check with <see cref="HealthCheckConstants.ReadyTag"/> to include it in readiness.
         /// </summary>
+        /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
         /// <returns>The <see cref="IHealthChecksBuilder"/> for registering individual checks.</returns>
-        public IHealthChecksBuilder AddSharedHealthChecks()
-            => services.AddHealthChecks();
+        public IHealthChecksBuilder AddSharedHealthChecks(IConfiguration configuration)
+        {
+            services.AddValidatedOptions<HealthEndpointOptions, HealthEndpointOptionsValidator>(
+                HealthEndpointOptions.SectionName,
+                configuration);
+
+            return services.AddHealthChecks();
+        }
     }
 
-    extension(IEndpointRouteBuilder app)
+    extension(IApplicationBuilder app)
     {
         /// <summary>
-        /// Maps three health endpoints: a liveness pull hook that runs no checks and always answers 200,
-        /// a readiness endpoint limited to checks tagged ready, and a detailed endpoint reporting every check.
+        /// Answers three health endpoints on the health port only. Liveness runs no checks and always answers 200.
+        /// Readiness runs the checks tagged ready. The detailed endpoint runs every check and reports each result.
         /// </summary>
-        /// <returns>The <see cref="IEndpointRouteBuilder"/> instance for chained configuration.</returns>
-        public IEndpointRouteBuilder MapSharedHealthChecks()
+        /// <remarks>
+        /// Call it as the first middleware. Health requests then skip the HTTPS redirect, request logging, CORS,
+        /// authentication, and authorization. The middleware compares the local port of the connection, which a client
+        /// cannot change. It never reads the <c>Host</c> header, because a client can send any value. The platform
+        /// must not route the health port publicly. The detailed endpoint writes the exception message of each check.
+        /// That text can show internal host names and ports.
+        /// </remarks>
+        /// <returns>The <see cref="IApplicationBuilder"/> instance for chained configuration.</returns>
+        public IApplicationBuilder UseSharedHealthChecks()
         {
-            app.MapHealthChecks(
+            var port = app.ApplicationServices.GetRequiredService<IOptions<HealthEndpointOptions>>().Value.Port;
+
+            app.UseHealthChecks(
                 HealthCheckConstants.Routes.Liveness,
+                port,
                 new HealthCheckOptions
                 {
                     Predicate = _ => false,
                     ResponseWriter = WriteLivenessAsync,
                 });
 
-            app.MapHealthChecks(
+            app.UseHealthChecks(
                 HealthCheckConstants.Routes.Readiness,
+                port,
                 new HealthCheckOptions
                 {
                     Predicate = registration => registration.Tags.Contains(HealthCheckConstants.ReadyTag),
                     ResponseWriter = WriteLivenessAsync,
                 });
 
-            app.MapHealthChecks(
+            app.UseHealthChecks(
                 HealthCheckConstants.Routes.Detailed,
+                port,
                 new HealthCheckOptions
                 {
                     Predicate = _ => true,

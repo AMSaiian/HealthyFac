@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
+using HealthyFac.Testing.Authentication;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Testing.Logging;
@@ -18,7 +19,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
     public async Task CoreRoute_WhenDestinationIsDown_Returns502ProblemDetails()
     {
         await using var gateway = environment.CreateGateway(ProxyFailureTestData.ClosedPortAddress);
-        using var client = gateway.CreateClient();
+        using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync(ProxyFailureTestData.MachinesRoute);
 
@@ -37,7 +38,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         await using var gateway = environment.CreateGateway(
             core,
             settings: ProxyFailureTestData.OneSecondActivityTimeout);
-        using var client = gateway.CreateClient();
+        using var client = gateway.CreateAuthenticatedClient();
         var startedAt = Stopwatch.GetTimestamp();
 
         using var response = await client.GetAsync(ProxyFailureTestData.MachinesRoute);
@@ -59,7 +60,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         await using var gateway = environment.CreateGateway(
             core,
             settings: ProxyFailureTestData.OneSecondHealthCheckInterval);
-        using var client = gateway.CreateClient();
+        using var client = gateway.CreateAuthenticatedClient();
         await client.WaitForStatusAsync(
             ProxyFailureTestData.MachinesRoute,
             HttpStatusCode.ServiceUnavailable,
@@ -83,17 +84,18 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
             ProxyFailureTestData.ClosedPortAddress,
             configureServices: services => services.AddSingleton<ILoggerFactory>(new LoggerFactory([logs])));
         using var client = gateway.CreateClient();
+        var secretToken = gateway.Tokens.CreateToken(new TestTokenClaims());
         using var request = new HttpRequestMessage(HttpMethod.Get, ProxyFailureTestData.MachinesRoute);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ProxyFailureTestData.SecretToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secretToken);
 
         using var response = await client.SendAsync(request);
 
         var warnings = logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ToList();
         var leakedEntries = logs.Entries
-            .Where(entry => entry.Message.Contains(ProxyFailureTestData.SecretToken)
+            .Where(entry => entry.Message.Contains(secretToken)
                 || entry.Properties.Values.Any(value =>
-                    value?.ToString()?.Contains(ProxyFailureTestData.SecretToken) == true)
-                || entry.Exception?.ToString().Contains(ProxyFailureTestData.SecretToken) == true)
+                    value?.ToString()?.Contains(secretToken) == true)
+                || entry.Exception?.ToString().Contains(secretToken) == true)
             .ToList();
 
         warnings.Should()

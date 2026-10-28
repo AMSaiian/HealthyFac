@@ -6,7 +6,6 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Testing.Exceptions;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
@@ -78,20 +77,22 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     public async Task AcceptAsync_TwiceInParallel_CreatesOneEmployee()
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptParallelEmail);
+        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
-        var failures = await Task.WhenAll(TryAcceptAsync(arranged.Token), TryAcceptAsync(arranged.Token));
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => fixture.AcceptInviteAsync(arranged.Token)),
+            race.RunAsync(() => fixture.AcceptInviteAsync(arranged.Token)));
 
         var employeeCount = await fixture.CountEmployeesAsync(
             InviteTestData.AcceptParallelEmail);
 
+        race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(1);
         failures.Single(failure => failure is not null)
             .Should()
-            .Match<Exception>(failure =>
-                (failure is NotFoundException
-                    && failure.Message == EmployeeInviteErrors.Rejections.InviteLinkInvalid)
-                || (failure is ConflictException
-                    && failure.Message == EmployeeInviteErrors.Rejections.EmailAlreadyEmployed));
+            .BeOfType<ConflictException>()
+            .Which.Message.Should()
+            .Be(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
 
         employeeCount.Should().Be(1);
     }
@@ -115,12 +116,16 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var first = await ArrangeAsync(InviteTestData.AcceptSharedParallelEmail);
         var second = await ArrangeAsync(InviteTestData.AcceptSharedParallelEmail);
+        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
-        var failures = await Task.WhenAll(TryAcceptAsync(first.Token), TryAcceptAsync(second.Token));
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => fixture.AcceptInviteAsync(first.Token)),
+            race.RunAsync(() => fixture.AcceptInviteAsync(second.Token)));
 
         var employeeCount = await fixture.CountEmployeesAsync(
             InviteTestData.AcceptSharedParallelEmail);
 
+        race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(1);
         failures.Single(failure => failure is not null)
             .Should()
@@ -154,7 +159,4 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
         return messages.Where(message => message.EmployeeId == employeeId).ToList();
     }
-
-    private Task<Exception?> TryAcceptAsync(string token) =>
-        ExceptionCapture.CaptureAsync(() => fixture.AcceptInviteAsync(token));
 }

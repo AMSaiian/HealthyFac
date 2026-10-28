@@ -1,7 +1,11 @@
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Gateway.Web.RateLimiting;
+using HealthyFac.Gateway.Web.Revocation;
 using HealthyFac.Shared.Infrastructure.Caching;
+using HealthyFac.Shared.Infrastructure.Revocation;
 using HealthyFac.Shared.Infrastructure.Time;
+using HealthyFac.Shared.Web.Authentication;
+using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Logging;
 using HealthyFac.Shared.Web.Proxy;
@@ -32,7 +36,9 @@ public static class ConfigureServices
             services.AddSharedForwardedHeaders(configuration);
             services.AddExceptionHandler<GatewayExceptionHandler>();
             services.AddProblemDetails();
+            services.AddSharedCors(configuration);
             services.AddSharedRedis(configuration);
+            services.AddGatewaySecurity(configuration);
             services.AddGatewayRateLimiting(configuration);
             services.AddReverseProxy().LoadFromConfig(configuration.GetSection(GatewayConstants.ReverseProxySection));
             services.AddSingleton<IAvailableDestinationsPolicy, HealthyOnlyDestinationsPolicy>();
@@ -42,11 +48,23 @@ public static class ConfigureServices
             return services;
         }
 
+        private IServiceCollection AddGatewaySecurity(IConfiguration configuration)
+        {
+            services.AddSharedJwtAuthentication(configuration);
+            services.AddTokenRevocationStore();
+            services.AddSingleton<RevocationCheckMiddleware>();
+            services.AddAuthorizationBuilder()
+                .SetAuthenticatedFallbackPolicy()
+                .AddPolicy(GatewayConstants.AuthenticatedPolicyName, policy => policy.RequireAuthenticatedUser());
+
+            return services;
+        }
+
         private IServiceCollection AddGatewayObservability(IConfiguration configuration)
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
-            services.AddSharedHealthChecks()
+            services.AddSharedHealthChecks(configuration)
                 .AddRedis(
                     provider => provider.GetRequiredService<IConnectionMultiplexer>(),
                     GatewayConstants.RedisHealthCheckName,
@@ -65,10 +83,15 @@ public static class ConfigureServices
         /// <returns>The configured <see cref="WebApplication"/> instance.</returns>
         public WebApplication UseGatewayPipeline()
         {
+            app.UseSharedHealthChecks();
             app.UseSharedForwardedHeaders();
             app.UseSerilogRequestLogging();
             app.UseExceptionHandler();
+            app.UseSharedCors();
+            app.UseAuthentication();
+            app.UseMiddleware<RevocationCheckMiddleware>();
             app.UseRateLimiter();
+            app.UseAuthorization();
 
             return app;
         }
@@ -82,7 +105,6 @@ public static class ConfigureServices
         /// <returns>The <see cref="IEndpointRouteBuilder"/> instance for chained configuration.</returns>
         public IEndpointRouteBuilder MapGatewayEndpoints()
         {
-            app.MapSharedHealthChecks();
             app.MapReverseProxy(proxy =>
             {
                 proxy.UseMiddleware<ProxyErrorMiddleware>();

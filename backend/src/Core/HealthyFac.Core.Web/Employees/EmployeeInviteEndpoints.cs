@@ -2,6 +2,8 @@ using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
 using HealthyFac.Core.Application.Employees.ResendEmployeeInvite;
 using HealthyFac.Core.Application.Employees.VerifyEmployeeInvite;
+using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
@@ -22,10 +24,14 @@ public static class EmployeeInviteEndpoints
         public IEndpointRouteBuilder MapEmployeeInviteEndpoints()
         {
             var group = app.MapGroup(EmployeeInviteRoutes.BaseRoute);
-            group.MapPost(EmployeeInviteRoutes.Root, CreateAsync);
-            group.MapPost(EmployeeInviteRoutes.Resend, ResendAsync);
-            group.MapPost(EmployeeInviteRoutes.Verify, VerifyAsync);
-            group.MapPost(EmployeeInviteRoutes.Accept, AcceptAsync);
+            group.MapPost(EmployeeInviteRoutes.Root, CreateAsync)
+                .RequireAuthorization(CorePermissions.Employees.Invite);
+            group.MapPost(EmployeeInviteRoutes.Resend, ResendAsync)
+                .RequireAuthorization(CorePermissions.Employees.Invite);
+            group.MapPost(EmployeeInviteRoutes.Verify, VerifyAsync)
+                .AllowAnonymous();
+            group.MapPost(EmployeeInviteRoutes.Accept, AcceptAsync)
+                .AllowAnonymous();
 
             return app;
         }
@@ -34,12 +40,17 @@ public static class EmployeeInviteEndpoints
     private static async Task<IResult> CreateAsync(
         CreateEmployeeInviteRequest request,
         HttpRequest httpRequest,
-        IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse> handler,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<
+            Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest,
+            CreateEmployeeInviteResponse> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )
     {
-        var response = await handler.HandleAsync(request, cancellationToken);
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
 
         var location = string.Format(
             EmployeeInviteRoutes.ResourceLocationFormat,
@@ -51,11 +62,16 @@ public static class EmployeeInviteEndpoints
 
     private static async Task<IResult> ResendAsync(
         ResendEmployeeInviteRequest request,
-        IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse> handler,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<
+            Application.Employees.ResendEmployeeInvite.ResendEmployeeInviteRequest,
+            ResendEmployeeInviteResponse> handler,
         CancellationToken cancellationToken
     )
     {
-        var response = await handler.HandleAsync(request, cancellationToken);
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
 
         return Results.Ok(response);
     }

@@ -23,6 +23,10 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .Unless(_ => environment.IsDevelopment())
             .WithMessage(SeedingValidationConstants.Messages.RecreationOnlyInDevelopment);
 
+        RuleFor(options => options.TestTenant!)
+            .SetValidator(new TestTenantOptionsValidator())
+            .When(options => options.TestTenant is not null);
+
         RuleFor(options => options.CompanyCount)
             .InclusiveBetween(1, SeedingValidationConstants.Counts.MaxCompanies);
 

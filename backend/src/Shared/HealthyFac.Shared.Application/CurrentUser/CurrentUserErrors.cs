@@ -13,4 +13,13 @@ public static class CurrentUserErrors
 
     public static ErrorHandling.UnauthorizedAccessException CompanyMissing() =>
         new("The current actor has no company.");
+
+    public static ErrorHandling.UnauthorizedAccessException SubjectInvalid() =>
+        new("The token subject must be a GUID.");
+
+    public static ErrorHandling.UnauthorizedAccessException OrganizationInvalid() =>
+        new("The token must carry exactly one organization, and it must be a GUID.");
+
+    public static ErrorHandling.UnauthorizedAccessException EmployeeIdInvalid() =>
+        new("The token employee ID must be a GUID.");
 }

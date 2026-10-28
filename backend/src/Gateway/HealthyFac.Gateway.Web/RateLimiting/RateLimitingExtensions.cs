@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
 using RedisRateLimiting;
 using StackExchange.Redis;
 
@@ -13,6 +14,8 @@ namespace HealthyFac.Gateway.Web.RateLimiting;
 public static class RateLimitingExtensions
 {
     private const string UnknownClient = "unknown";
+    private const string AddressKeyPrefix = "ip:";
+    private const string UserKeyPrefix = "user:";
 
     extension(IServiceCollection services)
     {
@@ -43,33 +46,48 @@ public static class RateLimitingExtensions
                     context => PartitionByClient(
                         context,
                         RateLimitPolicyNames.AnonymousStrict,
-                        limits => limits.Strict));
+                        limits => limits.Strict,
+                        ClientAddress));
 
                 options.AddPolicy(
                     RateLimitPolicyNames.Default,
                     context => PartitionByClient(
                         context,
                         RateLimitPolicyNames.Default,
-                        limits => limits.Default));
+                        limits => limits.Default,
+                        UserOrClientAddress));
             });
 
             return services;
         }
     }
 
+    private static string ClientAddress(HttpContext context) =>
+        $"{AddressKeyPrefix}{context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient}";
+
+    private static string UserOrClientAddress(HttpContext context)
+    {
+        var subject = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        return context.User.Identity?.IsAuthenticated == true && subject is not null
+            ? $"{UserKeyPrefix}{subject}"
+            : ClientAddress(context);
+    }
+
     private static RateLimitPartition<string> PartitionByClient(
         HttpContext context,
         string policyName,
-        Func<RateLimitOptions, FixedWindowLimit> selectLimit
+        Func<RateLimitOptions, FixedWindowLimit> selectLimit,
+        Func<HttpContext, string> selectClient
     )
     {
         var services = context.RequestServices;
         var limit = selectLimit(services.GetRequiredService<IOptions<RateLimitOptions>>().Value);
-        var clientAddress = context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient;
+        var client = selectClient(context);
         var window = TimeSpan.FromSeconds(limit.WindowSeconds);
 
         return RateLimitPartition.Get(
-            $"{policyName}:{clientAddress}",
+            $"{policyName}:{client}",
             partitionKey => new FallbackRateLimiter(
                 new RedisFixedWindowRateLimiter<string>(
                     partitionKey,

@@ -1,10 +1,12 @@
 using Serilog;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.Rendering;
 using HealthyFac.Shared.Web.ErrorHandling;
@@ -41,6 +43,7 @@ public static class ConfigureServices
             services.AddApiNetworking(configuration);
             services.AddApiContracts(configuration);
             services.AddApiObservability(configuration);
+            services.AddApiSecurity(configuration);
 
             services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
@@ -57,6 +60,17 @@ public static class ConfigureServices
             services.AddSharedForwardedHeaders(configuration);
             services.AddSharedCors(configuration);
             services.AddSharedHttps(configuration);
+
+            return services;
+        }
+
+        private IServiceCollection AddApiSecurity(IConfiguration configuration)
+        {
+            services.AddSharedJwtAuthentication(configuration);
+
+            services.AddAuthorizationBuilder()
+                .SetAuthenticatedFallbackPolicy()
+                .AddPermissionPolicies(CorePermissions.All);
 
             return services;
         }
@@ -81,7 +95,7 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
 
-            services.AddSharedHealthChecks()
+            services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<CoreDbContext>(
                     DatabaseConstants.HealthCheckName,
                     tags: [HealthCheckConstants.ReadyTag])
@@ -103,13 +117,16 @@ public static class ConfigureServices
         /// <returns>The configured <see cref="WebApplication"/> instance.</returns>
         public WebApplication UseApiPipeline()
         {
+            app.UseSharedHealthChecks();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
             app.UseSerilogRequestLogging();
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();
+            app.UseAuthentication();
             app.UseActorContext();
+            app.UseAuthorization();
 
             return app;
         }
@@ -134,7 +151,6 @@ public static class ConfigureServices
 
         private IEndpointRouteBuilder MapApiDiagnostics()
         {
-            app.MapSharedHealthChecks();
             app.MapSharedOpenApi();
             app.MapSharedGrpcReflection();
 

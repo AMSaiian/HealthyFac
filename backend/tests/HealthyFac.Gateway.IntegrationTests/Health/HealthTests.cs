@@ -1,4 +1,5 @@
 using System.Net;
+using HealthyFac.Gateway.IntegrationTests.Health.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Testing.Containers;
 
@@ -21,9 +22,8 @@ public sealed class HealthTests : IAsyncLifetime
     public async Task HealthReady_WithRedisRunning_ReturnsHealthy()
     {
         await using var gateway = CreateGateway();
-        using var client = gateway.CreateClient();
 
-        var response = await client.GetAsync(ReadinessRoute);
+        var response = await gateway.GetOnHealthPortAsync(ReadinessRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -33,14 +33,11 @@ public sealed class HealthTests : IAsyncLifetime
     {
         await _redis.StopAsync();
         await using var gateway = CreateGateway();
-        using var client = gateway.CreateClient();
 
-        var response = await client.GetAsync(ReadinessRoute);
-
-        var status = await response.Content.ReadAsStringAsync();
+        var response = await gateway.GetOnHealthPortAsync(ReadinessRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        status.Should().Be("Degraded");
+        response.Body.Should().Be("Degraded");
     }
 
     [Fact]
@@ -48,9 +45,8 @@ public sealed class HealthTests : IAsyncLifetime
     {
         await _redis.StopAsync();
         await using var gateway = CreateGateway();
-        using var client = gateway.CreateClient();
 
-        var response = await client.GetAsync(LivenessRoute);
+        var response = await gateway.GetOnHealthPortAsync(LivenessRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

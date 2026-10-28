@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Persistence;
 
 namespace HealthyFac.Core.IntegrationTests.Database.Data;
 
@@ -21,6 +22,8 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
     private ServiceProvider _services = null!;
 
     public RecordingEmailSender EmailSender { get; } = new();
+
+    public ConcurrentSaveGate SaveGate { get; } = new();
 
     public IServiceScopeFactory ScopeFactory =>
         new SystemActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
@@ -48,6 +51,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         services.AddActorContext();
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
+        services.ConfigureDbContext<CoreDbContext>(options => options.AddInterceptors(SaveGate));
         services.AddSingleton<IEmailSender>(EmailSender);
         services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
 

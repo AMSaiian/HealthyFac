@@ -6,5 +6,7 @@ namespace HealthyFac.Gateway.IntegrationTests.Hosting;
 public static class GatewaySettingKeys
 {
     public const string RedisConnectionString = "Redis:ConnectionString";
+    public const string CorsAllowedOrigin = "Cors:AllowedOrigins:0";
     public const string CoreAddress = "ReverseProxy:Clusters:core:Destinations:main:Address";
+    public const string CoreHealthAddress = "ReverseProxy:Clusters:core:Destinations:main:Health";
 }

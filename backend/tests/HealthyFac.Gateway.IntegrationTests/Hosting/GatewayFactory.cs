@@ -1,4 +1,7 @@
 using System.Net;
+using System.Net.Http.Headers;
+using HealthyFac.Testing.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +20,10 @@ namespace HealthyFac.Gateway.IntegrationTests.Hosting;
 public sealed class GatewayFactory : WebApplicationFactory<Program>
 {
     private const string TestEnvironment = "Test";
+    private const string BearerScheme = "Bearer";
+
+    /// <summary>The origin of the web app. The base settings list no origin, so each host sets its own.</summary>
+    public const string DefaultCorsOrigin = "http://app.healthyfac.test:4200";
 
     private readonly string _redisConnectionString;
     private readonly string _coreAddress;
@@ -39,15 +46,39 @@ public sealed class GatewayFactory : WebApplicationFactory<Program>
         _configureServices = configureServices;
     }
 
+    public TestTokenFactory Tokens { get; } = new();
+
+    /// <summary>
+    /// Creates a client that sends a signed access token. Without claims, the token is valid and belongs to a new user.
+    /// </summary>
+    /// <param name="claims">The claims of the token, or <see langword="null"/> for a new valid user.</param>
+    /// <returns>An <see cref="HttpClient"/> with the bearer header set.</returns>
+    public HttpClient CreateAuthenticatedClient(TestTokenClaims? claims = null)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            BearerScheme,
+            Tokens.CreateToken(claims ?? new TestTokenClaims { Subject = Guid.NewGuid() }));
+
+        return client;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(TestEnvironment);
 
-        var overrides = new Dictionary<string, string?>(_settings!)
+        var overrides = new Dictionary<string, string?>(TestTokenFactory.JwtSettings)
         {
             [GatewaySettingKeys.RedisConnectionString] = _redisConnectionString,
+            [GatewaySettingKeys.CorsAllowedOrigin] = DefaultCorsOrigin,
             [GatewaySettingKeys.CoreAddress] = _coreAddress,
+            [GatewaySettingKeys.CoreHealthAddress] = _coreAddress,
         };
+
+        foreach (var (key, value) in _settings)
+        {
+            overrides[key] = value;
+        }
 
         foreach (var (key, value) in overrides)
         {
@@ -58,6 +89,7 @@ public sealed class GatewayFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, Tokens.TrustTestKey);
             services.AddSingleton<IStartupFilter>(new ClientAddressStartupFilter(_clientAddress));
             _configureServices?.Invoke(services);
         });

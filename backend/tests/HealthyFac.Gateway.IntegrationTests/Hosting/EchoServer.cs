@@ -83,6 +83,7 @@ public sealed class EchoServer : IAsyncDisposable
             _requests.Enqueue(
                 new EchoedRequest
                 {
+                    Method = context.Request.Method,
                     Path = context.Request.Path,
                     Query = context.Request.QueryString.Value ?? string.Empty,
                     Headers = context.Request.Headers.ToDictionary(

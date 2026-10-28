@@ -93,7 +93,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     public async Task DefaultPolicy_UnderLimit_PassesOtherCoreRoutes()
     {
         await using var gateway = environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
-        using var client = gateway.CreateClient();
+        using var client = gateway.CreateAuthenticatedClient();
         await client.SpendStrictLimitAsync();
 
         using var response = await client.GetAsync(RateLimitTestData.MachinesRoute);
