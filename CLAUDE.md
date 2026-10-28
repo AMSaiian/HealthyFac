@@ -10,6 +10,7 @@
 | Rule | Paths |
 | --- | --- |
 | `agent-output` | always loaded |
+| `agent-workflow` | always loaded |
 | `backend-general` | always loaded |
 | `git-commits` | always loaded |
 | `format-csharp` | `**/*.cs` |

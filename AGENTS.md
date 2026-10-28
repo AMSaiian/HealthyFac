@@ -21,6 +21,7 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 Each rule file declares its scope in `globs` frontmatter. A rule with `trigger: always_on` and no `globs` applies to all work.
 
 *   Read `.agents/rules/agent-output.md` first. It governs every response and all documentation.
+*   Read `.agents/rules/agent-workflow.md` before you change anything. It governs scope, removals, and the final report.
 *   Read the layer rule for any path you touch (`backend-domain`, `backend-application`, `backend-infrastructure`, `backend-web`).
 *   Read `backend-general.md` and `format-csharp.md` for any C# file.
 *   Read `backend-packages.md` for `.csproj` and `.props` files.
