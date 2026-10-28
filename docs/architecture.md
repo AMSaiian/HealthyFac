@@ -53,7 +53,8 @@ This document records the service boundaries and the decisions that connect the 
 - An HTTP request, an inbox message, or a job enters the actor once. A second enter throws until the first lease ends.
 - A scope outside an HTTP request starts with `CreateActorScope`. It is the only way to start a job scope, a processor step, or the database start-up.
 - Only Infrastructure and Web can set the actor. `ActorContextHolder` lives in Shared.Infrastructure, so an Application handler cannot replace the actor.
-- The system actor has a fixed GUID. It is not a Keycloak user. Until authentication exists, every HTTP request runs as the system actor.
+- The system actor has a fixed GUID. It is not a Keycloak user. An anonymous HTTP request runs as the system actor.
+- An authenticated HTTP request runs as the user of its token. `ActorContextMiddleware` runs after authentication and reads `sub`, `organization`, and `employee_id`. Each value must be a GUID, and `organization` must hold exactly one value. Any other shape returns `401`, because the tenant is not clear.
 - `Outbox.Add` stores the actor in the row. The inbox processor restores the original actor, so audit fields show who started the work.
 
 ## Email
@@ -73,6 +74,46 @@ This document records the service boundaries and the decisions that connect the 
 - The public path has the form `/api/<service>/v{version}/...` (e.g., `/api/core/v1/machines`).
 - A service routes under `/v{version}`, without `/api`. The gateway removes the whole `/api/<service>` prefix.
 - The gateway sends `X-Forwarded-Prefix: /api/<service>`. A service accepts this header from trusted proxies only (`Proxy:KnownNetworks`). Its `PathBase` then becomes the public prefix, so every link that it builds (e.g., the `Location` header) shows the public path.
+- **Logical names:** each public service has its own name, so a move to the cloud changes only the names and the scheme. The domain is `healthyfac.test` (`HEALTHYFAC_DOMAIN`). The `.test` top-level domain is reserved for tests (RFC 6761) and never resolves on the internet.
+
+| Name | Serves | Cloud equivalent |
+| --- | --- | --- |
+| `https://api.healthyfac.test` | the gateway, Core API routes (`/api/core/v{n}/...`) | `https://api.<domain>` |
+| `https://auth.healthyfac.test` | the gateway, Keycloak routes (`/realms/healthyfac/...`, `/resources/...`); the token issuer | `https://auth.<domain>` |
+| `https://app.healthyfac.test:4200` | the web app (not implemented yet); invite links, redirect URIs, CORS origin | `https://app.<domain>` |
+
+- **TLS:** TLS ends at the gateway, as at a cloud load balancer or ingress.
+    - The public URLs use HTTPS and no port. `GATEWAY_PORT` is 443; when it is not, add the port to `HEALTHYFAC_AUTH_URL`, because the issuer must equal the URL that the browser uses.
+    - The gateway publishes HTTPS only. Plain HTTP on the public port gets no HTTP response.
+    - Internal traffic stays HTTP: gateway to Core, gateway to Keycloak, the health ports, and the Keycloak admin console on `localhost`. The gateway sets `X-Forwarded-Proto: https`, and Core and Keycloak (`KC_PROXY_HEADERS: xforwarded`) read it.
+    - A local certificate authority (mkcert) signs the certificate. The files are `docker/certs/healthyfac.test.pem` and `docker/certs/healthyfac.test-key.pem`. Git ignores them, and no image holds them. Compose mounts the folder read-only into the gateway. See `docker/certs/README.md`.
+    - The launch profile `https` of the gateway serves `https://localhost:5001` with the same files. With the hosts file, a browser reaches `https://api.healthyfac.test:5001`.
+
+- **Host routing:** each gateway route has a YARP `Match.Hosts` entry with its name. A host without a port matches every port. A request to another name matches no route: `401` without a token, `404` with a token. The names are set per environment (`appsettings.Development.json`, Compose); `appsettings.json` holds none.
+- **Development tools** stay on `localhost`: the Keycloak admin console (`KEYCLOAK_PORT`, set by `KC_HOSTNAME_ADMIN`), Mailpit, Grafana, the RabbitMQ console, the database, and the health ports.
+- **Hosts file:** map the three names to the local machine, as an administrator (`C:\Windows\System32\drivers\etc\hosts` on Windows):
+
+```text
+127.0.0.1 api.healthyfac.test auth.healthyfac.test app.healthyfac.test
+```
+
+- **CORS at the gateway only:** the gateway answers the cross-origin requests of browsers (`AddSharedCors`, `UseSharedCors`).
+    - Each route that the web app calls (`core`, `core-invite-public`) names the policy with `"CorsPolicy": "HealthyFacDefault"`.
+    - The CORS middleware runs before authentication. A preflight (`OPTIONS`, no `Authorization` header) gets `204`. It never meets authentication, the revocation check, the rate limiter, or authorization.
+    - `Cors:PreflightMaxAgeSeconds` (600) lets the browser cache the answer. Browsers ignore a value above 7200.
+    - A service behind the gateway keeps `Cors:Enabled = false`. Two layers that write `Access-Control-Allow-Origin` make the browser reject the response.
+    - Keycloak answers CORS for its own routes from the `webOrigins` of each client. The gateway adds no CORS headers there.
+    - The allowed origins have no default. Each environment sets `Cors:AllowedOrigins` (Compose: `HEALTHYFAC_SPA_URL`).
+- **Versioned paths only:** the `core` route matches `/api/core/v{n}/...` only. Paths such as `/api/core/hc`, `/api/core/health/ready`, and `/api/core/openapi/...` match no route, so the gateway makes no call to Core. It answers `401` without a token and `404` with a token.
+
+## Health Endpoints
+
+- Each service serves `/health` (liveness), `/health/ready` (readiness), and `/hc` (every check, with exception texts) on one internal health port.
+    - The setting is `HealthEndpoints:Port`. The containers use `8090`. The API port does not serve these paths.
+- `UseSharedHealthChecks()` is the first middleware. It compares the local port of the connection, which a client cannot change. It never reads the `Host` header.
+- Health requests skip HTTPS redirect, request logging, CORS, authentication, revocation, rate limiting, and authorization.
+- Compose publishes the health ports on `127.0.0.1` only (`CORE_HEALTH_PORT`, `GATEWAY_HEALTH_PORT`). No gateway route reaches them. In the cloud, the platform probes use the health port, and no public load balancer routes it.
+- The gateway active health check of Core calls the `Health` address of the destination (the health port of Core), with the path `/health/ready`.
 
 ## Gateway Failure Policy
 
@@ -81,6 +122,7 @@ This document records the service boundaries and the decisions that connect the 
 - `/health/ready` reports `Degraded` with status `200` while Redis is down. The gateway readiness does not check the services behind it.
 - Every error response of the gateway is `application/problem+json`: `429` (rate limit), `502` (destination unreachable or broken response), `503` (no healthy destination), `504` (destination timeout), and `500` (gateway exception, without details). A client cancellation gets no body.
 - The gateway never retries a request. A `POST` request is not idempotent, so the client decides on a retry.
+- The revocation check passes a request when Redis fails, and the same circuit breaker protects it.
 - The gateway skips a destination that the health checks mark unhealthy. It does not fall back to all destinations.
 
 ## Identity
@@ -89,6 +131,14 @@ This document records the service boundaries and the decisions that connect the 
 - Each company is a Keycloak organization. The organization alias is `Company.Id`, so Keycloak holds no other company data.
 - The access token carries `sub` (the Keycloak user ID), the permissions, the `organization` claim (the company ID), and `employee_id`.
 - The roles `worker` and `supervisor` group the permissions. API policies check permissions, never role names.
+- **Realm as code:** `docker/keycloak/import/healthyfac-realm.json` is the development realm. Keycloak imports it at start (`--import-realm`) and replaces each `${NAME}` placeholder with the environment variable of the same name. The import skips a realm that already exists. After a change, run `docker compose down -v`, or delete the realm in the admin console. Production realm provisioning is not decided. Edit the user profile in `docker/keycloak/user-profile.json` only, then run `docker/keycloak/embed-user-profile.sh`, which embeds it into the realm file as the string that Keycloak expects; the test `UserProfile_InRealmFile_EqualsSourceFile` fails when the two differ.
+- **Clients:** `healthyfac-spa` (public, Authorization Code with PKCE), `healthyfac-core` (confidential, holds the permission roles), and `healthyfac-auth` (service account for the Auth service). The client has the scope `service_account` explicitly, because the realm import does not add it. A service token carries `client_id` (it identifies the calling service) and no `clientHost` or `clientAddress`, so it holds no host name or IP address of the caller.
+- **Permissions:** client roles of `healthyfac-core`: `employees:invite`, `employees:manage`, and `machines:write`. The client holds permissions only. The job roles `supervisor` (all three) and `worker` (none yet) are realm roles, composites of those client roles, so a job role can later also hold permissions of other APIs. The mapper `healthyfac-core-permissions` of the scope `healthyfac-claims` writes the effective client roles of `healthyfac-core` into the flat claim `permissions`. The JWT handler splits the array into one `permissions` claim per value, and the endpoint policies check that claim. The name of a policy is the name of the permission. The token has no `resource_access` and no `realm_access`.
+- **Token validation:** every service validates the JWT itself (`AddSharedJwtAuthentication`). The issuer is the public URL of the realm (the gateway). The service reads the keys from the internal Keycloak address (`Jwt:MetadataAddress`), which works because of `KC_HOSTNAME_BACKCHANNEL_DYNAMIC`. A token needs `healthyfac-core` in `aud`. The service reads the permissions from the `permissions` claim and needs no claims transformation. The access token lives 300 seconds.
+- **Core endpoints:** a fallback policy requires a signed-in user. Invite create and resend need `employees:invite`, and machine create needs `machines:write`. Verify, accept, and OpenAPI (Development only) are anonymous. The health endpoints are on the health port (see **Health Endpoints**). The company of a request comes from the token only: a Web request record has no `CompanyId`.
+- **Gateway:** the gateway validates the token, checks the revocation list, and then applies the rate limit. It routes `/realms/healthyfac/*` and `/resources/*` to Keycloak. The Keycloak routes answer only `auth.<domain>`, and the Core routes answer only `api.<domain>`. No route reaches `/admin`. The `core` route needs a signed-in user, and the default rate limit counts for each user (`sub`). A fallback policy (`SetAuthenticatedFallbackPolicy`) requires a signed-in user for a route without `AuthorizationPolicy` and for a request that matches no route. Public routes name the `anonymous` policy.
+- **Revocation:** the key `revoked:{sub}` holds the revocation time in Unix seconds. The gateway answers `401` when `iat` is earlier. A missing entry passes. Redis failures follow the **Gateway Failure Policy**: the request passes, and the circuit breaker logs a warning.
+- **Test tenant:** one set of `.env` values (`HEALTHYFAC_TEST_*`) feeds the realm import and the Core development seed. The seed creates the company, two departments, and an active supervisor with the fixed IDs, and no `EmployeeAccepted` message.
 - Today, maintenance workers and supervisors sign in. Sign-in for other users (e.g., a platform operator outside every company) is not decided.
 
 ## Shared Infrastructure
