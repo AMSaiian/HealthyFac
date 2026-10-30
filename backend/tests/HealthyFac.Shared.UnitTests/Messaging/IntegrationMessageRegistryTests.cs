@@ -11,7 +11,7 @@ public sealed class IntegrationMessageRegistryTests
         var registry = new IntegrationMessageRegistry();
         registry.Register<RegistryFirstMessage>();
 
-        var act = () => registry.Register<RegistryFirstMessage>();
+        var act = registry.Register<RegistryFirstMessage>;
 
         act.Should().Throw<InvalidOperationException>().WithMessage(RegistryTestData.HandlerAlreadyRegisteredText);
     }
@@ -22,7 +22,7 @@ public sealed class IntegrationMessageRegistryTests
         var registry = new IntegrationMessageRegistry();
         registry.Register<RegistryFirstMessage>();
 
-        var act = () => registry.Register<RegistrySameNameMessage>();
+        var act = registry.Register<RegistrySameNameMessage>;
 
         act.Should().Throw<InvalidOperationException>().WithMessage(RegistryTestData.MessageTypeConflictText);
     }

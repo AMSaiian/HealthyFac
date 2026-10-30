@@ -14,6 +14,12 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     /// <summary>The client secret of every client that <see cref="CreatePasswordGrantClientAsync"/> creates.</summary>
     public const string PasswordGrantClientSecret = "test-password-grant-secret";
 
+    /// <summary>
+    /// The name under which the container reaches the Docker host (e.g., a Mailpit container on a published port).
+    /// </summary>
+    public const string HostGatewayName = "host.docker.internal";
+
+    private const string HostGatewayAddress = "host-gateway";
     private const string AdminUsername = "admin";
     private const string AdminPassword = "test-admin-password";
     private const string AdminClientId = "admin-cli";
@@ -48,6 +54,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         var builder = new KeycloakBuilder(TestImages.Keycloak)
             .WithUsername(AdminUsername)
             .WithPassword(AdminPassword)
+            .WithExtraHost(HostGatewayName, HostGatewayAddress)
             .WithRealm(KeycloakFiles.Find(RealmImportDirectory, RealmFileName));
 
         foreach (var (name, value) in environment)

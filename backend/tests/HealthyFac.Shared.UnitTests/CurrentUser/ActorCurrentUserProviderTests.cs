@@ -12,7 +12,7 @@ public sealed class ActorCurrentUserProviderTests
     {
         var provider = new ActorCurrentUserProvider(new ActorContextHolder());
 
-        var act = () => provider.GetUserId();
+        var act = provider.GetUserId;
 
         act.Should().Throw<UnauthorizedAccessException>();
     }
@@ -60,7 +60,7 @@ public sealed class ActorCurrentUserProviderTests
         using var actorScope = holder.Enter(SystemActor.Create());
         var provider = new ActorCurrentUserProvider(holder);
 
-        var act = () => provider.GetCompanyId();
+        var act = provider.GetCompanyId;
 
         act.Should().Throw<UnauthorizedAccessException>();
     }

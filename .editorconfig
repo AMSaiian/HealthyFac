@@ -30,10 +30,12 @@ csharp_prefer_braces = true
 dotnet_diagnostic.IDE0007.severity = warning
 dotnet_diagnostic.IDE0011.severity = warning
 dotnet_diagnostic.IDE0040.severity = warning
+dotnet_diagnostic.IDE0200.severity = warning
 
 # Microsoft .NET properties
 csharp_new_line_before_members_in_object_initializers = false
 csharp_preferred_modifier_order = public, private, protected, internal, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:suggestion
+csharp_style_prefer_method_group_conversion = true:warning
 csharp_style_prefer_utf8_string_literals = true:suggestion
 csharp_style_var_elsewhere = true:warning
 csharp_style_var_for_built_in_types = true:warning
