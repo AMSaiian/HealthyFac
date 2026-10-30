@@ -843,7 +843,9 @@
       "serviceAccountClientId": "healthyfac-auth",
       "clientRoles": {
         "realm-management": [
+          "manage-organizations",
           "manage-users",
+          "view-realm",
           "view-users"
         ]
       }

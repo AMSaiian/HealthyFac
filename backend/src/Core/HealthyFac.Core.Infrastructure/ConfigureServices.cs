@@ -84,6 +84,8 @@ public static class ConfigureServices
             services.AddValidatedOptions<InviteLinkOptions, InviteLinkOptionsValidator>(
                 InviteLinkOptions.SectionName, configuration);
             services.AddIntegrationMessage<EmployeeInvited>();
+            services.AddIntegrationMessage<IdentityProvisioned>();
+            services.AddIntegrationMessage<IdentityProvisioningFailed>();
 
             services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
                 SeedingOptions.SectionName, configuration);

@@ -1,3 +1,6 @@
+using ApplicationResendEmployeeInviteRequest =
+    HealthyFac.Core.Application.Employees.ResendEmployeeInvite.ResendEmployeeInviteRequest;
+
 namespace HealthyFac.Core.Web.Employees;
 
 public record ResendEmployeeInviteRequest
@@ -9,9 +12,7 @@ public static class ResendEmployeeInviteRequestExtensions
 {
     extension(ResendEmployeeInviteRequest request)
     {
-        public Application.Employees.ResendEmployeeInvite.ResendEmployeeInviteRequest ToApplicationRequest(
-            Guid companyId
-        ) =>
+        public ApplicationResendEmployeeInviteRequest ToApplicationRequest(Guid companyId) =>
             new()
             {
                 CompanyId = companyId,

@@ -1,0 +1,126 @@
+using HealthyFac.Auth.Application.Identities;
+using HealthyFac.Auth.Application.Identities.Messages;
+using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+
+namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
+
+public static class ProvisioningTestData
+{
+    public const string QueueName = "auth-integration-tests";
+    public const string DatabaseConnectionStringKey = "ConnectionStrings:Database";
+    public const string BrokerConnectionStringKey = "ConnectionStrings:RabbitMq";
+    public const string QueueNameKey = "Messaging:QueueName";
+    public const string RedisConnectionStringKey = "Redis:ConnectionString";
+    public const string PollingIntervalKey = "Messaging:PollingIntervalMilliseconds";
+    public const string PollingIntervalMilliseconds = "50";
+    public const string OutboxProcessorTypeName = "OutboxProcessor";
+    public const string FirstName = "Ada";
+    public const string LastName = "Worker";
+    public const string KeycloakUnavailableMessage = "The Keycloak server is not reachable.";
+    public const string RedisUnavailableMessage = "The Redis server is not reachable.";
+
+    public static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(30);
+    public static readonly TimeSpan PollDelay = TimeSpan.FromMilliseconds(100);
+    public const int DelayedDeactivationMinutes = 10;
+
+    public static readonly TimeSpan QuietPeriod = TimeSpan.FromSeconds(3);
+    public static readonly TimeSpan ExpectedRevocationTimeToLive = TimeSpan.FromSeconds(360);
+    public static readonly TimeSpan MinimumRevocationTimeToLive = TimeSpan.FromSeconds(300);
+
+    public static readonly Guid ActorId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000a1");
+
+    public static EmployeeAccepted CreateAccepted(Guid? companyId = null, string roleCode = "worker")
+    {
+        var employeeId = Guid.CreateVersion7();
+
+        return new EmployeeAccepted
+        {
+            EmployeeId = employeeId,
+            CompanyId = companyId ?? KeycloakAdminTestData.CompanyId,
+            Email = $"{employeeId:N}@{KeycloakAdminTestData.EmailDomain}",
+            FirstName = FirstName,
+            LastName = LastName,
+            RoleCode = roleCode,
+        };
+    }
+
+    public static Dictionary<string, string> ActorHeaders(Guid companyId) =>
+        new()
+        {
+            [MessageHeaders.ActorId] = ActorId.ToString(),
+            [MessageHeaders.CompanyId] = companyId.ToString(),
+        };
+
+    public static TheoryData<EmployeeAccepted, string> InvalidMessagesWithExpectedError => new()
+    {
+        {
+            CreateAccepted() with { EmployeeId = Guid.Empty },
+            IdentityErrors.Validation.EmployeeIdRequired
+        },
+        {
+            CreateAccepted() with { CompanyId = Guid.Empty },
+            IdentityErrors.Validation.CompanyIdRequired
+        },
+        {
+            CreateAccepted() with { Email = string.Empty },
+            IdentityErrors.Validation.EmailRequired
+        },
+        {
+            CreateAccepted() with { Email = "not-an-email" },
+            IdentityErrors.Validation.EmailInvalid
+        },
+        {
+            CreateAccepted() with { FirstName = " " },
+            IdentityErrors.Validation.FirstNameRequired
+        },
+        {
+            CreateAccepted() with { LastName = string.Empty },
+            IdentityErrors.Validation.LastNameRequired
+        },
+        {
+            CreateAccepted() with { RoleCode = string.Empty },
+            IdentityErrors.Validation.RoleCodeRequired
+        },
+    };
+
+    public static EmployeeDeactivated CreateDeactivated(Guid? identityUserId, Guid? companyId = null) => new()
+    {
+        EmployeeId = Guid.CreateVersion7(),
+        CompanyId = companyId ?? KeycloakAdminTestData.CompanyId,
+        IdentityUserId = identityUserId,
+        DeactivatedAt = DateTime.UtcNow,
+    };
+
+    public static TheoryData<EmployeeDeactivated> ValidDeactivatedMessages => new()
+    {
+        CreateDeactivated(Guid.CreateVersion7()),
+        CreateDeactivated(identityUserId: null),
+    };
+
+    public static TheoryData<EmployeeDeactivated, string> InvalidDeactivatedMessagesWithExpectedError => new()
+    {
+        {
+            CreateDeactivated(Guid.CreateVersion7()) with { EmployeeId = Guid.Empty },
+            IdentityErrors.Validation.EmployeeIdRequired
+        },
+        {
+            CreateDeactivated(Guid.CreateVersion7(), Guid.Empty),
+            IdentityErrors.Validation.CompanyIdRequired
+        },
+        {
+            CreateDeactivated(Guid.Empty),
+            IdentityErrors.Validation.IdentityUserIdInvalid
+        },
+        {
+            CreateDeactivated(Guid.CreateVersion7()) with { DeactivatedAt = default },
+            IdentityErrors.Validation.DeactivatedAtRequired
+        },
+    };
+
+    public static TheoryData<EmployeeAccepted> ValidMessages => new()
+    {
+        CreateAccepted(),
+        CreateAccepted(roleCode: "supervisor"),
+    };
+}

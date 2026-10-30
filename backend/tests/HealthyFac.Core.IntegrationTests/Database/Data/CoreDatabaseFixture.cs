@@ -4,6 +4,7 @@ using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,9 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 
     public IServiceScopeFactory ScopeFactory =>
         new SystemActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
+
+    public IServiceScope CreateActorScope(ActorContext actor)
+        => _services.GetRequiredService<IServiceScopeFactory>().CreateActorScope(actor);
 
     public IInviteTokenService InviteTokenService => _services.GetRequiredService<IInviteTokenService>();
 

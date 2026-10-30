@@ -1,3 +1,5 @@
+using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachine.CreateMachineRequest;
+
 namespace HealthyFac.Core.Web.Machines;
 
 public record CreateMachineRequest
@@ -11,7 +13,7 @@ public static class CreateMachineRequestExtensions
 {
     extension(CreateMachineRequest request)
     {
-        public Application.Machines.CreateMachine.CreateMachineRequest ToApplicationRequest(Guid companyId) =>
+        public ApplicationCreateMachineRequest ToApplicationRequest(Guid companyId) =>
             new()
             {
                 Name = request.Name,

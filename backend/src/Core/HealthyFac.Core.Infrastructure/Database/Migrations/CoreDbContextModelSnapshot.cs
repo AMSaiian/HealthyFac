@@ -151,6 +151,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("last_name");
 
+                    b.Property<DateTime?>("ProvisioningRetriedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("provisioning_retried_at");
+
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid")
                         .HasColumnName("role_id");
@@ -168,6 +172,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

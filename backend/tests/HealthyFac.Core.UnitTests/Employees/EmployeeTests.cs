@@ -72,17 +72,93 @@ public sealed class EmployeeTests
         var employee = EmployeeTestData.CreateEmployee();
         employee.MarkProvisioningFailed();
 
-        employee.RetryProvisioning();
+        employee.RetryProvisioning(EmployeeTestData.RetriedAt);
 
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
     }
 
     [Fact]
-    public void RetryProvisioning_WhenProvisioning_ThrowsInvalidOperationException()
+    public void RetryProvisioning_WhenProvisioning_StaysProvisioning()
     {
         var employee = EmployeeTestData.CreateEmployee();
 
-        var act = employee.RetryProvisioning;
+        employee.RetryProvisioning(EmployeeTestData.RetriedAt);
+
+        employee.Status.Should().Be(EmployeeStatus.Provisioning);
+    }
+
+    [Fact]
+    public void RetryProvisioning_ForProvisioningEmployee_SetsRetriedAt()
+    {
+        var employee = EmployeeTestData.CreateEmployee();
+
+        employee.RetryProvisioning(EmployeeTestData.RetriedAt);
+
+        employee.ProvisioningRetriedAt.Should().Be(EmployeeTestData.RetriedAt);
+    }
+
+    [Fact]
+    public void RetryProvisioning_ForFailedEmployee_SetsProvisioningAndRetriedAt()
+    {
+        var employee = EmployeeTestData.CreateEmployee();
+        employee.MarkProvisioningFailed();
+
+        employee.RetryProvisioning(EmployeeTestData.RetriedAt);
+
+        employee.Status.Should().Be(EmployeeStatus.Provisioning);
+        employee.ProvisioningRetriedAt.Should().Be(EmployeeTestData.RetriedAt);
+    }
+
+    [Theory]
+    [MemberData(nameof(EmployeeTestData.RetryAbilityByStatus), MemberType = typeof(EmployeeTestData))]
+    public void CanRetryProvisioning_ForEachStatus_ReturnsExpected(Action<Employee> transition, bool canRetry)
+    {
+        var employee = EmployeeTestData.CreateEmployee();
+        transition(employee);
+
+        var result = employee.CanRetryProvisioning;
+
+        result.Should().Be(canRetry);
+    }
+
+    [Theory]
+    [MemberData(nameof(EmployeeTestData.DeactivationAbilityByStatus), MemberType = typeof(EmployeeTestData))]
+    public void CanDeactivate_ForEachStatus_ReturnsExpected(Action<Employee> transition, bool canDeactivate)
+    {
+        var employee = EmployeeTestData.CreateEmployee();
+        transition(employee);
+
+        var result = employee.CanDeactivate;
+
+        result.Should().Be(canDeactivate);
+    }
+
+    [Theory]
+    [MemberData(nameof(EmployeeTestData.IdentityLinkCases), MemberType = typeof(EmployeeTestData))]
+    public void IsLinkedTo_ForEachCase_ReturnsExpected(Guid? linkedIdentity, Guid? identityUserId, bool isLinked)
+    {
+        var employee = EmployeeTestData.CreateEmployee();
+        if (linkedIdentity is { } identity)
+        {
+            employee.LinkIdentity(identity);
+        }
+
+        var result = employee.IsLinkedTo(identityUserId);
+
+        result.Should().Be(isLinked);
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(EmployeeTestData.TransitionsToStatusThatCannotRetry),
+        MemberType = typeof(EmployeeTestData)
+    )]
+    public void RetryProvisioning_WhenActiveOrDeactivated_ThrowsInvalidOperationException(Action<Employee> transition)
+    {
+        var employee = EmployeeTestData.CreateEmployee();
+        transition(employee);
+
+        var act = () => employee.RetryProvisioning(EmployeeTestData.RetriedAt);
 
         act.Should().Throw<InvalidOperationException>();
     }

@@ -26,6 +26,7 @@ public static class EmployeeTestData
     public static readonly DateTime BeforeExpiry = new(2026, 10, 21, 12, 0, 0, DateTimeKind.Utc);
     public static readonly DateTime ExpiresAt = BeforeExpiry.AddDays(7);
     public static readonly DateTime RenewedExpiresAt = BeforeExpiry.AddDays(14);
+    public static readonly DateTime RetriedAt = BeforeExpiry.AddDays(1);
 
     private static readonly DevelopmentDataOptions DefaultShapes = new();
 
@@ -66,6 +67,37 @@ public static class EmployeeTestData
     [
         employee => employee.Activate(IdentityUserId),
         employee => employee.MarkProvisioningFailed(),
+        employee => employee.Deactivate(),
+    ];
+
+    public static TheoryData<Action<Employee>, bool> RetryAbilityByStatus => new()
+    {
+        { _ => { }, true },
+        { employee => employee.MarkProvisioningFailed(), true },
+        { employee => employee.Activate(IdentityUserId), false },
+        { employee => employee.Deactivate(), false },
+    };
+
+    public static TheoryData<Action<Employee>, bool> DeactivationAbilityByStatus => new()
+    {
+        { _ => { }, true },
+        { employee => employee.MarkProvisioningFailed(), true },
+        { employee => employee.Activate(IdentityUserId), true },
+        { employee => employee.Deactivate(), false },
+    };
+
+    public static TheoryData<Guid?, Guid?, bool> IdentityLinkCases => new()
+    {
+        { IdentityUserId, IdentityUserId, true },
+        { IdentityUserId, OtherIdentityUserId, false },
+        { IdentityUserId, null, false },
+        { null, IdentityUserId, false },
+        { null, null, false },
+    };
+
+    public static TheoryData<Action<Employee>> TransitionsToStatusThatCannotRetry =>
+    [
+        employee => employee.Activate(IdentityUserId),
         employee => employee.Deactivate(),
     ];
 

@@ -9,6 +9,9 @@ public static class HealthCheckConstants
     /// <summary>Marks checks that decide whether the service can serve traffic.</summary>
     public const string ReadyTag = "ready";
 
+    /// <summary>The name of the Redis readiness check, the same in every service that uses Redis.</summary>
+    public const string RedisCheckName = "redis";
+
     public static class Routes
     {
         /// <summary>Liveness route on the health port. Runs no checks and always answers 200 for a pull hook.</summary>

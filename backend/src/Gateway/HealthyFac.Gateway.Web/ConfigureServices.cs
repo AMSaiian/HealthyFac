@@ -67,7 +67,7 @@ public static class ConfigureServices
             services.AddSharedHealthChecks(configuration)
                 .AddRedis(
                     provider => provider.GetRequiredService<IConnectionMultiplexer>(),
-                    GatewayConstants.RedisHealthCheckName,
+                    HealthCheckConstants.RedisCheckName,
                     failureStatus: HealthStatus.Degraded,
                     tags: [HealthCheckConstants.ReadyTag]);
 

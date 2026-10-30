@@ -252,6 +252,61 @@ services:
       lgtm:
         condition: service_healthy
 
+  auth:
+    container_name: healthyfac-auth
+    build:
+      context: ./backend
+      dockerfile: src/Auth/HealthyFac.Auth.Web/Dockerfile
+    image: healthyfac/auth:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - auth-logs:/app/logs
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_auth;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Messaging__QueueName: auth
+      # Auth calls the Keycloak admin API and the token endpoint on the internal address. The set-password link
+      # returns to the web app.
+      KeycloakAdmin__BaseAddress: http://keycloak:8080
+      KeycloakAdmin__Realm: healthyfac
+      KeycloakAdmin__SpaClientId: healthyfac-spa
+      KeycloakAdmin__SpaBaseUrl: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      ServiceTokens__TokenEndpoint: http://keycloak:8080/realms/healthyfac/protocol/openid-connect/token
+      ServiceTokens__ClientId: healthyfac-auth
+      ServiceTokens__ClientSecret: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Tracing__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # The service maps no endpoint. The health port (8090 in the container) is the only port, and it binds to the
+    # loopback address of the host. The container port equals HealthEndpoints:Port in appsettings.json.
+    ports:
+      - "127.0.0.1:${AUTH_HEALTH_PORT:-8092}:8090"
+    # Hard dependencies: the host does not start without the database and the subscriptions. Keycloak and Redis are
+    # soft: a failed call retries through the inbox.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      redis:
+        condition: service_started
+
   gateway:
     container_name: healthyfac-gateway
     build:
@@ -340,4 +395,5 @@ volumes:
   rabbitmq-data:
   lgtm-data:
   core-logs:
+  auth-logs:
   mailpit-data:

@@ -4,6 +4,7 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
+using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachine.CreateMachineRequest;
 
 namespace HealthyFac.Core.Web.Machines;
 
@@ -32,7 +33,7 @@ public static class MachineEndpoints
         CreateMachineRequest request,
         HttpRequest httpRequest,
         ICurrentUserProvider currentUser,
-        IRequestHandler<Application.Machines.CreateMachine.CreateMachineRequest, CreateMachineResponse> handler,
+        IRequestHandler<ApplicationCreateMachineRequest, CreateMachineResponse> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )

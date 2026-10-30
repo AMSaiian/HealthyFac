@@ -145,6 +145,7 @@ public static class ConfigureServices
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapMachineEndpoints();
             versionedGroup.MapEmployeeInviteEndpoints();
+            versionedGroup.MapEmployeeEndpoints();
 
             return app;
         }

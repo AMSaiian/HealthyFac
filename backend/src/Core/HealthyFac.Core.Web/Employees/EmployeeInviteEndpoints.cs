@@ -7,6 +7,10 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
+using ApplicationCreateEmployeeInviteRequest =
+    HealthyFac.Core.Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest;
+using ApplicationResendEmployeeInviteRequest =
+    HealthyFac.Core.Application.Employees.ResendEmployeeInvite.ResendEmployeeInviteRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 
@@ -41,9 +45,7 @@ public static class EmployeeInviteEndpoints
         CreateEmployeeInviteRequest request,
         HttpRequest httpRequest,
         ICurrentUserProvider currentUser,
-        IRequestHandler<
-            Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest,
-            CreateEmployeeInviteResponse> handler,
+        IRequestHandler<ApplicationCreateEmployeeInviteRequest, CreateEmployeeInviteResponse> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )
@@ -63,9 +65,7 @@ public static class EmployeeInviteEndpoints
     private static async Task<IResult> ResendAsync(
         ResendEmployeeInviteRequest request,
         ICurrentUserProvider currentUser,
-        IRequestHandler<
-            Application.Employees.ResendEmployeeInvite.ResendEmployeeInviteRequest,
-            ResendEmployeeInviteResponse> handler,
+        IRequestHandler<ApplicationResendEmployeeInviteRequest, ResendEmployeeInviteResponse> handler,
         CancellationToken cancellationToken
     )
     {

@@ -1,4 +1,6 @@
 using HealthyFac.Core.Domain.Roles;
+using ApplicationCreateEmployeeInviteRequest =
+    HealthyFac.Core.Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 
@@ -13,9 +15,7 @@ public static class CreateEmployeeInviteRequestExtensions
 {
     extension(CreateEmployeeInviteRequest request)
     {
-        public Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest ToApplicationRequest(
-            Guid companyId
-        ) =>
+        public ApplicationCreateEmployeeInviteRequest ToApplicationRequest(Guid companyId) =>
             new()
             {
                 CompanyId = companyId,
