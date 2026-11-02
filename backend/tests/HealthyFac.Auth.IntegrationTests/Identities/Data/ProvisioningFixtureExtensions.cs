@@ -80,7 +80,8 @@ public static class ProvisioningFixtureExtensions
 
         public async Task<RevocationEntry?> LoadRevocationAsync(Guid userId)
         {
-            using var scope = fixture.ScopeFactory.CreateActorScope(SystemActor.Create());
+            using var scope = fixture.ScopeFactory.CreateActorScope(
+                ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
             var revokedAt = await scope.ServiceProvider.GetRequiredService<ITokenRevocationStore>()
                 .GetRevokedAtAsync(userId, CancellationToken.None);
             if (revokedAt is null)
@@ -135,7 +136,8 @@ public static class ProvisioningFixtureExtensions
             using var timeout = new CancellationTokenSource(ProvisioningTestData.WaitTimeout);
             while (true)
             {
-                using var scope = fixture.ScopeFactory.CreateActorScope(SystemActor.Create());
+                using var scope = fixture.ScopeFactory.CreateActorScope(
+                    ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
                 var isProcessed = await scope.ServiceProvider.GetRequiredService<AuthDbContext>()
                     .InboxMessages
                     .AsNoTracking()
@@ -151,7 +153,8 @@ public static class ProvisioningFixtureExtensions
 
         public async Task<int> CountInboxMessagesAsync(Guid messageId)
         {
-            using var scope = fixture.ScopeFactory.CreateActorScope(SystemActor.Create());
+            using var scope = fixture.ScopeFactory.CreateActorScope(
+                ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
 
             return await scope.ServiceProvider.GetRequiredService<AuthDbContext>()
                 .InboxMessages
@@ -183,7 +186,8 @@ public static class ProvisioningFixtureExtensions
         private async Task<IReadOnlyList<T>> LoadOutboxMessagesAsync<T>(Func<T, bool> isMatch)
             where T : IIntegrationMessage
         {
-            using var scope = fixture.ScopeFactory.CreateActorScope(SystemActor.Create());
+            using var scope = fixture.ScopeFactory.CreateActorScope(
+                ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
             var messageType = T.MessageType;
             var payloads = await scope.ServiceProvider.GetRequiredService<AuthDbContext>()
                 .OutboxMessages

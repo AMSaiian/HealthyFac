@@ -11,7 +11,7 @@ public static class MessagingTestServices
 {
     public static IServiceScope CreateCompanyScope(this ServiceProvider provider) =>
         provider.GetRequiredService<IServiceScopeFactory>()
-            .CreateActorScope(SystemActor.Create(MessagingTestData.CompanyId));
+            .CreateActorScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core, MessagingTestData.CompanyId));
 
     public static ServiceProvider Build()
     {
@@ -22,6 +22,6 @@ public static class MessagingTestServices
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(MessagingTestData.ConnectionString));
 
-        return services.BuildServiceProvider(validateScopes: true);
+        return services.BuildServiceProvider(true);
     }
 }

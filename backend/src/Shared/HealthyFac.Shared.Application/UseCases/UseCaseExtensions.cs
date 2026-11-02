@@ -1,7 +1,9 @@
 using System.Reflection;
 using FluentValidation;
+using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace HealthyFac.Shared.Application.UseCases;
 
@@ -14,8 +16,8 @@ public static class UseCaseExtensions
     {
         /// <summary>
         /// Registers every <see cref="IRequestHandler{TRequest,TResponse}"/> and every validator of the assembly,
-        /// wraps the handlers with the validation decorator and then the logging decorator, and registers the
-        /// adapter for the use cases without a result.
+        /// wraps the handlers with the downstream scope decorator, then the validation decorator, and then the logging
+        /// decorator, and registers the adapter for the use cases without a result.
         /// </summary>
         /// <param name="applicationAssembly">The assembly of the service application layer.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -56,6 +58,8 @@ public static class UseCaseExtensions
 
             services.EnsureOneHandlerForEachRequest();
 
+            services.TryAddSingleton<IDownstreamScopeHolder, DownstreamScopeHolder>();
+            services.Decorate(typeof(IRequestHandler<,>), typeof(DownstreamScopeRequestHandlerDecorator<,>));
             services.Decorate(typeof(IRequestHandler<,>), typeof(ValidationRequestHandlerDecorator<,>));
             services.Decorate(typeof(IRequestHandler<,>), typeof(LoggingRequestHandlerDecorator<,>));
             services.AddScoped(typeof(IRequestHandler<>), typeof(UnitRequestHandlerAdapter<>));
@@ -87,6 +91,6 @@ public static class UseCaseExtensions
         {
             IsGenericType: true,
             ContainsGenericParameters: false,
-        } 
+        }
         && type.GetGenericTypeDefinition() == typeof(IRequestHandler<,>);
 }

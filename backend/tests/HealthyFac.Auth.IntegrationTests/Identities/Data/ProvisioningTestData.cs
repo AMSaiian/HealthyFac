@@ -1,7 +1,7 @@
 using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.Application.Identities.Messages;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
-using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 
@@ -13,6 +13,7 @@ public static class ProvisioningTestData
     public const string QueueNameKey = "Messaging:QueueName";
     public const string RedisConnectionStringKey = "Redis:ConnectionString";
     public const string PollingIntervalKey = "Messaging:PollingIntervalMilliseconds";
+    public const string ServiceNameKey = "Service:Name";
     public const string PollingIntervalMilliseconds = "50";
     public const string OutboxProcessorTypeName = "OutboxProcessor";
     public const string FirstName = "Ada";
@@ -48,8 +49,8 @@ public static class ProvisioningTestData
     public static Dictionary<string, string> ActorHeaders(Guid companyId) =>
         new()
         {
-            [MessageHeaders.ActorId] = ActorId.ToString(),
-            [MessageHeaders.CompanyId] = companyId.ToString(),
+            [ActorHeaderNames.ActorId] = ActorId.ToString(),
+            [ActorHeaderNames.CompanyId] = companyId.ToString(),
         };
 
     public static TheoryData<EmployeeAccepted, string> InvalidMessagesWithExpectedError => new()
@@ -95,7 +96,7 @@ public static class ProvisioningTestData
     public static TheoryData<EmployeeDeactivated> ValidDeactivatedMessages => new()
     {
         CreateDeactivated(Guid.CreateVersion7()),
-        CreateDeactivated(identityUserId: null),
+        CreateDeactivated(null),
     };
 
     public static TheoryData<EmployeeDeactivated, string> InvalidDeactivatedMessagesWithExpectedError => new()
@@ -113,7 +114,7 @@ public static class ProvisioningTestData
             IdentityErrors.Validation.IdentityUserIdInvalid
         },
         {
-            CreateDeactivated(Guid.CreateVersion7()) with { DeactivatedAt = default },
+            CreateDeactivated(Guid.CreateVersion7()) with { DeactivatedAt = default(DateTime) },
             IdentityErrors.Validation.DeactivatedAtRequired
         },
     };

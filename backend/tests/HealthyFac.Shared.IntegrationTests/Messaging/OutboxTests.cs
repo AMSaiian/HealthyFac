@@ -13,7 +13,12 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
     public async Task OutboxAdd_WithActor_StoresActorIdAndCompanyId()
     {
         using var scope = fixture.CreateScope(
-            new ActorContext { UserId = OutboxTestData.UserId, CompanyId = OutboxTestData.CompanyId });
+            new ActorContext
+            {
+                Kind = ActorKind.User,
+                UserId = OutboxTestData.UserId,
+                CompanyId = OutboxTestData.CompanyId,
+            });
         scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestActorStamped { Text = OutboxTestData.ActorStampedText });
 

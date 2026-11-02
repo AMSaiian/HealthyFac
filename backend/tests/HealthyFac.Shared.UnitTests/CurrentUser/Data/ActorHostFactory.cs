@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser.Data;
 
@@ -18,11 +19,18 @@ public static class ActorHostFactory
 {
     public const string UserIdPath = "/user-id";
 
-    public static Task<IHost> StartAsync(ClaimsPrincipal? user = null) =>
+    public static Task<IHost> StartAsync(
+        ClaimsPrincipal? user = null,
+        ServiceActorOptions? serviceActors = null
+    ) =>
         new HostBuilder()
             .ConfigureWebHost(web => web
                 .UseTestServer()
-                .ConfigureServices(services => services.AddActorContextMiddleware())
+                .ConfigureServices(services =>
+                {
+                    services.AddActorContextMiddleware();
+                    services.AddSingleton(Options.Create(serviceActors ?? new ServiceActorOptions()));
+                })
                 .Configure(app =>
                 {
                     if (user is not null)

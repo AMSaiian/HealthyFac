@@ -3,24 +3,25 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Revocation;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Net.Http.Headers;
+using Polly.CircuitBreaker;
 using StackExchange.Redis;
 
 namespace HealthyFac.Gateway.Web.Revocation;
 
 /// <summary>
 /// Rejects a request when its token was issued before the revocation time of the user. Redis is not a hard
-/// dependency: when the circuit breaker is open or Redis fails, the request passes, and the breaker logs the state
-/// change. Run the middleware after authentication.
+/// dependency: when the Redis circuit breaker is open or Redis fails, the request passes, and the breaker logs the
+/// state change. Run the middleware after authentication.
 /// </summary>
 /// <param name="store">The revocation list.</param>
-/// <param name="breaker">The shared breaker that protects the gateway from a slow Redis.</param>
+/// <param name="redis">The shared Redis pipeline that protects the gateway from a slow Redis.</param>
 public sealed class RevocationCheckMiddleware(
     ITokenRevocationStore store,
-    RedisCircuitBreaker breaker
+    RedisResiliencePipeline redis
 ) : IMiddleware
 {
     private readonly ITokenRevocationStore _store = store;
-    private readonly RedisCircuitBreaker _breaker = breaker;
+    private readonly RedisResiliencePipeline _redis = redis;
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -52,22 +53,17 @@ public sealed class RevocationCheckMiddleware(
 
     private async Task<DateTimeOffset?> TryReadRevokedAtAsync(Guid userId, CancellationToken cancellationToken)
     {
-        if (!_breaker.CanTryRedis())
-        {
-            return null;
-        }
-
         try
         {
-            var revokedAt = await _store.GetRevokedAtAsync(userId, cancellationToken);
-            _breaker.RecordSuccess();
+            var revokedAt = await _redis.ExecuteAsync(
+                token => new ValueTask<DateTimeOffset?>(_store.GetRevokedAtAsync(userId, token)),
+                cancellationToken);
 
             return revokedAt;
         }
-        catch (Exception exception) when (exception is RedisException or RedisTimeoutException)
+        catch (Exception exception)
+            when (exception is RedisException or RedisTimeoutException or BrokenCircuitException)
         {
-            _breaker.RecordFailure(exception);
-
             return null;
         }
     }

@@ -9,7 +9,7 @@ public static class InboxProcessorTestData
     public const string FailingMessageType = "test.v1:Failing";
     public const string UnregisteredMessageType = "test.v1:Unregistered";
     public const string HandlerFailureText = "handler failed on purpose";
-    public const string SystemActorText = "system actor message";
+    public const string AnonymousActorText = "anonymous actor message";
     public const string UserActorText = "user actor message";
     public const string FailingText = "failing message";
     public const string ValidAfterUnregisteredText = "valid after unregistered";
@@ -29,7 +29,7 @@ public static class InboxProcessorTestData
 
     public static readonly Guid UserActorId = Guid.Parse("019a0000-0000-7000-8000-0000000000b1");
     public static readonly Guid UserCompanyId = Guid.Parse("019a0000-0000-7000-8000-0000000000d1");
-    public static readonly Guid SystemRowId = Guid.Parse("019a0000-0000-7000-8000-000000000201");
+    public static readonly Guid AnonymousRowId = Guid.Parse("019a0000-0000-7000-8000-000000000201");
     public static readonly Guid UserRowId = Guid.Parse("019a0000-0000-7000-8000-000000000202");
     public static readonly Guid FailingRowId = Guid.Parse("019a0000-0000-7000-8000-000000000203");
     public static readonly Guid UnregisteredRowId = Guid.Parse("019a0000-0000-7000-8000-000000000204");
@@ -57,7 +57,7 @@ public static class InboxProcessorTestData
             messageType,
             PayloadFor(text),
             receivedOn,
-            traceParent: null,
+            null,
             UserActorId,
             UserCompanyId);
         for (var attempt = 0; attempt < attemptCount; attempt++)
@@ -75,7 +75,7 @@ public static class InboxProcessorTestData
             messageType,
             PayloadFor(text),
             receivedOn,
-            traceParent: null,
+            null,
             UserActorId,
             UserCompanyId);
         row.RecordFailure(receivedOn, SeededError, 1);

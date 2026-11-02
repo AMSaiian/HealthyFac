@@ -22,5 +22,24 @@ public sealed class ServiceTokenOptionsValidator : AbstractValidator<ServiceToke
         RuleFor(options => options.RefreshMarginSeconds)
             .GreaterThanOrEqualTo(0)
             .WithMessage(ServiceTokenValidationMessages.RefreshMarginInvalid);
+
+        RuleFor(options => options.RefreshJitterSeconds)
+            .GreaterThanOrEqualTo(0)
+            .WithMessage(ServiceTokenValidationMessages.RefreshJitterInvalid);
+
+        RuleFor(options => options.LockTimeoutSeconds)
+            .GreaterThan(0)
+            .WithMessage(ServiceTokenValidationMessages.LockTimeoutInvalid);
+
+        RuleFor(options => options.LockPollMilliseconds)
+            .GreaterThan(0)
+            .WithMessage(ServiceTokenValidationMessages.LockPollInvalid);
+
+        RuleFor(options => options)
+            .Must(options => TimeSpan.FromMilliseconds(options.LockPollMilliseconds)
+                < TimeSpan.FromSeconds(options.LockTimeoutSeconds))
+            .When(options => options.LockTimeoutSeconds > 0 && options.LockPollMilliseconds > 0)
+            .WithName(nameof(ServiceTokenOptions.LockPollMilliseconds))
+            .WithMessage(ServiceTokenValidationMessages.LockPollNotBelowTimeout);
     }
 }

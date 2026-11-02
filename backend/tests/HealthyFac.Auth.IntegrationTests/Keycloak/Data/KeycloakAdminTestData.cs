@@ -14,6 +14,9 @@ public static class KeycloakAdminTestData
     public const string AuthClientSecret = "test-auth-client-secret";
     public const string SpaClientId = "healthyfac-spa";
     public const string SpaUrl = "http://localhost:4200";
+    public const string UnregisteredSpaUrl = "https://not-registered.example.test";
+    public const string RedirectUriRejection = "Invalid redirect uri.";
+    public const string CoreClientSecret = "test-core-client-secret";
     public const string SupervisorEmail = "supervisor@healthyfac.local";
     public const string SupervisorPassword = "Sup3rvisor-Passw0rd!";
     public const string WorkerRoleName = "worker";
@@ -37,6 +40,7 @@ public static class KeycloakAdminTestData
         ["HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
         ["HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
         ["KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
+        ["KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
     };
 
     /// <summary>

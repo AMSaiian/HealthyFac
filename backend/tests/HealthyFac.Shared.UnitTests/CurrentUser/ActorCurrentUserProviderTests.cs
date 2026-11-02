@@ -21,7 +21,7 @@ public sealed class ActorCurrentUserProviderTests
     public void GetUserId_WithActor_ReturnsActorUserId()
     {
         var holder = new ActorContextHolder();
-        using var actorScope = holder.Enter(new ActorContext { UserId = ActorTestData.UserId });
+        using var actorScope = holder.Enter(ActorTestData.UserActor(ActorTestData.UserId));
         var provider = new ActorCurrentUserProvider(holder);
 
         var userId = provider.GetUserId();
@@ -33,9 +33,9 @@ public sealed class ActorCurrentUserProviderTests
     public void Enter_WhileActorIsSet_Throws()
     {
         var holder = new ActorContextHolder();
-        using var actorScope = holder.Enter(new ActorContext { UserId = ActorTestData.UserId });
+        using var actorScope = holder.Enter(ActorTestData.UserActor(ActorTestData.UserId));
 
-        var act = () => holder.Enter(new ActorContext { UserId = ActorTestData.OtherUserId });
+        var act = () => holder.Enter(ActorTestData.UserActor(ActorTestData.OtherUserId));
 
         act.Should().Throw<InvalidOperationException>();
         holder.Current!.UserId.Should().Be(ActorTestData.UserId);
@@ -45,33 +45,23 @@ public sealed class ActorCurrentUserProviderTests
     public void Enter_AfterDispose_SetsNewActor()
     {
         var holder = new ActorContextHolder();
-        var firstActorScope = holder.Enter(new ActorContext { UserId = ActorTestData.UserId });
+        var firstActorScope = holder.Enter(ActorTestData.UserActor(ActorTestData.UserId));
         firstActorScope.Dispose();
 
-        using var secondActorScope = holder.Enter(new ActorContext { UserId = ActorTestData.OtherUserId });
+        using var secondActorScope = holder.Enter(ActorTestData.UserActor(ActorTestData.OtherUserId));
 
         holder.Current!.UserId.Should().Be(ActorTestData.OtherUserId);
     }
 
     [Fact]
-    public void GetCompanyId_WithSystemActorWithoutCompany_ThrowsUnauthorized()
+    public void GetCompanyId_WithServiceActorWithoutCompany_ThrowsUnauthorized()
     {
         var holder = new ActorContextHolder();
-        using var actorScope = holder.Enter(SystemActor.Create());
+        using var actorScope = holder.Enter(ServiceActor.OutboxProcessor.For(ServiceName.Core));
         var provider = new ActorCurrentUserProvider(holder);
 
         var act = provider.GetCompanyId;
 
         act.Should().Throw<UnauthorizedAccessException>();
-    }
-
-    [Fact]
-    public void SystemActorCreate_WithCompany_SetsIsSystemAndCompany()
-    {
-        var actor = SystemActor.Create(ActorTestData.CompanyId);
-
-        actor.IsSystem.Should().BeTrue();
-        actor.UserId.Should().Be(SystemActor.Id);
-        actor.CompanyId.Should().Be(ActorTestData.CompanyId);
     }
 }

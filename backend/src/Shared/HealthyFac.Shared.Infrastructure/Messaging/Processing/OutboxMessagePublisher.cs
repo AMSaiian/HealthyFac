@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;
@@ -104,12 +105,12 @@ internal sealed class OutboxMessagePublisher(
         var headers = new Dictionary<string, string>
         {
             [Headers.MessageId] = message.Id.ToString(),
-            [MessageHeaders.ActorId] = message.ActorId.ToString(),
+            [ActorHeaderNames.ActorId] = message.ActorId.ToString(),
         };
 
         if (message.CompanyId is not null)
         {
-            headers[MessageHeaders.CompanyId] = message.CompanyId.Value.ToString();
+            headers[ActorHeaderNames.CompanyId] = message.CompanyId.Value.ToString();
         }
 
         var traceParent = sendActivity?.Id ?? message.TraceParent;

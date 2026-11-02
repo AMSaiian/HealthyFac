@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
@@ -14,6 +14,7 @@ public static class TransportTestData
     public const string BrokerConnectionStringKey = "ConnectionStrings:RabbitMq";
     public const string QueueNameKey = "Messaging:QueueName";
     public const string PollingIntervalKey = "Messaging:PollingIntervalMilliseconds";
+    public const string ServiceNameKey = "Service:Name";
     public const string PollingIntervalMilliseconds = "50";
     public const string MessageIdHeader = "rbs2-msg-id";
     public const string ErrorDetailsHeader = "rbs2-error-details";
@@ -38,7 +39,7 @@ public static class TransportTestData
     public static Dictionary<string, string> ActorHeaders() =>
         new()
         {
-            [MessageHeaders.ActorId] = ActorId.ToString(),
-            [MessageHeaders.CompanyId] = CompanyId.ToString(),
+            [ActorHeaderNames.ActorId] = ActorId.ToString(),
+            [ActorHeaderNames.CompanyId] = CompanyId.ToString(),
         };
 }

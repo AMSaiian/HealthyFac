@@ -22,11 +22,13 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 /// <param name="scopeFactory">Creates the scopes of each message.</param>
 /// <param name="timeProvider">The clock for the due time of the rows.</param>
 /// <param name="options">The polling interval.</param>
+/// <param name="serviceOptions">The name of the running service, for the actor that records a failure.</param>
 /// <param name="logger">The logger of the processor.</param>
 internal sealed class InboxProcessor(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     IOptions<MessagingOptions> options,
+    IOptions<ServiceOptions> serviceOptions,
     ILogger<InboxProcessor> logger
 ) : BackgroundService
 {
@@ -104,7 +106,8 @@ internal sealed class InboxProcessor(
     /// <returns>A task that completes when the failure is recorded or skipped.</returns>
     private async Task RecordFailureAsync(Guid messageId, Exception exception, CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateActorScope(SystemActor.Create());
+        using var scope = scopeFactory.CreateActorScope(
+            ServiceActor.InboxProcessor.For(serviceOptions.Value.ToServiceName()));
         var dbContext = scope.ServiceProvider.GetRequiredService<IInboxDbContext>();
 
         var message = await dbContext.InboxMessages.SingleOrDefaultAsync(

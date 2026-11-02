@@ -9,24 +9,24 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixture<TransportFixture>
 {
     [Fact]
-    public async Task InboxProcessor_WithRegisteredType_CallsHandlerAndMarksProcessed()
+    public async Task InboxProcessor_WithAnonymousActor_RestoresAnonymous()
     {
         await fixture.AddPendingInboxRowAsync(
-            InboxProcessorTestData.SystemRowId,
+            InboxProcessorTestData.AnonymousRowId,
             InboxProcessorTestData.RecordedMessageType,
-            InboxProcessorTestData.SystemActorText,
-            SystemActor.Id,
-            companyId: null,
+            InboxProcessorTestData.AnonymousActorText,
+            KnownActors.Anonymous.UserId,
+            null,
             InboxTestData.Now);
         var processor = fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
-        var row = await fixture.ReadInboxRowAsync(InboxProcessorTestData.SystemRowId);
-        var calls = fixture.Recorder.CallsFor(InboxProcessorTestData.SystemActorText);
+        var row = await fixture.ReadInboxRowAsync(InboxProcessorTestData.AnonymousRowId);
+        var calls = fixture.Recorder.CallsFor(InboxProcessorTestData.AnonymousActorText);
 
         row.ProcessedOn.Should().Be(InboxTestData.Now);
-        calls.Should().ContainSingle().Which.Actor!.IsSystem.Should().BeTrue();
+        calls.Should().ContainSingle().Which.Actor!.Kind.Should().Be(ActorKind.Anonymous);
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
         var actor = calls.Should().ContainSingle().Which.Actor!;
         actor.UserId.Should().Be(InboxProcessorTestData.UserActorId);
         actor.CompanyId.Should().Be(InboxProcessorTestData.UserCompanyId);
-        actor.IsSystem.Should().BeFalse();
+        actor.Kind.Should().Be(ActorKind.User);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Auth.Application.Identities;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Auth.Infrastructure.Keycloak;
@@ -63,7 +64,7 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             throw IdentityAdminErrors.IdentityConflict(identity.EmployeeId);
         }
 
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(ct);
 
         var location = response.Headers.Location;
         var lastSegment = location?.Segments.LastOrDefault()?.Trim(KeycloakAdminConstants.PathSeparator);
@@ -84,7 +85,7 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             return;
         }
 
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(ct);
     }
 
     public async Task AssignRealmRoleAsync(Guid userId, string roleName, CancellationToken ct)
@@ -95,7 +96,7 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             throw IdentityAdminErrors.RealmRoleNotFound(roleName);
         }
 
-        roleResponse.EnsureSuccessStatusCode();
+        await roleResponse.EnsureSuccessAsync(ct);
 
         var role = await roleResponse.Content.ReadFromJsonAsync<KeycloakRole>(ct)
             ?? throw IdentityAdminErrors.ResponseEmpty();
@@ -104,7 +105,7 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             KeycloakAdminRoutes.UserRealmRoleMappings(_options.Realm, userId),
             new[] { role },
             ct);
-        mapResponse.EnsureSuccessStatusCode();
+        await mapResponse.EnsureSuccessAsync(ct);
     }
 
     public async Task<bool> HasPasswordAsync(Guid userId, CancellationToken ct)
@@ -127,7 +128,7 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
                 _options.SetPasswordLifespanSeconds),
             new[] { KeycloakAdminConstants.UpdatePasswordAction },
             ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(ct);
     }
 
     public async Task DisableUserAsync(Guid userId, CancellationToken ct)
@@ -137,22 +138,25 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
         user[KeycloakAdminConstants.EnabledProperty] = false;
 
         using var response = await _client.PutAsJsonAsync(userPath, user, ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(ct);
     }
 
     public async Task LogoutUserAsync(Guid userId, CancellationToken ct)
     {
         using var response = await _client.PostAsync(
             KeycloakAdminRoutes.UserLogout(_options.Realm, userId),
-            content: null,
+            null,
             ct);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(ct);
     }
 
     private async Task<T> GetRequiredAsync<T>(string path, CancellationToken ct)
         where T : class
     {
-        var body = await _client.GetFromJsonAsync<T>(path, ct);
+        using var response = await _client.GetAsync(path, ct);
+        await response.EnsureSuccessAsync(ct);
+
+        var body = await response.Content.ReadFromJsonAsync<T>(ct);
 
         return body ?? throw IdentityAdminErrors.ResponseEmpty();
     }

@@ -9,17 +9,19 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 
 /// <summary>
-/// Publishes pending outbox rows to RabbitMQ. Each message runs in its own scope as the system actor, and
-/// <see cref="OutboxMessagePublisher"/> does the work of one message in its own transaction. A run ends when no
-/// row is due or when a publish fails, because the broker is then likely down and the other rows would fail
+/// Publishes pending outbox rows to RabbitMQ. Each message runs in its own scope as the outbox processor actor of the
+/// service, and <see cref="OutboxMessagePublisher"/> does the work of one message in its own transaction. A run ends
+/// when no row is due or when a publish fails, because the broker is then likely down and the other rows would fail
 /// too. The next run starts after the polling interval.
 /// </summary>
 /// <param name="scopeFactory">Creates the scope of each message.</param>
 /// <param name="options">The polling interval.</param>
+/// <param name="serviceOptions">The name of the running service, for the actor of each scope.</param>
 /// <param name="logger">The logger of the processor.</param>
 internal sealed class OutboxProcessor(
     IServiceScopeFactory scopeFactory,
     IOptions<MessagingOptions> options,
+    IOptions<ServiceOptions> serviceOptions,
     ILogger<OutboxProcessor> logger
 ) : BackgroundService
 {
@@ -62,7 +64,8 @@ internal sealed class OutboxProcessor(
 
     private async Task<ClaimResult> PublishNextAsync(CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateActorScope(SystemActor.Create());
+        using var scope = scopeFactory.CreateActorScope(
+            ServiceActor.OutboxProcessor.For(serviceOptions.Value.ToServiceName()));
 
         return await scope.ServiceProvider.GetRequiredService<OutboxMessagePublisher>()
             .PublishNextAsync(cancellationToken);

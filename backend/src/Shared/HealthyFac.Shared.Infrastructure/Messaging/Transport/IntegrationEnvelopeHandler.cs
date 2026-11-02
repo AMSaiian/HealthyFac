@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Persistence;
 using Rebus.Extensions;
 using Rebus.Handlers;
@@ -71,7 +72,7 @@ internal sealed class IntegrationEnvelopeHandler(
             throw MessagingErrors.MessageIdInvalid(rawMessageId);
         }
 
-        var isActorValid = Guid.TryParse(headers.GetValueOrDefault(MessageHeaders.ActorId), out var actorId);
+        var isActorValid = Guid.TryParse(headers.GetValueOrDefault(ActorHeaderNames.ActorId), out var actorId);
         if (!isActorValid || actorId == Guid.Empty)
         {
             throw MessagingErrors.ActorHeaderMissing(rawMessageId);
@@ -98,7 +99,7 @@ internal sealed class IntegrationEnvelopeHandler(
 
     private static Guid? ReadCompanyId(IDictionary<string, string> headers, string rawMessageId)
     {
-        if (!headers.TryGetValue(MessageHeaders.CompanyId, out var rawCompanyId))
+        if (!headers.TryGetValue(ActorHeaderNames.CompanyId, out var rawCompanyId))
         {
             return null;
         }

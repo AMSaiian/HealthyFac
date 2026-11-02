@@ -1,6 +1,8 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
@@ -11,7 +13,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture) : I
     [Fact]
     public async Task CreateInvite_WithoutToken_Returns401()
     {
-        var response = await _fixture.PostCreateInviteAsync(claims: null);
+        var response = await _fixture.PostCreateInviteAsync(null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -72,6 +74,35 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture) : I
     }
 
     [Fact]
+    public async Task Endpoint_WithServiceTokenWithPermission_Passes()
+    {
+        var claims = new TestServiceTokenClaims { Permissions = ["employees:invite"] };
+
+        var response = await _fixture.PostCreateInviteAsServiceAsync(
+            claims,
+            EmployeeInviteApiTestData.ServiceCallerUserId,
+            _fixture.CompanyId);
+        var invite = await _fixture.LoadInviteAsync(response);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        invite.CompanyId.Should().Be(_fixture.CompanyId);
+        invite.CreatedBy.Should().Be(EmployeeInviteApiTestData.ServiceCallerUserId);
+    }
+
+    [Fact]
+    public async Task Endpoint_WithServiceTokenWithoutPermission_Returns403()
+    {
+        var claims = new TestServiceTokenClaims { Permissions = ["machines:write"] };
+
+        var response = await _fixture.PostCreateInviteAsServiceAsync(
+            claims,
+            EmployeeInviteApiTestData.ServiceCallerUserId,
+            _fixture.CompanyId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task VerifyInvite_WithoutToken_IsAllowed()
     {
         var response = await _fixture.PostVerifyInviteAnonymouslyAsync();
@@ -101,5 +132,19 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture) : I
         var invite = await _fixture.LoadInviteAsync(response);
 
         invite.CreatedBy.Should().Be(claims.Subject!.Value);
+    }
+
+    [Fact]
+    public async Task Accept_AsAnonymous_AuditsAnonymousActor()
+    {
+        var createResponse = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims());
+        var invite = await _fixture.LoadInviteAsync(createResponse);
+
+        var response = await _fixture.PostAcceptInviteAnonymouslyAsync(invite);
+
+        var employee = await _fixture.LoadEmployeeAsync(invite.Email);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        employee.CreatedBy.Should().Be(KnownActors.Anonymous.UserId);
     }
 }

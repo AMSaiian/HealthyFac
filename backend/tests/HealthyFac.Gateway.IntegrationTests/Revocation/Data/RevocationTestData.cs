@@ -5,7 +5,6 @@ namespace HealthyFac.Gateway.IntegrationTests.Revocation.Data;
 public static class RevocationTestData
 {
     public const string CoreRoute = "/api/core/v1/machines";
-    public const string RedisCircuitBreakerCategory = "HealthyFac.Shared.Infrastructure.Caching.RedisCircuitBreaker";
 
     public static readonly TimeSpan RevocationTimeToLive = TimeSpan.FromMinutes(6);
     public static readonly TimeSpan TokenAge = TimeSpan.FromMinutes(10);

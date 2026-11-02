@@ -743,10 +743,22 @@
       "name": "HealthyFac Core API",
       "enabled": true,
       "publicClient": false,
+      "secret": "${KEYCLOAK_CORE_CLIENT_SECRET}",
       "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "healthyfac-claims"
+      ],
+      "optionalClientScopes": [
+        "organization"
+      ]
     },
     {
       "clientId": "healthyfac-auth",

@@ -22,4 +22,12 @@ public static class CurrentUserErrors
 
     public static ErrorHandling.UnauthorizedAccessException EmployeeIdInvalid() =>
         new("The token employee ID must be a GUID.");
+
+    public static ErrorHandling.UnauthorizedAccessException ServiceActorMissing() =>
+        new(
+            "A service token needs the actor ID header with a GUID, "
+            + "and the company header must be a GUID when it is present.");
+
+    public static ErrorHandling.UnauthorizedAccessException ServiceClientNotAllowed(string clientId) =>
+        new($"The service client {clientId} is not allowed to call this service.");
 }

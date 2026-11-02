@@ -52,6 +52,7 @@ public sealed class ProvisioningFixture : IAsyncLifetime
                 [ProvisioningTestData.QueueNameKey] = ProvisioningTestData.QueueName,
                 [ProvisioningTestData.RedisConnectionStringKey] = _redis.ConnectionString,
                 [ProvisioningTestData.PollingIntervalKey] = ProvisioningTestData.PollingIntervalMilliseconds,
+                [ProvisioningTestData.ServiceNameKey] = ServiceName.Auth.Value,
             });
         builder.Services.AddApplicationServices();
         builder.Services.AddInfrastructureServices(builder.Configuration, builder.Environment);
@@ -90,7 +91,7 @@ public sealed class ProvisioningFixture : IAsyncLifetime
     }
 
     public IServiceScope CreateActorScope(Guid companyId)
-        => ScopeFactory.CreateActorScope(SystemActor.Create(companyId));
+        => ScopeFactory.CreateActorScope(ServiceActor.DatabaseInitialization.For(ServiceName.Auth, companyId));
 
     public Task PublishAsync(string topic, string payload, Guid messageId, IReadOnlyDictionary<string, string> headers)
     {

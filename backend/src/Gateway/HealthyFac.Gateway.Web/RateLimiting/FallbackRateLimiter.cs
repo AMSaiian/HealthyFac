@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using HealthyFac.Shared.Infrastructure.Caching;
+using Polly.CircuitBreaker;
 using StackExchange.Redis;
 
 namespace HealthyFac.Gateway.Web.RateLimiting;
@@ -9,9 +10,9 @@ namespace HealthyFac.Gateway.Web.RateLimiting;
 /// Redis fails. Redis is never a hard dependency of the gateway.
 /// </summary>
 /// <remarks>
-/// While the <see cref="RedisCircuitBreaker"/> skips Redis, only the local limiter answers. The local limit
-/// applies to one gateway instance, so during an outage the effective limit is up to the number of instances
-/// times the configured limit. The rate limiter middleware tries a synchronous acquire first and calls the
+/// While the Redis circuit breaker of <see cref="RedisResiliencePipeline"/> is open, only the local limiter answers.
+/// The local limit applies to one gateway instance, so during an outage the effective limit is up to the number of
+/// instances times the configured limit. The rate limiter middleware tries a synchronous acquire first and calls the
 /// asynchronous acquire only when it fails. Redis has no synchronous path, so <see cref="AttemptAcquireCore"/>
 /// denies without consuming a permit, and <see cref="AcquireAsyncCore"/> decides every request.
 /// <para>
@@ -33,12 +34,12 @@ namespace HealthyFac.Gateway.Web.RateLimiting;
 /// <param name="primary">The Redis limiter.</param>
 /// <param name="createLocal">Creates the in-memory limiter with the same limits. It must not replenish itself.</param>
 /// <param name="window">The replenishment period of the limits.</param>
-/// <param name="breaker">The shared breaker that records Redis failures.</param>
+/// <param name="redis">The shared Redis pipeline that records Redis failures and fails fast while it is open.</param>
 internal sealed class FallbackRateLimiter(
     RateLimiter primary,
     Func<ReplenishingRateLimiter> createLocal,
     TimeSpan window,
-    RedisCircuitBreaker breaker
+    RedisResiliencePipeline redis
 ) : ReplenishingRateLimiter
 {
     private readonly Lazy<ReplenishingRateLimiter> _local =
@@ -80,22 +81,17 @@ internal sealed class FallbackRateLimiter(
         CancellationToken cancellationToken
     )
     {
-        if (!breaker.CanTryRedis())
-        {
-            return await _local.Value.AcquireAsync(permitCount, cancellationToken);
-        }
-
         try
         {
-            var primaryLease = await primary.AcquireAsync(permitCount, cancellationToken);
-            breaker.RecordSuccess();
+            var primaryLease = await redis.ExecuteAsync(
+                token => primary.AcquireAsync(permitCount, token),
+                cancellationToken);
 
             return primaryLease;
         }
-        catch (Exception exception) when (exception is RedisException or RedisTimeoutException)
+        catch (Exception exception)
+            when (exception is RedisException or RedisTimeoutException or BrokenCircuitException)
         {
-            breaker.RecordFailure(exception);
-
             return await _local.Value.AcquireAsync(permitCount, cancellationToken);
         }
     }

@@ -64,7 +64,10 @@ public sealed class RealmImportTests(KeycloakRealmFixture fixture) : IClassFixtu
         var claims = await _fixture.GetAuthServiceAccessTokenClaimsAsync();
 
         claims[RealmTestData.ClientIdClaim]!.GetValue<string>().Should().Be(RealmTestData.AuthClientId);
-        claims.Select(claim => claim.Key).Should().NotContain(RealmTestData.RemovedServiceAccountClaims);
+        claims.Select(claim => claim.Key)
+            .Should()
+            .NotContain(RealmTestData.RemovedServiceAccountClaims)
+            .And.NotContain(RealmTestData.UserOnlyClaims);
     }
 
     [Fact]

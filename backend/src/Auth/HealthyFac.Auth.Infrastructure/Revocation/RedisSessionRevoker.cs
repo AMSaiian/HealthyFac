@@ -1,4 +1,5 @@
 using HealthyFac.Auth.Application.Identities;
+using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Revocation;
 using Microsoft.Extensions.Options;
 
@@ -8,18 +9,33 @@ namespace HealthyFac.Auth.Infrastructure.Revocation;
 /// Writes the revocation entry of a user to the Redis list that the gateway reads. The entry lives for the token
 /// lifetime plus the clock skew (<see cref="RevocationOptions"/>). A Redis failure propagates, so the caller retries.
 /// </summary>
+/// <remarks>
+/// The write runs through the shared Redis pipeline, so an open circuit breaker fails it at once with a
+/// <c>BrokenCircuitException</c> and the call never waits for a Redis timeout. The revocation guards correctness: a
+/// logout must block the old tokens. So the write never falls back and catches nothing. Every failure propagates, and
+/// the inbox retries the message.
+/// </remarks>
 /// <param name="store">The shared revocation list.</param>
+/// <param name="redis">The shared Redis pipeline with its circuit breaker.</param>
 /// <param name="options">Holds the token lifetime and the clock skew.</param>
-public sealed class RedisSessionRevoker(ITokenRevocationStore store, IOptions<RevocationOptions> options)
-    : ISessionRevoker
+public sealed class RedisSessionRevoker(
+    ITokenRevocationStore store,
+    RedisResiliencePipeline redis,
+    IOptions<RevocationOptions> options
+) : ISessionRevoker
 {
     private readonly ITokenRevocationStore _store = store;
+    private readonly RedisResiliencePipeline _redis = redis;
     private readonly IOptions<RevocationOptions> _options = options;
 
     public Task RevokeAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken cancellationToken)
-        => _store.RevokeAsync(
-            userId,
-            revokedAt,
-            TimeSpan.FromSeconds(_options.Value.TokenLifetimeSeconds + _options.Value.ClockSkewSeconds),
-            cancellationToken);
+        => _redis.ExecuteAsync(
+                token => new ValueTask(
+                    _store.RevokeAsync(
+                        userId,
+                        revokedAt,
+                        TimeSpan.FromSeconds(_options.Value.TokenLifetimeSeconds + _options.Value.ClockSkewSeconds),
+                        token)),
+                cancellationToken)
+            .AsTask();
 }

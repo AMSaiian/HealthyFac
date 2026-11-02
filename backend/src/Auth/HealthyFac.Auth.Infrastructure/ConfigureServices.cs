@@ -8,6 +8,7 @@ using HealthyFac.Auth.Application.Identities.Messages;
 using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Auth.Infrastructure.Keycloak;
 using HealthyFac.Auth.Infrastructure.Revocation;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
@@ -54,7 +55,7 @@ public static class ConfigureServices
                     npgsql => npgsql.EnableRetryOnFailure(
                             DatabaseConstants.Retry.MaxCount,
                             TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
-                            errorCodesToAdd: null)
+                            null)
                         .ConfigureParentOnlyTracing());
                 options.UseExceptionProcessor();
 
@@ -65,6 +66,7 @@ public static class ConfigureServices
                 }
             });
 
+            services.AddServiceOptions(configuration);
             services.AddMessagingTransport(configuration);
             services.AddMessageProcessors();
             services.AddIntegrationMessage<EmployeeAccepted>();

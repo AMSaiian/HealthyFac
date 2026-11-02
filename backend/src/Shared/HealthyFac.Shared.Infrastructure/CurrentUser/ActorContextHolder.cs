@@ -9,7 +9,16 @@ namespace HealthyFac.Shared.Infrastructure.CurrentUser;
 /// </summary>
 public sealed class ActorContextHolder
 {
+    private static readonly AsyncLocal<ActorContext?> FlowCurrent = new();
+
     public ActorContext? Current { get; private set; }
+
+    /// <summary>
+    /// The actor that the current asynchronous flow entered into any holder. An outgoing call reads it in a handler
+    /// of <c>IHttpClientFactory</c>, which lives in its own DI scope and so cannot reach the holder of the scope of
+    /// the flow. It is <see langword="null"/> when no flow entered an actor.
+    /// </summary>
+    public static ActorContext? FlowActor => FlowCurrent.Value;
 
     /// <summary>
     /// Sets the actor of the scope until the returned lease is disposed.
@@ -29,12 +38,18 @@ public sealed class ActorContextHolder
         }
 
         Current = actor;
+        var previousFlowActor = FlowCurrent.Value;
+        FlowCurrent.Value = actor;
 
-        return new ActorLease(this);
+        return new ActorLease(this, previousFlowActor);
     }
 
-    private sealed class ActorLease(ActorContextHolder holder) : IDisposable
+    private sealed class ActorLease(ActorContextHolder holder, ActorContext? previousFlowActor) : IDisposable
     {
-        public void Dispose() => holder.Current = null;
+        public void Dispose()
+        {
+            holder.Current = null;
+            FlowCurrent.Value = previousFlowActor;
+        }
     }
 }

@@ -3,7 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.Application;
+using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +39,39 @@ public static class EmployeeInviteApiFixtureExtensions
                     fixture.Tokens.CreateToken(claims));
             }
 
+            var body = fixture.CreateInviteBody(extraFields);
+
+            return await client.PostAsJsonAsync(EmployeeInviteApiTestData.CreateInvitePath, body);
+        }
+
+        /// <summary>
+        /// Posts the invite as another service does: with a service token and the actor headers of the calling
+        /// flow.
+        /// </summary>
+        /// <param name="claims">The claims of the service token.</param>
+        /// <param name="actorId">The actor ID for the actor header.</param>
+        /// <param name="companyId">The company for the company header.</param>
+        /// <returns>The response of the endpoint.</returns>
+        public async Task<HttpResponseMessage> PostCreateInviteAsServiceAsync(
+            TestServiceTokenClaims claims,
+            Guid actorId,
+            Guid companyId
+        )
+        {
+            using var client = fixture.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                BearerScheme,
+                fixture.Tokens.CreateServiceToken(claims));
+            client.DefaultRequestHeaders.Add(ActorHeaderNames.ActorId, actorId.ToString());
+            client.DefaultRequestHeaders.Add(ActorHeaderNames.CompanyId, companyId.ToString());
+
+            return await client.PostAsJsonAsync(
+                EmployeeInviteApiTestData.CreateInvitePath,
+                fixture.CreateInviteBody(null));
+        }
+
+        private JsonObject CreateInviteBody(IReadOnlyDictionary<string, object?>? extraFields)
+        {
             var body = new JsonObject
             {
                 ["email"] = $"{Guid.NewGuid():N}@healthyfac.test",
@@ -49,7 +84,7 @@ public static class EmployeeInviteApiFixtureExtensions
                 body[name] = JsonValue.Create(value);
             }
 
-            return await client.PostAsJsonAsync(EmployeeInviteApiTestData.CreateInvitePath, body);
+            return body;
         }
 
         public async Task<HttpResponseMessage> PostVerifyInviteAnonymouslyAsync()
@@ -59,6 +94,31 @@ public static class EmployeeInviteApiFixtureExtensions
             return await client.PostAsJsonAsync(
                 EmployeeInviteApiTestData.VerifyInvitePath,
                 new JsonObject { ["token"] = EmployeeInviteApiTestData.UnknownInviteToken });
+        }
+
+        public async Task<HttpResponseMessage> PostAcceptInviteAnonymouslyAsync(EmployeeInvite invite)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var token = scope.ServiceProvider.GetRequiredService<IInviteTokenService>()
+                .CreateToken(invite.Id, invite.TokenSalt);
+            using var client = fixture.CreateClient();
+
+            return await client.PostAsJsonAsync(
+                EmployeeInviteApiTestData.AcceptInvitePath,
+                new JsonObject
+                {
+                    ["token"] = token,
+                    ["firstName"] = EmployeeInviteApiTestData.AcceptedFirstName,
+                    ["lastName"] = EmployeeInviteApiTestData.AcceptedLastName,
+                });
+        }
+
+        public async Task<Employee> LoadEmployeeAsync(string email)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.Employees.AsNoTracking().SingleAsync(employee => employee.Email == email);
         }
 
         public async Task<EmployeeInvite> LoadInviteAsync(HttpResponseMessage createResponse)

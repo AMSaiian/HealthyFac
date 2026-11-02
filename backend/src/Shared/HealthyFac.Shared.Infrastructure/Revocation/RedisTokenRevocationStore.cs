@@ -5,7 +5,7 @@ namespace HealthyFac.Shared.Infrastructure.Revocation;
 /// <summary>
 /// Keeps the revocation list in Redis. The value is the revocation time in Unix seconds, and the entry expires with
 /// its time to live, so the list needs no cleanup. The methods let a Redis failure propagate. The caller decides
-/// whether Redis is a hard dependency (see <c>RedisCircuitBreaker</c>).
+/// whether Redis is a hard dependency (see <c>RedisResiliencePipeline</c>).
 /// </summary>
 /// <param name="connection">The shared Redis connection.</param>
 public sealed class RedisTokenRevocationStore(IConnectionMultiplexer connection) : ITokenRevocationStore

@@ -67,7 +67,7 @@ public sealed class CoreApiFixture : IAsyncLifetime
 
     private async Task SeedCompanyAsync()
     {
-        using var scope = ScopeFactory.CreateActorScope(SystemActor.Create());
+        using var scope = ScopeFactory.CreateActorScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core));
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
         var company = new Company { Name = CoreApiTestData.CompanyName };

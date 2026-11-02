@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -20,13 +21,17 @@ public static class AuthenticationExtensions
         /// Registers JWT bearer authentication for the access tokens of Keycloak. The service validates the
         /// signature, the issuer, the audience, and the lifetime itself, and reads the signing keys from the metadata
         /// address. The permissions of the user come from the flat <c>permissions</c> claim, which a Keycloak mapper
-        /// writes.
+        /// writes. It also registers the validated <see cref="ServiceActorOptions"/> that list the service clients
+        /// whose tokens the service accepts.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddSharedJwtAuthentication(IConfiguration configuration)
         {
             services.AddValidatedOptions<JwtOptions, JwtOptionsValidator>(JwtOptions.SectionName, configuration);
+            services.AddValidatedOptions<ServiceActorOptions, ServiceActorOptionsValidator>(
+                ServiceActorOptions.SectionName,
+                configuration);
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer();

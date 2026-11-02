@@ -106,6 +106,6 @@ public static class RateLimitingExtensions
                         AutoReplenishment = false,
                     }),
                 window,
-                services.GetRequiredService<RedisCircuitBreaker>()));
+                services.GetRequiredService<RedisResiliencePipeline>()));
     }
 }

@@ -99,10 +99,10 @@ public static class KeycloakRealmFixtureExtensions
         return DecodePayload(body!["access_token"]!.GetValue<string>());
     }
 
-    private static JsonObject DecodePayload(string token)
+    internal static JsonObject DecodePayload(string token)
     {
         var payload = token.Split('.')[1].Replace('-', '+').Replace('_', '/');
-        var padded = payload.PadRight(payload.Length + ((4 - (payload.Length % 4)) % 4), '=');
+        var padded = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
 
         return JsonNode.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(padded)))!.AsObject();
     }

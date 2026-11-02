@@ -61,18 +61,28 @@ public sealed class TestTokenFactory
             tokenClaims[KeycloakClaimTypes.EmployeeId] = claims.EmployeeId;
         }
 
-        var descriptor = new SecurityTokenDescriptor
+        return Sign(tokenClaims, claims.Issuer, claims.Audience, claims.IssuedAt, claims.Lifetime);
+    }
+
+    /// <summary>
+    /// Creates a token with the shape of a Client Credentials token: no user, no organization, and no employee.
+    /// </summary>
+    /// <param name="claims">The claims of the service token.</param>
+    /// <returns>The signed token.</returns>
+    public string CreateServiceToken(TestServiceTokenClaims claims)
+    {
+        var tokenClaims = new Dictionary<string, object>
         {
-            Issuer = claims.Issuer,
-            Audience = claims.Audience,
-            IssuedAt = claims.IssuedAt.UtcDateTime,
-            NotBefore = claims.IssuedAt.UtcDateTime,
-            Expires = claims.IssuedAt.UtcDateTime + claims.Lifetime,
-            Claims = tokenClaims,
-            SigningCredentials = new SigningCredentials(_key, SecurityAlgorithms.RsaSha256),
+            [JwtRegisteredClaimNames.Sub] = claims.Subject.ToString(),
+            [KeycloakClaimTypes.ClientId] = claims.ClientId,
         };
 
-        return new JsonWebTokenHandler().CreateToken(descriptor);
+        if (claims.Permissions.Count > 0)
+        {
+            tokenClaims[KeycloakClaimTypes.Permissions] = claims.Permissions.ToArray();
+        }
+
+        return Sign(tokenClaims, claims.Issuer, claims.Audience, claims.IssuedAt, claims.Lifetime);
     }
 
     /// <summary>
@@ -89,5 +99,27 @@ public sealed class TestTokenFactory
         options.Configuration = configuration;
         options.ConfigurationManager = new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);
         options.TokenValidationParameters.IssuerSigningKey = _key;
+    }
+
+    private string Sign(
+        Dictionary<string, object> tokenClaims,
+        string issuer,
+        string audience,
+        DateTimeOffset issuedAt,
+        TimeSpan lifetime
+    )
+    {
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Issuer = issuer,
+            Audience = audience,
+            IssuedAt = issuedAt.UtcDateTime,
+            NotBefore = issuedAt.UtcDateTime,
+            Expires = issuedAt.UtcDateTime + lifetime,
+            Claims = tokenClaims,
+            SigningCredentials = new SigningCredentials(_key, SecurityAlgorithms.RsaSha256),
+        };
+
+        return new JsonWebTokenHandler().CreateToken(descriptor);
     }
 }

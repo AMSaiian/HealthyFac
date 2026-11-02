@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.Mime;
+using System.Text;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 
@@ -23,6 +25,8 @@ public sealed class FakeTokenEndpoint : HttpMessageHandler
 
     public int ExpiresInSeconds { get; set; } = ServiceTokenTestData.TokenLifetimeSeconds;
 
+    public string? ErrorBody { get; set; }
+
     public void HoldResponses() => _isGateEnabled = true;
 
     public void ReleaseResponses() => _gate.SetResult();
@@ -43,7 +47,10 @@ public sealed class FakeTokenEndpoint : HttpMessageHandler
 
         if (StatusCode != HttpStatusCode.OK)
         {
-            return new HttpResponseMessage(StatusCode);
+            return new HttpResponseMessage(StatusCode)
+            {
+                Content = new StringContent(ErrorBody ?? string.Empty, Encoding.UTF8, MediaTypeNames.Application.Json),
+            };
         }
 
         return new HttpResponseMessage(HttpStatusCode.OK)

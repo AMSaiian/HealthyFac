@@ -1,3 +1,4 @@
+using System.Net;
 using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
@@ -137,6 +138,24 @@ public sealed class KeycloakIdentityAdminTests(KeycloakAdminFixture fixture) : I
         var message = await _fixture.WaitForMailToAsync(identity.Email);
 
         message.To.Should().ContainSingle().Which.Should().Be(identity.Email);
+    }
+
+    [Fact]
+    public async Task SendSetPasswordEmail_WithRedirectUriNotAllowed_ThrowsWithPathAndReason()
+    {
+        var userId = await _fixture.Admin.CreateUserAsync(
+            KeycloakAdminTestData.CreateIdentity(),
+            CancellationToken.None);
+        var admin = _fixture.CreateAdmin(KeycloakAdminTestData.UnregisteredSpaUrl);
+
+        var act = () => admin.SendSetPasswordEmailAsync(userId, CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<HttpRequestException>();
+        exception.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        exception.Which.Message.Should()
+            .Contain($"{userId}/execute-actions-email")
+            .And.Contain(KeycloakAdminTestData.RedirectUriRejection)
+            .And.NotContain(KeycloakAdminTestData.UnregisteredSpaUrl);
     }
 
     [Fact]

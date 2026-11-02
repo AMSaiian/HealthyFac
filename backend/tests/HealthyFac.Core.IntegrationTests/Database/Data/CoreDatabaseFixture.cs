@@ -27,7 +27,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
     public ConcurrentSaveGate SaveGate { get; } = new();
 
     public IServiceScopeFactory ScopeFactory =>
-        new SystemActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
+        new InitializationActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
 
     public IServiceScope CreateActorScope(ActorContext actor)
         => _services.GetRequiredService<IServiceScopeFactory>().CreateActorScope(actor);
@@ -40,7 +40,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile(DatabaseTestData.SettingsFileName, optional: false)
+            .AddJsonFile(DatabaseTestData.SettingsFileName, false)
             .AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
@@ -59,7 +59,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         services.AddSingleton<IEmailSender>(EmailSender);
         services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
 
-        _services = services.BuildServiceProvider(validateScopes: true);
+        _services = services.BuildServiceProvider(true);
 
         using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<CoreDbContext>().Database.MigrateAsync();

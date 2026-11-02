@@ -1,37 +1,79 @@
+using System.Web;
+using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 
 /// <summary>
-/// Wires a client through <see cref="ClientCredentialsHandler"/> to a fake API, with a fake token endpoint and a fake
-/// clock.
+/// Wires a client through <see cref="ClientCredentialsHandler"/> to a fake API, with a fake token endpoint, a fake
+/// clock, and an in-memory token storage. <see cref="CreateClient"/> adds a client of another instance of the
+/// service. All instances share the storage, the token endpoint, and the clock, like instances that share Redis.
 /// </summary>
 public sealed class ServiceTokenHarness : IDisposable
 {
-    public ServiceTokenHarness()
-    {
-        var cache = new ServiceTokenCache(
-            new FixedHttpClientFactory(TokenEndpoint),
-            Options.Create(ServiceTokenTestData.Options),
-            Time);
+    private readonly double _jitterFraction;
+    private readonly List<HttpClient> _clients = [];
 
-        Client = new HttpClient(new ClientCredentialsHandler(cache) { InnerHandler = Resource });
+    /// <summary>
+    /// Creates the harness.
+    /// </summary>
+    /// <param name="jitterFraction">The fraction of the maximum refresh jitter that each token gets, from 0 to 1.
+    /// The default 0 gives no jitter, so the token is replaced exactly at the refresh margin.</param>
+    public ServiceTokenHarness(double jitterFraction = 0)
+    {
+        _jitterFraction = jitterFraction;
+        Client = CreateClient();
     }
 
     public FakeTokenEndpoint TokenEndpoint { get; } = new();
 
+    public InMemoryTokenCacheStorage Storage { get; } = new();
+
+    public DownstreamScopeHolder DownstreamScopes { get; } = new();
+
     public RecordingResourceHandler Resource { get; } = new();
 
-    public FakeTimeProvider Time { get; } = new();
+    public TimerSignalingTimeProvider Time { get; } = new();
 
     public HttpClient Client { get; }
 
     public Task<HttpResponseMessage> CallAsync() => Client.GetAsync(ServiceTokenTestData.ResourceUrl);
 
     /// <summary>
-    /// Starts calls while the token endpoint holds its answer, then waits until every call has reached the cache.
+    /// Creates the client of one more instance of the service. It has its own cache and its own token store.
+    /// </summary>
+    /// <returns>The client. The harness disposes it.</returns>
+    public HttpClient CreateClient()
+    {
+        var serviceOptions = Options.Create(new ServiceOptions { Name = ServiceTokenTestData.ServiceName });
+        var store = new TokenStore(
+            Storage,
+            Time,
+            Options.Create(ServiceTokenTestData.Options),
+            serviceOptions,
+            NullLogger<TokenStore>.Instance);
+        var cache = new ServiceTokenCache(
+            new TokenEndpointClient(
+                new FixedHttpClientFactory(TokenEndpoint),
+                Options.Create(ServiceTokenTestData.Options),
+                Time,
+                new FixedRandom(_jitterFraction)),
+            store,
+            serviceOptions);
+        var client = new HttpClient(
+            new ClientCredentialsHandler(cache, DownstreamScopes, serviceOptions) { InnerHandler = Resource });
+        _clients.Add(client);
+
+        return client;
+    }
+
+    /// <summary>
+    /// Starts calls while the token endpoint holds its answer, then waits until every call has reached the cache. One
+    /// call holds the storage lock and waits for the token endpoint. The others wait on the fake clock and read the
+    /// storage again when the test moves the clock by <see cref="ServiceTokenTestData.PollAdvance"/>.
     /// </summary>
     /// <param name="count">The number of parallel calls.</param>
     /// <returns>The pending calls. Release the token endpoint to complete them.</returns>
@@ -55,12 +97,18 @@ public sealed class ServiceTokenHarness : IDisposable
         return calls;
     }
 
-    public void Dispose() => Client.Dispose();
+    /// <summary>
+    /// Reads the <c>scope</c> field of the only token request.
+    /// </summary>
+    /// <returns>The scopes separated by spaces, or <see langword="null"/> when the request has no scope.</returns>
+    public string? ReadScopes() =>
+        HttpUtility.ParseQueryString(TokenEndpoint.Forms.Single())[ServiceTokenConstants.Form.Scope];
 
-    private sealed class FixedHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
+    public void Dispose()
     {
-        private readonly HttpMessageHandler _handler = handler;
-
-        public HttpClient CreateClient(string name) => new(_handler, disposeHandler: false);
+        foreach (var client in _clients)
+        {
+            client.Dispose();
+        }
     }
 }

@@ -12,6 +12,7 @@ using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.InviteLinks;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Email;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
@@ -60,7 +61,7 @@ public static class ConfigureServices
                     npgsql => npgsql.EnableRetryOnFailure(
                             DatabaseConstants.Retry.MaxCount,
                             TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
-                            errorCodesToAdd: null)
+                            null)
                         .ConfigureParentOnlyTracing());
                 options.UseExceptionProcessor();
 
@@ -73,6 +74,7 @@ public static class ConfigureServices
                 }
             });
 
+            services.AddServiceOptions(configuration);
             services.AddMessagingTransport(configuration);
             services.AddMessageProcessors();
 

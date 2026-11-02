@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Core.ApiTests.Hosting;
@@ -34,5 +35,6 @@ public static class CoreApiTestData
             ["Smtp:FromAddress"] = "no-reply@healthyfac.test",
             ["Smtp:FromName"] = "HealthyFac Tests",
             ["Seeding:SeedOptionalData"] = bool.FalseString,
+            [$"{ServiceActorOptions.SectionName}:AllowedClients:0"] = TestServiceTokenClaims.DefaultClientId,
         };
 }

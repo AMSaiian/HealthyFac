@@ -20,7 +20,8 @@ public sealed class TransactionTestException : Exception;
 /// Creates scopes that already hold the system actor, so each test step writes with a known actor.
 /// </summary>
 /// <param name="inner">The scope factory of the test service provider.</param>
-public sealed class SystemActorScopeFactory(IServiceScopeFactory inner) : IServiceScopeFactory
+public sealed class InitializationActorScopeFactory(IServiceScopeFactory inner) : IServiceScopeFactory
 {
-    public IServiceScope CreateScope() => inner.CreateActorScope(SystemActor.Create());
+    public IServiceScope CreateScope() =>
+        inner.CreateActorScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core));
 }

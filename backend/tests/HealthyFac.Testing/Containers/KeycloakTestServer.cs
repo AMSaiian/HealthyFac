@@ -109,7 +109,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
                     ["standardFlowEnabled"] = false,
                     ["directAccessGrantsEnabled"] = true,
                     ["defaultClientScopes"] = new JsonArray(
-                        PasswordGrantClientScopes.Select(scope => (JsonNode)JsonValue.Create(scope)!).ToArray()),
+                        PasswordGrantClientScopes.Select(scope => (JsonNode)JsonValue.Create(scope)).ToArray()),
                 }),
         };
 

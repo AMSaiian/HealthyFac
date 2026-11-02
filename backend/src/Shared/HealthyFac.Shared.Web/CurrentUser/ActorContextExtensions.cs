@@ -1,6 +1,8 @@
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace HealthyFac.Shared.Web.CurrentUser;
 
@@ -9,13 +11,16 @@ public static class ActorContextExtensions
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registers the actor holder, the <c>ICurrentUserProvider</c>, and the scoped actor middleware. A
-        /// middleware that implements <see cref="Microsoft.AspNetCore.Http.IMiddleware"/> needs this registration.
+        /// Registers the actor holder, the <c>ICurrentUserProvider</c>, the <c>IIncomingAccessTokenAccessor</c>,
+        /// and the scoped actor middleware. A middleware that implements
+        /// <see cref="Microsoft.AspNetCore.Http.IMiddleware"/> needs this registration.
         /// </summary>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddActorContextMiddleware()
         {
             services.AddActorContext();
+            services.AddHttpContextAccessor();
+            services.TryAddSingleton<IIncomingAccessTokenAccessor, HttpIncomingAccessTokenAccessor>();
             services.AddScoped<ActorContextMiddleware>();
 
             return services;

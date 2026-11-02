@@ -1,28 +1,29 @@
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Shared.Infrastructure.Caching;
-using Microsoft.Extensions.Logging.Abstractions;
+using HealthyFac.Testing.Caching;
 using Microsoft.Extensions.Time.Testing;
+using Polly.CircuitBreaker;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
 public sealed class FallbackRateLimiterTests
 {
-    private readonly RedisCircuitBreaker _breaker =
-        new(new FakeTimeProvider(), NullLogger<RedisCircuitBreaker>.Instance);
+    private readonly RedisResiliencePipeline _redis = TestRedisPipeline.Create(new FakeTimeProvider());
 
     [Fact]
     public async Task Acquire_WhenPrimaryThrowsRedisException_UsesLocalLimiterAndOpensBreaker()
     {
         var primary = FallbackRateLimiterTestData.CreateFailingPrimary();
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
+        await _redis.FailAsync(RedisConstants.Resilience.MinimumThroughput - 1);
 
         using var lease = await limiter.AcquireAsync();
 
-        var canTryRedis = _breaker.CanTryRedis();
+        var state = _redis.State;
 
         lease.IsAcquired.Should().BeTrue();
-        canTryRedis.Should().BeFalse();
+        state.Should().Be(CircuitState.Open);
     }
 
     [Fact]
@@ -30,7 +31,7 @@ public sealed class FallbackRateLimiterTests
     {
         var primary = FallbackRateLimiterTestData.CreateFailingPrimary();
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
-        _breaker.RecordFailure(new TimeoutException());
+        await _redis.OpenBreakerAsync();
 
         using var lease = await limiter.AcquireAsync();
 
@@ -41,16 +42,16 @@ public sealed class FallbackRateLimiterTests
     [Fact]
     public async Task Acquire_WhenPrimarySucceeds_ReturnsPrimaryLease()
     {
-        var primaryLease = new FakeRateLimitLease(isAcquired: false);
+        var primaryLease = new FakeRateLimitLease(false);
         var primary = new FakePrimaryRateLimiter(() => primaryLease);
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
 
         var lease = await limiter.AcquireAsync();
 
-        var canTryRedis = _breaker.CanTryRedis();
+        var state = _redis.State;
 
         lease.Should().BeSameAs(primaryLease);
-        canTryRedis.Should().BeTrue();
+        state.Should().Be(CircuitState.Closed);
     }
 
     [Fact]
@@ -67,7 +68,7 @@ public sealed class FallbackRateLimiterTests
                 return new FakeLocalRateLimiter();
             },
             FallbackRateLimiterTestData.Window,
-            _breaker);
+            _redis);
 
         using var lease = await limiter.AcquireAsync();
 
@@ -129,7 +130,7 @@ public sealed class FallbackRateLimiterTests
     }
 
     private FallbackRateLimiter CreateLimiter(FakePrimaryRateLimiter primary, FakeLocalRateLimiter local) =>
-        new(primary, () => local, FallbackRateLimiterTestData.Window, _breaker);
+        new(primary, () => local, FallbackRateLimiterTestData.Window, _redis);
 
     private async Task<FallbackRateLimiter> CreateFallenBackLimiterAsync(
         FakePrimaryRateLimiter primary,

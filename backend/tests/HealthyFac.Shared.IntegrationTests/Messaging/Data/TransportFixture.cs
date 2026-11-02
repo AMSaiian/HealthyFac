@@ -51,10 +51,12 @@ public class TransportFixture : IAsyncLifetime
                 [TransportTestData.BrokerConnectionStringKey] = _broker.ConnectionString,
                 [TransportTestData.QueueNameKey] = TransportTestData.QueueName,
                 [TransportTestData.PollingIntervalKey] = TransportTestData.PollingIntervalMilliseconds,
+                [TransportTestData.ServiceNameKey] = ServiceName.Core.Value,
             });
         builder.Logging.AddProvider(Logs);
         builder.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(InboxTestData.Now)));
         builder.Services.AddActorContext();
+        builder.Services.AddServiceOptions(builder.Configuration);
         builder.Services.AddScoped<AuditableEntityInterceptor>();
         builder.Services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((provider, options) =>
         {
@@ -121,11 +123,9 @@ public class TransportFixture : IAsyncLifetime
 
     public Task StopBrokerAsync() => _broker.StopAsync();
 
-    public IServiceScope CreateScope(ActorContext? actor = null)
-    {
-        return _host.Services.GetRequiredService<IServiceScopeFactory>()
-            .CreateActorScope(actor ?? SystemActor.Create());
-    }
+    public IServiceScope CreateScope(ActorContext? actor = null) =>
+        _host.Services.GetRequiredService<IServiceScopeFactory>()
+            .CreateActorScope(actor ?? ServiceActor.DatabaseInitialization.For(ServiceName.Core));
 
     public async Task<InboxMessage?> WaitForInboxMessageAsync(Guid messageId)
     {

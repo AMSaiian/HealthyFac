@@ -2,6 +2,7 @@ using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Gateway.Web.Revocation;
 using HealthyFac.Shared.Infrastructure.Caching;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Revocation;
 using HealthyFac.Shared.Infrastructure.Time;
 using HealthyFac.Shared.Web.Authentication;
@@ -13,6 +14,8 @@ using HealthyFac.Shared.Web.Tracing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using StackExchange.Redis;
+using Yarp.ReverseProxy.Transforms;
+using Yarp.ReverseProxy.Transforms.Builder;
 using IAvailableDestinationsPolicy = Yarp.ReverseProxy.Health.IAvailableDestinationsPolicy;
 
 namespace HealthyFac.Gateway.Web;
@@ -32,6 +35,7 @@ public static class ConfigureServices
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddGatewayServices(IConfiguration configuration)
         {
+            services.AddServiceOptions(configuration);
             services.AddSharedTime();
             services.AddSharedForwardedHeaders(configuration);
             services.AddExceptionHandler<GatewayExceptionHandler>();
@@ -40,7 +44,9 @@ public static class ConfigureServices
             services.AddSharedRedis(configuration);
             services.AddGatewaySecurity(configuration);
             services.AddGatewayRateLimiting(configuration);
-            services.AddReverseProxy().LoadFromConfig(configuration.GetSection(GatewayConstants.ReverseProxySection));
+            services.AddReverseProxy()
+                .LoadFromConfig(configuration.GetSection(GatewayConstants.ReverseProxySection))
+                .AddTransforms(RemoveActorHeaders);
             services.AddSingleton<IAvailableDestinationsPolicy, HealthyOnlyDestinationsPolicy>();
             services.AddSingleton<ProxyErrorMiddleware>();
             services.AddGatewayObservability(configuration);
@@ -68,8 +74,9 @@ public static class ConfigureServices
                 .AddRedis(
                     provider => provider.GetRequiredService<IConnectionMultiplexer>(),
                     HealthCheckConstants.RedisCheckName,
-                    failureStatus: HealthStatus.Degraded,
-                    tags: [HealthCheckConstants.ReadyTag]);
+                    HealthStatus.Degraded,
+                    [HealthCheckConstants.ReadyTag])
+                .AddRedisBreakerHealthCheck([HealthCheckConstants.ReadyTag]);
 
             return services;
         }
@@ -114,5 +121,16 @@ public static class ConfigureServices
 
             return app;
         }
+    }
+
+    /// <summary>
+    /// Removes the actor headers from every request that the gateway forwards. A service trusts these headers on a
+    /// service token, so a client on the internet must never send them.
+    /// </summary>
+    /// <param name="context">The transform context of one route.</param>
+    private static void RemoveActorHeaders(TransformBuilderContext context)
+    {
+        context.AddRequestHeaderRemove(ActorHeaderNames.ActorId);
+        context.AddRequestHeaderRemove(ActorHeaderNames.CompanyId);
     }
 }

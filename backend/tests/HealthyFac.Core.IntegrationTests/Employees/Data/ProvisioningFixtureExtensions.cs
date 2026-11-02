@@ -74,7 +74,7 @@ public static class ProvisioningFixtureExtensions
         public async Task DeactivateEmployeeAsync(Guid companyId, Guid employeeId, Guid actorUserId)
         {
             using var scope = fixture.CreateActorScope(
-                new ActorContext { UserId = actorUserId, CompanyId = companyId });
+                new ActorContext { Kind = ActorKind.User, UserId = actorUserId, CompanyId = companyId });
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<DeactivateEmployeeRequest>>();
 
             await handler.HandleAsync(

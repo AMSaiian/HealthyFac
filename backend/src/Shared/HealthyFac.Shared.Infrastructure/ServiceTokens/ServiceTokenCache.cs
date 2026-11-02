@@ -1,116 +1,69 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
 
 /// <summary>
-/// Holds the access token of the service itself, so every outgoing call reuses one token until it nears its expiry.
+/// Holds the access tokens of the service itself, so every outgoing call reuses a token until it nears its expiry.
 /// </summary>
 /// <remarks>
-/// One instance serves the whole process. A semaphore lets one caller fetch while the others wait and then read the
-/// new token, so parallel calls make one token request. A failed fetch stores nothing, and the next call tries again.
+/// One instance serves the whole process. The tokens stay in the <see cref="TokenStore"/> in Redis, shared by the
+/// instances of the service, with one entry for each set of requested scopes: a flow that asks for other downstream
+/// scopes gets another token. The store lets one caller fetch while the others wait and then read the new token, so
+/// parallel calls, also across instances, make one token request. A failed fetch stores nothing, and the next call
+/// tries again.
 /// </remarks>
-/// <param name="httpClientFactory">Creates the client of the token endpoint.</param>
-/// <param name="options">Holds the token endpoint and the client credentials.</param>
-/// <param name="timeProvider">Provides the current time.</param>
+/// <param name="endpointClient">Requests the tokens from the token endpoint.</param>
+/// <param name="store">Keeps the tokens in Redis.</param>
+/// <param name="serviceOptions">Holds the name of the running service for the keys.</param>
 public sealed class ServiceTokenCache(
-    IHttpClientFactory httpClientFactory,
-    IOptions<ServiceTokenOptions> options,
-    TimeProvider timeProvider
+    TokenEndpointClient endpointClient,
+    TokenStore store,
+    IOptions<ServiceOptions> serviceOptions
 )
 {
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    private readonly ServiceTokenOptions _options = options.Value;
-    private readonly TimeProvider _timeProvider = timeProvider;
-    private readonly SemaphoreSlim _fetchGate = new(1, 1);
-
-    private volatile CachedToken? _cachedToken;
+    private readonly TokenEndpointClient _endpointClient = endpointClient;
+    private readonly TokenStore _store = store;
+    private readonly string _serviceName = serviceOptions.Value.Name;
 
     /// <summary>
-    /// Returns the cached token, or fetches a new one when the cache is empty or the token is within
-    /// <see cref="ServiceTokenOptions.RefreshMarginSeconds"/> of its expiry.
+    /// Returns the stored token for the scopes, or fetches a new one when the store has none or the token has passed
+    /// its refresh moment: <see cref="ServiceTokenOptions.RefreshMarginSeconds"/> plus a random jitter of up to
+    /// <see cref="ServiceTokenOptions.RefreshJitterSeconds"/> before its expiry.
     /// </summary>
+    /// <param name="scopes">The scopes to request. The order and repeated names do not matter, so two orders of the
+    /// same scopes share one token. No scope gives a token without the permissions of any downstream scope.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>The access token.</returns>
     /// <exception cref="HttpRequestException">
-    /// Thrown when the token endpoint answers a failure status (see
-    /// <see cref="ServiceTokenErrors.TokenRequestFailed"/>).
+    /// Thrown when the token endpoint answers a failure status (see <see cref="HttpResponseMessageExtensions"/>).
     /// </exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the response holds no access token (see <see cref="ServiceTokenErrors.TokenResponseInvalid"/>).
     /// </exception>
-    public async Task<string> GetTokenAsync(CancellationToken cancellationToken)
+    public Task<string> GetTokenAsync(IReadOnlyCollection<string> scopes, CancellationToken cancellationToken)
     {
-        var cached = _cachedToken;
-        if (IsUsable(cached))
-        {
-            return cached.Value;
-        }
+        var requested = scopes.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
 
-        await _fetchGate.WaitAsync(cancellationToken);
-        try
-        {
-            cached = _cachedToken;
-            if (IsUsable(cached))
-            {
-                return cached.Value;
-            }
-
-            var fetched = await FetchAsync(cancellationToken);
-            _cachedToken = fetched;
-
-            return fetched.Value;
-        }
-        finally
-        {
-            _fetchGate.Release();
-        }
+        return _store.GetOrFetchAsync(
+            TokenCacheKeys.ForServiceToken(_serviceName, string.Join(ServiceTokenConstants.ScopeSeparator, requested)),
+            token => FetchAsync(requested, token),
+            cancellationToken);
     }
 
-    private bool IsUsable([NotNullWhen(true)] CachedToken? token) =>
-        token is not null && _timeProvider.GetUtcNow() < token.RefreshAt;
-
-    private async Task<CachedToken> FetchAsync(CancellationToken cancellationToken)
+    private Task<CachedToken> FetchAsync(List<string> scopes, CancellationToken cancellationToken)
     {
-        using var client = _httpClientFactory.CreateClient(ServiceTokenConstants.TokenClientName);
-        using var content = new FormUrlEncodedContent(
-            new Dictionary<string, string>
-            {
-                [ServiceTokenConstants.Form.GrantType] = ServiceTokenConstants.Form.ClientCredentialsGrant,
-                [ServiceTokenConstants.Form.ClientId] = _options.ClientId,
-                [ServiceTokenConstants.Form.ClientSecret] = _options.ClientSecret,
-            });
-
-        using var response = await client.PostAsync(_options.TokenEndpoint, content, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        var grantFields = new Dictionary<string, string>
         {
-            throw ServiceTokenErrors.TokenRequestFailed(response.StatusCode);
+            [ServiceTokenConstants.Form.GrantType] = ServiceTokenConstants.Form.ClientCredentialsGrant,
+        };
+        if (scopes.Count > 0)
+        {
+            grantFields[ServiceTokenConstants.Form.Scope] = string.Join(ServiceTokenConstants.ScopeSeparator, scopes);
         }
 
-        var body = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken);
-        if (body is null || string.IsNullOrWhiteSpace(body.AccessToken) || body.ExpiresInSeconds <= 0)
-        {
-            throw ServiceTokenErrors.TokenResponseInvalid();
-        }
-
-        var lifetime = TimeSpan.FromSeconds(body.ExpiresInSeconds);
-
-        return new CachedToken(
-            body.AccessToken,
-            _timeProvider.GetUtcNow() + lifetime - TimeSpan.FromSeconds(_options.RefreshMarginSeconds));
-    }
-
-    private sealed record CachedToken(string Value, DateTimeOffset RefreshAt);
-
-    private sealed record TokenResponse
-    {
-        [JsonPropertyName(ServiceTokenConstants.Response.AccessToken)]
-        public string? AccessToken { get; init; }
-
-        [JsonPropertyName(ServiceTokenConstants.Response.ExpiresIn)]
-        public int ExpiresInSeconds { get; init; }
+        return _endpointClient.SendAsync(grantFields, cancellationToken);
     }
 }

@@ -24,7 +24,7 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
 
         var spans = await capture.WaitForSpansAsync(
             span => span.TraceId == parent.TraceId,
-            expectedCount: TracingTestData.ExpectedSpanCount);
+            TracingTestData.ExpectedSpanCount);
 
         var send = spans.Single(span => span.IsOperation(ObservabilityConstants.Messaging.Operations.Send));
         var receive = spans.Single(span => span.IsOperation(ObservabilityConstants.Messaging.Operations.Receive));
@@ -41,6 +41,7 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
         using var scope = fixture.CreateScope(
             new ActorContext
             {
+                Kind = ActorKind.User,
                 UserId = InboxProcessorTestData.UserActorId,
                 CompanyId = InboxProcessorTestData.UserCompanyId,
             });

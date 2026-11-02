@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Shared.Infrastructure.Messaging.Processing;
-using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using LinqToDB;
 using Microsoft.EntityFrameworkCore;
@@ -38,8 +38,8 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
         JsonNode.DeepEquals(JsonNode.Parse(message.Payload), JsonNode.Parse(OutboxProcessorTestData.Payload))
             .Should()
             .BeTrue();
-        message.Headers[MessageHeaders.ActorId].Should().Be(TransportTestData.ActorId.ToString());
-        message.Headers[MessageHeaders.CompanyId].Should().Be(TransportTestData.CompanyId.ToString());
+        message.Headers[ActorHeaderNames.ActorId].Should().Be(TransportTestData.ActorId.ToString());
+        message.Headers[ActorHeaderNames.CompanyId].Should().Be(TransportTestData.CompanyId.ToString());
     }
 
     [Fact]

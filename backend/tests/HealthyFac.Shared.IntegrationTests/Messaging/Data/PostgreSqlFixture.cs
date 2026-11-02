@@ -17,12 +17,12 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
     public string ConnectionString => _database.ConnectionString;
 
     /// <summary>
-    /// Creates a scope that holds <paramref name="actor"/>, or the system actor when the argument is null.
+    /// Creates a scope that holds <paramref name="actor"/>, or the database initialization actor of the
+    /// core service when the argument is null.
     /// </summary>
-    public IServiceScope CreateScope(ActorContext? actor = null)
-    {
-        return Services.GetRequiredService<IServiceScopeFactory>().CreateActorScope(actor ?? SystemActor.Create());
-    }
+    public IServiceScope CreateScope(ActorContext? actor = null) =>
+        Services.GetRequiredService<IServiceScopeFactory>()
+            .CreateActorScope(actor ?? ServiceActor.DatabaseInitialization.For(ServiceName.Core));
 
     public IServiceScope CreateScopeWithoutActor() => Services.CreateScope();
 
@@ -35,7 +35,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         services.AddActorContext();
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(_database.ConnectionString));
-        Services = services.BuildServiceProvider(validateScopes: true);
+        Services = services.BuildServiceProvider(true);
 
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>().Database.EnsureCreatedAsync();

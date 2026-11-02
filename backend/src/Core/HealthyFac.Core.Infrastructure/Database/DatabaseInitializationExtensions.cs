@@ -16,8 +16,8 @@ public static class DatabaseInitializationExtensions
     {
         /// <summary>
         /// Applies database migrations (Development only), seeds the required data, then seeds the optional
-        /// data when the seeding section enables it. The scope runs as the system actor, so seeded rows carry
-        /// <see cref="SystemActor.Id"/>.
+        /// data when the seeding section enables it. The scope runs as the database initialization actor of the
+        /// service, so seeded rows carry its ID.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
         /// requests.</param>
@@ -25,7 +25,9 @@ public static class DatabaseInitializationExtensions
         public async Task InitializeDatabaseAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             using var scope = services.GetRequiredService<IServiceScopeFactory>()
-                .CreateActorScope(SystemActor.Create());
+                .CreateActorScope(
+                    ServiceActor.DatabaseInitialization.For(
+                        services.GetRequiredService<IOptions<ServiceOptions>>().Value.ToServiceName()));
 
             var initializer = scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>();
             var seedingOptions = scope.ServiceProvider.GetRequiredService<IOptions<SeedingOptions>>().Value;

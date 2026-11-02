@@ -1,4 +1,5 @@
 using HealthyFac.Auth.Infrastructure.Database;
+using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Logging;
@@ -35,8 +36,9 @@ public static class ConfigureServices
                 .AddRedis(
                     provider => provider.GetRequiredService<IConnectionMultiplexer>(),
                     HealthCheckConstants.RedisCheckName,
-                    failureStatus: HealthStatus.Degraded,
-                    tags: [HealthCheckConstants.ReadyTag]);
+                    HealthStatus.Degraded,
+                    [HealthCheckConstants.ReadyTag])
+                .AddRedisBreakerHealthCheck([HealthCheckConstants.ReadyTag]);
 
             return services;
         }
