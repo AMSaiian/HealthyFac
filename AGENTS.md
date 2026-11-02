@@ -27,6 +27,7 @@ Each rule file declares its scope in `globs` frontmatter. A rule with `trigger: 
 *   Read `backend-packages.md` for `.csproj` and `.props` files.
 *   Read `testing.md` for test projects.
 *   Read `container.md` for Dockerfiles and Compose files.
+*   Read `observability.md` for telemetry code (resource attributes, spans, metrics, log export).
 *   Read `git-commits.md` before you write a commit.
 
 Antigravity and Windsurf match these globs directly. Claude Code loads them through `.claude/rules/`; see `CLAUDE.md`.

@@ -21,6 +21,7 @@
 | `backend-infrastructure` | `**/*.Infrastructure/**` |
 | `backend-web` | `**/*.Web/**` |
 | `testing` | `backend/tests/**`, `**/*Tests/**`, `**/*Test/**` |
+| `observability` | `**/Observability/**`, `**/Tracing/**`, `**/Metrics/**`, `**/Logging/**` |
 | `format-typescript` | `**/*.{ts,tsx,js,jsx}` |
 | `format-html` | `**/*.{html,htm}` |
 | `format-styles` | `**/*.{css,scss,sass,less}` |

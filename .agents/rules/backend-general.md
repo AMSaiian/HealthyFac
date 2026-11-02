@@ -35,7 +35,7 @@ description: "General backend C# conventions for all layers."
 *   **Object Initialization:** Use `init` properties and object initializers for plain data. Put logic where its inputs are:
     *   **One Property:** Logic that reads only that value (trim, normalize, a guard) goes into its `init` or `set` accessor with the `field` keyword (`init => field = EmailAddresses.Normalize(value);`). Every path then runs it: initializer, deserialization, constructor, entity method.
     *   **Several Properties:** Use a constructor or an entity method. It assigns through the properties, never through the backing fields.
-    *   **Requests and Messages:** Their accessors only normalize, accept `null`, and never throw, because they run during deserialization. The validator checks the normalized value.
+    *   **Requests and Messages:** Their accessors only normalize, accept `null`, and never throw, because they run during deserialization. The validator checks the normalized value. Mark text forms with `[MultilineText]` or `[RawText]` (`backend-application.md`, **Text Input**).
     *   **One Definition:** When several types need the same logic, the accessors call one shared function (e.g., in Domain). Never copy it.
 *   **No Magic Values:** In web, infrastructure, and business code, extract a literal into a named constant when a change to it would need edits in more than one place (numbers, strings, URLs, configuration keys, routes, policy names, validation limits). Put constants in a dedicated `static class` (`ValidationConstants`, `PolicyNames`, `CacheKeys`).
     *   **Always Inline:** `0`, `1`, `-1`, `true`, `false`, `null`, `string.Empty`, `Guid.Empty`, and log message templates.
