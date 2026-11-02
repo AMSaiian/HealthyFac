@@ -42,7 +42,6 @@ public static class ServiceTokenExtensions
             services.TryAddSingleton<ServiceTokenCache>();
             services.TryAddTransient<ClientCredentialsHandler>();
             services.TryAddSingleton<TokenExchangeClient>();
-            services.TryAddTransient<ActorHeadersHandler>();
             services.TryAddSingleton<IDownstreamScopeHolder, DownstreamScopeHolder>();
 
             return services;
@@ -63,10 +62,18 @@ public static class ServiceTokenExtensions
         /// Adds the handler that sets the actor headers of the calling flow on each request of the client. Use it
         /// after <see cref="AddClientCredentialsToken"/> for a client that calls one of our own services, and never
         /// for the Keycloak client or an external API. The service must call <see cref="AddServiceTokens"/> first,
-        /// and the host must register <see cref="IIncomingAccessTokenAccessor"/>.
+        /// and the host must register <see cref="IIncomingAccessTokenAccessor"/>. The handler is registered here, not in
+        /// <see cref="AddServiceTokens"/>: a service without this client (e.g., Auth, which has no incoming user
+        /// requests) then has no handler that needs the accessor, and the service provider validation at start-up
+        /// passes.
         /// </summary>
         /// <returns>The <see cref="IHttpClientBuilder"/> instance for chained configuration.</returns>
-        public IHttpClientBuilder AddActorHeaders() => builder.AddHttpMessageHandler<ActorHeadersHandler>();
+        public IHttpClientBuilder AddActorHeaders()
+        {
+            builder.Services.TryAddTransient<ActorHeadersHandler>();
+
+            return builder.AddHttpMessageHandler<ActorHeadersHandler>();
+        }
 
         /// <summary>
         /// Adds the handler that exchanges the token of the user of the current request for a short token of one
