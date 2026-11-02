@@ -27,15 +27,23 @@ internal enum ClaimResult
 /// </summary>
 /// <param name="dbContext">The service context that holds the outbox set.</param>
 /// <param name="bus">The Rebus bus of the service.</param>
-/// <param name="timeProvider">The clock for the due time of the rows.</param>
+/// <param name="timeProvider">The clock for the due time of the rows and the publish duration.</param>
+/// <param name="metrics">Counts the published and the retried messages.</param>
 /// <param name="logger">The logger of the publisher.</param>
 internal sealed class OutboxMessagePublisher(
     IOutboxDbContext dbContext,
     IBus bus,
     TimeProvider timeProvider,
+    MessagingMetrics metrics,
     ILogger<OutboxMessagePublisher> logger
 )
 {
+    private readonly IOutboxDbContext _dbContext = dbContext;
+    private readonly IBus _bus = bus;
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly MessagingMetrics _metrics = metrics;
+    private readonly ILogger<OutboxMessagePublisher> _logger = logger;
+
     /// <summary>
     /// Claims the next due row and publishes it.
     /// </summary>
@@ -48,26 +56,36 @@ internal sealed class OutboxMessagePublisher(
     /// </returns>
     public async Task<ClaimResult> PublishNextAsync(CancellationToken cancellationToken)
     {
-        return await dbContext.RunInTransactionAsync(
+        return await _dbContext.RunInTransactionAsync(
             async token =>
             {
-                var now = timeProvider.GetUtcNow().UtcDateTime;
-                var message = await dbContext.ClaimNextOutboxMessageAsync(now, token);
+                var now = _timeProvider.GetUtcNow().UtcDateTime;
+                var message = await _dbContext.ClaimNextOutboxMessageAsync(now, token);
                 if (message is null)
                 {
                     return ClaimResult.None;
                 }
 
                 var isPublished = await TryPublishAsync(message, now, token);
-                await dbContext.SaveChangesAsync(token);
+                await _dbContext.SaveChangesAsync(token);
 
                 return isPublished ? ClaimResult.Published : ClaimResult.Failed;
             },
             cancellationToken);
     }
 
+    /// <summary>
+    /// Publishes the claimed row and records the result on the row and in the metrics. A cancellation records
+    /// nothing, because it is not a failure.
+    /// </summary>
+    /// <param name="message">The claimed row.</param>
+    /// <param name="now">The UTC time of the claim.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
+    /// requests.</param>
+    /// <returns><see langword="true"/> when the broker accepted the message.</returns>
     private async Task<bool> TryPublishAsync(OutboxMessage message, DateTime now, CancellationToken cancellationToken)
     {
+        var startedAt = _timeProvider.GetTimestamp();
         using var activity = MessagingActivitySource.Instance.StartMessagingActivity(
             ObservabilityConstants.Messaging.Operations.Send,
             ActivityKind.Producer,
@@ -77,28 +95,39 @@ internal sealed class OutboxMessagePublisher(
 
         try
         {
-            await bus.Advanced.Topics.Publish(
+            await _bus.Advanced.Topics.Publish(
                 message.Type,
                 new IntegrationEnvelope { Type = message.Type, Payload = message.Payload },
                 CreateHeaders(message, activity));
             message.MarkPublished(now);
             activity.MarkSuccess();
+            _metrics.RecordPublished(message.Type);
+            RecordPublish(message, ObservabilityConstants.Outcomes.Success, startedAt);
 
             return true;
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             activity.MarkException(exception);
-            logger.LogWarning(
+            _logger.LogWarning(
                 exception,
                 "Publishing outbox message {MessageId} of type {MessageType} failed.",
                 message.Id,
                 message.Type);
             message.ScheduleRetry(now, exception.Message);
+            _metrics.RecordRetried(ObservabilityConstants.Messaging.Processors.Outbox, message.Type);
+            RecordPublish(message, ObservabilityConstants.Outcomes.Failure, startedAt);
 
             return false;
         }
     }
+
+    private void RecordPublish(OutboxMessage message, string outcome, long startedAt) =>
+        _metrics.RecordHandle(
+            ObservabilityConstants.Messaging.Processors.Outbox,
+            message.Type,
+            outcome,
+            _timeProvider.GetElapsedTime(startedAt));
 
     private static Dictionary<string, string> CreateHeaders(OutboxMessage message, Activity? sendActivity)
     {

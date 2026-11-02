@@ -94,6 +94,26 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
     }
 
     [Fact]
+    public async Task Process_WithControlCharacter_FailsAtFirstAttempt()
+    {
+        await fixture.AddPingInboxRowAsync(
+            InboxProcessorTestData.ControlCharacterRowId,
+            InboxProcessorTestData.ControlCharacterPayload);
+        var callsBefore = fixture.Recorder.Count;
+        var processor = fixture.Create<InboxProcessor>();
+
+        await processor.RunAsync(CancellationToken.None);
+
+        var row = await fixture.ReadInboxRowAsync(InboxProcessorTestData.ControlCharacterRowId);
+        var errors = fixture.ReadErrorLogs(InboxProcessorTestData.ControlCharacterRowId);
+
+        row.FailedOn.Should().NotBeNull();
+        row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
+        fixture.Recorder.Count.Should().Be(callsBefore);
+        errors.Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task InboxProcessor_WhenHandlerThrows_RollsBackAndSchedulesRetry()
     {
         await fixture.AddPendingInboxRowAsync(

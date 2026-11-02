@@ -68,7 +68,7 @@ internal sealed class IntegrationMessageDispatcher(IntegrationMessageRegistry re
     {
         try
         {
-            return JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)
+            return JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)
                 ?? throw MessagingErrors.PayloadInvalid(TMessage.MessageType, null);
         }
         catch (JsonException exception)

@@ -9,6 +9,7 @@ using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.Proxy;
 using HealthyFac.Shared.Web.Tracing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -70,6 +71,7 @@ public static class ConfigureServices
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
+            services.AddSharedMetrics(configuration);
             services.AddSharedHealthChecks(configuration)
                 .AddRedis(
                     provider => provider.GetRequiredService<IConnectionMultiplexer>(),

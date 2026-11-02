@@ -1,8 +1,8 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Web.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace HealthyFac.Shared.Web.Tracing;
@@ -38,16 +38,10 @@ public static class TracingExtensions
             }
 
             services.AddOpenTelemetry()
-                .ConfigureResource(resource =>
-                {
-                    if (!string.IsNullOrWhiteSpace(options.ServiceName))
-                    {
-                        resource.AddService(options.ServiceName);
-                    }
-                })
                 .WithTracing(tracing =>
                 {
                     tracing
+                        .ConfigureResource(resource => resource.AddSharedAttributes())
                         .AddSource(ObservabilityConstants.Sources.UseCases)
                         .AddSource(ObservabilityConstants.Sources.IdEncryption)
                         .AddSource(ObservabilityConstants.Sources.Messaging)

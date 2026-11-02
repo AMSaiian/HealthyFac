@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,28 +18,52 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 /// <param name="scopeFactory">Creates the scope of each message.</param>
 /// <param name="options">The polling interval.</param>
 /// <param name="serviceOptions">The name of the running service, for the actor of each scope.</param>
+/// <param name="metrics">Records the duration of each run.</param>
+/// <param name="timeProvider">The clock for the run duration.</param>
 /// <param name="logger">The logger of the processor.</param>
 internal sealed class OutboxProcessor(
     IServiceScopeFactory scopeFactory,
     IOptions<MessagingOptions> options,
     IOptions<ServiceOptions> serviceOptions,
+    MessagingMetrics metrics,
+    TimeProvider timeProvider,
     ILogger<OutboxProcessor> logger
 ) : BackgroundService
 {
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly IOptions<MessagingOptions> _options = options;
+    private readonly IOptions<ServiceOptions> _serviceOptions = serviceOptions;
+    private readonly MessagingMetrics _metrics = metrics;
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly ILogger<OutboxProcessor> _logger = logger;
+
     /// <summary>
-    /// Publishes pending rows until none is due or a publish fails.
+    /// Publishes pending rows until none is due or a publish fails. The run duration is recorded with its outcome;
+    /// a cancelled run records nothing, because a cancellation is not a failure.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A task that completes when the run ends.</returns>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        ClaimResult result;
-        do
+        var startedAt = _timeProvider.GetTimestamp();
+        try
         {
-            result = await PublishNextAsync(cancellationToken);
+            ClaimResult result;
+            do
+            {
+                result = await PublishNextAsync(cancellationToken);
+            }
+            while (result is ClaimResult.Published);
         }
-        while (result is ClaimResult.Published);
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            RecordRun(ObservabilityConstants.Outcomes.Failure, startedAt);
+
+            throw;
+        }
+
+        RecordRun(ObservabilityConstants.Outcomes.Success, startedAt);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,7 +71,7 @@ internal sealed class OutboxProcessor(
         while (!stoppingToken.IsCancellationRequested)
         {
             await RunSafelyAsync(stoppingToken);
-            await Task.Delay(options.Value.PollingIntervalMilliseconds, stoppingToken);
+            await Task.Delay(_options.Value.PollingIntervalMilliseconds, stoppingToken);
         }
     }
 
@@ -58,16 +83,22 @@ internal sealed class OutboxProcessor(
         }
         catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogError(exception, "The outbox processor run failed. The next run starts after the interval.");
+            _logger.LogError(exception, "The outbox processor run failed. The next run starts after the interval.");
         }
     }
 
     private async Task<ClaimResult> PublishNextAsync(CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateActorScope(
-            ServiceActor.OutboxProcessor.For(serviceOptions.Value.ToServiceName()));
+        using var scope = _scopeFactory.CreateActorScope(
+            ServiceActor.OutboxProcessor.For(_serviceOptions.Value.ToServiceName()));
 
         return await scope.ServiceProvider.GetRequiredService<OutboxMessagePublisher>()
             .PublishNextAsync(cancellationToken);
     }
+
+    private void RecordRun(string outcome, long startedAt) =>
+        _metrics.RecordRun(
+            ObservabilityConstants.Messaging.Processors.Outbox,
+            outcome,
+            _timeProvider.GetElapsedTime(startedAt));
 }

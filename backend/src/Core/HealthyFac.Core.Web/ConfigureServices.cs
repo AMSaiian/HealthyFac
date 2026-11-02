@@ -17,6 +17,7 @@ using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Https;
 using HealthyFac.Shared.Web.IdEncryption;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.OpenApi;
 using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Shared.Web.Proxy;
@@ -94,6 +95,7 @@ public static class ConfigureServices
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
+            services.AddSharedMetrics(configuration);
 
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<CoreDbContext>(

@@ -2,6 +2,7 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Shared.Domain.Emails;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -81,6 +82,20 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         machineNames.Should()
             .NotBeEmpty()
             .And.OnlyContain(name => machineTypes.Any(type => name.StartsWith(type + " ")));
+    }
+
+    [Fact]
+    public async Task SeedOptionalDataAsync_OnEmptyDatabase_StoresNormalizedEmails()
+    {
+        await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
+
+        using var scope = fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+        var employeeEmails = await dbContext.Employees.Select(employee => employee.Email).ToListAsync();
+        var inviteEmails = await dbContext.EmployeeInvites.Select(invite => invite.Email).ToListAsync();
+
+        employeeEmails.Should().NotBeEmpty().And.OnlyContain(email => email == EmailAddresses.Normalize(email));
+        inviteEmails.Should().NotBeEmpty().And.OnlyContain(email => email == EmailAddresses.Normalize(email));
     }
 
     [Fact]

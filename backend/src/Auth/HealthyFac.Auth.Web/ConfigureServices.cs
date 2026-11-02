@@ -3,6 +3,7 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.Tracing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
@@ -27,6 +28,7 @@ public static class ConfigureServices
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
+            services.AddSharedMetrics(configuration);
 
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<AuthDbContext>(

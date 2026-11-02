@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentValidation;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -17,7 +18,8 @@ public static class UseCaseExtensions
         /// <summary>
         /// Registers every <see cref="IRequestHandler{TRequest,TResponse}"/> and every validator of the assembly,
         /// wraps the handlers with the downstream scope decorator, then the validation decorator, and then the logging
-        /// decorator, and registers the adapter for the use cases without a result.
+        /// decorator, and registers the adapter for the use cases without a result. It also registers the open generic
+        /// <see cref="TextInputValidator{TRequest}"/>, so every request and message gets the text input checks.
         /// </summary>
         /// <param name="applicationAssembly">The assembly of the service application layer.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -64,6 +66,7 @@ public static class UseCaseExtensions
             services.Decorate(typeof(IRequestHandler<,>), typeof(LoggingRequestHandlerDecorator<,>));
             services.AddScoped(typeof(IRequestHandler<>), typeof(UnitRequestHandlerAdapter<>));
             services.AddValidatorsFromAssemblies(candidateTypes.Select(type => type.Assembly).Distinct());
+            services.AddSingleton(typeof(IValidator<>), typeof(TextInputValidator<>));
 
             return services;
         }

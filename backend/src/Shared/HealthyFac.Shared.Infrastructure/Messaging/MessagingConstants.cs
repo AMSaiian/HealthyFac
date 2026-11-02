@@ -18,6 +18,12 @@ public static class MessagingConstants
 
     public const string RabbitMqConnectionStringName = "RabbitMq";
 
+    /// <summary>
+    /// The interval of the backlog sample. A shorter interval adds queries on the pending indexes; a longer one shows
+    /// a growing backlog later.
+    /// </summary>
+    public static readonly TimeSpan BacklogSampleInterval = TimeSpan.FromSeconds(15);
+
     public static class Limits
     {
         public const int MinPollingIntervalMilliseconds = 10;

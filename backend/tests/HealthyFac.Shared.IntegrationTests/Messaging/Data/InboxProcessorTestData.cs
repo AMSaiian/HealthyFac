@@ -16,6 +16,13 @@ public static class InboxProcessorTestData
     public const string EndToEndText = "end to end message";
     public const string InvalidPayload = """{"text":"this text is longer than twenty characters"}""";
     public const string UnreadablePayload = """{"text":123}""";
+
+    /// <summary>
+    /// A control character that <c>jsonb</c> stores, so the row reaches the validator. A <c>\u0000</c> escape never
+    /// reaches the inbox: <c>jsonb</c> rejects it at the insert.
+    /// </summary>
+    public const string ControlCharacterPayload = """{"text":"bell\u0007"}""";
+
     public const string LimitSql = "LIMIT";
     public const string ForUpdateSkipLockedSql = "FOR UPDATE SKIP LOCKED";
     public const string AtLimitText = "at attempt limit";
@@ -40,6 +47,7 @@ public static class InboxProcessorTestData
     public static readonly Guid ValidAfterFailedRowId = Guid.Parse("019a0000-0000-7000-8000-000000000208");
     public static readonly Guid InvalidPayloadRowId = Guid.Parse("019a0000-0000-7000-8000-000000000209");
     public static readonly Guid UnreadablePayloadRowId = Guid.Parse("019a0000-0000-7000-8000-00000000020a");
+    public static readonly Guid ControlCharacterRowId = Guid.Parse("019a0000-0000-7000-8000-00000000020b");
 
     public static readonly int MaxAttemptCount =
         new MessagingOptions { QueueName = QueueName }.InboxMaxAttemptCount;

@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Domain.Emails;
 
 namespace HealthyFac.Core.Application.Employees.Messages;
 
@@ -10,7 +11,11 @@ public sealed record EmployeeAccepted : IIntegrationMessage
 
     public required Guid CompanyId { get; init; }
 
-    public required string Email { get; init; }
+    public required string Email
+    {
+        get;
+        init => field = EmailAddresses.Normalize(value);
+    }
 
     public required string FirstName { get; init; }
 

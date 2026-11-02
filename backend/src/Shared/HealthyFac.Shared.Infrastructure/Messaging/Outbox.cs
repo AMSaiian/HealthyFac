@@ -25,7 +25,7 @@ internal sealed class Outbox(
         dbContext.OutboxMessages.Add(
             new OutboxMessage(
                 TMessage.MessageType,
-                JsonSerializer.Serialize(message, JsonSerializerOptions.Web),
+                JsonSerializer.Serialize(message, MessagingJsonOptions.Instance),
                 timeProvider.GetUtcNow().UtcDateTime,
                 Activity.Current?.Id,
                 actor.UserId,

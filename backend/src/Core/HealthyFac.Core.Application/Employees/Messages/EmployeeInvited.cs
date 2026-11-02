@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Domain.Emails;
 
 namespace HealthyFac.Core.Application.Employees.Messages;
 
@@ -13,5 +14,9 @@ public sealed record EmployeeInvited : IIntegrationMessage, IRequest
     public required Guid CompanyId { get; init; }
 
     [SensitiveData]
-    public required string Email { get; init; }
+    public required string Email
+    {
+        get;
+        init => field = EmailAddresses.Normalize(value);
+    }
 }

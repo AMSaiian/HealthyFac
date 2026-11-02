@@ -15,9 +15,6 @@ public sealed class TracingOptions
     /// <summary>The OTLP collector endpoint. An empty value keeps the spans in process.</summary>
     public string? Endpoint { get; init; }
 
-    /// <summary>The logical service name reported as the OpenTelemetry resource.</summary>
-    public string? ServiceName { get; init; }
-
     /// <summary>
     /// The fraction of traces to record, from 0.0 to 1.0. Lower this when span volume costs too much.
     /// A sampled parent always wins, so a trace never breaks apart across services.

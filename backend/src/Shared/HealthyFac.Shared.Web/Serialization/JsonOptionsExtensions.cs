@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using HealthyFac.Shared.Infrastructure.TextInput;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -16,7 +17,8 @@ public static class JsonOptionsExtensions
         /// <summary>
         /// Registers the shared JSON conventions. Native enums serialize as camelCase strings rather than
         /// numbers, and enumeration members serialize as their own value. Both keep the wire contract
-        /// readable and stable, so a reordered enum never changes the payload.
+        /// readable and stable, so a reordered enum never changes the payload. Every string of a request is normalized
+        /// on read (<see cref="TextInputJson"/>).
         /// </summary>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddSharedJsonOptions()
@@ -35,5 +37,6 @@ internal sealed class SharedJsonOptionsConfigurator : IConfigureOptions<JsonOpti
         options.SerializerOptions.Converters.Add(
             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
         options.SerializerOptions.Converters.Add(new EnumerationJsonConverter());
+        TextInputJson.Configure(options.SerializerOptions);
     }
 }

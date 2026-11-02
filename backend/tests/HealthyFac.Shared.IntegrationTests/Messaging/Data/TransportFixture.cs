@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
@@ -39,6 +40,13 @@ public class TransportFixture : IAsyncLifetime
 
     public CapturingLoggerProvider Logs { get; } = new();
 
+    public CancellationTrigger CancellationTrigger { get; } = new();
+
+    /// <summary>
+    /// The meter factory of the test host. A <c>MetricCollector</c> on it reads only the measurements of this host.
+    /// </summary>
+    public IMeterFactory MeterFactory => _host.Services.GetRequiredService<IMeterFactory>();
+
     public async Task InitializeAsync()
     {
         await _database.StartAsync();
@@ -68,10 +76,13 @@ public class TransportFixture : IAsyncLifetime
         builder.Services.AddScoped<OutboxMessagePublisher>();
         builder.Services.AddScoped<InboxMessageRunner>();
         builder.Services.AddSingleton(Recorder);
+        builder.Services.AddSingleton(CancellationTrigger);
+        builder.Services.AddMessagingMetrics();
         builder.Services.AddUseCases(typeof(TestPing).Assembly);
         builder.Services.AddIntegrationMessage<TestPing>();
         builder.Services.AddIntegrationMessage<TestRecorded>();
         builder.Services.AddIntegrationMessage<TestFailing>();
+        builder.Services.AddIntegrationMessage<TestCancelling>();
         ConfigureServices(builder.Services);
 
         _host = builder.Build();

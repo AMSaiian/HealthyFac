@@ -113,3 +113,34 @@ public sealed class FailingHandler(ITestServiceDbContext dbContext) : RequestHan
         throw new InvalidOperationException(InboxProcessorTestData.HandlerFailureText);
     }
 }
+
+public sealed record TestCancelling : IIntegrationMessage, IRequest
+{
+    public static string MessageType => MessagingMetricsTestData.CancellingMessageType;
+
+    public required string Text { get; init; }
+}
+
+/// <summary>
+/// Holds the token source of a run, so <see cref="CancellingHandler"/> can cancel the run while it handles a row.
+/// </summary>
+public sealed class CancellationTrigger
+{
+    public CancellationTokenSource Source { get; } = new();
+}
+
+/// <summary>
+/// Cancels the run token in the middle of the handling, as a host shutdown does. A later run with another token
+/// handles the row normally.
+/// </summary>
+public sealed class CancellingHandler(CancellationTrigger trigger) : RequestHandler<TestCancelling>
+{
+    private readonly CancellationTrigger _trigger = trigger;
+
+    protected override async Task HandleInternalAsync(TestCancelling request, CancellationToken ct)
+    {
+        await _trigger.Source.CancelAsync();
+
+        ct.ThrowIfCancellationRequested();
+    }
+}

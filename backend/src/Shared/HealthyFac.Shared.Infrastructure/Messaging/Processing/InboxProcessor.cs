@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.EntityFrameworkCore;
@@ -23,29 +24,51 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 /// <param name="timeProvider">The clock for the due time of the rows.</param>
 /// <param name="options">The polling interval.</param>
 /// <param name="serviceOptions">The name of the running service, for the actor that records a failure.</param>
+/// <param name="metrics">Records the run duration and counts the retried and the failed messages.</param>
 /// <param name="logger">The logger of the processor.</param>
 internal sealed class InboxProcessor(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     IOptions<MessagingOptions> options,
     IOptions<ServiceOptions> serviceOptions,
+    MessagingMetrics metrics,
     ILogger<InboxProcessor> logger
 ) : BackgroundService
 {
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IOptions<MessagingOptions> _options = options;
+    private readonly IOptions<ServiceOptions> _serviceOptions = serviceOptions;
+    private readonly MessagingMetrics _metrics = metrics;
+    private readonly ILogger<InboxProcessor> _logger = logger;
+
     /// <summary>
-    /// Handles pending rows until none is due.
+    /// Handles pending rows until none is due. The run duration is recorded with its outcome; a cancelled run
+    /// records nothing, because a cancellation is not a failure.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A task that completes when the run ends.</returns>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        bool isClaimed;
-        do
+        var startedAt = _timeProvider.GetTimestamp();
+        try
         {
-            isClaimed = await ProcessNextAsync(cancellationToken);
+            bool isClaimed;
+            do
+            {
+                isClaimed = await ProcessNextAsync(cancellationToken);
+            }
+            while (isClaimed);
         }
-        while (isClaimed);
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            RecordRun(ObservabilityConstants.Outcomes.Failure, startedAt);
+
+            throw;
+        }
+
+        RecordRun(ObservabilityConstants.Outcomes.Success, startedAt);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,7 +76,7 @@ internal sealed class InboxProcessor(
         while (!stoppingToken.IsCancellationRequested)
         {
             await RunSafelyAsync(stoppingToken);
-            await Task.Delay(options.Value.PollingIntervalMilliseconds, stoppingToken);
+            await Task.Delay(_options.Value.PollingIntervalMilliseconds, stoppingToken);
         }
     }
 
@@ -65,7 +88,7 @@ internal sealed class InboxProcessor(
         }
         catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogError(exception, "The inbox processor run failed. The next run starts after the interval.");
+            _logger.LogError(exception, "The inbox processor run failed. The next run starts after the interval.");
         }
     }
 
@@ -87,7 +110,7 @@ internal sealed class InboxProcessor(
 
     private async Task<bool> RunNextAsync(Action<Guid> onClaimed, CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateScope();
+        using var scope = _scopeFactory.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<InboxMessageRunner>()
             .RunNextAsync(onClaimed, cancellationToken);
@@ -106,8 +129,8 @@ internal sealed class InboxProcessor(
     /// <returns>A task that completes when the failure is recorded or skipped.</returns>
     private async Task RecordFailureAsync(Guid messageId, Exception exception, CancellationToken cancellationToken)
     {
-        using var scope = scopeFactory.CreateActorScope(
-            ServiceActor.InboxProcessor.For(serviceOptions.Value.ToServiceName()));
+        using var scope = _scopeFactory.CreateActorScope(
+            ServiceActor.InboxProcessor.For(_serviceOptions.Value.ToServiceName()));
         var dbContext = scope.ServiceProvider.GetRequiredService<IInboxDbContext>();
 
         var message = await dbContext.InboxMessages.SingleOrDefaultAsync(
@@ -115,21 +138,21 @@ internal sealed class InboxProcessor(
             cancellationToken);
         if (message is null)
         {
-            logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", messageId);
+            _logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", messageId);
 
             return;
         }
 
         if (IsPermanent(exception))
         {
-            message.RecordPermanentFailure(timeProvider.GetUtcNow().UtcDateTime, exception.Message);
+            message.RecordPermanentFailure(_timeProvider.GetUtcNow().UtcDateTime, exception.Message);
         }
         else
         {
             message.RecordFailure(
-                timeProvider.GetUtcNow().UtcDateTime,
+                _timeProvider.GetUtcNow().UtcDateTime,
                 exception.Message,
-                options.Value.InboxMaxAttemptCount);
+                _options.Value.InboxMaxAttemptCount);
         }
 
         try
@@ -138,7 +161,7 @@ internal sealed class InboxProcessor(
         }
         catch (DbUpdateConcurrencyException)
         {
-            logger.LogInformation(
+            _logger.LogInformation(
                 "Inbox message {MessageId} changed in another processor before its failure was recorded. "
                 + "The processor skips it.",
                 messageId);
@@ -147,13 +170,14 @@ internal sealed class InboxProcessor(
         }
 
         LogFailure(message, exception);
+        CountFailure(message, exception);
     }
 
     private void LogFailure(InboxMessage message, Exception exception)
     {
         if (IsPermanent(exception))
         {
-            logger.LogError(
+            _logger.LogError(
                 exception,
                 "Inbox message {MessageId} of type {MessageType} is invalid. The processor does not retry it.",
                 message.Id,
@@ -164,12 +188,12 @@ internal sealed class InboxProcessor(
 
         if (message.FailedOn is null)
         {
-            logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", message.Id);
+            _logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", message.Id);
 
             return;
         }
 
-        logger.LogError(
+        _logger.LogError(
             exception,
             "Inbox message {MessageId} of type {MessageType} failed {AttemptCount} times. "
             + "The processor stops retrying it.",
@@ -177,6 +201,37 @@ internal sealed class InboxProcessor(
             message.Type,
             message.AttemptCount);
     }
+
+    /// <summary>
+    /// Counts the recorded failure: a permanent failure and a failure at the attempt limit end the row, every other
+    /// failure schedules a retry.
+    /// </summary>
+    /// <param name="message">The row with its recorded failure.</param>
+    /// <param name="exception">The failure of the handling attempt.</param>
+    private void CountFailure(InboxMessage message, Exception exception)
+    {
+        if (IsPermanent(exception))
+        {
+            _metrics.RecordFailed(message.Type, ObservabilityConstants.Messaging.Failures.Permanent);
+
+            return;
+        }
+
+        if (message.FailedOn is not null)
+        {
+            _metrics.RecordFailed(message.Type, ObservabilityConstants.Messaging.Failures.AttemptLimit);
+
+            return;
+        }
+
+        _metrics.RecordRetried(ObservabilityConstants.Messaging.Processors.Inbox, message.Type);
+    }
+
+    private void RecordRun(string outcome, long startedAt) =>
+        _metrics.RecordRun(
+            ObservabilityConstants.Messaging.Processors.Inbox,
+            outcome,
+            _timeProvider.GetElapsedTime(startedAt));
 
     /// <summary>
     /// Tells a failure that no retry can fix from one that a later attempt can fix. A payload that does not

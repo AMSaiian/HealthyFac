@@ -6,6 +6,7 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Domain.Emails;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
@@ -13,7 +14,13 @@ namespace HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
 public record CreateEmployeeInviteRequest : IRequest<CreateEmployeeInviteResponse>
 {
     public required Guid CompanyId { get; init; }
-    public required string Email { get; init; }
+
+    public required string Email
+    {
+        get;
+        init => field = EmailAddresses.Normalize(value);
+    }
+
     public required RoleCode RoleCode { get; init; }
     public required IReadOnlyList<Guid> DepartmentIds { get; init; }
 }
@@ -35,10 +42,9 @@ public class CreateEmployeeInviteRequestHandler(
         CancellationToken ct = default(CancellationToken)
     )
     {
-        var email = request.Email.Trim().ToLowerInvariant();
         var departmentIds = request.DepartmentIds.Distinct().ToList();
 
-        var isEmailEmployed = await dbContext.Employees.AnyAsync(employee => employee.Email == email, ct);
+        var isEmailEmployed = await dbContext.Employees.AnyAsync(employee => employee.Email == request.Email, ct);
         if (isEmailEmployed)
         {
             throw new ConflictException(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
@@ -46,7 +52,7 @@ public class CreateEmployeeInviteRequestHandler(
 
         var hasOpenInvite = await dbContext.EmployeeInvites.AnyAsync(
             invite => invite.CompanyId == request.CompanyId
-                && invite.Email == email
+                && invite.Email == request.Email
                 && invite.AcceptedAt == null,
             ct);
         if (hasOpenInvite)
@@ -70,7 +76,7 @@ public class CreateEmployeeInviteRequestHandler(
 
         var invite = new EmployeeInvite(
             request.CompanyId,
-            email,
+            request.Email,
             roleId,
             departments,
             tokenService.CreateSalt(),
