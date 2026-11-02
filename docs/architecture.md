@@ -25,6 +25,13 @@ This document records the service boundaries and the decisions that connect the 
 - **Client to service:** the SPA calls the gateway. The gateway forwards to the service. Every service validates the JWT again.
 - **Service to service, asynchronous:** RabbitMQ with Rebus. Every service uses the transactional outbox and inbox (`backend-infrastructure.md`, rule **Outbox and Inbox**). A message type name has the form `<service>.v<version>:<Name>` (e.g., `core.v1:EmployeeInvited`).
 - **Service to service, synchronous:** OAuth 2.0 Token Exchange when the call acts for a user, or Client Credentials when the service acts for itself. Never put a token into a message.
+- **Register a client:** call `AddUserDelegatedToken(audience, scope)` for a call on behalf of a user. Call `AddClientCredentialsToken().AddActorHeaders()` for a call of an own flow to one of our services. Call `AddClientCredentialsToken()` alone for Keycloak and external APIs. The target audience needs an optional client scope on the calling client in the realm file.
+- **Message or call:** a feature chooses a message or a synchronous call by its needs. A message fits when the flow does not need the result and the target may be unavailable. A call fits when the flow needs the answer at once. Both carry the actor.
+- **Exchanged token:** the handler exchanges the user token for a short token of one audience. The token carries the `organization` scope. It carries the permissions of the user, including those of the calling API, because Keycloak keeps the own client roles of the calling client in its exchanged tokens. The downstream scopes do not narrow it. Keep each permission name unique across all APIs, because the `permissions` claim is flat. The handler keeps it in Redis for each user, audience, and scope, shared by the instances of the service, until `RefreshMarginSeconds` plus a random jitter of up to `RefreshJitterSeconds` before it expires. Redis removes the entry when the token expires. One instance fetches a token that is due: the others wait on a Redis lock and read the new token, and they fetch it themselves when the lock outlives `LockTimeoutSeconds`. The service token cache uses the same store and the same refresh moment. Asynchronous work has no user token, so it never exchanges.
+- **Revocation of an exchanged token:** an exchanged token is used only inside a user request that passed the gateway revocation check, so the target needs no revocation check of its own. Keycloak also refuses the exchange for a disabled user.
+- **Service token:** it carries the permissions of its service account, narrowed to the downstream scopes of the current flow. A use case declares them with `[DownstreamScopes(...)]`. A worker that is not a use case calls `IDownstreamScopeHolder.Enter`. The handler asks for the scope `{service}-{name}` of each downstream scope. Without a downstream scope, the token carries no permission. The downstream scopes narrow only this token.
+- **Keycloak client per service:** each deployable unit has one client and one secret. Its service account holds a service role with the permissions of all its flows. Role scope mappings and `fullScopeAllowed: false` narrow the service token to the downstream scopes that the flow asked for.
+- **Failed calls:** a failed outgoing HTTP call throws an `HttpRequestException` with the method, the path without the query, the status, and a reason. One composed reader (`EnsureSuccessAsync`, `HttpErrorReasonReaders.Default`) takes the reason from the allow-listed fields of the three error formats: ProblemDetails, the Keycloak `errorMessage`, and OAuth 2.0. The message never holds the raw body.
 
 ## Messaging
 
@@ -49,13 +56,27 @@ This document records the service boundaries and the decisions that connect the 
 
 ## Actor Context
 
-- Each DI scope has one actor: the user ID, the company ID, the employee ID, and a system flag. `ICurrentUserProvider` reads it.
+- Each DI scope has one actor: the kind, the actor ID, the name of a service actor, the company ID, and the employee ID. `ICurrentUserProvider` reads it.
 - An HTTP request, an inbox message, or a job enters the actor once. A second enter throws until the first lease ends.
 - A scope outside an HTTP request starts with `CreateActorScope`. It is the only way to start a job scope, a processor step, or the database start-up.
+- **Service call:** a service call carries the actor of the calling flow in the actor headers `healthyfac-actor-id` and `healthyfac-company-id`. Messages use the same headers, and the trust is the same: the target trusts the calling service.
+- A service token from a client in `ServiceActors:AllowedClients` runs as the actor of the headers, a user included. The target keeps the actor ID as it is, as for a message. A client outside the list, or a missing or invalid actor header, returns `401`. An empty list accepts no service token.
+- A token with a client ID and the user shape (for example, an exchanged token) is a user token. The target ignores the actor headers on it.
+- The restored actor of a service call gets no rights of its own. The permissions of the call come from the service token, never from the restored user. When the actor context gets permissions, a service call fills them from the service token.
+- A request with a user token never sends actor headers on a service token. `AddActorHeaders` throws and sends nothing in that case: the call must use the token exchange. The gateway removes both actor headers from every external request.
+- A use case that a service calls takes the company from the request or from the company header, and it checks that the company exists. It never reads `GetCompanyId()` for an actor without a company.
+- An outgoing call reads the actor from the asynchronous flow that entered it, because a handler of `IHttpClientFactory` lives in its own DI scope.
 - Only Infrastructure and Web can set the actor. `ActorContextHolder` lives in Shared.Infrastructure, so an Application handler cannot replace the actor.
-- The system actor has a fixed GUID. It is not a Keycloak user. An anonymous HTTP request runs as the system actor.
+- An actor has one of three kinds: `user`, `service`, and `anonymous`. The values are part of the actor IDs, so a rename changes the IDs.
+- A service never acts as a whole. A flow of the service starts the work: the database start-up, the outbox processor, or the inbox processor. Each flow is a service actor with the name `<service>:<flow>` (for example, `core:outboxProcessor`).
+- The `Service:Name` setting names the running service (`core`, `auth`, or `gateway`). The processors and the start-up read it to build their service actor. A start-up check rejects any other value.
+- Every actor that is not a user has a name-based UUID (version 5) in one fixed HealthyFac namespace. The key is `anonymous` or `service:<service>:<flow>`. The ID is the same in every environment and needs no table. A Keycloak user ID is version 4, so a user ID never equals an actor ID.
+- A request without a signed-in user runs as the anonymous actor, never as a service actor. The anonymous actor has no company and no employee. Nothing grants it a right.
 - An authenticated HTTP request runs as the user of its token. `ActorContextMiddleware` runs after authentication and reads `sub`, `organization`, and `employee_id`. Each value must be a GUID, and `organization` must hold exactly one value. Any other shape returns `401`, because the tenant is not clear.
 - `Outbox.Add` stores the actor in the row. The inbox processor restores the original actor, so audit fields show who started the work.
+- A receiver keeps an incoming actor ID as it is. The anonymous ID gives `anonymous`, any other version 5 ID gives `service`, and every other ID gives `user` (`KnownActors.KindOf`). A restored actor has no name, and the company is kept. Only the service that runs a flow knows its name. The trace links the receiver to that flow.
+- Each service declares its own flows. The common flows that shared code runs stay in Shared (`ServiceActor`). A flow of one service lives in that service's project and uses `KnownActors.ForServiceFlow`.
+- An audit view shows a user by name. It shows a service actor or the anonymous actor as a generic label from `KindOf`. It never shows a flow name.
 
 ## Email
 
@@ -118,7 +139,7 @@ This document records the service boundaries and the decisions that connect the 
 ## Gateway Failure Policy
 
 - Redis is not a hard dependency of the gateway. When Redis fails, rate limiting falls back to a local limiter per instance. With N instances, the effective limit can reach N times the configured limit during an outage.
-- A circuit breaker skips Redis for 30 seconds after a failure. Then one request tests Redis, and the others keep the local limiter until the test succeeds. The gateway logs one warning when the breaker opens and one when it closes.
+- A circuit breaker skips Redis for 30 seconds when at least half of at least 2 calls in 30 seconds fail. Then one request tests Redis, and the others keep the local limiter until the test succeeds. Polly logs the breaker events with its default levels: opened at `Error`, half-opened at `Warning`, and closed at `Information`. During a long outage, each failed test logs one `Error` and one `Warning` every 30 seconds.
 - `/health/ready` reports `Degraded` with status `200` while Redis is down. The gateway readiness does not check the services behind it.
 - Every error response of the gateway is `application/problem+json`: `429` (rate limit), `502` (destination unreachable or broken response), `503` (no healthy destination), `504` (destination timeout), and `500` (gateway exception, without details). A client cancellation gets no body.
 - The gateway never retries a request. A `POST` request is not idempotent, so the client decides on a retry.
@@ -145,7 +166,7 @@ This document records the service boundaries and the decisions that connect the 
 
 ## Shared Infrastructure
 
-- **Redis:** the token revocation list, the gateway rate limiter counters, and the distributed cache. A service caches data only through FusionCache with Redis as the distributed level and no in-process level (no `HybridCache`, no `IMemoryCache`), so every instance reads the same value. No service caches data yet. Redis holds no source data and no tokens.
+- **Redis:** the token revocation list, the gateway rate limiter counters, and the distributed cache. A service caches data only in Redis, through the shared connection, and keeps no copy in process memory (no FusionCache, no `HybridCache`, no `IMemoryCache`, no `IDistributedCache`), so every instance reads the same value. No service caches data yet. Redis also holds the service tokens and the exchanged tokens of each service, without encryption (an accepted risk), with a time to live of the token lifetime, and the short locks that give one token fetch across the instances. No instance keeps a token in process memory. While Redis is down, every outgoing call fetches its own token from Keycloak (an accepted risk), and the Redis circuit breaker makes each Redis call fail fast. Every Redis call goes through one Polly circuit breaker (from `Microsoft.Extensions.Resilience`); the service reports `Degraded` while it is open, and only the calls that guard copies or load fall back. Redis must stay on a private network with authentication. Redis holds no source data.
 - **Azurite:** blob storage for the Document service in development.
 
 ## Open Decisions
