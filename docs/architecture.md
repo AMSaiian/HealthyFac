@@ -122,7 +122,7 @@ This document records the service boundaries and the decisions that connect the 
     - Each route that the web app calls (`core`, `core-invite-public`) names the policy with `"CorsPolicy": "HealthyFacDefault"`.
     - The CORS middleware runs before authentication. A preflight (`OPTIONS`, no `Authorization` header) gets `204`. It never meets authentication, the revocation check, the rate limiter, or authorization.
     - `Cors:PreflightMaxAgeSeconds` (600) lets the browser cache the answer. Browsers ignore a value above 7200.
-    - A service behind the gateway keeps `Cors:Enabled = false`. Two layers that write `Access-Control-Allow-Origin` make the browser reject the response.
+    - A service behind the gateway keeps `Cors:IsEnabled = false`. Two layers that write `Access-Control-Allow-Origin` make the browser reject the response.
     - Keycloak answers CORS for its own routes from the `webOrigins` of each client. The gateway adds no CORS headers there.
     - The allowed origins have no default. Each environment sets `Cors:AllowedOrigins` (Compose: `HEALTHYFAC_SPA_URL`).
 - **Versioned paths only:** the `core` route matches `/api/core/v{n}/...` only. Paths such as `/api/core/hc`, `/api/core/health/ready`, and `/api/core/openapi/...` match no route, so the gateway makes no call to Core. It answers `401` without a token and `404` with a token.
@@ -179,6 +179,7 @@ This document records the service boundaries and the decisions that connect the 
 - **Messaging metrics:** the counters `healthyfac.messaging.published`, `handled`, `retried`, and `failed` (tag `healthyfac.messaging.failure`: `permanent` or `attempt_limit`), and the histograms `healthyfac.messaging.run.duration` and `healthyfac.messaging.handle.duration` (seconds). The tags are the processor (`outbox`, `inbox`), the message type, and the outcome, never a message ID. A cancellation records no failure.
 - **Backlog gauges:** a sampler reads the pending count and the oldest pending time of both tables every 15 seconds, with one query per table on the pending index and without a trace. The gauges `healthyfac.messaging.pending` and `healthyfac.messaging.oldest_pending.age` report the last sample, so the export never queries the database. A failed inbox row is not pending. Every instance reports the same table values, so a dashboard aggregates them with `max`, never `sum`.
 - **Span names:** an internal span is `<Area>.<Action>` in PascalCase (`Razor.Render`, `UseCase.Validate`). The use case span keeps the request type name, and the tag `healthyfac.use_case` holds the same name. HTTP and messaging spans keep the library names. No span name holds an ID or a user value. The rule `observability` lists the naming conventions.
+- **Layer boundary:** Domain, Application, and Infrastructure create spans and metrics only through the .NET API (`ActivitySource`, `Meter`). Only `HealthyFac.Shared.Web` references OpenTelemetry packages, so the host decides where telemetry goes. The architecture tests forbid the `OpenTelemetry` namespace in the inner layers.
 
 ## Shared Infrastructure
 
