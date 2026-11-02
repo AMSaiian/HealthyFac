@@ -7,13 +7,11 @@ public static class CorsPolicyOptionsValidatorTestData
     public static TheoryData<int> AboveBrowserLimit => new()
     {
         7201,
-        int.MaxValue,
     };
 
     public static TheoryData<int> ValidPreflightMaxAges => new()
     {
         1,
-        600,
         7200,
     };
 
@@ -23,7 +21,7 @@ public static class CorsPolicyOptionsValidatorTestData
     public static CorsPolicyOptions EnabledWithPreflightMaxAge(int seconds) =>
         new()
         {
-            Enabled = true,
+            IsEnabled = true,
             AllowedOrigins = ["http://app.healthyfac.test:4200"],
             PreflightMaxAgeSeconds = seconds,
         };

@@ -15,6 +15,8 @@ namespace HealthyFac.Gateway.Web.Proxy;
 /// </remarks>
 internal sealed class ProxyErrorMiddleware(ILogger<ProxyErrorMiddleware> logger) : IMiddleware
 {
+    private readonly ILogger<ProxyErrorMiddleware> _logger = logger;
+
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         await next(context);
@@ -62,7 +64,7 @@ internal sealed class ProxyErrorMiddleware(ILogger<ProxyErrorMiddleware> logger)
     {
         var proxyFeature = context.GetReverseProxyFeature();
 
-        logger.LogWarning(
+        _logger.LogWarning(
             "Proxy failure on route {RouteId} to cluster {ClusterId}: {ErrorKind}",
             proxyFeature.Route.Config.RouteId,
             proxyFeature.Cluster.Config.ClusterId,

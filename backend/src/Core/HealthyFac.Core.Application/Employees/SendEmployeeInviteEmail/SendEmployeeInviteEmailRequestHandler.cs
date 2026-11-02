@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
@@ -38,22 +37,30 @@ public sealed class SendEmployeeInviteEmailRequestHandler(
     ILogger<SendEmployeeInviteEmailRequestHandler> logger
 ) : RequestHandler<EmployeeInvited>
 {
-    protected override async Task HandleInternalAsync(EmployeeInvited request, CancellationToken ct)
+    private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IInviteTokenService _tokenService = tokenService;
+    private readonly IEmailSender _emailSender = emailSender;
+    private readonly IEmployeeInviteEmailBuilder _emailBuilder = emailBuilder;
+    private readonly IOptions<InviteLinkOptions> _linkOptions = linkOptions;
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly ILogger<SendEmployeeInviteEmailRequestHandler> _logger = logger;
+
+    protected override async Task HandleInternalAsync(EmployeeInvited request, CancellationToken cancellationToken)
     {
-        var invite = await dbContext.EmployeeInvites
+        var invite = await _dbContext.EmployeeInvites
             .AsNoTracking()
-            .SingleOrDefaultAsync(invite => invite.Id == request.InviteId, ct);
+            .SingleOrDefaultAsync(invite => invite.Id == request.InviteId, cancellationToken);
 
         if (invite is null)
         {
-            logger.LogInformation("Invite email skipped: invite {InviteId} does not exist.", request.InviteId);
+            _logger.LogInformation("Invite email skipped: invite {InviteId} does not exist.", request.InviteId);
 
             return;
         }
 
-        if (!invite.CanAccept(timeProvider.GetUtcNow().UtcDateTime))
+        if (!invite.CanAccept(_timeProvider.GetUtcNow().UtcDateTime))
         {
-            logger.LogInformation(
+            _logger.LogInformation(
                 "Invite email skipped: invite {InviteId} is accepted or expired. A supervisor must resend it.",
                 invite.Id);
 
@@ -63,15 +70,15 @@ public sealed class SendEmployeeInviteEmailRequestHandler(
         var model = new EmployeeInviteEmailModel
         {
             To = invite.Email,
-            Link = BuildLink(tokenService.CreateToken(invite.Id, invite.TokenSalt)),
+            Link = BuildLink(_tokenService.CreateToken(invite.Id, invite.TokenSalt)),
             ExpiresAt = invite.ExpiresAt,
         };
-        var email = await emailBuilder.BuildAsync(model, ct);
+        var email = await _emailBuilder.BuildAsync(model, cancellationToken);
 
-        await emailSender.SendAsync(email, ct);
+        await _emailSender.SendAsync(email, cancellationToken);
     }
 
     private string BuildLink(string token) =>
-        $"{linkOptions.Value.SpaBaseUrl.TrimEnd(LinkConstants.PathSeparator)}"
+        $"{_linkOptions.Value.SpaBaseUrl.TrimEnd(LinkConstants.PathSeparator)}"
         + $"{InviteLinkConstants.InvitePath}#{InviteLinkConstants.TokenFragmentKey}={token}";
 }

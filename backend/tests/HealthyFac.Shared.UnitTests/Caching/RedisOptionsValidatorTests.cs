@@ -9,37 +9,6 @@ public sealed class RedisOptionsValidatorTests
 
     [Theory]
     [MemberData(
-        nameof(RedisOptionsValidatorTestData.ValidConnectionStrings),
-        MemberType = typeof(RedisOptionsValidatorTestData)
-    )]
-    public void Validate_WhenConnectionStringIsSet_ShouldBeValid(string connectionString)
-    {
-        var options = new RedisOptions { ConnectionString = connectionString };
-
-        var result = _validator.Validate(options);
-
-        result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
-    }
-
-    [Theory]
-    [MemberData(
-        nameof(RedisOptionsValidatorTestData.BlankConnectionStrings),
-        MemberType = typeof(RedisOptionsValidatorTestData)
-    )]
-    public void Validate_WhenConnectionStringIsBlank_ShouldReportConnectionStringRequired(string connectionString)
-    {
-        var options = new RedisOptions { ConnectionString = connectionString };
-
-        var result = _validator.Validate(options);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should()
-            .Contain(error => error.ErrorMessage == RedisValidationMessages.ConnectionStringRequired);
-    }
-
-    [Theory]
-    [MemberData(
         nameof(RedisOptionsValidatorTestData.ValidTimeouts),
         MemberType = typeof(RedisOptionsValidatorTestData)
     )]

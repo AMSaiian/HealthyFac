@@ -26,5 +26,7 @@ public sealed class RecordingEmailSender : IEmailSender
 /// <param name="failure">The exception to throw.</param>
 public sealed class ThrowingEmailSender(Exception failure) : IEmailSender
 {
-    public Task SendAsync(EmailMessage message, CancellationToken cancellationToken) => throw failure;
+    private readonly Exception _failure = failure;
+
+    public Task SendAsync(EmailMessage message, CancellationToken cancellationToken) => throw _failure;
 }

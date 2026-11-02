@@ -16,9 +16,11 @@ namespace HealthyFac.Gateway.Web.RateLimiting;
 /// </remarks>
 internal sealed class RateLimitRejectionHandler(ILogger<RateLimitRejectionHandler> logger)
 {
+    private readonly ILogger<RateLimitRejectionHandler> _logger = logger;
+
     public async ValueTask HandleAsync(OnRejectedContext context, CancellationToken cancellationToken)
     {
-        logger.LogDebug("Rate limit rejected a request to {Path}", context.HttpContext.Request.Path);
+        _logger.LogDebug("Rate limit rejected a request to {Path}", context.HttpContext.Request.Path);
 
         if (TryGetRetryAfterSeconds(context, out var retryAfterSeconds))
         {

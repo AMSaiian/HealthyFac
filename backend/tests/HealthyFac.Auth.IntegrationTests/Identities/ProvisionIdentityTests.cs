@@ -4,7 +4,8 @@ using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities;
 
-public sealed class ProvisionIdentityTests(ProvisioningFixture fixture) : IClassFixture<ProvisioningFixture>
+[Collection(KeycloakCollection.Name)]
+public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
 {
     private readonly ProvisioningFixture _fixture = fixture;
 

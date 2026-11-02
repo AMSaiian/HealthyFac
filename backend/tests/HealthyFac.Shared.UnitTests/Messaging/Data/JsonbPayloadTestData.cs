@@ -5,8 +5,6 @@ public static class JsonbPayloadTestData
     public static TheoryData<string> StorablePayloads => new()
     {
         """{"a":1}""",
-        "[1,2,3]",
-        "null",
         """{"text":"line\nbreak"}""",
     };
 

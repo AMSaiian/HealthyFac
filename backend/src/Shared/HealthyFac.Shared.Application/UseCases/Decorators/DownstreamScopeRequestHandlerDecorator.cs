@@ -23,10 +23,13 @@ internal sealed class DownstreamScopeRequestHandlerDecorator<TRequest, TResponse
         ?.Scopes
         .ToArray();
 
-    public async Task<TResponse> HandleAsync(TRequest request, CancellationToken ct = default(CancellationToken))
+    public async Task<TResponse> HandleAsync(
+        TRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
     {
         using var downstreamScope = _holder.Enter(Declared ?? []);
 
-        return await _innerHandler.HandleAsync(request, ct);
+        return await _innerHandler.HandleAsync(request, cancellationToken);
     }
 }

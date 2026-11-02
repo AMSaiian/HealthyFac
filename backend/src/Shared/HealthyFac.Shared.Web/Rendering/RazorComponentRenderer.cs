@@ -16,6 +16,9 @@ namespace HealthyFac.Shared.Web.Rendering;
 /// <param name="loggerFactory">The logger factory of the renderer.</param>
 public sealed class RazorComponentRenderer(IServiceProvider services, ILoggerFactory loggerFactory)
 {
+    private readonly IServiceProvider _services = services;
+    private readonly ILoggerFactory _loggerFactory = loggerFactory;
+
     /// <summary>
     /// Renders the component to an HTML string. <see cref="HtmlRenderer"/> takes no token, so the method checks
     /// the token once before the render starts.
@@ -69,25 +72,21 @@ public sealed class RazorComponentRenderer(IServiceProvider services, ILoggerFac
             .WithTag(ObservabilityConstants.Rendering.Tags.Component, typeof(TComponent).Name)
             .WithTag(ObservabilityConstants.Rendering.Tags.Format, format);
 
-        try
+        return await activity.TraceAsync(() => RenderComponentAsync<TComponent>(parameters), cancellationToken);
+    }
+
+    private async Task<string> RenderComponentAsync<TComponent>(IDictionary<string, object?> parameters)
+        where TComponent : IComponent
+    {
+        await using var renderer = new HtmlRenderer(_services, _loggerFactory);
+
+        var html = await renderer.Dispatcher.InvokeAsync(async () =>
         {
-            await using var renderer = new HtmlRenderer(services, loggerFactory);
+            var output = await renderer.RenderComponentAsync<TComponent>(ParameterView.FromDictionary(parameters));
 
-            var html = await renderer.Dispatcher.InvokeAsync(async () =>
-            {
-                var output = await renderer.RenderComponentAsync<TComponent>(ParameterView.FromDictionary(parameters));
+            return output.ToHtmlString();
+        });
 
-                return output.ToHtmlString();
-            });
-            activity.MarkSuccess();
-
-            return html;
-        }
-        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
-        {
-            activity.MarkException(exception);
-
-            throw;
-        }
+        return html;
     }
 }

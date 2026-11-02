@@ -8,6 +8,8 @@ namespace HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 /// </summary>
 public sealed class FakePrimaryRateLimiter(Func<RateLimitLease> acquire) : RateLimiter
 {
+    private readonly Func<RateLimitLease> _acquire = acquire;
+
     private int _callCount;
 
     public int CallCount => _callCount;
@@ -29,6 +31,6 @@ public sealed class FakePrimaryRateLimiter(Func<RateLimitLease> acquire) : RateL
     {
         Interlocked.Increment(ref _callCount);
 
-        return acquire();
+        return _acquire();
     }
 }

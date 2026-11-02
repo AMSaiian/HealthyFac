@@ -1,4 +1,3 @@
-using HealthyFac.Auth.Application.Identities.Messages;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +34,7 @@ public sealed class RevokeIdentityRequestHandler(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ILogger<RevokeIdentityRequestHandler> _logger = logger;
 
-    protected override async Task HandleInternalAsync(EmployeeDeactivated request, CancellationToken ct)
+    protected override async Task HandleInternalAsync(EmployeeDeactivated request, CancellationToken cancellationToken)
     {
         if (request.IdentityUserId is not { } userId)
         {
@@ -46,8 +45,8 @@ public sealed class RevokeIdentityRequestHandler(
             return;
         }
 
-        await _identityAdmin.DisableUserAsync(userId, ct);
-        await _identityAdmin.LogoutUserAsync(userId, ct);
-        await _sessionRevoker.RevokeAsync(userId, _timeProvider.GetUtcNow().AddSeconds(1), ct);
+        await _identityAdmin.DisableUserAsync(userId, cancellationToken);
+        await _identityAdmin.LogoutUserAsync(userId, cancellationToken);
+        await _sessionRevoker.RevokeAsync(userId, _timeProvider.GetUtcNow().AddSeconds(1), cancellationToken);
     }
 }

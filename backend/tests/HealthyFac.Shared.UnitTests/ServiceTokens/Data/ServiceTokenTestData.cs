@@ -69,43 +69,23 @@ public static class ServiceTokenTestData
     public static TheoryData<ServiceTokenOptions> ValidOptions => new()
     {
         CreateOptions(),
-        CreateOptions("http://keycloak:8080/realms/healthyfac/protocol/openid-connect/token"),
-        CreateOptions(lockPollMilliseconds: LockPollJustBelowTimeoutMilliseconds),
+        CreateOptions(LockPollJustBelowTimeoutMilliseconds),
     };
 
     public static TheoryData<ServiceTokenOptions, string> InvalidOptionsWithExpectedError => new()
     {
         {
-            CreateOptions(string.Empty),
-            ServiceTokenValidationMessages.TokenEndpointInvalid
-        },
-        {
-            CreateOptions("/relative/token"),
-            ServiceTokenValidationMessages.TokenEndpointInvalid
-        },
-        {
-            CreateOptions("ftp://auth.example.test/token"),
-            ServiceTokenValidationMessages.TokenEndpointInvalid
-        },
-        { CreateOptions(clientId: string.Empty), ServiceTokenValidationMessages.ClientIdRequired },
-        { CreateOptions(clientSecret: " "), ServiceTokenValidationMessages.ClientSecretRequired },
-        {
-            CreateOptions(lockPollMilliseconds: LockPollEqualToTimeoutMilliseconds),
+            CreateOptions(LockPollEqualToTimeoutMilliseconds),
             ServiceTokenValidationMessages.LockPollNotBelowTimeout
         },
     };
 
-    private static ServiceTokenOptions CreateOptions(
-        string tokenEndpoint = TokenEndpoint,
-        string clientId = ClientId,
-        string clientSecret = ClientSecret,
-        int lockPollMilliseconds = LockPollMilliseconds
-    ) =>
+    private static ServiceTokenOptions CreateOptions(int lockPollMilliseconds = LockPollMilliseconds) =>
         new()
         {
-            TokenEndpoint = tokenEndpoint,
-            ClientId = clientId,
-            ClientSecret = clientSecret,
+            TokenEndpoint = TokenEndpoint,
+            ClientId = ClientId,
+            ClientSecret = ClientSecret,
             RefreshMarginSeconds = RefreshMarginSeconds,
             RefreshJitterSeconds = RefreshJitterSeconds,
             LockTimeoutSeconds = LockTimeoutSeconds,

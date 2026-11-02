@@ -18,15 +18,19 @@ internal sealed class Outbox(
     ICurrentUserProvider currentUserProvider
 ) : IOutbox
 {
+    private readonly IOutboxDbContext _dbContext = dbContext;
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly ICurrentUserProvider _currentUserProvider = currentUserProvider;
+
     public void Add<TMessage>(TMessage message) where TMessage : IIntegrationMessage
     {
-        var actor = currentUserProvider.TryGetActor() ?? throw MessagingErrors.ActorMissing();
+        var actor = _currentUserProvider.TryGetActor() ?? throw MessagingErrors.ActorMissing();
 
-        dbContext.OutboxMessages.Add(
+        _dbContext.OutboxMessages.Add(
             new OutboxMessage(
                 TMessage.MessageType,
                 JsonSerializer.Serialize(message, MessagingJsonOptions.Instance),
-                timeProvider.GetUtcNow().UtcDateTime,
+                _timeProvider.GetUtcNow().UtcDateTime,
                 Activity.Current?.Id,
                 actor.UserId,
                 actor.CompanyId));

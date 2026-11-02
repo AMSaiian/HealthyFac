@@ -26,9 +26,12 @@ namespace HealthyFac.Shared.Infrastructure.Email;
 /// <param name="logger">Logs a failed disconnect.</param>
 public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
+    private readonly IOptions<SmtpOptions> _options = options;
+    private readonly ILogger<SmtpEmailSender> _logger = logger;
+
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
-        var smtp = options.Value;
+        var smtp = _options.Value;
         var mimeMessage = CreateMimeMessage(smtp, message);
 
         using var activity = EmailActivitySource.Instance.StartActivity(ObservabilityConstants.Spans.EmailSend);
@@ -63,7 +66,7 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "The SMTP disconnect failed after the server accepted the message.");
+            _logger.LogWarning(exception, "The SMTP disconnect failed after the server accepted the message.");
         }
     }
 

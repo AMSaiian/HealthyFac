@@ -9,7 +9,9 @@ namespace HealthyFac.Gateway.IntegrationTests.Revocation;
 public sealed class RevocationTests(GatewayEnvironment environment)
     : IClassFixture<GatewayEnvironment>, IAsyncLifetime
 {
-    private readonly EchoServer _core = new(useForwardedHeaders: true);
+    private readonly GatewayEnvironment _environment = environment;
+
+    private readonly EchoServer _core = new(true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -19,7 +21,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
     public async Task Revocation_TokenIssuedBefore_Returns401()
     {
         var userId = Guid.NewGuid();
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         await RevokeAsync(gateway, userId);
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenAge));
@@ -34,7 +36,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
     public async Task Revocation_TokenIssuedAfter_Passes()
     {
         var userId = Guid.NewGuid();
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         await RevokeAsync(gateway, userId);
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenYoungAge));

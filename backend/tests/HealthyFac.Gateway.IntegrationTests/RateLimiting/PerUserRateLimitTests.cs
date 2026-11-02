@@ -8,7 +8,9 @@ namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
     : IClassFixture<GatewayEnvironment>, IAsyncLifetime
 {
-    private readonly EchoServer _core = new(useForwardedHeaders: true);
+    private readonly GatewayEnvironment _environment = environment;
+
+    private readonly EchoServer _core = new(true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -17,7 +19,7 @@ public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
     [Fact]
     public async Task DefaultPolicy_TwoUsersFromOneAddress_HaveSeparateLimits()
     {
-        await using var gateway = environment.CreateGateway(_core, settings: RateLimitTestData.DefaultLimitOfTwo);
+        await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.DefaultLimitOfTwo);
         using var firstUserClient = gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });
         using var secondUserClient =
             gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });

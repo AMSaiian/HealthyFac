@@ -11,11 +11,14 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Transport;
 /// <param name="registry">The message types that the service handles.</param>
 internal sealed class SubscriptionHostedService(IBus bus, IntegrationMessageRegistry registry) : IHostedService
 {
+    private readonly IBus _bus = bus;
+    private readonly IntegrationMessageRegistry _registry = registry;
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var messageType in registry.MessageTypes)
+        foreach (var messageType in _registry.MessageTypes)
         {
-            await bus.Advanced.Topics.Subscribe(messageType);
+            await _bus.Advanced.Topics.Subscribe(messageType);
         }
     }
 

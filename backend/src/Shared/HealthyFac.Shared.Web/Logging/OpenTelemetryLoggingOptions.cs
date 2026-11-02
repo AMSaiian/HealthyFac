@@ -12,5 +12,5 @@ public sealed class OpenTelemetryLoggingOptions
     public string? Endpoint { get; init; }
 
     /// <summary>Set to false to keep the exporter off even when an endpoint is configured.</summary>
-    public bool Enabled { get; init; } = true;
+    public bool IsEnabled { get; init; } = true;
 }

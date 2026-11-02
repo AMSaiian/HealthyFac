@@ -12,16 +12,19 @@ public sealed class ConfigurationValidator<TOptions>(
 ) : IValidateOptions<TOptions>
     where TOptions : class
 {
+    private readonly string? _optionsName = optionsName;
+    private readonly IValidator<TOptions> _validator = validator;
+
     public ValidateOptionsResult Validate(string? name, TOptions options)
     {
-        if (name is not null && name != optionsName)
+        if (name is not null && name != _optionsName)
         {
             return ValidateOptionsResult.Skip;
         }
 
         ArgumentNullException.ThrowIfNull(options);
 
-        var validationResult = validator.Validate(options);
+        var validationResult = _validator.Validate(options);
         if (validationResult.IsValid)
         {
             return ValidateOptionsResult.Success;

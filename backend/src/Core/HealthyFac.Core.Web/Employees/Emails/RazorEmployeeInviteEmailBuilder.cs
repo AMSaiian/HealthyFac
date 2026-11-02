@@ -11,13 +11,15 @@ namespace HealthyFac.Core.Web.Employees.Emails;
 /// <param name="renderer">Renders the components to strings.</param>
 public sealed class RazorEmployeeInviteEmailBuilder(RazorComponentRenderer renderer) : IEmployeeInviteEmailBuilder
 {
+    private readonly RazorComponentRenderer _renderer = renderer;
+
     public const string Subject = "You are invited to HealthyFac";
 
     public async Task<EmailMessage> BuildAsync(EmployeeInviteEmailModel model, CancellationToken cancellationToken)
     {
         var parameters = new Dictionary<string, object?> { [nameof(EmployeeInviteEmailHtml.Model)] = model };
-        var htmlBody = await renderer.RenderHtmlAsync<EmployeeInviteEmailHtml>(parameters, cancellationToken);
-        var textBody = await renderer.RenderTextAsync<EmployeeInviteEmailText>(parameters, cancellationToken);
+        var htmlBody = await _renderer.RenderHtmlAsync<EmployeeInviteEmailHtml>(parameters, cancellationToken);
+        var textBody = await _renderer.RenderTextAsync<EmployeeInviteEmailText>(parameters, cancellationToken);
 
         return new EmailMessage
         {

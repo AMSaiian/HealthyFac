@@ -6,10 +6,12 @@ namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
 public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
 {
+    private readonly GatewayEnvironment _environment = environment;
+
     private const string ForwardedPrefixHeader = "X-Forwarded-Prefix";
     private const string PublicPrefix = "/api/core";
 
-    private readonly EchoServer _core = new(useForwardedHeaders: true);
+    private readonly EchoServer _core = new(true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -18,7 +20,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task CoreRoute_WithVersionedPath_RemovesPublicPrefix()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         var response = await client.GetAsync("/api/core/v1/machines");
@@ -32,7 +34,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task CoreRoute_SendsForwardedPrefix()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync("/api/core/v1/machines");
@@ -46,7 +48,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task CoreRoute_WithForwardedHeadersInDestination_RestoresPublicPath()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         var response = await client.GetAsync("/api/core/v1/machines");
@@ -59,7 +61,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task CoreRoute_WithQueryString_ForwardsRewrittenPathAndQuery()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         var response = await client.GetAsync("/api/core/v1/employee-invites/verify?page=2&size=10");
@@ -75,7 +77,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     [MemberData(nameof(CoreRouteTestData.UnversionedPaths), MemberType = typeof(CoreRouteTestData))]
     public async Task CoreRoute_WithUnversionedPath_DoesNotForward(string path)
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         var response = await client.GetAsync(path);
@@ -88,7 +90,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task UnknownPath_ReturnsNotFound()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         var response = await client.GetAsync("/api/other/v1/x");

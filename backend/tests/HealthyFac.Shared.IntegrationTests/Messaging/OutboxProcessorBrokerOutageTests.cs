@@ -5,40 +5,28 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class OutboxProcessorBrokerOutageTests(TransportFixture fixture) : IClassFixture<TransportFixture>
 {
-    [Fact]
-    public async Task OutboxProcessor_WhenBrokerRejects_SchedulesRetry()
-    {
-        await fixture.AddPendingOutboxRowsAsync(
-            OutboxProcessorTestData.OutageMessageType,
-            OutboxProcessorTestData.SingleRowCount);
-        await fixture.StopBrokerAsync();
-        var processor = fixture.Create<OutboxProcessor>();
-
-        await processor.RunAsync(CancellationToken.None);
-
-        var rows = await fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.OutageMessageType);
-
-        var row = rows.Should().ContainSingle().Which;
-        row.ProcessedOn.Should().BeNull();
-        row.AttemptCount.Should().Be(OutboxProcessorTestData.FailedAttemptCount);
-        row.Error.Should().NotBeNullOrWhiteSpace();
-        row.NextAttemptOn.Should().BeAfter(InboxTestData.Now);
-    }
+    private readonly TransportFixture _fixture = fixture;
 
     [Fact]
-    public async Task OutboxProcessor_WhenBrokerRejects_StopsRunAfterFirstFailure()
+    public async Task OutboxProcessor_WhenBrokerRejects_SchedulesRetryAndStopsRunAfterFirstFailure()
     {
-        await fixture.AddPendingOutboxRowsAsync(
+        await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.OutageBatchMessageType,
             OutboxProcessorTestData.OutageBatchRowCount);
-        await fixture.StopBrokerAsync();
-        var processor = fixture.Create<OutboxProcessor>();
+        await _fixture.StopBrokerAsync();
+        var processor = _fixture.Create<OutboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
-        var rows = await fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.OutageBatchMessageType);
+        var rows = await _fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.OutageBatchMessageType);
 
-        rows.Count(row => row.AttemptCount == OutboxProcessorTestData.FailedAttemptCount).Should().Be(1);
+        var failedRow = rows.Should()
+            .ContainSingle(row => row.AttemptCount == OutboxProcessorTestData.FailedAttemptCount)
+            .Which;
+        failedRow.ProcessedOn.Should().BeNull();
+        failedRow.Error.Should().NotBeNullOrWhiteSpace();
+        failedRow.NextAttemptOn.Should().BeAfter(InboxTestData.Now);
+
         rows.Count(row => row.AttemptCount == 0).Should().Be(OutboxProcessorTestData.OutageBatchRowCount - 1);
     }
 }

@@ -10,6 +10,9 @@ namespace HealthyFac.Shared.Infrastructure.Messaging;
 /// <param name="timeProvider">The clock for the time of the delivery.</param>
 internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider) : IInbox
 {
+    private readonly IInboxDbContext _dbContext = dbContext;
+    private readonly TimeProvider _timeProvider = timeProvider;
+
     public async Task<bool> TryAddAsync(
         Guid messageId,
         string type,
@@ -20,13 +23,13 @@ internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var insertedCount = await dbContext.InboxMessages
+        var insertedCount = await _dbContext.InboxMessages
             .Upsert(
                 new InboxMessage(
                     messageId,
                     type,
                     payload,
-                    timeProvider.GetUtcNow().UtcDateTime,
+                    _timeProvider.GetUtcNow().UtcDateTime,
                     traceParent,
                     actorId,
                     companyId))
@@ -39,11 +42,11 @@ internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider
 
     public void MarkProcessed(InboxMessage message)
     {
-        if (!dbContext.InboxMessages.Local.Contains(message))
+        if (!_dbContext.InboxMessages.Local.Contains(message))
         {
             throw MessagingErrors.InboxMessageNotTracked(message.Id);
         }
 
-        message.MarkProcessed(timeProvider.GetUtcNow().UtcDateTime);
+        message.MarkProcessed(_timeProvider.GetUtcNow().UtcDateTime);
     }
 }

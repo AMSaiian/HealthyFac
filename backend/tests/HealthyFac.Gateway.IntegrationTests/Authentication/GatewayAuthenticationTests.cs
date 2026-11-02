@@ -8,7 +8,9 @@ namespace HealthyFac.Gateway.IntegrationTests.Authentication;
 public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     : IClassFixture<GatewayEnvironment>, IAsyncLifetime
 {
-    private readonly EchoServer _core = new(useForwardedHeaders: true);
+    private readonly GatewayEnvironment _environment = environment;
+
+    private readonly EchoServer _core = new(true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -17,7 +19,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     [Fact]
     public async Task CoreRoute_WithoutToken_Returns401()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateClient();
 
         using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
@@ -29,7 +31,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     [Fact]
     public async Task CoreRoute_WithWrongAudience_Returns401()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient(
             new TestTokenClaims { Audience = AuthenticationTestData.OtherAudience });
 
@@ -42,7 +44,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     [Fact]
     public async Task CoreRoute_WithValidToken_Forwards()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
@@ -56,10 +58,10 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     [Fact]
     public async Task InvitePublicRoute_WithoutToken_Forwards()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateClient();
 
-        using var response = await client.PostAsync(AuthenticationTestData.VerifyInviteRoute, content: null);
+        using var response = await client.PostAsync(AuthenticationTestData.VerifyInviteRoute, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         _core.RequestCount.Should().Be(1);
@@ -68,7 +70,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     [Fact]
     public async Task AdminPath_ReturnsNotFound()
     {
-        await using var gateway = environment.CreateGateway(_core);
+        await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync(AuthenticationTestData.AdminRoute);

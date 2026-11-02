@@ -1,6 +1,6 @@
 using EntityFramework.Exceptions.Common;
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Employees.Messages;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -37,38 +37,44 @@ public class CreateEmployeeInviteRequestHandler(
     TimeProvider timeProvider
 ) : IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse>
 {
+    private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IInviteTokenService _tokenService = tokenService;
+    private readonly IOutbox _outbox = outbox;
+    private readonly TimeProvider _timeProvider = timeProvider;
+
     public async Task<CreateEmployeeInviteResponse> HandleAsync(
         CreateEmployeeInviteRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         var departmentIds = request.DepartmentIds.Distinct().ToList();
 
-        var isEmailEmployed = await dbContext.Employees.AnyAsync(employee => employee.Email == request.Email, ct);
+        var isEmailEmployed = await _dbContext.Employees.AnyAsync(
+            employee => employee.Email == request.Email, cancellationToken);
         if (isEmailEmployed)
         {
             throw new ConflictException(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
         }
 
-        var hasOpenInvite = await dbContext.EmployeeInvites.AnyAsync(
+        var hasOpenInvite = await _dbContext.EmployeeInvites.AnyAsync(
             invite => invite.CompanyId == request.CompanyId
                 && invite.Email == request.Email
                 && invite.AcceptedAt == null,
-            ct);
+            cancellationToken);
         if (hasOpenInvite)
         {
             throw new ConflictException(EmployeeInviteErrors.Rejections.OpenInviteExists);
         }
 
-        var roleId = await dbContext.Roles
+        var roleId = await _dbContext.Roles
                 .Where(role => role.Code == request.RoleCode)
                 .Select(role => (Guid?)role.Id)
-                .SingleOrDefaultAsync(ct)
+                .SingleOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.RoleNotFound);
 
-        var departments = await dbContext.Departments
+        var departments = await _dbContext.Departments
             .Where(department => department.CompanyId == request.CompanyId && departmentIds.Contains(department.Id))
-            .ToListAsync(ct);
+            .ToListAsync(cancellationToken);
         if (departments.Count != departmentIds.Count)
         {
             throw new NotFoundException(EmployeeInviteErrors.Rejections.DepartmentsNotFound);
@@ -79,10 +85,10 @@ public class CreateEmployeeInviteRequestHandler(
             request.Email,
             roleId,
             departments,
-            tokenService.CreateSalt(),
-            tokenService.GetExpiresAt(timeProvider.GetUtcNow().UtcDateTime));
-        dbContext.EmployeeInvites.Add(invite);
-        outbox.Add(
+            _tokenService.CreateSalt(),
+            _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));
+        _dbContext.EmployeeInvites.Add(invite);
+        _outbox.Add(
             new EmployeeInvited
             {
                 InviteId = invite.Id,
@@ -92,7 +98,7 @@ public class CreateEmployeeInviteRequestHandler(
 
         try
         {
-            await dbContext.SaveChangesAsync(ct);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (UniqueConstraintException exception)
         {

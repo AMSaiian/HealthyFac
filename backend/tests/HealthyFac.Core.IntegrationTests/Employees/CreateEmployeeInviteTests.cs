@@ -1,7 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
-using HealthyFac.Core.Application.Employees.Messages;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
@@ -13,6 +13,8 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task CreateAsync_WithValidRequest_StoresOpenInviteWithNormalizedEmail()
     {
@@ -20,7 +22,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
         var inviteId = await CreateAsync(companyId, InviteTestData.RawEmail, departmentIds);
 
-        var invite = await fixture.LoadInviteAsync(inviteId);
+        var invite = await _fixture.LoadInviteAsync(inviteId);
 
         invite.Email.Should().Be(InviteTestData.NormalizedEmail);
         invite.AcceptedAt.Should().BeNull();
@@ -95,7 +97,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             InviteTestData.DuplicateDepartmentEmail,
             [departmentIds[0], departmentIds[0]]);
 
-        var invite = await fixture.LoadInviteAsync(inviteId);
+        var invite = await _fixture.LoadInviteAsync(inviteId);
 
         invite.Departments.Should().ContainSingle().Which.Id.Should().Be(departmentIds[0]);
     }
@@ -114,13 +116,13 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     public async Task CreateAsync_TwiceInParallelForSameEmail_CreatesOneInviteAndOneConflict()
     {
         var (companyId, departmentIds) = await ArrangeCompanyAsync();
-        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
+        using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
             race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds)),
             race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds)));
 
-        var inviteCount = await fixture.CountInvitesAsync(
+        var inviteCount = await _fixture.CountInvitesAsync(
             companyId,
             InviteTestData.CreateParallelEmail);
 
@@ -137,8 +139,8 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
     private async Task<(Guid CompanyId, IReadOnlyList<Guid> DepartmentIds)> ArrangeCompanyAsync()
     {
-        var companyId = await fixture.CreateCompanyAsync(InviteTestData.CompanyName);
-        var departmentIds = await fixture.CreateDepartmentsAsync(
+        var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
+        var departmentIds = await _fixture.CreateDepartmentsAsync(
             companyId,
             InviteTestData.FirstDepartmentName,
             InviteTestData.SecondDepartmentName);
@@ -148,25 +150,25 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
     private async Task ArrangeEmployeeAsync(Guid companyId, IReadOnlyList<Guid> departmentIds, string email)
     {
-        var (_, token) = await fixture.CreateInviteAsync(
+        var (_, token) = await _fixture.CreateInviteAsync(
             companyId,
             departmentIds,
             email,
             DateTime.UtcNow.AddHours(1));
 
-        await fixture.AcceptInviteAsync(token);
+        await _fixture.AcceptInviteAsync(token);
     }
 
     private async Task<IReadOnlyList<EmployeeInvited>> ReadInvitedMessagesAsync(Guid inviteId)
     {
-        var messages = await fixture.ReadOutboxMessagesAsync<EmployeeInvited>();
+        var messages = await _fixture.ReadOutboxMessagesAsync<EmployeeInvited>();
 
         return messages.Where(message => message.InviteId == inviteId).ToList();
     }
 
     private async Task<Guid> CreateAsync(Guid companyId, string email, IReadOnlyList<Guid> departmentIds)
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse>>();
 

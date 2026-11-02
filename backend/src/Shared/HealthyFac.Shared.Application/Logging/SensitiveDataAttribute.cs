@@ -16,7 +16,7 @@ public class SensitiveDataAttribute : Attribute
 
     public int ShowLast { get; init; }
 
-    public bool PreserveLength { get; init; }
+    public bool IsLengthPreserved { get; init; }
 
     public SensitiveDataAttribute()
     {

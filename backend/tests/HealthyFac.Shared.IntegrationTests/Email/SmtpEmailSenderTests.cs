@@ -7,6 +7,8 @@ namespace HealthyFac.Shared.IntegrationTests.Email;
 
 public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture<MailpitFixture>
 {
+    private readonly MailpitFixture _fixture = fixture;
+
     [Fact]
     public async Task SendAsync_WithMailpit_WritesSendSpanWithMailKitChildren()
     {
@@ -15,7 +17,7 @@ public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture
             MailKit.Telemetry.SmtpClient.ActivitySourceName);
         using var parent = new Activity(EmailTestData.ParentName).Start();
 
-        await fixture.EmailSender.SendAsync(
+        await _fixture.EmailSender.SendAsync(
             EmailTestData.MessageFor(EmailTestData.SpanRecipient),
             CancellationToken.None);
 
@@ -38,12 +40,12 @@ public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture
     [Fact]
     public async Task SendAsync_WithMessage_DeliversToMailpitWithBothBodies()
     {
-        await fixture.EmailSender.SendAsync(EmailTestData.Message, CancellationToken.None);
+        await _fixture.EmailSender.SendAsync(EmailTestData.Message, CancellationToken.None);
 
-        var messages = await fixture.Server.GetMessagesAsync();
+        var messages = await _fixture.Server.GetMessagesAsync();
         var message = messages.Should().ContainSingle(stored => stored.To.Contains(EmailTestData.Recipient)).Subject;
-        var text = await fixture.Server.GetMessageTextAsync(message.Id);
-        var html = await fixture.Server.GetMessageHtmlAsync(message.Id);
+        var text = await _fixture.Server.GetMessageTextAsync(message.Id);
+        var html = await _fixture.Server.GetMessageHtmlAsync(message.Id);
 
         message.To.Should().ContainSingle().Which.Should().Be(EmailTestData.Recipient);
         message.Subject.Should().Be(EmailTestData.Subject);

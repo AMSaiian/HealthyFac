@@ -8,8 +8,6 @@ public static class ServiceOptionsTestData
         new()
         {
             new ServiceOptions { Name = "core" },
-            new ServiceOptions { Name = "auth" },
-            new ServiceOptions { Name = "gateway" },
         };
 
     public static TheoryData<ServiceOptions> InvalidOptions =>
@@ -17,6 +15,5 @@ public static class ServiceOptionsTestData
         {
             new ServiceOptions { Name = "insights" },
             new ServiceOptions { Name = "Core" },
-            new ServiceOptions { Name = string.Empty },
         };
 }

@@ -33,6 +33,11 @@ public static class ConventionConstants
         public const string CapturedParameterGroup = "name";
     }
 
+    public static class CancellationTokens
+    {
+        public const string ParameterName = "cancellationToken";
+    }
+
     public static class Booleans
     {
         public static readonly IReadOnlyList<string> Prefixes = ["is", "has", "can"];

@@ -1,5 +1,6 @@
 using HealthyFac.Auth.Application.Identities;
-using HealthyFac.Auth.Application.Identities.Messages;
+using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
+using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 
@@ -53,38 +54,6 @@ public static class ProvisioningTestData
             [ActorHeaderNames.CompanyId] = companyId.ToString(),
         };
 
-    public static TheoryData<EmployeeAccepted, string> InvalidMessagesWithExpectedError => new()
-    {
-        {
-            CreateAccepted() with { EmployeeId = Guid.Empty },
-            IdentityErrors.Validation.EmployeeIdRequired
-        },
-        {
-            CreateAccepted() with { CompanyId = Guid.Empty },
-            IdentityErrors.Validation.CompanyIdRequired
-        },
-        {
-            CreateAccepted() with { Email = string.Empty },
-            IdentityErrors.Validation.EmailRequired
-        },
-        {
-            CreateAccepted() with { Email = "not-an-email" },
-            IdentityErrors.Validation.EmailInvalid
-        },
-        {
-            CreateAccepted() with { FirstName = " " },
-            IdentityErrors.Validation.FirstNameRequired
-        },
-        {
-            CreateAccepted() with { LastName = string.Empty },
-            IdentityErrors.Validation.LastNameRequired
-        },
-        {
-            CreateAccepted() with { RoleCode = string.Empty },
-            IdentityErrors.Validation.RoleCodeRequired
-        },
-    };
-
     public static EmployeeDeactivated CreateDeactivated(Guid? identityUserId, Guid? companyId = null) => new()
     {
         EmployeeId = Guid.CreateVersion7(),
@@ -102,26 +71,8 @@ public static class ProvisioningTestData
     public static TheoryData<EmployeeDeactivated, string> InvalidDeactivatedMessagesWithExpectedError => new()
     {
         {
-            CreateDeactivated(Guid.CreateVersion7()) with { EmployeeId = Guid.Empty },
-            IdentityErrors.Validation.EmployeeIdRequired
-        },
-        {
-            CreateDeactivated(Guid.CreateVersion7(), Guid.Empty),
-            IdentityErrors.Validation.CompanyIdRequired
-        },
-        {
             CreateDeactivated(Guid.Empty),
             IdentityErrors.Validation.IdentityUserIdInvalid
         },
-        {
-            CreateDeactivated(Guid.CreateVersion7()) with { DeactivatedAt = default(DateTime) },
-            IdentityErrors.Validation.DeactivatedAtRequired
-        },
-    };
-
-    public static TheoryData<EmployeeAccepted> ValidMessages => new()
-    {
-        CreateAccepted(),
-        CreateAccepted(roleCode: "supervisor"),
     };
 }

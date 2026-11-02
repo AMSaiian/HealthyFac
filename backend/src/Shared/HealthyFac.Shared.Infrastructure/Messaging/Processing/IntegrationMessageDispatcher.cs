@@ -14,6 +14,9 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
 /// <param name="services">The service provider of the current scope.</param>
 internal sealed class IntegrationMessageDispatcher(IntegrationMessageRegistry registry, IServiceProvider services)
 {
+    private readonly IntegrationMessageRegistry _registry = registry;
+    private readonly IServiceProvider _services = services;
+
     /// <summary>
     /// Calls the typed dispatch that is registered for the message type.
     /// </summary>
@@ -28,12 +31,12 @@ internal sealed class IntegrationMessageDispatcher(IntegrationMessageRegistry re
     /// </exception>
     public Task DispatchAsync(string type, string payload, CancellationToken cancellationToken)
     {
-        if (!registry.TryGetDispatch(type, out var dispatch))
+        if (!_registry.TryGetDispatch(type, out var dispatch))
         {
             throw MessagingErrors.UnregisteredMessageType(type);
         }
 
-        return dispatch(services, payload, cancellationToken);
+        return dispatch(_services, payload, cancellationToken);
     }
 
     /// <summary>
@@ -52,7 +55,7 @@ internal sealed class IntegrationMessageDispatcher(IntegrationMessageRegistry re
     /// it, so the processor marks the row failed at the first attempt.
     /// </exception>
     internal static async Task DispatchTypedAsync<TMessage>(
-        IServiceProvider services,
+        IServiceProvider _services,
         string payload,
         CancellationToken cancellationToken
     )
@@ -60,7 +63,7 @@ internal sealed class IntegrationMessageDispatcher(IntegrationMessageRegistry re
     {
         var message = Deserialize<TMessage>(payload);
 
-        await services.GetRequiredService<IRequestHandler<TMessage>>().HandleAsync(message, cancellationToken);
+        await _services.GetRequiredService<IRequestHandler<TMessage>>().HandleAsync(message, cancellationToken);
     }
 
     private static TMessage Deserialize<TMessage>(string payload)

@@ -1,7 +1,6 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.Email;

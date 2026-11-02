@@ -78,7 +78,7 @@ public class TransportFixture : IAsyncLifetime
         builder.Services.AddSingleton(Recorder);
         builder.Services.AddSingleton(CancellationTrigger);
         builder.Services.AddMessagingMetrics();
-        builder.Services.AddUseCases(typeof(TestPing).Assembly);
+        builder.Services.AddUseCases(SharedIntegrationTestsAssembly.Instance);
         builder.Services.AddIntegrationMessage<TestPing>();
         builder.Services.AddIntegrationMessage<TestRecorded>();
         builder.Services.AddIntegrationMessage<TestFailing>();

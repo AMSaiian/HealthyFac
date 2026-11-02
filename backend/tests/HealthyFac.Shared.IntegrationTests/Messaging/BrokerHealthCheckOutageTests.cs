@@ -7,12 +7,14 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class BrokerHealthCheckOutageTests(TransportFixture fixture) : IClassFixture<TransportFixture>
 {
+    private readonly TransportFixture _fixture = fixture;
+
     [Fact]
     public async Task BrokerHealthCheck_WhenBrokerIsDown_ReportsDegradedWithinTimeout()
     {
-        await using var services = fixture.BuildBrokerHealthCheckServices();
+        await using var services = _fixture.BuildBrokerHealthCheckServices();
         var healthCheckService = services.GetRequiredService<HealthCheckService>();
-        await fixture.StopBrokerAsync();
+        await _fixture.StopBrokerAsync();
         var stopwatch = Stopwatch.StartNew();
 
         var report = await healthCheckService.CheckHealthAsync();

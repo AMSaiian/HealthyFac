@@ -4,7 +4,9 @@ namespace HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 
 public sealed class FakeRateLimitLease(bool isAcquired) : RateLimitLease
 {
-    public override bool IsAcquired => isAcquired;
+    private readonly bool _isAcquired = isAcquired;
+
+    public override bool IsAcquired => _isAcquired;
 
     public override IEnumerable<string> MetadataNames => [];
 

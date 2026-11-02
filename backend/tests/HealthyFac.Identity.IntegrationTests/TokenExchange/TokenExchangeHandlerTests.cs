@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
-public sealed class TokenExchangeHandlerTests(TokenExchangeFixture fixture) : IClassFixture<TokenExchangeFixture>
+[Collection(TokenExchangeCollection.Name)]
+public sealed class TokenExchangeHandlerTests(TokenExchangeFixture fixture)
 {
     private readonly TokenExchangeFixture _fixture = fixture;
 

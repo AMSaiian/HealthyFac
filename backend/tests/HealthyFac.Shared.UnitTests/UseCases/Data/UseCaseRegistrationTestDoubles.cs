@@ -25,9 +25,11 @@ public sealed class HandlerProbe
 
 public sealed class NoResultRequestHandler(HandlerProbe probe) : RequestHandler<NoResultRequest>
 {
-    protected override Task HandleInternalAsync(NoResultRequest request, CancellationToken ct)
+    private readonly HandlerProbe _probe = probe;
+
+    protected override Task HandleInternalAsync(NoResultRequest request, CancellationToken cancellationToken)
     {
-        probe.Record();
+        _probe.Record();
 
         return Task.CompletedTask;
     }
@@ -37,10 +39,18 @@ public sealed record DuplicatedRequest : IRequest<int>;
 
 public sealed class FirstDuplicatedRequestHandler : IRequestHandler<DuplicatedRequest, int>
 {
-    public Task<int> HandleAsync(DuplicatedRequest request, CancellationToken ct = default) => Task.FromResult(1);
+    public Task<int> HandleAsync(
+        DuplicatedRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) =>
+        Task.FromResult(1);
 }
 
 public sealed class SecondDuplicatedRequestHandler : IRequestHandler<DuplicatedRequest, int>
 {
-    public Task<int> HandleAsync(DuplicatedRequest request, CancellationToken ct = default) => Task.FromResult(2);
+    public Task<int> HandleAsync(
+        DuplicatedRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) =>
+        Task.FromResult(2);
 }

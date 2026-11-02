@@ -9,12 +9,14 @@ namespace HealthyFac.Gateway.IntegrationTests.Hosting;
 /// </summary>
 public sealed class ClientAddressStartupFilter(IPAddress clientAddress) : IStartupFilter
 {
+    private readonly IPAddress _clientAddress = clientAddress;
+
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
         app =>
         {
             app.Use((context, nextMiddleware) =>
             {
-                context.Connection.RemoteIpAddress = clientAddress;
+                context.Connection.RemoteIpAddress = _clientAddress;
 
                 return nextMiddleware();
             });

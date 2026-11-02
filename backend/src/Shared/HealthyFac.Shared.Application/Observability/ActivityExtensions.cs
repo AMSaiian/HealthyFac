@@ -26,6 +26,59 @@ public static class ActivityExtensions
         }
 
         /// <summary>
+        /// Runs the work and marks the outcome of the activity: <see cref="MarkSuccess"/> after the work completes,
+        /// and <see cref="MarkException"/> when it throws. A cancellation is not a failure, so the method marks
+        /// nothing while <paramref name="cancellationToken"/> is cancelled and the status stays unset. The method
+        /// always rethrows the original exception with its stack trace. A null activity still runs the work.
+        /// </summary>
+        /// <param name="work">The traced work.</param>
+        /// <param name="cancellationToken">The token of the traced work. A thrown exception counts as a
+        /// cancellation while this token is cancelled.</param>
+        /// <returns>A task that completes when the work completes.</returns>
+        public async Task TraceAsync(Func<Task> work, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await work();
+                activity.MarkSuccess();
+            }
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                activity.MarkException(exception);
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs the work and marks the outcome of the activity: <see cref="MarkSuccess"/> after the work completes,
+        /// and <see cref="MarkException"/> when it throws. A cancellation is not a failure, so the method marks
+        /// nothing while <paramref name="cancellationToken"/> is cancelled and the status stays unset. The method
+        /// always rethrows the original exception with its stack trace. A null activity still runs the work.
+        /// </summary>
+        /// <typeparam name="TResult">The result type of the work.</typeparam>
+        /// <param name="work">The traced work.</param>
+        /// <param name="cancellationToken">The token of the traced work. A thrown exception counts as a
+        /// cancellation while this token is cancelled.</param>
+        /// <returns>The result of the work.</returns>
+        public async Task<TResult> TraceAsync<TResult>(Func<Task<TResult>> work, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await work();
+                activity.MarkSuccess();
+
+                return result;
+            }
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                activity.MarkException(exception);
+
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Marks the activity as a successful outcome.
         /// </summary>
         /// <returns>The same activity, so calls can chain.</returns>

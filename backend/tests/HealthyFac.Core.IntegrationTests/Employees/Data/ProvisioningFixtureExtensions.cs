@@ -1,6 +1,8 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees.DeactivateEmployee;
-using HealthyFac.Core.Application.Employees.Messages;
+using HealthyFac.Core.Application.Employees;
+using HealthyFac.Core.Application.Employees.CompleteProvisioning;
+using HealthyFac.Core.Application.Employees.FailProvisioning;
 using HealthyFac.Core.Application.Employees.RetryProvisioning;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.IntegrationTests.Database.Data;

@@ -30,7 +30,7 @@ public static class CorsExtensions
                 .GetSection(CorsPolicyOptions.SectionName)
                 .Get<CorsPolicyOptions>();
 
-            if (options is null || !options.Enabled)
+            if (options is null || !options.IsEnabled)
             {
                 return services;
             }
@@ -54,7 +54,7 @@ public static class CorsExtensions
                     policy.AllowAnyMethod();
                     policy.SetPreflightMaxAge(TimeSpan.FromSeconds(options.PreflightMaxAgeSeconds));
 
-                    if (options.AllowCredentials)
+                    if (options.IsCredentialsAllowed)
                     {
                         policy.AllowCredentials();
                     }

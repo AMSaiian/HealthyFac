@@ -75,7 +75,7 @@ public static class LoggingExtensions
         IConfiguration configuration
     )
     {
-        if (options is null || !options.Enabled || string.IsNullOrWhiteSpace(options.Endpoint))
+        if (options is null || !options.IsEnabled || string.IsNullOrWhiteSpace(options.Endpoint))
         {
             return;
         }

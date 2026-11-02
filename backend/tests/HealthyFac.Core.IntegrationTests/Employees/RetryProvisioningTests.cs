@@ -8,16 +8,18 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task RetryProvisioning_ForFailedEmployee_SetsProvisioningAndAddsEmployeeAccepted()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryFailedEmail);
-        await fixture.ChangeEmployeeAsync(arranged.EmployeeId, employee => employee.MarkProvisioningFailed());
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryFailedEmail);
+        await _fixture.ChangeEmployeeAsync(arranged.EmployeeId, employee => employee.MarkProvisioningFailed());
 
-        var response = await fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
+        var response = await _fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
-        var messages = await fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
 
         response.EmployeeId.Should().Be(arranged.EmployeeId);
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
@@ -28,12 +30,12 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
     [Fact]
     public async Task RetryProvisioning_ForProvisioningEmployee_AddsEmployeeAccepted()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryProvisioningEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryProvisioningEmail);
 
-        await fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
+        await _fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
-        var messages = await fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
         employee.ProvisioningRetriedAt.Should().NotBeNull();
@@ -43,12 +45,12 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
     [Fact]
     public async Task RetryProvisioning_ConcurrentWithDeactivate_OneConflicts()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryRaceEmail);
-        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryRaceEmail);
+        using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
-            race.RunAsync(() => fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId)),
-            race.RunAsync(() => fixture.DeactivateEmployeeAsync(
+            race.RunAsync(() => _fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId)),
+            race.RunAsync(() => _fixture.DeactivateEmployeeAsync(
                 arranged.CompanyId,
                 arranged.EmployeeId,
                 Guid.CreateVersion7())));
@@ -65,15 +67,15 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
     [Fact]
     public async Task RetryProvisioning_ForActiveEmployee_ThrowsConflict()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryActiveEmail);
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, Guid.CreateVersion7());
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryActiveEmail);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, Guid.CreateVersion7());
 
-        var act = () => fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
+        var act = () => _fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
 
         await act.Should()
             .ThrowAsync<ConflictException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeNotRetryable);
-        var messages = await fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
 
         messages.Should().ContainSingle();
     }
@@ -81,9 +83,9 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
     [Fact]
     public async Task RetryProvisioning_ForEmployeeOfOtherCompany_ThrowsNotFound()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryOtherCompanyEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.RetryOtherCompanyEmail);
 
-        var act = () => fixture.RetryProvisioningAsync(Guid.CreateVersion7(), arranged.EmployeeId);
+        var act = () => _fixture.RetryProvisioningAsync(Guid.CreateVersion7(), arranged.EmployeeId);
 
         await act.Should()
             .ThrowAsync<NotFoundException>()

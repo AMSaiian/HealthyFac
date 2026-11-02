@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Shared.Application.UseCases;
 
 namespace HealthyFac.Core.Application;
@@ -18,9 +17,7 @@ public static class ConfigureServices
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddApplicationServices()
         {
-            var applicationAssembly = typeof(MachineErrors).Assembly;
-
-            services.AddUseCases(applicationAssembly);
+            services.AddUseCases(CoreApplicationAssembly.Instance);
             services.AddScoped<EmployeeInviteResolver>();
 
             return services;

@@ -35,22 +35,25 @@ public record VerifiedInviteDepartment
 public class VerifyEmployeeInviteRequestHandler(ICoreDbContext dbContext, EmployeeInviteResolver inviteResolver)
     : IRequestHandler<VerifyEmployeeInviteRequest, VerifyEmployeeInviteResponse>
 {
+    private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly EmployeeInviteResolver _inviteResolver = inviteResolver;
+
     public async Task<VerifyEmployeeInviteResponse> HandleAsync(
         VerifyEmployeeInviteRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var invite = await inviteResolver.GetAcceptableAsync(request.Token, ct);
+        var invite = await _inviteResolver.GetAcceptableAsync(request.Token, cancellationToken);
 
-        var companyName = await dbContext.Companies
+        var companyName = await _dbContext.Companies
             .Where(company => company.Id == invite.CompanyId)
             .Select(company => company.Name)
-            .SingleAsync(ct);
+            .SingleAsync(cancellationToken);
 
-        var roleCode = await dbContext.Roles
+        var roleCode = await _dbContext.Roles
                 .Where(role => role.Id == invite.RoleId)
                 .Select(role => role.Code)
-                .SingleOrDefaultAsync(ct)
+                .SingleOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.RoleNotFound);
 
         return new VerifyEmployeeInviteResponse

@@ -12,6 +12,8 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 public sealed class OutboxProcessorTests(TransportFixture fixture)
     : IClassFixture<TransportFixture>, IDisposable
 {
+    private readonly TransportFixture _fixture = fixture;
+
     private readonly TestSubscriber _subscriber =
         new(fixture.BrokerConnectionString, OutboxProcessorTestData.SubscriberQueueName);
 
@@ -19,17 +21,17 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
     public async Task OutboxProcessor_WithPendingRow_PublishesAndMarksProcessed()
     {
         await _subscriber.SubscribeAsync(OutboxProcessorTestData.PublishedMessageType);
-        await fixture.AddPendingOutboxRowsAsync(
+        await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.PublishedMessageType,
             OutboxProcessorTestData.SingleRowCount);
-        var processor = fixture.Create<OutboxProcessor>();
+        var processor = _fixture.Create<OutboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
         var received = await _subscriber.WaitForMessagesAsync(
             OutboxProcessorTestData.PublishedMessageType,
             OutboxProcessorTestData.SingleRowCount);
-        var rows = await fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.PublishedMessageType);
+        var rows = await _fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.PublishedMessageType);
 
         var row = rows.Should().ContainSingle().Which;
         var message = received.Should().ContainSingle().Which;
@@ -46,11 +48,11 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
     public async Task OutboxProcessor_TwoInstances_PublishEachRowOnce()
     {
         await _subscriber.SubscribeAsync(OutboxProcessorTestData.ConcurrentMessageType);
-        await fixture.AddPendingOutboxRowsAsync(
+        await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.ConcurrentMessageType,
             OutboxProcessorTestData.ConcurrentRowCount);
-        var firstProcessor = fixture.Create<OutboxProcessor>();
-        var secondProcessor = fixture.Create<OutboxProcessor>();
+        var firstProcessor = _fixture.Create<OutboxProcessor>();
+        var secondProcessor = _fixture.Create<OutboxProcessor>();
 
         await Task.WhenAll(
             firstProcessor.RunAsync(CancellationToken.None),
@@ -59,7 +61,7 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
         var received = await _subscriber.WaitForMessagesAsync(
             OutboxProcessorTestData.ConcurrentMessageType,
             OutboxProcessorTestData.ConcurrentRowCount);
-        var rows = await fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.ConcurrentMessageType);
+        var rows = await _fixture.ReadOutboxRowsAsync(OutboxProcessorTestData.ConcurrentMessageType);
 
         received.Select(message => message.Id).Should().OnlyHaveUniqueItems();
         received.Should().HaveCount(OutboxProcessorTestData.ConcurrentRowCount);
@@ -69,11 +71,11 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
     [Fact]
     public async Task ClaimQuery_InsideTransaction_HoldsRowLockAgainstSecondClaim()
     {
-        await fixture.AddPendingOutboxRowsAsync(
+        await _fixture.AddPendingOutboxRowsAsync(
             OutboxProcessorTestData.LockedMessageType,
             OutboxProcessorTestData.SingleRowCount);
-        using var firstScope = fixture.CreateScope();
-        using var secondScope = fixture.CreateScope();
+        using var firstScope = _fixture.CreateScope();
+        using var secondScope = _fixture.CreateScope();
         var firstContext = firstScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         var secondContext = secondScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
 
@@ -94,7 +96,7 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
     [Fact]
     public async Task ClaimQuery_GeneratedSql_EndsWithForUpdateSkipLocked()
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
 
         var sql = dbContext.BuildOutboxClaimQuery(InboxTestData.Now).ToSqlQuery().Sql;
@@ -105,7 +107,7 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
     [Fact]
     public async Task ClaimQuery_WhenTableIsMissing_ThrowsPostgresExceptionUnchanged()
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(async token =>

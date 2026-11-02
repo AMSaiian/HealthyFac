@@ -1,6 +1,5 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
@@ -11,15 +10,17 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task AcceptAsync_WithValidToken_CreatesProvisioningEmployeeWithInviteData()
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptValidEmail);
 
-        var employeeId = await fixture.AcceptInviteAsync(arranged.Token);
+        var employeeId = await _fixture.AcceptInviteAsync(arranged.Token);
 
-        var employee = await fixture.LoadEmployeeAsync(employeeId);
-        var invite = await fixture.LoadInviteAsync(arranged.InviteId);
+        var employee = await _fixture.LoadEmployeeAsync(employeeId);
+        var invite = await _fixture.LoadInviteAsync(arranged.InviteId);
 
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
         employee.Email.Should().Be(InviteTestData.AcceptValidEmail);
@@ -36,7 +37,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptOutboxEmail);
 
-        var employeeId = await fixture.AcceptInviteAsync(arranged.Token);
+        var employeeId = await _fixture.AcceptInviteAsync(arranged.Token);
 
         var messages = await ReadAcceptedMessagesAsync(employeeId);
 
@@ -52,9 +53,9 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     public async Task AcceptAsync_SameTokenTwice_SecondCallThrowsGenericNotFound()
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptTwiceEmail);
-        await fixture.AcceptInviteAsync(arranged.Token);
+        await _fixture.AcceptInviteAsync(arranged.Token);
 
-        var act = () => fixture.AcceptInviteAsync(arranged.Token);
+        var act = () => _fixture.AcceptInviteAsync(arranged.Token);
 
         await act.Should()
             .ThrowAsync<NotFoundException>()
@@ -66,7 +67,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptExpiredEmail, DateTime.UtcNow.AddHours(-1));
 
-        var act = () => fixture.AcceptInviteAsync(arranged.Token);
+        var act = () => _fixture.AcceptInviteAsync(arranged.Token);
 
         await act.Should()
             .ThrowAsync<NotFoundException>()
@@ -77,13 +78,13 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     public async Task AcceptAsync_TwiceInParallel_CreatesOneEmployee()
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptParallelEmail);
-        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
+        using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
-            race.RunAsync(() => fixture.AcceptInviteAsync(arranged.Token)),
-            race.RunAsync(() => fixture.AcceptInviteAsync(arranged.Token)));
+            race.RunAsync(() => _fixture.AcceptInviteAsync(arranged.Token)),
+            race.RunAsync(() => _fixture.AcceptInviteAsync(arranged.Token)));
 
-        var employeeCount = await fixture.CountEmployeesAsync(
+        var employeeCount = await _fixture.CountEmployeesAsync(
             InviteTestData.AcceptParallelEmail);
 
         race.SaveCounts.Should().Equal(1, 1);
@@ -102,9 +103,9 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var first = await ArrangeAsync(InviteTestData.AcceptSharedEmail);
         var second = await ArrangeAsync(InviteTestData.AcceptSharedEmail);
-        await fixture.AcceptInviteAsync(second.Token);
+        await _fixture.AcceptInviteAsync(second.Token);
 
-        var act = () => fixture.AcceptInviteAsync(first.Token);
+        var act = () => _fixture.AcceptInviteAsync(first.Token);
 
         await act.Should()
             .ThrowAsync<ConflictException>()
@@ -116,13 +117,13 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var first = await ArrangeAsync(InviteTestData.AcceptSharedParallelEmail);
         var second = await ArrangeAsync(InviteTestData.AcceptSharedParallelEmail);
-        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
+        using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
-            race.RunAsync(() => fixture.AcceptInviteAsync(first.Token)),
-            race.RunAsync(() => fixture.AcceptInviteAsync(second.Token)));
+            race.RunAsync(() => _fixture.AcceptInviteAsync(first.Token)),
+            race.RunAsync(() => _fixture.AcceptInviteAsync(second.Token)));
 
-        var employeeCount = await fixture.CountEmployeesAsync(
+        var employeeCount = await _fixture.CountEmployeesAsync(
             InviteTestData.AcceptSharedParallelEmail);
 
         race.SaveCounts.Should().Equal(1, 1);
@@ -141,13 +142,13 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptBlankNameEmail);
 
-        var act = () => fixture.AcceptInviteAsync(arranged.Token, firstName: " ");
+        var act = () => _fixture.AcceptInviteAsync(arranged.Token, " ");
 
         await act.Should().ThrowAsync<ValidationException>();
     }
 
     private Task<ArrangedInvite> ArrangeAsync(string email, DateTime? expiresAt = null) =>
-        fixture.ArrangeInviteAsync(
+        _fixture.ArrangeInviteAsync(
             email,
             expiresAt ?? DateTime.UtcNow.AddHours(1),
             InviteTestData.FirstDepartmentName,
@@ -155,7 +156,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
     private async Task<IReadOnlyList<EmployeeAccepted>> ReadAcceptedMessagesAsync(Guid employeeId)
     {
-        var messages = await fixture.ReadOutboxMessagesAsync<EmployeeAccepted>();
+        var messages = await _fixture.ReadOutboxMessagesAsync<EmployeeAccepted>();
 
         return messages.Where(message => message.EmployeeId == employeeId).ToList();
     }

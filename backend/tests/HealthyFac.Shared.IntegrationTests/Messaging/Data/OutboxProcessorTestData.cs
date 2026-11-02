@@ -4,7 +4,6 @@ public static class OutboxProcessorTestData
 {
     public const string PublishedMessageType = "test.v1:ProcessorPublished";
     public const string ConcurrentMessageType = "test.v1:ProcessorConcurrent";
-    public const string OutageMessageType = "test.v1:ProcessorOutage";
     public const string OutageBatchMessageType = "test.v1:ProcessorOutageBatch";
     public const string LockedMessageType = "test.v1:ProcessorLocked";
     public const string Payload = """{"text":"processor"}""";

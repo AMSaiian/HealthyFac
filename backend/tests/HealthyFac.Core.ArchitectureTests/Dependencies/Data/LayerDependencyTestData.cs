@@ -14,6 +14,7 @@ public static class LayerDependencyTestData
     public const string AspNetCore = "Microsoft.AspNetCore";
     public const string Npgsql = "Npgsql";
     public const string LinqToDB = "LinqToDB";
+    public const string OpenTelemetry = "OpenTelemetry";
 
     public static TheoryData<string, string> ForbiddenDependencies => new()
     {
@@ -41,5 +42,11 @@ public static class LayerDependencyTestData
         { SharedDomain, LinqToDB },
         { SharedApplication, LinqToDB },
         { SharedWeb, LinqToDB },
+        { CoreDomain, OpenTelemetry },
+        { CoreApplication, OpenTelemetry },
+        { CoreInfrastructure, OpenTelemetry },
+        { SharedDomain, OpenTelemetry },
+        { SharedApplication, OpenTelemetry },
+        { SharedInfrastructure, OpenTelemetry },
     };
 }

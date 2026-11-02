@@ -8,17 +8,19 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task Deactivate_ActiveEmployee_SetsDeactivatedAndAddsMessage()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateEmail);
         var identityUserId = Guid.CreateVersion7();
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        await fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
-        var messages = await fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
         messages.Should().ContainSingle();
@@ -30,11 +32,12 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task Deactivate_ProvisioningEmployee_AddsMessageWithoutIdentity()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateProvisioningEmail);
+        var arranged =
+            await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateProvisioningEmail);
 
-        await fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
 
-        var messages = await fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         messages.Should().ContainSingle().Which.IdentityUserId.Should().BeNull();
     }
@@ -42,17 +45,17 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task Deactivate_Self_ThrowsConflict()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateSelfEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateSelfEmail);
         var identityUserId = Guid.CreateVersion7();
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        var act = () => fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, identityUserId);
+        var act = () => _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, identityUserId);
 
         await act.Should()
             .ThrowAsync<ConflictException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeIsSelf);
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
-        var messages = await fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Active);
         messages.Should().BeEmpty();
@@ -61,9 +64,10 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task Deactivate_EmployeeOfOtherCompany_ThrowsNotFound()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateOtherCompanyEmail);
+        var arranged =
+            await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateOtherCompanyEmail);
 
-        var act = () => fixture.DeactivateEmployeeAsync(
+        var act = () => _fixture.DeactivateEmployeeAsync(
             Guid.CreateVersion7(),
             arranged.EmployeeId,
             Guid.CreateVersion7());
@@ -76,15 +80,16 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task Deactivate_AlreadyDeactivatedEmployee_ThrowsConflict()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateTwiceEmail);
-        await fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.DeactivateTwiceEmail);
+        await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
 
-        var act = () => fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        var act = () => _fixture.DeactivateEmployeeAsync(
+            arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
 
         await act.Should()
             .ThrowAsync<ConflictException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeAlreadyDeactivated);
-        var messages = await fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         messages.Should().ContainSingle();
     }

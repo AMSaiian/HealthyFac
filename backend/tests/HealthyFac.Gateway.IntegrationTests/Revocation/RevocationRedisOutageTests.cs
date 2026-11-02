@@ -14,6 +14,8 @@ namespace HealthyFac.Gateway.IntegrationTests.Revocation;
 public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
     : IClassFixture<GatewayEnvironment>, IAsyncLifetime
 {
+    private readonly GatewayEnvironment _environment = environment;
+
     private const string DownClientAddress = "203.0.113.200";
 
     private readonly EchoServer _core = new(true);
@@ -52,7 +54,7 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
     {
         var store = new FlakyRevocationStore();
         var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        await using var gateway = environment.CreateGateway(
+        await using var gateway = _environment.CreateGateway(
             _core,
             configureServices: services =>
             {

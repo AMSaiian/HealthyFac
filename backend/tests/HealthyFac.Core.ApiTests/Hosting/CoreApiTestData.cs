@@ -23,7 +23,7 @@ public static class CoreApiTestData
             ["Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
             ["IdEncryption:Keys:0:Prefix"] = "v1.",
             ["IdEncryption:Keys:0:Key"] = IdEncryptionKey,
-            ["IdEncryption:Keys:0:Default"] = bool.TrueString,
+            ["IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
             ["InviteTokens:LifetimeHours"] = "72",
             ["InviteTokens:Keys:0:Id"] = "test",
             ["InviteTokens:Keys:0:Secret"] = InviteTokenSecret,
@@ -34,7 +34,7 @@ public static class CoreApiTestData
             ["Smtp:Security"] = "None",
             ["Smtp:FromAddress"] = "no-reply@healthyfac.test",
             ["Smtp:FromName"] = "HealthyFac Tests",
-            ["Seeding:SeedOptionalData"] = bool.FalseString,
+            ["Seeding:IsOptionalDataSeeded"] = bool.FalseString,
             [$"{ServiceActorOptions.SectionName}:AllowedClients:0"] = TestServiceTokenClaims.DefaultClientId,
         };
 }

@@ -11,6 +11,9 @@ public sealed class AuditableEntityInterceptor(
     ICurrentUserProvider currentUserProvider
 ) : SaveChangesInterceptor
 {
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly ICurrentUserProvider _currentUserProvider = currentUserProvider;
+
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result
@@ -24,7 +27,7 @@ public sealed class AuditableEntityInterceptor(
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         ApplyAudit(eventData.Context);
@@ -39,8 +42,8 @@ public sealed class AuditableEntityInterceptor(
             return;
         }
 
-        var userId = currentUserProvider.TryGetUserId() ?? Guid.Empty;
-        var utcNow = timeProvider.GetUtcNow().UtcDateTime;
+        var userId = _currentUserProvider.TryGetUserId() ?? Guid.Empty;
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
         {

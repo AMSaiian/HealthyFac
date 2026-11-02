@@ -116,9 +116,12 @@ public sealed record TestPing : IIntegrationMessage, IRequest
 public sealed class TestPingHandler(HandlerRecorder recorder, ICurrentUserProvider currentUserProvider)
     : RequestHandler<TestPing>
 {
-    protected override Task HandleInternalAsync(TestPing request, CancellationToken ct)
+    private readonly HandlerRecorder _recorder = recorder;
+    private readonly ICurrentUserProvider _currentUserProvider = currentUserProvider;
+
+    protected override Task HandleInternalAsync(TestPing request, CancellationToken cancellationToken)
     {
-        recorder.Record(new HandledCall(request.Text, currentUserProvider.TryGetActor()));
+        _recorder.Record(new HandledCall(request.Text, _currentUserProvider.TryGetActor()));
 
         return Task.CompletedTask;
     }

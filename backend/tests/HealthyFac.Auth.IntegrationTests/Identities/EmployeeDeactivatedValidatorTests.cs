@@ -1,4 +1,4 @@
-using HealthyFac.Auth.Application.Identities.Messages;
+using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities;

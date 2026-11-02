@@ -12,19 +12,19 @@ public static class RouteHostTestData
 
     private const string KeycloakAddressKey = "ReverseProxy:Clusters:keycloak:Destinations:main:Address";
 
-    private static readonly string[] _apiRoutes = ["core", "core-invite-public"];
-    private static readonly string[] _authRoutes = ["keycloak-token", "keycloak-realm", "keycloak-resources"];
+    private static readonly string[] ApiRoutes = ["core", "core-invite-public"];
+    private static readonly string[] AuthRoutes = ["keycloak-token", "keycloak-realm", "keycloak-resources"];
 
     public static IReadOnlyDictionary<string, string> CreateSettings(string keycloakAddress)
     {
         var settings = new Dictionary<string, string> { [KeycloakAddressKey] = keycloakAddress };
 
-        foreach (var route in _apiRoutes)
+        foreach (var route in ApiRoutes)
         {
             settings[$"ReverseProxy:Routes:{route}:Match:Hosts:0"] = ApiHost;
         }
 
-        foreach (var route in _authRoutes)
+        foreach (var route in AuthRoutes)
         {
             settings[$"ReverseProxy:Routes:{route}:Match:Hosts:0"] = AuthHost;
         }

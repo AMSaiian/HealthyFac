@@ -9,13 +9,15 @@ namespace HealthyFac.Shared.Infrastructure.CurrentUser;
 /// <param name="holder">The holder of the actor of the scope.</param>
 public sealed class ActorCurrentUserProvider(ActorContextHolder holder) : ICurrentUserProvider
 {
-    public Guid? TryGetUserId() => holder.Current?.UserId;
+    private readonly ActorContextHolder _holder = holder;
+
+    public Guid? TryGetUserId() => _holder.Current?.UserId;
 
     public Guid GetUserId() => TryGetUserId() ?? throw CurrentUserErrors.ActorMissing();
 
-    public Guid? TryGetCompanyId() => holder.Current?.CompanyId;
+    public Guid? TryGetCompanyId() => _holder.Current?.CompanyId;
 
     public Guid GetCompanyId() => TryGetCompanyId() ?? throw CurrentUserErrors.CompanyMissing();
 
-    public ActorContext? TryGetActor() => holder.Current;
+    public ActorContext? TryGetActor() => _holder.Current;
 }

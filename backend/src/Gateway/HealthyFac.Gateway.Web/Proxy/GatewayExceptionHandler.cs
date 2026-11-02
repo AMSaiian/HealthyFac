@@ -8,6 +8,8 @@ namespace HealthyFac.Gateway.Web.Proxy;
 /// </summary>
 internal sealed class GatewayExceptionHandler(ILogger<GatewayExceptionHandler> logger) : IExceptionHandler
 {
+    private readonly ILogger<GatewayExceptionHandler> _logger = logger;
+
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
@@ -21,7 +23,7 @@ internal sealed class GatewayExceptionHandler(ILogger<GatewayExceptionHandler> l
             return true;
         }
 
-        logger.LogError(exception, "Unhandled exception in the gateway");
+        _logger.LogError(exception, "Unhandled exception in the gateway");
 
         await httpContext.Response.WriteGatewayProblemAsync(
             StatusCodes.Status500InternalServerError,

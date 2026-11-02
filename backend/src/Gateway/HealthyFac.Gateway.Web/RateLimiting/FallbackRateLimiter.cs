@@ -42,18 +42,22 @@ internal sealed class FallbackRateLimiter(
     RedisResiliencePipeline redis
 ) : ReplenishingRateLimiter
 {
+    private readonly RateLimiter _primary = primary;
+    private readonly TimeSpan _window = window;
+    private readonly RedisResiliencePipeline _redis = redis;
+
     private readonly Lazy<ReplenishingRateLimiter> _local =
         new(createLocal, LazyThreadSafetyMode.ExecutionAndPublication);
 
     public override bool IsAutoReplenishing => false;
 
-    public override TimeSpan ReplenishmentPeriod => window;
+    public override TimeSpan ReplenishmentPeriod => _window;
 
     public override TimeSpan? IdleDuration
     {
         get
         {
-            var primaryIdleDuration = primary.IdleDuration;
+            var primaryIdleDuration = _primary.IdleDuration;
             if (!_local.IsValueCreated)
             {
                 return primaryIdleDuration;
@@ -83,8 +87,8 @@ internal sealed class FallbackRateLimiter(
     {
         try
         {
-            var primaryLease = await redis.ExecuteAsync(
-                token => primary.AcquireAsync(permitCount, token),
+            var primaryLease = await _redis.ExecuteAsync(
+                token => _primary.AcquireAsync(permitCount, token),
                 cancellationToken);
 
             return primaryLease;
@@ -100,7 +104,7 @@ internal sealed class FallbackRateLimiter(
     {
         if (disposing)
         {
-            primary.Dispose();
+            _primary.Dispose();
 
             if (_local.IsValueCreated)
             {
@@ -113,7 +117,7 @@ internal sealed class FallbackRateLimiter(
 
     protected override async ValueTask DisposeAsyncCore()
     {
-        await primary.DisposeAsync();
+        await _primary.DisposeAsync();
 
         if (_local.IsValueCreated)
         {

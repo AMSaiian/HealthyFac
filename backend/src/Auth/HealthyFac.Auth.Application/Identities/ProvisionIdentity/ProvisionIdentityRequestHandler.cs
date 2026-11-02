@@ -1,4 +1,3 @@
-using HealthyFac.Auth.Application.Identities.Messages;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.Logging;
@@ -42,12 +41,13 @@ public sealed class ProvisionIdentityRequestHandler(
     private readonly IAuthDbContext _dbContext = dbContext;
     private readonly ILogger<ProvisionIdentityRequestHandler> _logger = logger;
 
-    protected override async Task HandleInternalAsync(EmployeeAccepted request, CancellationToken ct)
+    protected override async Task HandleInternalAsync(EmployeeAccepted request, CancellationToken cancellationToken)
     {
-        var organizationId = await _identityAdmin.FindOrganizationIdAsync(request.CompanyId, ct);
+        var organizationId = await _identityAdmin.FindOrganizationIdAsync(request.CompanyId, cancellationToken);
         if (organizationId is null)
         {
-            await PublishFailedAsync(request, IdentityProvisioningFailureReasons.OrganizationNotFound, ct);
+            await PublishFailedAsync(
+                request, IdentityProvisioningFailureReasons.OrganizationNotFound, cancellationToken);
 
             return;
         }
@@ -55,36 +55,37 @@ public sealed class ProvisionIdentityRequestHandler(
         Guid userId;
         try
         {
-            userId = await FindOrCreateUserAsync(request, ct);
+            userId = await FindOrCreateUserAsync(request, cancellationToken);
         }
         catch (IdentityConflictException)
         {
-            await PublishFailedAsync(request, IdentityProvisioningFailureReasons.EmailAlreadyRegistered, ct);
+            await PublishFailedAsync(
+                request, IdentityProvisioningFailureReasons.EmailAlreadyRegistered, cancellationToken);
 
             return;
         }
 
-        await _identityAdmin.AddOrganizationMemberAsync(organizationId.Value, userId, ct);
+        await _identityAdmin.AddOrganizationMemberAsync(organizationId.Value, userId, cancellationToken);
 
         try
         {
-            await _identityAdmin.AssignRealmRoleAsync(userId, request.RoleCode, ct);
+            await _identityAdmin.AssignRealmRoleAsync(userId, request.RoleCode, cancellationToken);
         }
         catch (RealmRoleNotFoundException)
         {
-            await PublishFailedAsync(request, IdentityProvisioningFailureReasons.RoleNotFound, ct);
+            await PublishFailedAsync(request, IdentityProvisioningFailureReasons.RoleNotFound, cancellationToken);
 
             return;
         }
 
-        var hasPassword = await _identityAdmin.HasPasswordAsync(userId, ct);
+        var hasPassword = await _identityAdmin.HasPasswordAsync(userId, cancellationToken);
         if (!hasPassword)
         {
-            await _identityAdmin.SendSetPasswordEmailAsync(userId, ct);
+            await _identityAdmin.SendSetPasswordEmailAsync(userId, cancellationToken);
         }
 
         _outbox.Add(new IdentityProvisioned { EmployeeId = request.EmployeeId, IdentityUserId = userId });
-        await _dbContext.SaveChangesAsync(ct);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -92,14 +93,14 @@ public sealed class ProvisionIdentityRequestHandler(
     /// for the same employee, the method continues with that user.
     /// </summary>
     /// <param name="request">The accepted employee.</param>
-    /// <param name="ct">The <see cref="CancellationToken"/> to observe while waiting.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe while waiting.</param>
     /// <returns>The ID of the user that holds the employee ID.</returns>
     /// <exception cref="IdentityConflictException">
     /// Another user holds the email, and no user has the employee ID.
     /// </exception>
-    private async Task<Guid> FindOrCreateUserAsync(EmployeeAccepted request, CancellationToken ct)
+    private async Task<Guid> FindOrCreateUserAsync(EmployeeAccepted request, CancellationToken cancellationToken)
     {
-        var existingUserId = await _identityAdmin.FindUserIdByEmployeeIdAsync(request.EmployeeId, ct);
+        var existingUserId = await _identityAdmin.FindUserIdByEmployeeIdAsync(request.EmployeeId, cancellationToken);
         if (existingUserId is { } foundUserId)
         {
             return foundUserId;
@@ -115,11 +116,12 @@ public sealed class ProvisionIdentityRequestHandler(
                     FirstName = request.FirstName,
                     LastName = request.LastName,
                 },
-                ct);
+                cancellationToken);
         }
         catch (IdentityConflictException)
         {
-            var parallelUserId = await _identityAdmin.FindUserIdByEmployeeIdAsync(request.EmployeeId, ct);
+            var parallelUserId =
+                await _identityAdmin.FindUserIdByEmployeeIdAsync(request.EmployeeId, cancellationToken);
             if (parallelUserId is { } createdUserId)
             {
                 return createdUserId;
@@ -129,7 +131,7 @@ public sealed class ProvisionIdentityRequestHandler(
         }
     }
 
-    private async Task PublishFailedAsync(EmployeeAccepted request, string reason, CancellationToken ct)
+    private async Task PublishFailedAsync(EmployeeAccepted request, string reason, CancellationToken cancellationToken)
     {
         _logger.LogWarning(
             "Provisioning of employee {EmployeeId} failed with reason {Reason}.",
@@ -137,6 +139,6 @@ public sealed class ProvisionIdentityRequestHandler(
             reason);
 
         _outbox.Add(new IdentityProvisioningFailed { EmployeeId = request.EmployeeId, Reason = reason });
-        await _dbContext.SaveChangesAsync(ct);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

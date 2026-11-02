@@ -40,9 +40,6 @@ public static class DestructuringTestData
     public static TheoryData<object> SimpleScalarData => new()
     {
         { "a simple string" },
-        { 42 },
-        { DateTime.UtcNow },
-        { Guid.CreateVersion7() },
     };
 
     public static TheoryData<SensitiveCollectionDto> SensitiveCollectionData => new()

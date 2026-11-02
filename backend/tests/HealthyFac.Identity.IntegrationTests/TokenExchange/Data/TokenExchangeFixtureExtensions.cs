@@ -32,5 +32,32 @@ public static class TokenExchangeFixtureExtensions
                     ["scope"] = scope,
                 },
                 host);
+
+        /// <summary>
+        /// Disables the user, exchanges the token, and enables the user again in a <c>finally</c> block. The
+        /// collection shares one realm, so a failed exchange must never leave the user disabled for the next test.
+        /// </summary>
+        /// <param name="subjectToken">The access token of the user, issued before the user is disabled.</param>
+        /// <param name="userId">The Keycloak ID of the user to disable for the exchange.</param>
+        /// <param name="audience">The target client.</param>
+        /// <param name="scope">The requested scopes, separated by spaces.</param>
+        /// <returns>The status code and the body of the answer.</returns>
+        public async Task<TokenResponse> ExchangeWhileUserDisabledAsync(
+            string subjectToken,
+            Guid userId,
+            string audience,
+            string scope
+        )
+        {
+            await fixture.Realm.SetUserEnabledAsync(userId, false);
+            try
+            {
+                return await fixture.ExchangeAsync(subjectToken, audience, scope);
+            }
+            finally
+            {
+                await fixture.Realm.SetUserEnabledAsync(userId, true);
+            }
+        }
     }
 }

@@ -1,4 +1,3 @@
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
@@ -23,11 +22,14 @@ public sealed class FailProvisioningRequestHandler(
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly ILogger<FailProvisioningRequestHandler> _logger = logger;
 
-    protected override async Task HandleInternalAsync(IdentityProvisioningFailed request, CancellationToken ct)
+    protected override async Task HandleInternalAsync(
+        IdentityProvisioningFailed request,
+        CancellationToken cancellationToken
+    )
     {
         var employee = await _dbContext.Employees.SingleOrDefaultAsync(
                 employee => employee.Id == request.EmployeeId,
-                ct)
+                cancellationToken)
             ?? throw EmployeeProvisioningErrors.EmployeeMissing(request.EmployeeId);
 
         _logger.LogWarning(
@@ -44,6 +46,6 @@ public sealed class FailProvisioningRequestHandler(
         }
 
         employee.MarkProvisioningFailed();
-        await _dbContext.SaveChangesAsync(ct);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -19,37 +19,37 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
     private readonly HttpClient _client = client;
     private readonly KeycloakAdminOptions _options = options.Value;
 
-    public async Task<Guid?> FindOrganizationIdAsync(Guid companyId, CancellationToken ct)
+    public async Task<Guid?> FindOrganizationIdAsync(Guid companyId, CancellationToken cancellationToken)
     {
         var organizations = await GetRequiredAsync<List<KeycloakOrganization>>(
             KeycloakAdminRoutes.OrganizationSearch(
                 _options.Realm,
                 companyId.ToString(KeycloakAdminConstants.OrganizationNameFormat)),
-            ct);
+            cancellationToken);
 
         return organizations.Select(organization => (Guid?)organization.Id).FirstOrDefault();
     }
 
-    public async Task<Guid?> FindUserIdByEmployeeIdAsync(Guid employeeId, CancellationToken ct)
+    public async Task<Guid?> FindUserIdByEmployeeIdAsync(Guid employeeId, CancellationToken cancellationToken)
     {
         var users = await GetRequiredAsync<List<KeycloakUser>>(
             KeycloakAdminRoutes.UserSearchByAttribute(
                 _options.Realm,
                 KeycloakAdminConstants.EmployeeIdAttribute,
                 employeeId.ToString()),
-            ct);
+            cancellationToken);
 
         return users.Select(user => (Guid?)user.Id).FirstOrDefault();
     }
 
-    public async Task<Guid> CreateUserAsync(NewIdentity identity, CancellationToken ct)
+    public async Task<Guid> CreateUserAsync(NewIdentity identity, CancellationToken cancellationToken)
     {
         var request = new CreateKeycloakUserRequest
         {
             Username = identity.Email,
             Email = identity.Email,
-            EmailVerified = true,
-            Enabled = true,
+            IsEmailVerified = true,
+            IsEnabled = true,
             FirstName = identity.FirstName,
             LastName = identity.LastName,
             Attributes = new Dictionary<string, string[]>
@@ -58,13 +58,14 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             },
         };
 
-        using var response = await _client.PostAsJsonAsync(KeycloakAdminRoutes.UsersRoot(_options.Realm), request, ct);
+        using var response = await _client.PostAsJsonAsync(
+            KeycloakAdminRoutes.UsersRoot(_options.Realm), request, cancellationToken);
         if (response.StatusCode == HttpStatusCode.Conflict)
         {
             throw IdentityAdminErrors.IdentityConflict(identity.EmployeeId);
         }
 
-        await response.EnsureSuccessAsync(ct);
+        await response.EnsureSuccessAsync(cancellationToken);
 
         var location = response.Headers.Location;
         var lastSegment = location?.Segments.LastOrDefault()?.Trim(KeycloakAdminConstants.PathSeparator);
@@ -74,50 +75,51 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             : userId;
     }
 
-    public async Task AddOrganizationMemberAsync(Guid organizationId, Guid userId, CancellationToken ct)
+    public async Task AddOrganizationMemberAsync(Guid organizationId, Guid userId, CancellationToken cancellationToken)
     {
         using var response = await _client.PostAsJsonAsync(
             KeycloakAdminRoutes.OrganizationMembers(_options.Realm, organizationId),
             userId.ToString(),
-            ct);
+            cancellationToken);
         if (response.StatusCode == HttpStatusCode.Conflict)
         {
             return;
         }
 
-        await response.EnsureSuccessAsync(ct);
+        await response.EnsureSuccessAsync(cancellationToken);
     }
 
-    public async Task AssignRealmRoleAsync(Guid userId, string roleName, CancellationToken ct)
+    public async Task AssignRealmRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken)
     {
-        using var roleResponse = await _client.GetAsync(KeycloakAdminRoutes.RealmRole(_options.Realm, roleName), ct);
+        using var roleResponse = await _client.GetAsync(
+            KeycloakAdminRoutes.RealmRole(_options.Realm, roleName), cancellationToken);
         if (roleResponse.StatusCode == HttpStatusCode.NotFound)
         {
             throw IdentityAdminErrors.RealmRoleNotFound(roleName);
         }
 
-        await roleResponse.EnsureSuccessAsync(ct);
+        await roleResponse.EnsureSuccessAsync(cancellationToken);
 
-        var role = await roleResponse.Content.ReadFromJsonAsync<KeycloakRole>(ct)
+        var role = await roleResponse.Content.ReadFromJsonAsync<KeycloakRole>(cancellationToken)
             ?? throw IdentityAdminErrors.ResponseEmpty();
 
         using var mapResponse = await _client.PostAsJsonAsync(
             KeycloakAdminRoutes.UserRealmRoleMappings(_options.Realm, userId),
             new[] { role },
-            ct);
-        await mapResponse.EnsureSuccessAsync(ct);
+            cancellationToken);
+        await mapResponse.EnsureSuccessAsync(cancellationToken);
     }
 
-    public async Task<bool> HasPasswordAsync(Guid userId, CancellationToken ct)
+    public async Task<bool> HasPasswordAsync(Guid userId, CancellationToken cancellationToken)
     {
         var credentials = await GetRequiredAsync<List<KeycloakCredential>>(
             KeycloakAdminRoutes.UserCredentials(_options.Realm, userId),
-            ct);
+            cancellationToken);
 
         return credentials.Any(credential => credential.Type == KeycloakAdminConstants.PasswordCredentialType);
     }
 
-    public async Task SendSetPasswordEmailAsync(Guid userId, CancellationToken ct)
+    public async Task SendSetPasswordEmailAsync(Guid userId, CancellationToken cancellationToken)
     {
         using var response = await _client.PutAsJsonAsync(
             KeycloakAdminRoutes.ExecuteActionsEmailRequest(
@@ -127,36 +129,36 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
                 _options.SpaBaseUrl,
                 _options.SetPasswordLifespanSeconds),
             new[] { KeycloakAdminConstants.UpdatePasswordAction },
-            ct);
-        await response.EnsureSuccessAsync(ct);
+            cancellationToken);
+        await response.EnsureSuccessAsync(cancellationToken);
     }
 
-    public async Task DisableUserAsync(Guid userId, CancellationToken ct)
+    public async Task DisableUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         var userPath = KeycloakAdminRoutes.User(_options.Realm, userId);
-        var user = await GetRequiredAsync<JsonObject>(userPath, ct);
+        var user = await GetRequiredAsync<JsonObject>(userPath, cancellationToken);
         user[KeycloakAdminConstants.EnabledProperty] = false;
 
-        using var response = await _client.PutAsJsonAsync(userPath, user, ct);
-        await response.EnsureSuccessAsync(ct);
+        using var response = await _client.PutAsJsonAsync(userPath, user, cancellationToken);
+        await response.EnsureSuccessAsync(cancellationToken);
     }
 
-    public async Task LogoutUserAsync(Guid userId, CancellationToken ct)
+    public async Task LogoutUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         using var response = await _client.PostAsync(
             KeycloakAdminRoutes.UserLogout(_options.Realm, userId),
             null,
-            ct);
-        await response.EnsureSuccessAsync(ct);
+            cancellationToken);
+        await response.EnsureSuccessAsync(cancellationToken);
     }
 
-    private async Task<T> GetRequiredAsync<T>(string path, CancellationToken ct)
+    private async Task<T> GetRequiredAsync<T>(string path, CancellationToken cancellationToken)
         where T : class
     {
-        using var response = await _client.GetAsync(path, ct);
-        await response.EnsureSuccessAsync(ct);
+        using var response = await _client.GetAsync(path, cancellationToken);
+        await response.EnsureSuccessAsync(cancellationToken);
 
-        var body = await response.Content.ReadFromJsonAsync<T>(ct);
+        var body = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
 
         return body ?? throw IdentityAdminErrors.ResponseEmpty();
     }

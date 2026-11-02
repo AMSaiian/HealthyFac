@@ -10,7 +10,7 @@ public sealed class ProxyOptions
     public const string SectionName = "Proxy";
 
     /// <summary>Set to false to ignore forwarded headers completely.</summary>
-    public bool Enabled { get; init; } = true;
+    public bool IsEnabled { get; init; } = true;
 
     /// <summary>Addresses of the proxies that may set forwarded headers, for example "10.0.0.7".</summary>
     public string[] KnownProxies { get; init; } = [];
@@ -25,5 +25,5 @@ public sealed class ProxyOptions
     /// Trusts every hop and clears the proxy and network lists. Use this only when the service is
     /// unreachable except through the proxy. A directly reachable service lets any caller spoof its address.
     /// </summary>
-    public bool TrustAllProxies { get; init; }
+    public bool IsEveryProxyTrusted { get; init; }
 }

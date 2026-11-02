@@ -5,12 +5,12 @@ namespace HealthyFac.Shared.UnitTests.Logging.Data;
 
 public sealed class TestLogEventSink : ILogEventSink
 {
-    private readonly List<LogEvent> events = [];
+    private readonly List<LogEvent> _events = [];
 
-    public IReadOnlyList<LogEvent> Events => events;
+    public IReadOnlyList<LogEvent> Events => _events;
 
     public void Emit(LogEvent logEvent)
     {
-        events.Add(logEvent);
+        _events.Add(logEvent);
     }
 }

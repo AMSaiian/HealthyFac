@@ -34,7 +34,7 @@ public static class CorsHostFactory
                 .ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(
                     new Dictionary<string, string?>
                     {
-                        [$"{CorsPolicyOptions.SectionName}:Enabled"] = bool.TrueString,
+                        [$"{CorsPolicyOptions.SectionName}:IsEnabled"] = bool.TrueString,
                         [$"{CorsPolicyOptions.SectionName}:AllowedOrigins:0"] = AllowedOrigin,
                         [$"{CorsPolicyOptions.SectionName}:PreflightMaxAgeSeconds"] =
                             PreflightMaxAgeSeconds.ToString(),

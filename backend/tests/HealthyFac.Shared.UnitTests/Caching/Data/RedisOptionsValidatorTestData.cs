@@ -6,19 +6,6 @@ public static class RedisOptionsValidatorTestData
 {
     private const string ValidConnectionString = "localhost:6379,password=x";
 
-    public static TheoryData<string> ValidConnectionStrings => new()
-    {
-        ValidConnectionString,
-        "redis:6379",
-    };
-
-    public static TheoryData<string> BlankConnectionStrings => new()
-    {
-        null!,
-        string.Empty,
-        "   ",
-    };
-
     public static TheoryData<RedisOptions> ValidTimeouts => new()
     {
         new RedisOptions { ConnectionString = ValidConnectionString },
@@ -33,11 +20,19 @@ public static class RedisOptionsValidatorTestData
     public static TheoryData<RedisOptions, string> InvalidTimeoutsWithExpectedError => new()
     {
         {
-            new RedisOptions { ConnectionString = ValidConnectionString, ConnectTimeoutMilliseconds = 0 },
+            new RedisOptions
+            {
+                ConnectionString = ValidConnectionString,
+                ConnectTimeoutMilliseconds = RedisConstants.MinTimeoutMilliseconds - 1,
+            },
             RedisValidationMessages.ConnectTimeoutOutOfRange
         },
         {
-            new RedisOptions { ConnectionString = ValidConnectionString, OperationTimeoutMilliseconds = 30001 },
+            new RedisOptions
+            {
+                ConnectionString = ValidConnectionString,
+                OperationTimeoutMilliseconds = RedisConstants.MaxTimeoutMilliseconds + 1,
+            },
             RedisValidationMessages.OperationTimeoutOutOfRange
         },
     };

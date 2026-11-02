@@ -112,5 +112,20 @@ internal static class TypeInspection
         public bool IsNamedElsewhere(HashSet<MethodInfo> externalMethods) =>
             method is MethodInfo info
             && (info.GetBaseDefinition().DeclaringType != info.DeclaringType || externalMethods.Contains(info));
+
+        /// <summary>
+        /// Checks whether a declaration outside this repository fixes the parameter names of the method: an override
+        /// of an outside base method, or an implementation of an outside interface. An override of a method of this
+        /// repository returns <see langword="false"/>, so a naming rule still applies to it.
+        /// </summary>
+        /// <param name="externalMethods">The methods that implement an outside interface.</param>
+        /// <returns><see langword="true"/> when an outside declaration fixes the names.</returns>
+        public bool IsDeclaredOutside(HashSet<MethodInfo> externalMethods) =>
+            method is MethodInfo info
+            && (externalMethods.Contains(info)
+                || !(info.GetBaseDefinition().DeclaringType?.Assembly.GetName().Name ?? string.Empty).StartsWith(
+                    ConventionConstants.ProjectAssemblyPrefix,
+                    StringComparison.Ordinal
+                ));
     }
 }

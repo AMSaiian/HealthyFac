@@ -17,6 +17,11 @@ public class CoreDbInitializer(
     CoreDevelopmentDataSeeder developmentDataSeeder
 ) : ICoreDbInitializer
 {
+    private readonly ILogger<CoreDbInitializer> _logger = logger;
+    private readonly CoreDbContext _dbContext = dbContext;
+    private readonly IHostEnvironment _environment = environment;
+    private readonly CoreDevelopmentDataSeeder _developmentDataSeeder = developmentDataSeeder;
+
     /// <summary>
     /// Applies database migrations to the core database context, only in the Development
     /// environment. Other environments apply migrations in a deployment step, so a service never changes
@@ -25,26 +30,26 @@ public class CoreDbInitializer(
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
-        if (!environment.IsDevelopment())
+        if (!_environment.IsDevelopment())
         {
-            logger.LogInformation(DatabaseConstants.Messages.MigrationSkipped, environment.EnvironmentName);
+            _logger.LogInformation(DatabaseConstants.Messages.MigrationSkipped, _environment.EnvironmentName);
 
             return;
         }
 
         try
         {
-            if (dbContext.Database.IsRelational())
+            if (_dbContext.Database.IsRelational())
             {
-                logger.LogInformation(DatabaseConstants.Messages.MigrationApplying);
-                await dbContext.Database.MigrateAsync(cancellationToken);
+                _logger.LogInformation(DatabaseConstants.Messages.MigrationApplying);
+                await _dbContext.Database.MigrateAsync(cancellationToken);
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, DatabaseConstants.Errors.Migration);
+            _logger.LogError(ex, DatabaseConstants.Errors.Migration);
             throw;
         }
     }
@@ -57,11 +62,11 @@ public class CoreDbInitializer(
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public Task SeedRequiredDataAsync(CancellationToken cancellationToken = default)
-        => dbContext.Roles
+    public Task SeedRequiredDataAsync(CancellationToken cancellationToken = default(CancellationToken))
+        => _dbContext.Roles
             .UpsertRange(RoleSeed.Roles)
             .On(role => role.Code)
-            .WhenMatched((existing, seeded) => new Role { Code = existing.Code, Name = seeded.Name, })
+            .WhenMatched((existing, seeded) => new Role { Code = existing.Code, Name = seeded.Name })
             .RunAsync(cancellationToken);
 
     /// <summary>
@@ -71,6 +76,6 @@ public class CoreDbInitializer(
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public Task SeedOptionalDataAsync(CancellationToken cancellationToken = default)
-        => developmentDataSeeder.SeedAsync(cancellationToken);
+    public Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
+        => _developmentDataSeeder.SeedAsync(cancellationToken);
 }

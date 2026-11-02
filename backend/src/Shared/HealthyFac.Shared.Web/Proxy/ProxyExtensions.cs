@@ -38,7 +38,7 @@ public static class ProxyExtensions
 
                 options.ForwardLimit = proxyOptions.ForwardLimit;
 
-                if (proxyOptions.TrustAllProxies)
+                if (proxyOptions.IsEveryProxyTrusted)
                 {
                     options.KnownProxies.Clear();
                     options.KnownIPNetworks.Clear();

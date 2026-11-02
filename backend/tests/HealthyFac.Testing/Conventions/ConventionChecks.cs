@@ -97,6 +97,19 @@ public static class ConventionChecks
             .ToList();
 
     /// <summary>
+    /// Finds the <see cref="CancellationToken"/> parameters that are not named <c>cancellationToken</c>. The check
+    /// skips a method that overrides or implements a member declared outside this repository (e.g.,
+    /// <c>BackgroundService.ExecuteAsync</c>), because that declaration fixes the name, and it skips
+    /// compiler-generated members (lambdas, local functions).
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>The names of the methods with the wrong parameter name.</returns>
+    public static IReadOnlyList<string> FindCancellationTokensWithWrongName(Assembly assembly) =>
+        assembly.GetSourceTypes()
+            .SelectMany(FindCancellationTokensWithWrongName)
+            .ToList();
+
+    /// <summary>
     /// Finds the protected abstract methods whose name does not end with <c>Internal</c> or <c>InternalAsync</c>.
     /// </summary>
     /// <param name="assembly">The assembly to inspect.</param>
@@ -234,6 +247,20 @@ public static class ConventionChecks
             .Concat(parameters)
             .Where(member => !HasBooleanPrefix(member.Name))
             .Select(member => $"{type.DisplayName}.{member.Display}");
+    }
+
+    private static IEnumerable<string> FindCancellationTokensWithWrongName(Type type)
+    {
+        var externalMethods = type.GetExternalInterfaceMethods();
+
+        return type.GetMethods(TypeInspection.DeclaredMembers)
+            .Cast<MethodBase>()
+            .Concat(type.GetConstructors(TypeInspection.DeclaredMembers))
+            .Where(method => !method.IsCompilerGenerated && !method.IsDeclaredOutside(externalMethods))
+            .SelectMany(method => method.GetParameters())
+            .Where(parameter => parameter.ParameterType == typeof(CancellationToken)
+                && parameter.Name != ConventionConstants.CancellationTokens.ParameterName)
+            .Select(parameter => $"{type.DisplayName}.{parameter.Member.Name}({parameter.Name})");
     }
 
     private static string DescribeCapturedParameter(FieldInfo field, Match match)

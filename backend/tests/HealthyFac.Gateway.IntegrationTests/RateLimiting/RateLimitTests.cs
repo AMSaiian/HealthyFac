@@ -10,7 +10,9 @@ namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
 public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
 {
-    private readonly EchoServer _core = new(useForwardedHeaders: true);
+    private readonly GatewayEnvironment _environment = environment;
+
+    private readonly EchoServer _core = new(true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -19,7 +21,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task StrictPolicy_OverLimit_Returns429WithRetryAfter()
     {
-        await using var gateway = environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
+        await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
         using var client = gateway.CreateClient();
         await client.SpendStrictLimitAsync();
 
@@ -37,7 +39,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task StrictPolicy_OverLimit_ReturnsProblemDetails()
     {
-        await using var gateway = environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
+        await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
         using var client = gateway.CreateClient();
         await client.SpendStrictLimitAsync();
 
@@ -53,12 +55,12 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task StrictPolicy_AcrossTwoGatewayInstances_SharesOneLimit()
     {
-        var clientAddress = environment.NextClientAddress();
-        await using var firstGateway = environment.CreateGateway(
+        var clientAddress = _environment.NextClientAddress();
+        await using var firstGateway = _environment.CreateGateway(
             _core,
             clientAddress,
             RateLimitTestData.StrictLimitOfThree);
-        await using var secondGateway = environment.CreateGateway(
+        await using var secondGateway = _environment.CreateGateway(
             _core,
             clientAddress,
             RateLimitTestData.StrictLimitOfThree);
@@ -77,7 +79,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task StrictPolicy_WithSpoofedForwardedFor_StillLimitsByConnectionAddress()
     {
-        await using var gateway = environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
+        await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
         using var client = gateway.CreateClient();
         using var firstResponse = await client.PostVerifyInviteAsync("198.51.100.1");
         using var secondResponse = await client.PostVerifyInviteAsync("198.51.100.2");
@@ -92,7 +94,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     [Fact]
     public async Task DefaultPolicy_UnderLimit_PassesOtherCoreRoutes()
     {
-        await using var gateway = environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
+        await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
         using var client = gateway.CreateAuthenticatedClient();
         await client.SpendStrictLimitAsync();
 

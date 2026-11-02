@@ -2,7 +2,7 @@ namespace HealthyFac.Shared.Web.Tracing;
 
 /// <summary>
 /// Configures the OpenTelemetry tracer and its OTLP exporter.
-/// Keep <see cref="Enabled"/> true in every environment. Spans stamp each log entry with a trace
+/// Keep <see cref="IsEnabled"/> true in every environment. Spans stamp each log entry with a trace
 /// identifier even when no collector receives them. Set <see cref="Endpoint"/> to export the spans.
 /// </summary>
 public sealed class TracingOptions
@@ -10,7 +10,7 @@ public sealed class TracingOptions
     public const string SectionName = "Tracing";
 
     /// <summary>Set to false only to switch tracing off entirely, for example during a load test.</summary>
-    public bool Enabled { get; init; } = true;
+    public bool IsEnabled { get; init; } = true;
 
     /// <summary>The OTLP collector endpoint. An empty value keeps the spans in process.</summary>
     public string? Endpoint { get; init; }

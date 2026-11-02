@@ -47,21 +47,21 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
         return userId;
     }
 
-    public Task<Guid?> FindOrganizationIdAsync(Guid companyId, CancellationToken ct)
+    public Task<Guid?> FindOrganizationIdAsync(Guid companyId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
         return Task.FromResult<Guid?>(OrganizationId);
     }
 
-    public Task<Guid?> FindUserIdByEmployeeIdAsync(Guid employeeId, CancellationToken ct)
+    public Task<Guid?> FindUserIdByEmployeeIdAsync(Guid employeeId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
         return Task.FromResult(_userIdsByEmployee.TryGetValue(employeeId, out var userId) ? userId : (Guid?)null);
     }
 
-    public Task<Guid> CreateUserAsync(NewIdentity identity, CancellationToken ct)
+    public Task<Guid> CreateUserAsync(NewIdentity identity, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
@@ -86,14 +86,14 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
         return Task.FromResult(userId);
     }
 
-    public Task AddOrganizationMemberAsync(Guid organizationId, Guid userId, CancellationToken ct)
+    public Task AddOrganizationMemberAsync(Guid organizationId, Guid userId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
         return Task.CompletedTask;
     }
 
-    public Task AssignRealmRoleAsync(Guid userId, string roleName, CancellationToken ct)
+    public Task AssignRealmRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
@@ -105,14 +105,14 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
         return Task.CompletedTask;
     }
 
-    public Task<bool> HasPasswordAsync(Guid userId, CancellationToken ct)
+    public Task<bool> HasPasswordAsync(Guid userId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
         return Task.FromResult(_userIdsWithPassword.Contains(userId));
     }
 
-    public Task SendSetPasswordEmailAsync(Guid userId, CancellationToken ct)
+    public Task SendSetPasswordEmailAsync(Guid userId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
         _passwordEmailUserIds.Add(userId);
@@ -120,7 +120,7 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
         return Task.CompletedTask;
     }
 
-    public Task DisableUserAsync(Guid userId, CancellationToken ct)
+    public Task DisableUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
 
@@ -136,7 +136,7 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
         return Task.CompletedTask;
     }
 
-    public Task LogoutUserAsync(Guid userId, CancellationToken ct)
+    public Task LogoutUserAsync(Guid userId, CancellationToken cancellationToken)
     {
         ThrowWhenUnavailable();
         _loggedOutUserIds.Add(userId);

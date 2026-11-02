@@ -1,6 +1,9 @@
+using System.Diagnostics;
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
 using HealthyFac.Testing.Logging;
+using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.UnitTests.UseCases;
@@ -55,4 +58,51 @@ public sealed class LoggingRequestHandlerDecoratorTests
         logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Debug && e.Message.Contains("failed"));
         logger.Entries.Should().NotContain(e => e.Exception != null);
     }
+
+    [Fact]
+    public async Task HandleAsync_WhenCancelled_LeavesSpanStatusUnsetAndRethrows()
+    {
+        using var capture = new SpanCapture(
+            ObservabilityConstants.Sources.UseCases,
+            LoggingDecoratorTestData.TestSourceName);
+        using var source = new ActivitySource(LoggingDecoratorTestData.TestSourceName);
+        using var parent = source.StartActivity(LoggingDecoratorTestData.ParentActivityName);
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        var decorator = new LoggingRequestHandlerDecorator<TestRequest, int>(
+            new ThrowingHandler(new OperationCanceledException(cancellation.Token)),
+            new CapturingLogger<LoggingRequestHandlerDecorator<TestRequest, int>>());
+
+        var act = () => decorator.HandleAsync(new TestRequest(), cancellation.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        capture.Spans.Should()
+            .ContainSingle(span => IsUseCaseSpanOf(span, parent!))
+            .Which.Status.Should()
+            .Be(ActivityStatusCode.Unset);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenHandlerFails_MarksSpanStatusError()
+    {
+        using var capture = new SpanCapture(
+            ObservabilityConstants.Sources.UseCases,
+            LoggingDecoratorTestData.TestSourceName);
+        using var source = new ActivitySource(LoggingDecoratorTestData.TestSourceName);
+        using var parent = source.StartActivity(LoggingDecoratorTestData.ParentActivityName);
+        var decorator = new LoggingRequestHandlerDecorator<TestRequest, int>(
+            new ThrowingHandler(new InvalidOperationException()),
+            new CapturingLogger<LoggingRequestHandlerDecorator<TestRequest, int>>());
+
+        var act = () => decorator.HandleAsync(new TestRequest(), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        capture.Spans.Should()
+            .ContainSingle(span => IsUseCaseSpanOf(span, parent!))
+            .Which.Status.Should()
+            .Be(ActivityStatusCode.Error);
+    }
+
+    private static bool IsUseCaseSpanOf(Activity span, Activity parent) =>
+        span.Source.Name == ObservabilityConstants.Sources.UseCases && span.TraceId == parent.TraceId;
 }

@@ -75,13 +75,13 @@ internal sealed class OutboxProcessor(
         }
     }
 
-    private async Task RunSafelyAsync(CancellationToken stoppingToken)
+    private async Task RunSafelyAsync(CancellationToken cancellationToken)
     {
         try
         {
-            await RunAsync(stoppingToken);
+            await RunAsync(cancellationToken);
         }
-        catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             _logger.LogError(exception, "The outbox processor run failed. The next run starts after the interval.");
         }

@@ -8,6 +8,8 @@ namespace HealthyFac.Shared.IntegrationTests.Persistence.Data;
 /// </summary>
 public sealed class TracingDbContext(string connectionString) : DbContext
 {
+    private readonly string _connectionString = connectionString;
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
-        optionsBuilder.UseNpgsql(connectionString, npgsql => npgsql.ConfigureParentOnlyTracing());
+        optionsBuilder.UseNpgsql(_connectionString, npgsql => npgsql.ConfigureParentOnlyTracing());
 }

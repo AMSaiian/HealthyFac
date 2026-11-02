@@ -32,7 +32,7 @@ public static class TracingExtensions
                     .Get<TracingOptions>()
                 ?? new TracingOptions();
 
-            if (!options.Enabled)
+            if (!options.IsEnabled)
             {
                 return services;
             }

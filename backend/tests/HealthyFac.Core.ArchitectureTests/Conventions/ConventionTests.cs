@@ -53,6 +53,16 @@ public sealed class ConventionTests
 
     [Theory]
     [MemberData(nameof(ConventionTestData.AllAssemblies), MemberType = typeof(ConventionTestData))]
+    public void CancellationTokenParameters_InAssembly_AreNamedCancellationToken(string assemblyName)
+    {
+        var violations = string.Join(
+            Environment.NewLine, ConventionChecks.FindCancellationTokensWithWrongName(Assembly.Load(assemblyName)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Theory]
+    [MemberData(nameof(ConventionTestData.AllAssemblies), MemberType = typeof(ConventionTestData))]
     public void ProtectedAbstractSteps_InAssembly_EndWithInternal(string assemblyName)
     {
         var violations = string.Join(

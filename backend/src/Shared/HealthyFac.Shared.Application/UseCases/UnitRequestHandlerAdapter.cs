@@ -10,5 +10,8 @@ internal sealed class UnitRequestHandlerAdapter<TRequest>(IRequestHandler<TReque
     : IRequestHandler<TRequest>
     where TRequest : IRequest
 {
-    public Task HandleAsync(TRequest request, CancellationToken ct = default) => pipeline.HandleAsync(request, ct);
+    private readonly IRequestHandler<TRequest, Unit> _pipeline = pipeline;
+
+    public Task HandleAsync(TRequest request, CancellationToken cancellationToken = default(CancellationToken)) =>
+        _pipeline.HandleAsync(request, cancellationToken);
 }

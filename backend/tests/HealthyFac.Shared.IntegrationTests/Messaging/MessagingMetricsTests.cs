@@ -9,14 +9,16 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixture<TransportFixture>
 {
+    private readonly TransportFixture _fixture = fixture;
+
     [Fact]
     public async Task OutboxProcessor_WithPendingRow_CountsPublished()
     {
-        await fixture.AddPendingOutboxRowsAsync(
+        await _fixture.AddPendingOutboxRowsAsync(
             MessagingMetricsTestData.PublishedMessageType,
             MessagingMetricsTestData.SingleRowCount);
         using var published = Collect<long>(Instruments.Published);
-        var processor = fixture.Create<OutboxProcessor>();
+        var processor = _fixture.Create<OutboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
@@ -30,7 +32,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
     [Fact]
     public async Task InboxProcessor_WithPendingRow_CountsHandledAndRecordsRun()
     {
-        await fixture.AddPendingInboxRowAsync(
+        await _fixture.AddPendingInboxRowAsync(
             MessagingMetricsTestData.HandledRowId,
             InboxProcessorTestData.RecordedMessageType,
             MessagingMetricsTestData.HandledText,
@@ -39,7 +41,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
             InboxTestData.Now);
         using var handled = Collect<long>(Instruments.Handled);
         using var runs = Collect<double>(Instruments.RunDuration);
-        var processor = fixture.Create<InboxProcessor>();
+        var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
@@ -58,7 +60,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
     [Fact]
     public async Task InboxProcessor_WhenHandlerThrows_CountsRetried()
     {
-        await fixture.AddPendingInboxRowAsync(
+        await _fixture.AddPendingInboxRowAsync(
             MessagingMetricsTestData.RetriedRowId,
             InboxProcessorTestData.FailingMessageType,
             MessagingMetricsTestData.RetriedText,
@@ -67,7 +69,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
             InboxTestData.Now);
         using var retried = Collect<long>(Instruments.Retried);
         using var failed = Collect<long>(Instruments.Failed);
-        var processor = fixture.Create<InboxProcessor>();
+        var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
@@ -83,12 +85,12 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
     [Fact]
     public async Task InboxProcessor_WithInvalidPayload_CountsPermanentFailure()
     {
-        await fixture.AddPingInboxRowAsync(
+        await _fixture.AddPingInboxRowAsync(
             MessagingMetricsTestData.PermanentRowId,
             InboxProcessorTestData.InvalidPayload);
         using var failed = Collect<long>(Instruments.Failed);
         using var retried = Collect<long>(Instruments.Retried);
-        var processor = fixture.Create<InboxProcessor>();
+        var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
@@ -104,7 +106,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
     [Fact]
     public async Task InboxProcessor_AtAttemptLimit_CountsAttemptLimitFailure()
     {
-        await fixture.AddInboxRowAsync(
+        await _fixture.AddInboxRowAsync(
             InboxProcessorTestData.CreateRowWithAttempts(
                 MessagingMetricsTestData.AttemptLimitRowId,
                 InboxProcessorTestData.FailingMessageType,
@@ -112,7 +114,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
                 InboxTestData.Now,
                 InboxProcessorTestData.MaxAttemptCount - 1));
         using var failed = Collect<long>(Instruments.Failed);
-        var processor = fixture.Create<InboxProcessor>();
+        var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
@@ -126,7 +128,7 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
     [Fact]
     public async Task InboxProcessor_WhenRunIsCancelled_RecordsNoFailureAndNoRun()
     {
-        await fixture.AddPendingInboxRowAsync(
+        await _fixture.AddPendingInboxRowAsync(
             MessagingMetricsTestData.CancelledRowId,
             MessagingMetricsTestData.CancellingMessageType,
             MessagingMetricsTestData.CancelledText,
@@ -136,9 +138,9 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
         using var failed = Collect<long>(Instruments.Failed);
         using var retried = Collect<long>(Instruments.Retried);
         using var runs = Collect<double>(Instruments.RunDuration);
-        var processor = fixture.Create<InboxProcessor>();
+        var processor = _fixture.Create<InboxProcessor>();
 
-        var act = () => processor.RunAsync(fixture.CancellationTrigger.Source.Token);
+        var act = () => processor.RunAsync(_fixture.CancellationTrigger.Source.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
 
@@ -153,5 +155,5 @@ public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixt
 
     private MetricCollector<T> Collect<T>(string instrument)
         where T : struct =>
-        new(fixture.MeterFactory, Constants.Meters.Messaging, instrument);
+        new(_fixture.MeterFactory, Constants.Meters.Messaging, instrument);
 }

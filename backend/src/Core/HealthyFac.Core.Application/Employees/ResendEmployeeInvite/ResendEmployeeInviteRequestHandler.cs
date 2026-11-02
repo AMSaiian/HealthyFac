@@ -1,5 +1,5 @@
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Employees.Messages;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
@@ -25,14 +25,19 @@ public class ResendEmployeeInviteRequestHandler(
     TimeProvider timeProvider
 ) : IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>
 {
+    private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IInviteTokenService _tokenService = tokenService;
+    private readonly IOutbox _outbox = outbox;
+    private readonly TimeProvider _timeProvider = timeProvider;
+
     public async Task<ResendEmployeeInviteResponse> HandleAsync(
         ResendEmployeeInviteRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var invite = await dbContext.EmployeeInvites.SingleOrDefaultAsync(
+        var invite = await _dbContext.EmployeeInvites.SingleOrDefaultAsync(
                 invite => invite.Id == request.InviteId && invite.CompanyId == request.CompanyId,
-                ct)
+                cancellationToken)
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.InviteNotFound);
 
         if (invite.AcceptedAt is not null)
@@ -40,8 +45,8 @@ public class ResendEmployeeInviteRequestHandler(
             throw new ConflictException(EmployeeInviteErrors.Rejections.InviteAlreadyAccepted);
         }
 
-        invite.Renew(tokenService.CreateSalt(), tokenService.GetExpiresAt(timeProvider.GetUtcNow().UtcDateTime));
-        outbox.Add(
+        invite.Renew(_tokenService.CreateSalt(), _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));
+        _outbox.Add(
             new EmployeeInvited
             {
                 InviteId = invite.Id,
@@ -50,7 +55,7 @@ public class ResendEmployeeInviteRequestHandler(
             });
         try
         {
-            await dbContext.SaveChangesAsync(ct);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {

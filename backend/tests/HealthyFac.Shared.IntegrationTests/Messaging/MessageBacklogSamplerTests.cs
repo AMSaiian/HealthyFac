@@ -16,10 +16,12 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 /// </summary>
 public sealed class MessageBacklogSamplerTests(PostgreSqlFixture fixture) : IClassFixture<PostgreSqlFixture>
 {
+    private readonly PostgreSqlFixture _fixture = fixture;
+
     [Fact]
     public async Task Sample_WithPendingRows_ReportsCountAndOldestAge()
     {
-        await fixture.SeedBacklogAsync();
+        await _fixture.SeedBacklogAsync();
         using var pending = Collect<long>(Instruments.Pending);
         using var age = Collect<double>(Instruments.OldestPendingAge);
         var sampler = CreateSampler();
@@ -40,8 +42,8 @@ public sealed class MessageBacklogSamplerTests(PostgreSqlFixture fixture) : ICla
     [Fact]
     public async Task Sample_AfterProcessing_ReportsZero()
     {
-        await fixture.SeedBacklogAsync();
-        await fixture.MarkBacklogProcessedAsync();
+        await _fixture.SeedBacklogAsync();
+        await _fixture.MarkBacklogProcessedAsync();
         using var pending = Collect<long>(Instruments.Pending);
         using var age = Collect<double>(Instruments.OldestPendingAge);
         var sampler = CreateSampler();
@@ -61,10 +63,10 @@ public sealed class MessageBacklogSamplerTests(PostgreSqlFixture fixture) : ICla
 
     private MetricCollector<T> Collect<T>(string instrument)
         where T : struct =>
-        new(fixture.Services.GetRequiredService<IMeterFactory>(), Constants.Meters.Messaging, instrument);
+        new(_fixture.Services.GetRequiredService<IMeterFactory>(), Constants.Meters.Messaging, instrument);
 
     private MessageBacklogSampler CreateSampler() =>
         ActivatorUtilities.CreateInstance<MessageBacklogSampler>(
-            fixture.Services,
+            _fixture.Services,
             NullLogger<MessageBacklogSampler>.Instance);
 }

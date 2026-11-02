@@ -1,4 +1,3 @@
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
@@ -28,11 +27,11 @@ public sealed class CompleteProvisioningRequestHandler(
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
 
-    protected override async Task HandleInternalAsync(IdentityProvisioned request, CancellationToken ct)
+    protected override async Task HandleInternalAsync(IdentityProvisioned request, CancellationToken cancellationToken)
     {
         var employee = await _dbContext.Employees.SingleOrDefaultAsync(
                 employee => employee.Id == request.EmployeeId,
-                ct)
+                cancellationToken)
             ?? throw EmployeeProvisioningErrors.EmployeeMissing(request.EmployeeId);
 
         var isAlreadyCompleted = employee.IsLinkedTo(request.IdentityUserId)
@@ -59,6 +58,6 @@ public sealed class CompleteProvisioningRequestHandler(
             employee.Activate(request.IdentityUserId);
         }
 
-        await _dbContext.SaveChangesAsync(ct);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

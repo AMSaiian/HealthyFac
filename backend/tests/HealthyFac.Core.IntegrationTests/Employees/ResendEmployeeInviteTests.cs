@@ -1,5 +1,5 @@
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.Messages;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Application.Employees.ResendEmployeeInvite;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
@@ -11,17 +11,19 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task ResendAsync_WithExpiredInvite_RenewsSaltAndExpiry()
     {
         var (companyId, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendExpiredEmail,
             DateTime.UtcNow.AddHours(-1));
-        var oldInvite = await fixture.LoadInviteAsync(inviteId);
+        var oldInvite = await _fixture.LoadInviteAsync(inviteId);
 
         await ResendAsync(companyId, inviteId);
 
-        var invite = await fixture.LoadInviteAsync(inviteId);
+        var invite = await _fixture.LoadInviteAsync(inviteId);
 
         invite.ExpiresAt.Should()
             .BeCloseTo(
@@ -54,9 +56,9 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
         await ResendAsync(companyId, inviteId);
 
-        var invite = await fixture.LoadInviteAsync(inviteId);
+        var invite = await _fixture.LoadInviteAsync(inviteId);
 
-        fixture.IsTokenValid(oldToken, invite.TokenSalt).Should().BeFalse();
+        _fixture.IsTokenValid(oldToken, invite.TokenSalt).Should().BeFalse();
     }
 
     [Fact]
@@ -65,7 +67,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var (companyId, inviteId, token) = await ArrangeInviteAsync(
             InviteTestData.ResendAcceptedEmail,
             DateTime.UtcNow.AddHours(1));
-        await fixture.AcceptInviteAsync(token);
+        await _fixture.AcceptInviteAsync(token);
 
         var act = () => ResendAsync(companyId, inviteId);
 
@@ -80,7 +82,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var (_, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendOtherCompanyEmail,
             DateTime.UtcNow.AddHours(1));
-        var otherCompanyId = await fixture.CreateCompanyAsync(InviteTestData.CompanyName);
+        var otherCompanyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
 
         var act = () => ResendAsync(otherCompanyId, inviteId);
 
@@ -96,7 +98,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             InviteTestData.ResendParallelEmail,
             DateTime.UtcNow.AddHours(1));
         var countBefore = await CountInvitedMessagesAsync(inviteId);
-        using var race = fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
+        using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
             race.RunAsync(() => ResendAsync(companyId, inviteId)),
@@ -120,7 +122,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         DateTime expiresAt
     )
     {
-        var arranged = await fixture.ArrangeInviteAsync(
+        var arranged = await _fixture.ArrangeInviteAsync(
             email,
             expiresAt,
             InviteTestData.FirstDepartmentName);
@@ -130,14 +132,14 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
     private async Task<int> CountInvitedMessagesAsync(Guid inviteId)
     {
-        var messages = await fixture.ReadOutboxMessagesAsync<EmployeeInvited>();
+        var messages = await _fixture.ReadOutboxMessagesAsync<EmployeeInvited>();
 
         return messages.Count(message => message.InviteId == inviteId);
     }
 
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>();
 

@@ -21,14 +21,16 @@ public record CreateMachineResponse
 public class CreateMachineRequestHandler(ICoreDbContext dbContext)
     : IRequestHandler<CreateMachineRequest, CreateMachineResponse>
 {
+    private readonly ICoreDbContext _dbContext = dbContext;
+
     public async Task<CreateMachineResponse> HandleAsync(
         CreateMachineRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var isDepartmentInCompany = await dbContext.Departments.AnyAsync(
+        var isDepartmentInCompany = await _dbContext.Departments.AnyAsync(
             department => department.Id == request.DepartmentId && department.CompanyId == request.CompanyId,
-            ct);
+            cancellationToken);
 
         if (!isDepartmentInCompany)
         {
@@ -43,8 +45,8 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext)
             DepartmentId = request.DepartmentId,
         };
 
-        dbContext.Machines.Add(machine);
-        await dbContext.SaveChangesAsync(ct);
+        _dbContext.Machines.Add(machine);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateMachineResponse { Id = machine.Id };
     }

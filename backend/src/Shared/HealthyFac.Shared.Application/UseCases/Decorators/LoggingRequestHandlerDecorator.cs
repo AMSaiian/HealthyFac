@@ -16,33 +16,42 @@ internal sealed class LoggingRequestHandlerDecorator<TRequest, TResponse>(
 ) : IRequestHandler<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
+    private readonly IRequestHandler<TRequest, TResponse> _innerHandler = innerHandler;
+    private readonly ILogger<LoggingRequestHandlerDecorator<TRequest, TResponse>> _logger = logger;
+
     /// <summary>
     /// Traces and logs the use case, then executes the inner handler.
     /// </summary>
+    /// <remarks>
+    /// A cancelled use case is not a failure, so it leaves the span status unset and logs no outcome.
+    /// </remarks>
     /// <param name="request">The incoming request to execute.</param>
-    /// <param name="ct">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
     /// <returns>The response of type <typeparamref name="TResponse"/> from the inner handler.</returns>
-    public async Task<TResponse> HandleAsync(TRequest request, CancellationToken ct = default)
+    public async Task<TResponse> HandleAsync(
+        TRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
     {
         var useCaseName = typeof(TRequest).Name;
 
         using var activity = UseCaseActivitySource.Instance.StartActivity(useCaseName, ActivityKind.Internal);
         activity.WithTag(ObservabilityConstants.Tags.UseCase, useCaseName);
 
-        logger.LogInformation("Use case {UseCase} triggered", useCaseName);
-        logger.LogDebug("Use case {UseCase} received request {@Request}", useCaseName, request);
+        _logger.LogInformation("Use case {UseCase} triggered", useCaseName);
+        _logger.LogDebug("Use case {UseCase} received request {@Request}", useCaseName, request);
 
         try
         {
-            var response = await innerHandler.HandleAsync(request, ct);
+            var response = await _innerHandler.HandleAsync(request, cancellationToken);
 
             activity.MarkSuccess();
-            logger.LogDebug("Use case {UseCase} returned {@Response}", useCaseName, response);
-            logger.LogInformation("Use case {UseCase} finished", useCaseName);
+            _logger.LogDebug("Use case {UseCase} returned {@Response}", useCaseName, response);
+            _logger.LogInformation("Use case {UseCase} finished", useCaseName);
 
             return response;
         }
-        catch (Exception exception)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             activity.MarkException(exception);
             LogOutcome(exception, useCaseName);
@@ -65,14 +74,14 @@ internal sealed class LoggingRequestHandlerDecorator<TRequest, TResponse>(
         {
             if (rejection.Level is not null)
             {
-                logger.Log(
+                _logger.Log(
                     rejection.Level.Value,
                     "Use case {UseCase} rejected: {Reason}", useCaseName, exception.Message);
             }
         }
         else
         {
-            logger.LogDebug("Use case {UseCase} failed", useCaseName);
+            _logger.LogDebug("Use case {UseCase} failed", useCaseName);
         }
     }
 }

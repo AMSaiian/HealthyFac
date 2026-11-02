@@ -9,10 +9,12 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<PostgreSqlFixture>
 {
+    private readonly PostgreSqlFixture _fixture = fixture;
+
     [Fact]
     public async Task OutboxAdd_WithActor_StoresActorIdAndCompanyId()
     {
-        using var scope = fixture.CreateScope(
+        using var scope = _fixture.CreateScope(
             new ActorContext
             {
                 Kind = ActorKind.User,
@@ -33,7 +35,7 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
     [Fact]
     public void OutboxAdd_WithoutActor_ThrowsActorMissing()
     {
-        using var scope = fixture.CreateScopeWithoutActor();
+        using var scope = _fixture.CreateScopeWithoutActor();
 
         var act = () => scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestActorStamped { Text = OutboxTestData.ActorStampedText });
@@ -44,12 +46,12 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
     [Fact]
     public async Task SaveChangesAsync_WhenAnotherScopeUpdatedSameOutboxRowFirst_RejectsSecondCommit()
     {
-        using var publishScope = fixture.CreateScope();
+        using var publishScope = _fixture.CreateScope();
         publishScope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestConcurrentPublish { Text = OutboxTestData.BusinessChangeText });
         await publishScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
-        using var firstScope = fixture.CreateScope();
-        using var secondScope = fixture.CreateScope();
+        using var firstScope = _fixture.CreateScope();
+        using var secondScope = _fixture.CreateScope();
         var firstContext = firstScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         var secondContext = secondScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         var firstMessage = await LoadMessageAsync(firstContext);
@@ -67,7 +69,7 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
 
     private async Task<OutboxMessage> ReadActorStampedMessageAsync()
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>()
             .OutboxMessages

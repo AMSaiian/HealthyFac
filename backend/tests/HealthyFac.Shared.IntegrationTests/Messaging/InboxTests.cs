@@ -9,10 +9,12 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<PostgreSqlFixture>
 {
+    private readonly PostgreSqlFixture _fixture = fixture;
+
     [Fact]
     public async Task TryAddAsync_WithNewMessageId_StoresMessageAndReturnsTrue()
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
 
         var isStored = await scope.ServiceProvider.GetRequiredService<IInbox>()
             .TryAddAsync(
@@ -39,8 +41,8 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
     [Fact]
     public async Task TryAddAsync_WithDuplicateMessageId_ReturnsFalseAndKeepsOneRow()
     {
-        using var firstScope = fixture.CreateScope();
-        using var secondScope = fixture.CreateScope();
+        using var firstScope = _fixture.CreateScope();
+        using var secondScope = _fixture.CreateScope();
 
         var isFirstStored = await firstScope.ServiceProvider.GetRequiredService<IInbox>()
             .TryAddAsync(
@@ -70,7 +72,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
     [Fact]
     public async Task TryAddAsync_InsideRolledBackServiceTransaction_LeavesNoRow()
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -92,7 +94,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
     [Fact]
     public async Task MarkProcessed_WithMessageLoadedInScope_PersistsProcessedOnOnSave()
     {
-        using var receiveScope = fixture.CreateScope();
+        using var receiveScope = _fixture.CreateScope();
         await receiveScope.ServiceProvider.GetRequiredService<IInbox>()
             .TryAddAsync(
                 InboxTestData.ProcessedMessageId,
@@ -101,7 +103,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
                 InboxTestData.TraceParent,
                 InboxTestData.ActorId,
                 InboxTestData.CompanyId);
-        using var processScope = fixture.CreateScope();
+        using var processScope = _fixture.CreateScope();
         var dbContext = processScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         var message =
             await dbContext.InboxMessages.SingleAsync(pending => pending.Id == InboxTestData.ProcessedMessageId);
@@ -117,7 +119,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
     [Fact]
     public async Task MarkProcessed_WhenAnotherScopeCommittedFirst_RejectsSecondCommitWithItsBusinessChange()
     {
-        using var receiveScope = fixture.CreateScope();
+        using var receiveScope = _fixture.CreateScope();
         await receiveScope.ServiceProvider.GetRequiredService<IInbox>()
             .TryAddAsync(
                 InboxTestData.ConcurrentMessageId,
@@ -126,8 +128,8 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
                 InboxTestData.TraceParent,
                 InboxTestData.ActorId,
                 InboxTestData.CompanyId);
-        using var firstScope = fixture.CreateScope();
-        using var secondScope = fixture.CreateScope();
+        using var firstScope = _fixture.CreateScope();
+        using var secondScope = _fixture.CreateScope();
         var firstMessage = await LoadMessageAsync(firstScope, InboxTestData.ConcurrentMessageId);
         var secondMessage = await LoadMessageAsync(secondScope, InboxTestData.ConcurrentMessageId);
         firstScope.ServiceProvider.GetRequiredService<IInbox>().MarkProcessed(firstMessage);
@@ -152,7 +154,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
 
     private async Task<int> CountOutboxMessagesAsync(string messageType)
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>()
             .OutboxMessages
@@ -161,7 +163,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
 
     private async Task<InboxMessage?> ReadMessageAsync(Guid messageId)
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>()
             .InboxMessages
@@ -171,7 +173,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
 
     private async Task<int> CountMessagesAsync(Guid messageId)
     {
-        using var scope = fixture.CreateScope();
+        using var scope = _fixture.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>()
             .InboxMessages

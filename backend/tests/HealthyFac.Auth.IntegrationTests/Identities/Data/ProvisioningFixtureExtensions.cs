@@ -1,7 +1,6 @@
 using System.Text.Json;
 using HealthyFac.Auth.Application;
 using HealthyFac.Auth.Application.Identities;
-using HealthyFac.Auth.Application.Identities.Messages;
 using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
 using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.Infrastructure.Database;

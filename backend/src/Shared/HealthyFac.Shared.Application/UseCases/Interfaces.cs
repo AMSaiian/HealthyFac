@@ -26,7 +26,7 @@ public interface IRequest<out TResponse>;
 /// <typeparam name="TResponse">The type of the response that the handler returns.</typeparam>
 public interface IRequestHandler<in TRequest, TResponse> where TRequest : IRequest<TResponse>
 {
-    Task<TResponse> HandleAsync(TRequest request, CancellationToken ct = default);
+    Task<TResponse> HandleAsync(TRequest request, CancellationToken cancellationToken = default(CancellationToken));
 }
 
 /// <summary>
@@ -37,5 +37,5 @@ public interface IRequestHandler<in TRequest, TResponse> where TRequest : IReque
 /// <typeparam name="TRequest">The type of the request that the handler accepts.</typeparam>
 public interface IRequestHandler<in TRequest> where TRequest : IRequest
 {
-    Task HandleAsync(TRequest request, CancellationToken ct = default);
+    Task HandleAsync(TRequest request, CancellationToken cancellationToken = default(CancellationToken));
 }

@@ -33,9 +33,13 @@ internal sealed class IntegrationEnvelopeHandler(
 )
     : IHandleMessages<IntegrationEnvelope>
 {
+    private readonly IInbox _inbox = inbox;
+    private readonly IInboxDbContext _dbContext = dbContext;
+    private readonly IMessageContext _messageContext = messageContext;
+
     public async Task Handle(IntegrationEnvelope message)
     {
-        var headers = messageContext.Headers;
+        var headers = _messageContext.Headers;
         var rawMessageId = headers.GetValueOrDefault(Headers.MessageId) ?? string.Empty;
         var receivedTraceParent = headers.GetValueOrDefault(MessageHeaders.TraceParent);
 
@@ -46,17 +50,9 @@ internal sealed class IntegrationEnvelopeHandler(
             rawMessageId,
             receivedTraceParent);
 
-        try
-        {
-            await StoreAsync(message, headers, rawMessageId, activity?.Id ?? receivedTraceParent);
-            activity.MarkSuccess();
-        }
-        catch (Exception exception) when (!messageContext.GetCancellationToken().IsCancellationRequested)
-        {
-            activity.MarkException(exception);
-
-            throw;
-        }
+        await activity.TraceAsync(
+            () => StoreAsync(message, headers, rawMessageId, activity?.Id ?? receivedTraceParent),
+            _messageContext.GetCancellationToken());
     }
 
     private async Task StoreAsync(
@@ -85,8 +81,8 @@ internal sealed class IntegrationEnvelopeHandler(
             throw MessagingErrors.PayloadNotStorable(rawMessageId, message.Type);
         }
 
-        await dbContext.RunInTransactionAsync(
-            token => inbox.TryAddAsync(
+        await _dbContext.RunInTransactionAsync(
+            token => _inbox.TryAddAsync(
                 messageId,
                 message.Type,
                 message.Payload,
@@ -94,7 +90,7 @@ internal sealed class IntegrationEnvelopeHandler(
                 actorId,
                 companyId,
                 token),
-            messageContext.GetCancellationToken());
+            _messageContext.GetCancellationToken());
     }
 
     private static Guid? ReadCompanyId(IDictionary<string, string> headers, string rawMessageId)

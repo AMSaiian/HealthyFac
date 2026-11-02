@@ -46,10 +46,13 @@ public sealed class ActorContextHolder
 
     private sealed class ActorLease(ActorContextHolder holder, ActorContext? previousFlowActor) : IDisposable
     {
+        private readonly ActorContextHolder _holder = holder;
+        private readonly ActorContext? _previousFlowActor = previousFlowActor;
+
         public void Dispose()
         {
-            holder.Current = null;
-            FlowCurrent.Value = previousFlowActor;
+            _holder.Current = null;
+            FlowCurrent.Value = _previousFlowActor;
         }
     }
 }

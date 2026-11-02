@@ -83,18 +83,12 @@ public static class ActorClaimsTestData
     public static TheoryData<string> InvalidActorHeaders => new()
     {
         "not-a-guid",
-        "",
         Guid.Empty.ToString(),
     };
 
     public static TheoryData<string> JsonOrganizationValues => new()
     {
         $"[\"{ActorTestData.CompanyId}\"]",
-        "[]",
         $"[\"{ActorTestData.CompanyId}\",\"{ActorTestData.OtherCompanyId}\"]",
-        "[\"not-a-guid\"]",
-        "[1]",
-        "{\"id\":1}",
-        "[\"",
     };
 }

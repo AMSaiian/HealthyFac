@@ -6,16 +6,18 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class TransportTests(TransportFixture fixture) : IClassFixture<TransportFixture>
 {
+    private readonly TransportFixture _fixture = fixture;
+
     [Fact]
     public async Task RebusDelivery_WithActorHeaders_StoresInboxRowWithActor()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.DeliveredMessageId,
             TransportTestData.ActorHeaders());
 
-        var stored = await fixture.WaitForInboxMessageAsync(TransportTestData.DeliveredMessageId);
+        var stored = await _fixture.WaitForInboxMessageAsync(TransportTestData.DeliveredMessageId);
 
         stored.Should().NotBeNull();
         stored!.Type.Should().Be(TransportTestData.PingMessageType);
@@ -29,26 +31,26 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_SameMessageIdTwice_HandlesOnce()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.DuplicatedMessageId,
             TransportTestData.ActorHeaders());
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.DuplicatedMessageId,
             TransportTestData.ActorHeaders());
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.SentinelMessageId,
             TransportTestData.ActorHeaders());
 
-        await fixture.WaitForInboxMessageAsync(TransportTestData.SentinelMessageId);
-        await fixture.WaitForQueueToSettleAsync();
+        await _fixture.WaitForInboxMessageAsync(TransportTestData.SentinelMessageId);
+        await _fixture.WaitForQueueToSettleAsync();
 
-        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.DuplicatedMessageId);
+        var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.DuplicatedMessageId);
 
         messageCount.Should().Be(1);
     }
@@ -56,20 +58,20 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_WithoutActorHeader_FailsFastToErrorQueue()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.HeaderlessMessageId,
             new Dictionary<string, string>());
 
         var errorDetails = await RabbitMqQueueReader.ReadHeaderAsync(
-            fixture.BrokerConnectionString,
+            _fixture.BrokerConnectionString,
             TransportTestData.ErrorQueueName,
             TransportTestData.HeaderlessMessageId,
             TransportTestData.ErrorDetailsHeader,
             TransportTestData.WaitTimeout);
 
-        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.HeaderlessMessageId);
+        var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.HeaderlessMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
         messageCount.Should().Be(0);
@@ -78,29 +80,29 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_InvalidPayloadTwice_StoresOneFailedRow()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.BlankTextPayload,
             TransportTestData.InvalidPayloadMessageId,
             TransportTestData.ActorHeaders());
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.BlankTextPayload,
             TransportTestData.InvalidPayloadMessageId,
             TransportTestData.ActorHeaders());
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.InvalidSentinelMessageId,
             TransportTestData.ActorHeaders());
-        await fixture.WaitForInboxMessageAsync(TransportTestData.InvalidSentinelMessageId);
-        await fixture.WaitForQueueToSettleAsync();
-        var processor = fixture.Create<InboxProcessor>();
+        await _fixture.WaitForInboxMessageAsync(TransportTestData.InvalidSentinelMessageId);
+        await _fixture.WaitForQueueToSettleAsync();
+        var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
-        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.InvalidPayloadMessageId);
-        var row = await fixture.ReadInboxRowAsync(TransportTestData.InvalidPayloadMessageId);
+        var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.InvalidPayloadMessageId);
+        var row = await _fixture.ReadInboxRowAsync(TransportTestData.InvalidPayloadMessageId);
 
         messageCount.Should().Be(1);
         row.FailedOn.Should().NotBeNull();
@@ -110,20 +112,20 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_WithPayloadNotJson_FailsFastToErrorQueue()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.NotJsonPayload,
             TransportTestData.NotJsonMessageId,
             TransportTestData.ActorHeaders());
 
         var errorDetails = await RabbitMqQueueReader.ReadHeaderAsync(
-            fixture.BrokerConnectionString,
+            _fixture.BrokerConnectionString,
             TransportTestData.ErrorQueueName,
             TransportTestData.NotJsonMessageId,
             TransportTestData.ErrorDetailsHeader,
             TransportTestData.WaitTimeout);
 
-        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.NotJsonMessageId);
+        var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.NotJsonMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
         messageCount.Should().Be(0);
@@ -132,20 +134,20 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_WithNullCharacterEscape_FailsFastToErrorQueue()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.NullCharacterEscapePayload,
             TransportTestData.NullCharacterMessageId,
             TransportTestData.ActorHeaders());
 
         var errorDetails = await RabbitMqQueueReader.ReadHeaderAsync(
-            fixture.BrokerConnectionString,
+            _fixture.BrokerConnectionString,
             TransportTestData.ErrorQueueName,
             TransportTestData.NullCharacterMessageId,
             TransportTestData.ErrorDetailsHeader,
             TransportTestData.WaitTimeout);
 
-        var messageCount = await fixture.CountInboxMessagesAsync(TransportTestData.NullCharacterMessageId);
+        var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.NullCharacterMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
         messageCount.Should().Be(0);
@@ -154,13 +156,13 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_ToErrorQueue_LogsError()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             TransportTestData.LoggedMessageId,
             new Dictionary<string, string>());
 
-        var errors = await fixture.WaitForErrorLogsAsync(TransportTestData.LoggedMessageId);
+        var errors = await _fixture.WaitForErrorLogsAsync(TransportTestData.LoggedMessageId);
 
         errors.Should().ContainSingle();
     }
@@ -168,19 +170,19 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
     [Fact]
     public async Task RebusDelivery_WithEmptyMessageId_MovesMessageToErrorQueue()
     {
-        await fixture.PublishAsync(
+        await _fixture.PublishAsync(
             TransportTestData.PingMessageType,
             TransportTestData.PingPayload,
             Guid.Empty,
             TransportTestData.ActorHeaders());
 
         var isInErrorQueue = await RabbitMqQueueReader.ContainsMessageAsync(
-            fixture.BrokerConnectionString,
+            _fixture.BrokerConnectionString,
             TransportTestData.ErrorQueueName,
             Guid.Empty,
             TransportTestData.WaitTimeout);
 
-        var messageCount = await fixture.CountInboxMessagesAsync(Guid.Empty);
+        var messageCount = await _fixture.CountInboxMessagesAsync(Guid.Empty);
 
         isInErrorQueue.Should().BeTrue();
         messageCount.Should().Be(0);

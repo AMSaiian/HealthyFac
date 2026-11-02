@@ -27,7 +27,7 @@ public sealed class DownstreamScopeProbeHandler<TRequest>(IDownstreamScopeHolder
 
     public IReadOnlyCollection<string>? SeenScopes { get; private set; }
 
-    public Task<string> HandleAsync(TRequest request, CancellationToken ct = default(CancellationToken))
+    public Task<string> HandleAsync(TRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
         SeenScopes = _holder.Current.ToList();
 

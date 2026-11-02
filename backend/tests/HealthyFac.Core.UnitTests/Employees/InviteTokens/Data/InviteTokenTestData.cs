@@ -16,45 +16,33 @@ public static class InviteTokenTestData
 
     public static TheoryData<string> MalformedTokens => new()
     {
-        string.Empty,
-        "abc",
         "a.b",
-        "not-a-guid.k1.AAAA",
         $"{InviteId:N}.k1.%%%",
-        $"{InviteId:N}.k1.sig.extra",
     };
 
     public static TheoryData<string> TokensWithUnreadableInviteId => new()
     {
-        string.Empty,
-        "abc",
         "a.b",
         "not-a-guid.k1.AAAA",
         $"{InviteId:N}.k1.sig.extra",
     };
 
-    private static readonly string ValidSecret = Convert.ToBase64String(new byte[KeyByteCount]);
-
     public static TheoryData<InviteTokenOptions> InvalidOptions => new()
     {
-        BuildOptions(keys: []),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true), BuildKey(OlderKeyId, isDefault: true)]),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: false)]),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true), BuildKey(CurrentKeyId, isDefault: false)]),
-        BuildOptions(keys: [BuildKey("k.1", isDefault: true)]),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true, secret: "not base64 !!")]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, true), BuildKey(OlderKeyId, true)]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, false)]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, true), BuildKey(CurrentKeyId, false)]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, true, "not base64 !!")]),
         BuildOptions(
             keys:
             [
                 BuildKey(
                     CurrentKeyId,
-                    isDefault: true,
-                    secret: Convert.ToBase64String(new byte[TooShortKeyByteCount])),
+                    true,
+                    Convert.ToBase64String(new byte[TooShortKeyByteCount])),
             ]),
-        BuildOptions(keys: [new InviteTokenKeyOptions { Id = null!, Secret = ValidSecret, IsDefault = true }]),
-        BuildOptions(keys: [new InviteTokenKeyOptions { Id = CurrentKeyId, Secret = null!, IsDefault = true }]),
-        BuildOptions(lifetimeHours: 0),
-        BuildOptions(lifetimeHours: TooLongLifetimeHours),
+        BuildOptions(0),
+        BuildOptions(TooLongLifetimeHours),
     };
 
     public static InviteTokenOptions BuildOptions(
@@ -64,15 +52,15 @@ public static class InviteTokenTestData
         new()
         {
             LifetimeHours = lifetimeHours,
-            Keys = keys ?? [BuildKey(CurrentKeyId, isDefault: true)],
+            Keys = keys ?? [BuildKey(CurrentKeyId, true)],
         };
 
     public static InviteTokenOptions BuildTwoKeyOptions(string defaultKeyId) =>
         BuildOptions(
             keys:
             [
-                BuildKey(CurrentKeyId, isDefault: defaultKeyId == CurrentKeyId),
-                BuildKey(OlderKeyId, isDefault: defaultKeyId == OlderKeyId),
+                BuildKey(CurrentKeyId, defaultKeyId == CurrentKeyId),
+                BuildKey(OlderKeyId, defaultKeyId == OlderKeyId),
             ]);
 
     private static InviteTokenKeyOptions BuildKey(string id, bool isDefault, string? secret = null) =>

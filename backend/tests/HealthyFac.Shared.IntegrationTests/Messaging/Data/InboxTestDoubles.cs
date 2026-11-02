@@ -94,21 +94,27 @@ public sealed class RecordingHandler(
     HandlerRecorder recorder
 ) : RequestHandler<TestRecorded>
 {
-    protected override async Task HandleInternalAsync(TestRecorded request, CancellationToken ct)
-    {
-        dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
-        await dbContext.SaveChangesAsync(ct);
+    private readonly ITestServiceDbContext _dbContext = dbContext;
+    private readonly ICurrentUserProvider _currentUserProvider = currentUserProvider;
+    private readonly HandlerRecorder _recorder = recorder;
 
-        recorder.Record(new HandledCall(request.Text, currentUserProvider.TryGetActor()));
+    protected override async Task HandleInternalAsync(TestRecorded request, CancellationToken cancellationToken)
+    {
+        _dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _recorder.Record(new HandledCall(request.Text, _currentUserProvider.TryGetActor()));
     }
 }
 
 public sealed class FailingHandler(ITestServiceDbContext dbContext) : RequestHandler<TestFailing>
 {
-    protected override async Task HandleInternalAsync(TestFailing request, CancellationToken ct)
+    private readonly ITestServiceDbContext _dbContext = dbContext;
+
+    protected override async Task HandleInternalAsync(TestFailing request, CancellationToken cancellationToken)
     {
-        dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
-        await dbContext.SaveChangesAsync(ct);
+        _dbContext.AuditedEntities.Add(new TestAuditedEntity(request.Text));
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         throw new InvalidOperationException(InboxProcessorTestData.HandlerFailureText);
     }
@@ -137,10 +143,10 @@ public sealed class CancellingHandler(CancellationTrigger trigger) : RequestHand
 {
     private readonly CancellationTrigger _trigger = trigger;
 
-    protected override async Task HandleInternalAsync(TestCancelling request, CancellationToken ct)
+    protected override async Task HandleInternalAsync(TestCancelling request, CancellationToken cancellationToken)
     {
         await _trigger.Source.CancelAsync();
 
-        ct.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
     }
 }

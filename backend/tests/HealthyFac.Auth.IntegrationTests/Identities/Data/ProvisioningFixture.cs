@@ -21,11 +21,14 @@ namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 /// processor runs as a hosted service. The outbox processor does not run, so the rows of the handler stay pending
 /// and a test reads them. <see cref="PublishAsync"/> plays the core service.
 /// </summary>
+/// <remarks>
+/// One instance serves every test class of <see cref="KeycloakCollection"/>. The host uses the Redis container of
+/// <see cref="Keycloak"/>, so the run starts one Redis container.
+/// </remarks>
 public sealed class ProvisioningFixture : IAsyncLifetime
 {
     private readonly PostgreSqlTestDatabase _database = new();
     private readonly RabbitMqTestBroker _broker = new();
-    private readonly RedisTestServer _redis = new();
 
     private IHost _host = null!;
     private IBus _publisher = null!;
@@ -39,7 +42,6 @@ public sealed class ProvisioningFixture : IAsyncLifetime
         await Task.WhenAll(
             _database.StartAsync(),
             _broker.StartAsync(),
-            _redis.StartAsync(),
             Keycloak.InitializeAsync());
 
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
@@ -50,7 +52,7 @@ public sealed class ProvisioningFixture : IAsyncLifetime
                 [ProvisioningTestData.DatabaseConnectionStringKey] = _database.ConnectionString,
                 [ProvisioningTestData.BrokerConnectionStringKey] = _broker.ConnectionString,
                 [ProvisioningTestData.QueueNameKey] = ProvisioningTestData.QueueName,
-                [ProvisioningTestData.RedisConnectionStringKey] = _redis.ConnectionString,
+                [ProvisioningTestData.RedisConnectionStringKey] = Keycloak.Redis.ConnectionString,
                 [ProvisioningTestData.PollingIntervalKey] = ProvisioningTestData.PollingIntervalMilliseconds,
                 [ProvisioningTestData.ServiceNameKey] = ServiceName.Auth.Value,
             });
@@ -85,7 +87,6 @@ public sealed class ProvisioningFixture : IAsyncLifetime
         await _host.StopAsync();
         _host.Dispose();
         await Keycloak.DisposeAsync();
-        await _redis.DisposeAsync();
         await _broker.DisposeAsync();
         await _database.DisposeAsync();
     }

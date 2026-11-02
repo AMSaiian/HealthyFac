@@ -9,7 +9,7 @@ public sealed class HttpsOptionsValidator : AbstractValidator<HttpsOptions>
     {
         RuleFor(options => options.RedirectPort)
             .NotNull()
-            .When(options => options.RedirectEnabled)
+            .When(options => options.IsRedirectEnabled)
             .WithMessage(HttpsValidationMessages.RedirectPortRequired);
 
         RuleFor(options => options.RedirectPort)
@@ -18,20 +18,20 @@ public sealed class HttpsOptionsValidator : AbstractValidator<HttpsOptions>
 
         RuleFor(options => options.HstsMaxAgeDays)
             .GreaterThanOrEqualTo(1)
-            .When(options => options.HstsEnabled)
+            .When(options => options.IsHstsEnabled)
             .WithMessage(HttpsValidationMessages.MaxAgeMustBePositive);
 
         RuleFor(options => options)
             .Must(MeetPreloadRequirements)
-            .When(options => options.HstsPreload)
+            .When(options => options.IsHstsPreloaded)
             .WithMessage(HttpsValidationMessages.PreloadRequirementsNotMet);
     }
 
     private static bool MeetPreloadRequirements(HttpsOptions options)
         => options is
         {
-            HstsEnabled: true,
-            HstsIncludeSubDomains: true,
-            HstsMaxAgeDays: >= HttpsConstants.PreloadMinimumMaxAgeDays
+            IsHstsEnabled: true,
+            IsHstsSubDomainsIncluded: true,
+            HstsMaxAgeDays: >= HttpsConstants.PreloadMinimumMaxAgeDays,
         };
 }

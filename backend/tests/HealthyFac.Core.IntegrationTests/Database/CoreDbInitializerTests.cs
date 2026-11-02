@@ -12,13 +12,15 @@ namespace HealthyFac.Core.IntegrationTests.Database;
 
 public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task SeedRequiredDataAsync_RunTwice_KeepsOneRolePerCode()
     {
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
 
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var roles = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
             .AsNoTracking()
@@ -31,7 +33,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     [Fact]
     public async Task SeedRequiredDataAsync_WithChangedRoleName_RestoresSeededName()
     {
-        using (var changeScope = fixture.ScopeFactory.CreateScope())
+        using (var changeScope = _fixture.ScopeFactory.CreateScope())
         {
             await changeScope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .Roles
@@ -41,7 +43,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
 
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
 
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var workerName = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
             .Where(role => role.Code == RoleCode.Worker)
@@ -69,7 +71,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
 
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var machineTypes = scope.ServiceProvider.GetRequiredService<IOptions<SeedingOptions>>()
             .Value
             .DevelopmentData
@@ -89,7 +91,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
 
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var employeeEmails = await dbContext.Employees.Select(employee => employee.Email).ToListAsync();
         var inviteEmails = await dbContext.EmployeeInvites.Select(invite => invite.Email).ToListAsync();
@@ -103,18 +105,18 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
         var companyIdsBefore = await ReadCompanyIdsAsync();
-        using var recreateScope = fixture.ScopeFactory.CreateScope();
+        using var recreateScope = _fixture.ScopeFactory.CreateScope();
         var seeder = new CoreDevelopmentDataSeeder(
             recreateScope.ServiceProvider.GetRequiredService<CoreDbContext>(),
             recreateScope.ServiceProvider.GetRequiredService<TimeProvider>(),
             Options.Create(DatabaseTestData.ForcedRecreationOptions),
             NullLogger<CoreDevelopmentDataSeeder>.Instance,
-            fixture.InviteTokenService);
+            _fixture.InviteTokenService);
 
         await seeder.SeedAsync(CancellationToken.None);
 
         var companyIdsAfter = await ReadCompanyIdsAsync();
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var departmentCount = await dbContext.Departments.CountAsync();
         var machineCount = await dbContext.Machines.CountAsync();
@@ -132,14 +134,14 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
 
     private async Task<SeededDataSnapshot> ReadSnapshotAsync()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
 
         return await SeededDataSnapshot.ReadAsync(scope.ServiceProvider.GetRequiredService<CoreDbContext>());
     }
 
     private async Task<List<Guid>> ReadCompanyIdsAsync()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Companies
@@ -149,7 +151,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
 
     private async Task SeedAsync(Func<ICoreDbInitializer, Task> seed)
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
 
         await seed(scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>());
     }

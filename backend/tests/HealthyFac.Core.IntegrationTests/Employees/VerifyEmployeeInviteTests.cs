@@ -12,11 +12,13 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task VerifyAsync_WithValidToken_ReturnsPrefillData()
     {
         var expiresAt = NextHour();
-        var arranged = await fixture.ArrangeInviteAsync(
+        var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyValidEmail,
             expiresAt,
             InviteTestData.FirstDepartmentName,
@@ -37,7 +39,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     [Fact]
     public async Task VerifyAsync_WithExpiredInvite_ThrowsGenericNotFound()
     {
-        var arranged = await fixture.ArrangeInviteAsync(
+        var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyExpiredEmail,
             DateTime.UtcNow.AddHours(-1),
             InviteTestData.FirstDepartmentName);
@@ -52,11 +54,11 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     [Fact]
     public async Task VerifyAsync_WithAcceptedInvite_ThrowsGenericNotFound()
     {
-        var arranged = await fixture.ArrangeInviteAsync(
+        var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyAcceptedEmail,
             NextHour(),
             InviteTestData.FirstDepartmentName);
-        await fixture.AcceptInviteAsync(arranged.Token);
+        await _fixture.AcceptInviteAsync(arranged.Token);
 
         var act = () => VerifyAsync(arranged.Token);
 
@@ -68,7 +70,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     [Fact]
     public async Task VerifyAsync_WithTamperedToken_ThrowsGenericNotFound()
     {
-        var arranged = await fixture.ArrangeInviteAsync(
+        var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyTamperedEmail,
             NextHour(),
             InviteTestData.FirstDepartmentName);
@@ -96,14 +98,14 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     [Fact]
     public async Task VerifyAsync_AfterResend_RejectsOldTokenAndAcceptsNewToken()
     {
-        var arranged = await fixture.ArrangeInviteAsync(
+        var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyResendEmail,
             NextHour(),
             InviteTestData.FirstDepartmentName);
 
         await ResendAsync(arranged.CompanyId, arranged.InviteId);
 
-        var newToken = await fixture.CreateTokenFromStoredSaltAsync(arranged.InviteId);
+        var newToken = await _fixture.CreateTokenFromStoredSaltAsync(arranged.InviteId);
         var newTokenResponse = await VerifyAsync(newToken);
         var verifyOldToken = () => VerifyAsync(arranged.Token);
 
@@ -117,11 +119,11 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         DateTime.UtcNow.AddHours(1).Date.AddHours(DateTime.UtcNow.AddHours(1).Hour);
 
     private string CreateTokenForUnknownInvite()
-        => fixture.InviteTokenService.CreateToken(Guid.NewGuid(), fixture.InviteTokenService.CreateSalt());
+        => _fixture.InviteTokenService.CreateToken(Guid.NewGuid(), _fixture.InviteTokenService.CreateSalt());
 
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
 
         await scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>()
@@ -130,7 +132,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
     private async Task<VerifyEmployeeInviteResponse> VerifyAsync(string token)
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
 
         return await scope.ServiceProvider
             .GetRequiredService<IRequestHandler<VerifyEmployeeInviteRequest, VerifyEmployeeInviteResponse>>()

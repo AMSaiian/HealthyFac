@@ -17,7 +17,7 @@ public sealed class DownstreamScopeCallHandler(ServiceTokenHarness harness)
 
     public async Task<string> HandleAsync(
         DownstreamScopeCallRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         using var response = await _harness.CallAsync();

@@ -33,7 +33,7 @@ public sealed class IdEncryptionOptionsValidator : AbstractValidator<IdEncryptio
     }
 
     private static bool HaveExactlyOneDefaultKey(List<IdEncryptionKeyOptions> keys) =>
-        keys.Count(k => k.Default) == 1;
+        keys.Count(k => k.IsDefault) == 1;
 
     private static bool HaveUniquePrefixes(List<IdEncryptionKeyOptions> keys) =>
         keys.Select(k => k.Prefix).Distinct(StringComparer.Ordinal).Count() == keys.Count;

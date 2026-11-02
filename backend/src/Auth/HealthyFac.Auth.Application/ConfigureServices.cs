@@ -16,7 +16,7 @@ public static class ConfigureServices
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddApplicationServices()
         {
-            services.AddUseCases(typeof(IAuthDbContext).Assembly);
+            services.AddUseCases(AuthApplicationAssembly.Instance);
 
             return services;
         }

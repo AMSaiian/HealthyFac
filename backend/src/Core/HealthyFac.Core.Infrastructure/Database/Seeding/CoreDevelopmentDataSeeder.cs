@@ -35,6 +35,10 @@ public sealed class CoreDevelopmentDataSeeder(
     IInviteTokenService inviteTokenService
 )
 {
+    private readonly CoreDbContext _dbContext = dbContext;
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly ILogger<CoreDevelopmentDataSeeder> _logger = logger;
+
     private const int TestTenantDepartmentCount = 2;
 
     private readonly DevelopmentDataOptions _options = seedingOptions.Value.DevelopmentData;
@@ -54,7 +58,7 @@ public sealed class CoreDevelopmentDataSeeder(
     {
         if (_options.IsRecreationForced)
         {
-            logger.LogWarning(
+            _logger.LogWarning(
                 "Forced recreation of development data: deleting all companies, departments, machines, employees, "
                 + "and invites.");
 
@@ -71,20 +75,20 @@ public sealed class CoreDevelopmentDataSeeder(
 
     private async Task SeedGeneratedDataAsync(CancellationToken cancellationToken)
     {
-        var hasCompanies = await dbContext.Companies.AnyAsync(cancellationToken);
+        var hasCompanies = await _dbContext.Companies.AnyAsync(cancellationToken);
         if (hasCompanies)
         {
             return;
         }
 
-        var roleIds = await dbContext.Roles.ToDictionaryAsync(role => role.Code, role => role.Id, cancellationToken);
-        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var roleIds = await _dbContext.Roles.ToDictionaryAsync(role => role.Code, role => role.Id, cancellationToken);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var inviteLifetime = TimeSpan.FromDays(_options.InviteLifetimeDays);
         var identityRandomizer = new Randomizer(_options.RandomSeed);
 
         var companies = new CompanyFaker(NextSeed()).Generate(_options.CompanyCount);
-        dbContext.Companies.AddRange(companies);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.Companies.AddRange(companies);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         var departments = companies
             .SelectMany(company => new DepartmentFaker(
@@ -94,12 +98,12 @@ public sealed class CoreDevelopmentDataSeeder(
                     NextSeed())
                 .Generate(_options.DepartmentsPerCompany))
             .ToList();
-        dbContext.Departments.AddRange(departments);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        _dbContext.Departments.AddRange(departments);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         foreach (var department in departments)
         {
-            dbContext.Machines.AddRange(
+            _dbContext.Machines.AddRange(
                 new MachineFaker(department, _options.GetMachineTypes(), _options.SerialNumberPattern, NextSeed())
                     .Generate(_options.MachinesPerDepartment));
 
@@ -123,7 +127,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var companyDepartments in departments.GroupBy(department => department.CompanyId))
         {
-            dbContext.EmployeeInvites.AddRange(
+            _dbContext.EmployeeInvites.AddRange(
                 EmployeeInviteFaker.Open(
                         companyDepartments.First(),
                         roleIds[RoleCode.Worker],
@@ -133,12 +137,12 @@ public sealed class CoreDevelopmentDataSeeder(
                     .Generate(_options.OpenInvitesPerCompany));
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task SeedTestTenantAsync(TestTenantOptions tenant, CancellationToken cancellationToken)
     {
-        var isCompanySeeded = await dbContext.Companies.AnyAsync(
+        var isCompanySeeded = await _dbContext.Companies.AnyAsync(
             company => company.Id == tenant.CompanyId,
             cancellationToken);
         if (isCompanySeeded)
@@ -146,15 +150,15 @@ public sealed class CoreDevelopmentDataSeeder(
             return;
         }
 
-        var supervisorRoleId = await dbContext.Roles
+        var supervisorRoleId = await _dbContext.Roles
             .Where(role => role.Code == RoleCode.Supervisor)
             .Select(role => role.Id)
             .SingleAsync(cancellationToken);
-        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         var company = new Company { Name = tenant.CompanyName };
-        dbContext.Entry(company).Property(entity => entity.Id).CurrentValue = tenant.CompanyId;
-        dbContext.Companies.Add(company);
+        _dbContext.Entry(company).Property(entity => entity.Id).CurrentValue = tenant.CompanyId;
+        _dbContext.Companies.Add(company);
 
         var departments = _options.GetDepartmentNames()
             .Take(TestTenantDepartmentCount)
@@ -165,7 +169,7 @@ public sealed class CoreDevelopmentDataSeeder(
                 TimeZoneId = _options.GetTimeZoneIds()[index % _options.GetTimeZoneIds().Count],
             })
             .ToList();
-        dbContext.Departments.AddRange(departments);
+        _dbContext.Departments.AddRange(departments);
 
         var invite = new EmployeeInvite(
             tenant.CompanyId,
@@ -177,22 +181,22 @@ public sealed class CoreDevelopmentDataSeeder(
         invite.UpdateProfile(tenant.SupervisorFirstName, tenant.SupervisorLastName);
 
         var supervisor = invite.Accept(now);
-        dbContext.Entry(supervisor).Property(entity => entity.Id).CurrentValue = tenant.SupervisorEmployeeId;
+        _dbContext.Entry(supervisor).Property(entity => entity.Id).CurrentValue = tenant.SupervisorEmployeeId;
         supervisor.Activate(tenant.SupervisorIdentityId);
 
-        dbContext.EmployeeInvites.Add(invite);
-        dbContext.Employees.Add(supervisor);
+        _dbContext.EmployeeInvites.Add(invite);
+        _dbContext.Employees.Add(supervisor);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task DeleteBusinessDataAsync(CancellationToken cancellationToken)
     {
-        await dbContext.Employees.ExecuteDeleteAsync(cancellationToken);
-        await dbContext.EmployeeInvites.ExecuteDeleteAsync(cancellationToken);
-        await dbContext.Machines.ExecuteDeleteAsync(cancellationToken);
-        await dbContext.Departments.ExecuteDeleteAsync(cancellationToken);
-        await dbContext.Companies.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Employees.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.EmployeeInvites.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Machines.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Departments.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Companies.ExecuteDeleteAsync(cancellationToken);
     }
 
     private void AddEmployees(
@@ -209,8 +213,8 @@ public sealed class CoreDevelopmentDataSeeder(
             var employee = invite.Accept(now);
             employee.Activate(identityRandomizer.Guid());
 
-            dbContext.EmployeeInvites.Add(invite);
-            dbContext.Employees.Add(employee);
+            _dbContext.EmployeeInvites.Add(invite);
+            _dbContext.Employees.Add(employee);
         }
     }
 

@@ -35,7 +35,7 @@ public static class DatabaseInitializationExtensions
             await initializer.ApplyDatabaseStructureAsync(cancellationToken);
             await initializer.SeedRequiredDataAsync(cancellationToken);
 
-            if (seedingOptions.SeedOptionalData)
+            if (seedingOptions.IsOptionalDataSeeded)
             {
                 await initializer.SeedOptionalDataAsync(cancellationToken);
             }

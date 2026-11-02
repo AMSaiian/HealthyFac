@@ -10,12 +10,14 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<PipelineFixture>
 {
+    private readonly PipelineFixture _fixture = fixture;
+
     [Fact]
     public async Task Pipeline_WithTraceParent_LinksSendReceiveAndProcess()
     {
         using var capture = new SpanCapture(ObservabilityConstants.Sources.Messaging);
         using var parent = new Activity(TracingTestData.ParentName).Start();
-        using (var scope = fixture.CreateScope())
+        using (var scope = _fixture.CreateScope())
         {
             scope.ServiceProvider.GetRequiredService<IOutbox>()
                 .Add(new TestRecorded { Text = TracingTestData.LinkedText });
@@ -38,7 +40,7 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
     [Fact]
     public async Task EndToEnd_OutboxToInbox_HandlesMessageOnce()
     {
-        using var scope = fixture.CreateScope(
+        using var scope = _fixture.CreateScope(
             new ActorContext
             {
                 Kind = ActorKind.User,
@@ -49,7 +51,7 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
             .Add(new TestRecorded { Text = InboxProcessorTestData.EndToEndText });
         await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
 
-        var calls = await fixture.WaitForHandledCallsAsync(InboxProcessorTestData.EndToEndText);
+        var calls = await _fixture.WaitForHandledCallsAsync(InboxProcessorTestData.EndToEndText);
 
         var actor = calls.Should().ContainSingle().Which.Actor!;
         actor.UserId.Should().Be(InboxProcessorTestData.UserActorId);

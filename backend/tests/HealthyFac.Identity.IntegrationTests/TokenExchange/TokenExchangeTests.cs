@@ -4,7 +4,8 @@ using HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
-public sealed class TokenExchangeTests(TokenExchangeFixture fixture) : IClassFixture<TokenExchangeFixture>
+[Collection(TokenExchangeCollection.Name)]
+public sealed class TokenExchangeTests(TokenExchangeFixture fixture)
 {
     private readonly TokenExchangeFixture _fixture = fixture;
 
@@ -71,14 +72,13 @@ public sealed class TokenExchangeTests(TokenExchangeFixture fixture) : IClassFix
     public async Task Exchange_ForDisabledUser_Fails()
     {
         var subjectToken = await _fixture.Realm.GetSupervisorAccessTokenAsync();
-        await _fixture.Realm.SetUserEnabledAsync(RealmTestData.SupervisorIdentityId, false);
 
-        var response = await _fixture.ExchangeAsync(
+        var response = await _fixture.ExchangeWhileUserDisabledAsync(
             subjectToken,
+            RealmTestData.SupervisorIdentityId,
             TokenExchangeTestData.TargetClientId,
             TokenExchangeTestData.ExchangeScopes);
 
-        await _fixture.Realm.SetUserEnabledAsync(RealmTestData.SupervisorIdentityId, true);
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         response.Body[TokenExchangeTestData.ErrorField]!.GetValue<string>()
             .Should()

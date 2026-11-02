@@ -1,4 +1,3 @@
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
@@ -37,12 +36,12 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
 
     public async Task<RetryProvisioningResponse> HandleAsync(
         RetryProvisioningRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         var employee = await _dbContext.Employees.SingleOrDefaultAsync(
                 employee => employee.Id == request.EmployeeId && employee.CompanyId == request.CompanyId,
-                ct)
+                cancellationToken)
             ?? throw new NotFoundException(EmployeeProvisioningErrors.Rejections.EmployeeNotFound);
 
         if (!employee.CanRetryProvisioning)
@@ -53,7 +52,7 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
         var roleCode = await _dbContext.Roles
                 .Where(role => role.Id == employee.RoleId)
                 .Select(role => role.Code)
-                .SingleOrDefaultAsync(ct)
+                .SingleOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.RoleNotFound);
 
         employee.RetryProvisioning(_timeProvider.GetUtcNow().UtcDateTime);
@@ -70,7 +69,7 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
 
         try
         {
-            await _dbContext.SaveChangesAsync(ct);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {

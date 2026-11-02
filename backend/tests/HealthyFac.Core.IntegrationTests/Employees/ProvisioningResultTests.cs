@@ -6,15 +6,17 @@ namespace HealthyFac.Core.IntegrationTests.Employees;
 
 public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task IdentityProvisioned_ForProvisioningEmployee_ActivatesAndLinks()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteEmail);
         var identityUserId = Guid.CreateVersion7();
 
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Active);
         employee.IdentityUserId.Should().Be(identityUserId);
@@ -23,13 +25,13 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioned_ForActiveEmployeeWithSameIdentity_Completes()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteTwiceEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteTwiceEmail);
         var identityUserId = Guid.CreateVersion7();
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Active);
         employee.IdentityUserId.Should().Be(identityUserId);
@@ -38,14 +40,14 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioned_WithOtherIdentity_Throws()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteOtherIdentityEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteOtherIdentityEmail);
         var identityUserId = Guid.CreateVersion7();
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        var act = () => fixture.CompleteProvisioningAsync(arranged.EmployeeId, Guid.CreateVersion7());
+        var act = () => _fixture.CompleteProvisioningAsync(arranged.EmployeeId, Guid.CreateVersion7());
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.IdentityUserId.Should().Be(identityUserId);
     }
@@ -53,7 +55,7 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioned_ForMissingEmployee_Throws()
     {
-        var act = () => fixture.CompleteProvisioningAsync(Guid.CreateVersion7(), Guid.CreateVersion7());
+        var act = () => _fixture.CompleteProvisioningAsync(Guid.CreateVersion7(), Guid.CreateVersion7());
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -61,11 +63,11 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioningFailed_ForProvisioningEmployee_MarksFailed()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailEmail);
 
-        await fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
+        await _fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.ProvisioningFailed);
     }
@@ -73,12 +75,12 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioningFailed_ForFailedEmployee_Completes()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailTwiceEmail);
-        await fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailTwiceEmail);
+        await _fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
 
-        await fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
+        await _fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.ProvisioningFailed);
     }
@@ -86,13 +88,13 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioningFailed_ForActiveEmployee_Completes()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailActiveEmail);
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailActiveEmail);
         var identityUserId = Guid.CreateVersion7();
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        await fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
+        await _fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Active);
         employee.IdentityUserId.Should().Be(identityUserId);
@@ -101,14 +103,14 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioned_ForDeactivatedEmployee_LinksIdentityAndAddsEmployeeDeactivated()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteDeactivatedEmail);
-        await fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.CompleteDeactivatedEmail);
+        await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
         var identityUserId = Guid.CreateVersion7();
 
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
-        var messages = await fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
         employee.IdentityUserId.Should().Be(identityUserId);
@@ -119,16 +121,16 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioned_ForDeactivatedEmployeeWithSameIdentity_Completes()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(
             ProvisioningTestData.CompleteDeactivatedTwiceEmail);
-        await fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
         var identityUserId = Guid.CreateVersion7();
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        await fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
+        await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
-        var messages = await fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
         messages.Should().HaveCount(2);
@@ -137,12 +139,12 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
     [Fact]
     public async Task IdentityProvisioningFailed_ForDeactivatedEmployee_Completes()
     {
-        var arranged = await fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailDeactivatedEmail);
-        await fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
+        var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(ProvisioningTestData.FailDeactivatedEmail);
+        await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
 
-        await fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
+        await _fixture.FailProvisioningAsync(arranged.EmployeeId, ProvisioningTestData.FailureReason);
 
-        var employee = await fixture.LoadEmployeeAsync(arranged.EmployeeId);
+        var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
     }

@@ -11,6 +11,8 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
 /// <param name="failureCount">The number of inbox insert commands to fail.</param>
 public sealed class InboxInsertFailureInterceptor(int failureCount) : DbCommandInterceptor
 {
+    private readonly int _failureCount = failureCount;
+
     private int _injectedCount;
 
     public int InjectedCount => Volatile.Read(ref _injectedCount);
@@ -43,7 +45,7 @@ public sealed class InboxInsertFailureInterceptor(int failureCount) : DbCommandI
     {
         var isInboxInsert = command.CommandText.Contains(DatabaseOutageTestData.InboxInsertCommand)
             && command.CommandText.Contains(DatabaseOutageTestData.InboxTableName);
-        if (isInboxInsert && Interlocked.Increment(ref _injectedCount) <= failureCount)
+        if (isInboxInsert && Interlocked.Increment(ref _injectedCount) <= _failureCount)
         {
             throw new NpgsqlException(DatabaseOutageTestData.InjectedFailureText, new TimeoutException());
         }

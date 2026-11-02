@@ -15,10 +15,12 @@ namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
 public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>
 {
+    private readonly GatewayEnvironment _environment = environment;
+
     [Fact]
     public async Task CoreRoute_WhenDestinationIsDown_Returns502ProblemDetails()
     {
-        await using var gateway = environment.CreateGateway(ProxyFailureTestData.ClosedPortAddress);
+        await using var gateway = _environment.CreateGateway(ProxyFailureTestData.ClosedPortAddress);
         using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync(ProxyFailureTestData.MachinesRoute);
@@ -35,7 +37,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
     {
         await using var core = new EchoServer(responseDelay: ProxyFailureTestData.SlowResponseDelay);
         await core.StartAsync();
-        await using var gateway = environment.CreateGateway(
+        await using var gateway = _environment.CreateGateway(
             core,
             settings: ProxyFailureTestData.OneSecondActivityTimeout);
         using var client = gateway.CreateAuthenticatedClient();
@@ -57,7 +59,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         await using var core = new EchoServer();
         core.IsReady = false;
         await core.StartAsync();
-        await using var gateway = environment.CreateGateway(
+        await using var gateway = _environment.CreateGateway(
             core,
             settings: ProxyFailureTestData.OneSecondHealthCheckInterval);
         using var client = gateway.CreateAuthenticatedClient();
@@ -80,7 +82,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
     public async Task CoreRoute_WhenDestinationFails_LogsWarningWithoutAuthorizationHeader()
     {
         var logs = new CapturingLoggerProvider();
-        await using var gateway = environment.CreateGateway(
+        await using var gateway = _environment.CreateGateway(
             ProxyFailureTestData.ClosedPortAddress,
             configureServices: services => services.AddSingleton<ILoggerFactory>(new LoggerFactory([logs])));
         using var client = gateway.CreateClient();

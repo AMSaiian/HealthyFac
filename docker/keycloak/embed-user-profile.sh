@@ -27,10 +27,9 @@ profile="$(run_jq -c . < "$PROFILE_FILE" | tr -d '\r')"
 temp_file="$(mktemp "$REALM_FILE.XXXXXX")"
 trap 'rm -f "$temp_file"' EXIT
 
-# The files of this repository use CR LF until the line ending cleanup.
+# A native jq.exe on Windows writes CR LF, so sed removes the CR at each line end.
 run_jq --indent 2 --arg profile "$profile" "$PROFILE_PATH = \$profile" < "$REALM_FILE" \
-  | sed 's/\r$//' \
-  | awk '{ printf "%s\r\n", $0 }' > "$temp_file"
+  | sed 's/\r$//' > "$temp_file"
 
 if cmp -s "$temp_file" "$REALM_FILE"; then
   echo "The realm file was already up to date."

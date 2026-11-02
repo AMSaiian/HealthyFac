@@ -15,7 +15,7 @@ public sealed class ThrowingHandler : IRequestHandler<TestRequest, int>
         _exception = exception;
     }
 
-    public Task<int> HandleAsync(TestRequest request, CancellationToken ct = default)
+    public Task<int> HandleAsync(TestRequest request, CancellationToken cancellationToken = default(CancellationToken))
         => throw _exception;
 }
 

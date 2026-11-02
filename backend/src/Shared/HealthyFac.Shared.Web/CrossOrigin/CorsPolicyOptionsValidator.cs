@@ -8,7 +8,7 @@ public sealed class CorsPolicyOptionsValidator : AbstractValidator<CorsPolicyOpt
     public CorsPolicyOptionsValidator()
     {
         When(
-            options => options.Enabled,
+            options => options.IsEnabled,
             () =>
             {
                 RuleFor(options => options.AllowedOrigins)
@@ -27,7 +27,7 @@ public sealed class CorsPolicyOptionsValidator : AbstractValidator<CorsPolicyOpt
 
                 RuleFor(options => options.AllowedOrigins)
                     .Must(origins => !origins.Contains(CorsConstants.Wildcard))
-                    .When(options => options.AllowCredentials)
+                    .When(options => options.IsCredentialsAllowed)
                     .WithMessage(CorsValidationMessages.CredentialsWithWildcardOrigin);
             });
     }

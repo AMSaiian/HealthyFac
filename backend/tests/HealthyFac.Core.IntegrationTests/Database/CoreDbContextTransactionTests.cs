@@ -10,10 +10,12 @@ namespace HealthyFac.Core.IntegrationTests.Database;
 
 public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
 {
+    private readonly CoreDatabaseFixture _fixture = fixture;
+
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationSavesInside_CommitsAndReturnsGeneratedId()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
         var companyId = await dbContext.RunInTransactionAsync(async cancellationToken =>
@@ -34,7 +36,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationThrowsAfterSave_CommitsNothing()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(async cancellationToken =>
@@ -55,7 +57,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
     [Fact]
     public async Task RunInTransactionAsync_WithUnsavedChangesBeforeCall_ThrowsWithoutRunningOperation()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
         dbContext.Companies.Add(new Company { Name = TransactionTestData.UnsavedCompanyName });
         var isOperationRun = false;
@@ -76,7 +78,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationLeavesUnsavedChanges_ThrowsAndCommitsNothing()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(_ =>
@@ -98,7 +100,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
     [Fact]
     public async Task RunInTransactionAsync_WhenOperationCommitsTransaction_ThrowsAndSavesNothingAfterIt()
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
         var act = () => dbContext.RunInTransactionAsync(async cancellationToken =>
@@ -118,7 +120,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
 
     private async Task<int> CountCompaniesAsync(string name)
     {
-        using var scope = fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.ScopeFactory.CreateScope();
 
         return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Companies

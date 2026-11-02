@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using HealthyFac.Shared.Application.Logging;
 
 namespace HealthyFac.Auth.Infrastructure.Keycloak;
@@ -9,9 +10,11 @@ public sealed record CreateKeycloakUserRequest
     [SensitiveData]
     public required string Email { get; init; }
 
-    public required bool EmailVerified { get; init; }
+    [JsonPropertyName("emailVerified")]
+    public required bool IsEmailVerified { get; init; }
 
-    public required bool Enabled { get; init; }
+    [JsonPropertyName("enabled")]
+    public required bool IsEnabled { get; init; }
 
     [SensitiveData]
     public required string FirstName { get; init; }

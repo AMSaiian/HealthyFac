@@ -42,7 +42,7 @@ public static class TransportExtensions
             services.AddValidatedOptions<MessagingOptions, MessagingOptionsValidator>(
                 MessagingOptions.SectionName,
                 configuration);
-            services.AddIntegrationMessageRegistry();
+            GetOrAddIntegrationMessageRegistry(services);
             services.AddScoped<IntegrationMessageDispatcher>();
             services.AddSingleton(_ => new BrokerConnectionProvider(new Uri(connectionString)));
 
@@ -86,26 +86,39 @@ public static class TransportExtensions
                 throw MessagingErrors.MessageHandlerMissing(TMessage.MessageType);
             }
 
-            services.AddIntegrationMessageRegistry().Register<TMessage>();
+            GetOrAddIntegrationMessageRegistry(services).Register<TMessage>();
 
             return services;
         }
+    }
 
-        private IntegrationMessageRegistry AddIntegrationMessageRegistry()
+    /// <summary>
+    /// Finds the <see cref="IntegrationMessageRegistry"/> that the service collection already holds, or creates
+    /// one and registers it as a singleton instance. <see cref="AddMessagingTransport"/> and every
+    /// <see cref="AddIntegrationMessage{TMessage}"/> call therefore add to one registry, in any order.
+    /// </summary>
+    /// <remarks>
+    /// The search reads only <see cref="ServiceDescriptor.ImplementationInstance"/>, so the registry must stay
+    /// registered as an instance (<c>AddSingleton(instance)</c>). A factory or a type registration is not
+    /// found: the method then adds a second registry, the container resolves the last one, and the message
+    /// types of the first registry get no subscription and no dispatch, without an error.
+    /// </remarks>
+    /// <param name="services">The service collection of the host.</param>
+    /// <returns>The one registry of the service collection.</returns>
+    private static IntegrationMessageRegistry GetOrAddIntegrationMessageRegistry(IServiceCollection services)
+    {
+        var registry = services
+            .Select(descriptor => descriptor.ImplementationInstance)
+            .OfType<IntegrationMessageRegistry>()
+            .FirstOrDefault();
+        if (registry is not null)
         {
-            var registry = services
-                .Select(descriptor => descriptor.ImplementationInstance)
-                .OfType<IntegrationMessageRegistry>()
-                .FirstOrDefault();
-            if (registry is not null)
-            {
-                return registry;
-            }
-
-            registry = new IntegrationMessageRegistry();
-            services.AddSingleton(registry);
-
             return registry;
         }
+
+        registry = new IntegrationMessageRegistry();
+        services.AddSingleton(registry);
+
+        return registry;
     }
 }

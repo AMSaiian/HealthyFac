@@ -4,7 +4,8 @@ using StackExchange.Redis;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities;
 
-public sealed class RevokeIdentityTests(ProvisioningFixture fixture) : IClassFixture<ProvisioningFixture>
+[Collection(KeycloakCollection.Name)]
+public sealed class RevokeIdentityTests(ProvisioningFixture fixture)
 {
     private readonly ProvisioningFixture _fixture = fixture;
 
@@ -85,7 +86,7 @@ public sealed class RevokeIdentityTests(ProvisioningFixture fixture) : IClassFix
     [Fact]
     public async Task Revoke_WithoutIdentity_Completes()
     {
-        var message = ProvisioningTestData.CreateDeactivated(identityUserId: null);
+        var message = ProvisioningTestData.CreateDeactivated(null);
         var identityAdmin = new FakeIdentityAdmin();
 
         await _fixture.RevokeAsync(message, identityAdmin);

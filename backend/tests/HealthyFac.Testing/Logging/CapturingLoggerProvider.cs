@@ -21,6 +21,9 @@ public sealed class CapturingLoggerProvider : ILoggerProvider
 
     private sealed class CapturingCategoryLogger(string category, ConcurrentQueue<CapturedLogEntry> entries) : ILogger
     {
+        private readonly string _category = category;
+        private readonly ConcurrentQueue<CapturedLogEntry> _entries = entries;
+
         public IDisposable? BeginScope<TState>(TState state)
             where TState : notnull => null;
 
@@ -32,12 +35,12 @@ public sealed class CapturingLoggerProvider : ILoggerProvider
             TState state,
             Exception? exception,
             Func<TState, Exception?, string> formatter
-        ) => entries.Enqueue(
+        ) => _entries.Enqueue(
             new CapturedLogEntry
             {
                 Level = logLevel,
                 Message = formatter(state, exception),
-                Category = category,
+                Category = _category,
                 Exception = exception,
                 Properties = state is IEnumerable<KeyValuePair<string, object?>> values
                     ? values.ToDictionary(pair => pair.Key, pair => pair.Value)

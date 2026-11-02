@@ -105,11 +105,13 @@ public static class IdEncryptionExtensions
 
 internal sealed class IdEncryptionJsonOptionsConfigurator(IIdEncryptor encryptor) : IConfigureOptions<JsonOptions>
 {
+    private readonly IIdEncryptor _encryptor = encryptor;
+
     public void Configure(JsonOptions options)
     {
         var resolver = options.SerializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
         options.SerializerOptions.TypeInfoResolver = resolver.WithAddedModifier(typeInfo =>
-            IdEncryptionExtensions.ApplyIdEncryption(typeInfo, encryptor)
+            IdEncryptionExtensions.ApplyIdEncryption(typeInfo, _encryptor)
         );
     }
 }

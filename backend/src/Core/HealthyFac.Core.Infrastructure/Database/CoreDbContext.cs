@@ -72,7 +72,7 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(CoreDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(CoreInfrastructureAssembly.Instance);
         modelBuilder.ApplyOutboxConfiguration();
         modelBuilder.ApplyInboxConfiguration();
         modelBuilder.ToSnakeCaseConventions();

@@ -8,6 +8,8 @@ namespace HealthyFac.Shared.IntegrationTests.Persistence;
 
 public sealed class NpgsqlTracingTests(PostgreSqlFixture fixture) : IClassFixture<PostgreSqlFixture>
 {
+    private readonly PostgreSqlFixture _fixture = fixture;
+
     [Fact]
     public async Task Query_WithoutParentActivity_WritesNoSpan()
     {
@@ -40,7 +42,7 @@ public sealed class NpgsqlTracingTests(PostgreSqlFixture fixture) : IClassFixtur
 
     private async Task RunQueryAsync(string marker)
     {
-        await using var dbContext = new TracingDbContext(fixture.ConnectionString);
+        await using var dbContext = new TracingDbContext(_fixture.ConnectionString);
 
         await dbContext.Database.ExecuteSqlRawAsync(NpgsqlTracingTestData.CreateMarkerSql(marker));
     }

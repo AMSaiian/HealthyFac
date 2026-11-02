@@ -205,7 +205,7 @@ services:
         Host=postgres;Port=5432;Database=${POSTGRES_DB:-healthyfac_core};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
-      IdEncryption__Keys__0__Default: "true"
+      IdEncryption__Keys__0__IsDefault: "true"
       InviteTokens__LifetimeHours: ${InviteTokens__LifetimeHours:-72}
       InviteTokens__Keys__0__Id: ${InviteTokens__Keys__0__Id:-k1}
       InviteTokens__Keys__0__Secret: ${InviteTokens__Keys__0__Secret:?set InviteTokens__Keys__0__Secret in .env}
@@ -225,7 +225,7 @@ services:
       Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
       Jwt__IsHttpsMetadataRequired: "false"
       # The test company and supervisor. Keycloak imports the same values (see the keycloak service), so the
-      # supervisor can sign in. Core seeds them only when SeedOptionalData is true (the Development default).
+      # supervisor can sign in. Core seeds them only when IsOptionalDataSeeded is true (the Development default).
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
       Seeding__DevelopmentData__TestTenant__CompanyName: Test Company
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}

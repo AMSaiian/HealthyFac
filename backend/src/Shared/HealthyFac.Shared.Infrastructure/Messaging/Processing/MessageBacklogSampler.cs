@@ -81,15 +81,15 @@ internal sealed class MessageBacklogSampler(
     /// Runs one sample. A failure clears the stored sample, so the gauges report no stale backlog while the database
     /// is down.
     /// </summary>
-    /// <param name="stoppingToken">The token of the host.</param>
+    /// <param name="cancellationToken">The token of the host.</param>
     /// <returns>A task that completes when the sample ends.</returns>
-    private async Task SampleSafelyAsync(CancellationToken stoppingToken)
+    private async Task SampleSafelyAsync(CancellationToken cancellationToken)
     {
         try
         {
-            await SampleAsync(stoppingToken);
+            await SampleAsync(cancellationToken);
         }
-        catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             _metrics.UpdateBacklog(null);
             _logger.LogWarning(

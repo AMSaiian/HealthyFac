@@ -1,4 +1,3 @@
-using HealthyFac.Core.Application.Employees.Messages;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
@@ -36,11 +35,14 @@ public sealed class DeactivateEmployeeRequestHandler(
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
 
-    protected override async Task HandleInternalAsync(DeactivateEmployeeRequest request, CancellationToken ct)
+    protected override async Task HandleInternalAsync(
+        DeactivateEmployeeRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var employee = await _dbContext.Employees.SingleOrDefaultAsync(
                 employee => employee.Id == request.EmployeeId && employee.CompanyId == request.CompanyId,
-                ct)
+                cancellationToken)
             ?? throw new NotFoundException(EmployeeProvisioningErrors.Rejections.EmployeeNotFound);
 
         if (employee.IsLinkedTo(_currentUser.TryGetUserId()))
@@ -66,7 +68,7 @@ public sealed class DeactivateEmployeeRequestHandler(
 
         try
         {
-            await _dbContext.SaveChangesAsync(ct);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {

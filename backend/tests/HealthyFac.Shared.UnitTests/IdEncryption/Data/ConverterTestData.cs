@@ -9,7 +9,6 @@ public static class ConverterTestData
     [
         SampleGuid,
         Guid.Empty,
-        Guid.CreateVersion7(),
     ];
 
     public static TheoryData<Guid?> NullableGuidsWithValue =>

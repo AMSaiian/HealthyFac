@@ -1,12 +1,14 @@
 using System.Net;
 using HealthyFac.Auth.Application.Identities;
+using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
 namespace HealthyFac.Auth.IntegrationTests.Keycloak;
 
-public sealed class KeycloakIdentityAdminTests(KeycloakAdminFixture fixture) : IClassFixture<KeycloakAdminFixture>
+[Collection(KeycloakCollection.Name)]
+public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
 {
-    private readonly KeycloakAdminFixture _fixture = fixture;
+    private readonly KeycloakAdminFixture _fixture = fixture.Keycloak;
 
     [Fact]
     public async Task FindOrganizationId_ForSeededCompany_ReturnsId()
