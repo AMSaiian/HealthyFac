@@ -10,6 +10,7 @@
 | Rule | Paths |
 | --- | --- |
 | `agent-output` | always loaded |
+| `agent-workflow` | always loaded |
 | `backend-general` | always loaded |
 | `git-commits` | always loaded |
 | `format-csharp` | `**/*.cs` |
@@ -20,6 +21,7 @@
 | `backend-infrastructure` | `**/*.Infrastructure/**` |
 | `backend-web` | `**/*.Web/**` |
 | `testing` | `backend/tests/**`, `**/*Tests/**`, `**/*Test/**` |
+| `observability` | `**/Observability/**`, `**/Tracing/**`, `**/Metrics/**`, `**/Logging/**` |
 | `format-typescript` | `**/*.{ts,tsx,js,jsx}` |
 | `format-html` | `**/*.{html,htm}` |
 | `format-styles` | `**/*.{css,scss,sass,less}` |
@@ -36,6 +38,6 @@ To add a rule:
 Repository rules override plugin skills and their workflows. This includes the TDD, planning, and brainstorming skills. When a skill conflicts with a rule, follow the rule. When you dispatch a subagent, copy the rules that apply to its files into its prompt.
 
 ## Verification Hook
-The Stop hook (`.claude/hooks/verify-changed.ps1`) reformats changed C# files and builds the solution. It reports build warnings and errors in those files. Fix every reported item before you finish the turn.
+The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) reformat changed C# files and build the solution. They report build warnings and errors in those files to the agent that stops. Fix every reported item before you finish the turn.
 
 This file imports `AGENTS.md` on purpose. Claude Code skips `AGENTS.md` when a `CLAUDE.md` exists, so the import keeps the shared project context in scope. It also imports `README.md`, so every session knows the product domain. Put shared, agent-agnostic content in `AGENTS.md`. Keep this file for Claude Code specifics only.

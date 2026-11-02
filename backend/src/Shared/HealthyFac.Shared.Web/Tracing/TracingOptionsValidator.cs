@@ -1,5 +1,5 @@
 using FluentValidation;
-using HealthyFac.Shared.Web.Configuration;
+using HealthyFac.Shared.Infrastructure.Configuration;
 
 namespace HealthyFac.Shared.Web.Tracing;
 

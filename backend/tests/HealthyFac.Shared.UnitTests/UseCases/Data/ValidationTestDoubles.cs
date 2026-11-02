@@ -18,7 +18,10 @@ public sealed class ValidatedRequestValidator : AbstractValidator<ValidatedReque
 
 public sealed class FixedResultHandler : IRequestHandler<ValidatedRequest, int>
 {
-    public Task<int> HandleAsync(ValidatedRequest request, CancellationToken ct = default)
+    public Task<int> HandleAsync(
+        ValidatedRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
         => Task.FromResult(request.Name.Length);
 }
 

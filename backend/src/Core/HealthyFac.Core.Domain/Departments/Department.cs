@@ -8,7 +8,7 @@ namespace HealthyFac.Core.Domain.Departments;
 /// </summary>
 public class Department : IEntity, IAuditable
 {
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
     public required Guid CompanyId { get; init; }
     public required string Name { get; init; }
 

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Machines.CreateMachine;
 
-public record CreateMachineRequest : IRequest<Guid>
+public record CreateMachineRequest : IRequest<CreateMachineResponse>
 {
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
@@ -13,17 +13,24 @@ public record CreateMachineRequest : IRequest<Guid>
     public required Guid DepartmentId { get; init; }
 }
 
-public class CreateMachineRequestHandler(ICoreDbContext dbContext)
-    : IRequestHandler<CreateMachineRequest, Guid>
+public record CreateMachineResponse
 {
-    public async Task<Guid> HandleAsync(
+    public required Guid Id { get; init; }
+}
+
+public class CreateMachineRequestHandler(ICoreDbContext dbContext)
+    : IRequestHandler<CreateMachineRequest, CreateMachineResponse>
+{
+    private readonly ICoreDbContext _dbContext = dbContext;
+
+    public async Task<CreateMachineResponse> HandleAsync(
         CreateMachineRequest request,
-        CancellationToken ct = default(CancellationToken)
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var isDepartmentInCompany = await dbContext.Departments.AnyAsync(
+        var isDepartmentInCompany = await _dbContext.Departments.AnyAsync(
             department => department.Id == request.DepartmentId && department.CompanyId == request.CompanyId,
-            ct);
+            cancellationToken);
 
         if (!isDepartmentInCompany)
         {
@@ -38,9 +45,9 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext)
             DepartmentId = request.DepartmentId,
         };
 
-        dbContext.Machines.Add(machine);
-        await dbContext.SaveChangesAsync(ct);
+        _dbContext.Machines.Add(machine);
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return machine.Id;
+        return new CreateMachineResponse { Id = machine.Id };
     }
 }

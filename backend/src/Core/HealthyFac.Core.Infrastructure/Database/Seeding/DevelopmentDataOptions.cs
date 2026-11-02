@@ -50,6 +50,12 @@ public sealed class DevelopmentDataOptions
     /// </summary>
     public string SerialNumberPattern { get; init; } = "SN-####-????";
 
+    /// <summary>
+    /// The test company and its first supervisor, or <see langword="null"/> to seed none. The supervisor is active
+    /// and linked to the Keycloak user of the same realm import.
+    /// </summary>
+    public TestTenantOptions? TestTenant { get; init; }
+
     public IReadOnlyList<string>? DepartmentNames { get; init; }
 
     /// <summary>The IANA time zone IDs that departments take.</summary>

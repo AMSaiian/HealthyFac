@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -24,6 +26,7 @@
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj" />
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Infrastructure\HealthyFac.Shared.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj" />
+    <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 
 </Project>

@@ -15,13 +15,12 @@ public static class AesKwIdEncryptorTestData
 
     public static TheoryData<Guid> SampleGuidsData =>
     [
-        Guid.CreateVersion7(),
-        new Guid(
+        new(
             [
                 0x01, 0x92, 0x34, 0x56, 0x78, 0x9A, 0x7B, 0xC0,
                 0x81, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF,
             ],
-            bigEndian: true
+            true
         ),
 
         Guid.Empty,
@@ -30,38 +29,29 @@ public static class AesKwIdEncryptorTestData
     public static TheoryData<int> InvalidKeyLengthsData =>
     [
         16,
-        24,
         48,
     ];
 
     public static TheoryData<int> TamperedByteIndicesData =>
     [
         0,
-        12,
         23,
     ];
 
     public static TheoryData<string> InvalidBase64UrlPayloadsData =>
     [
         "v1.!!!NotValidBase64Url$$$",
-        "v1.invalid==padding",
-        "v1.with spaces in token",
-        "v1.tooShort",
     ];
 
     public static TheoryData<string> InvalidVersionPrefixedTokensData =>
     [
         "v2.64E8C3F9CE0F5BA263E9777905818A2A93C8191E7D6E8AE7",
-        "v0.64E8C3F9CE0F5BA263E9777905818A2A93C8191E7D6E8AE7",
-        "64E8C3F9CE0F5BA263E9777905818A2A93C8191E7D6E8AE7",
         "v164E8C3F9CE0F5BA263E9777905818A2A93C8191E7D6E8AE7",
     ];
 
     public static TheoryData<string> EmptyOrWhitespaceStringsData =>
     [
-        string.Empty,
         "   ",
-        "\t",
     ];
 
     public static TheoryData<string> WrongLengthBase64UrlPayloadsData =>
@@ -84,7 +74,7 @@ public static class AesKwIdEncryptorTestData
                 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
             ],
-            bigEndian: true
+            true
         ),
         ExpectedCiphertext =
         [

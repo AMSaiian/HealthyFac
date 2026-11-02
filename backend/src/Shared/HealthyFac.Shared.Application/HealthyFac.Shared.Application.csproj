@@ -8,6 +8,12 @@
         <PackageReference Include="FluentValidation"/>
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
+        <PackageReference Include="Scrutor"/>
+        <PackageReference Include="UUIDNext"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="HealthyFac.Shared.UnitTests"/>
     </ItemGroup>
 
     <PropertyGroup>

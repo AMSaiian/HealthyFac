@@ -7,7 +7,7 @@ namespace HealthyFac.Core.Domain.Companies;
 /// </summary>
 public class Company : IEntity, IAuditable
 {
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
     public required string Name { get; init; }
 
     public DateTime CreatedAt { get; }

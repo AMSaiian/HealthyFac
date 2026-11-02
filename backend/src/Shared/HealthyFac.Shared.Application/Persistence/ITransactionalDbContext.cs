@@ -9,11 +9,11 @@ public interface ITransactionalDbContext
 {
     /// <summary>
     /// Runs <paramref name="operation"/> in one transaction and commits. Use it only when one <c>SaveChangesAsync</c>
-    /// call is not enough (e.g., read a generated ID, then write a dependent row). The operation saves its changes
-    /// with <c>SaveChangesAsync</c>, as often as it needs. It must never commit or roll back. To abort, it throws, and
-    /// the transaction rolls back. On a transient failure, the retry strategy runs the whole unit again, so the
-    /// operation must be safe to repeat. Throws <see cref="InvalidOperationException"/> on unsaved changes before the
-    /// call or after the operation, or on a transaction that the operation ended.
+    /// call is not enough (e.g., lock a row, handle it, and mark it processed as one unit). The operation saves its
+    /// changes with <c>SaveChangesAsync</c>, as often as it needs. It must never commit or roll back. To abort, it
+    /// throws, and the transaction rolls back. On a transient failure, the retry strategy runs the whole unit again, so
+    /// the operation must be safe to repeat. Throws <see cref="InvalidOperationException"/> on unsaved changes before
+    /// the call or after the operation, or on a transaction that the operation ended.
     /// </summary>
     /// <remarks>
     /// Each attempt clears the change tracker first, so the changes of a failed attempt are not saved again. Read and

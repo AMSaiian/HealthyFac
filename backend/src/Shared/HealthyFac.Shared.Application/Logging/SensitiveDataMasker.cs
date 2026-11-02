@@ -27,7 +27,7 @@ public static class SensitiveDataMasker
 
         if (attribute.ShowFirst <= 0 && attribute.ShowLast <= 0)
         {
-            if (attribute.PreserveLength)
+            if (attribute.IsLengthPreserved)
             {
                 return new string(MaskingConstants.DefaultMaskChar, text.Length);
             }
@@ -38,7 +38,7 @@ public static class SensitiveDataMasker
         var requiredLength = Math.Max(0, attribute.ShowFirst) + Math.Max(0, attribute.ShowLast);
         if (text.Length <= requiredLength)
         {
-            if (attribute.PreserveLength)
+            if (attribute.IsLengthPreserved)
             {
                 return new string(MaskingConstants.DefaultMaskChar, text.Length);
             }
@@ -49,7 +49,7 @@ public static class SensitiveDataMasker
         var prefix = attribute.ShowFirst > 0 ? text[..attribute.ShowFirst] : string.Empty;
         var suffix = attribute.ShowLast > 0 ? text[^attribute.ShowLast..] : string.Empty;
 
-        if (attribute.PreserveLength)
+        if (attribute.IsLengthPreserved)
         {
             return string.Concat(
                 prefix,

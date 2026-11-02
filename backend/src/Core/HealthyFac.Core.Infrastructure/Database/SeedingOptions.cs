@@ -11,7 +11,7 @@ public sealed class SeedingOptions
     public const string SectionName = "Seeding";
 
     /// <summary>Set to true to seed development and test data after the required data.</summary>
-    public bool SeedOptionalData { get; init; }
+    public bool IsOptionalDataSeeded { get; init; }
 
     public DevelopmentDataOptions DevelopmentData { get; init; } = new();
 }

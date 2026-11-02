@@ -23,7 +23,7 @@ public sealed class MessagingExtensionsTests
     public void AddMessagingDbContext_WhenOutboxAddsMessage_TracksRowOnScopedContext()
     {
         using var provider = MessagingTestServices.Build();
-        using var scope = provider.CreateScope();
+        using var scope = provider.CreateCompanyScope();
 
         scope.ServiceProvider.GetRequiredService<IOutbox>().Add(new TestPing { Text = MessagingTestData.PingText });
 

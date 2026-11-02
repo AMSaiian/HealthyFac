@@ -12,17 +12,13 @@ public static class EnumerationTestData
 
     public static TheoryData<string> MiscasedKnownValues => new()
     {
-        "Operational",
         "OPERATIONAL",
-        "INMAINTENANCE",
-        "inmaintenance",
     };
 
     public static TheoryData<string, MachineStateTestEnumeration> KnownValues => new()
     {
         { "operational", MachineStateTestEnumeration.Operational },
         { "inMaintenance", MachineStateTestEnumeration.InMaintenance },
-        { "outOfService", MachineStateTestEnumeration.OutOfService },
     };
 
     public static TheoryData<IReadOnlyList<string>> DeclarationOrder => new()

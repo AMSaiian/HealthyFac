@@ -2,7 +2,7 @@ namespace HealthyFac.Shared.Web.CrossOrigin;
 
 /// <summary>
 /// Configures browser cross-origin access for a single service.
-/// Leave <see cref="Enabled"/> false wherever a gateway owns the policy. Two layers emitting the headers
+/// Leave <see cref="IsEnabled"/> false wherever a gateway owns the policy. Two layers emitting the headers
 /// produce a duplicate <c>Access-Control-Allow-Origin</c>, which every browser rejects.
 /// </summary>
 public sealed class CorsPolicyOptions
@@ -10,7 +10,7 @@ public sealed class CorsPolicyOptions
     public const string SectionName = "Cors";
 
     /// <summary>Set to true only where this service answers browsers directly.</summary>
-    public bool Enabled { get; init; }
+    public bool IsEnabled { get; init; }
 
     /// <summary>The browser origins allowed to call this service, for example "http://localhost:4200".</summary>
     public string[] AllowedOrigins { get; init; } = [];
@@ -21,5 +21,12 @@ public sealed class CorsPolicyOptions
     /// <c>AllowAnyHeader</c>, and is not a credential. Enable it only for a cookie session, such as a
     /// backend for frontend. Enabling it also forbids the wildcard origin.
     /// </summary>
-    public bool AllowCredentials { get; init; }
+    public bool IsCredentialsAllowed { get; init; }
+
+    /// <summary>
+    /// How long, in seconds, the browser keeps the answer to a preflight. The browser then sends no preflight before
+    /// each call. While the policy is enabled, the value must be greater than 0 and at most
+    /// <see cref="CorsConstants.MaxPreflightMaxAgeSeconds"/>.
+    /// </summary>
+    public int PreflightMaxAgeSeconds { get; init; }
 }

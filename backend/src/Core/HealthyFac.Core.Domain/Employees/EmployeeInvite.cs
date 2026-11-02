@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Departments;
+using HealthyFac.Shared.Domain.Emails;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Domain.Employees;
@@ -37,7 +38,7 @@ public class EmployeeInvite : IEntity, IAuditable
         byte[] tokenSalt,
         DateTime expiresAt
     )
-        : this(companyId, email.Trim().ToLowerInvariant(), roleId, tokenSalt, expiresAt)
+        : this(companyId, EmailAddresses.Normalize(email), roleId, tokenSalt, expiresAt)
     {
         if (departments.Count == 0)
         {
@@ -62,7 +63,7 @@ public class EmployeeInvite : IEntity, IAuditable
         ExpiresAt = expiresAt;
     }
 
-    public Guid Id { get; private set; } = Guid.Empty;
+    public Guid Id { get; private set; } = Guid.CreateVersion7();
     public Guid CompanyId { get; private set; }
     public string Email { get; private set; }
     public Guid RoleId { get; private set; }

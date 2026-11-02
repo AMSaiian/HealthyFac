@@ -12,6 +12,8 @@ namespace HealthyFac.Shared.Web.IdEncryption.Converters;
 /// </summary>
 public sealed class EncryptedNullableGuidConverter(IIdEncryptor encryptor) : JsonConverter<Guid?>
 {
+    private readonly IIdEncryptor _encryptor = encryptor;
+
     /// <inheritdoc/>
     /// <exception cref="JsonException">Thrown when the token is not a valid encrypted identifier.</exception>
     public override Guid? Read(
@@ -33,7 +35,7 @@ public sealed class EncryptedNullableGuidConverter(IIdEncryptor encryptor) : Jso
 
         try
         {
-            return encryptor.Decrypt(encrypted);
+            return _encryptor.Decrypt(encrypted);
         }
         catch (Exception exception) when (exception is FormatException
             or CryptographicException
@@ -57,6 +59,6 @@ public sealed class EncryptedNullableGuidConverter(IIdEncryptor encryptor) : Jso
             return;
         }
 
-        writer.WriteStringValue(encryptor.Encrypt(value.Value));
+        writer.WriteStringValue(_encryptor.Encrypt(value.Value));
     }
 }

@@ -7,8 +7,7 @@ public static class DatabaseConstants
 {
     /// <summary>
     /// Lists the PostgreSQL extensions that the core service requires.
-    /// The database generates identifiers with the native PostgreSQL 18 function, so the core schema needs no
-    /// extension yet. Add an entry here when the core service starts to depend on one.
+    /// The core schema needs no extension yet. Add an entry here when the core service starts to depend on one.
     /// </summary>
     public static readonly string[] RequiredPostgresExtensions = [];
 

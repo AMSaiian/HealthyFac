@@ -30,7 +30,7 @@ public static class HttpsExtensions
 
             services.AddSingleton(options);
 
-            if (options.RedirectEnabled && options.RedirectPort is not null)
+            if (options.IsRedirectEnabled && options.RedirectPort is not null)
             {
                 services.Configure<HttpsRedirectionOptions>(redirection =>
                     redirection.HttpsPort = options.RedirectPort);
@@ -39,8 +39,8 @@ public static class HttpsExtensions
             services.AddHsts(hsts =>
             {
                 hsts.MaxAge = TimeSpan.FromDays(options.HstsMaxAgeDays);
-                hsts.IncludeSubDomains = options.HstsIncludeSubDomains;
-                hsts.Preload = options.HstsPreload;
+                hsts.IncludeSubDomains = options.IsHstsSubDomainsIncluded;
+                hsts.Preload = options.IsHstsPreloaded;
             });
 
             return services;
@@ -58,12 +58,12 @@ public static class HttpsExtensions
         {
             var options = app.Services.GetRequiredService<HttpsOptions>();
 
-            if (options.HstsEnabled && !app.Environment.IsDevelopment())
+            if (options.IsHstsEnabled && !app.Environment.IsDevelopment())
             {
                 app.UseHsts();
             }
 
-            if (options.RedirectEnabled && options.RedirectPort is not null)
+            if (options.IsRedirectEnabled && options.RedirectPort is not null)
             {
                 app.UseHttpsRedirection();
             }

@@ -23,5 +23,32 @@ public static class DatabaseTestData
         DevelopmentData = new DevelopmentDataOptions { IsRecreationForced = true },
     };
 
+    public static readonly Guid TestTenantCompanyId = Guid.Parse("0190f3a0-0000-7000-8000-000000000001");
+    public static readonly Guid TestSupervisorIdentityId = Guid.Parse("0190f3a0-0000-7000-8000-000000000002");
+    public static readonly Guid TestSupervisorEmployeeId = Guid.Parse("0190f3a0-0000-7000-8000-000000000003");
+    public const string TestSupervisorEmail = "supervisor@healthyfac.local";
+    public const int TestTenantDepartmentCount = 2;
+
+    public static readonly TestTenantOptions TestTenant = new()
+    {
+        CompanyId = TestTenantCompanyId,
+        CompanyName = "Test Company",
+        SupervisorIdentityId = TestSupervisorIdentityId,
+        SupervisorEmployeeId = TestSupervisorEmployeeId,
+        SupervisorEmail = TestSupervisorEmail,
+        SupervisorFirstName = "Test",
+        SupervisorLastName = "Supervisor",
+    };
+
+    public static readonly SeedingOptions ForcedRecreationWithTestTenantOptions = new()
+    {
+        DevelopmentData = new DevelopmentDataOptions { IsRecreationForced = true, TestTenant = TestTenant },
+    };
+
+    public static readonly SeedingOptions TestTenantOptions = new()
+    {
+        DevelopmentData = new DevelopmentDataOptions { TestTenant = TestTenant },
+    };
+
     public static readonly RoleCode[] RoleCodes = [RoleCode.Worker, RoleCode.Supervisor];
 }

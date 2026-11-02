@@ -41,8 +41,8 @@ public static class OpenApiExtensions
                 return app;
             }
 
-            app.MapOpenApi(OpenApiConstants.DocumentRoute);
-            app.MapScalarApiReference(OpenApiConstants.DashboardRoute);
+            app.MapOpenApi(OpenApiConstants.DocumentRoute).AllowAnonymous();
+            app.MapScalarApiReference(OpenApiConstants.DashboardRoute).AllowAnonymous();
 
             return app;
         }

@@ -1,4 +1,3 @@
-using HealthyFac.Shared.Application.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging;
@@ -8,19 +7,32 @@ namespace HealthyFac.Shared.Infrastructure.Messaging;
 /// interfaces against one instance, so the insert uses the same connection and transaction as the service.
 /// </summary>
 /// <param name="dbContext">The scoped service context.</param>
-/// <param name="dateProvider">The clock for the time of the delivery.</param>
-internal sealed class Inbox(IInboxDbContext dbContext, IDateProvider dateProvider) : IInbox
+/// <param name="timeProvider">The clock for the time of the delivery.</param>
+internal sealed class Inbox(IInboxDbContext dbContext, TimeProvider timeProvider) : IInbox
 {
+    private readonly IInboxDbContext _dbContext = dbContext;
+    private readonly TimeProvider _timeProvider = timeProvider;
+
     public async Task<bool> TryAddAsync(
         Guid messageId,
         string type,
         string payload,
         string? traceParent,
+        Guid actorId,
+        Guid? companyId,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var insertedCount = await dbContext.InboxMessages
-            .Upsert(new InboxMessage(messageId, type, payload, dateProvider.GetUtc(), traceParent))
+        var insertedCount = await _dbContext.InboxMessages
+            .Upsert(
+                new InboxMessage(
+                    messageId,
+                    type,
+                    payload,
+                    _timeProvider.GetUtcNow().UtcDateTime,
+                    traceParent,
+                    actorId,
+                    companyId))
             .On(message => message.Id)
             .NoUpdate()
             .RunAsync(cancellationToken);
@@ -30,11 +42,11 @@ internal sealed class Inbox(IInboxDbContext dbContext, IDateProvider dateProvide
 
     public void MarkProcessed(InboxMessage message)
     {
-        if (!dbContext.InboxMessages.Local.Contains(message))
+        if (!_dbContext.InboxMessages.Local.Contains(message))
         {
             throw MessagingErrors.InboxMessageNotTracked(message.Id);
         }
 
-        message.MarkProcessed(dateProvider.GetUtc());
+        message.MarkProcessed(_timeProvider.GetUtcNow().UtcDateTime);
     }
 }

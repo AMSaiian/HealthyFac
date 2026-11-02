@@ -11,9 +11,6 @@ public sealed class OpenTelemetryLoggingOptions
     /// <summary>The OTLP collector endpoint. An empty value disables the exporter.</summary>
     public string? Endpoint { get; init; }
 
-    /// <summary>The logical service name reported as the OpenTelemetry resource.</summary>
-    public string? ServiceName { get; init; }
-
     /// <summary>Set to false to keep the exporter off even when an endpoint is configured.</summary>
-    public bool Enabled { get; init; } = true;
+    public bool IsEnabled { get; init; } = true;
 }

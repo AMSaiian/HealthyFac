@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Persistence;
+using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,8 +15,7 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         builder.HasKey(message => message.Id);
 
         builder.Property(message => message.Id)
-            .HasDefaultValueSql(PersistenceConstants.IdentifierSql)
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         builder.Property(message => message.Type)
             .HasMaxLength(MessagingPersistenceConstants.TypeMaxLength)
@@ -25,7 +25,15 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
             .HasColumnType(MessagingPersistenceConstants.PayloadColumnType)
             .IsRequired();
 
-        builder.Property<uint>(MessagingPersistenceConstants.ConcurrencyToken)
+        builder.Property(message => message.ActorId)
+            .IsRequired();
+
+        builder.HasNotEmptyGuidCheck(message => message.ActorId);
+
+        builder.Property(message => message.Error)
+            .HasMaxLength(MessagingPersistenceConstants.ErrorMaxLength);
+
+        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
             .IsRowVersion();
 
         builder.HasIndex(message => message.NextAttemptOn)

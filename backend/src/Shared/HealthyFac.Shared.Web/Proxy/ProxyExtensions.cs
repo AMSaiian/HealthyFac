@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HealthyFac.Shared.Web.Proxy;
 
 /// <summary>
-/// Provides extension methods for reading client address and scheme from reverse proxy headers.
+/// Provides extension methods for reading client address, scheme, host, and path prefix from reverse proxy headers.
 /// </summary>
 public static class ProxyExtensions
 {
@@ -33,11 +33,12 @@ public static class ProxyExtensions
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
                     | ForwardedHeaders.XForwardedProto
-                    | ForwardedHeaders.XForwardedHost;
+                    | ForwardedHeaders.XForwardedHost
+                    | ForwardedHeaders.XForwardedPrefix;
 
                 options.ForwardLimit = proxyOptions.ForwardLimit;
 
-                if (proxyOptions.TrustAllProxies)
+                if (proxyOptions.IsEveryProxyTrusted)
                 {
                     options.KnownProxies.Clear();
                     options.KnownIPNetworks.Clear();

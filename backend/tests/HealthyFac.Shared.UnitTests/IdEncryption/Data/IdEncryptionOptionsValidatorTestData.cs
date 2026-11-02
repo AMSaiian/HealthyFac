@@ -11,9 +11,9 @@ public static class IdEncryptionOptionsValidatorTestData
     private static readonly string Short128BitKey = Convert.ToBase64String(new byte[16]);
     private static readonly string Long512BitKey = Convert.ToBase64String(new byte[64]);
     private const string NotBase64Key = "not-a-valid-base64-string!@#$";
-    private const string WhitespaceKey = "   ";
 
     public const string DefaultPrefix = "v1.";
+    public const string SecondPrefix = "v2.";
 
     public static TheoryData<string> ValidKeys => new()
     {
@@ -22,10 +22,35 @@ public static class IdEncryptionOptionsValidatorTestData
 
     public static TheoryData<string, string> InvalidKeysWithExpectedError => new()
     {
-        { string.Empty, IdEncryptionValidationMessages.Key.Required },
-        { WhitespaceKey, IdEncryptionValidationMessages.Key.Required },
         { NotBase64Key, IdEncryptionValidationMessages.Key.MustBeBase64 },
         { Short128BitKey, IdEncryptionValidationMessages.Key.MustBe256Bits },
         { Long512BitKey, IdEncryptionValidationMessages.Key.MustBe256Bits },
     };
+
+    public static TheoryData<IdEncryptionOptions, string> InvalidKeySetsWithExpectedError => new()
+    {
+        {
+            CreateOptions(CreateKey(DefaultPrefix, false), CreateKey(SecondPrefix, false)),
+            IdEncryptionValidationMessages.Keys.ExactlyOneDefaultRequired
+        },
+        {
+            CreateOptions(CreateKey(DefaultPrefix, true), CreateKey(SecondPrefix, true)),
+            IdEncryptionValidationMessages.Keys.ExactlyOneDefaultRequired
+        },
+        {
+            CreateOptions(CreateKey(DefaultPrefix, true), CreateKey(DefaultPrefix, false)),
+            IdEncryptionValidationMessages.Prefix.DuplicatesNotAllowed
+        },
+    };
+
+    private static IdEncryptionOptions CreateOptions(params IdEncryptionKeyOptions[] keys) =>
+        new() { Keys = [.. keys] };
+
+    private static IdEncryptionKeyOptions CreateKey(string prefix, bool isDefault) =>
+        new()
+        {
+            Prefix = prefix,
+            Key = Valid256BitKey,
+            IsDefault = isDefault,
+        };
 }

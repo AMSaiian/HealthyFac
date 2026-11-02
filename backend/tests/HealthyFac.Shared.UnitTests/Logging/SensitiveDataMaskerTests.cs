@@ -31,11 +31,11 @@ public sealed class SensitiveDataMaskerTests
     }
 
     [Fact]
-    public void Mask_WithPreserveLengthAndZeroShowOffsets_ReplacesAllCharactersWithMaskChar()
+    public void Mask_WithLengthPreservedAndZeroShowOffsets_ReplacesAllCharactersWithMaskChar()
     {
         var attribute = new SensitiveDataAttribute
         {
-            PreserveLength = true,
+            IsLengthPreserved = true,
         };
 
         SensitiveDataMasker.Mask("secret123", attribute).Should().Be("*********");

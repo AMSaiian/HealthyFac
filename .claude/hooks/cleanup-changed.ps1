@@ -1,15 +1,20 @@
 #Requires -Version 7
 # Runs JetBrains ReSharper code cleanup on the given C# files (repository-relative paths).
 # Without -Files, it cleans every backend C# file changed since HEAD.
-# verify-changed.ps1 calls it from the Stop hook with the files touched this turn.
+# verify-changed.ps1 calls it from the Stop and SubagentStop hooks with the files touched this turn and the checkout
+# (main or worktree) that holds them. A manual run without -Repo cleans the checkout of the current directory.
 
 param(
-  [string[]] $Files
+  [string[]] $Files,
+  [string] $Repo
 )
 
 $ErrorActionPreference = 'Stop'
 
-$repo = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { $PSScriptRoot | Split-Path | Split-Path }
+$repo = if ($Repo) { $Repo } else { git rev-parse --show-toplevel 2>$null }
+if (-not $repo) {
+  $repo = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { $PSScriptRoot | Split-Path | Split-Path }
+}
 $solution = Join-Path $repo 'backend/HealthyFac.slnx'
 if (-not (Test-Path $solution)) { exit 0 }
 
@@ -39,9 +44,10 @@ try {
   # --include paths are relative to the solution directory (backend/).
   $include = (@($targets) | ForEach-Object { $_ -replace '^backend/', '' }) -join ';'
 
-  # "Built-in: Reformat Code" is formatting only. The default Full Cleanup profile
-  # rewrites code: it drops `private set`, reorders members and strips XML doc indents.
-  & $jb cleanupcode --no-build --verbosity=WARN --profile="Built-in: Reformat Code" `
+  # "Built-in: Reformat & Apply Syntax Style" applies the layout and the .editorconfig syntax style
+  # (braces, expression bodies, trailing commas, `var`). Do not use the default Full Cleanup profile:
+  # it drops `private set`, reorders members and strips XML doc indents.
+  & $jb cleanupcode --no-build --verbosity=WARN --profile="Built-in: Reformat & Apply Syntax Style" `
       --include="$include" $solution 2>&1 |
     Select-Object -Last 5
 }

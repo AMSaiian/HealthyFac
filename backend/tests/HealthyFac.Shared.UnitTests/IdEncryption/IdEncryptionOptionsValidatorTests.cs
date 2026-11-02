@@ -37,14 +37,19 @@ public sealed class IdEncryptionOptionsValidatorTests
         result.Errors.Should().Contain(error => error.ErrorMessage == expectedErrorMessage);
     }
 
-    [Fact]
-    public void Validate_WhenNoKeysConfigured_ShouldReportKeysRequired()
+    [Theory]
+    [MemberData(
+        nameof(IdEncryptionOptionsValidatorTestData.InvalidKeySetsWithExpectedError),
+        MemberType = typeof(IdEncryptionOptionsValidatorTestData)
+    )]
+    public void Validate_WithInvalidKeySet_ReportsExpectedError(
+        IdEncryptionOptions options,
+        string expectedErrorMessage
+    )
     {
-        var result = _validator.Validate(new IdEncryptionOptions());
+        var result = _validator.Validate(options);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should()
-            .Contain(error => error.ErrorMessage == IdEncryptionValidationMessages.Keys.Required);
+        result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Be(expectedErrorMessage);
     }
 
     private static IdEncryptionOptions BuildOptions(string key) =>
@@ -56,7 +61,7 @@ public sealed class IdEncryptionOptionsValidatorTests
                 {
                     Prefix = IdEncryptionOptionsValidatorTestData.DefaultPrefix,
                     Key = key,
-                    Default = true,
+                    IsDefault = true,
                 },
             ],
         };

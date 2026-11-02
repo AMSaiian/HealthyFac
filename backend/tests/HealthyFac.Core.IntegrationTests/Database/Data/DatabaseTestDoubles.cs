@@ -1,4 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
@@ -12,11 +14,16 @@ public sealed class TestHostEnvironment : IHostEnvironment
     public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
 }
 
-public sealed class AnonymousCurrentUserProvider : ICurrentUserProvider
-{
-    public Guid? TryGetUserId() => null;
-
-    public Guid GetUserId() => throw new InvalidOperationException();
-}
-
 public sealed class TransactionTestException : Exception;
+
+/// <summary>
+/// Creates scopes that already hold the system actor, so each test step writes with a known actor.
+/// </summary>
+/// <param name="inner">The scope factory of the test service provider.</param>
+public sealed class InitializationActorScopeFactory(IServiceScopeFactory inner) : IServiceScopeFactory
+{
+    private readonly IServiceScopeFactory _inner = inner;
+
+    public IServiceScope CreateScope() =>
+        _inner.CreateActorScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+}

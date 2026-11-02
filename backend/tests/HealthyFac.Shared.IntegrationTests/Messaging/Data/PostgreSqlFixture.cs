@@ -1,5 +1,8 @@
-using HealthyFac.Shared.Application.Time;
+using Microsoft.Extensions.Time.Testing;
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using HealthyFac.Testing.Containers;
@@ -12,15 +15,29 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
 
     public ServiceProvider Services { get; private set; } = null!;
 
+    public string ConnectionString => _database.ConnectionString;
+
+    /// <summary>
+    /// Creates a scope that holds <paramref name="actor"/>, or the database initialization actor of the
+    /// core service when the argument is null.
+    /// </summary>
+    public IServiceScope CreateScope(ActorContext? actor = null) =>
+        Services.GetRequiredService<IServiceScopeFactory>()
+            .CreateActorScope(actor ?? ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+
+    public IServiceScope CreateScopeWithoutActor() => Services.CreateScope();
+
     public async Task InitializeAsync()
     {
         await _database.StartAsync();
 
         var services = new ServiceCollection();
-        services.AddSingleton<IDateProvider, FixedDateProvider>();
+        services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(InboxTestData.Now)));
+        services.AddActorContext();
+        services.AddMessagingMetrics();
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(_database.ConnectionString));
-        Services = services.BuildServiceProvider(validateScopes: true);
+        Services = services.BuildServiceProvider(true);
 
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>().Database.EnsureCreatedAsync();

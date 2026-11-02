@@ -1,10 +1,18 @@
 <Solution>
   <Folder Name="/src/" />
+  <Folder Name="/src/Auth/">
+    <Project Path="src/Auth/HealthyFac.Auth.Application/HealthyFac.Auth.Application.csproj" />
+    <Project Path="src/Auth/HealthyFac.Auth.Infrastructure/HealthyFac.Auth.Infrastructure.csproj" />
+    <Project Path="src/Auth/HealthyFac.Auth.Web/HealthyFac.Auth.Web.csproj" />
+  </Folder>
   <Folder Name="/src/Core/">
     <Project Path="src/Core/HealthyFac.Core.Application/HealthyFac.Core.Application.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Domain/HealthyFac.Core.Domain.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Infrastructure/HealthyFac.Core.Infrastructure.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Web/HealthyFac.Core.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/HealthyFac.Gateway.Web/HealthyFac.Gateway.Web.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/HealthyFac.Shared.Application/HealthyFac.Shared.Application.csproj" />
@@ -16,9 +24,14 @@
     <Project Path="src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/HealthyFac.Auth.ArchitectureTests/HealthyFac.Auth.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.Auth.IntegrationTests/HealthyFac.Auth.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Core.ApiTests/HealthyFac.Core.ApiTests.csproj" />
     <Project Path="tests/HealthyFac.Core.ArchitectureTests/HealthyFac.Core.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.Gateway.IntegrationTests/HealthyFac.Gateway.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Core.IntegrationTests/HealthyFac.Core.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Core.UnitTests/HealthyFac.Core.UnitTests.csproj" />
+    <Project Path="tests/HealthyFac.Identity.IntegrationTests/HealthyFac.Identity.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Shared.IntegrationTests/HealthyFac.Shared.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Testing/HealthyFac.Testing.csproj" />
     <Project Path="tests/HealthyFac.Shared.UnitTests/HealthyFac.Shared.UnitTests.csproj" />

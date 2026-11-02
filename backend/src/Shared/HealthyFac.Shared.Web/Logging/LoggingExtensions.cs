@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Web.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -36,14 +37,14 @@ public static class LoggingExtensions
                 .GetSection(OpenTelemetryLoggingOptions.SectionName)
                 .Get<OpenTelemetryLoggingOptions>();
 
-            services.AddSerilog((_, loggerConfiguration) =>
+            services.AddSerilog((provider, loggerConfiguration) =>
             {
                 loggerConfiguration
                     .ReadFrom.Configuration(configuration)
                     .Enrich.FromLogContext()
                     .Destructure.With<SensitiveDataDestructuringPolicy>();
 
-                ApplyOpenTelemetryExporter(loggerConfiguration, exporterOptions);
+                ApplyOpenTelemetryExporter(loggerConfiguration, exporterOptions, provider, configuration);
 
                 configureLogger?.Invoke(loggerConfiguration);
             });
@@ -58,33 +59,38 @@ public static class LoggingExtensions
     /// correlate with the use case activities without an extra enricher.
     /// </summary>
     /// <param name="loggerConfiguration">The logger configuration to extend.</param>
+    /// <remarks>
+    /// The sink carries the shared resource attributes (<see cref="TelemetryResource"/>), so a log line joins the
+    /// trace and the metrics of the same instance. The sink reads the <c>OTEL_*</c> variables through
+    /// <paramref name="configuration"/> and lets them override the configured values, as the SDK detector does.
+    /// </remarks>
+    /// <param name="loggerConfiguration">The logger configuration to extend.</param>
     /// <param name="options">The exporter options, or <see langword="null"/> when the section is absent.</param>
+    /// <param name="provider">The service provider that holds the inputs of the resource attributes.</param>
+    /// <param name="configuration">The application configuration, which includes the environment variables.</param>
     private static void ApplyOpenTelemetryExporter(
         LoggerConfiguration loggerConfiguration,
-        OpenTelemetryLoggingOptions? options
+        OpenTelemetryLoggingOptions? options,
+        IServiceProvider provider,
+        IConfiguration configuration
     )
     {
-        if (options is null || !options.Enabled || string.IsNullOrWhiteSpace(options.Endpoint))
+        if (options is null || !options.IsEnabled || string.IsNullOrWhiteSpace(options.Endpoint))
         {
             return;
         }
 
-        loggerConfiguration.WriteTo.OpenTelemetry(sink =>
-        {
-            sink.Endpoint = options.Endpoint;
-            sink.Protocol = OtlpProtocol.HttpProtobuf;
-            sink.IncludedData = IncludedData.TraceIdField
-                | IncludedData.SpanIdField
-                | IncludedData.MessageTemplateTextAttribute
-                | IncludedData.SourceContextAttribute;
-
-            if (!string.IsNullOrWhiteSpace(options.ServiceName))
+        loggerConfiguration.WriteTo.OpenTelemetry(
+            sink =>
             {
-                sink.ResourceAttributes = new Dictionary<string, object>
-                {
-                    [LoggingConstants.ServiceNameAttribute] = options.ServiceName,
-                };
-            }
-        });
+                sink.Endpoint = options.Endpoint;
+                sink.Protocol = OtlpProtocol.HttpProtobuf;
+                sink.IncludedData = IncludedData.TraceIdField
+                    | IncludedData.SpanIdField
+                    | IncludedData.MessageTemplateTextAttribute
+                    | IncludedData.SourceContextAttribute;
+                sink.ResourceAttributes = TelemetryResource.CreateAttributes(provider).ToDictionary();
+            },
+            key => configuration[key]);
     }
 }

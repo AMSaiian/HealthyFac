@@ -1,8 +1,8 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Web.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace HealthyFac.Shared.Web.Tracing;
@@ -32,24 +32,22 @@ public static class TracingExtensions
                     .Get<TracingOptions>()
                 ?? new TracingOptions();
 
-            if (!options.Enabled)
+            if (!options.IsEnabled)
             {
                 return services;
             }
 
             services.AddOpenTelemetry()
-                .ConfigureResource(resource =>
-                {
-                    if (!string.IsNullOrWhiteSpace(options.ServiceName))
-                    {
-                        resource.AddService(options.ServiceName);
-                    }
-                })
                 .WithTracing(tracing =>
                 {
                     tracing
+                        .ConfigureResource(resource => resource.AddSharedAttributes())
                         .AddSource(ObservabilityConstants.Sources.UseCases)
                         .AddSource(ObservabilityConstants.Sources.IdEncryption)
+                        .AddSource(ObservabilityConstants.Sources.Messaging)
+                        .AddSource(ObservabilityConstants.Sources.Rendering)
+                        .AddSource(ObservabilityConstants.Sources.Email)
+                        .AddSource(MailKit.Telemetry.SmtpClient.ActivitySourceName)
                         .AddSource(options.AdditionalSources)
                         .AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation()

@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +17,18 @@ public sealed class TestServiceDbContext(DbContextOptions<TestServiceDbContext> 
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => throw new NotSupportedException();
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => throw new NotSupportedException();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyOutboxConfiguration();
@@ -31,9 +42,4 @@ public sealed record TestPing : IIntegrationMessage
     public static string MessageType => MessagingTestData.PingMessageType;
 
     public required string Text { get; init; }
-}
-
-public sealed class FixedDateProvider : IDateProvider
-{
-    public DateTime GetUtc() => MessagingTestData.Now;
 }

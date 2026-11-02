@@ -1,31 +1,27 @@
 namespace HealthyFac.Shared.Web.HealthChecks;
 
 /// <summary>
-/// Defines routes, tags, content types, and payload keys for the health check endpoints.
+/// Defines routes, tags, and payload keys for the health check endpoints. The service serves the routes on the
+/// health port only (see <see cref="HealthEndpointOptions"/>).
 /// </summary>
 public static class HealthCheckConstants
 {
     /// <summary>Marks checks that decide whether the service can serve traffic.</summary>
     public const string ReadyTag = "ready";
 
-    public const string HealthyResponse = "Healthy";
+    /// <summary>The name of the Redis readiness check, the same in every service that uses Redis.</summary>
+    public const string RedisCheckName = "redis";
 
     public static class Routes
     {
-        /// <summary>Liveness route. Runs no checks and always answers 200 for a pull hook.</summary>
+        /// <summary>Liveness route on the health port. Runs no checks and always answers 200 for a pull hook.</summary>
         public const string Liveness = "/health";
 
-        /// <summary>Readiness route. Runs only the checks tagged <see cref="ReadyTag"/>.</summary>
+        /// <summary>Readiness route on the health port. Runs only the checks tagged <see cref="ReadyTag"/>.</summary>
         public const string Readiness = "/health/ready";
 
-        /// <summary>Detailed route. Runs every check and reports each result.</summary>
+        /// <summary>Detailed route on the health port. Runs every check and reports each result.</summary>
         public const string Detailed = "/hc";
-    }
-
-    public static class ContentTypes
-    {
-        public const string PlainText = "text/plain";
-        public const string Json = "application/json; charset=utf-8";
     }
 
     public static class Properties

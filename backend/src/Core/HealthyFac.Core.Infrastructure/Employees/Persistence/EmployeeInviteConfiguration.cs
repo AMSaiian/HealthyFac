@@ -36,6 +36,9 @@ public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvi
         builder.Property(invite => invite.TokenSalt)
             .IsRequired();
 
+        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
+            .IsRowVersion();
+
         builder.HasOne<Company>()
             .WithMany()
             .HasForeignKey(invite => invite.CompanyId)

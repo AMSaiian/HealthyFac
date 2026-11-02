@@ -1,4 +1,10 @@
-using HealthyFac.Core.Web.Machines.CreateMachine;
+using HealthyFac.Core.Application.Machines.CreateMachine;
+using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.Links;
+using HealthyFac.Shared.Application.UseCases;
+using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachine.CreateMachineRequest;
 
 namespace HealthyFac.Core.Web.Machines;
 
@@ -16,9 +22,31 @@ public static class MachineEndpoints
         public IEndpointRouteBuilder MapMachineEndpoints()
         {
             var group = app.MapGroup(MachineRoutes.BaseRoute);
-            group.MapCreateMachineEndpoint();
+            group.MapPost(MachineRoutes.Root, CreateAsync)
+                .RequireAuthorization(CorePermissions.Machines.Write);
 
             return app;
         }
+    }
+
+    private static async Task<IResult> CreateAsync(
+        CreateMachineRequest request,
+        HttpRequest httpRequest,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationCreateMachineRequest, CreateMachineResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        var location = string.Format(
+            MachineRoutes.ResourceLocationFormat,
+            (httpRequest.PathBase + httpRequest.Path).Value?.TrimEnd(LinkConstants.PathSeparator),
+            idEncryptor.Encrypt(response.Id));
+
+        return Results.Created(location, response);
     }
 }

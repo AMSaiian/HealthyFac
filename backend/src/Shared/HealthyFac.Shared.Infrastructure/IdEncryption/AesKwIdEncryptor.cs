@@ -119,7 +119,7 @@ public sealed class AesKwIdEncryptor : IIdEncryptor, IDisposable
         engine.Init(true, currentDefault.KeyParameter);
 
         var wrappedBytes = engine.Wrap(
-            id.ToByteArray(bigEndian: true),
+            id.ToByteArray(true),
             0,
             IdEncryptionConstants.Lengths.PlaintextGuidBytes
         );
@@ -168,7 +168,7 @@ public sealed class AesKwIdEncryptor : IIdEncryptor, IDisposable
 
         return unwrappedBytes.Length != IdEncryptionConstants.Lengths.PlaintextGuidBytes
             ? throw IdEncryptionErrors.PayloadLengthMismatch()
-            : new Guid(unwrappedBytes, bigEndian: true);
+            : new Guid(unwrappedBytes, true);
     }
 
     private void OnConfigurationChanged(IdEncryptionOptions newOptions)
@@ -191,7 +191,7 @@ public sealed class AesKwIdEncryptor : IIdEncryptor, IDisposable
             var version = CreateVersion(keyOptions.Prefix, Convert.FromBase64String(keyOptions.Key));
             versions.Add(version);
 
-            if (keyOptions.Default)
+            if (keyOptions.IsDefault)
             {
                 defaultVersion = version;
             }

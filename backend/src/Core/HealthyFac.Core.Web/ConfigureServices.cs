@@ -1,8 +1,14 @@
 using Serilog;
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Core.Web.Employees;
+using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
+using HealthyFac.Shared.Web.Rendering;
 using HealthyFac.Shared.Web.ErrorHandling;
 using HealthyFac.Shared.Web.Rpc;
 using HealthyFac.Shared.Web.Serialization;
@@ -11,6 +17,7 @@ using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Https;
 using HealthyFac.Shared.Web.IdEncryption;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.OpenApi;
 using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Shared.Web.Proxy;
@@ -37,11 +44,14 @@ public static class ConfigureServices
             services.AddApiNetworking(configuration);
             services.AddApiContracts(configuration);
             services.AddApiObservability(configuration);
+            services.AddApiSecurity(configuration);
 
-            services.AddHttpContextAccessor();
-            services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+            services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
             services.AddSharedGrpc(environment);
+
+            services.AddRazorRendering();
+            services.AddScoped<IEmployeeInviteEmailBuilder, RazorEmployeeInviteEmailBuilder>();
 
             return services;
         }
@@ -51,6 +61,17 @@ public static class ConfigureServices
             services.AddSharedForwardedHeaders(configuration);
             services.AddSharedCors(configuration);
             services.AddSharedHttps(configuration);
+
+            return services;
+        }
+
+        private IServiceCollection AddApiSecurity(IConfiguration configuration)
+        {
+            services.AddSharedJwtAuthentication(configuration);
+
+            services.AddAuthorizationBuilder()
+                .SetAuthenticatedFallbackPolicy()
+                .AddPermissionPolicies(CorePermissions.All);
 
             return services;
         }
@@ -74,10 +95,13 @@ public static class ConfigureServices
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
-            services.AddSharedHealthChecks()
+            services.AddSharedMetrics(configuration);
+
+            services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<CoreDbContext>(
                     DatabaseConstants.HealthCheckName,
-                    tags: [HealthCheckConstants.ReadyTag]);
+                    tags: [HealthCheckConstants.ReadyTag])
+                .AddBrokerHealthCheck([HealthCheckConstants.ReadyTag]);
 
             return services;
         }
@@ -95,12 +119,16 @@ public static class ConfigureServices
         /// <returns>The configured <see cref="WebApplication"/> instance.</returns>
         public WebApplication UseApiPipeline()
         {
+            app.UseSharedHealthChecks();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
             app.UseSerilogRequestLogging();
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();
+            app.UseAuthentication();
+            app.UseActorContext();
+            app.UseAuthorization();
 
             return app;
         }
@@ -118,13 +146,14 @@ public static class ConfigureServices
 
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapMachineEndpoints();
+            versionedGroup.MapEmployeeInviteEndpoints();
+            versionedGroup.MapEmployeeEndpoints();
 
             return app;
         }
 
         private IEndpointRouteBuilder MapApiDiagnostics()
         {
-            app.MapSharedHealthChecks();
             app.MapSharedOpenApi();
             app.MapSharedGrpcReflection();
 

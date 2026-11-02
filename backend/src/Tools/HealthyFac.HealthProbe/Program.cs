@@ -44,6 +44,5 @@ bool IsSchemaValid(string uriString, out Uri? uri)
     uri = null;
 
     return Uri.TryCreate(uriString, UriKind.Absolute, out uri)
-        && uri.Scheme is ProbeConstants.Schemes.Http
-            or ProbeConstants.Schemes.Https;
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }

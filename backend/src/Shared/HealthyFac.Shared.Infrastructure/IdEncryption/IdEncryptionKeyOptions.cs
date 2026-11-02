@@ -9,5 +9,5 @@ public sealed class IdEncryptionKeyOptions
 
     public required string Key { get; init; }
 
-    public bool Default { get; init; }
+    public bool IsDefault { get; init; }
 }

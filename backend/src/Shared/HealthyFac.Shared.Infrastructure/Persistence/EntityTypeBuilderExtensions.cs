@@ -10,9 +10,9 @@ namespace HealthyFac.Shared.Infrastructure.Persistence;
 public static class EntityTypeBuilderExtensions
 {
     /// <summary>
-    /// Configures the baseline primary key for entities implementing <see cref="IEntity"/>.
-    /// The database generates the identifier, so a new entity carries <see cref="Guid.Empty"/> until it is
-    /// saved. Treat <see cref="Guid.Empty"/> as the marker for an unsaved entity.
+    /// Configures the baseline primary key for entities implementing <see cref="IEntity"/>. The application
+    /// generates the identifier (<see cref="Guid.CreateVersion7()"/>), so the column has no database default and
+    /// EF Core always sends the value.
     /// </summary>
     public static EntityTypeBuilder<TEntity> ConfigureEntity<TEntity>(this EntityTypeBuilder<TEntity> builder)
         where TEntity : class, IEntity
@@ -20,8 +20,7 @@ public static class EntityTypeBuilderExtensions
         builder.HasKey(entity => entity.Id);
 
         builder.Property(entity => entity.Id)
-            .HasDefaultValueSql(PersistenceConstants.IdentifierSql)
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
 
         return builder;
     }

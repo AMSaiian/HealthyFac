@@ -2,16 +2,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Application.Time;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
 public sealed class AuditableEntityInterceptor(
-    IDateProvider dateProvider,
+    TimeProvider timeProvider,
     ICurrentUserProvider currentUserProvider
 ) : SaveChangesInterceptor
 {
+    private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly ICurrentUserProvider _currentUserProvider = currentUserProvider;
+
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
         InterceptionResult<int> result
@@ -25,7 +27,7 @@ public sealed class AuditableEntityInterceptor(
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         ApplyAudit(eventData.Context);
@@ -40,8 +42,8 @@ public sealed class AuditableEntityInterceptor(
             return;
         }
 
-        var userId = currentUserProvider.TryGetUserId() ?? Guid.Empty;
-        var utcNow = dateProvider.GetUtc();
+        var userId = _currentUserProvider.TryGetUserId() ?? Guid.Empty;
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
         {

@@ -25,10 +25,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Companies.Company", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -63,10 +61,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Departments.Department", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -118,10 +114,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.Employee", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -157,6 +151,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("last_name");
 
+                    b.Property<DateTime?>("ProvisioningRetriedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("provisioning_retried_at");
+
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid")
                         .HasColumnName("role_id");
@@ -174,6 +172,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -207,10 +211,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.EmployeeInvite", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone")
@@ -265,6 +267,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("RoleId");
@@ -290,10 +298,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Machines.Machine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
@@ -360,10 +366,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Core.Domain.Roles.Role", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -396,13 +400,26 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_id");
+
                     b.Property<int>("AttemptCount")
                         .HasColumnType("integer")
                         .HasColumnName("attempt_count");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
                     b.Property<string>("Error")
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("error");
+
+                    b.Property<DateTime?>("FailedOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("failed_on");
 
                     b.Property<DateTime>("NextAttemptOn")
                         .HasColumnType("timestamp with time zone")
@@ -442,23 +459,35 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasIndex("NextAttemptOn")
                         .HasFilter("processed_on IS NULL");
 
-                    b.ToTable("inbox_messages", (string)null);
+                    b.ToTable("inbox_messages", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_inbox_message_actor_id_not_empty", "\"actor_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_inbox_message_id_not_empty", "\"id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
                 });
 
             modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("uuidv7()");
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_id");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("integer")
                         .HasColumnName("attempt_count");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
                     b.Property<string>("Error")
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("error");
 
                     b.Property<DateTime>("NextAttemptOn")
@@ -499,7 +528,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasIndex("NextAttemptOn")
                         .HasFilter("processed_on IS NULL");
 
-                    b.ToTable("outbox_messages", (string)null);
+                    b.ToTable("outbox_messages", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_outbox_message_actor_id_not_empty", "\"actor_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
                 });
 
             modelBuilder.Entity("employee_departments", b =>

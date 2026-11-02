@@ -8,10 +8,12 @@ namespace HealthyFac.Shared.Web.IdEncryption.Converters;
 
 /// <summary>
 /// Reads and writes a <see cref="Guid"/> as an encrypted identifier token.
-/// An absent or empty token reads as <see cref="Guid.Empty"/>, which marks an unsaved entity.
+/// An absent or empty token reads as <see cref="Guid.Empty"/>, which request validation then rejects.
 /// </summary>
 public sealed class EncryptedGuidConverter(IIdEncryptor encryptor) : JsonConverter<Guid>
 {
+    private readonly IIdEncryptor _encryptor = encryptor;
+
     /// <inheritdoc/>
     /// <exception cref="JsonException">Thrown when the token is not a valid encrypted identifier.</exception>
     public override Guid Read(
@@ -28,7 +30,7 @@ public sealed class EncryptedGuidConverter(IIdEncryptor encryptor) : JsonConvert
 
         try
         {
-            return encryptor.Decrypt(encrypted);
+            return _encryptor.Decrypt(encrypted);
         }
         catch (Exception exception) when (exception is FormatException
             or CryptographicException
@@ -43,5 +45,5 @@ public sealed class EncryptedGuidConverter(IIdEncryptor encryptor) : JsonConvert
         Utf8JsonWriter writer,
         Guid value,
         JsonSerializerOptions options
-    ) => writer.WriteStringValue(encryptor.Encrypt(value));
+    ) => writer.WriteStringValue(_encryptor.Encrypt(value));
 }
