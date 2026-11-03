@@ -333,6 +333,8 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       # The public URL of the API. The host sends it to the browser in /config.json and allows it in the CSP.
       Spa__ApiBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}
+      # The public URL of Keycloak. The host sends it to the browser in /config.json and allows it in the CSP.
+      Spa__AuthUrl: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       Metrics__Endpoint: http://lgtm:4317

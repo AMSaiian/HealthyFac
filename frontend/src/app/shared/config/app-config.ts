@@ -1,39 +1,51 @@
 import { InjectionToken } from '@angular/core';
+import * as z from 'zod/mini';
 
-export interface AppConfig {
-  readonly apiBaseUrl: string;
-}
+const HTTPS_PROTOCOL = 'https:';
+const LOOPBACK_HOSTS: readonly string[] = ['localhost', '127.0.0.1', '[::1]'];
+
+const ConfigMessage = {
+  UrlNotString: 'must be a string',
+  UrlNotHttps: 'must be an absolute https URL',
+  UrlLoopback: 'must not use localhost or a loopback address',
+  UrlTrailingSlash: 'must not end with /',
+  TextBlank: 'must be a non-blank string',
+};
+
+const publicHttpsUrl = z.string(ConfigMessage.UrlNotString).check(
+  z.refine((value) => URL.parse(value)?.protocol === HTTPS_PROTOCOL, { error: ConfigMessage.UrlNotHttps, abort: true }),
+  z.refine((value) => !LOOPBACK_HOSTS.includes(URL.parse(value)?.hostname ?? ''), {
+    error: ConfigMessage.UrlLoopback,
+    abort: true,
+  }),
+  z.refine((value) => !value.endsWith('/'), { error: ConfigMessage.UrlTrailingSlash }),
+);
+
+const nonBlankText = z
+  .string(ConfigMessage.TextBlank)
+  .check(z.refine((value) => value.trim() !== '', { error: ConfigMessage.TextBlank }));
+
+const appConfigSchema = z.object({
+  apiBaseUrl: publicHttpsUrl,
+  authUrl: publicHttpsUrl,
+  authRealm: nonBlankText,
+  authClientId: nonBlankText,
+});
+
+export type AppConfig = Readonly<z.infer<typeof appConfigSchema>>;
 
 export const APP_CONFIG = new InjectionToken<AppConfig>('APP_CONFIG');
 
 export const APP_CONFIG_PATH = '/config.json';
 
-const API_BASE_URL_FIELD = 'apiBaseUrl';
-const HTTPS_PROTOCOL = 'https:';
-const LOOPBACK_HOSTS: readonly string[] = ['localhost', '127.0.0.1', '[::1]'];
-
 export class AppConfigError extends Error {}
 
-function describeApiBaseUrlProblem(value: unknown): string | null {
-  if (typeof value !== 'string') {
-    return 'must be a string';
-  }
-  const url = URL.parse(value);
-  if (url === null || url.protocol !== HTTPS_PROTOCOL) {
-    return 'must be an absolute https URL';
-  }
-  if (LOOPBACK_HOSTS.includes(url.hostname)) {
-    return 'must not use localhost or a loopback address';
-  }
-  return value.endsWith('/') ? 'must not end with /' : null;
-}
-
 export function parseAppConfig(raw: unknown): AppConfig {
-  const value =
-    typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>)[API_BASE_URL_FIELD] : undefined;
-  const problem = describeApiBaseUrlProblem(value);
-  if (problem !== null) {
-    throw new AppConfigError(`Invalid ${API_BASE_URL_FIELD}: ${problem}.`);
+  const source = typeof raw === 'object' && raw !== null ? raw : {};
+  const result = appConfigSchema.safeParse(source);
+  if (!result.success) {
+    const [issue] = result.error.issues;
+    throw new AppConfigError(`Invalid ${issue.path.map(String).join('.')}: ${issue.message}.`);
   }
-  return { apiBaseUrl: value as string };
+  return result.data;
 }

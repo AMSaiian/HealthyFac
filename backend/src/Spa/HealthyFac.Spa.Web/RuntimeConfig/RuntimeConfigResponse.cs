@@ -6,4 +6,10 @@ namespace HealthyFac.Spa.Web.RuntimeConfig;
 public sealed class RuntimeConfigResponse
 {
     public required string ApiBaseUrl { get; init; }
+
+    public required string AuthUrl { get; init; }
+
+    public required string AuthRealm { get; init; }
+
+    public required string AuthClientId { get; init; }
 }

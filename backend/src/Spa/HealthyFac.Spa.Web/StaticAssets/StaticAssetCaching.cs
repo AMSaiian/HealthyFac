@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using HealthyFac.Spa.Web.Hosting;
+using HealthyFac.Spa.Web.IndexDocument;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -34,10 +35,17 @@ public static class StaticAssetCaching
                 new StaticFileOptions
                 {
                     FileProvider = new EndpointFilesExcludedProvider(new PhysicalFileProvider(contentRoot)),
-                    OnPrepareResponse = context => context.Context.Response.Headers[HeaderNames.CacheControl] =
-                        hashedFileName.IsMatch(context.File.Name)
+                    OnPrepareResponse = context =>
+                    {
+                        var headers = context.Context.Response.Headers;
+                        headers[HeaderNames.CacheControl] = hashedFileName.IsMatch(context.File.Name)
                             ? immutableCacheControl
-                            : SpaConstants.CacheControl.NoCache,
+                            : SpaConstants.CacheControl.NoCache;
+                        if (context.File.Name == SpaConstants.SilentSsoFileName)
+                        {
+                            headers[HeaderNames.ContentSecurityPolicy] = ContentSecurityPolicy.SilentSso;
+                        }
+                    },
                 });
         }
     }

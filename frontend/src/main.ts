@@ -1,8 +1,10 @@
+import { isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 
 import { App } from '@app/app';
 import { appConfig } from '@app/app.config';
 import { APP_CONFIG, APP_CONFIG_PATH, AppConfigError, parseAppConfig } from '@shared/config/app-config';
+import { startErrorMessage } from '@shared/errors/start-error-message';
 
 async function start(): Promise<void> {
   const response = await fetch(APP_CONFIG_PATH);
@@ -18,8 +20,5 @@ async function start(): Promise<void> {
 
 start().catch((error: unknown) => {
   console.error(error);
-  document.body.textContent =
-    error instanceof AppConfigError
-      ? `HealthyFac cannot start. The configuration is not valid: ${error.message}`
-      : 'HealthyFac cannot start. Reload the page or contact support.';
+  document.body.textContent = startErrorMessage(error, isDevMode());
 });

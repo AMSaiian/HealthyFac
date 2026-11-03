@@ -9,6 +9,10 @@ namespace HealthyFac.Spa.IntegrationTests.Hosting;
 public sealed class SpaFactory : WebApplicationFactory<Program>
 {
     public const string ApiBaseUrl = "https://api.healthyfac.test";
+    public const string AuthUrl = "https://auth.healthyfac.test";
+    public const string AuthRealm = "healthyfac";
+    public const string AuthClientId = "healthyfac-spa";
+    public const string SilentSsoFileName = "silent-check-sso.html";
     public const string HashedAssetName = "main-ABCDEFGH.js";
     public const string LookalikeFileName = "data-ABCDEFGHx.json";
     public const string UnhashedFileName = "i18n/en.json";
@@ -41,6 +45,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         File.WriteAllText(Path.Combine(_contentRoot, HashedAssetName), "console.log(1);");
         File.WriteAllText(Path.Combine(_contentRoot, LookalikeFileName), "x");
         File.WriteAllText(Path.Combine(_contentRoot, UnhashedFileName), "{}");
+        File.WriteAllText(Path.Combine(_contentRoot, SilentSsoFileName), "<html></html>");
         File.WriteAllText(Path.Combine(_contentRoot, "config.json"), "{\"apiBaseUrl\":\"https://file.example.com\"}");
     }
 
@@ -49,6 +54,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         builder.UseEnvironment(TestEnvironment);
         builder.UseSetting("Spa:ContentRoot", _contentRoot);
         builder.UseSetting("Spa:ApiBaseUrl", ApiBaseUrl);
+        builder.UseSetting("Spa:AuthUrl", AuthUrl);
 
         foreach (var (key, value) in _settings)
         {
