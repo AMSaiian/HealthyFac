@@ -1,0 +1,14 @@
+@layer theme, base, primeng, components, utilities;
+
+@import '@fontsource/oxygen/300.css';
+@import '@fontsource/oxygen/400.css';
+@import '@fontsource/oxygen/700.css';
+@import 'primeicons/primeicons.css';
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+@theme {
+  --font-sans: 'Oxygen', ui-sans-serif, system-ui, sans-serif;
+}
+
+@custom-variant dark (&:where(.app-dark, .app-dark *));

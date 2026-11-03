@@ -9,11 +9,12 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 *   `backend/src/Shared/` — shared layer libraries referenced by every microservice.
 *   `backend/tests/` — unit and integration test projects.
 *   `docs/` — architecture and design documents.
-*   `frontend/` — frontend application (not yet implemented).
+*   `frontend/` — Angular 22 app (PrimeNG, Tailwind, ngx-translate, SignalStore).
 
 ## Build and Test
 *   Build: `dotnet build backend/HealthyFac.slnx`
 *   Test: `dotnet test backend/HealthyFac.slnx`
+*   Frontend: `cd frontend && npm run lint && npx ng build && npx ng test --watch=false`
 
 ## Rules
 `.agents/rules/` holds every rule. That directory is the single source of truth. Edit rules there only.
@@ -26,6 +27,7 @@ Each rule file declares its scope in `globs` frontmatter. A rule with `trigger: 
 *   Read `backend-general.md` and `format-csharp.md` for any C# file.
 *   Read `backend-packages.md` for `.csproj` and `.props` files.
 *   Read `testing.md` for test projects.
+*   Read `frontend-angular.md` for the frontend.
 *   Read `container.md` for Dockerfiles and Compose files.
 *   Read `observability.md` for telemetry code (resource attributes, spans, metrics, log export).
 *   Read `git-commits.md` before you write a commit.
