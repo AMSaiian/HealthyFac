@@ -8,6 +8,7 @@ This document records the service boundaries and the decisions that connect the 
 | --- | --- | --- |
 | **Gateway** (YARP) | The only public entry point. Routing, TLS, rate limiting, the edge JWT check, and the token revocation check. | Exists |
 | **Auth** | A thin back channel to Keycloak: user provisioning, organization membership, and role assignment through the Keycloak Admin API. It does not log users in or handle passwords. It may have its own tables when it needs them. | Exists |
+| **SPA host** | A small .NET host that serves the built web app, the runtime `/config.json`, and the index file with a content security policy nonce. It has no database and no authentication. | Exists |
 | **Core** | Business data: companies, departments, employees, employee invites, roles, machines, metric definitions, and campaigns. | Exists |
 | **Telemetry** | Metric intake from the machines (a mock machine service for now). It writes the received data and nothing else. | Planned |
 | **Insights** | Document ingestion, the LLM worker, and the statistic rules that detect anomalies. | Planned |
@@ -101,7 +102,8 @@ This document records the service boundaries and the decisions that connect the 
 | --- | --- | --- |
 | `https://api.healthyfac.test` | the gateway, Core API routes (`/api/core/v{n}/...`) | `https://api.<domain>` |
 | `https://auth.healthyfac.test` | the gateway, Keycloak routes (`/realms/healthyfac/...`, `/resources/...`); the token issuer | `https://auth.<domain>` |
-| `https://app.healthyfac.test:4200` | the web app (not implemented yet); invite links, redirect URIs, CORS origin | `https://app.<domain>` |
+| `https://app.healthyfac.test` | the gateway, the SPA host route (all paths); in container mode the web app, invite links, redirect URIs, CORS origin | `https://app.<domain>` |
+| `https://app.healthyfac.test:4200` | `ng serve` of the web app (development mode) | none |
 
 - **TLS:** TLS ends at the gateway, as at a cloud load balancer or ingress.
     - The public URLs use HTTPS and no port. `GATEWAY_PORT` is 443; when it is not, add the port to `HEALTHYFAC_AUTH_URL`, because the issuer must equal the URL that the browser uses.
@@ -180,6 +182,21 @@ This document records the service boundaries and the decisions that connect the 
 - **Backlog gauges:** a sampler reads the pending count and the oldest pending time of both tables every 15 seconds, with one query per table on the pending index and without a trace. The gauges `healthyfac.messaging.pending` and `healthyfac.messaging.oldest_pending.age` report the last sample, so the export never queries the database. A failed inbox row is not pending. Every instance reports the same table values, so a dashboard aggregates them with `max`, never `sum`.
 - **Span names:** an internal span is `<Area>.<Action>` in PascalCase (`Razor.Render`, `UseCase.Validate`). The use case span keeps the request type name, and the tag `healthyfac.use_case` holds the same name. HTTP and messaging spans keep the library names. No span name holds an ID or a user value. The rule `observability` lists the naming conventions.
 - **Layer boundary:** Domain, Application, and Infrastructure create spans and metrics only through the .NET API (`ActivitySource`, `Meter`). Only `HealthyFac.Shared.Web` references OpenTelemetry packages, so the host decides where telemetry goes. The architecture tests forbid the `OpenTelemetry` namespace in the inner layers.
+
+## Frontend
+
+- **Stack:** Angular 22.2 (zoneless), PrimeNG 22 with the Lara preset, Tailwind 4, ngx-translate 18, NgRx SignalStore 22, and `temporal-polyfill`.
+- **Folders:** `src/app/` holds the app root and `layout/`. `shared/` groups code by intent (`storage/`, `i18n/`, `theme/`, `time/`). Each feature has its own folder under `app/` and one folder per use case. Aliases: `@app/`, `@shared/`, and `@<feature>/`.
+- **State scopes:** a global store uses `providedIn: 'root'` and lives in `shared/`. A feature store is a provider on the lazy route. A local store is a provider on the component. Stores save to storage only through `withStorageSync` and `BROWSER_STORAGE`.
+- **Theme:** one preset defines the colors. PrimeNG and Tailwind read the same tokens. The class `app-dark` on `<html>` switches both libraries.
+- **Time:** all date and time values use Temporal. Code reads the current time only through the `CLOCK` token. `Date` appears only in the picker wrappers, because PrimeNG needs it.
+- **Forms:** all forms use Signal Forms. A wrapper component adapts each PrimeNG date picker to a Temporal value.
+- **Text:** ngx-translate loads `public/i18n/<language>.json`. English is the fallback. The keys use capitalized snake case.
+- **Runtime config:** the app reads `/config.json` before it starts. The file is public and holds only values that every visitor may see. A wrong file stops the start with a plain text message.
+- **HTTP errors:** `apiBaseUrlInterceptor` prefixes `/api/` paths with the API URL. `problemDetailsInterceptor` shows a translated toast and rethrows the error. A validation error (`400` with `errors`) shows no toast.
+- **CSP:** the SPA host answers the index with a content security policy and a new nonce per response (`__CSP_NONCE__` in `index.html`). Angular and PrimeNG read the nonce from `ngCspNonce`. The policy allows `style-src-attr 'unsafe-inline'`, because PrimeNG sets inline `style` attributes. The host serves `index.html` only through its endpoint. Hashed files cache for a year.
+- **Run modes:** `ng serve` serves `https://app.healthyfac.test:4200` (default `HEALTHYFAC_SPA_URL`). The `spa` Compose service serves `https://app.healthyfac.test` through the gateway. Set `HEALTHYFAC_SPA_URL=https://app.healthyfac.test` in `.env` for it.
+- **Open items:** the authentication session (it adds the identity provider origin to the CSP `connect-src`) and the typed API client.
 
 ## Shared Infrastructure
 
