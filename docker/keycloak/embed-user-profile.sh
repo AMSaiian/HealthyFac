@@ -7,7 +7,7 @@ set -euo pipefail
 
 JQ_IMAGE="ghcr.io/jqlang/jq:1.7.1"
 PROFILE_FILE="user-profile.json"
-REALM_FILE="import/healthyfac-realm.json"
+REALM_FILE="realm/healthyfac-realm.json"
 PROFILE_PATH='.components["org.keycloak.userprofile.UserProfileProvider"][0].config["kc.user.profile.config"][0]'
 
 cd "$(dirname "${BASH_SOURCE[0]}")"

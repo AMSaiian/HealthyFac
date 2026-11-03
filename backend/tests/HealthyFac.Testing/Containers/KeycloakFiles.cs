@@ -12,7 +12,7 @@ public static class KeycloakFiles
     /// Finds a file in <c>docker/keycloak</c> by walking up from the test output until the file exists.
     /// </summary>
     /// <param name="relativePath">The path segments below <c>docker/keycloak</c>, for example
-    /// <c>"import", "healthyfac-realm.json"</c>.</param>
+    /// <c>"realm", "healthyfac-realm.json"</c>.</param>
     /// <returns>The full path of the file.</returns>
     /// <exception cref="FileNotFoundException">
     /// Thrown when no folder above the test output holds the file.

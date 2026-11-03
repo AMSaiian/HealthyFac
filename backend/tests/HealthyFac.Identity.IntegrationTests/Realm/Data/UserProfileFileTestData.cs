@@ -9,7 +9,7 @@ public static class UserProfileFileTestData
         "the realm file must embed docker/keycloak/user-profile.json. Run docker/keycloak/embed-user-profile.sh";
 
     private const string RealmFileName = "healthyfac-realm.json";
-    private const string RealmFileDirectory = "import";
+    private const string RealmFileDirectory = "realm";
     private const string UserProfileFileName = "user-profile.json";
     private const string UserProfileProviderKey = "org.keycloak.userprofile.UserProfileProvider";
     private const string ConfigKey = "config";
