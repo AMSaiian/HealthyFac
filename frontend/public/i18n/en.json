@@ -1,0 +1,91 @@
+{
+  "APP": {
+    "NAME": "HealthyFac"
+  },
+  "TITLES": {
+    "HOME": "Home",
+    "NOT_FOUND": "Page not found"
+  },
+  "SHELL": {
+    "TITLE": "HealthyFac",
+    "MENU": "Menu",
+    "LANGUAGE": "Language",
+    "THEME_TOGGLE": "Switch theme"
+  },
+  "LANGUAGE": {
+    "EN": "English",
+    "UK": "Українська"
+  },
+  "HOME": {
+    "INTRO": "HealthyFac connects machines with maintenance staff.",
+    "DISMISS": "Got it"
+  },
+  "NOT_FOUND": {
+    "MESSAGE": "This page does not exist.",
+    "BACK": "Go to the home page"
+  },
+  "ERRORS": {
+    "UNEXPECTED": "An unexpected error occurred.",
+    "SUMMARY": "Error",
+    "HTTP": {
+      "NETWORK": "The server is not reachable. Check your connection and try again.",
+      "BAD_REQUEST": "The request is not valid.",
+      "UNAUTHORIZED": "Your session has ended. Sign in again.",
+      "FORBIDDEN": "You do not have permission for this action.",
+      "NOT_FOUND": "The requested item does not exist.",
+      "CONFLICT": "The item was changed by someone else. Reload and try again.",
+      "TOO_MANY_REQUESTS": "Too many requests. Wait a moment and try again.",
+      "SERVER": "The server failed to process the request. Try again later.",
+      "UNKNOWN": "The request failed."
+    }
+  },
+  "PRIMENG": {
+    "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "dayNamesShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "dayNamesMin": ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+    "monthNames": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "monthNamesShort": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "dateFormat": "mm/dd/yy",
+    "firstDayOfWeek": "0",
+    "today": "Today",
+    "weekHeader": "Wk",
+    "clear": "Clear",
+    "apply": "Apply",
+    "accept": "Yes",
+    "reject": "No",
+    "cancel": "Cancel",
+    "choose": "Choose",
+    "upload": "Upload",
+    "close": "Close",
+    "emptyMessage": "No results found",
+    "emptyFilterMessage": "No results found",
+    "chooseYear": "Choose Year",
+    "chooseMonth": "Choose Month",
+    "chooseDate": "Choose Date",
+    "prevDecade": "Previous Decade",
+    "nextDecade": "Next Decade",
+    "prevYear": "Previous Year",
+    "nextYear": "Next Year",
+    "prevMonth": "Previous Month",
+    "nextMonth": "Next Month",
+    "prevHour": "Previous Hour",
+    "nextHour": "Next Hour",
+    "prevMinute": "Previous Minute",
+    "nextMinute": "Next Minute",
+    "am": "AM",
+    "pm": "PM"
+  }
+}

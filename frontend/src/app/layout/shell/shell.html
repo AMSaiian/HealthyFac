@@ -1,0 +1,41 @@
+<p-toolbar>
+  <ng-template #start>
+    <p-button
+      icon="pi pi-bars"
+      [text]="true"
+      [attr.aria-label]="'SHELL.MENU' | translate"
+      [attr.aria-expanded]="shellStore.isMenuOpen()"
+      (onClick)="shellStore.toggleMenu()"
+    />
+    <span class="ml-2 font-bold">{{ 'SHELL.TITLE' | translate }}</span>
+  </ng-template>
+  <ng-template #end>
+    <div class="flex items-center gap-2">
+      <p-select
+        [options]="languages"
+        [ngModel]="languageStore.language()"
+        [ariaLabel]="'SHELL.LANGUAGE' | translate"
+        (ngModelChange)="languageStore.use($event)"
+      >
+        <ng-template
+          #selectedItem
+          let-language
+          >{{ 'LANGUAGE.' + (language | uppercase) | translate }}</ng-template
+        >
+        <ng-template
+          #item
+          let-language
+          >{{ 'LANGUAGE.' + (language | uppercase) | translate }}</ng-template
+        >
+      </p-select>
+      <p-button
+        [icon]="themeStore.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+        [text]="true"
+        [attr.aria-label]="'SHELL.THEME_TOGGLE' | translate"
+        (onClick)="themeStore.toggle()"
+      />
+    </div>
+  </ng-template>
+</p-toolbar>
+<p-toast />
+<router-outlet />

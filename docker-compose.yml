@@ -310,6 +310,40 @@ services:
       redis:
         condition: service_started
 
+  spa:
+    container_name: healthyfac-spa
+    build:
+      context: ./backend
+      dockerfile: src/Spa/HealthyFac.Spa.Web/Dockerfile
+      # The frontend folder is a named extra context, so the image build stays under the backend context.
+      additional_contexts:
+        frontend: ./frontend
+    image: healthyfac/spa:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # The public URL of the API. The host sends it to the browser in /config.json and allows it in the CSP.
+      Spa__ApiBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}
+      Proxy__KnownNetworks__0: 172.16.0.0/12
+      Tracing__Endpoint: http://lgtm:4317
+      Metrics__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # No public port: the gateway serves the app on app.<domain>. The health port binds to the loopback address.
+    ports:
+      - "127.0.0.1:${SPA_HEALTH_PORT:-8093}:8090"
+    depends_on:
+      lgtm:
+        condition: service_healthy
+
   gateway:
     container_name: healthyfac-gateway
     build:
@@ -337,6 +371,8 @@ services:
       # The active health check of the cluster calls the health port of Core, not the API port.
       ReverseProxy__Clusters__core__Destinations__main__Health: http://core:8090/
       ReverseProxy__Clusters__keycloak__Destinations__main__Address: http://keycloak:8080/
+      ReverseProxy__Clusters__spa__Destinations__main__Address: http://spa:8080/
+      ReverseProxy__Clusters__spa__Destinations__main__Health: http://spa:8090/
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
       Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
       Jwt__IsHttpsMetadataRequired: "false"
@@ -347,6 +383,7 @@ services:
       ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-realm__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-resources__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__spa__Match__Hosts__0: app.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
@@ -361,10 +398,12 @@ services:
     # them, and the image does not hold them.
     volumes:
       - ./docker/certs:/certs:ro
-    # Redis, Core, and Keycloak are soft dependencies of the gateway: it serves with a local limiter, answers 503 for
-    # Core alone, and reads the signing keys of Keycloak at the first token.
+    # Redis, Core, the SPA host, and Keycloak are soft dependencies of the gateway: it serves with a local limiter,
+    # answers 503 for Core or the SPA host alone, and reads the signing keys of Keycloak at the first token.
     depends_on:
       core:
+        condition: service_started
+      spa:
         condition: service_started
       keycloak:
         condition: service_started
