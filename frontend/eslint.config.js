@@ -52,6 +52,26 @@ const FORMS_PATH = {
   message: 'Use Signal Forms (@angular/forms/signals).',
 };
 
+const KEYCLOAK_PATH = {
+  name: 'keycloak-js',
+  message: 'Use AuthStore from @shared/security.',
+};
+
+const ZOD_PATH = {
+  name: 'zod',
+  message: 'Use zod/mini.',
+};
+
+const HTTP_ACCESS_PATH = {
+  name: '@angular/common/http',
+  importNames: ['HttpClient', 'httpResource'],
+  message: 'Make HTTP requests only in a store (*.store.ts) or in shared/.',
+};
+
+const BASE_IMPORT_PATHS = [TEMPORAL_PATH, FORMS_PATH, ZONELESS_PATH, ZOD_PATH];
+
+const importRule = (paths) => ['error', { paths, patterns: RESTRICTED_IMPORT_PATTERNS }];
+
 const CLOCK_MESSAGE = 'Inject CLOCK.';
 const CLOCK_SYNTAX = [
   { selector: "NewExpression[callee.name='Date'][arguments.length=0]", message: CLOCK_MESSAGE },
@@ -96,10 +116,7 @@ module.exports = defineConfig([
       '@typescript-eslint/prefer-enum-initializers': 'error',
       '@typescript-eslint/no-mixed-enums': 'error',
       'sort-imports': ['error', { ignoreDeclarationSort: true, ignoreCase: true }],
-      'no-restricted-imports': [
-        'error',
-        { paths: [TEMPORAL_PATH, FORMS_PATH, ZONELESS_PATH], patterns: RESTRICTED_IMPORT_PATTERNS },
-      ],
+      'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_ACCESS_PATH]),
       'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX, ...CLOCK_SYNTAX],
       'no-restricted-globals': [
         'error',
@@ -116,9 +133,21 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['src/app/**/*.store.ts', 'src/app/**/*.spec.ts', 'src/app/shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH]),
+    },
+  },
+  {
+    files: ['src/app/shared/security/**/*.ts'],
+    rules: {
+      'no-restricted-imports': importRule(BASE_IMPORT_PATHS),
+    },
+  },
+  {
     files: ['src/app/shared/time/temporal.ts'],
     rules: {
-      'no-restricted-imports': ['error', { paths: [FORMS_PATH, ZONELESS_PATH], patterns: RESTRICTED_IMPORT_PATTERNS }],
+      'no-restricted-imports': importRule([FORMS_PATH, ZONELESS_PATH, KEYCLOAK_PATH, ZOD_PATH]),
     },
   },
   {
