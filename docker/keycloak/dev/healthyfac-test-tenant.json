@@ -1,0 +1,41 @@
+{
+  "realm": "healthyfac",
+  "organizations": [
+    {
+      "name": "${HEALTHYFAC_TEST_COMPANY_ID}",
+      "alias": "${HEALTHYFAC_TEST_COMPANY_ID}",
+      "enabled": true,
+      "domains": [],
+      "members": [
+        {
+          "username": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}"
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}",
+      "email": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Supervisor",
+      "attributes": {
+        "employee_id": [
+          "${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID}"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "supervisor"
+      ]
+    }
+  ]
+}

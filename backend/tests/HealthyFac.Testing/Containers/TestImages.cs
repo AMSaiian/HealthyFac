@@ -13,4 +13,5 @@ public static class TestImages
     public const string RabbitMq = "rabbitmq:4.3.5-management-alpine";
     public const string Mailpit = "axllent/mailpit:v1.31.5";
     public const string Keycloak = "quay.io/keycloak/keycloak:26.8.0";
+    public const string KeycloakConfigCli = "adorsys/keycloak-config-cli:6.5.1-26";
 }

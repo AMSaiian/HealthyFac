@@ -1,0 +1,12 @@
+{
+  "realm": "healthyfac",
+  "enabled": true,
+  "users": [
+    {
+      "id": "${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID}",
+      "username": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}",
+      "email": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}",
+      "enabled": true
+    }
+  ]
+}
