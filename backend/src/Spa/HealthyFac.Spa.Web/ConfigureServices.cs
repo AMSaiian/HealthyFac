@@ -52,10 +52,7 @@ public static class ConfigureServices
             services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
                 options.Filter = context => !StaticAssetRequests.IsStaticAsset(context.Request.Path));
             services.AddSharedMetrics(configuration);
-            services.AddSharedHealthChecks(configuration)
-                .AddCheck<IndexDocumentHealthCheck>(
-                    nameof(IndexDocument.IndexDocument),
-                    tags: [HealthCheckConstants.ReadyTag]);
+            services.AddSharedHealthChecks(configuration);
 
             return services;
         }
