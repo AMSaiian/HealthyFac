@@ -23,6 +23,7 @@
 | `testing` | `backend/tests/**`, `**/*Tests/**`, `**/*Test/**` |
 | `observability` | `**/Observability/**`, `**/Tracing/**`, `**/Metrics/**`, `**/Logging/**` |
 | `format-typescript` | `**/*.{ts,tsx,js,jsx}` |
+| `frontend-angular` | `frontend/**` |
 | `format-html` | `**/*.{html,htm}` |
 | `format-styles` | `**/*.{css,scss,sass,less}` |
 | `container` | `**/Dockerfile*`, `**/.dockerignore`, `**/docker-compose*.{yml,yaml}`, `docker/**` |

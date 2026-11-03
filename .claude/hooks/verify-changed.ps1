@@ -74,6 +74,61 @@ function Get-ContentHashes([string[]] $files) {
   $hashes
 }
 
+function Get-ChangedFrontendFiles([string] $repo) {
+  $patterns = '*.ts', '*.html', '*.css', '*.json'
+  $tracked = @(git diff --name-only HEAD -- $patterns 2>$null)
+  $untracked = @(git ls-files -o --exclude-standard -- $patterns 2>$null)
+
+  @($tracked + $untracked) |
+    Where-Object { $_ -like 'frontend/*' -and $_ -notlike '*/package-lock.json' } |
+    Sort-Object -Unique |
+    Where-Object { Test-Path (Join-Path $repo $_) }
+}
+
+# Formats the frontend files touched this turn with Prettier, then lints the frontend. The hash state works as in
+# Invoke-Verification, in its own file. A lint failure lists the ESLint output lines. The hook runs no build or test.
+function Invoke-FrontendVerification([string] $repo) {
+  $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
+  $frontend = Join-Path $repo 'frontend'
+  if (-not (Test-Path (Join-Path $frontend 'node_modules'))) { return $result }
+
+  Push-Location $repo
+  try {
+    $statePath = [IO.Path]::GetFullPath((git rev-parse --git-path claude-verify-frontend-state.json), $repo)
+    $saved = @{}
+    if (Test-Path $statePath) {
+      (Get-Content $statePath -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() |
+        ForEach-Object { $saved[$_.Key] = $_.Value }
+    }
+
+    $files = @(Get-ChangedFrontendFiles $repo)
+    $current = Get-ContentHashes $files
+    $touched = @($files | Where-Object { $saved[$_] -ne $current[$_] })
+    if ($touched.Count -eq 0) { return $result }
+
+    Push-Location $frontend
+    try {
+      $relative = $touched | ForEach-Object { $_.Substring('frontend/'.Length) }
+      & npx prettier --write --ignore-unknown @relative 2>&1 | Out-Null
+      $output = & npm run lint 2>&1 | ForEach-Object { "$_" }
+      $lintFailed = $LASTEXITCODE -ne 0
+    }
+    finally { Pop-Location }
+
+    $state = Get-ContentHashes @(Get-ChangedFrontendFiles $repo)
+    if ($lintFailed) { $state = @{} }
+    New-Item -ItemType Directory -Force (Split-Path $statePath) | Out-Null
+    $state | ConvertTo-Json -Compress | Set-Content $statePath -Encoding utf8NoBOM
+
+    if ($lintFailed) {
+      $result.Problems = @('Frontend lint failed (npm run lint in frontend/):') +
+        @($output | Where-Object { $_ -match 'S' -and $_ -notmatch '^> ' } | Select-Object -First 40)
+    }
+    return $result
+  }
+  finally { Pop-Location }
+}
+
 # Formats and builds one checkout. Returns its diagnostics (empty when clean) and a notice for the transcript.
 function Invoke-Verification([string] $repo) {
   $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
@@ -164,14 +219,14 @@ if ($checkouts.Count -eq 0) {
 }
 if ($checkouts.Count -eq 0) { exit 0 }
 
-$results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout })
+$results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout; Invoke-FrontendVerification $checkout })
 $results | Where-Object Notice | ForEach-Object { Write-Output $_.Notice }
 
 $failed = @($results | Where-Object { $_.Problems.Count -gt 0 })
 if ($failed.Count -eq 0) { exit 0 }
 
 $report = @(
-  'The build reports problems in the backend files touched this turn. Fix every item before you finish.'
+  'The build or the frontend lint reports problems in the files touched this turn. Fix every item before you finish.'
   foreach ($result in $failed) {
     if ($checkouts.Count -gt 1) { "In $($result.Repo):" }
     $result.Problems
