@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Employees.DeactivateEmployee;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;

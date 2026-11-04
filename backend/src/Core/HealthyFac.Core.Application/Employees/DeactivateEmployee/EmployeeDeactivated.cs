@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.Messaging;
 
-namespace HealthyFac.Core.Application.Employees;
+namespace HealthyFac.Core.Application.Employees.DeactivateEmployee;
 
 public sealed record EmployeeDeactivated : IIntegrationMessage
 {

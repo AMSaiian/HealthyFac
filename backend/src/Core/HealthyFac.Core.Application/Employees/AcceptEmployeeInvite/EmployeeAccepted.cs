@@ -1,7 +1,7 @@
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Domain.Emails;
 
-namespace HealthyFac.Core.Application.Employees;
+namespace HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 
 public sealed record EmployeeAccepted : IIntegrationMessage
 {

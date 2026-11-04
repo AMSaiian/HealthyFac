@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;

@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Employees;
+using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
