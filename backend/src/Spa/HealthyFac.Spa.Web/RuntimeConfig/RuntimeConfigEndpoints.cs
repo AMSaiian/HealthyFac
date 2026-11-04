@@ -1,3 +1,4 @@
+using System.Globalization;
 using HealthyFac.Spa.Web.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -23,8 +24,17 @@ public static class RuntimeConfigEndpoints
 
     private static RuntimeConfigResponse GetRuntimeConfig(HttpContext context, IOptions<SpaOptions> options)
     {
-        context.Response.Headers[HeaderNames.CacheControl] = SpaConstants.CacheControl.NoStore;
+        context.Response.Headers[HeaderNames.CacheControl] = string.Format(
+            CultureInfo.InvariantCulture,
+            SpaConstants.CacheControl.PublicMaxAgeFormat,
+            options.Value.RuntimeConfigCacheSeconds);
 
-        return new RuntimeConfigResponse { ApiBaseUrl = options.Value.ApiBaseUrl };
+        return new RuntimeConfigResponse
+        {
+            ApiBaseUrl = options.Value.ApiBaseUrl,
+            AuthUrl = options.Value.AuthUrl,
+            AuthRealm = options.Value.AuthRealm,
+            AuthClientId = options.Value.AuthClientId,
+        };
     }
 }

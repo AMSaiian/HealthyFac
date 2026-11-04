@@ -34,6 +34,14 @@
         [attr.aria-label]="'SHELL.THEME_TOGGLE' | translate"
         (onClick)="themeStore.toggle()"
       />
+      @if (authStore.isAuthenticated()) {
+        <p-button
+          icon="pi pi-sign-out"
+          [text]="true"
+          [attr.aria-label]="'SHELL.SIGN_OUT' | translate"
+          (onClick)="authStore.logout()"
+        />
+      }
     </div>
   </ng-template>
 </p-toolbar>

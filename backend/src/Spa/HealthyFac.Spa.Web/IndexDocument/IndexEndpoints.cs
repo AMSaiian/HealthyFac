@@ -44,7 +44,10 @@ public static class IndexEndpoints
         var nonce = CspNonce.Create();
         var headers = context.Response.Headers;
         headers[HeaderNames.ContentSecurityPolicy] =
-            ContentSecurityPolicy.Build(nonce, new Uri(options.Value.ApiBaseUrl));
+            ContentSecurityPolicy.Build(
+                nonce,
+                new Uri(options.Value.ApiBaseUrl),
+                new Uri(options.Value.AuthUrl));
         headers[HeaderNames.CacheControl] = SpaConstants.CacheControl.NoCache;
         headers[HeaderNames.XContentTypeOptions] = SpaConstants.SecurityHeaders.ContentTypeOptions;
         headers[SpaConstants.SecurityHeaders.ReferrerPolicyName] = SpaConstants.SecurityHeaders.ReferrerPolicy;

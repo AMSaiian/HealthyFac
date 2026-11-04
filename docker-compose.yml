@@ -33,8 +33,8 @@ services:
     command: ["start-dev", "--http-port=8080", "--import-realm"]
     stop_signal: SIGTERM
     stop_grace_period: 30s
-    # The import skips a realm that already exists in the keycloak database. After you change the realm file, run
-    # `docker compose down -v`, or delete the healthyfac realm in the admin console, and start Keycloak again.
+    # The import only creates the realm and the supervisor with the fixed ID on a fresh database, because only the import
+    # keeps a fixed user ID. The import skips a realm that exists. The keycloak-config job applies everything else.
     volumes:
       - ./docker/keycloak/import:/opt/keycloak/data/import:ro
     environment:
@@ -53,15 +53,9 @@ services:
       KC_HOSTNAME_ADMIN: http://localhost:${KEYCLOAK_PORT:-8081}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
-      # Keycloak replaces each placeholder of the realm import file with the variable of the same name.
-      HEALTHYFAC_SPA_URL: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
-      HEALTHYFAC_TEST_COMPANY_ID: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      # Keycloak replaces each placeholder of the bootstrap file with the variable of the same name.
       HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_PASSWORD: ${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD:?set HEALTHYFAC_TEST_SUPERVISOR_PASSWORD in .env}
-      KEYCLOAK_AUTH_CLIENT_SECRET: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
-      KEYCLOAK_CORE_CLIENT_SECRET: ${KEYCLOAK_CORE_CLIENT_SECRET:?set KEYCLOAK_CORE_CLIENT_SECRET in .env}
     ports:
       - "${KEYCLOAK_PORT:-8081}:8080"
     # The image has no curl. Bash opens a TCP connection to the management port and reads the readiness answer.
@@ -80,6 +74,55 @@ services:
       postgres:
         condition: service_healthy
       mailpit:
+        condition: service_healthy
+
+  # The job applies docker/keycloak/realm/healthyfac-realm.json and then docker/keycloak/dev/healthyfac-test-tenant.json
+  # to the running Keycloak and exits. It changes only the differences. After you change a file, run
+  # `docker compose up keycloak-config`.
+  keycloak-config:
+    container_name: healthyfac-keycloak-config
+    image: adorsys/keycloak-config-cli:6.5.1-26
+    restart: "no"
+    user: "65534:65534"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    volumes:
+      - ./docker/keycloak/realm:/config/realm:ro
+      - ./docker/keycloak/dev:/config/dev:ro
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_USER: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env}
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KEYCLOAK_AVAILABILITYCHECK_ENABLED: "true"
+      IMPORT_FILES_LOCATIONS: /config/realm/healthyfac-realm.json,/config/dev/healthyfac-test-tenant.json
+      # The files hold the plain placeholder ${NAME}, which Keycloak also reads in the bootstrap import. The job
+      # leaves the Keycloak message placeholders (${username}) unchanged. The option no longer stops on a missing
+      # variable; the ":?" checks below stop Compose instead.
+      IMPORT_VARSUBSTITUTION_ENABLED: "true"
+      IMPORT_VARSUBSTITUTION_PREFIX: $${
+      IMPORT_VARSUBSTITUTION_SUFFIX: "}"
+      IMPORT_VARSUBSTITUTION_UNDEFINEDISERROR: "false"
+      # Auth adds employees to the organization at run time. By default the job removes the members and organizations
+      # that the files do not list.
+      IMPORT_MANAGED_ORGANIZATION: no-delete
+      # Auth maps realm roles to users at run time. By default the job removes the roles of a listed user (the
+      # supervisor) that the file does not list.
+      IMPORT_USERS_MERGEROLES: "true"
+      HEALTHYFAC_SPA_URL: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      HEALTHYFAC_TEST_COMPANY_ID: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
+      HEALTHYFAC_TEST_SUPERVISOR_PASSWORD: ${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD:?set HEALTHYFAC_TEST_SUPERVISOR_PASSWORD in .env}
+      KEYCLOAK_AUTH_CLIENT_SECRET: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
+      KEYCLOAK_CORE_CLIENT_SECRET: ${KEYCLOAK_CORE_CLIENT_SECRET:?set KEYCLOAK_CORE_CLIENT_SECRET in .env}
+    depends_on:
+      keycloak:
         condition: service_healthy
 
   redis:
@@ -245,8 +288,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      keycloak:
-        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
       mailpit:
@@ -296,8 +339,9 @@ services:
     # loopback address of the host. The container port equals HealthEndpoints:Port in appsettings.json.
     ports:
       - "127.0.0.1:${AUTH_HEALTH_PORT:-8092}:8090"
-    # Hard dependencies: the host does not start without the database and the subscriptions. Keycloak and Redis are
-    # soft: a failed call retries through the inbox.
+    # Hard dependencies: the host does not start without the database and the subscriptions. The realm job must end
+    # with exit code 0, so Auth never starts with a half-applied realm. Redis is soft: a failed call retries through the
+    # inbox.
     depends_on:
       postgres:
         condition: service_healthy
@@ -305,8 +349,8 @@ services:
         condition: service_healthy
       lgtm:
         condition: service_healthy
-      keycloak:
-        condition: service_started
+      keycloak-config:
+        condition: service_completed_successfully
       redis:
         condition: service_started
 
@@ -333,6 +377,8 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       # The public URL of the API. The host sends it to the browser in /config.json and allows it in the CSP.
       Spa__ApiBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}
+      # The public URL of Keycloak. The host sends it to the browser in /config.json and allows it in the CSP.
+      Spa__AuthUrl: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       Metrics__Endpoint: http://lgtm:4317
@@ -398,15 +444,16 @@ services:
     # them, and the image does not hold them.
     volumes:
       - ./docker/certs:/certs:ro
-    # Redis, Core, the SPA host, and Keycloak are soft dependencies of the gateway: it serves with a local limiter,
-    # answers 503 for Core or the SPA host alone, and reads the signing keys of Keycloak at the first token.
+    # Redis, Core, and the SPA host are soft dependencies of the gateway: it serves with a local limiter and
+    # answers 503 for Core or the SPA host alone. It reads the signing keys of Keycloak at the first token. The realm job
+    # runs only after a healthy Keycloak, so its success also covers the Keycloak routes.
     depends_on:
       core:
         condition: service_started
       spa:
         condition: service_started
-      keycloak:
-        condition: service_started
+      keycloak-config:
+        condition: service_completed_successfully
       redis:
         condition: service_started
       lgtm:

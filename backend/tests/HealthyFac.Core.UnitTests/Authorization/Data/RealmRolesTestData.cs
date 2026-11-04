@@ -5,7 +5,7 @@ namespace HealthyFac.Core.UnitTests.Authorization.Data;
 
 public static class RealmRolesTestData
 {
-    private const string RealmFileDirectory = "import";
+    private const string RealmFileDirectory = "realm";
     private const string RealmFileName = "healthyfac-realm.json";
     private const string CoreClientId = "healthyfac-core";
     private const string RolesKey = "roles";

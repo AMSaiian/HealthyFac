@@ -72,6 +72,7 @@
           "defaultConfiguration": "development",
           "options": {
             "allowedHosts": ["app.healthyfac.test"],
+            "proxyConfig": "proxy.conf.json",
             "host": "app.healthyfac.test",
             "port": 4200,
             "ssl": true,

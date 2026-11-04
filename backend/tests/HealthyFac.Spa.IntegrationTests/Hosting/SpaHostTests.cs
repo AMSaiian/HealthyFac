@@ -148,16 +148,17 @@ public sealed partial class SpaHostTests
     }
 
     [Fact]
-    public async Task GetConfigJson_ReturnsApiBaseUrlWithNoStore()
+    public async Task GetConfigJson_WithConfiguredSeconds_ReturnsPublicMaxAge()
     {
-        await using var spa = new SpaFactory();
+        await using var spa = new SpaFactory(
+            settings: new Dictionary<string, string> { ["Spa:RuntimeConfigCacheSeconds"] = "60" });
         using var client = spa.CreateClient();
 
         var response = await client.GetAsync("/config.json");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.CacheControl?.ToString().Should().Be("no-store");
+        response.Headers.CacheControl?.ToString().Should().Be("public, max-age=60");
         json.RootElement.GetProperty("apiBaseUrl").GetString().Should().Be(SpaFactory.ApiBaseUrl);
     }
 
@@ -170,7 +171,35 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync("/config.json");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-        json.RootElement.EnumerateObject().Select(property => property.Name).Should().Equal("apiBaseUrl");
+        json.RootElement.EnumerateObject()
+            .Select(property => property.Name)
+            .Should()
+            .Equal("apiBaseUrl", "authUrl", "authRealm", "authClientId");
+    }
+
+    [Fact]
+    public async Task GetSilentSsoPage_ReturnsOwnCsp()
+    {
+        await using var spa = new SpaFactory();
+        using var client = spa.CreateClient();
+
+        var response = await client.GetAsync($"/{SpaFactory.SilentSsoFileName}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.GetValues(HeaderNames.ContentSecurityPolicy)
+            .Should()
+            .Equal("default-src 'none'; script-src 'self'; frame-ancestors 'self'");
+    }
+
+    [Fact]
+    public async Task GetIndexAndOtherFile_OnlySilentSsoGetsSilentSsoCsp()
+    {
+        await using var spa = new SpaFactory();
+        using var client = spa.CreateClient();
+
+        var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}");
+
+        response.Headers.Contains(HeaderNames.ContentSecurityPolicy).Should().BeFalse();
     }
 
     [Fact]

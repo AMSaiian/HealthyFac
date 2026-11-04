@@ -10,6 +10,7 @@ import { Toolbar } from 'primeng/toolbar';
 
 import { Language } from '@shared/i18n/i18n.constants';
 import { LanguageStore } from '@shared/i18n/language.store';
+import { AuthStore } from '@shared/security/auth.store';
 import { ThemeStore } from '@shared/theme/theme.store';
 
 import { ShellStore } from './shell.store';
@@ -24,5 +25,6 @@ export class Shell {
   protected readonly shellStore = inject(ShellStore);
   protected readonly languageStore = inject(LanguageStore);
   protected readonly themeStore = inject(ThemeStore);
+  protected readonly authStore = inject(AuthStore);
   protected readonly languages = Object.values(Language);
 }

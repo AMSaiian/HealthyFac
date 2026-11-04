@@ -2,7 +2,7 @@ import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import localeUk from '@angular/common/locales/uk';
 import type { ApplicationConfig } from '@angular/core';
-import { ErrorHandler, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ErrorHandler, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, TitleStrategy } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
@@ -15,6 +15,8 @@ import { apiBaseUrlInterceptor } from '@shared/http/api-base-url.interceptor';
 import { problemDetailsInterceptor } from '@shared/http/problem-details.interceptor';
 import { DEFAULT_LANGUAGE, TRANSLATION_PATH, TRANSLATION_SUFFIX } from '@shared/i18n/i18n.constants';
 import { TranslatedTitleStrategy } from '@shared/i18n/translated-title-strategy';
+import { AuthStore } from '@shared/security/auth.store';
+import { authInterceptor } from '@shared/security/auth.interceptor';
 import { readCspNonce } from '@shared/security/csp-nonce';
 import { HealthyFacPreset } from '@shared/theme/healthyfac-preset';
 import { DARK_MODE_CLASS } from '@shared/theme/theme.constants';
@@ -25,7 +27,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withFetch(), withInterceptors([apiBaseUrlInterceptor, problemDetailsInterceptor])),
+    provideAppInitializer(() => inject(AuthStore).init()),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([apiBaseUrlInterceptor, problemDetailsInterceptor, authInterceptor]),
+    ),
     provideTranslateService({
       fallbackLang: DEFAULT_LANGUAGE,
       loader: provideTranslateHttpLoader({ prefix: TRANSLATION_PATH, suffix: TRANSLATION_SUFFIX }),

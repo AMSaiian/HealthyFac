@@ -10,7 +10,8 @@
     "TITLE": "HealthyFac",
     "MENU": "Menu",
     "LANGUAGE": "Language",
-    "THEME_TOGGLE": "Switch theme"
+    "THEME_TOGGLE": "Switch theme",
+    "SIGN_OUT": "Sign out"
   },
   "LANGUAGE": {
     "EN": "English",

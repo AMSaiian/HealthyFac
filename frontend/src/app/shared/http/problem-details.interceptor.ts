@@ -19,7 +19,12 @@ export const problemDetailsInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(request).pipe(
     catchError((error: unknown) => {
-      if (error instanceof HttpErrorResponse && !request.context.get(SKIP_ERROR_TOAST) && !hasFieldErrors(error)) {
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status !== HttpStatusCode.Unauthorized &&
+        !request.context.get(SKIP_ERROR_TOAST) &&
+        !hasFieldErrors(error)
+      ) {
         const translate = injector.get(TranslateService);
         messages.add({
           severity: 'error',
