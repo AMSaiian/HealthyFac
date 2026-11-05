@@ -1,6 +1,7 @@
 #Requires -Version 7
 # Stop and SubagentStop hook: formats the backend files touched this turn, builds the solution, and reports build
-# warnings and errors in those files back to the agent that stops. Exit code 2 blocks the stop and sends stderr to
+# warnings and errors in those files back to the agent that stops. It also reports C# lines longer than
+# max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
 # that agent, so a subagent fixes its own diagnostics before it reports to the main session.
 # The hook checks each checkout (the main one or a git worktree) that holds a file the stopping agent changed with
 # Edit, Write, MultiEdit, or NotebookEdit, read from that agent's transcript. Only when it finds none does it fall
@@ -129,6 +130,30 @@ function Invoke-FrontendVerification([string] $repo) {
   finally { Pop-Location }
 }
 
+# Reports each line of the given C# files that is longer than max_line_length in .editorconfig, in the build
+# diagnostic format. The JetBrains formatter wraps only at syntax points, so a long string literal or a one-line XML
+# doc comment stays too long. The check skips the Migrations folders, because EF Core generates those files.
+function Get-LongLineDiagnostics([string] $repo, [string[]] $files) {
+  $editorConfig = Join-Path $repo '.editorconfig'
+  if (-not (Test-Path $editorConfig)) { return }
+  $setting = Select-String -LiteralPath $editorConfig -Pattern '^\s*max_line_length\s*=\s*(\d+)' |
+    Select-Object -First 1
+  if (-not $setting) { return }
+  $limit = [int]$setting.Matches[0].Groups[1].Value
+
+  foreach ($file in @($files | Where-Object { $_ -notlike '*/Migrations/*' })) {
+    $path = Join-Path $repo $file
+    if (-not (Test-Path -LiteralPath $path)) { continue }
+    $number = 0
+    foreach ($line in [IO.File]::ReadLines($path)) {
+      $number++
+      if ($line.Length -le $limit) { continue }
+      "$($file.Replace('/', '\'))($number,$($limit + 1)): error LINE_LENGTH: the line has $($line.Length) " +
+        "characters; .editorconfig max_line_length is $limit. Split the line."
+    }
+  }
+}
+
 # Formats and builds one checkout. Returns its diagnostics (empty when clean) and a notice for the transcript.
 function Invoke-Verification([string] $repo) {
   $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
@@ -193,6 +218,9 @@ function Invoke-Verification([string] $repo) {
       } |
       Sort-Object -Unique)
 
+    $longLines = @(Get-LongLineDiagnostics $repo $touchedCode)
+    foreach ($line in $longLines) { [void]$flagged.Add(($line -replace '\(\d+,\d+\): .*$', '').Replace('\', '/')) }
+
     $state = Get-ContentHashes @(Get-ChangedBackendFiles $repo)
     if ($buildFailed) { $state = @{} }
     foreach ($file in $flagged) { $state.Remove($file) }
@@ -200,7 +228,7 @@ function Invoke-Verification([string] $repo) {
     $state | ConvertTo-Json -Compress | Set-Content $statePath -Encoding utf8NoBOM
 
     if ($buildFailed -and $diagnostics.Count -eq 0) { $diagnostics = @($output | Select-Object -Last 20) }
-    $result.Problems = $diagnostics
+    $result.Problems = @($diagnostics + $longLines)
     return $result
   }
   finally {
@@ -226,7 +254,8 @@ $failed = @($results | Where-Object { $_.Problems.Count -gt 0 })
 if ($failed.Count -eq 0) { exit 0 }
 
 $report = @(
-  'The build or the frontend lint reports problems in the files touched this turn. Fix every item before you finish.'
+  'The build, the line length check, or the frontend lint reports problems in the files touched this turn. ' +
+    'Fix every item before you finish.'
   foreach ($result in $failed) {
     if ($checkouts.Count -gt 1) { "In $($result.Repo):" }
     $result.Problems
