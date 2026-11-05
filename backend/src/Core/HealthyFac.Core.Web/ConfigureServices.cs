@@ -5,6 +5,7 @@ using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Core.Web.Departments;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Employees.Emails;
+using HealthyFac.Core.Web.MachineErrorCodes;
 using HealthyFac.Core.Web.Machines;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.Authentication;
@@ -147,6 +148,7 @@ public static class ConfigureServices
 
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapMachineEndpoints();
+            versionedGroup.MapMachineErrorCodeEndpoints();
             versionedGroup.MapDepartmentEndpoints();
             versionedGroup.MapEmployeeInviteEndpoints();
             versionedGroup.MapEmployeeEndpoints();

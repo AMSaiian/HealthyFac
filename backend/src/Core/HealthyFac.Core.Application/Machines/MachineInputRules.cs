@@ -27,32 +27,13 @@ public static class MachineInputRules
 
     extension<T>(IRuleBuilder<T, string?> ruleBuilder)
     {
-        /// <summary>
-        /// Checks the length of the stored HTML first and the allow-list second, so the policy never parses a huge
-        /// string and one input gives one failure.
-        /// </summary>
-        /// <param name="richTextPolicy">Judges the HTML.</param>
-        /// <returns>The rule builder for chaining.</returns>
         public IRuleBuilderOptionsConditions<T, string?> IsMachineDescription(IRichTextPolicy richTextPolicy) =>
-            ruleBuilder.MultilineText()
-                .Custom((description, context) =>
-                {
-                    if (description is null)
-                    {
-                        return;
-                    }
-
-                    if (description.Length > MachineValidationConstants.DescriptionMaxLength)
-                    {
-                        context.AddFailure(MachineErrors.DescriptionTooLong);
-
-                        return;
-                    }
-
-                    if (!richTextPolicy.IsAllowed(description))
-                    {
-                        context.AddFailure(MachineErrors.DescriptionNotAllowed);
-                    }
-                });
+            ruleBuilder.IsRichText(
+                richTextPolicy,
+                MachineValidationConstants.DescriptionMaxLength,
+                MachineErrors.DescriptionTooLong,
+                MachineErrors.DescriptionNotAllowed,
+                MachineErrors.DescriptionTooMuchFormatting
+            );
     }
 }

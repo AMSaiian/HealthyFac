@@ -75,6 +75,9 @@ public static class RealmTestData
         "machines:read",
         "machines:write",
         "machines:delete",
+        "machine-error-codes:read",
+        "machine-error-codes:write",
+        "machine-error-codes:delete",
     ];
 
     public static IReadOnlyList<string> MachinePermissions { get; } =
@@ -82,5 +85,8 @@ public static class RealmTestData
         "machines:read",
         "machines:write",
         "machines:delete",
+        "machine-error-codes:read",
+        "machine-error-codes:write",
+        "machine-error-codes:delete",
     ];
 }

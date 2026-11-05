@@ -9,19 +9,29 @@ public sealed class HtmlSanitizerRichTextPolicyTests
 
     [Theory]
     [MemberData(nameof(RichTextTestData.ToolbarSamples), MemberType = typeof(RichTextTestData))]
-    public void IsAllowed_WithToolbarSamples_ReturnsTrue(string html)
+    public void Inspect_WithToolbarSamples_IsAllowed(string html)
     {
-        var isAllowed = _policy.IsAllowed(html);
+        var inspection = _policy.Inspect(html);
 
-        isAllowed.Should().BeTrue();
+        inspection.IsAllowed.Should().BeTrue();
     }
 
     [Theory]
     [MemberData(nameof(RichTextTestData.HostileHtml), MemberType = typeof(RichTextTestData))]
-    public void IsAllowed_WithHostileHtml_ReturnsFalse(string html)
+    public void Inspect_WithHostileHtml_IsNotAllowed(string html)
     {
-        var isAllowed = _policy.IsAllowed(html);
+        var inspection = _policy.Inspect(html);
 
-        isAllowed.Should().BeFalse();
+        inspection.IsAllowed.Should().BeFalse();
+    }
+
+    [Theory]
+    [MemberData(nameof(RichTextTestData.VisibleLengthCases), MemberType = typeof(RichTextTestData))]
+    public void Inspect_WithAllowedHtml_CountsVisibleCharacters(string html, int expectedLength)
+    {
+        var inspection = _policy.Inspect(html);
+
+        inspection.IsAllowed.Should().BeTrue();
+        inspection.VisibleLength.Should().Be(expectedLength);
     }
 }

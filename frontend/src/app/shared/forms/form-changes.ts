@@ -1,4 +1,5 @@
 import type { ZodMiniType } from 'zod/mini';
+import equal from 'fast-deep-equal/es6';
 
 /**
  * Tells whether the form value differs from its start value. Both values pass through the schema, so its
@@ -12,5 +13,5 @@ export function hasFormChanges<T>(schema: ZodMiniType<T>, initial: T, current: T
   if (!parsedInitial.success || !parsedCurrent.success) {
     return true;
   }
-  return JSON.stringify(parsedInitial.data) !== JSON.stringify(parsedCurrent.data);
+  return !equal(parsedInitial.data, parsedCurrent.data);
 }

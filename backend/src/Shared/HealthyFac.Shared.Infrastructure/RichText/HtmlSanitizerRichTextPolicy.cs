@@ -5,13 +5,14 @@ using HealthyFac.Shared.Application.RichText;
 namespace HealthyFac.Shared.Infrastructure.RichText;
 
 /// <summary>
-/// Judges rich text with HtmlSanitizer. The allow-list holds the formats of the editor toolbar (bold, italic,
+/// Inspects rich text with HtmlSanitizer. The allow-list holds the formats of the editor toolbar (bold, italic,
 /// underline, strikethrough, lists, links) and the markup that Quill 2 adds for lists. The policy never compares the
 /// sanitized text with the original: it reports every removal that the sanitizer announces through its events, so a
 /// difference in white space or entity encoding is never a finding.
 /// </summary>
 /// <remarks>
-/// A sanitizer with event handlers keeps the state of one call, so each call builds its own sanitizer.
+/// A sanitizer with event handlers keeps the state of one call, so each call builds its own sanitizer. One
+/// <c>SanitizeDom</c> call gives the removal events and the parsed body, so one parse serves both results.
 /// </remarks>
 public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
 {
@@ -25,7 +26,7 @@ public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
         RichTextAttributes.DataList, RichTextAttributes.ContentEditable,
     ];
 
-    public bool IsAllowed(string html)
+    public RichTextInspection Inspect(string html)
     {
         var isAllowed = true;
         var sanitizer = CreateSanitizer();
@@ -42,9 +43,13 @@ public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
         sanitizer.RemovingComment += Reject;
         sanitizer.RemovingCssClass += Reject;
 
-        sanitizer.Sanitize(html);
+        var document = sanitizer.SanitizeDom(html);
 
-        return isAllowed;
+        return new RichTextInspection
+        {
+            IsAllowed = isAllowed,
+            VisibleLength = document.Body?.TextContent.Normalize().Length ?? 0,
+        };
     }
 
     private static HtmlSanitizer CreateSanitizer() =>

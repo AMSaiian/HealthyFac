@@ -36,6 +36,9 @@ public sealed class DevelopmentDataOptions
 
     public int MachinesPerDepartment { get; init; } = 4;
 
+    /// <summary>The error codes per generated machine. The codes of one machine are unique.</summary>
+    public int ErrorCodesPerMachine { get; init; } = 4;
+
     public int SupervisorsPerDepartment { get; init; } = 1;
 
     public int WorkersPerDepartment { get; init; } = 3;

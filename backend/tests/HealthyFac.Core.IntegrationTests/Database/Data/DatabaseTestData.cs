@@ -15,6 +15,9 @@ public static class DatabaseTestData
     public const int SeededCompanyCount = 2;
     public const int SeededDepartmentCount = 6;
     public const int SeededMachineCount = 24;
+    public const int SeededErrorCodeCount = 96;
+    public const int ErrorCodesPerMachine = 4;
+    public const int MachinesPerDepartment = 4;
     public const int SeededEmployeeCount = 24;
     public const int SeededInviteCount = 28;
 

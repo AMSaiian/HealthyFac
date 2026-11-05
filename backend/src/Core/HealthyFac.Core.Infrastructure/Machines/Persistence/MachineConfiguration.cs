@@ -4,6 +4,7 @@ using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
@@ -30,9 +31,6 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .HasMaxLength(MachineValidationConstants.SerialNumberMaxLength)
             .IsRequired();
 
-        builder.Property(machine => machine.Description)
-            .HasMaxLength(MachineValidationConstants.DescriptionMaxLength);
-
         builder.Property(machine => machine.State)
             .IsRequired();
 
@@ -54,7 +52,7 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
 
         builder.HasNotBlankCheck(machine => machine.Name)
             .HasNotBlankCheck(machine => machine.SerialNumber)
-            .HasLengthCheck(machine => machine.Description, 0, MachineValidationConstants.DescriptionMaxLength)
+            .HasLengthCheck(machine => machine.Description, 0, RichTextConstants.HtmlMaxLength)
             .HasNotEmptyGuidCheck(machine => machine.CompanyId)
             .HasNotEmptyGuidCheck(machine => machine.DepartmentId)
             .HasEnumerationCheck(machine => machine.State);

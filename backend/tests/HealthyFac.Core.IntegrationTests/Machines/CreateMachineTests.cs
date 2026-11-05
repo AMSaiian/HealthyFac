@@ -116,6 +116,25 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
     }
 
     [Fact]
+    public async Task CreateMachine_WithVisibleTextAtLimitInsideFormatting_StoresDescription()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber,
+            MachineTestData.FormattedDescriptionAtVisibleLimit);
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+
+        machine.Description.Should().Be(MachineTestData.FormattedDescriptionAtVisibleLimit);
+        machine.Description!.Length.Should().BeGreaterThan(MachineTestData.DescriptionLimit);
+    }
+
+    [Fact]
     public async Task CreateMachine_WithHostileDescription_ThrowsValidation()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();

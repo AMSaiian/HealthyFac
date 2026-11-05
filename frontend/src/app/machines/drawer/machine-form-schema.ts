@@ -3,7 +3,6 @@ import {
   type infer as Infer,
   maxLength,
   minLength,
-  nullable,
   object,
   optional,
   partial,
@@ -11,6 +10,8 @@ import {
   trim,
   type ZodMiniString,
 } from 'zod/mini';
+
+import { richTextSchema } from '@shared/rich-text/rich-text-schema';
 
 import { DESCRIPTION_MAX_LENGTH, NAME_MAX_LENGTH, SERIAL_NUMBER_MAX_LENGTH } from '@machines/machine-limits';
 
@@ -28,7 +29,7 @@ export const machineFormSchema = object({
   name: requiredText(NAME_MAX_LENGTH),
   serialNumber: requiredText(SERIAL_NUMBER_MAX_LENGTH),
   departmentId: string().check(minLength(1, REQUIRED_ERROR_KEY)),
-  description: nullable(string().check(maxLength(DESCRIPTION_MAX_LENGTH, TOO_LONG_ERROR_KEY))),
+  description: richTextSchema(DESCRIPTION_MAX_LENGTH, TOO_LONG_ERROR_KEY),
 });
 
 export type MachineFormValue = Infer<typeof machineFormSchema>;

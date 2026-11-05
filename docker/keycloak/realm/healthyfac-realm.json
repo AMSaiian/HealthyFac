@@ -730,7 +730,10 @@
               "employees:manage",
               "machines:read",
               "machines:write",
-              "machines:delete"
+              "machines:delete",
+              "machine-error-codes:read",
+              "machine-error-codes:write",
+              "machine-error-codes:delete"
             ]
           }
         }
@@ -744,7 +747,10 @@
             "healthyfac-core": [
               "machines:read",
               "machines:write",
-              "machines:delete"
+              "machines:delete",
+              "machine-error-codes:read",
+              "machine-error-codes:write",
+              "machine-error-codes:delete"
             ]
           }
         }
@@ -771,6 +777,18 @@
         {
           "name": "machines:delete",
           "description": "Delete machines"
+        },
+        {
+          "name": "machine-error-codes:read",
+          "description": "View and search machine error codes"
+        },
+        {
+          "name": "machine-error-codes:write",
+          "description": "Create and change machine error codes"
+        },
+        {
+          "name": "machine-error-codes:delete",
+          "description": "Delete machine error codes"
         }
       ]
     }

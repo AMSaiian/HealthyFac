@@ -339,6 +339,68 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HealthyFac.Core.Domain.MachineErrorCodes.MachineErrorCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MachineId", "Code")
+                        .IsUnique()
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("machine_error_codes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_machine_error_code_code_not_blank", "\"code\" COLLATE \"default\" ~ '\\S'");
+
+                            t.HasCheckConstraint("ck_machine_error_code_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
+
+                            t.HasCheckConstraint("ck_machine_error_code_machine_id_not_empty", "\"machine_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
+                });
+
             modelBuilder.Entity("HealthyFac.Core.Domain.Machines.Machine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -370,8 +432,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("department_id");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(5000)
-                        .HasColumnType("character varying(5000)")
+                        .HasColumnType("text")
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
 
@@ -418,7 +479,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("ck_machine_department_id_not_empty", "\"department_id\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("ck_machine_description_length", "char_length(\"description\") BETWEEN 0 AND 5000");
+                            t.HasCheckConstraint("ck_machine_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
 
                             t.HasCheckConstraint("ck_machine_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
 
@@ -696,6 +757,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.Roles.Role", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.MachineErrorCodes.MachineErrorCode", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
+                        .WithMany()
+                        .HasForeignKey("MachineId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

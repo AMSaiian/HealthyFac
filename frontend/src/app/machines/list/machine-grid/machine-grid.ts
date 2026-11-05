@@ -38,6 +38,7 @@ import {
   FILTER_READERS,
   FILTER_WRITERS,
   MENU_DELETE_KEY,
+  MENU_ERROR_CODES_KEY,
   MENU_UPDATE_KEY,
   SORTABLE_COLUMNS,
   STATE_LABEL_KEYS,
@@ -77,6 +78,7 @@ export class MachineGrid {
   readonly departments = input.required<readonly DepartmentOption[]>();
   readonly canWrite = input(false);
   readonly canDelete = input(false);
+  readonly canReadErrorCodes = input(false);
 
   readonly filterChange = output<Partial<MachineFilter>>();
   readonly sortChange = output<MachineSort | null>();
@@ -85,6 +87,7 @@ export class MachineGrid {
   readonly columnsReorder = output<readonly MachineColumn[]>();
   readonly updateRequested = output<string>();
   readonly deleteRequested = output<Machine>();
+  readonly errorCodesRequested = output<string>();
 
   protected readonly table = viewChild.required(Table);
   protected readonly MachineColumn = MachineColumn;
@@ -93,7 +96,12 @@ export class MachineGrid {
 
   private readonly _translate = inject(TranslateService);
   private readonly _labels = toSignal(
-    this._translate.stream([...Object.values(STATE_LABEL_KEYS), MENU_UPDATE_KEY, MENU_DELETE_KEY]),
+    this._translate.stream([
+      ...Object.values(STATE_LABEL_KEYS),
+      MENU_ERROR_CODES_KEY,
+      MENU_UPDATE_KEY,
+      MENU_DELETE_KEY,
+    ]),
     { initialValue: {} as Record<string, string> },
   );
 
@@ -117,11 +125,20 @@ export class MachineGrid {
   }));
   protected readonly tableDepartments = computed(() => [...this.departments()]);
   protected readonly tableColumns = computed(() => [...this.columns()]);
-  protected readonly hasRowActions = computed(() => this.canWrite() || this.canDelete());
+  protected readonly hasRowActions = computed(() => this.canWrite() || this.canDelete() || this.canReadErrorCodes());
 
   protected activeMachine: Machine | null = null;
 
   protected readonly menuItems = computed<MenuItem[]>(() => [
+    ...(this.canReadErrorCodes()
+      ? [
+          {
+            label: this._labels()[MENU_ERROR_CODES_KEY] ?? MENU_ERROR_CODES_KEY,
+            icon: 'pi pi-list',
+            command: (): void => this._emitErrorCodes(),
+          },
+        ]
+      : []),
     ...(this.canWrite()
       ? [
           {
@@ -198,6 +215,12 @@ export class MachineGrid {
   protected openMenu(event: Event, machine: Machine, menu: Menu): void {
     this.activeMachine = machine;
     menu.toggle(event);
+  }
+
+  private _emitErrorCodes(): void {
+    if (this.activeMachine !== null) {
+      this.errorCodesRequested.emit(this.activeMachine.id);
+    }
   }
 
   private _emitUpdate(): void {

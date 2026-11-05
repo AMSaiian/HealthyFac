@@ -1,5 +1,6 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
@@ -132,5 +133,20 @@ describe('MachinesGridStore', () => {
       type: MachineActionType.Update,
       payload: { machineId: MACHINE.id },
     });
+  });
+
+  it('openErrorCodes_WithMachineId_NavigatesToErrorCodeRoute', async () => {
+    const { store } = await setup();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    store.openErrorCodes(MACHINE.id);
+
+    expect(navigate).toHaveBeenCalledWith(['/machines', MACHINE.id, 'error-codes']);
+  });
+
+  it('canReadErrorCodes_WithoutPermission_IsFalse', async () => {
+    const { store } = await setup({ hasPermission: false });
+
+    expect(store.canReadErrorCodes()).toBe(false);
   });
 });

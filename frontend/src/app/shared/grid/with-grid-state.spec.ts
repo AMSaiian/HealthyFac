@@ -79,4 +79,21 @@ describe('withGridState', () => {
       { column: 'a', isVisible: true },
     ]);
   });
+
+  it('resetGrid_AfterEveryChange_RestoresInitialState', () => {
+    const store = setup();
+    store.setFilter({ name: 'la' });
+    store.setPage(PAGE_OFFSET, PAGE_LIMIT);
+    store.setSort(null);
+    store.setColumns(['b']);
+    store.reorderColumns(['c', 'b', 'a']);
+
+    store.resetGrid();
+
+    expect(store.offset()).toBe(0);
+    expect(store.limit()).toBe(25);
+    expect(store.sort()).toEqual({ column: 'name', direction: SortDirection.Descending });
+    expect(store.filter()).toEqual({ name: '' });
+    expect(store.visibleColumns()).toEqual(['a', 'b', 'c']);
+  });
 });

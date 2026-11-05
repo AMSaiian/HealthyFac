@@ -24,8 +24,8 @@ export class MachinesApi {
     return this._http.post<MachinesPage>(MACHINES_SEARCH_URL, body);
   }
 
-  get(id: string): Observable<Machine> {
-    return this._http.get<Machine>(machineUrl(id));
+  get(id: string, options?: WriteOptions): Observable<Machine> {
+    return this._http.get<Machine>(machineUrl(id), options);
   }
 
   create(body: MachineBody, options?: WriteOptions): Observable<CreateMachineResponse> {

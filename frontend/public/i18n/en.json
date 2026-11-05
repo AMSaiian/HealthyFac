@@ -5,7 +5,8 @@
   "TITLES": {
     "HOME": "Home",
     "NOT_FOUND": "Page not found",
-    "MACHINES": "Machines"
+    "MACHINES": "Machines",
+    "MACHINE_ERROR_CODES": "Error codes"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -53,7 +54,10 @@
     "ORDERED_LIST": "Numbered list",
     "BULLET_LIST": "Bulleted list",
     "LINK": "Link",
-    "CLEAN": "Clear formatting"
+    "CLEAN": "Clear formatting",
+    "ERRORS": {
+      "TOO_MUCH_FORMATTING": "The formatting is too large. Remove some formatting or shorten the text."
+    }
   },
   "MACHINES": {
     "TITLE": "Machines",
@@ -61,6 +65,7 @@
     "ACTIONS": "Row actions",
     "UPDATE": "Update",
     "DELETE": "Delete",
+    "ERROR_CODES": "Error codes",
     "DELETE_HEADER": "Delete machine",
     "DELETE_MESSAGE": "Delete the machine {{name}}?",
     "DELETED": "The machine is deleted.",
@@ -109,6 +114,47 @@
       "DEPARTMENT_PLACEHOLDER": "Select a department",
       "DESCRIPTION_PLACEHOLDER": "Describe the machine",
       "INVALID": "Form is not valid"
+    },
+    "COLUMNS_CHOOSER": "Columns"
+  },
+  "MACHINE_ERROR_CODES": {
+    "TITLE": "Error codes of",
+    "BACK": "Back to machines",
+    "ADD_NEW": "Add new",
+    "ACTIONS": "Row actions",
+    "UPDATE": "Update",
+    "DELETE": "Delete",
+    "DELETE_HEADER": "Delete error code",
+    "DELETE_MESSAGE": "Delete the error code {{code}}?",
+    "EMPTY": "No error codes found.",
+    "COLUMNS": {
+      "CODE": "Code",
+      "CREATED_AT": "Created",
+      "UPDATED_AT": "Updated"
+    },
+    "FILTERS": {
+      "CODE_PLACEHOLDER": "Filter by code"
+    },
+    "TOASTS": {
+      "SUCCESS": "Done",
+      "CREATED": "The error code is created.",
+      "UPDATED": "The error code is updated.",
+      "DELETED": "The error code is deleted.",
+      "CODE_TAKEN": "An error code with this code already exists for this machine."
+    },
+    "FORM": {
+      "CREATE_TITLE": "New error code",
+      "UPDATE_TITLE": "Update error code",
+      "CODE": "Code",
+      "CODE_PLACEHOLDER": "Enter the code",
+      "DESCRIPTION": "Description",
+      "DESCRIPTION_PLACEHOLDER": "Describe the error and the actions to take",
+      "NO_CHANGES": "No changes provided",
+      "INVALID": "Form is not valid",
+      "ERRORS": {
+        "REQUIRED": "This field is required.",
+        "TOO_LONG": "The value is too long."
+      }
     },
     "COLUMNS_CHOOSER": "Columns"
   },

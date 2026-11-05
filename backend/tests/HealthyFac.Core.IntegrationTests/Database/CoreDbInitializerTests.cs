@@ -147,6 +147,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var departmentCount = await dbContext.Departments.CountAsync();
         var machineCount = await dbContext.Machines.CountAsync();
+        var errorCodeCount = await dbContext.MachineErrorCodes.CountAsync();
         var inviteCount = await dbContext.EmployeeInvites.CountAsync();
         var employeeCount = await dbContext.Employees.CountAsync();
 
@@ -155,8 +156,28 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             .And.NotIntersectWith(companyIdsBefore);
         departmentCount.Should().Be(DatabaseTestData.SeededDepartmentCount);
         machineCount.Should().Be(DatabaseTestData.SeededMachineCount);
+        errorCodeCount.Should().Be(DatabaseTestData.SeededErrorCodeCount);
         inviteCount.Should().Be(DatabaseTestData.SeededInviteCount);
         employeeCount.Should().Be(DatabaseTestData.SeededEmployeeCount);
+    }
+
+    [Fact]
+    public async Task SeedOptionalDataAsync_OnEmptyDatabase_CreatesUniqueErrorCodesForEachMachine()
+    {
+        await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
+
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var codesPerMachine = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+            .MachineErrorCodes
+            .GroupBy(errorCode => errorCode.MachineId)
+            .Select(group => new
+                { Total = group.Count(), Distinct = group.Select(code => code.Code).Distinct().Count() })
+            .ToListAsync();
+
+        codesPerMachine.Should().HaveCount(DatabaseTestData.SeededMachineCount);
+        codesPerMachine.Should()
+            .OnlyContain(group => group.Total == DatabaseTestData.ErrorCodesPerMachine
+                && group.Distinct == DatabaseTestData.ErrorCodesPerMachine);
     }
 
     private async Task<SeededDataSnapshot> ReadSnapshotAsync()

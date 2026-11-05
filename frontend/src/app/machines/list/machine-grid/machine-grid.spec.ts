@@ -20,6 +20,7 @@ interface GridAccess {
   onFilterApplied(event: TableFilterEvent): void;
   onFilterHidden(column: MachineColumn): void;
   table: () => { filters: Record<string, { value: unknown }[]> };
+  menuItems(): { label?: string; icon?: string }[];
 }
 
 class FakeResizeObserver {
@@ -33,7 +34,7 @@ interface Setup {
   grid: GridAccess;
 }
 
-function setup(filter: MachineFilter = EMPTY_FILTER): Setup {
+function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadErrorCodes?: boolean } = {}): Setup {
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
   TestBed.configureTestingModule({ providers: [provideTranslateService()] });
   const fixture = TestBed.createComponent(MachineGrid);
@@ -45,6 +46,7 @@ function setup(filter: MachineFilter = EMPTY_FILTER): Setup {
   fixture.componentRef.setInput('sort', null);
   fixture.componentRef.setInput('filter', filter);
   fixture.componentRef.setInput('departments', []);
+  fixture.componentRef.setInput('canReadErrorCodes', options.canReadErrorCodes ?? false);
   fixture.detectChanges();
   const emitted: Partial<MachineFilter>[] = [];
   fixture.componentInstance.filterChange.subscribe((patch) => emitted.push(patch));
@@ -99,5 +101,17 @@ describe('MachineGrid', () => {
     grid.onFilterHidden(MachineColumn.Name);
 
     expect(grid.table().filters[MachineColumn.Name][0].value).toBe('applied');
+  });
+
+  it('menuItems_WithErrorCodesPermission_HoldsErrorCodesItem', () => {
+    const { grid } = setup(EMPTY_FILTER, { canReadErrorCodes: true });
+
+    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-list']);
+  });
+
+  it('menuItems_WithoutErrorCodesPermission_HoldsNoErrorCodesItem', () => {
+    const { grid } = setup();
+
+    expect(grid.menuItems()).toEqual([]);
   });
 });

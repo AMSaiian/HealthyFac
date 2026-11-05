@@ -18,6 +18,7 @@ export const STATE_LABEL_KEYS: Readonly<Record<MachineState, string>> = {
   [MachineState.OutOfService]: 'MACHINES.STATES.OUT_OF_SERVICE',
 };
 
+export const MENU_ERROR_CODES_KEY = 'MACHINES.ERROR_CODES';
 export const MENU_UPDATE_KEY = 'MACHINES.UPDATE';
 export const MENU_DELETE_KEY = 'MACHINES.DELETE';
 

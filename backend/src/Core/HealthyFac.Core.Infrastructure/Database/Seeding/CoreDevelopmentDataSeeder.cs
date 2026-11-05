@@ -7,6 +7,7 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Companies.Seeding;
 using HealthyFac.Core.Infrastructure.Departments.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
+using HealthyFac.Core.Infrastructure.MachineErrorCodes.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -58,8 +59,8 @@ public sealed class CoreDevelopmentDataSeeder(
         if (_options.IsRecreationForced)
         {
             _logger.LogWarning(
-                "Forced recreation of development data: deleting all companies, departments, machines (also the "
-                + "deleted ones), employees, invites, outbox messages, and inbox messages.");
+                "Forced recreation of development data: deleting all companies, departments, machines and error "
+                + "codes (also the deleted ones), employees, invites, outbox messages, and inbox messages.");
 
             await DeleteBusinessDataAsync(cancellationToken);
         }
@@ -102,9 +103,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var department in departments)
         {
-            _dbContext.Machines.AddRange(
-                new MachineFaker(department, _options.GetMachineTypes(), _options.SerialNumberPattern, NextSeed())
-                    .Generate(_options.MachinesPerDepartment));
+            AddMachinesWithErrorCodes(department);
 
             AddEmployees(
                 EmployeeInviteFaker.WithProfile(
@@ -176,6 +175,11 @@ public sealed class CoreDevelopmentDataSeeder(
             .ToList();
         _dbContext.Departments.AddRange(departments);
 
+        foreach (var department in departments)
+        {
+            AddMachinesWithErrorCodes(department);
+        }
+
         var invite = new EmployeeInvite(
             tenant.CompanyId,
             tenant.SupervisorEmail,
@@ -201,9 +205,27 @@ public sealed class CoreDevelopmentDataSeeder(
         await _dbContext.InboxMessages.ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Employees.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.EmployeeInvites.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.MachineErrorCodes.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Machines.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Departments.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Companies.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private void AddMachinesWithErrorCodes(Department department)
+    {
+        var machines = new MachineFaker(
+                department,
+                _options.GetMachineTypes(),
+                _options.SerialNumberPattern,
+                NextSeed())
+            .Generate(_options.MachinesPerDepartment);
+        _dbContext.Machines.AddRange(machines);
+
+        foreach (var machine in machines)
+        {
+            _dbContext.MachineErrorCodes.AddRange(
+                new MachineErrorCodeFaker(machine, NextSeed()).Generate(_options.ErrorCodesPerMachine));
+        }
     }
 
     private void AddEmployees(
