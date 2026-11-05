@@ -1,6 +1,7 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
@@ -138,7 +139,8 @@ public sealed class TestPingValidator : AbstractValidator<TestPing>
     {
         RuleFor(ping => ping.Text)
             .NotEmpty()
-            .MaximumLength(TextMaxLength);
+            .MaximumLength(TextMaxLength)
+            .SingleLineText();
     }
 }
 
