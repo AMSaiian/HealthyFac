@@ -528,6 +528,8 @@ FodyWeavers.xsd
 .env
 .env.*
 !.env.example
+# The verify stack overrides; no secrets (scripts/verify-stack.ps1).
+!.env.verify
 
 ### DotnetCore ###
 # .NET Core build folders

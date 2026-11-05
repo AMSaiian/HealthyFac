@@ -1,0 +1,66 @@
+# Override for the isolated verify stack. scripts/verify-stack.ps1 applies it on top of docker-compose.yml as the
+# project healthyfac-verify, with .env and then .env.verify, so agents can check the UI next to the running dev stack:
+# - own container names (healthyfac-verify-*) and own image tags (healthyfac-verify/*:local), so the dev images keep
+#   their tags;
+# - own volumes and network (Compose scopes both by project), so `down -v` removes only verify data;
+# - own domain and public URLs (.env.verify), because browser cookies ignore the port and a second Keycloak on
+#   auth.healthyfac.test would overwrite the dev sign-in;
+# - only the gateway and the Mailpit UI publish host ports (GATEWAY_PORT and MAILPIT_UI_PORT from .env.verify). Every
+#   other service has no host port.
+# Never start this file without the script: the script passes .env.verify and checks the host names and the
+# certificate first.
+name: healthyfac-verify
+
+services:
+  postgres:
+    container_name: healthyfac-verify-postgres
+    ports: !reset []
+
+  keycloak:
+    container_name: healthyfac-verify-keycloak
+    ports: !reset []
+
+  keycloak-config:
+    container_name: healthyfac-verify-keycloak-config
+
+  redis:
+    container_name: healthyfac-verify-redis
+    ports: !reset []
+
+  rabbitmq:
+    container_name: healthyfac-verify-rabbitmq
+    ports: !reset []
+
+  mailpit:
+    container_name: healthyfac-verify-mailpit
+    ports: !override
+      - "127.0.0.1:${MAILPIT_UI_PORT:?set MAILPIT_UI_PORT in .env.verify}:8025"
+
+  core:
+    container_name: healthyfac-verify-core
+    image: healthyfac-verify/core:local
+    ports: !reset []
+
+  auth:
+    container_name: healthyfac-verify-auth
+    image: healthyfac-verify/auth:local
+    ports: !reset []
+
+  spa:
+    container_name: healthyfac-verify-spa
+    image: healthyfac-verify/spa:local
+    ports: !reset []
+
+  gateway:
+    container_name: healthyfac-verify-gateway
+    image: healthyfac-verify/gateway:local
+    environment:
+      # mkcert certificate for the verify names (docker/certs/README.md). The script creates it when it is missing.
+      Kestrel__Certificates__Default__Path: /certs/hfverify.test.pem
+      Kestrel__Certificates__Default__KeyPath: /certs/hfverify.test-key.pem
+    ports: !override
+      - "${GATEWAY_PORT:?set GATEWAY_PORT in .env.verify}:8443"
+
+  lgtm:
+    container_name: healthyfac-verify-lgtm
+    ports: !reset []
