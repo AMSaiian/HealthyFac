@@ -26,7 +26,7 @@ public sealed record MachineGridFilter : IFilter<Machine>
         Predicates.From(Name?.ToPredicate<Machine>(machine => machine.Name))
             .And(SerialNumber?.ToPredicate<Machine>(machine => machine.SerialNumber))
             .And(DepartmentIds?.ToPredicate<Machine>(machine => machine.DepartmentId))
-            .And(States?.ToPredicate<Machine>(machine => machine.State))
+            .And(States?.ToPredicate(MachineCurrentState.Selector))
             .And(CreatedAt?.ToPredicate<Machine>(machine => machine.CreatedAt))
             .And(UpdatedAt?.ToPredicate<Machine>(machine => machine.UpdatedAt));
 }

@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Shared.Application.QueryExpressions;
 
 namespace HealthyFac.Core.Application.Machines;
 
@@ -28,15 +29,33 @@ public record MachineResponse
     /// Maps a machine to its response inside a query, so the database reads only these columns. The get use case
     /// and the grid share it.
     /// </summary>
-    public static readonly Expression<Func<Machine, MachineResponse>> Projection = machine => new MachineResponse
+    public static readonly Expression<Func<Machine, MachineResponse>> Projection = BuildProjection();
+
+    /// <summary>
+    /// Builds <see cref="Projection"/> from a template lambda. It puts <see cref="MachineCurrentState.Selector"/> in
+    /// place of the state parameter of the template, so the projection and the grid filter share one definition of
+    /// the current state, and EF Core translates the result without LINQKit.
+    /// </summary>
+    /// <returns>The projection with the current state selector embedded.</returns>
+    private static Expression<Func<Machine, MachineResponse>> BuildProjection()
     {
-        Id = machine.Id,
-        Name = machine.Name,
-        SerialNumber = machine.SerialNumber,
-        DepartmentId = machine.DepartmentId,
-        State = machine.State,
-        Description = machine.Description,
-        CreatedAt = machine.CreatedAt,
-        UpdatedAt = machine.UpdatedAt,
-    };
+        Expression<Func<Machine, MachineState, MachineResponse>> template = (machine, state) => new MachineResponse
+        {
+            Id = machine.Id,
+            Name = machine.Name,
+            SerialNumber = machine.SerialNumber,
+            DepartmentId = machine.DepartmentId,
+            State = state,
+            Description = machine.Description,
+            CreatedAt = machine.CreatedAt,
+            UpdatedAt = machine.UpdatedAt,
+        };
+
+        var machineParameter = template.Parameters[0];
+        var selectorBody = new ParameterReplacer(MachineCurrentState.Selector.Parameters[0], machineParameter)
+            .Visit(MachineCurrentState.Selector.Body);
+        var body = new ParameterReplacer(template.Parameters[1], selectorBody).Visit(template.Body);
+
+        return Expression.Lambda<Func<Machine, MachineResponse>>(body, machineParameter);
+    }
 }

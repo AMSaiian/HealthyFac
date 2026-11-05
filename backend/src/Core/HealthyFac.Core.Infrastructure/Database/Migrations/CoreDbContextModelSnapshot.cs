@@ -450,12 +450,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("serial_number")
                         .UseCollation("case_insensitive");
 
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)")
-                        .HasColumnName("state");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -484,8 +478,64 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_machine_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
 
                             t.HasCheckConstraint("ck_machine_serial_number_not_blank", "\"serial_number\" COLLATE \"default\" ~ '\\S'");
+                        });
+                });
 
-                            t.HasCheckConstraint("ck_machine_state_allowed", "\"state\" IN ('inMaintenance', 'operational', 'outOfService')");
+            modelBuilder.Entity("HealthyFac.Core.Domain.Machines.MachineStateHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MachineId", "StartedAt")
+                        .IsUnique()
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("machine_state_histories", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_machine_state_history_machine_id_not_empty", "\"machine_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_machine_state_history_state_allowed", "\"state\" IN ('inMaintenance', 'operational', 'outOfService')");
                         });
                 });
 
@@ -786,6 +836,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HealthyFac.Core.Domain.Machines.MachineStateHistory", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
+                        .WithMany("StateHistory")
+                        .HasForeignKey("MachineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("employee_departments", b =>
                 {
                     b.HasOne("HealthyFac.Core.Domain.Departments.Department", null)
@@ -818,6 +877,11 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasPrincipalKey("Id", "CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Machines.Machine", b =>
+                {
+                    b.Navigation("StateHistory");
                 });
 #pragma warning restore 612, 618
         }

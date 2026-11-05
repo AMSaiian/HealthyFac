@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using HealthyFac.Shared.Application.QueryExpressions;
 
 namespace HealthyFac.Shared.Application.Filters;
 
@@ -64,19 +65,5 @@ public static class Predicates
         var rightBody = new ParameterReplacer(right.Parameters[0], left.Parameters[0]).Visit(right.Body);
 
         return Expression.Lambda<Func<T, bool>>(join(left.Body, rightBody), left.Parameters);
-    }
-
-    private sealed class ParameterReplacer : ExpressionVisitor
-    {
-        private readonly ParameterExpression _source;
-        private readonly ParameterExpression _target;
-
-        public ParameterReplacer(ParameterExpression source, ParameterExpression target)
-        {
-            _source = source;
-            _target = target;
-        }
-
-        protected override Expression VisitParameter(ParameterExpression node) => node == _source ? _target : node;
     }
 }

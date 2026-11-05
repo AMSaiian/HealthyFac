@@ -75,7 +75,8 @@ public static class MachineApiFixtureExtensions
                 fixture.DepartmentId,
                 MachineApiTestData.MachineName,
                 serialNumber,
-                null);
+                null,
+                scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
 
             dbContext.Machines.Add(machine);
             await dbContext.SaveChangesAsync();

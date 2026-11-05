@@ -114,6 +114,41 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
+    public async Task SeedOptionalDataAsync_OnEmptyDatabase_StartsEveryStateHistoryOperational()
+    {
+        await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
+
+        var afterSeed = TimeProvider.System.GetUtcNow().UtcDateTime;
+        var rows = await _fixture.LoadSeededStateRowsAsync();
+        var machines = rows.GroupBy(row => row.MachineId).ToList();
+
+        machines.Should().HaveCount(DatabaseTestData.SeededMachineCount);
+        foreach (var machine in machines)
+        {
+            var timeline = machine.OrderBy(row => row.StartedAt).ToList();
+            var machineName = timeline[0].MachineName;
+            var cycleIndex = ReadMachineIndex(machineName) % DatabaseTestData.ExpectedHistoriesByCycleIndex.Count;
+
+            timeline.Select(row => row.State)
+                .Should()
+                .Equal(DatabaseTestData.ExpectedHistoriesByCycleIndex[cycleIndex], $"machine '{machineName}'");
+            timeline.Select(row => row.StartedAt).Should().BeInAscendingOrder().And.OnlyHaveUniqueItems();
+            timeline.Should().OnlyContain(row => row.StartedAt < afterSeed);
+        }
+    }
+
+    [Fact]
+    public async Task SeedOptionalDataAsync_OnEmptyDatabase_StoresStateRowsForEveryDepartment()
+    {
+        await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
+
+        var rows = await _fixture.LoadSeededStateRowsAsync();
+
+        rows.Should().HaveCount(DatabaseTestData.SeededStateHistoryCount);
+        rows.GroupBy(row => row.DepartmentId).Should().HaveCount(DatabaseTestData.SeededDepartmentCount);
+    }
+
+    [Fact]
     public async Task SeedOptionalDataAsync_OnEmptyDatabase_StoresNormalizedEmails()
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
@@ -132,6 +167,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
         var companyIdsBefore = await ReadCompanyIdsAsync();
+        var stateRowIdsBefore = await _fixture.SoftDeleteOneStateRowAndLoadAllIdsAsync();
         using var recreateScope = _fixture.ScopeFactory.CreateScope();
         var seeder = new CoreDevelopmentDataSeeder(
             recreateScope.ServiceProvider.GetRequiredService<CoreDbContext>(),
@@ -143,6 +179,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         await seeder.SeedAsync(CancellationToken.None);
 
         var companyIdsAfter = await ReadCompanyIdsAsync();
+        var stateRowIdsAfter = await _fixture.LoadAllStateRowIdsAsync();
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var departmentCount = await dbContext.Departments.CountAsync();
@@ -154,6 +191,9 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         companyIdsAfter.Should()
             .HaveCount(DatabaseTestData.SeededCompanyCount)
             .And.NotIntersectWith(companyIdsBefore);
+        stateRowIdsAfter.Should()
+            .HaveCount(DatabaseTestData.SeededStateHistoryCount)
+            .And.NotIntersectWith(stateRowIdsBefore);
         departmentCount.Should().Be(DatabaseTestData.SeededDepartmentCount);
         machineCount.Should().Be(DatabaseTestData.SeededMachineCount);
         errorCodeCount.Should().Be(DatabaseTestData.SeededErrorCodeCount);
@@ -179,6 +219,9 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             .OnlyContain(group => group.Total == DatabaseTestData.ErrorCodesPerMachine
                 && group.Distinct == DatabaseTestData.ErrorCodesPerMachine);
     }
+
+    private static int ReadMachineIndex(string machineName) =>
+        int.Parse(machineName[^DatabaseTestData.MachineNameNumberLength..]) - 1;
 
     private async Task<SeededDataSnapshot> ReadSnapshotAsync()
     {

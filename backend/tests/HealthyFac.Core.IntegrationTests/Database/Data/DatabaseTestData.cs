@@ -1,3 +1,4 @@
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
@@ -17,6 +18,8 @@ public static class DatabaseTestData
     public const int SeededMachineCount = 24;
     public const int SeededErrorCodeCount = 96;
     public const int ErrorCodesPerMachine = 4;
+    public const int SeededStateHistoryCount = 42;
+    public const int MachineNameNumberLength = 2;
     public const int MachinesPerDepartment = 4;
     public const int SeededEmployeeCount = 24;
     public const int SeededInviteCount = 28;
@@ -55,6 +58,14 @@ public static class DatabaseTestData
     {
         DevelopmentData = new DevelopmentDataOptions { TestTenant = TestTenant },
     };
+
+    /// <summary>The state timeline of a seeded machine by its index modulo 3.</summary>
+    public static readonly IReadOnlyList<IReadOnlyList<MachineState>> ExpectedHistoriesByCycleIndex =
+    [
+        [MachineState.Operational],
+        [MachineState.Operational, MachineState.InMaintenance],
+        [MachineState.Operational, MachineState.InMaintenance, MachineState.OutOfService],
+    ];
 
     public static readonly RoleCode[] RoleCodes = [RoleCode.Worker, RoleCode.Supervisor];
 }

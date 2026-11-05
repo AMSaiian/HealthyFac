@@ -30,5 +30,7 @@ public interface ICoreDbContext : ITransactionalDbContext
 
     DbSet<MachineErrorCode> MachineErrorCodes { get; }
 
+    DbSet<MachineStateHistory> MachineStateHistories { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

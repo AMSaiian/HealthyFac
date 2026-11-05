@@ -70,10 +70,12 @@ public sealed class CreateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// catches a parallel create of the same serial number, and the handler maps that failure to the same conflict.
 /// </remarks>
 /// <param name="dbContext">Reads the department and the serial numbers and saves the machine.</param>
-public class CreateMachineRequestHandler(ICoreDbContext dbContext)
+/// <param name="timeProvider">Provides the start of the first state of the machine.</param>
+public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider timeProvider)
     : IRequestHandler<CreateMachineRequest, CreateMachineResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly TimeProvider _timeProvider = timeProvider;
 
     public async Task<CreateMachineResponse> HandleAsync(
         CreateMachineRequest request,
@@ -94,7 +96,8 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext)
             request.DepartmentId,
             request.Name,
             request.SerialNumber,
-            request.Description);
+            request.Description,
+            _timeProvider.GetUtcNow().UtcDateTime);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(
             candidate => candidate.CompanyId == machine.CompanyId

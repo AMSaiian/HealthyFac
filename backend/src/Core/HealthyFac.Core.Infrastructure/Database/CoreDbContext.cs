@@ -37,6 +37,8 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     public DbSet<MachineErrorCode> MachineErrorCodes => Set<MachineErrorCode>();
 
+    public DbSet<MachineStateHistory> MachineStateHistories => Set<MachineStateHistory>();
+
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();

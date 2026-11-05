@@ -16,7 +16,8 @@ if (-not $repo) {
   $repo = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { $PSScriptRoot | Split-Path | Split-Path }
 }
 $solution = Join-Path $repo 'backend/HealthyFac.slnx'
-if (-not (Test-Path $solution)) { exit 0 }
+$settings = Join-Path $repo 'backend/HealthyFac.sln.DotSettings'
+if (-not (Test-Path $solution) -or -not (Test-Path $settings)) { exit 0 }
 
 $jb = Get-Command jb -ErrorAction SilentlyContinue
 if (-not $jb) {
@@ -41,13 +42,22 @@ try {
 
   if ($targets.Count -eq 0) { exit 0 }
 
+  # "Optimize using directives" removes each using that it cannot resolve. Without restored packages (a new
+  # checkout, or a package added this turn) it removes valid usings such as Microsoft.EntityFrameworkCore, so the
+  # cleanup runs only after a successful restore. A failed restore skips the cleanup; the build then reports it.
+  & dotnet restore $solution --verbosity quiet 2>&1 | Out-Null
+  if ($LASTEXITCODE -ne 0) { exit 0 }
+
   # --include paths are relative to the solution directory (backend/).
   $include = (@($targets) | ForEach-Object { $_ -replace '^backend/', '' }) -join ';'
 
-  # "Built-in: Reformat & Apply Syntax Style" applies the layout and the .editorconfig syntax style
-  # (braces, expression bodies, trailing commas, `var`). Do not use the default Full Cleanup profile:
-  # it drops `private set`, reorders members and strips XML doc indents.
-  & $jb cleanupcode --no-build --verbosity=WARN --profile="Built-in: Reformat & Apply Syntax Style" `
+  # The "HealthyFac" profile (backend/HealthyFac.sln.DotSettings, also the Rider team-shared layer) holds the tasks
+  # of "Built-in: Reformat & Apply Syntax Style" plus "Optimize using directives": it applies the layout and the
+  # .editorconfig syntax style (braces, expression bodies, trailing commas, `var`, type keywords, no `this.`), sorts
+  # the using directives (System first), and removes the unused ones. Do not use the default Full Cleanup profile:
+  # it drops `private set`, reorders members and strips XML doc indents. --settings names the file explicitly, so
+  # the run does not depend on how JetBrains maps HealthyFac.slnx to its settings file.
+  & $jb cleanupcode --no-build --verbosity=WARN --settings="$settings" --profile="HealthyFac" `
       --include="$include" $solution 2>&1 |
     Select-Object -Last 5
 }

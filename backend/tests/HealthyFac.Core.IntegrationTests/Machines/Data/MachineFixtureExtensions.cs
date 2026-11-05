@@ -17,6 +17,18 @@ namespace HealthyFac.Core.IntegrationTests.Machines.Data;
 /// </summary>
 public static class MachineFixtureExtensions
 {
+    private static Machine CreateMachine(Guid companyId, Guid departmentId, MachineSeed seed)
+    {
+        var machine = new Machine(companyId, departmentId, seed.Name, seed.SerialNumber, null, seed.CreatedAt);
+
+        if (seed.State != MachineState.Operational)
+        {
+            machine.ChangeState(seed.State, seed.CreatedAt.AddHours(MachineTestData.StateChangeDelayHours));
+        }
+
+        return machine;
+    }
+
     extension(CoreDatabaseFixture fixture)
     {
         public async Task<MachineTenant> ArrangeMachineTenantAsync(string companyName = MachineTestData.CompanyName)
@@ -123,9 +135,7 @@ public static class MachineFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var machines = seeds
-                .Select(seed => new Machine(companyId, departmentId, seed.Name, seed.SerialNumber, null))
-                .ToList();
+            var machines = seeds.Select(seed => CreateMachine(companyId, departmentId, seed)).ToList();
 
             dbContext.Machines.AddRange(machines);
             await dbContext.SaveChangesAsync();
@@ -134,12 +144,43 @@ public static class MachineFixtureExtensions
             {
                 await dbContext.Machines
                     .Where(candidate => candidate.Id == machine.Id)
-                    .ExecuteUpdateAsync(update => update
-                        .SetProperty(candidate => candidate.CreatedAt, seed.CreatedAt)
-                        .SetProperty(candidate => candidate.State, seed.State));
+                    .ExecuteUpdateAsync(update => update.SetProperty(candidate => candidate.CreatedAt, seed.CreatedAt));
             }
 
             return machines.Select(machine => machine.Id).ToList();
+        }
+
+        public async Task AddStateRowAsync(Guid machineId, MachineState state, DateTime startedAt)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            dbContext.MachineStateHistories.Add(new MachineStateHistory(machineId, state, startedAt));
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task SoftDeleteStateRowAsync(Guid machineId, DateTime startedAt)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+            var row = await dbContext.MachineStateHistories.SingleAsync(candidate =>
+                candidate.MachineId == machineId && candidate.StartedAt == startedAt);
+
+            dbContext.MachineStateHistories.Remove(row);
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task<IReadOnlyList<MachineStateHistory>> LoadStateHistoryAsync(Guid machineId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
+                .MachineStateHistories
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Where(row => row.MachineId == machineId)
+                .OrderBy(row => row.StartedAt)
+                .ToListAsync();
         }
 
         public async Task<IReadOnlyList<Machine>> LoadMachineRowsAsync(Guid companyId, string serialNumber)
