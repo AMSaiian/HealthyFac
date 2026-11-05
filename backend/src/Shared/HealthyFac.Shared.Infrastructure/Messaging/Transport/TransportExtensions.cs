@@ -20,9 +20,9 @@ public static class TransportExtensions
         /// Registers Rebus with the RabbitMQ transport, the input queue of the service, and System.Text.Json
         /// serialization. Rebus keeps its default <c>error</c> queue, makes
         /// <see cref="MessagingConstants.MaxDeliveryAttempts"/> delivery attempts, and moves an
-        /// <see cref="InvalidIntegrationMessageException"/> to the queue at the first attempt. The envelope handler stores
-        /// each delivery in the inbox, and the dispatcher calls the use case of an inbox row. The subscription service
-        /// binds the queue to every message type that
+        /// <see cref="InvalidIntegrationMessageException"/> to the queue at the first attempt. The envelope handler
+        /// stores each delivery in the inbox, and the dispatcher calls the use case of an inbox row. The subscription
+        /// service binds the queue to every message type that
         /// <see cref="AddIntegrationMessage{TMessage}"/> registers. The host starts the bus. The
         /// method also registers the <see cref="BrokerConnectionProvider"/> of the readiness check.
         /// </summary>
@@ -51,7 +51,7 @@ public static class TransportExtensions
                     .UseRabbitMq(
                         connectionString,
                         provider.GetRequiredService<IOptions<MessagingOptions>>().Value.QueueName)
-                    .SetPublisherConfirms(true))
+                    .SetPublisherConfirms(enabled: true))
                 .Serialization(serialization => serialization.UseSystemTextJson())
                 .Options(options =>
                 {

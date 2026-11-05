@@ -1,8 +1,8 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Observability;
-using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -89,7 +89,8 @@ internal sealed class InboxProcessor(
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(exception, "The inbox processor run failed. The next run starts after the interval.");
+            _logger.LogError(
+                exception, message: "The inbox processor run failed. The next run starts after the interval.");
         }
     }
 
@@ -139,7 +140,7 @@ internal sealed class InboxProcessor(
             cancellationToken);
         if (message is null)
         {
-            _logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", messageId);
+            _logger.LogWarning(exception, message: "Handling inbox message {MessageId} failed.", messageId);
 
             return;
         }
@@ -180,7 +181,7 @@ internal sealed class InboxProcessor(
         {
             _logger.LogError(
                 exception,
-                "Inbox message {MessageId} of type {MessageType} is invalid. The processor does not retry it.",
+                message: "Inbox message {MessageId} of type {MessageType} is invalid. The processor does not retry it.",
                 message.Id,
                 message.Type);
 
@@ -189,7 +190,7 @@ internal sealed class InboxProcessor(
 
         if (message.FailedOn is null)
         {
-            _logger.LogWarning(exception, "Handling inbox message {MessageId} failed.", message.Id);
+            _logger.LogWarning(exception, message: "Handling inbox message {MessageId} failed.", message.Id);
 
             return;
         }

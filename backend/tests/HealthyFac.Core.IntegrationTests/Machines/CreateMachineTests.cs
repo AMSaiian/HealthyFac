@@ -47,9 +47,9 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         var history = await _fixture.LoadStateHistoryAsync(machineId);
 
         history.Should().ContainSingle();
-        history[0].State.Should().Be(MachineState.Operational);
-        history[0].StartedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
-        history[0].DeletedAt.Should().BeNull();
+        history[index: 0].State.Should().Be(MachineState.Operational);
+        history[index: 0].StartedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+        history[index: 0].DeletedAt.Should().BeNull();
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         var rows = await _fixture.LoadMachineRowsAsync(tenant.CompanyId, MachineTestData.SerialNumberOtherCase);
 
         rows.Select(row => row.Id).Should().BeEquivalentTo([firstId, secondId]);
-        rows.Count(row => row.DeletedAt is null).Should().Be(1);
+        rows.Count(row => row.DeletedAt is null).Should().Be(expected: 1);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         var rows = await _fixture.LoadMachineRowsAsync(tenant.CompanyId, MachineTestData.SerialNumberOtherCase);
 
         race.SaveCounts.Should().Equal(1, 1);
-        failures.Count(failure => failure is null).Should().Be(1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()

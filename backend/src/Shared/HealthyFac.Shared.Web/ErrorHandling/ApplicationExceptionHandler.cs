@@ -1,10 +1,10 @@
 using System.Collections.Frozen;
 using FluentValidation;
 using FluentValidation.Results;
+using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using HealthyFac.Shared.Application.ErrorHandling;
 using UnauthorizedAccessException = HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException;
 
 namespace HealthyFac.Shared.Web.ErrorHandling;

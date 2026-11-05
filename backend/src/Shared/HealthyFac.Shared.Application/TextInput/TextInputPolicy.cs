@@ -37,7 +37,7 @@ public static class TextInputPolicy
     /// valid.</returns>
     public static string? FindViolation(string value, TextInputKind kind)
     {
-        if (value.Contains('\0', StringComparison.Ordinal))
+        if (value.Contains(value: '\0', StringComparison.Ordinal))
         {
             return TextInputErrors.NullCharacter;
         }

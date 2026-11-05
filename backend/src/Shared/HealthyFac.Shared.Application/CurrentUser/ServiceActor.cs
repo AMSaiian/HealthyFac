@@ -10,9 +10,9 @@ namespace HealthyFac.Shared.Application.CurrentUser;
 /// </summary>
 public sealed class ServiceActor : Enumeration<ServiceActor>
 {
-    public static readonly ServiceActor DatabaseInitialization = new("databaseInitialization");
-    public static readonly ServiceActor OutboxProcessor = new("outboxProcessor");
-    public static readonly ServiceActor InboxProcessor = new("inboxProcessor");
+    public static readonly ServiceActor DatabaseInitialization = new(value: "databaseInitialization");
+    public static readonly ServiceActor OutboxProcessor = new(value: "outboxProcessor");
+    public static readonly ServiceActor InboxProcessor = new(value: "inboxProcessor");
 
     private ServiceActor(string value)
         : base(value)

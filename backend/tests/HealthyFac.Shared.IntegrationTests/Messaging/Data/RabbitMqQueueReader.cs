@@ -36,7 +36,7 @@ public static class RabbitMqQueueReader
         using var cancellation = new CancellationTokenSource(timeout);
         while (!cancellation.IsCancellationRequested)
         {
-            var result = await channel.BasicGetAsync(queueName, autoAck: true, cancellationToken: cancellation.Token);
+            var result = await channel.BasicGetAsync(queueName, autoAck: true, cancellation.Token);
             if (result is null)
             {
                 await Task.Delay(TransportTestData.PollDelay, cancellation.Token);

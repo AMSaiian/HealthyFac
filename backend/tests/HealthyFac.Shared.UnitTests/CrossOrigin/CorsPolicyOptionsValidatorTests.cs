@@ -10,7 +10,7 @@ public sealed class CorsPolicyOptionsValidatorTests
     [Fact]
     public void Validate_WhenEnabledWithoutPreflightMaxAge_Fails()
     {
-        var result = _validator.Validate(CorsPolicyOptionsValidatorTestData.EnabledWithPreflightMaxAge(0));
+        var result = _validator.Validate(CorsPolicyOptionsValidatorTestData.EnabledWithPreflightMaxAge(seconds: 0));
 
         result.Errors.Should()
             .ContainSingle(error => error.ErrorMessage == CorsValidationMessages.PreflightMaxAgeRequired);

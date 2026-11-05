@@ -24,12 +24,16 @@ public static class GridTestData
 
     private static readonly string[] FixedTexts = ["ABC", "abd", "xab", "50% off", "500 off", "50_x", "50ax"];
 
-    private static readonly DateTime SortBase = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime PagingAt = new(2030, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime SortBase = new(
+        year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0, DateTimeKind.Utc);
 
-    public static readonly DateTime DatesBase = new(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime PagingAt = new(
+        year: 2030, month: 6, day: 1, hour: 12, minute: 0, second: 0, DateTimeKind.Utc);
 
-    public static readonly TimeSpan DatesStep = TimeSpan.FromHours(1);
+    public static readonly DateTime DatesBase = new(
+        year: 2027, month: 1, day: 1, hour: 0, minute: 0, second: 0, DateTimeKind.Utc);
+
+    public static readonly TimeSpan DatesStep = TimeSpan.FromHours(hours: 1);
 
     public static TheoryData<string, bool> SortCases
     {
@@ -39,8 +43,8 @@ public static class GridTestData
 
             foreach (var column in new[] { "text", "number", "amount", "at", "key" })
             {
-                data.Add(column, false);
-                data.Add(column, true);
+                data.Add(column, p2: false);
+                data.Add(column, p2: true);
             }
 
             return data;
@@ -63,16 +67,16 @@ public static class GridTestData
 
         for (var index = 0; index < SortRowCount; index++)
         {
-            var at = SortBase.AddMinutes(faker.Random.Int(0, 100_000));
+            var at = SortBase.AddMinutes(faker.Random.Int(min: 0, max: 100_000));
             rows.Add(
                 new GridTestEntity
                 {
                     Group = SortGroup,
                     Text = faker.Random.String2(TextLength, Lowercase),
-                    Number = faker.Random.Int(0, 9),
-                    Amount = faker.Random.Decimal(0, 1000),
+                    Number = faker.Random.Int(min: 0, max: 9),
+                    Amount = faker.Random.Decimal(min: 0, max: 1000),
                     At = at,
-                    OptionalAt = index % 3 == 0 ? null : at.AddDays(1),
+                    OptionalAt = index % 3 == 0 ? null : at.AddDays(value: 1),
                     Key = faker.Random.Guid(),
                 });
         }
@@ -121,7 +125,8 @@ public static class GridTestData
         return rows;
     }
 
-    public static IComparer<Guid> GuidBytewise { get; } = Comparer<Guid>.Create((left, right) => left.ToByteArray(true)
-        .AsSpan()
-        .SequenceCompareTo(right.ToByteArray(true)));
+    public static IComparer<Guid> GuidBytewise { get; } = Comparer<Guid>.Create((left, right) =>
+        left.ToByteArray(bigEndian: true)
+            .AsSpan()
+            .SequenceCompareTo(right.ToByteArray(bigEndian: true)));
 }

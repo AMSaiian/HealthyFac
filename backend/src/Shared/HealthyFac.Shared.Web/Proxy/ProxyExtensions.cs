@@ -1,5 +1,5 @@
-using HealthyFac.Shared.Infrastructure.Configuration;
 using System.Net;
+using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;

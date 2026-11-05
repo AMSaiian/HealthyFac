@@ -1,6 +1,5 @@
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Gateway.Web.RateLimiting.Fallback;
-using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Testing.Caching;
 using Microsoft.Extensions.Time.Testing;
@@ -37,13 +36,13 @@ public sealed class FallbackRateLimiterTests
         using var lease = await limiter.AcquireAsync();
 
         lease.IsAcquired.Should().BeTrue();
-        primary.CallCount.Should().Be(0);
+        primary.CallCount.Should().Be(expected: 0);
     }
 
     [Fact]
     public async Task Acquire_WhenPrimarySucceeds_ReturnsPrimaryLease()
     {
-        var primaryLease = new FakeRateLimitLease(false);
+        var primaryLease = new FakeRateLimitLease(isAcquired: false);
         var primary = new FakePrimaryRateLimiter(() => primaryLease);
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
 
@@ -73,7 +72,7 @@ public sealed class FallbackRateLimiterTests
 
         using var lease = await limiter.AcquireAsync();
 
-        createLocalCallCount.Should().Be(0);
+        createLocalCallCount.Should().Be(expected: 0);
     }
 
     [Fact]

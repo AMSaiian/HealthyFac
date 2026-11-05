@@ -1,6 +1,5 @@
 using System.Reflection;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;

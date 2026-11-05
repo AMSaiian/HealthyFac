@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Time.Testing;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Testing.Containers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using HealthyFac.Testing.Containers;
+using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
@@ -36,7 +36,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         services.AddMessagingMetrics();
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(_database.ConnectionString));
-        Services = services.BuildServiceProvider(true);
+        Services = services.BuildServiceProvider(validateScopes: true);
 
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>().Database.EnsureCreatedAsync();

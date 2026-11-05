@@ -1,5 +1,5 @@
-using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Web.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

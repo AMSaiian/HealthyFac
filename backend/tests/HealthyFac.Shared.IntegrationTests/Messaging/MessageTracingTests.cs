@@ -28,7 +28,7 @@ public sealed class MessageTracingTests(TransportFixture fixture) : IClassFixtur
         var spans = await capture.WaitForSpansAsync(
             span => span.IsOperation(ObservabilityConstants.Messaging.Operations.Process)
                 && span.ReadMessageId() == TracingTestData.NoParentRowId.ToString(),
-            1);
+            expectedCount: 1);
 
         spans.Should().ContainSingle().Which.ParentId.Should().BeNull();
     }
@@ -51,7 +51,7 @@ public sealed class MessageTracingTests(TransportFixture fixture) : IClassFixtur
         var spans = await capture.WaitForSpansAsync(
             span => span.IsOperation(ObservabilityConstants.Messaging.Operations.Process)
                 && span.ReadMessageId() == TracingTestData.FailingRowId.ToString(),
-            1);
+            expectedCount: 1);
 
         spans.Should().ContainSingle().Which.Status.Should().Be(ActivityStatusCode.Error);
     }

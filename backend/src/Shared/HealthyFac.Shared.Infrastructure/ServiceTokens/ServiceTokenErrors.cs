@@ -8,7 +8,7 @@ namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
 public static class ServiceTokenErrors
 {
     public static InvalidOperationException TokenResponseInvalid() =>
-        new("The token endpoint answered success, but the response has no access token or no valid lifetime.");
+        new(message: "The token endpoint answered success, but the response has no access token or no valid lifetime.");
 
     public static InvalidOperationException NoIncomingUserToken() =>
         new(
@@ -21,10 +21,10 @@ public static class ServiceTokenErrors
             + "A service token with actor headers would replace the user token.");
 
     public static InvalidOperationException ActorHeadersWithoutActor() =>
-        new("The current flow has no actor, so the call has no actor to send in the actor headers.");
+        new(message: "The current flow has no actor, so the call has no actor to send in the actor headers.");
 
     public static TokenStorageException StorageSkipped() =>
-        new("The token storage was skipped, because the Redis circuit breaker is open.");
+        new(message: "The token storage was skipped, because the Redis circuit breaker is open.");
 
     public static TokenStorageException StorageFailed(Exception innerException) =>
         new($"The token storage call failed with {innerException.GetType().Name}.", innerException);

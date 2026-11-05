@@ -20,7 +20,7 @@ public sealed class CorsPolicyOptionsValidator : AbstractValidator<CorsPolicyOpt
                     .WithMessage(CorsValidationMessages.OriginInvalid);
 
                 RuleFor(options => options.PreflightMaxAgeSeconds)
-                    .GreaterThan(0)
+                    .GreaterThan(valueToCompare: 0)
                     .WithMessage(CorsValidationMessages.PreflightMaxAgeRequired)
                     .LessThanOrEqualTo(CorsConstants.MaxPreflightMaxAgeSeconds)
                     .WithMessage(CorsValidationMessages.PreflightMaxAgeAboveBrowserLimit);

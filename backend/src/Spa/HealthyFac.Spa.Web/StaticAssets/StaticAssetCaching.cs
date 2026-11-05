@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using HealthyFac.Spa.Web.Hosting;
 using HealthyFac.Spa.Web.IndexDocument.Csp;
-using HealthyFac.Spa.Web.IndexDocument;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -15,8 +14,8 @@ public static class StaticAssetCaching
     {
         /// <summary>
         /// Serves the files of the content root. A file with an Angular content hash in its name never changes, so
-        /// it caches for the configured time. Every other file (e.g., translations, the icon) caches only after the browser
-        /// checks it.
+        /// it caches for the configured time. Every other file (e.g., translations, the icon) caches only after the
+        /// browser checks it.
         /// </summary>
         /// <returns>The <see cref="IApplicationBuilder"/> instance for chained configuration.</returns>
         public IApplicationBuilder UseSpaStaticFiles()

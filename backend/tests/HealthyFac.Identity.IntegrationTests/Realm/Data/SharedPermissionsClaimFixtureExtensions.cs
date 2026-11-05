@@ -45,7 +45,11 @@ public static class SharedPermissionsClaimFixtureExtensions
             using var response = await fixture.SendAdminAsync(
                 HttpMethod.Post,
                 $"{RealmAdminPath}/clients",
-                new JsonObject { ["clientId"] = clientId, ["enabled"] = true, ["publicClient"] = false });
+                new JsonObject
+                {
+                    [propertyName: "clientId"] = clientId, [propertyName: "enabled"] = true,
+                    [propertyName: "publicClient"] = false,
+                });
 
             return response.Headers.Location!.Segments.Last();
         }
@@ -55,7 +59,7 @@ public static class SharedPermissionsClaimFixtureExtensions
             using var created = await fixture.SendAdminAsync(
                 HttpMethod.Post,
                 $"{RealmAdminPath}/clients/{clientUuid}/roles",
-                new JsonObject { ["name"] = roleName });
+                new JsonObject { [propertyName: "name"] = roleName });
             using var response = await fixture.SendAdminAsync(
                 HttpMethod.Get,
                 $"{RealmAdminPath}/clients/{clientUuid}/roles/{Uri.EscapeDataString(roleName)}");
@@ -81,7 +85,7 @@ public static class SharedPermissionsClaimFixtureExtensions
 
             var clients = await response.Content.ReadFromJsonAsync<JsonArray>();
 
-            return clients![0]!["id"]!.GetValue<string>();
+            return clients![index: 0]![propertyName: "id"]!.GetValue<string>();
         }
 
         private async Task AddPermissionsMapperAsync(string clientUuid, string mappedClientId)
@@ -91,18 +95,18 @@ public static class SharedPermissionsClaimFixtureExtensions
                 $"{RealmAdminPath}/clients/{clientUuid}/protocol-mappers/models",
                 new JsonObject
                 {
-                    ["name"] = $"{mappedClientId}-permissions",
-                    ["protocol"] = OpenIdConnect,
-                    ["protocolMapper"] = ClientRoleMapper,
-                    ["config"] = new JsonObject
+                    [propertyName: "name"] = $"{mappedClientId}-permissions",
+                    [propertyName: "protocol"] = OpenIdConnect,
+                    [propertyName: "protocolMapper"] = ClientRoleMapper,
+                    [propertyName: "config"] = new JsonObject
                     {
-                        ["usermodel.clientRoleMapping.clientId"] = mappedClientId,
-                        ["claim.name"] = KeycloakClaimTypes.Permissions,
-                        ["jsonType.label"] = "String",
-                        ["multivalued"] = "true",
-                        ["access.token.claim"] = "true",
-                        ["id.token.claim"] = "false",
-                        ["userinfo.token.claim"] = "false",
+                        [propertyName: "usermodel.clientRoleMapping.clientId"] = mappedClientId,
+                        [propertyName: "claim.name"] = KeycloakClaimTypes.Permissions,
+                        [propertyName: "jsonType.label"] = "String",
+                        [propertyName: "multivalued"] = "true",
+                        [propertyName: "access.token.claim"] = "true",
+                        [propertyName: "id.token.claim"] = "false",
+                        [propertyName: "userinfo.token.claim"] = "false",
                     },
                 });
         }
@@ -113,7 +117,7 @@ public static class SharedPermissionsClaimFixtureExtensions
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
             using var request = new HttpRequestMessage(method, path)
             {
-                Headers = { Authorization = new AuthenticationHeaderValue("Bearer", adminToken) },
+                Headers = { Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken) },
                 Content = body is null ? null : JsonContent.Create(body),
             };
 

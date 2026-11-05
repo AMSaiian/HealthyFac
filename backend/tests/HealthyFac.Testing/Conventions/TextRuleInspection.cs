@@ -108,7 +108,7 @@ internal static class TextRuleInspection
             .GetMethods()
             .Single(method => method.Name == nameof(DispatchProxy.Create) && method.GetGenericArguments().Length == 2)
             .MakeGenericMethod(interfaceType, typeof(DefaultReturnProxy))
-            .Invoke(null, null)!;
+            .Invoke(obj: null, parameters: null)!;
 
     private static bool HasRule(
         IValidatorDescriptor descriptor,
@@ -141,7 +141,7 @@ internal static class TextRuleInspection
         type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(property => property.GetMethod is { IsPublic: true }
                 && property.GetIndexParameters().Length == 0
-                && !property.IsDefined(typeof(JsonIgnoreAttribute), true));
+                && !property.IsDefined(typeof(JsonIgnoreAttribute), inherit: true));
 
     private static bool IsStringCollection(Type type) =>
         type != typeof(string)

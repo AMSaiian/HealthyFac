@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
-using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,7 +66,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
 
         isFirstStored.Should().BeTrue();
         isSecondStored.Should().BeFalse();
-        messageCount.Should().Be(1);
+        messageCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -89,7 +88,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
 
         var messageCount = await CountMessagesAsync(InboxTestData.RolledBackMessageId);
 
-        messageCount.Should().Be(0);
+        messageCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -145,7 +144,7 @@ public sealed class InboxTests(PostgreSqlFixture fixture) : IClassFixture<Postgr
 
         var outboxMessageCount = await CountOutboxMessagesAsync(OutboxTestData.BusinessChangeMessageType);
 
-        outboxMessageCount.Should().Be(0);
+        outboxMessageCount.Should().Be(expected: 0);
     }
 
     private static Task<InboxMessage> LoadMessageAsync(IServiceScope scope, Guid messageId)

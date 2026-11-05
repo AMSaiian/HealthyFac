@@ -24,9 +24,9 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClas
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
         messages.Should().ContainSingle();
-        messages[0].CompanyId.Should().Be(arranged.CompanyId);
-        messages[0].IdentityUserId.Should().Be(identityUserId);
-        messages[0].DeactivatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        messages[index: 0].CompanyId.Should().Be(arranged.CompanyId);
+        messages[index: 0].IdentityUserId.Should().Be(identityUserId);
+        messages[index: 0].DeactivatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(minutes: 1));
     }
 
     [Fact]

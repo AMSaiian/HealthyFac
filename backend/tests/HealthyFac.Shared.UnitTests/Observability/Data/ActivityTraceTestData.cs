@@ -8,7 +8,7 @@ public static class ActivityTraceTestData
     public const string ActivityName = "trace";
     public const int Result = 42;
 
-    public static InvalidOperationException CreateFailure() => new("broken");
+    public static InvalidOperationException CreateFailure() => new(message: "broken");
 
-    public static NotFoundException CreateRejection() => new("missing");
+    public static NotFoundException CreateRejection() => new(message: "missing");
 }

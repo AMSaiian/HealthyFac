@@ -4,11 +4,11 @@ public static class IdEncryptionConventionTestData
 {
     public static readonly byte[] PrimaryKey = AesKwIdEncryptorTestData.PrimaryKey;
 
-    public static readonly Guid SampleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    public static readonly Guid SampleMachineId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-    public static readonly Guid SampleTenantId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-    public static readonly Guid SampleIgnoredId = Guid.Parse("44444444-4444-4444-4444-444444444444");
-    public static readonly Guid SampleCorrelationToken = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    public static readonly Guid SampleId = Guid.Parse(input: "11111111-1111-1111-1111-111111111111");
+    public static readonly Guid SampleMachineId = Guid.Parse(input: "22222222-2222-2222-2222-222222222222");
+    public static readonly Guid SampleTenantId = Guid.Parse(input: "33333333-3333-3333-3333-333333333333");
+    public static readonly Guid SampleIgnoredId = Guid.Parse(input: "44444444-4444-4444-4444-444444444444");
+    public static readonly Guid SampleCorrelationToken = Guid.Parse(input: "55555555-5555-5555-5555-555555555555");
     public const int SampleStepId = 42;
 
     public const string IdPropertyName = "id";
@@ -20,7 +20,7 @@ public static class IdEncryptionConventionTestData
 
     public static TheoryData<ConventionTestModel> ModelsWithTenantId =>
     [
-        new ConventionTestModel
+        new()
         {
             Id = SampleId,
             MachineId = SampleMachineId,

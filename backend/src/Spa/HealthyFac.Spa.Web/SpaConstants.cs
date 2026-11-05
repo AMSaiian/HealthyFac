@@ -23,7 +23,7 @@ public static class SpaConstants
         /// The limit for one match of the hash pattern. The pattern comes from configuration, so a slow pattern
         /// must never block a request.
         /// </summary>
-        public static readonly TimeSpan PatternMatchTimeout = TimeSpan.FromMilliseconds(100);
+        public static readonly TimeSpan PatternMatchTimeout = TimeSpan.FromMilliseconds(milliseconds: 100);
     }
 
     public static class RuntimeConfig

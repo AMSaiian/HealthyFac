@@ -74,8 +74,8 @@ public static class DestructuringTestData
                 Context = "SecurityHeaders",
                 Headers = new Dictionary<string, string>
                 {
-                    ["Authorization"] = "Bearer SecretToken123",
-                    ["X-Api-Key"] = "SuperSecretKey456",
+                    [key: "Authorization"] = "Bearer SecretToken123",
+                    [key: "X-Api-Key"] = "SuperSecretKey456",
                 },
             }
         },

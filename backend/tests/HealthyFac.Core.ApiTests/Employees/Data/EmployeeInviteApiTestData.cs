@@ -16,6 +16,6 @@ public static class EmployeeInviteApiTestData
     public const string LowerCaseEmail = "mixed.case@healthyfac.test";
     public const string MixedCaseEmail = "  Mixed.Case@HealthyFac.Test ";
 
-    public static readonly Guid ServiceCallerUserId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000d1");
-    public static readonly Guid OtherCompanyId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000c9");
+    public static readonly Guid ServiceCallerUserId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000d1");
+    public static readonly Guid OtherCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000c9");
 }

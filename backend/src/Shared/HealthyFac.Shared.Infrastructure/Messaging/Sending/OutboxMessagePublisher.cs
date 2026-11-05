@@ -111,7 +111,7 @@ internal sealed class OutboxMessagePublisher(
             activity.MarkException(exception);
             _logger.LogWarning(
                 exception,
-                "Publishing outbox message {MessageId} of type {MessageType} failed.",
+                message: "Publishing outbox message {MessageId} of type {MessageType} failed.",
                 message.Id,
                 message.Type);
             message.ScheduleRetry(now, exception.Message);

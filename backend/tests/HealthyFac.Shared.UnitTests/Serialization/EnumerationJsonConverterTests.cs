@@ -54,7 +54,7 @@ public sealed class EnumerationJsonConverterTests
     public void Deserialize_WithNullOptionalValue_LeavesMemberNull()
     {
         JsonSerializer.Deserialize<EnumerationPayload>(
-                """{"status":"operational","optional":null}""",
+                json: """{"status":"operational","optional":null}""",
                 _options)!
             .Optional
             .Should()

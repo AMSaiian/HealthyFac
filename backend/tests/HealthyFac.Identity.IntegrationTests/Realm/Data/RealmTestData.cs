@@ -25,26 +25,26 @@ public static class RealmTestData
     public const string DepartmentIdsClaim = KeycloakClaimTypes.DepartmentIds;
     public const string WorkerRoleName = "worker";
 
-    public static readonly Guid CompanyId = Guid.Parse("0190f3a0-0000-7000-8000-000000000001");
-    public static readonly Guid SupervisorIdentityId = Guid.Parse("0190f3a0-0000-7000-8000-000000000002");
-    public static readonly Guid DepartmentAId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000a1");
-    public static readonly Guid DepartmentBId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000b1");
-    public static readonly Guid SupervisorEmployeeId = Guid.Parse("0190f3a0-0000-7000-8000-000000000003");
+    public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
+    public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
+    public static readonly Guid DepartmentAId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000a1");
+    public static readonly Guid DepartmentBId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000b1");
+    public static readonly Guid SupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
 
     public static IReadOnlyDictionary<string, string> Environment { get; } = new Dictionary<string, string>
     {
-        ["HEALTHYFAC_SPA_URL"] = SpaUrl,
-        ["HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
-        ["HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
-        ["HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
-        ["HEALTHYFAC_TEST_DEPARTMENT_A_ID"] = DepartmentAId.ToString(),
-        ["HEALTHYFAC_TEST_DEPARTMENT_B_ID"] = DepartmentBId.ToString(),
-        ["HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
-        ["HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
-        ["KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
-        ["KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
-        ["KC_HOSTNAME"] = PublicAuthUrl,
-        ["KC_HOSTNAME_BACKCHANNEL_DYNAMIC"] = "true",
+        [key: "HEALTHYFAC_SPA_URL"] = SpaUrl,
+        [key: "HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
+        [key: "HEALTHYFAC_TEST_DEPARTMENT_A_ID"] = DepartmentAId.ToString(),
+        [key: "HEALTHYFAC_TEST_DEPARTMENT_B_ID"] = DepartmentBId.ToString(),
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
+        [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
+        [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
+        [key: "KC_HOSTNAME"] = PublicAuthUrl,
+        [key: "KC_HOSTNAME_BACKCHANNEL_DYNAMIC"] = "true",
     };
 
     public static string PublicIssuer => $"{PublicAuthUrl}/realms/healthyfac";

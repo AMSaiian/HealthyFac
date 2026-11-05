@@ -6,7 +6,7 @@ namespace HealthyFac.Core.Domain.Employees;
 public static class EmployeeErrors
 {
     public static InvalidOperationException InviteWithoutDepartments() =>
-        new("An employee invite needs at least one department.");
+        new(message: "An employee invite needs at least one department.");
 
     public static InvalidOperationException InviteDepartmentOfOtherCompany(Guid departmentId) =>
         new($"Department '{departmentId}' belongs to another company than the employee invite.");

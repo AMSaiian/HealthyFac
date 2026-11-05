@@ -5,7 +5,7 @@ namespace HealthyFac.Shared.IntegrationTests.Revocation;
 public sealed class RedisTokenRevocationStoreTests(RevocationStoreFixture fixture)
     : IClassFixture<RevocationStoreFixture>
 {
-    private static readonly TimeSpan TimeToLive = TimeSpan.FromMinutes(6);
+    private static readonly TimeSpan TimeToLive = TimeSpan.FromMinutes(minutes: 6);
 
     private readonly RevocationStoreFixture _fixture = fixture;
 

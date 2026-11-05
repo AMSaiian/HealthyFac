@@ -1,4 +1,3 @@
-using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.Infrastructure.Roles.Persistence;
 using Microsoft.EntityFrameworkCore;

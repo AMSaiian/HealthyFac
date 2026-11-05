@@ -16,7 +16,7 @@ internal static class MessageRetryPolicy
     /// <param name="attemptCount">The number of attempts, including the one that failed.</param>
     /// <returns>The UTC time after which the processor may try again.</returns>
     public static DateTime NextAttemptOn(DateTime now, int attemptCount) =>
-        now.AddSeconds(Math.Min(Math.Pow(2, attemptCount), MessagingConstants.MaxRetryDelaySeconds));
+        now.AddSeconds(Math.Min(Math.Pow(x: 2, attemptCount), MessagingConstants.MaxRetryDelaySeconds));
 
     /// <summary>
     /// Cuts an error text to the size of the error column.

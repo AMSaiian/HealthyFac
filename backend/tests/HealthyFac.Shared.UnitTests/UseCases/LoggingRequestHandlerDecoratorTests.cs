@@ -47,7 +47,7 @@ public sealed class LoggingRequestHandlerDecoratorTests
     [Fact]
     public async Task HandleAsync_WhenHandlerThrowsUnexpectedException_LogsDebugWithoutExceptionAndNoRejection()
     {
-        var failure = new InvalidOperationException("broken");
+        var failure = new InvalidOperationException(message: "broken");
         var logger = new CapturingLogger<LoggingRequestHandlerDecorator<TestRequest, int>>();
         var decorator = new LoggingRequestHandlerDecorator<TestRequest, int>(new ThrowingHandler(failure), logger);
 

@@ -86,7 +86,7 @@ public sealed class RevokeIdentityTests(ProvisioningFixture fixture)
     [Fact]
     public async Task Revoke_WithoutIdentity_Completes()
     {
-        var message = ProvisioningTestData.CreateDeactivated(null);
+        var message = ProvisioningTestData.CreateDeactivated(identityUserId: null);
         var identityAdmin = new FakeIdentityAdmin();
 
         await _fixture.RevokeAsync(message, identityAdmin);

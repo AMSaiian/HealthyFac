@@ -52,7 +52,7 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
 
         var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.DuplicatedMessageId);
 
-        messageCount.Should().Be(1);
+        messageCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
         var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.HeaderlessMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
-        messageCount.Should().Be(0);
+        messageCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
         var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.InvalidPayloadMessageId);
         var row = await _fixture.ReadInboxRowAsync(TransportTestData.InvalidPayloadMessageId);
 
-        messageCount.Should().Be(1);
+        messageCount.Should().Be(expected: 1);
         row.FailedOn.Should().NotBeNull();
         row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
     }
@@ -128,7 +128,7 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
         var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.NotJsonMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
-        messageCount.Should().Be(0);
+        messageCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
         var messageCount = await _fixture.CountInboxMessagesAsync(TransportTestData.NullCharacterMessageId);
 
         errorDetails.Should().StartWith(TransportTestData.FailedOnceText);
-        messageCount.Should().Be(0);
+        messageCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -185,6 +185,6 @@ public sealed class TransportTests(TransportFixture fixture) : IClassFixture<Tra
         var messageCount = await _fixture.CountInboxMessagesAsync(Guid.Empty);
 
         isInErrorQueue.Should().BeTrue();
-        messageCount.Should().Be(0);
+        messageCount.Should().Be(expected: 0);
     }
 }

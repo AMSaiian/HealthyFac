@@ -30,7 +30,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
         var companyCount = await CountCompaniesAsync(TransactionTestData.CommittedCompanyName);
 
         companyId.Should().NotBeEmpty();
-        companyCount.Should().Be(1);
+        companyCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
 
         var companyCount = await CountCompaniesAsync(TransactionTestData.RolledBackCompanyName);
 
-        companyCount.Should().Be(0);
+        companyCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
 
         var companyCount = await CountCompaniesAsync(TransactionTestData.UnsavedAfterOperationCompanyName);
 
-        companyCount.Should().Be(0);
+        companyCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
 
         var companyCount = await CountCompaniesAsync(TransactionTestData.EndedTransactionCompanyName);
 
-        companyCount.Should().Be(0);
+        companyCount.Should().Be(expected: 0);
     }
 
     private async Task<int> CountCompaniesAsync(string name)

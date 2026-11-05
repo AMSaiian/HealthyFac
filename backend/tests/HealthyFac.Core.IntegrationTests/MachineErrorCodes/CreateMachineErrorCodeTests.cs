@@ -1,8 +1,8 @@
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Application.MachineErrorCodes;
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.MachineErrorCodes.Data;
+using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.MachineErrorCodes;
@@ -140,7 +140,7 @@ public sealed class CreateMachineErrorCodeTests(CoreDatabaseFixture fixture) : I
         var rows = await _fixture.LoadMachineErrorCodeRowsAsync(machineId, MachineErrorCodeTestData.Code);
 
         rows.Select(row => row.Id).Should().BeEquivalentTo([firstId, secondId]);
-        rows.Count(row => row.DeletedAt is null).Should().Be(1);
+        rows.Count(row => row.DeletedAt is null).Should().Be(expected: 1);
     }
 
     [Fact]

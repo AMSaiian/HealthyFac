@@ -20,7 +20,7 @@ public sealed class TestTokenFactory
     public const string Audience = "healthyfac-core";
     public const string IsHttpsMetadataRequiredSetting = "Jwt:IsHttpsMetadataRequired";
 
-    public static readonly TimeSpan DefaultLifetime = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan DefaultLifetime = TimeSpan.FromMinutes(minutes: 5);
 
     public static readonly IReadOnlyList<string> SupervisorPermissions =
     [
@@ -42,9 +42,9 @@ public sealed class TestTokenFactory
     /// <summary>The configuration values that make a host validate the tokens of this factory.</summary>
     public static IReadOnlyDictionary<string, string?> JwtSettings { get; } = new Dictionary<string, string?>
     {
-        ["Jwt:Issuer"] = Issuer,
-        ["Jwt:MetadataAddress"] = MetadataAddress,
-        ["Jwt:Audience"] = Audience,
+        [key: "Jwt:Issuer"] = Issuer,
+        [key: "Jwt:MetadataAddress"] = MetadataAddress,
+        [key: "Jwt:Audience"] = Audience,
         [IsHttpsMetadataRequiredSetting] = bool.FalseString,
     };
 
@@ -97,8 +97,8 @@ public sealed class TestTokenFactory
 
     /// <summary>
     /// Post-configures the JWT bearer handler to read its signing keys from this factory, not from the metadata
-    /// address. Register it with <c>PostConfigure&lt;JwtBearerOptions&gt;(JwtBearerDefaults.AuthenticationScheme, ...)</c>
-    /// in the test host, so it runs after the application configuration.
+    /// address. Register it with <c>PostConfigure&lt;JwtBearerOptions&gt;(JwtBearerDefaults.AuthenticationScheme,
+    /// ...)</c> in the test host, so it runs after the application configuration.
     /// </summary>
     /// <param name="options">The bearer options of the host.</param>
     public void TrustTestKey(JwtBearerOptions options)

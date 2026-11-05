@@ -6,12 +6,12 @@ public static class RevocationTestData
 {
     public const string CoreRoute = "/api/core/v1/machines";
 
-    public static readonly TimeSpan RevocationTimeToLive = TimeSpan.FromMinutes(6);
-    public static readonly TimeSpan TokenAge = TimeSpan.FromMinutes(10);
-    public static readonly TimeSpan RevocationAge = TimeSpan.FromMinutes(5);
-    public static readonly TimeSpan TokenYoungAge = TimeSpan.FromMinutes(1);
+    public static readonly TimeSpan RevocationTimeToLive = TimeSpan.FromMinutes(minutes: 6);
+    public static readonly TimeSpan TokenAge = TimeSpan.FromMinutes(minutes: 10);
+    public static readonly TimeSpan RevocationAge = TimeSpan.FromMinutes(minutes: 5);
+    public static readonly TimeSpan TokenYoungAge = TimeSpan.FromMinutes(minutes: 1);
 
-    private static readonly TimeSpan LongLifetime = TimeSpan.FromHours(1);
+    private static readonly TimeSpan LongLifetime = TimeSpan.FromHours(hours: 1);
 
     public static TestTokenClaims CreateClaims(Guid subject, TimeSpan tokenAge) =>
         new()

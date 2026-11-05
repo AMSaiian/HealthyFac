@@ -1,6 +1,5 @@
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Infrastructure.Persistence.Collations;
-using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;

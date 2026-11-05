@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

@@ -1,6 +1,5 @@
 using System.Reflection;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
 
 namespace HealthyFac.Shared.UnitTests.Observability.Data;
 

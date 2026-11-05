@@ -39,7 +39,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyExpiredEmail,
-            DateTime.UtcNow.AddHours(-1),
+            DateTime.UtcNow.AddHours(value: -1),
             InviteTestData.FirstDepartmentName);
 
         var act = () => VerifyAsync(arranged.Token);
@@ -114,7 +114,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     }
 
     private static DateTime NextHour() =>
-        DateTime.UtcNow.AddHours(1).Date.AddHours(DateTime.UtcNow.AddHours(1).Hour);
+        DateTime.UtcNow.AddHours(value: 1).Date.AddHours(DateTime.UtcNow.AddHours(value: 1).Hour);
 
     private string CreateTokenForUnknownInvite()
         => _fixture.InviteTokenService.CreateToken(Guid.NewGuid(), _fixture.InviteTokenService.CreateSalt());

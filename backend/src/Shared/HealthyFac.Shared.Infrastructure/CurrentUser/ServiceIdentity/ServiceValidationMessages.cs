@@ -8,5 +8,6 @@ namespace HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 public static class ServiceValidationMessages
 {
     public static readonly string NameInvalid =
-        $"The service name must be one of: {string.Join(", ", ServiceName.All.Select(service => service.Value))}.";
+        "The service name must be one of: "
+        + $"{string.Join(separator: ", ", ServiceName.All.Select(service => service.Value))}.";
 }

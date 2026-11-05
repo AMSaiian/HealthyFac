@@ -68,16 +68,16 @@ public static class EmployeeInviteApiFixtureExtensions
 
             return await client.PostAsJsonAsync(
                 EmployeeInviteApiTestData.CreateInvitePath,
-                fixture.CreateInviteBody(null));
+                fixture.CreateInviteBody(extraFields: null));
         }
 
         private JsonObject CreateInviteBody(IReadOnlyDictionary<string, object?>? extraFields)
         {
             var body = new JsonObject
             {
-                ["email"] = $"{Guid.NewGuid():N}@healthyfac.test",
-                ["roleCode"] = EmployeeInviteApiTestData.WorkerRoleCode,
-                ["departmentIds"] = new JsonArray(fixture.IdEncryptor.Encrypt(fixture.DepartmentId)),
+                [propertyName: "email"] = $"{Guid.NewGuid():N}@healthyfac.test",
+                [propertyName: "roleCode"] = EmployeeInviteApiTestData.WorkerRoleCode,
+                [propertyName: "departmentIds"] = new JsonArray(fixture.IdEncryptor.Encrypt(fixture.DepartmentId)),
             };
 
             foreach (var (name, value) in extraFields ?? new Dictionary<string, object?>())
@@ -94,7 +94,7 @@ public static class EmployeeInviteApiFixtureExtensions
 
             return await client.PostAsJsonAsync(
                 EmployeeInviteApiTestData.VerifyInvitePath,
-                new JsonObject { ["token"] = EmployeeInviteApiTestData.UnknownInviteToken });
+                new JsonObject { [propertyName: "token"] = EmployeeInviteApiTestData.UnknownInviteToken });
         }
 
         public async Task<HttpResponseMessage> PostAcceptInviteAnonymouslyAsync(EmployeeInvite invite)
@@ -108,9 +108,9 @@ public static class EmployeeInviteApiFixtureExtensions
                 EmployeeInviteApiTestData.AcceptInvitePath,
                 new JsonObject
                 {
-                    ["token"] = token,
-                    ["firstName"] = EmployeeInviteApiTestData.AcceptedFirstName,
-                    ["lastName"] = EmployeeInviteApiTestData.AcceptedLastName,
+                    [propertyName: "token"] = token,
+                    [propertyName: "firstName"] = EmployeeInviteApiTestData.AcceptedFirstName,
+                    [propertyName: "lastName"] = EmployeeInviteApiTestData.AcceptedLastName,
                 });
         }
 
@@ -125,7 +125,7 @@ public static class EmployeeInviteApiFixtureExtensions
         public async Task<EmployeeInvite> LoadInviteAsync(HttpResponseMessage createResponse)
         {
             var created = await createResponse.Content.ReadFromJsonAsync<JsonObject>();
-            var inviteId = fixture.IdEncryptor.Decrypt(created!["id"]!.GetValue<string>());
+            var inviteId = fixture.IdEncryptor.Decrypt(created![propertyName: "id"]!.GetValue<string>());
 
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();

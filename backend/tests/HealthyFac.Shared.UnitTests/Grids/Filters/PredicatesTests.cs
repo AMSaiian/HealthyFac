@@ -18,7 +18,7 @@ public sealed class PredicatesTests
     [Fact]
     public void And_WithBothSidesNull_ReturnsNull()
     {
-        var predicate = Predicates.From<int>(null).And(null);
+        var predicate = Predicates.From<int>(first: null).And(right: null);
 
         predicate.Should().BeNull();
     }
@@ -26,7 +26,7 @@ public sealed class PredicatesTests
     [Fact]
     public void And_WithNullLeft_ReturnsRight()
     {
-        var predicate = Predicates.From<int>(null).And(IsBelowFive);
+        var predicate = Predicates.From<int>(first: null).And(IsBelowFive);
 
         predicate.Should().BeSameAs(IsBelowFive);
     }
@@ -44,7 +44,7 @@ public sealed class PredicatesTests
     [Fact]
     public void Or_WithNullRight_ReturnsLeft()
     {
-        var predicate = Predicates.From(IsAboveOne).Or(null);
+        var predicate = Predicates.From(IsAboveOne).Or(right: null);
 
         predicate.Should().BeSameAs(IsAboveOne);
     }

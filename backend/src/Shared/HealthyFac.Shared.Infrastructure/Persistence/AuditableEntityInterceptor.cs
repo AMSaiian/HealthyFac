@@ -1,8 +1,8 @@
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 

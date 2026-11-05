@@ -64,7 +64,8 @@ public static class ServiceTokenExtensions
         /// Adds the handler that sets the actor headers of the calling flow on each request of the client. Use it
         /// after <see cref="AddClientCredentialsToken"/> for a client that calls one of our own services, and never
         /// for the Keycloak client or an external API. The service must call <see cref="AddServiceTokens"/> first,
-        /// and the host must register <see cref="IIncomingAccessTokenAccessor"/>. The handler is registered here, not in
+        /// and the host must register <see cref="IIncomingAccessTokenAccessor"/>. The handler is registered here, not
+        /// in
         /// <see cref="AddServiceTokens"/>: a service without this client (e.g., Auth, which has no incoming user
         /// requests) then has no handler that needs the accessor, and the service provider validation at start-up
         /// passes.

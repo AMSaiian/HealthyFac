@@ -14,8 +14,8 @@ public static class IdentityAdminErrors
             + "must then retry provisioning.");
 
     public static InvalidOperationException ResponseEmpty() =>
-        new("The identity provider answered success with an empty body.");
+        new(message: "The identity provider answered success with an empty body.");
 
     public static InvalidOperationException CreatedUserIdMissing() =>
-        new("The identity provider created the user but the response has no valid location header.");
+        new(message: "The identity provider created the user but the response has no valid location header.");
 }

@@ -56,11 +56,11 @@ public class GenericExceptionHandler : IExceptionHandler
 
         if (statusCode >= StatusCodes.Status500InternalServerError)
         {
-            _logger.LogError(exception, "{Title}", problemDetails.Title);
+            _logger.LogError(exception, message: "{Title}", problemDetails.Title);
         }
         else
         {
-            _logger.LogDebug(exception, "{Title}", problemDetails.Title);
+            _logger.LogDebug(exception, message: "{Title}", problemDetails.Title);
         }
 
         await httpContext.Response.WriteProblemDetailsAsync(problemDetails, cancellationToken);

@@ -1,5 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
 using HealthyFac.Shared.Application.UseCases;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Auth.Application;
 

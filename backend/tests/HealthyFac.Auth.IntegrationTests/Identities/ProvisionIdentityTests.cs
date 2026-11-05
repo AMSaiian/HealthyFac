@@ -1,5 +1,4 @@
 using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
-using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
@@ -25,7 +24,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         user.IsOrganizationMember.Should().BeTrue();
         user.RoleNames.Should().Contain(message.RoleCode);
         provisioned.Should().ContainSingle().Which.IdentityUserId.Should().Be(user.UserId.GetValueOrDefault());
-        mailCount.Should().Be(1);
+        mailCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -59,8 +58,8 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
             CancellationToken.None);
         var provisioned = await _fixture.LoadProvisionedAsync(message.EmployeeId);
 
-        userCount.Should().Be(1);
-        provisioned.Should().HaveCount(2);
+        userCount.Should().Be(expected: 1);
+        provisioned.Should().HaveCount(expected: 2);
         provisioned.Select(item => item.IdentityUserId).Should().OnlyContain(id => id == userId);
     }
 
@@ -102,7 +101,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
             .Which.Reason.Should()
             .Be(IdentityProvisioningFailureReasons.EmailAlreadyRegistered);
         provisioned.Should().BeEmpty();
-        mailCount.Should().Be(0);
+        mailCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -154,8 +153,8 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         var mailCount = await _fixture.CountMailsToAsync(message.Email);
         var provisioned = await _fixture.LoadProvisionedAsync(message.EmployeeId);
 
-        inboxCount.Should().Be(1);
-        mailCount.Should().Be(1);
+        inboxCount.Should().Be(expected: 1);
+        mailCount.Should().Be(expected: 1);
         provisioned.Should().ContainSingle();
     }
 
@@ -172,7 +171,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
 
         var provisioned = await _fixture.LoadProvisionedAsync(message.EmployeeId);
 
-        identityAdmin.CreatedUserCount.Should().Be(1);
+        identityAdmin.CreatedUserCount.Should().Be(expected: 1);
         identityAdmin.PasswordEmailUserIds.Should().ContainSingle();
         provisioned.Should().ContainSingle();
     }

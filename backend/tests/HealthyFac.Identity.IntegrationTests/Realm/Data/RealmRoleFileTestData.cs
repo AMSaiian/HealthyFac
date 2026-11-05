@@ -17,10 +17,10 @@ public static class RealmRoleFileTestData
     public static IReadOnlyList<string> ReadRolePermissions(string roleName)
     {
         var realm = JsonNode.Parse(File.ReadAllText(KeycloakFiles.Find(RealmFileDirectory, RealmFileName)))!;
-        var role = realm["roles"]!["realm"]!.AsArray()
-            .Single(candidate => candidate!["name"]!.GetValue<string>() == roleName)!;
+        var role = realm[propertyName: "roles"]![propertyName: "realm"]!.AsArray()
+            .Single(candidate => candidate![propertyName: "name"]!.GetValue<string>() == roleName)!;
 
-        return role["composites"]?["client"]?[RealmTestData.CoreClientId]
+        return role[propertyName: "composites"]?[propertyName: "client"]?[RealmTestData.CoreClientId]
                 ?.AsArray()
                 .Select(permission => permission!.GetValue<string>())
                 .ToList()

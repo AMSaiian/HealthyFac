@@ -26,7 +26,7 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        _core.RequestCount.Should().Be(1);
+        _core.RequestCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -54,6 +54,6 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 }

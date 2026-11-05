@@ -11,7 +11,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
     private const string ForwardedPrefixHeader = "X-Forwarded-Prefix";
     private const string PublicPrefix = "/api/core";
 
-    private readonly EchoServer _core = new(true);
+    private readonly EchoServer _core = new(useForwardedHeaders: true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -23,12 +23,12 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync("/api/core/v1/machines");
+        var response = await client.GetAsync(requestUri: "/api/core/v1/machines");
 
         var forwardedRequest = _core.Requests.Single();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        forwardedRequest.Path.Should().Be("/v1/machines");
+        forwardedRequest.Path.Should().Be(expected: "/v1/machines");
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync("/api/core/v1/machines");
+        using var response = await client.GetAsync(requestUri: "/api/core/v1/machines");
 
         var forwardedRequest = _core.Requests.Single();
 
@@ -51,11 +51,11 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync("/api/core/v1/machines");
+        var response = await client.GetAsync(requestUri: "/api/core/v1/machines");
 
         var publicPath = await response.Content.ReadAsStringAsync();
 
-        publicPath.Should().Be("/api/core/v1/machines");
+        publicPath.Should().Be(expected: "/api/core/v1/machines");
     }
 
     [Fact]
@@ -64,13 +64,13 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync("/api/core/v1/employee-invites/verify?page=2&size=10");
+        var response = await client.GetAsync(requestUri: "/api/core/v1/employee-invites/verify?page=2&size=10");
 
         var forwardedRequest = _core.Requests.Single();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        forwardedRequest.Path.Should().Be("/v1/employee-invites/verify");
-        forwardedRequest.Query.Should().Be("?page=2&size=10");
+        forwardedRequest.Path.Should().Be(expected: "/v1/employee-invites/verify");
+        forwardedRequest.Query.Should().Be(expected: "?page=2&size=10");
     }
 
     [Theory]
@@ -84,7 +84,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -93,10 +93,10 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync("/api/other/v1/x");
+        var response = await client.GetAsync(requestUri: "/api/other/v1/x");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 }

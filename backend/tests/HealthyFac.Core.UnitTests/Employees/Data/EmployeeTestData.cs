@@ -21,12 +21,15 @@ public static class EmployeeTestData
     public static readonly Guid RoleId = Faker.Random.Guid();
     public static readonly Guid IdentityUserId = Faker.Random.Guid();
     public static readonly Guid OtherIdentityUserId = Faker.Random.Guid();
-    public static readonly byte[] TokenSalt = Faker.Random.Bytes(32);
-    public static readonly byte[] RenewedTokenSalt = Faker.Random.Bytes(32);
-    public static readonly DateTime BeforeExpiry = new(2026, 10, 21, 12, 0, 0, DateTimeKind.Utc);
-    public static readonly DateTime ExpiresAt = BeforeExpiry.AddDays(7);
-    public static readonly DateTime RenewedExpiresAt = BeforeExpiry.AddDays(14);
-    public static readonly DateTime RetriedAt = BeforeExpiry.AddDays(1);
+    public static readonly byte[] TokenSalt = Faker.Random.Bytes(count: 32);
+    public static readonly byte[] RenewedTokenSalt = Faker.Random.Bytes(count: 32);
+
+    public static readonly DateTime BeforeExpiry = new(
+        year: 2026, month: 10, day: 21, hour: 12, minute: 0, second: 0, DateTimeKind.Utc);
+
+    public static readonly DateTime ExpiresAt = BeforeExpiry.AddDays(value: 7);
+    public static readonly DateTime RenewedExpiresAt = BeforeExpiry.AddDays(value: 14);
+    public static readonly DateTime RetriedAt = BeforeExpiry.AddDays(value: 1);
 
     private static readonly DevelopmentDataOptions DefaultShapes = new();
 
@@ -60,7 +63,7 @@ public static class EmployeeTestData
     public static TheoryData<DateTime> TimesAtOrAfterExpiry =>
     [
         ExpiresAt,
-        ExpiresAt.AddSeconds(1),
+        ExpiresAt.AddSeconds(value: 1),
     ];
 
     public static TheoryData<Action<Employee>> TransitionsOutOfProvisioning =>

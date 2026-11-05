@@ -131,7 +131,7 @@ public static class MachineErrorCodeFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var errorCodes = seeds
-                .Select(seed => new MachineErrorCode(machineId, seed.Code, null))
+                .Select(seed => new MachineErrorCode(machineId, seed.Code, description: null))
                 .ToList();
 
             dbContext.MachineErrorCodes.AddRange(errorCodes);

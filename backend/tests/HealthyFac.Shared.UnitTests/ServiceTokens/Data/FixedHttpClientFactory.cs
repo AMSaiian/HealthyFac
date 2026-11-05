@@ -8,5 +8,5 @@ public sealed class FixedHttpClientFactory(HttpMessageHandler handler) : IHttpCl
 {
     private readonly HttpMessageHandler _handler = handler;
 
-    public HttpClient CreateClient(string name) => new(_handler, false);
+    public HttpClient CreateClient(string name) => new(_handler, disposeHandler: false);
 }

@@ -29,7 +29,7 @@ public static class UriRuleBuilderExtensions
     /// <param name="value">The text to parse.</param>
     /// <param name="uri">The parsed URI when the method returns <see langword="true"/>.</param>
     /// <returns><see langword="true"/> when <paramref name="value"/> is an absolute http or https URI.</returns>
-    public static bool TryCreateAbsoluteHttpUri(string? value, [NotNullWhen(true)] out Uri? uri)
+    public static bool TryCreateAbsoluteHttpUri(string? value, [NotNullWhen(returnValue: true)] out Uri? uri)
         => Uri.TryCreate(value, UriKind.Absolute, out uri)
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 }

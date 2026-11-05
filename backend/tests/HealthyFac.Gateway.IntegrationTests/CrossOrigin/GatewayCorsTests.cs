@@ -36,7 +36,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IClassFix
             .Should()
             .Equal(GatewayFactory.DefaultCorsOrigin);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]

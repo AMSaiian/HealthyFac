@@ -1,6 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using HealthyFac.Shared.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
@@ -38,10 +37,10 @@ public static class EntityTypeBuilderExtensions
             .IsRequired();
 
         builder.Property(auditable => auditable.UpdatedAt)
-            .IsRequired(false);
+            .IsRequired(required: false);
 
         builder.Property(auditable => auditable.UpdatedBy)
-            .IsRequired(false);
+            .IsRequired(required: false);
 
         return builder;
     }
@@ -55,10 +54,10 @@ public static class EntityTypeBuilderExtensions
         where TEntity : class, ISoftDeletable
     {
         builder.Property(deletable => deletable.DeletedAt)
-            .IsRequired(false);
+            .IsRequired(required: false);
 
         builder.Property(deletable => deletable.DeletedBy)
-            .IsRequired(false);
+            .IsRequired(required: false);
 
         builder.HasQueryFilter(deletable => deletable.DeletedAt == null);
 

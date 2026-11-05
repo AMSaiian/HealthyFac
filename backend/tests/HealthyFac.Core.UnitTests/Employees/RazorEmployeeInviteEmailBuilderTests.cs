@@ -61,9 +61,9 @@ public sealed class RazorEmployeeInviteEmailBuilderTests : IDisposable
     {
         var message = await _builder.BuildAsync(InviteEmailBuilderTestData.Model(), CancellationToken.None);
 
-        var lines = message.TextBody.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var lines = message.TextBody.Split(separator: '\n', StringSplitOptions.RemoveEmptyEntries);
 
-        lines.Should().HaveCountGreaterThan(1);
+        lines.Should().HaveCountGreaterThan(expected: 1);
         lines.Should().Contain(line => line.Trim() == InviteEmailBuilderTestData.Link);
     }
 
@@ -85,7 +85,7 @@ public sealed class RazorEmployeeInviteEmailBuilderTests : IDisposable
             .Select(tag => tag.Value?.ToString() ?? string.Empty)
             .ToList();
 
-        spans.Should().HaveCount(2);
+        spans.Should().HaveCount(expected: 2);
         formats.Should()
             .BeEquivalentTo(
                 [ObservabilityConstants.Rendering.Formats.Html, ObservabilityConstants.Rendering.Formats.Text]);

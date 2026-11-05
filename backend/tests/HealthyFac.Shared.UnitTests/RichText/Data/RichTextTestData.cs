@@ -17,7 +17,8 @@ public static class RichTextTestData
         "<ul><li>a</li></ul>",
         "<ol><li>a</li></ol>",
         "<p><strong>a&nbsp;</strong><em>b&nbsp;</em><u>c</u><s>d</s></p>",
-        "<ol><li><a href=\"https://example.com\" rel=\"noopener noreferrer\" target=\"_blank\">first</a></li></ol><ul><li>b</li></ul>",
+        "<ol><li><a href=\"https://example.com\" rel=\"noopener noreferrer\" target=\"_blank\">first</a></li></ol>"
+        + "<ul><li>b</li></ul>",
     };
 
     public static TheoryData<string> HostileHtml => new()

@@ -5,8 +5,8 @@ namespace HealthyFac.Shared.UnitTests.Grids.Data;
 
 public sealed class TestSortColumn : Enumeration<TestSortColumn>
 {
-    public static readonly TestSortColumn Name = new("name");
-    public static readonly TestSortColumn CreatedAt = new("createdAt");
+    public static readonly TestSortColumn Name = new(value: "name");
+    public static readonly TestSortColumn CreatedAt = new(value: "createdAt");
 
     private TestSortColumn(string value)
         : base(value)
@@ -25,9 +25,10 @@ public static class GridValidatorTestData
 {
     public const int AboveMaxLimit = GridValidationConstants.MaxLimit + 1;
 
-    public static readonly DateTime RangeStart = new(2026, 11, 4, 0, 0, 0, DateTimeKind.Utc);
+    public static readonly DateTime RangeStart = new(
+        year: 2026, month: 11, day: 4, hour: 0, minute: 0, second: 0, DateTimeKind.Utc);
 
-    public static readonly DateTime RangeEnd = RangeStart.AddDays(1);
+    public static readonly DateTime RangeEnd = RangeStart.AddDays(value: 1);
 
     public static TheoryData<DateTimeKind> NonUtcKinds => new()
     {

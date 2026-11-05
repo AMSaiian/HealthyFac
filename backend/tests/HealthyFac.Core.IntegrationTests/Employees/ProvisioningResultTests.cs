@@ -114,7 +114,7 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
         employee.IdentityUserId.Should().Be(identityUserId);
-        messages.Should().HaveCount(2);
+        messages.Should().HaveCount(expected: 2);
         messages.Should().ContainSingle(message => message.IdentityUserId == identityUserId);
     }
 
@@ -133,7 +133,7 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClas
         var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
-        messages.Should().HaveCount(2);
+        messages.Should().HaveCount(expected: 2);
     }
 
     [Fact]

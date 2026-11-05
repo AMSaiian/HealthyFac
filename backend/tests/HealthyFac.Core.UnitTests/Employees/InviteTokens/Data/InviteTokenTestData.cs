@@ -12,7 +12,7 @@ public static class InviteTokenTestData
     private const int TooShortKeyByteCount = 16;
     private const int TooLongLifetimeHours = 721;
 
-    public static Guid InviteId { get; } = Guid.Parse("0d4f4b6e-3c1a-4e57-9a5e-6f1b2c3d4e5f");
+    public static Guid InviteId { get; } = Guid.Parse(input: "0d4f4b6e-3c1a-4e57-9a5e-6f1b2c3d4e5f");
 
     public static TheoryData<string> MalformedTokens => new()
     {
@@ -29,19 +29,19 @@ public static class InviteTokenTestData
 
     public static TheoryData<InviteTokenOptions> InvalidOptions => new()
     {
-        BuildOptions(keys: [BuildKey(CurrentKeyId, true), BuildKey(OlderKeyId, true)]),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, false)]),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, true), BuildKey(CurrentKeyId, false)]),
-        BuildOptions(keys: [BuildKey(CurrentKeyId, true, "not base64 !!")]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true), BuildKey(OlderKeyId, isDefault: true)]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: false)]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true), BuildKey(CurrentKeyId, isDefault: false)]),
+        BuildOptions(keys: [BuildKey(CurrentKeyId, isDefault: true, secret: "not base64 !!")]),
         BuildOptions(
             keys:
             [
                 BuildKey(
                     CurrentKeyId,
-                    true,
+                    isDefault: true,
                     Convert.ToBase64String(new byte[TooShortKeyByteCount])),
             ]),
-        BuildOptions(0),
+        BuildOptions(lifetimeHours: 0),
         BuildOptions(TooLongLifetimeHours),
     };
 
@@ -52,7 +52,7 @@ public static class InviteTokenTestData
         new()
         {
             LifetimeHours = lifetimeHours,
-            Keys = keys ?? [BuildKey(CurrentKeyId, true)],
+            Keys = keys ?? [BuildKey(CurrentKeyId, isDefault: true)],
         };
 
     public static InviteTokenOptions BuildTwoKeyOptions(string defaultKeyId) =>

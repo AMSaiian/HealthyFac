@@ -19,7 +19,8 @@ public static class MachineFixtureExtensions
 {
     private static Machine CreateMachine(Guid companyId, Guid departmentId, MachineSeed seed)
     {
-        var machine = new Machine(companyId, departmentId, seed.Name, seed.SerialNumber, null, seed.CreatedAt);
+        var machine = new Machine(
+            companyId, departmentId, seed.Name, seed.SerialNumber, description: null, seed.CreatedAt);
 
         if (seed.State != MachineState.Operational)
         {
@@ -39,7 +40,7 @@ public static class MachineFixtureExtensions
                 MachineTestData.FirstDepartmentName,
                 MachineTestData.SecondDepartmentName);
 
-            return new MachineTenant(companyId, departmentIds[0], departmentIds[1]);
+            return new MachineTenant(companyId, departmentIds[index: 0], departmentIds[index: 1]);
         }
 
         public async Task<Guid> CreateMachineAsync(

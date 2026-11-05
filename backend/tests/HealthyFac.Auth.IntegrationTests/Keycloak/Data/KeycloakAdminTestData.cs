@@ -1,6 +1,5 @@
 using Bogus;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
-using HealthyFac.Auth.Application.Identities;
 
 namespace HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
@@ -27,21 +26,21 @@ public static class KeycloakAdminTestData
     public const string TokenPathFormat = "{0}/realms/{1}/protocol/openid-connect/token";
     public const int FakerSeed = 20261028;
 
-    public static readonly Guid CompanyId = Guid.Parse("0190f3a0-0000-7000-8000-000000000001");
-    public static readonly Guid UnknownCompanyId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000ff");
-    public static readonly Guid SupervisorIdentityId = Guid.Parse("0190f3a0-0000-7000-8000-000000000002");
-    public static readonly Guid SupervisorEmployeeId = Guid.Parse("0190f3a0-0000-7000-8000-000000000003");
+    public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
+    public static readonly Guid UnknownCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000ff");
+    public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
+    public static readonly Guid SupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
 
     public static IReadOnlyDictionary<string, string> RealmEnvironment { get; } = new Dictionary<string, string>
     {
-        ["HEALTHYFAC_SPA_URL"] = SpaUrl,
-        ["HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
-        ["HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
-        ["HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
-        ["HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
-        ["HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
-        ["KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
-        ["KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
+        [key: "HEALTHYFAC_SPA_URL"] = SpaUrl,
+        [key: "HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
+        [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
+        [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
     };
 
     /// <summary>

@@ -9,7 +9,7 @@ if (args.Length == 0 || !IsSchemaValid(args[0], out var uri))
 
 using var handler = new HttpClientHandler
 {
-    AllowAutoRedirect = false
+    AllowAutoRedirect = false,
 };
 using var client = new HttpClient(handler)
 {

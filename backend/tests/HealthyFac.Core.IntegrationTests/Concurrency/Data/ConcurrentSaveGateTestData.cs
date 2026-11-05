@@ -7,7 +7,7 @@ public static class ConcurrentSaveGateTestData
     public const string OneOfTwoArrived = "1 of 2";
     public const int ParticipantCount = 2;
 
-    public static readonly TimeSpan SlowParticipantDelay = TimeSpan.FromMilliseconds(300);
-    public static readonly TimeSpan ShortTimeout = TimeSpan.FromMilliseconds(300);
-    public static readonly TimeSpan OutsideSaveLimit = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan SlowParticipantDelay = TimeSpan.FromMilliseconds(milliseconds: 300);
+    public static readonly TimeSpan ShortTimeout = TimeSpan.FromMilliseconds(milliseconds: 300);
+    public static readonly TimeSpan OutsideSaveLimit = TimeSpan.FromSeconds(seconds: 5);
 }

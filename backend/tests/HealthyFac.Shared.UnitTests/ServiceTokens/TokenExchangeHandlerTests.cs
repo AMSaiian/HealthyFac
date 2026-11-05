@@ -36,7 +36,7 @@ public sealed class TokenExchangeHandlerTests
 
         using var second = await harness.CallAsync();
 
-        harness.TokenEndpoint.RequestCount.Should().Be(1);
+        harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -52,7 +52,7 @@ public sealed class TokenExchangeHandlerTests
 
         using var second = await harness.CallAsync();
 
-        harness.TokenEndpoint.RequestCount.Should().Be(2);
+        harness.TokenEndpoint.RequestCount.Should().Be(expected: 2);
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -70,7 +70,7 @@ public sealed class TokenExchangeHandlerTests
 
         using var firstUserAgain = await harness.CallAsync();
 
-        harness.TokenEndpoint.RequestCount.Should().Be(2);
+        harness.TokenEndpoint.RequestCount.Should().Be(expected: 2);
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -91,7 +91,7 @@ public sealed class TokenExchangeHandlerTests
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(ServiceTokenErrors.NoIncomingUserToken().Message);
 
-        harness.TokenEndpoint.RequestCount.Should().Be(0);
+        harness.TokenEndpoint.RequestCount.Should().Be(expected: 0);
         harness.Resource.Authorizations.Should().BeEmpty();
     }
 

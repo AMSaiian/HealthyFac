@@ -1,7 +1,7 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
 namespace HealthyFac.Shared.UnitTests.UseCases.Data;
 
@@ -64,7 +64,9 @@ public sealed class RuledRequestPreHandlerCheck(HandlerProbe probe) : IPreHandle
     {
         _probe.RecordRule();
 
-        return request.IsRejected ? throw new ForbiddenAccessException("Outside the scope.") : Task.CompletedTask;
+        return request.IsRejected
+            ? throw new ForbiddenAccessException(message: "Outside the scope.")
+            : Task.CompletedTask;
     }
 }
 
@@ -79,7 +81,7 @@ public sealed class RuledRequestHandler(HandlerProbe probe) : IRequestHandler<Ru
     {
         _probe.Record();
 
-        return Task.FromResult(1);
+        return Task.FromResult(result: 1);
     }
 }
 
@@ -91,7 +93,7 @@ public sealed class UnruledRequestHandler : IRequestHandler<UnruledRequest, int>
         UnruledRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     ) =>
-        Task.FromResult(1);
+        Task.FromResult(result: 1);
 }
 
 public sealed record DoubleRuledRequest : IRequest<int>;
@@ -102,7 +104,7 @@ public sealed class DoubleRuledRequestHandler : IRequestHandler<DoubleRuledReque
         DoubleRuledRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     ) =>
-        Task.FromResult(1);
+        Task.FromResult(result: 1);
 }
 
 public sealed class FirstDoubleRuledPreHandlerCheck : PassThroughPreHandlerCheck<DoubleRuledRequest>;
@@ -129,7 +131,7 @@ public sealed class FirstDuplicatedRequestHandler : IRequestHandler<DuplicatedRe
         DuplicatedRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     ) =>
-        Task.FromResult(1);
+        Task.FromResult(result: 1);
 }
 
 public sealed class SecondDuplicatedRequestHandler : IRequestHandler<DuplicatedRequest, int>
@@ -138,5 +140,5 @@ public sealed class SecondDuplicatedRequestHandler : IRequestHandler<DuplicatedR
         DuplicatedRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     ) =>
-        Task.FromResult(2);
+        Task.FromResult(result: 2);
 }

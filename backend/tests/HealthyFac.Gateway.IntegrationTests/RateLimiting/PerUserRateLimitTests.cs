@@ -10,7 +10,7 @@ public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
 {
     private readonly GatewayEnvironment _environment = environment;
 
-    private readonly EchoServer _core = new(true);
+    private readonly EchoServer _core = new(useForwardedHeaders: true);
 
     public Task InitializeAsync() => _core.StartAsync();
 

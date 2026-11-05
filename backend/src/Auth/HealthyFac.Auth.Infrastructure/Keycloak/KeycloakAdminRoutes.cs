@@ -27,7 +27,7 @@ public static class KeycloakAdminRoutes
         => RealmUrl(realm)
             .AppendPathSegment(Organizations)
             .SetQueryParam(SearchParameter, name)
-            .SetQueryParam(ExactParameter, true)
+            .SetQueryParam(ExactParameter, value: true)
             .ToString();
 
     public static string OrganizationMembers(string realm, Guid organizationId)
@@ -37,7 +37,7 @@ public static class KeycloakAdminRoutes
         => RealmUrl(realm)
             .AppendPathSegment(Users)
             .SetQueryParam(AttributeQueryParameter, $"{attribute}:{value}")
-            .SetQueryParam(ExactParameter, true)
+            .SetQueryParam(ExactParameter, value: true)
             .ToString();
 
     public static string UsersRoot(string realm) => RealmUrl(realm).AppendPathSegment(Users).ToString();

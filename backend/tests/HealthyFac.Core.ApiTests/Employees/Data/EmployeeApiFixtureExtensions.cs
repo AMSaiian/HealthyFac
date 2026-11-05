@@ -25,7 +25,7 @@ public static class EmployeeApiFixtureExtensions
 
             return await client.PostAsJsonAsync(
                 path,
-                new JsonObject { ["employeeId"] = fixture.IdEncryptor.Encrypt(employeeId) });
+                new JsonObject { [propertyName: "employeeId"] = fixture.IdEncryptor.Encrypt(employeeId) });
         }
     }
 }

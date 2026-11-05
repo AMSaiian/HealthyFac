@@ -18,7 +18,9 @@ public static class RichTextRules
         /// </summary>
         /// <param name="richTextPolicy">Inspects the HTML.</param>
         /// <param name="maxVisibleLength">The longest allowed visible text of the field.</param>
-        /// <param name="tooLongMessage">The failure message for visible text above <paramref name="maxVisibleLength"/>.</param>
+        /// <param name="tooLongMessage">
+        /// The failure message for visible text above <paramref name="maxVisibleLength"/>.
+        /// </param>
         /// <param name="notAllowedMessage">The failure message for HTML that the policy rejects.</param>
         /// <param name="tooMuchFormattingMessage">The failure message for HTML above the raw cap.</param>
         /// <returns>The rule builder for chaining.</returns>

@@ -23,13 +23,13 @@ public static class TokenExchangeFixtureExtensions
             fixture.Realm.RequestTokenAsync(
                 new Dictionary<string, string>
                 {
-                    ["grant_type"] = TokenExchangeTestData.GrantType,
-                    ["client_id"] = RealmTestData.CoreClientId,
-                    ["client_secret"] = RealmTestData.CoreClientSecret,
-                    ["subject_token"] = subjectToken,
-                    ["subject_token_type"] = TokenExchangeTestData.AccessTokenType,
-                    ["audience"] = audience,
-                    ["scope"] = scope,
+                    [key: "grant_type"] = TokenExchangeTestData.GrantType,
+                    [key: "client_id"] = RealmTestData.CoreClientId,
+                    [key: "client_secret"] = RealmTestData.CoreClientSecret,
+                    [key: "subject_token"] = subjectToken,
+                    [key: "subject_token_type"] = TokenExchangeTestData.AccessTokenType,
+                    [key: "audience"] = audience,
+                    [key: "scope"] = scope,
                 },
                 host);
 
@@ -49,14 +49,14 @@ public static class TokenExchangeFixtureExtensions
             string scope
         )
         {
-            await fixture.Realm.SetUserEnabledAsync(userId, false);
+            await fixture.Realm.SetUserEnabledAsync(userId, isEnabled: false);
             try
             {
                 return await fixture.ExchangeAsync(subjectToken, audience, scope);
             }
             finally
             {
-                await fixture.Realm.SetUserEnabledAsync(userId, true);
+                await fixture.Realm.SetUserEnabledAsync(userId, isEnabled: true);
             }
         }
     }

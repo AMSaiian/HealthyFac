@@ -1,5 +1,5 @@
-using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 using HealthyFac.Testing.Caching;
 using Microsoft.Extensions.Time.Testing;
@@ -21,7 +21,7 @@ public sealed class RedisTokenCacheStorageTests
         await act.Should()
             .ThrowAsync<TokenStorageException>()
             .WithMessage(ServiceTokenErrors.StorageSkipped().Message);
-        counter.CallCount.Should().Be(0);
+        counter.CallCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -33,6 +33,6 @@ public sealed class RedisTokenCacheStorageTests
         var act = () => storage.GetAsync(ServiceTokenTestData.TokenKey, CancellationToken.None);
 
         await act.Should().ThrowAsync<TokenStorageException>();
-        counter.CallCount.Should().Be(1);
+        counter.CallCount.Should().Be(expected: 1);
     }
 }

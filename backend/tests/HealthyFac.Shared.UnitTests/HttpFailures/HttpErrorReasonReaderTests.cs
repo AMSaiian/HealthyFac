@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
-using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Shared.UnitTests.HttpFailures.Data;
 
 namespace HealthyFac.Shared.UnitTests.HttpFailures;
@@ -28,10 +27,10 @@ public sealed class HttpErrorReasonReaderTests
     public void ReadReason_WithBlankFirstReason_UsesNextReader()
     {
         var reader = new FirstReasonReader(
-            new FixedReasonReader("  "),
+            new FixedReasonReader(reason: "  "),
             new FixedReasonReader(HttpFailureTestData.SecondReason));
 
-        var reason = reader.ReadReason(HttpFailureTestData.Parse("{}"));
+        var reason = reader.ReadReason(HttpFailureTestData.Parse(json: "{}"));
 
         reason.Should().Be(HttpFailureTestData.SecondReason);
     }

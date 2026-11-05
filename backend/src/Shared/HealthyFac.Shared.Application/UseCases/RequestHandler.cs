@@ -19,7 +19,9 @@ public abstract class RequestHandler<TRequest> : IRequestHandler<TRequest, Unit>
     /// Runs the work of the use case and returns <see cref="Unit"/>.
     /// </summary>
     /// <param name="request">The request to handle.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <returns>The default <see cref="Unit"/>.</returns>
     public async Task<Unit> HandleAsync(
         TRequest request,
@@ -35,7 +37,9 @@ public abstract class RequestHandler<TRequest> : IRequestHandler<TRequest, Unit>
     /// Runs the work of the use case.
     /// </summary>
     /// <param name="request">The request to handle.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <returns>A task that completes when the work ends.</returns>
     protected abstract Task HandleInternalAsync(TRequest request, CancellationToken cancellationToken);
 }

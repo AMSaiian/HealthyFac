@@ -21,7 +21,7 @@ public static class CorsClientExtensions
             var request = new HttpRequestMessage(HttpMethod.Options, path);
             request.Headers.Add(OriginHeader, origin);
             request.Headers.Add(RequestMethodHeader, HttpMethod.Post.Method);
-            request.Headers.Add(RequestHeadersHeader, "authorization,content-type");
+            request.Headers.Add(RequestHeadersHeader, value: "authorization,content-type");
 
             return await client.SendAsync(request);
         }

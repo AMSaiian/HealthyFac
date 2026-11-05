@@ -15,14 +15,14 @@ public sealed class UseCaseRegistrationTests
         services.AddLogging();
         services.AddSingleton(probe);
         services.AddUseCases(UseCaseRegistrationTestData.NoResultTypes);
-        await using var provider = services.BuildServiceProvider(true);
+        await using var provider = services.BuildServiceProvider(validateScopes: true);
         using var scope = provider.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<NoResultRequest>>();
 
         var act = () => handler.HandleAsync(new NoResultRequest { Name = UseCaseRegistrationTestData.BlankName });
 
         await act.Should().ThrowAsync<AppValidationException>();
-        probe.RunCount.Should().Be(0);
+        probe.RunCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -90,8 +90,8 @@ public sealed class UseCaseRegistrationTests
         var act = () => handler.HandleAsync(new RuledRequest { Name = "machine", IsRejected = true });
 
         await act.Should().ThrowAsync<ForbiddenAccessException>();
-        probe.RuleRunCount.Should().Be(1);
-        probe.RunCount.Should().Be(0);
+        probe.RuleRunCount.Should().Be(expected: 1);
+        probe.RunCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -106,8 +106,8 @@ public sealed class UseCaseRegistrationTests
             new RuledRequest { Name = UseCaseRegistrationTestData.BlankName, IsRejected = false });
 
         await act.Should().ThrowAsync<AppValidationException>();
-        probe.RuleRunCount.Should().Be(0);
-        probe.RunCount.Should().Be(0);
+        probe.RuleRunCount.Should().Be(expected: 0);
+        probe.RunCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -120,8 +120,8 @@ public sealed class UseCaseRegistrationTests
 
         await handler.HandleAsync(new NoResultRequest { Name = "machine" });
 
-        probe.RuleRunCount.Should().Be(1);
-        probe.RunCount.Should().Be(1);
+        probe.RuleRunCount.Should().Be(expected: 1);
+        probe.RunCount.Should().Be(expected: 1);
     }
 
     private static ServiceProvider BuildProvider(HandlerProbe probe, Type[] types)
@@ -131,6 +131,6 @@ public sealed class UseCaseRegistrationTests
         services.AddSingleton(probe);
         services.AddUseCases(types);
 
-        return services.BuildServiceProvider(true);
+        return services.BuildServiceProvider(validateScopes: true);
     }
 }

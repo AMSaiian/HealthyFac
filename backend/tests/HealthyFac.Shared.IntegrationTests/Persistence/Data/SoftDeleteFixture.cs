@@ -1,6 +1,5 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
-using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Testing.Containers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;

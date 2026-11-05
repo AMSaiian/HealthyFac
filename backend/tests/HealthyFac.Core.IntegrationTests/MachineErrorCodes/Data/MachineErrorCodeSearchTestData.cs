@@ -9,14 +9,15 @@ public static class MachineErrorCodeSearchTestData
     public const int PageSize = 2;
     public const int SecondPageOffset = 2;
 
-    public static readonly DateTime FirstCreatedAt = new(2026, 3, 1, 8, 0, 0, DateTimeKind.Utc);
+    public static readonly DateTime FirstCreatedAt = new(
+        year: 2026, month: 3, day: 1, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
 
     public static IReadOnlyList<MachineErrorCodeSeed> CreateSeeds() =>
     [
-        new("Alpha-1", FirstCreatedAt, FirstCreatedAt.AddDays(13)),
-        new("alpha-2", FirstCreatedAt.AddDays(1), FirstCreatedAt.AddDays(11)),
-        new("Beta-1", FirstCreatedAt.AddDays(2), FirstCreatedAt.AddDays(12)),
-        new("Gamma-1", FirstCreatedAt.AddDays(3), FirstCreatedAt.AddDays(10)),
+        new(Code: "Alpha-1", FirstCreatedAt, FirstCreatedAt.AddDays(value: 13)),
+        new(Code: "alpha-2", FirstCreatedAt.AddDays(value: 1), FirstCreatedAt.AddDays(value: 11)),
+        new(Code: "Beta-1", FirstCreatedAt.AddDays(value: 2), FirstCreatedAt.AddDays(value: 12)),
+        new(Code: "Gamma-1", FirstCreatedAt.AddDays(value: 3), FirstCreatedAt.AddDays(value: 10)),
     ];
 
     public static SearchMachineErrorCodesRequest CreateSearch(

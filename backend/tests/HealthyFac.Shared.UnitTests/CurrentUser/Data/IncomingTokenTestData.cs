@@ -13,7 +13,7 @@ public static class IncomingTokenTestData
     public const string BearerScheme = "Bearer";
     public const string LowerCaseBearerScheme = "bearer";
 
-    public static readonly Guid ServiceAccountId = Guid.Parse("019a0000-0000-7000-8000-0000000000b1");
+    public static readonly Guid ServiceAccountId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000b1");
 
     public static ClaimsPrincipal ServicePrincipal => new(
         new ClaimsIdentity(
@@ -21,7 +21,7 @@ public static class IncomingTokenTestData
                 new Claim(JwtRegisteredClaimNames.Sub, ServiceAccountId.ToString()),
                 new Claim(ClientIdClaim, ServiceClientId),
             ],
-            "test"));
+            authenticationType: "test"));
 
     public static DefaultHttpContext CreateContext(
         ClaimsPrincipal user,

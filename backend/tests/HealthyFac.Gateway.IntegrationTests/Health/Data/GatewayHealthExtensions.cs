@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.TestHost;
 
 namespace HealthyFac.Gateway.IntegrationTests.Health.Data;
 

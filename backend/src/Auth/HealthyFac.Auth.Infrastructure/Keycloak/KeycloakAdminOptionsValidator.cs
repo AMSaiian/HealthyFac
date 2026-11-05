@@ -24,7 +24,7 @@ public sealed class KeycloakAdminOptionsValidator : AbstractValidator<KeycloakAd
             .WithMessage(KeycloakValidationMessages.SpaBaseUrlInvalid);
 
         RuleFor(options => options.SetPasswordLifespanSeconds)
-            .GreaterThan(0)
+            .GreaterThan(valueToCompare: 0)
             .WithMessage(KeycloakValidationMessages.SetPasswordLifespanInvalid);
     }
 }

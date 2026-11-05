@@ -3,7 +3,6 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
-using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.JsonWebTokens;
 
@@ -44,7 +43,7 @@ public static class ActorClaimsTestData
         claims.AddRange(
             (departmentIds ?? []).Select(departmentId => new Claim(KeycloakClaimTypes.DepartmentIds, departmentId)));
 
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "test"));
     }
 
     public static ClaimsPrincipal ValidPrincipal => CreatePrincipal(

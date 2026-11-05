@@ -34,7 +34,7 @@ internal static class JsonbPayloadExtensions
                 {
                     if (reader.TokenType is JsonTokenType.String or JsonTokenType.PropertyName
                         && reader.ValueIsEscaped
-                        && reader.GetString()!.Contains('\0'))
+                        && reader.GetString()!.Contains(value: '\0'))
                     {
                         return false;
                     }

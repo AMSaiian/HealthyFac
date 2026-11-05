@@ -58,7 +58,8 @@ public static class ConventionChecks
         assembly.GetSourceTypes()
             .Where(type => type is { IsAbstract: true, IsSealed: true })
             .SelectMany(type => type.GetMethods(TypeInspection.DeclaredMembers))
-            .Where(method => method.IsDefined(typeof(ExtensionAttribute), false) && method.ReturnType != typeof(void))
+            .Where(method => method.IsDefined(typeof(ExtensionAttribute), inherit: false)
+                && method.ReturnType != typeof(void))
             .Select(method => (Method: method, Prefix: GetExpectedPrefix(method.GetParameters()[0].ParameterType)))
             .Where(item => item.Prefix is not null
                 && !item.Method.Name.StartsWith(item.Prefix, StringComparison.Ordinal))
@@ -157,7 +158,7 @@ public static class ConventionChecks
     {
         var adapterType = typeof(IRequestHandler<>).Assembly.GetType(
             ConventionConstants.UnitAdapterType,
-            true
+            throwOnError: true
         );
 
         return assembly.GetSourceTypes()
@@ -229,7 +230,7 @@ public static class ConventionChecks
             .OfType<string>()
             .Distinct()
             .Where(name => name.StartsWith(rootNamespace, StringComparison.Ordinal))
-            .Select(name => (Namespace: name, Folders: name[rootNamespace.Length..].Split('.')));
+            .Select(name => (Namespace: name, Folders: name[rootNamespace.Length..].Split(separator: '.')));
     }
 
     private static string? GetExpectedPrefix(Type receiver) => receiver switch
@@ -249,7 +250,8 @@ public static class ConventionChecks
         var externalMethods = type.GetExternalInterfaceMethods();
         var properties = type.GetProperties(TypeInspection.DeclaredMembers)
             .Where(property => property.PropertyType.IsBoolean && !property.IsCompilerGenerated)
-            .Where(property => !property.GetAccessors(true).Any(accessor => accessor.IsNamedElsewhere(externalMethods)))
+            .Where(property => !property.GetAccessors(nonPublic: true)
+                .Any(accessor => accessor.IsNamedElsewhere(externalMethods)))
             .Select(property => property.Name);
         var fields = type.GetFields(TypeInspection.DeclaredMembers)
             .Where(field => field.FieldType.IsBoolean && !field.IsCompilerGenerated)

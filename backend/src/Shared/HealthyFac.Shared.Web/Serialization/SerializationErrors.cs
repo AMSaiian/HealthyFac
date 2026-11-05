@@ -17,10 +17,10 @@ public static class SerializationErrors
     /// <param name="innerException">The decryption failure that caused this.</param>
     /// <returns>The exception to throw from a converter.</returns>
     public static JsonException InvalidEncryptedIdentifier(Exception innerException) =>
-        new("The value is not a valid encrypted identifier.", innerException);
+        new(message: "The value is not a valid encrypted identifier.", innerException);
 
     public static JsonException ExpectedEncryptedIdentifierArray() =>
-        new("The value is not an array of encrypted identifiers.");
+        new(message: "The value is not an array of encrypted identifiers.");
 
     public static JsonException UnknownEnumerationValue(Type type, string? value) =>
         new($"'{value}' is not a known {type.Name} value.");

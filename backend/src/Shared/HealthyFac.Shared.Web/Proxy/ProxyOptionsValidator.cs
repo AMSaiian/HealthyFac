@@ -8,7 +8,7 @@ public sealed class ProxyOptionsValidator : AbstractValidator<ProxyOptions>
     public ProxyOptionsValidator()
     {
         RuleFor(options => options.ForwardLimit)
-            .GreaterThanOrEqualTo(1)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
             .When(options => !options.IsEveryProxyTrusted)
             .WithMessage(ProxyValidationMessages.ForwardLimitTooSmall);
 

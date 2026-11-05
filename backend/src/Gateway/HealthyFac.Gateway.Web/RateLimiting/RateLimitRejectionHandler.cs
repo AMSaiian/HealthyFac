@@ -20,7 +20,7 @@ internal sealed class RateLimitRejectionHandler(ILogger<RateLimitRejectionHandle
 
     public async ValueTask HandleAsync(OnRejectedContext context, CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Rate limit rejected a request to {Path}", context.HttpContext.Request.Path);
+        _logger.LogDebug(message: "Rate limit rejected a request to {Path}", context.HttpContext.Request.Path);
 
         if (TryGetRetryAfterSeconds(context, out var retryAfterSeconds))
         {

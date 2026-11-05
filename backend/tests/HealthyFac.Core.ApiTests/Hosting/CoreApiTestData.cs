@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
-using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Core.ApiTests.Hosting;
@@ -19,23 +18,23 @@ public static class CoreApiTestData
     )
         => new Dictionary<string, string?>(TestTokenFactory.JwtSettings)
         {
-            ["ConnectionStrings:Database"] = databaseConnection,
-            ["ConnectionStrings:RabbitMq"] = brokerConnection,
-            ["Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
-            ["IdEncryption:Keys:0:Prefix"] = "v1.",
-            ["IdEncryption:Keys:0:Key"] = IdEncryptionKey,
-            ["IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
-            ["InviteTokens:LifetimeHours"] = "72",
-            ["InviteTokens:Keys:0:Id"] = "test",
-            ["InviteTokens:Keys:0:Secret"] = InviteTokenSecret,
-            ["InviteTokens:Keys:0:IsDefault"] = bool.TrueString,
-            ["InviteLinks:SpaBaseUrl"] = "https://app.test",
-            ["Smtp:Host"] = "localhost",
-            ["Smtp:Port"] = "1025",
-            ["Smtp:Security"] = "None",
-            ["Smtp:FromAddress"] = "no-reply@healthyfac.test",
-            ["Smtp:FromName"] = "HealthyFac Tests",
-            ["Seeding:IsOptionalDataSeeded"] = bool.FalseString,
+            [key: "ConnectionStrings:Database"] = databaseConnection,
+            [key: "ConnectionStrings:RabbitMq"] = brokerConnection,
+            [key: "Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
+            [key: "IdEncryption:Keys:0:Prefix"] = "v1.",
+            [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
+            [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
+            [key: "InviteTokens:LifetimeHours"] = "72",
+            [key: "InviteTokens:Keys:0:Id"] = "test",
+            [key: "InviteTokens:Keys:0:Secret"] = InviteTokenSecret,
+            [key: "InviteTokens:Keys:0:IsDefault"] = bool.TrueString,
+            [key: "InviteLinks:SpaBaseUrl"] = "https://app.test",
+            [key: "Smtp:Host"] = "localhost",
+            [key: "Smtp:Port"] = "1025",
+            [key: "Smtp:Security"] = "None",
+            [key: "Smtp:FromAddress"] = "no-reply@healthyfac.test",
+            [key: "Smtp:FromName"] = "HealthyFac Tests",
+            [key: "Seeding:IsOptionalDataSeeded"] = bool.FalseString,
             [$"{ServiceActorOptions.SectionName}:AllowedClients:0"] = TestServiceTokenClaims.DefaultClientId,
         };
 }

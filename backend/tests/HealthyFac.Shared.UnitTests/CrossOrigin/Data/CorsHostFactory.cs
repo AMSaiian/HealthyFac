@@ -3,7 +3,6 @@ using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
@@ -44,7 +43,7 @@ public static class CorsHostFactory
                     services.AddRouting();
                     services.AddSharedCors(context.Configuration);
                     services.AddAuthentication(DenyScheme)
-                        .AddScheme<AuthenticationSchemeOptions, DenyHandler>(DenyScheme, null);
+                        .AddScheme<AuthenticationSchemeOptions, DenyHandler>(DenyScheme, configureOptions: null);
                     services.AddAuthorizationBuilder()
                         .SetAuthenticatedFallbackPolicy();
                 })

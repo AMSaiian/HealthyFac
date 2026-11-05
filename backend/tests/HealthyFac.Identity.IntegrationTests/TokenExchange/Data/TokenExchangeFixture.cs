@@ -23,9 +23,9 @@ public sealed class TokenExchangeFixture : IAsyncLifetime
         var targetUuid = await Realm.CreateClientAsync(
             new JsonObject
             {
-                ["clientId"] = TokenExchangeTestData.TargetClientId,
-                ["enabled"] = true,
-                ["publicClient"] = false,
+                [propertyName: "clientId"] = TokenExchangeTestData.TargetClientId,
+                [propertyName: "enabled"] = true,
+                [propertyName: "publicClient"] = false,
             });
         await Realm.CreateClientRoleAsync(targetUuid, TokenExchangeTestData.TargetRoleName);
 
@@ -33,19 +33,19 @@ public sealed class TokenExchangeFixture : IAsyncLifetime
             TokenExchangeTestData.TargetScopeName,
             new JsonObject
             {
-                ["name"] = $"{TokenExchangeTestData.TargetClientId}-audience",
-                ["protocol"] = "openid-connect",
-                ["protocolMapper"] = "oidc-audience-mapper",
-                ["config"] = new JsonObject
+                [propertyName: "name"] = $"{TokenExchangeTestData.TargetClientId}-audience",
+                [propertyName: "protocol"] = "openid-connect",
+                [propertyName: "protocolMapper"] = "oidc-audience-mapper",
+                [propertyName: "config"] = new JsonObject
                 {
-                    ["included.client.audience"] = TokenExchangeTestData.TargetClientId,
-                    ["access.token.claim"] = "true",
-                    ["id.token.claim"] = "false",
-                    ["introspection.token.claim"] = "true",
+                    [propertyName: "included.client.audience"] = TokenExchangeTestData.TargetClientId,
+                    [propertyName: "access.token.claim"] = "true",
+                    [propertyName: "id.token.claim"] = "false",
+                    [propertyName: "introspection.token.claim"] = "true",
                 },
             });
         var coreUuid = await Realm.FindClientUuidAsync(RealmTestData.CoreClientId);
-        await Realm.AddClientScopeAsync(coreUuid, scopeId, false);
+        await Realm.AddClientScopeAsync(coreUuid, scopeId, isDefault: false);
     }
 
     public async Task DisposeAsync()

@@ -30,11 +30,11 @@ public sealed class FlakyRevocationStore : ITokenRevocationStore
             throw new RedisConnectionException(
                 ConnectionFailureType.UnableToConnect,
                 CommandFlags.None,
-                "Redis is down.",
+                message: "Redis is down.",
                 innerException: null,
-                commandStatus: CommandStatus.Unknown);
+                CommandStatus.Unknown);
         }
 
-        return Task.FromResult<DateTimeOffset?>(null);
+        return Task.FromResult<DateTimeOffset?>(result: null);
     }
 }

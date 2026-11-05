@@ -104,6 +104,6 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture) : IClassFixture
             tenant.FirstDepartmentId,
             MachineTestData.CreateSingleMachineSeed());
 
-        return ids[0];
+        return ids[index: 0];
     }
 }

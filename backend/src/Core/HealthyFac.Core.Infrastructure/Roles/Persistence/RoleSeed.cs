@@ -10,7 +10,7 @@ internal static class RoleSeed
 {
     public static IReadOnlyList<Role> Roles =>
     [
-        new Role { Code = RoleCode.Worker, Name = "Maintenance worker" },
-        new Role { Code = RoleCode.Supervisor, Name = "Supervisor" },
+        new() { Code = RoleCode.Worker, Name = "Maintenance worker" },
+        new() { Code = RoleCode.Supervisor, Name = "Supervisor" },
     ];
 }

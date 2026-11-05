@@ -16,7 +16,7 @@ public static class CorsPolicyOptionsValidatorTestData
     };
 
     public static string AboveBrowserLimitMessage { get; } = CorsValidationMessages.PreflightMaxAgeAboveBrowserLimit
-        .Replace("{ComparisonValue}", CorsConstants.MaxPreflightMaxAgeSeconds.ToString());
+        .Replace(oldValue: "{ComparisonValue}", CorsConstants.MaxPreflightMaxAgeSeconds.ToString());
 
     public static CorsPolicyOptions EnabledWithPreflightMaxAge(int seconds) =>
         new()

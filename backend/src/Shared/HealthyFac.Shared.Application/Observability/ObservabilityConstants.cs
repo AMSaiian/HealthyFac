@@ -113,7 +113,9 @@ public static class ObservabilityConstants
 
         public static class Failures
         {
-            /// <summary>No retry can fix the message (e.g., an invalid payload), so it failed at the first attempt.</summary>
+            /// <summary>
+            /// No retry can fix the message (e.g., an invalid payload), so it failed at the first attempt.
+            /// </summary>
             public const string Permanent = "permanent";
 
             /// <summary>The message failed at the last allowed attempt.</summary>

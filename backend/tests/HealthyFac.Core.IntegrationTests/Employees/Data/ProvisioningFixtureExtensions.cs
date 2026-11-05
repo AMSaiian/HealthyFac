@@ -1,9 +1,9 @@
 using System.Collections.Frozen;
 using HealthyFac.Core.Application;
-using HealthyFac.Core.Application.Employees.DeactivateEmployee;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Application.Employees.CompleteProvisioning;
+using HealthyFac.Core.Application.Employees.DeactivateEmployee;
 using HealthyFac.Core.Application.Employees.FailProvisioning;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.IntegrationTests.Database.Data;
@@ -26,7 +26,7 @@ public static class ProvisioningFixtureExtensions
         {
             var invite = await fixture.ArrangeInviteAsync(
                 email,
-                DateTime.UtcNow.AddHours(1),
+                DateTime.UtcNow.AddHours(value: 1),
                 InviteTestData.FirstDepartmentName);
             var employeeId = await fixture.AcceptInviteAsync(invite.Token);
 

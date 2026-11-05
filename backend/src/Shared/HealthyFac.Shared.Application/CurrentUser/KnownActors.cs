@@ -15,7 +15,7 @@ public static class KnownActors
     /// The namespace of every actor ID. Never change it, because every actor ID in the audit columns and the
     /// messages depends on it.
     /// </summary>
-    public static readonly Guid Namespace = Guid.Parse("aae8d67c-0d95-40ea-bda9-142732768543");
+    public static readonly Guid Namespace = Guid.Parse(input: "aae8d67c-0d95-40ea-bda9-142732768543");
 
     private const int NameBasedVersion = 5;
 

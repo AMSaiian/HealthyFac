@@ -31,16 +31,16 @@ public sealed class RealmImportTests(KeycloakRealmFixture fixture) : IClassFixtu
     {
         var claims = await _fixture.GetSupervisorAccessTokenClaimsAsync();
 
-        claims["sub"]!.GetValue<string>().Should().Be(RealmTestData.SupervisorIdentityId.ToString());
-        claims["organization"]!.AsArray()
+        claims[propertyName: "sub"]!.GetValue<string>().Should().Be(RealmTestData.SupervisorIdentityId.ToString());
+        claims[propertyName: "organization"]!.AsArray()
             .Select(value => value!.GetValue<string>())
             .Should()
             .Equal(RealmTestData.CompanyId.ToString());
         claims[RealmTestData.EmployeeIdAttribute]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.SupervisorEmployeeId.ToString());
-        claims["aud"]!.ToJsonString().Should().Contain(RealmTestData.CoreClientId);
-        (claims["exp"]!.GetValue<long>() - claims["iat"]!.GetValue<long>())
+        claims[propertyName: "aud"]!.ToJsonString().Should().Contain(RealmTestData.CoreClientId);
+        (claims[propertyName: "exp"]!.GetValue<long>() - claims[propertyName: "iat"]!.GetValue<long>())
             .Should()
             .Be(RealmTestData.AccessTokenLifespanSeconds);
     }

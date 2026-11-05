@@ -38,11 +38,11 @@ public sealed class HmacInviteTokenServiceTests
     public void IsValid_WithChangedSignatureCharacter_ReturnsFalse()
     {
         var salt = _service.CreateSalt();
-        var parts = _service.CreateToken(InviteTokenTestData.InviteId, salt).Split('.');
+        var parts = _service.CreateToken(InviteTokenTestData.InviteId, salt).Split(separator: '.');
         var signature = parts[SignaturePartIndex];
-        parts[SignaturePartIndex] = (signature[0] == 'A' ? 'B' : 'A') + signature[1..];
+        parts[SignaturePartIndex] = (signature[index: 0] == 'A' ? 'B' : 'A') + signature[1..];
 
-        var isValid = _service.IsValid(string.Join('.', parts), salt);
+        var isValid = _service.IsValid(string.Join(separator: '.', parts), salt);
 
         isValid.Should().BeFalse();
     }
@@ -63,10 +63,10 @@ public sealed class HmacInviteTokenServiceTests
     public void IsValid_WithUnknownKeyId_ReturnsFalse()
     {
         var salt = _service.CreateSalt();
-        var parts = _service.CreateToken(InviteTokenTestData.InviteId, salt).Split('.');
+        var parts = _service.CreateToken(InviteTokenTestData.InviteId, salt).Split(separator: '.');
         parts[KeyIdPartIndex] = UnknownKeyId;
 
-        var isValid = _service.IsValid(string.Join('.', parts), salt);
+        var isValid = _service.IsValid(string.Join(separator: '.', parts), salt);
 
         isValid.Should().BeFalse();
     }
@@ -115,7 +115,7 @@ public sealed class HmacInviteTokenServiceTests
 
         var token = _service.CreateToken(InviteTokenTestData.InviteId, salt);
 
-        token.Split('.')[KeyIdPartIndex].Should().Be(InviteTokenTestData.CurrentKeyId);
+        token.Split(separator: '.')[KeyIdPartIndex].Should().Be(InviteTokenTestData.CurrentKeyId);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class HmacInviteTokenServiceTests
     [Fact]
     public void GetExpiresAt_WithIssuedAt_AddsLifetimeHours()
     {
-        var issuedAt = new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Utc);
+        var issuedAt = new DateTime(year: 2026, month: 1, day: 1, hour: 10, minute: 0, second: 0, DateTimeKind.Utc);
 
         var expiresAt = _service.GetExpiresAt(issuedAt);
 

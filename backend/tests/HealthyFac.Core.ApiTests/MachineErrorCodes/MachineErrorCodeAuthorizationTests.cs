@@ -1,7 +1,7 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
-using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.ApiTests.MachineErrorCodes.Data;
+using HealthyFac.Core.ApiTests.Machines.Data;
 
 namespace HealthyFac.Core.ApiTests.MachineErrorCodes;
 
@@ -40,7 +40,7 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         response.Headers.Location!.ToString().Should().StartWith("/" + _fixture.ErrorCodesPath(machineId) + "/");
-        body.Should().Contain(response.Headers.Location.ToString().Split('/').Last());
+        body.Should().Contain(response.Headers.Location.ToString().Split(separator: '/').Last());
     }
 
     [Fact]
@@ -97,7 +97,8 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
     [Fact]
     public async Task Get_WithoutReadPermission_Returns403()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("get-denied", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "get-denied", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.WritePermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -111,7 +112,8 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
     [Fact]
     public async Task Get_WithReadPermission_ReturnsErrorCode()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("get-ok", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "get-ok", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.ReadPermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -127,7 +129,8 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
     [Fact]
     public async Task Update_WithoutWritePermission_Returns403()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("upd-denied", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "upd-denied", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.ReadPermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -142,7 +145,8 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
     [Fact]
     public async Task Update_WithWritePermission_Returns204()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("upd-ok", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "upd-ok", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.WritePermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -157,7 +161,8 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
     [Fact]
     public async Task Delete_WithoutDeletePermission_Returns403()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("del-denied", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "del-denied", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(
             MachineErrorCodeApiTestData.ReadPermission,
             MachineErrorCodeApiTestData.WritePermission);
@@ -173,7 +178,8 @@ public sealed class MachineErrorCodeAuthorizationTests(CoreApiFixture fixture) :
     [Fact]
     public async Task Delete_WithDeletePermission_Returns204()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("del-ok", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "del-ok", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.DeletePermission);
 
         var response = await _fixture.SendMachineRequestAsync(

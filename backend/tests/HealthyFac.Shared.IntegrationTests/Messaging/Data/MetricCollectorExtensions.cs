@@ -24,7 +24,7 @@ public static class MetricCollectorExtensions
         {
             collector.RecordObservableInstruments();
 
-            return collector.GetMeasurementSnapshot(true)
+            return collector.GetMeasurementSnapshot(clear: true)
                 .Where(measurement => Equals(measurement.Tags.GetValueOrDefault(Tags.Processor), processor))
                 .Select(measurement => measurement.Value)
                 .ToList();

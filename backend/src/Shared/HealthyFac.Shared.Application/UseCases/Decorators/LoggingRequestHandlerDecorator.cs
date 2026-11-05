@@ -26,7 +26,9 @@ internal sealed class LoggingRequestHandlerDecorator<TRequest, TResponse>(
     /// A cancelled use case is not a failure, so it leaves the span status unset and logs no outcome.
     /// </remarks>
     /// <param name="request">The incoming request to execute.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <returns>The response of type <typeparamref name="TResponse"/> from the inner handler.</returns>
     public async Task<TResponse> HandleAsync(
         TRequest request,
@@ -38,16 +40,16 @@ internal sealed class LoggingRequestHandlerDecorator<TRequest, TResponse>(
         using var activity = UseCaseActivitySource.Instance.StartActivity(useCaseName, ActivityKind.Internal);
         activity.WithTag(ObservabilityConstants.Tags.UseCase, useCaseName);
 
-        _logger.LogInformation("Use case {UseCase} triggered", useCaseName);
-        _logger.LogDebug("Use case {UseCase} received request {@Request}", useCaseName, request);
+        _logger.LogInformation(message: "Use case {UseCase} triggered", useCaseName);
+        _logger.LogDebug(message: "Use case {UseCase} received request {@Request}", useCaseName, request);
 
         try
         {
             var response = await _innerHandler.HandleAsync(request, cancellationToken);
 
             activity.MarkSuccess();
-            _logger.LogDebug("Use case {UseCase} returned {@Response}", useCaseName, response);
-            _logger.LogInformation("Use case {UseCase} finished", useCaseName);
+            _logger.LogDebug(message: "Use case {UseCase} returned {@Response}", useCaseName, response);
+            _logger.LogInformation(message: "Use case {UseCase} finished", useCaseName);
 
             return response;
         }
@@ -76,12 +78,12 @@ internal sealed class LoggingRequestHandlerDecorator<TRequest, TResponse>(
             {
                 _logger.Log(
                     rejection.Level.Value,
-                    "Use case {UseCase} rejected: {Reason}", useCaseName, exception.Message);
+                    message: "Use case {UseCase} rejected: {Reason}", useCaseName, exception.Message);
             }
         }
         else
         {
-            _logger.LogDebug("Use case {UseCase} failed", useCaseName);
+            _logger.LogDebug(message: "Use case {UseCase} failed", useCaseName);
         }
     }
 }

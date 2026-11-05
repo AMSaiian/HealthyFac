@@ -21,7 +21,7 @@ internal static class TypeInspection
         /// <returns>The declared types of the assembly.</returns>
         public IEnumerable<Type> GetSourceTypes() =>
             assembly.GetTypes()
-                .Where(type => !type.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                .Where(type => !type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false))
                 .Where(type => !(type.FullName ?? type.Name).Contains(
                     ConventionConstants.CompilerNames.Marker,
                     StringComparison.Ordinal
@@ -45,7 +45,7 @@ internal static class TypeInspection
         /// </summary>
         public bool HasGeneratedDeconstruct => type.GetMethods(DeclaredMembers)
             .Any(method => method.Name == ConventionConstants.CompilerNames.Deconstruct
-                && method.IsDefined(typeof(CompilerGeneratedAttribute), false));
+                && method.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false));
 
         public bool HasSectionName =>
             type.GetField(ConventionConstants.Options.SectionNameField, BindingFlags.Public | BindingFlags.Static) is
@@ -97,7 +97,7 @@ internal static class TypeInspection
 
     extension(MemberInfo member)
     {
-        public bool IsCompilerGenerated => member.IsDefined(typeof(CompilerGeneratedAttribute), false)
+        public bool IsCompilerGenerated => member.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false)
             || member.Name.Contains(ConventionConstants.CompilerNames.Marker, StringComparison.Ordinal);
     }
 

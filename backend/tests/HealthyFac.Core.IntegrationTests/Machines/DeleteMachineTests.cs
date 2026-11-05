@@ -1,8 +1,8 @@
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.MachineErrorCodes.Data;
+using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
@@ -95,14 +95,14 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         await _fixture.AddStateRowAsync(
             machineId,
             MachineState.InMaintenance,
-            firstHistory[0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
+            firstHistory[index: 0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
 
         await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
 
         var history = await _fixture.LoadStateHistoryAsync(machineId);
         var otherHistory = await _fixture.LoadStateHistoryAsync(otherMachineId);
 
-        history.Should().HaveCount(2).And.OnlyContain(row => row.DeletedAt != null);
+        history.Should().HaveCount(expected: 2).And.OnlyContain(row => row.DeletedAt != null);
         otherHistory.Should().ContainSingle().Which.DeletedAt.Should().BeNull();
     }
 

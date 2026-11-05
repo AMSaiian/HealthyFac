@@ -17,7 +17,7 @@ public sealed class HttpsOptionsValidator : AbstractValidator<HttpsOptions>
             .WithMessage(HttpsValidationMessages.PortOutOfRange);
 
         RuleFor(options => options.HstsMaxAgeDays)
-            .GreaterThanOrEqualTo(1)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
             .When(options => options.IsHstsEnabled)
             .WithMessage(HttpsValidationMessages.MaxAgeMustBePositive);
 

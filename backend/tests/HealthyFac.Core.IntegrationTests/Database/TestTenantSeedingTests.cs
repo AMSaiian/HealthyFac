@@ -18,7 +18,7 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
         var companyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
         var departmentCount = await _fixture.CountDepartmentsAsync(DatabaseTestData.TestTenantCompanyId);
 
-        companyCount.Should().Be(1);
+        companyCount.Should().Be(expected: 1);
         departmentCount.Should().Be(DatabaseTestData.TestTenantDepartmentCount);
         supervisor.CompanyId.Should().Be(DatabaseTestData.TestTenantCompanyId);
         supervisor.IdentityUserId.Should().Be(DatabaseTestData.TestSupervisorIdentityId);
@@ -55,7 +55,7 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
 
         var outboxCount = await _fixture.CountOutboxMessagesAsync();
 
-        outboxCount.Should().Be(0);
+        outboxCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
 
         var tenantCompanyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
         var companyCount = await _fixture.CountCompaniesAsync();
-        tenantCompanyCount.Should().Be(1);
+        tenantCompanyCount.Should().Be(expected: 1);
         companyCount.Should().Be(companyCountAfterFirstRun);
     }
 

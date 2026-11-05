@@ -8,10 +8,10 @@ namespace HealthyFac.Core.Application.Machines.SearchMachines;
 /// </summary>
 public sealed class MachineSortColumn : Enumeration<MachineSortColumn>
 {
-    public static readonly MachineSortColumn Name = new("name");
-    public static readonly MachineSortColumn SerialNumber = new("serialNumber");
-    public static readonly MachineSortColumn CreatedAt = new("createdAt");
-    public static readonly MachineSortColumn UpdatedAt = new("updatedAt");
+    public static readonly MachineSortColumn Name = new(value: "name");
+    public static readonly MachineSortColumn SerialNumber = new(value: "serialNumber");
+    public static readonly MachineSortColumn CreatedAt = new(value: "createdAt");
+    public static readonly MachineSortColumn UpdatedAt = new(value: "updatedAt");
 
     private MachineSortColumn(string value)
         : base(value)

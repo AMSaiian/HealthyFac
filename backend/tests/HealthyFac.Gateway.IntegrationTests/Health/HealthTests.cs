@@ -37,7 +37,7 @@ public sealed class HealthTests : IAsyncLifetime
         var response = await gateway.GetOnHealthPortAsync(ReadinessRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Body.Should().Be("Degraded");
+        response.Body.Should().Be(expected: "Degraded");
     }
 
     [Fact]

@@ -8,8 +8,8 @@ namespace HealthyFac.Core.Domain.Roles;
 /// </summary>
 public sealed class RoleCode : Enumeration<RoleCode>
 {
-    public static readonly RoleCode Worker = new("worker");
-    public static readonly RoleCode Supervisor = new("supervisor");
+    public static readonly RoleCode Worker = new(value: "worker");
+    public static readonly RoleCode Supervisor = new(value: "supervisor");
 
     private RoleCode(string value)
         : base(value)

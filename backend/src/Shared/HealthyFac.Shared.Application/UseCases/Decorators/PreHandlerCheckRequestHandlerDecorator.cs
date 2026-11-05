@@ -21,7 +21,9 @@ internal sealed class PreHandlerCheckRequestHandlerDecorator<TRequest, TResponse
     /// Runs the pre-handler check, then executes the inner handler.
     /// </summary>
     /// <param name="request">The incoming request to check and execute.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <returns>The response of type <typeparamref name="TResponse"/> from the inner handler.</returns>
     public async Task<TResponse> HandleAsync(
         TRequest request,
@@ -34,11 +36,13 @@ internal sealed class PreHandlerCheckRequestHandlerDecorator<TRequest, TResponse
     }
 
     /// <summary>
-    /// Runs the pre-handler check inside its own span. The span ends before the inner handler starts, so the handler span
-    /// and the check span stay siblings.
+    /// Runs the pre-handler check inside its own span. The span ends before the inner handler starts, so the handler
+    /// span and the check span stay siblings.
     /// </summary>
     /// <param name="request">The incoming request to check.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     private async Task RunCheckAsync(TRequest request, CancellationToken cancellationToken)
     {
         using var activity = UseCaseActivitySource.Instance.StartActivity(ObservabilityConstants.Spans.PreHandlerCheck);

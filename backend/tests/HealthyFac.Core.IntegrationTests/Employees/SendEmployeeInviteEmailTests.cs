@@ -25,8 +25,8 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture) : 
         var invite = await _fixture.LoadInviteAsync(arranged.InviteId);
 
         emails.Should().ContainSingle();
-        emails[0].TextBody.Should().Contain($"{InviteEmailTestData.ConfiguredSpaBaseUrl}/invite#token=");
-        _fixture.IsTokenValid(emails[0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
+        emails[index: 0].TextBody.Should().Contain($"{InviteEmailTestData.ConfiguredSpaBaseUrl}/invite#token=");
+        _fixture.IsTokenValid(emails[index: 0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture) : 
         var invite = await _fixture.LoadInviteAsync(arranged.InviteId);
 
         emails.Should().ContainSingle();
-        _fixture.IsTokenValid(emails[0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
+        _fixture.IsTokenValid(emails[index: 0].ReadLinkToken(), invite.TokenSalt).Should().BeTrue();
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture) : 
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteEmailTestData.ExpiredInviteEmail,
-            DateTime.UtcNow.AddHours(-1),
+            DateTime.UtcNow.AddHours(value: -1),
             InviteTestData.FirstDepartmentName);
         var logger = new CapturingLogger<SendEmployeeInviteEmailRequestHandler>();
         using var scope = _fixture.ScopeFactory.CreateScope();
@@ -131,13 +131,13 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture) : 
         var emails = _fixture.ReadSentEmails(InviteEmailTestData.TrailingSlashEmail);
 
         emails.Should().ContainSingle();
-        emails[0].TextBody.Should().Contain(InviteEmailTestData.TrailingSlashExpectedPrefix);
-        emails[0].TextBody.Should().NotContain("//invite");
+        emails[index: 0].TextBody.Should().Contain(InviteEmailTestData.TrailingSlashExpectedPrefix);
+        emails[index: 0].TextBody.Should().NotContain(unexpected: "//invite");
     }
 
     private Task<ArrangedInvite> ArrangeOpenInviteAsync(string email) => _fixture.ArrangeInviteAsync(
         email,
-        DateTime.UtcNow.AddHours(1),
+        DateTime.UtcNow.AddHours(value: 1),
         InviteTestData.FirstDepartmentName);
 
     private static EmployeeInvited ToMessage(ArrangedInvite arranged, string email) =>

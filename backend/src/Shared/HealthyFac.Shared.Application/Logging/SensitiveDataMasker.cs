@@ -35,7 +35,7 @@ public static class SensitiveDataMasker
             return attribute.Mask;
         }
 
-        var requiredLength = Math.Max(0, attribute.ShowFirst) + Math.Max(0, attribute.ShowLast);
+        var requiredLength = Math.Max(val1: 0, attribute.ShowFirst) + Math.Max(val1: 0, attribute.ShowLast);
         if (text.Length <= requiredLength)
         {
             if (attribute.IsLengthPreserved)

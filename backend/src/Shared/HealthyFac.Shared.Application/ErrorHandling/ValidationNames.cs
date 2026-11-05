@@ -56,7 +56,7 @@ public static partial class ValidationNames
     }
 
     private static string? ResolveDisplayName(Type type, MemberInfo? member, LambdaExpression? expression) =>
-        member is null ? null : WordBoundary().Replace(member.Name, " ");
+        member is null ? null : WordBoundary().Replace(member.Name, replacement: " ");
 
     private static string? BuildPath(Expression expression)
     {

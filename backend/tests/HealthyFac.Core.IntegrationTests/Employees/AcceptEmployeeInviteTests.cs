@@ -43,11 +43,11 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var messages = await ReadAcceptedMessagesAsync(employeeId);
 
         messages.Should().ContainSingle();
-        messages[0].CompanyId.Should().Be(arranged.CompanyId);
-        messages[0].Email.Should().Be(InviteTestData.AcceptOutboxEmail);
-        messages[0].FirstName.Should().Be(InviteTestData.EmployeeFirstName);
-        messages[0].LastName.Should().Be(InviteTestData.EmployeeLastName);
-        messages[0].RoleCode.Should().Be(RoleCode.Worker.Value);
+        messages[index: 0].CompanyId.Should().Be(arranged.CompanyId);
+        messages[index: 0].Email.Should().Be(InviteTestData.AcceptOutboxEmail);
+        messages[index: 0].FirstName.Should().Be(InviteTestData.EmployeeFirstName);
+        messages[index: 0].LastName.Should().Be(InviteTestData.EmployeeLastName);
+        messages[index: 0].RoleCode.Should().Be(RoleCode.Worker.Value);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     [Fact]
     public async Task AcceptAsync_WithExpiredInvite_ThrowsGenericNotFound()
     {
-        var arranged = await ArrangeAsync(InviteTestData.AcceptExpiredEmail, DateTime.UtcNow.AddHours(-1));
+        var arranged = await ArrangeAsync(InviteTestData.AcceptExpiredEmail, DateTime.UtcNow.AddHours(value: -1));
 
         var act = () => _fixture.AcceptInviteAsync(arranged.Token);
 
@@ -101,14 +101,14 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             InviteTestData.AcceptParallelEmail);
 
         race.SaveCounts.Should().Equal(1, 1);
-        failures.Count(failure => failure is null).Should().Be(1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
 
-        employeeCount.Should().Be(1);
+        employeeCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -140,14 +140,14 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             InviteTestData.AcceptSharedParallelEmail);
 
         race.SaveCounts.Should().Equal(1, 1);
-        failures.Count(failure => failure is null).Should().Be(1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
 
-        employeeCount.Should().Be(1);
+        employeeCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptBlankNameEmail);
 
-        var act = () => _fixture.AcceptInviteAsync(arranged.Token, " ");
+        var act = () => _fixture.AcceptInviteAsync(arranged.Token, firstName: " ");
 
         await act.Should().ThrowAsync<ValidationException>();
     }
@@ -163,7 +163,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     private Task<ArrangedInvite> ArrangeAsync(string email, DateTime? expiresAt = null) =>
         _fixture.ArrangeInviteAsync(
             email,
-            expiresAt ?? DateTime.UtcNow.AddHours(1),
+            expiresAt ?? DateTime.UtcNow.AddHours(value: 1),
             InviteTestData.FirstDepartmentName,
             InviteTestData.SecondDepartmentName);
 

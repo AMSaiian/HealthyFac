@@ -10,7 +10,7 @@ public sealed record TestServiceTokenClaims
 {
     public const string DefaultClientId = "healthyfac-auth";
 
-    public static readonly Guid DefaultServiceAccountId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000b1");
+    public static readonly Guid DefaultServiceAccountId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000b1");
 
     public Guid Subject { get; init; } = DefaultServiceAccountId;
 

@@ -3,8 +3,8 @@ using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Employees;

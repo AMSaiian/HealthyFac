@@ -52,13 +52,13 @@ public static class HttpResponseMessageExtensions
         var length = await stream.ReadAtLeastAsync(
             buffer,
             buffer.Length,
-            false,
+            throwOnEndOfStream: false,
             cancellationToken);
 
         try
         {
             var fields = JsonTopLevelFields.Read(
-                buffer.AsSpan(0, Math.Min(length, HttpFailureConstants.MaxBodyBytes)),
+                buffer.AsSpan(start: 0, Math.Min(length, HttpFailureConstants.MaxBodyBytes)),
                 length <= HttpFailureConstants.MaxBodyBytes);
             var reason = HttpErrorReasonReaders.Default.ReadReason(fields);
 

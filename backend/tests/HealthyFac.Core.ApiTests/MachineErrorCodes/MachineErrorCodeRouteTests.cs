@@ -1,7 +1,7 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
-using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.ApiTests.MachineErrorCodes.Data;
+using HealthyFac.Core.ApiTests.Machines.Data;
 
 namespace HealthyFac.Core.ApiTests.MachineErrorCodes;
 
@@ -12,7 +12,8 @@ public sealed class MachineErrorCodeRouteTests(CoreApiFixture fixture) : IClassF
     [Fact]
     public async Task Get_WithMalformedMachineId_Returns404()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("route-machine", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "route-machine", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.ReadPermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -26,7 +27,8 @@ public sealed class MachineErrorCodeRouteTests(CoreApiFixture fixture) : IClassF
     [Fact]
     public async Task Get_WithMalformedErrorCodeId_Returns404()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("route-code", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "route-code", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.ReadPermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -69,7 +71,8 @@ public sealed class MachineErrorCodeRouteTests(CoreApiFixture fixture) : IClassF
     [Fact]
     public async Task Update_WithMalformedErrorCodeId_Returns404()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("route-upd", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "route-upd", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.WritePermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -84,7 +87,8 @@ public sealed class MachineErrorCodeRouteTests(CoreApiFixture fixture) : IClassF
     [Fact]
     public async Task Delete_WithMalformedErrorCodeId_Returns404()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("route-del", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "route-del", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.DeletePermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -98,7 +102,8 @@ public sealed class MachineErrorCodeRouteTests(CoreApiFixture fixture) : IClassF
     [Fact]
     public async Task Update_WithMalformedMachineId_Returns404()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("route-upd-machine", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "route-upd-machine", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.WritePermission);
 
         var response = await _fixture.SendMachineRequestAsync(
@@ -113,7 +118,8 @@ public sealed class MachineErrorCodeRouteTests(CoreApiFixture fixture) : IClassF
     [Fact]
     public async Task Delete_WithMalformedMachineId_Returns404()
     {
-        var errorCode = await _fixture.ArrangeErrorCodeAsync("route-del-machine", MachineErrorCodeApiTestData.Code);
+        var errorCode = await _fixture.ArrangeErrorCodeAsync(
+            serialNumberSuffix: "route-del-machine", MachineErrorCodeApiTestData.Code);
         var claims = _fixture.CreateMachineClaims(MachineErrorCodeApiTestData.DeletePermission);
 
         var response = await _fixture.SendMachineRequestAsync(

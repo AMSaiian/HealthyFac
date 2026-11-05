@@ -24,7 +24,7 @@ public sealed class RedisSessionRevokerTests
             CancellationToken.None);
 
         await act.Should().ThrowAsync<BrokenCircuitException>();
-        _store.RevokeCount.Should().Be(0);
+        _store.RevokeCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -37,6 +37,6 @@ public sealed class RedisSessionRevokerTests
             SessionRevokerTestData.RevokedAt,
             CancellationToken.None);
 
-        _store.RevokeCount.Should().Be(1);
+        _store.RevokeCount.Should().Be(expected: 1);
     }
 }

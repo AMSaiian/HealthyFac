@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
-using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Testing.Caching;
 using HealthyFac.Testing.Containers;
 using StackExchange.Redis;

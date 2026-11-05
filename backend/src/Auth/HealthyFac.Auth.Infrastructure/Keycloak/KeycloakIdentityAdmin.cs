@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
-using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.Infrastructure.Keycloak.Representations;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
@@ -151,7 +150,7 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
     {
         using var response = await _client.PostAsync(
             KeycloakAdminRoutes.UserLogout(_options.Realm, userId),
-            null,
+            content: null,
             cancellationToken);
         await response.EnsureSuccessAsync(cancellationToken);
     }

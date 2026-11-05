@@ -38,13 +38,16 @@ public static class MachineTestData
     public const int EarlierStateDays = 1;
     public const int LaterStateDays = 2;
 
-    public static readonly DateTime FirstCreatedAt = new(2026, 3, 1, 8, 0, 0, DateTimeKind.Utc);
+    public static readonly DateTime FirstCreatedAt = new(
+        year: 2026, month: 3, day: 1, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
 
-    public static string TooLongDescription => new('a', DescriptionLimit + 1);
+    public static string TooLongDescription => new(c: 'a', DescriptionLimit + 1);
 
     /// <summary>5000 visible characters in 500 bold runs: about 13,500 HTML characters.</summary>
     public static string FormattedDescriptionAtVisibleLimit =>
-        "<p>" + string.Concat(Enumerable.Repeat("<strong>aaaaaaaaaa</strong>", DescriptionLimit / 10)) + "</p>";
+        "<p>"
+        + string.Concat(Enumerable.Repeat(element: "<strong>aaaaaaaaaa</strong>", DescriptionLimit / 10))
+        + "</p>";
 
     public static SearchMachinesRequest CreateSearch(
         Guid companyId,
@@ -67,12 +70,14 @@ public static class MachineTestData
 
     public static IReadOnlyList<MachineSeed> CreateFilterSeeds() =>
     [
-        new(FilterNameBase + " 01", "S-01", MachineState.Operational, FirstCreatedAt),
-        new(FilterNameBase + " 02", "S-02", MachineState.Operational, FirstCreatedAt.AddDays(1)),
-        new(FilterNameBase + " 03", "S-03", MachineState.Operational, FirstCreatedAt.AddDays(2)),
-        new(FilterNameBase + " 04", "S-04", MachineState.Operational, FirstCreatedAt.AddDays(3)),
-        new(FilterNameBase + " 05", "S-05", MachineState.InMaintenance, FirstCreatedAt.AddDays(4)),
-        new(OtherFilterNameBase + " 01", "S-06", MachineState.Operational, FirstCreatedAt.AddDays(5)),
+        new(FilterNameBase + " 01", SerialNumber: "S-01", MachineState.Operational, FirstCreatedAt),
+        new(FilterNameBase + " 02", SerialNumber: "S-02", MachineState.Operational, FirstCreatedAt.AddDays(value: 1)),
+        new(FilterNameBase + " 03", SerialNumber: "S-03", MachineState.Operational, FirstCreatedAt.AddDays(value: 2)),
+        new(FilterNameBase + " 04", SerialNumber: "S-04", MachineState.Operational, FirstCreatedAt.AddDays(value: 3)),
+        new(FilterNameBase + " 05", SerialNumber: "S-05", MachineState.InMaintenance, FirstCreatedAt.AddDays(value: 4)),
+        new(
+            OtherFilterNameBase + " 01", SerialNumber: "S-06", MachineState.Operational,
+            FirstCreatedAt.AddDays(value: 5)),
     ];
 }
 

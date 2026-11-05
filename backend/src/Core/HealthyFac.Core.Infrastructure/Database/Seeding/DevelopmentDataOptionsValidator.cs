@@ -19,7 +19,7 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
     public DevelopmentDataOptionsValidator(IHostEnvironment environment)
     {
         RuleFor(options => options.IsRecreationForced)
-            .Equal(false)
+            .Equal(toCompare: false)
             .Unless(_ => environment.IsDevelopment())
             .WithMessage(SeedingValidationConstants.Messages.RecreationOnlyInDevelopment);
 
@@ -28,26 +28,26 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .When(options => options.TestTenant is not null);
 
         RuleFor(options => options.CompanyCount)
-            .InclusiveBetween(1, SeedingValidationConstants.Counts.MaxCompanies);
+            .InclusiveBetween(from: 1, SeedingValidationConstants.Counts.MaxCompanies);
 
         RuleFor(options => options.DepartmentsPerCompany)
-            .GreaterThanOrEqualTo(1)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
             .LessThanOrEqualTo(options => options.GetDepartmentNames().Count);
 
         RuleFor(options => options.MachinesPerDepartment)
-            .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxPerDepartment);
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerDepartment);
 
         RuleFor(options => options.ErrorCodesPerMachine)
-            .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxPerDepartment);
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerDepartment);
 
         RuleFor(options => options.SupervisorsPerDepartment)
-            .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxSupervisorsPerDepartment);
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxSupervisorsPerDepartment);
 
         RuleFor(options => options.WorkersPerDepartment)
-            .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxPerDepartment);
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerDepartment);
 
         RuleFor(options => options.OpenInvitesPerCompany)
-            .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxOpenInvitesPerCompany);
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxOpenInvitesPerCompany);
 
         RuleFor(options => options.InviteLifetimeDays)
             .InclusiveBetween(

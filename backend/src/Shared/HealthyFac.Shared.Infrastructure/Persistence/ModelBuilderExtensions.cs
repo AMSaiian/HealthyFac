@@ -59,7 +59,7 @@ public static class ModelBuilderExtensions
                 CollationNames.CaseInsensitive,
                 CollationNames.CaseInsensitiveLocale,
                 CollationNames.IcuProvider,
-                false);
+                deterministic: false);
 
             modelBuilder.Model
                 .GetEntityTypes()

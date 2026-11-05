@@ -50,22 +50,23 @@ public static class TokenRequestExtensions
             var response = await fixture.RequestTokenAsync(
                 new Dictionary<string, string>
                 {
-                    ["grant_type"] = "password",
-                    ["client_id"] = clientId,
-                    ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
-                    ["username"] = RealmTestData.SupervisorEmail,
-                    ["password"] = RealmTestData.SupervisorPassword,
+                    [key: "grant_type"] = "password",
+                    [key: "client_id"] = clientId,
+                    [key: "client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
+                    [key: "username"] = RealmTestData.SupervisorEmail,
+                    [key: "password"] = RealmTestData.SupervisorPassword,
                 });
             response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            return response.Body["access_token"]!.GetValue<string>();
+            return response.Body[propertyName: "access_token"]!.GetValue<string>();
         }
     }
 
     extension(TokenResponse response)
     {
         public JsonObject AccessTokenClaims() =>
-            KeycloakRealmFixtureExtensions.DecodePayload(response.Body["access_token"]!.GetValue<string>());
+            KeycloakRealmFixtureExtensions.DecodePayload(
+                response.Body[propertyName: "access_token"]!.GetValue<string>());
     }
 
     extension(JsonObject claims)

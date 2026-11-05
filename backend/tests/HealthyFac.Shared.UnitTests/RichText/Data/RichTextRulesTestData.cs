@@ -50,7 +50,7 @@ public static class RichTextRulesTestData
 
     public const string SmallHtml = "<p>x</p>";
 
-    public static string HtmlAboveCap => new('a', RichTextConstants.HtmlMaxLength + 1);
+    public static string HtmlAboveCap => new(c: 'a', RichTextConstants.HtmlMaxLength + 1);
 
-    public static string HtmlAtCap => new('a', RichTextConstants.HtmlMaxLength);
+    public static string HtmlAtCap => new(c: 'a', RichTextConstants.HtmlMaxLength);
 }

@@ -29,7 +29,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         invite.ExpiresAt.Should()
             .BeCloseTo(
                 DateTime.UtcNow.AddHours(InviteTestData.ExpectedLifetimeHours),
-                TimeSpan.FromMinutes(1));
+                TimeSpan.FromMinutes(minutes: 1));
         invite.Departments.Select(department => department.Id).Should().BeEquivalentTo(departmentIds);
     }
 
@@ -43,8 +43,8 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var messages = await ReadInvitedMessagesAsync(inviteId);
 
         messages.Should().ContainSingle();
-        messages[0].CompanyId.Should().Be(companyId);
-        messages[0].Email.Should().Be(InviteTestData.OutboxEmail);
+        messages[index: 0].CompanyId.Should().Be(companyId);
+        messages[index: 0].Email.Should().Be(InviteTestData.OutboxEmail);
     }
 
     [Fact]
@@ -99,12 +99,12 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             companyId,
             InviteTestData.OutsideActorEmail,
             departmentIds,
-            [departmentIds[0]]);
+            [departmentIds[index: 0]]);
 
         await act.Should().ThrowAsync<ForbiddenAccessException>();
         var inviteCount = await _fixture.CountInvitesAsync(companyId, InviteTestData.OutsideActorEmail);
 
-        inviteCount.Should().Be(0);
+        inviteCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -115,11 +115,11 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var inviteId = await CreateAsync(
             companyId,
             InviteTestData.DuplicateDepartmentEmail,
-            [departmentIds[0], departmentIds[0]]);
+            [departmentIds[index: 0], departmentIds[index: 0]]);
 
         var invite = await _fixture.LoadInviteAsync(inviteId);
 
-        invite.Departments.Should().ContainSingle().Which.Id.Should().Be(departmentIds[0]);
+        invite.Departments.Should().ContainSingle().Which.Id.Should().Be(departmentIds[index: 0]);
     }
 
     [Fact]
@@ -147,14 +147,14 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             InviteTestData.CreateParallelEmail);
 
         race.SaveCounts.Should().Equal(1, 1);
-        failures.Count(failure => failure is null).Should().Be(1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(EmployeeInviteErrors.Rejections.OpenInviteExists);
 
-        inviteCount.Should().Be(1);
+        inviteCount.Should().Be(expected: 1);
     }
 
     private async Task<(Guid CompanyId, IReadOnlyList<Guid> DepartmentIds)> ArrangeCompanyAsync()
@@ -174,7 +174,7 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             companyId,
             departmentIds,
             email,
-            DateTime.UtcNow.AddHours(1));
+            DateTime.UtcNow.AddHours(value: 1));
 
         await _fixture.AcceptInviteAsync(token);
     }

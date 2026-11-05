@@ -22,7 +22,7 @@ public static class MessagingConstants
     /// The interval of the backlog sample. A shorter interval adds queries on the pending indexes; a longer one shows
     /// a growing backlog later.
     /// </summary>
-    public static readonly TimeSpan BacklogSampleInterval = TimeSpan.FromSeconds(15);
+    public static readonly TimeSpan BacklogSampleInterval = TimeSpan.FromSeconds(seconds: 15);
 
     public static class Limits
     {
@@ -36,7 +36,7 @@ public static class MessagingConstants
     {
         public const string Name = "rabbitmq";
 
-        public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
-        public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(3);
+        public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(seconds: 2);
+        public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(seconds: 3);
     }
 }

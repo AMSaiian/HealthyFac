@@ -22,10 +22,10 @@ public sealed class InviteTokenLoggingTests
             .WriteTo.Sink(sink)
             .CreateLogger();
 
-        logger.Debug("Use case received request {@Request}", request);
+        logger.Debug(messageTemplate: "Use case received request {@Request}", request);
 
         var logged = sink.Events.Should().ContainSingle().Subject;
-        var structure = logged.Properties["Request"].Should().BeOfType<StructureValue>().Subject;
+        var structure = logged.Properties[key: "Request"].Should().BeOfType<StructureValue>().Subject;
         var token = structure.Properties.Single(property =>
             property.Name == InviteTokenLoggingTestData.TokenPropertyName);
 

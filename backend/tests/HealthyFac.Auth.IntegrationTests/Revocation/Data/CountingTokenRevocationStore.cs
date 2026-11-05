@@ -24,5 +24,5 @@ public sealed class CountingTokenRevocationStore : ITokenRevocationStore
     }
 
     public Task<DateTimeOffset?> GetRevokedAtAsync(Guid userId, CancellationToken cancellationToken) =>
-        Task.FromResult<DateTimeOffset?>(null);
+        Task.FromResult<DateTimeOffset?>(result: null);
 }

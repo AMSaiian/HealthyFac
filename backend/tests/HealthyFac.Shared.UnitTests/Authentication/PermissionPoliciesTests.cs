@@ -13,7 +13,8 @@ public sealed class PermissionPoliciesTests
         var authorization = provider.GetRequiredService<IAuthorizationService>();
         var user = PermissionPoliciesTestData.CreateUser(PermissionPoliciesTestData.InvitePermission);
 
-        var result = await authorization.AuthorizeAsync(user, null, PermissionPoliciesTestData.InvitePermission);
+        var result = await authorization.AuthorizeAsync(
+            user, resource: null, PermissionPoliciesTestData.InvitePermission);
 
         result.Succeeded.Should().BeTrue();
     }
@@ -25,7 +26,8 @@ public sealed class PermissionPoliciesTests
         var authorization = provider.GetRequiredService<IAuthorizationService>();
         var user = PermissionPoliciesTestData.CreateUser(PermissionPoliciesTestData.MachinesPermission);
 
-        var result = await authorization.AuthorizeAsync(user, null, PermissionPoliciesTestData.InvitePermission);
+        var result = await authorization.AuthorizeAsync(
+            user, resource: null, PermissionPoliciesTestData.InvitePermission);
 
         result.Succeeded.Should().BeFalse();
     }

@@ -12,17 +12,20 @@ public static class MachineTestData
     public static readonly Guid CompanyId = Faker.Random.Guid();
     public static readonly Guid DepartmentId = Faker.Random.Guid();
     public static readonly string Name = Faker.Commerce.ProductName();
-    public static readonly string SerialNumber = Faker.Random.AlphaNumeric(12);
-    public static readonly DateTime StartedAt = new(2026, 11, 6, 8, 0, 0, DateTimeKind.Utc);
-    public static readonly DateTime LaterStartedAt = StartedAt.AddHours(1);
+    public static readonly string SerialNumber = Faker.Random.AlphaNumeric(length: 12);
+
+    public static readonly DateTime StartedAt = new(
+        year: 2026, month: 11, day: 6, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
+
+    public static readonly DateTime LaterStartedAt = StartedAt.AddHours(value: 1);
 
     public static TheoryData<DateTime> NotLaterStartedAt =>
     [
         StartedAt,
-        StartedAt.AddTicks(-1),
-        StartedAt.AddDays(-1),
+        StartedAt.AddTicks(value: -1),
+        StartedAt.AddDays(value: -1),
     ];
 
     public static Machine CreateMachine() =>
-        new(CompanyId, DepartmentId, Name, SerialNumber, null, StartedAt);
+        new(CompanyId, DepartmentId, Name, SerialNumber, description: null, StartedAt);
 }

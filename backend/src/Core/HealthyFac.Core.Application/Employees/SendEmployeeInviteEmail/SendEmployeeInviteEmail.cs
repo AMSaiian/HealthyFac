@@ -2,8 +2,8 @@ using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Application.Links;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -56,7 +56,8 @@ public sealed class SendEmployeeInviteEmailRequestHandler(
 
         if (invite is null)
         {
-            _logger.LogInformation("Invite email skipped: invite {InviteId} does not exist.", request.InviteId);
+            _logger.LogInformation(
+                message: "Invite email skipped: invite {InviteId} does not exist.", request.InviteId);
 
             return;
         }
@@ -64,7 +65,7 @@ public sealed class SendEmployeeInviteEmailRequestHandler(
         if (!invite.CanAccept(_timeProvider.GetUtcNow().UtcDateTime))
         {
             _logger.LogInformation(
-                "Invite email skipped: invite {InviteId} is accepted or expired. A supervisor must resend it.",
+                message: "Invite email skipped: invite {InviteId} is accepted or expired. A supervisor must resend it.",
                 invite.Id);
 
             return;

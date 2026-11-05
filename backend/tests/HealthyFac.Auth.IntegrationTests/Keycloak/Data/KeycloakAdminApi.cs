@@ -33,7 +33,7 @@ public sealed class KeycloakAdminApi(KeycloakTestServer server)
     {
         var adminToken = await _server.GetAdminTokenAsync();
         var client = new HttpClient { BaseAddress = new Uri(_server.BaseAddress) };
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken);
 
         return client;
     }

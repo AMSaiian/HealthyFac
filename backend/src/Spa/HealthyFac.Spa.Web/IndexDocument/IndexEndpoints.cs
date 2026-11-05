@@ -22,7 +22,7 @@ public static class IndexEndpoints
         /// <returns>The <see cref="IEndpointRouteBuilder"/> instance for chained configuration.</returns>
         public IEndpointRouteBuilder MapIndexEndpoints()
         {
-            app.MapGet("/", ServeIndex).AllowAnonymous();
+            app.MapGet(pattern: "/", ServeIndex).AllowAnonymous();
             app.MapGet($"/{SpaConstants.IndexFileName}", ServeIndex).AllowAnonymous();
             app.MapFallback(CatchAllPattern, ServeFallback).AllowAnonymous();
 

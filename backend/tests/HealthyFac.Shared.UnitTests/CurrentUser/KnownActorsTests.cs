@@ -25,13 +25,13 @@ public sealed class KnownActorsTests
     [MemberData(nameof(KnownActorsTestData.ActorValues), MemberType = typeof(KnownActorsTestData))]
     public void ActorValues_AreCamelCase(string value)
     {
-        value.Should().MatchRegex("^[a-z][a-zA-Z0-9]*$");
+        value.Should().MatchRegex(regularExpression: "^[a-z][a-zA-Z0-9]*$");
     }
 
     [Fact]
     public void IdOf_ForAnonymous_EqualsFixedId()
     {
-        var id = KnownActors.IdOf("anonymous");
+        var id = KnownActors.IdOf(key: "anonymous");
 
         id.Should().Be(KnownActorsTestData.AnonymousId);
         KnownActors.Anonymous.UserId.Should().Be(KnownActorsTestData.AnonymousId);
@@ -44,7 +44,7 @@ public sealed class KnownActorsTests
 
         actor.Kind.Should().Be(ActorKind.Service);
         actor.Name.Should().Be(KnownActorsTestData.OutboxProcessorName);
-        actor.UserId.Should().Be(KnownActors.IdOf("service:core:outboxProcessor"));
+        actor.UserId.Should().Be(KnownActors.IdOf(key: "service:core:outboxProcessor"));
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class KnownActorsTests
     [Fact]
     public void Restore_WithAnonymousId_ReturnsAnonymous()
     {
-        var actor = KnownActors.Restore(KnownActors.Anonymous.UserId, null);
+        var actor = KnownActors.Restore(KnownActors.Anonymous.UserId, companyId: null);
 
         actor.Kind.Should().Be(ActorKind.Anonymous);
         actor.Name.Should().BeNull();

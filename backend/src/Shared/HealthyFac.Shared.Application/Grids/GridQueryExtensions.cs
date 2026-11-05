@@ -64,7 +64,9 @@ public static class GridQueryExtensions
         /// <param name="offset">The number of rows to skip.</param>
         /// <param name="limit">The number of rows to read.</param>
         /// <param name="projection">Maps an entity to the row type of the response.</param>
-        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+        /// <param name="cancellationToken">
+        /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+        /// </param>
         /// <typeparam name="TItem">The row type of the response.</typeparam>
         /// <returns>The page and the number of rows that match the filter.</returns>
         public async Task<GridResponse<TItem>> ToGridResponseAsync<TItem>(

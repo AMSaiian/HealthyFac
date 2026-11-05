@@ -65,7 +65,7 @@ internal sealed class ProxyErrorMiddleware(ILogger<ProxyErrorMiddleware> logger)
         var proxyFeature = context.GetReverseProxyFeature();
 
         _logger.LogWarning(
-            "Proxy failure on route {RouteId} to cluster {ClusterId}: {ErrorKind}",
+            message: "Proxy failure on route {RouteId} to cluster {ClusterId}: {ErrorKind}",
             proxyFeature.Route.Config.RouteId,
             proxyFeature.Cluster.Config.ClusterId,
             error);

@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
@@ -6,6 +5,7 @@ using HealthyFac.Core.Domain.MachineErrorCodes;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application;
 

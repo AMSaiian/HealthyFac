@@ -1,6 +1,5 @@
 using System.Text.Json;
 using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
-using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Shared.UnitTests.HttpFailures.Data;
 
 namespace HealthyFac.Shared.UnitTests.HttpFailures;
