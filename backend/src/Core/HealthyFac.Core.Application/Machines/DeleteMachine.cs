@@ -28,8 +28,8 @@ public sealed class DeleteMachinePreHandlerCheck(ICurrentUserProvider currentUse
 }
 
 /// <summary>
-/// Removes a machine and its error codes. The save interceptor turns each removal into a soft delete, so the rows
-/// stay and the query filter hides them. One save stores the machine and its error codes together. A machine
+/// Removes a machine, its error codes, and its state history. The save interceptor turns each removal into a soft
+/// delete, so the rows stay and the query filter hides them. One save stores all removals together. A machine
 /// outside the company or the departments of the actor, and a machine that is already deleted, are "not found".
 /// </summary>
 /// <param name="dbContext">Loads the machine and saves the removal.</param>
@@ -58,7 +58,12 @@ public sealed class DeleteMachineRequestHandler(ICoreDbContext dbContext, ICurre
             .Where(errorCode => errorCode.MachineId == machine.Id)
             .ToListAsync(cancellationToken);
 
+        var stateHistory = await _dbContext.MachineStateHistories
+            .Where(row => row.MachineId == machine.Id)
+            .ToListAsync(cancellationToken);
+
         _dbContext.MachineErrorCodes.RemoveRange(errorCodes);
+        _dbContext.MachineStateHistories.RemoveRange(stateHistory);
         _dbContext.Machines.Remove(machine);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }

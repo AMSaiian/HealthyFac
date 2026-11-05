@@ -59,8 +59,9 @@ public sealed class CoreDevelopmentDataSeeder(
         if (_options.IsRecreationForced)
         {
             _logger.LogWarning(
-                "Forced recreation of development data: deleting all companies, departments, machines and error "
-                + "codes (also the deleted ones), employees, invites, outbox messages, and inbox messages.");
+                "Forced recreation of development data: deleting all companies, departments, machines, error "
+                + "codes and machine state histories (also the deleted ones), employees, invites, outbox messages, "
+                + "and inbox messages.");
 
             await DeleteBusinessDataAsync(cancellationToken);
         }
@@ -103,7 +104,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var department in departments)
         {
-            AddMachinesWithErrorCodes(department);
+            AddMachinesWithErrorCodes(department, now);
 
             AddEmployees(
                 EmployeeInviteFaker.WithProfile(
@@ -177,7 +178,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var department in departments)
         {
-            AddMachinesWithErrorCodes(department);
+            AddMachinesWithErrorCodes(department, now);
         }
 
         var invite = new EmployeeInvite(
@@ -206,17 +207,19 @@ public sealed class CoreDevelopmentDataSeeder(
         await _dbContext.Employees.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.EmployeeInvites.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.MachineErrorCodes.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.MachineStateHistories.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Machines.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Departments.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Companies.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
     }
 
-    private void AddMachinesWithErrorCodes(Department department)
+    private void AddMachinesWithErrorCodes(Department department, DateTime now)
     {
         var machines = new MachineFaker(
                 department,
                 _options.GetMachineTypes(),
                 _options.SerialNumberPattern,
+                now,
                 NextSeed())
             .Generate(_options.MachinesPerDepartment);
         _dbContext.Machines.AddRange(machines);

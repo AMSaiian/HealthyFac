@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -28,6 +29,39 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture) : IClassFixture
         machine.SerialNumber.Should().Be(MachineTestData.SerialNumber);
         machine.DepartmentId.Should().Be(tenant.FirstDepartmentId);
         machine.Description.Should().Be(MachineTestData.LinkDescription);
+    }
+
+    [Fact]
+    public async Task GetMachine_WithRowInsertedOutOfOrder_ReturnsStateOfLatestStartedAt()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeSeededMachineAsync(tenant);
+        await _fixture.AddStateRowAsync(
+            machineId,
+            MachineState.InMaintenance,
+            MachineTestData.FirstCreatedAt.AddDays(MachineTestData.LaterStateDays));
+        await _fixture.AddStateRowAsync(
+            machineId,
+            MachineState.OutOfService,
+            MachineTestData.FirstCreatedAt.AddDays(MachineTestData.EarlierStateDays));
+
+        var machine = await _fixture.GetMachineAsync(tenant.CompanyId, [tenant.FirstDepartmentId], machineId);
+
+        machine.State.Should().Be(MachineState.InMaintenance);
+    }
+
+    [Fact]
+    public async Task GetMachine_WithDeletedLatestRow_ReturnsStateOfLatestActiveRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeSeededMachineAsync(tenant);
+        var latestStartedAt = MachineTestData.FirstCreatedAt.AddDays(MachineTestData.LaterStateDays);
+        await _fixture.AddStateRowAsync(machineId, MachineState.InMaintenance, latestStartedAt);
+        await _fixture.SoftDeleteStateRowAsync(machineId, latestStartedAt);
+
+        var machine = await _fixture.GetMachineAsync(tenant.CompanyId, [tenant.FirstDepartmentId], machineId);
+
+        machine.State.Should().Be(MachineState.Operational);
     }
 
     [Fact]
@@ -61,5 +95,15 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture) : IClassFixture
         var act = () => _fixture.GetMachineAsync(tenant.CompanyId, [tenant.SecondDepartmentId], machineId);
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineErrors.MachineNotFound);
+    }
+
+    private async Task<Guid> ArrangeSeededMachineAsync(MachineTenant tenant)
+    {
+        var ids = await _fixture.SeedMachinesAsync(
+            tenant.CompanyId,
+            tenant.FirstDepartmentId,
+            MachineTestData.CreateSingleMachineSeed());
+
+        return ids[0];
     }
 }

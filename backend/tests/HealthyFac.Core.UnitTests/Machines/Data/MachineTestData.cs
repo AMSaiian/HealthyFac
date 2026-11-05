@@ -1,0 +1,28 @@
+using Bogus;
+using HealthyFac.Core.Domain.Machines;
+
+namespace HealthyFac.Core.UnitTests.Machines.Data;
+
+public static class MachineTestData
+{
+    private const int RandomSeed = 20261106;
+
+    private static readonly Faker Faker = new() { Random = new Randomizer(RandomSeed) };
+
+    public static readonly Guid CompanyId = Faker.Random.Guid();
+    public static readonly Guid DepartmentId = Faker.Random.Guid();
+    public static readonly string Name = Faker.Commerce.ProductName();
+    public static readonly string SerialNumber = Faker.Random.AlphaNumeric(12);
+    public static readonly DateTime StartedAt = new(2026, 11, 6, 8, 0, 0, DateTimeKind.Utc);
+    public static readonly DateTime LaterStartedAt = StartedAt.AddHours(1);
+
+    public static TheoryData<DateTime> NotLaterStartedAt =>
+    [
+        StartedAt,
+        StartedAt.AddTicks(-1),
+        StartedAt.AddDays(-1),
+    ];
+
+    public static Machine CreateMachine() =>
+        new(CompanyId, DepartmentId, Name, SerialNumber, null, StartedAt);
+}

@@ -29,6 +29,46 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
     }
 
     [Fact]
+    public async Task SearchMachines_WithOperationalFilter_ReturnsMachineWithPastMaintenanceRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineWithPastMaintenanceAsync(tenant);
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            MachineTestData.CreateSearch(tenant.CompanyId, CreateStateFilter(MachineState.Operational)));
+
+        response.Items.Select(item => item.Id).Should().Equal(machineId);
+        response.Items[0].State.Should().Be(MachineState.Operational);
+    }
+
+    [Fact]
+    public async Task SearchMachines_WithMaintenanceFilter_MatchesOnlyMachineInMaintenanceNow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await ArrangeMachineWithPastMaintenanceAsync(tenant);
+        var inMaintenanceIds = await _fixture.SeedMachinesAsync(
+            tenant.CompanyId,
+            tenant.FirstDepartmentId,
+            [
+                new MachineSeed(
+                    MachineTestData.OtherMachineName,
+                    MachineTestData.OtherSerialNumber,
+                    MachineState.InMaintenance,
+                    MachineTestData.FirstCreatedAt),
+            ]);
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            MachineTestData.CreateSearch(tenant.CompanyId, CreateStateFilter(MachineState.InMaintenance)));
+
+        response.Items.Select(item => item.Id).Should().Equal(inMaintenanceIds);
+        response.Items[0].State.Should().Be(MachineState.InMaintenance);
+    }
+
+    [Fact]
     public async Task SearchMachines_ActorWithoutDepartments_ReturnsEmpty()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
@@ -141,4 +181,25 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             departmentId,
             MachineTestData.MachineName,
             serialNumber);
+
+    private static MachineGridFilter CreateStateFilter(MachineState state) =>
+        new() { States = new SetFilter<MachineState> { Values = [state] } };
+
+    private async Task<Guid> ArrangeMachineWithPastMaintenanceAsync(MachineTenant tenant)
+    {
+        var ids = await _fixture.SeedMachinesAsync(
+            tenant.CompanyId,
+            tenant.FirstDepartmentId,
+            MachineTestData.CreateSingleMachineSeed());
+        await _fixture.AddStateRowAsync(
+            ids[0],
+            MachineState.InMaintenance,
+            MachineTestData.FirstCreatedAt.AddDays(MachineTestData.EarlierStateDays));
+        await _fixture.AddStateRowAsync(
+            ids[0],
+            MachineState.Operational,
+            MachineTestData.FirstCreatedAt.AddDays(MachineTestData.LaterStateDays));
+
+        return ids[0];
+    }
 }

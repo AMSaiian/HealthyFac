@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.MachineErrorCodes.Data;
@@ -77,6 +78,32 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         first.DeletedBy.Should().NotBeNull();
         second.DeletedAt.Should().NotBeNull();
         second.DeletedBy.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteMachine_Always_SoftDeletesStateHistory()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+        var otherMachineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.OtherMachineName,
+            MachineTestData.OtherSerialNumber);
+        var firstHistory = await _fixture.LoadStateHistoryAsync(machineId);
+        await _fixture.AddStateRowAsync(
+            machineId,
+            MachineState.InMaintenance,
+            firstHistory[0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
+
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+        var otherHistory = await _fixture.LoadStateHistoryAsync(otherMachineId);
+
+        history.Should().HaveCount(2).And.OnlyContain(row => row.DeletedAt != null);
+        otherHistory.Should().ContainSingle().Which.DeletedAt.Should().BeNull();
     }
 
     [Fact]

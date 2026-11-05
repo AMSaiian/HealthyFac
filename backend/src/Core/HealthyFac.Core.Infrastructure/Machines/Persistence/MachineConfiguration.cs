@@ -31,9 +31,6 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .HasMaxLength(MachineValidationConstants.SerialNumberMaxLength)
             .IsRequired();
 
-        builder.Property(machine => machine.State)
-            .IsRequired();
-
         builder.HasIndex(machine => new { machine.CompanyId, machine.SerialNumber })
             .HasDatabaseName(MachineIndexNames.CompanySerialNumber)
             .IsUnique()
@@ -54,7 +51,6 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .HasNotBlankCheck(machine => machine.SerialNumber)
             .HasLengthCheck(machine => machine.Description, 0, RichTextConstants.HtmlMaxLength)
             .HasNotEmptyGuidCheck(machine => machine.CompanyId)
-            .HasNotEmptyGuidCheck(machine => machine.DepartmentId)
-            .HasEnumerationCheck(machine => machine.State);
+            .HasNotEmptyGuidCheck(machine => machine.DepartmentId);
     }
 }

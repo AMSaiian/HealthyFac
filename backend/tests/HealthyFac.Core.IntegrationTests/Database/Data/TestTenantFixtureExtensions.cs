@@ -1,4 +1,6 @@
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
@@ -96,6 +98,69 @@ public static class TestTenantFixtureExtensions
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<MachineState>> LoadTenantCurrentStatesAsync(Guid companyId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+                .Machines
+                .AsNoTracking()
+                .Where(machine => machine.CompanyId == companyId)
+                .Select(MachineCurrentState.Selector)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<SeededStateRow>> LoadSeededStateRowsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+            return await dbContext.MachineStateHistories
+                .AsNoTracking()
+                .Join(
+                    dbContext.Machines,
+                    row => row.MachineId,
+                    machine => machine.Id,
+                    (row, machine) => new SeededStateRow
+                    {
+                        MachineId = machine.Id,
+                        DepartmentId = machine.DepartmentId,
+                        MachineName = machine.Name,
+                        State = row.State,
+                        StartedAt = row.StartedAt,
+                    })
+                .OrderBy(row => row.StartedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<Guid>> SoftDeleteOneStateRowAndLoadAllIdsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+            var deletedRowId = await dbContext.MachineStateHistories
+                .Select(row => row.Id)
+                .FirstAsync();
+            await dbContext.MachineStateHistories
+                .Where(row => row.Id == deletedRowId)
+                .ExecuteUpdateAsync(update => update.SetProperty(row => row.DeletedAt, DateTime.UtcNow));
+
+            return await dbContext.MachineStateHistories
+                .IgnoreQueryFilters()
+                .Select(row => row.Id)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<Guid>> LoadAllStateRowIdsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+                .MachineStateHistories
+                .IgnoreQueryFilters()
+                .Select(row => row.Id)
+                .ToListAsync();
+        }
+
         public async Task<int> CountOutboxMessagesAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -103,6 +168,15 @@ public static class TestTenantFixtureExtensions
             return await scope.ServiceProvider.GetRequiredService<CoreDbContext>().OutboxMessages.CountAsync();
         }
     }
+}
+
+public sealed record SeededStateRow
+{
+    public required Guid MachineId { get; init; }
+    public required Guid DepartmentId { get; init; }
+    public required string MachineName { get; init; }
+    public required MachineState State { get; init; }
+    public required DateTime StartedAt { get; init; }
 }
 
 public sealed record TenantMachineCodes

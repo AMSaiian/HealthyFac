@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 
@@ -35,6 +36,16 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
         var departmentIds = await _fixture.LoadDepartmentIdsAsync(DatabaseTestData.TestTenantCompanyId);
 
         departmentIds.Should().BeEquivalentTo(DatabaseTestData.TestTenant.DepartmentIds);
+    }
+
+    [Fact]
+    public async Task TestTenantSeeding_Always_HasMachinesInEveryState()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        var states = await _fixture.LoadTenantCurrentStatesAsync(DatabaseTestData.TestTenantCompanyId);
+
+        states.Should().Contain([MachineState.Operational, MachineState.InMaintenance, MachineState.OutOfService]);
     }
 
     [Fact]

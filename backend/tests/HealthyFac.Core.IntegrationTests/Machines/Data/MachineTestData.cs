@@ -34,6 +34,9 @@ public static class MachineTestData
     public const string OtherFilterNameBase = "Press";
     public const int SeededMachineCount = 6;
     public const int RaceParticipantCount = 2;
+    public const int StateChangeDelayHours = 1;
+    public const int EarlierStateDays = 1;
+    public const int LaterStateDays = 2;
 
     public static readonly DateTime FirstCreatedAt = new(2026, 3, 1, 8, 0, 0, DateTimeKind.Utc);
 
@@ -58,6 +61,9 @@ public static class MachineTestData
             Sort = sort,
             Filter = filter ?? new MachineGridFilter(),
         };
+
+    public static IReadOnlyList<MachineSeed> CreateSingleMachineSeed() =>
+        [new(MachineName, SerialNumber, MachineState.Operational, FirstCreatedAt)];
 
     public static IReadOnlyList<MachineSeed> CreateFilterSeeds() =>
     [

@@ -16,6 +16,27 @@ public static class SeedingValidationConstants
         public const int TestTenantDepartments = 2;
     }
 
+    /// <summary>
+    /// Defines the time bounds of the seeded state history of a machine. The machine faker picks the changes that
+    /// follow the first <c>operational</c> row by the machine index.
+    /// </summary>
+    public static class StateHistory
+    {
+        public const int MinStartDaysBeforeNow = 30;
+        public const int MaxStartDaysBeforeNow = 365;
+
+        /// <summary>
+        /// The lower bound of the share of the time between the previous row and the seed time at which the next
+        /// state starts.
+        /// </summary>
+        public const double MinChangeShare = 0.1;
+
+        /// <summary>
+        /// The upper bound of the same share. It stays below 1, so every change starts before the seed time.
+        /// </summary>
+        public const double MaxChangeShare = 0.9;
+    }
+
     public static class InviteLifetime
     {
         public const int MinDays = 1;

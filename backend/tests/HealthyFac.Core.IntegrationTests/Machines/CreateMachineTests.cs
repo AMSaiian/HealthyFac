@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -27,6 +28,28 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         machine.Name.Should().Be(MachineTestData.MachineName);
         machine.Description.Should().Be(MachineTestData.BulletListDescription);
         machine.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreateMachine_Always_StoresOneOperationalStateRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var before = TimeProvider.System.GetUtcNow().UtcDateTime;
+
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber);
+
+        var after = TimeProvider.System.GetUtcNow().UtcDateTime;
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        history.Should().ContainSingle();
+        history[0].State.Should().Be(MachineState.Operational);
+        history[0].StartedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+        history[0].DeletedAt.Should().BeNull();
     }
 
     [Fact]
