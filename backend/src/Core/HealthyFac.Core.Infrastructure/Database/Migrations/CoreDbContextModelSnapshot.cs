@@ -469,7 +469,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.InboxMessage", b =>
+            modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.Receiving.InboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -545,7 +545,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.OutboxMessage", b =>
+            modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.Sending.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
