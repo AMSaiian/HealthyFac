@@ -113,6 +113,19 @@
         ]
       },
       "multivalued": false
+    },
+    {
+      "name": "department_ids",
+      "displayName": "Department IDs",
+      "permissions": {
+        "view": [
+          "admin"
+        ],
+        "edit": [
+          "admin"
+        ]
+      },
+      "multivalued": true
     }
   ]
 }

@@ -15,7 +15,7 @@ public sealed class UseCaseRegistrationTests
         services.AddLogging();
         services.AddSingleton(probe);
         services.AddUseCases(UseCaseRegistrationTestData.NoResultTypes);
-        await using var provider = services.BuildServiceProvider(validateScopes: true);
+        await using var provider = services.BuildServiceProvider(true);
         using var scope = provider.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<NoResultRequest>>();
 
@@ -57,5 +57,80 @@ public sealed class UseCaseRegistrationTests
         var act = () => services.AddUseCases(UseCaseRegistrationTestData.DuplicatedTypes);
 
         act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(DuplicatedRequest)}*");
+    }
+
+    [Fact]
+    public void AddUseCases_WithRequestWithoutPreHandlerCheck_Throws()
+    {
+        var services = new ServiceCollection();
+
+        var act = () => services.AddUseCases(UseCaseRegistrationTestData.UnruledTypes);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(UnruledRequest)}*");
+    }
+
+    [Fact]
+    public void AddUseCases_WithTwoPreHandlerChecksForOneRequest_Throws()
+    {
+        var services = new ServiceCollection();
+
+        var act = () => services.AddUseCases(UseCaseRegistrationTestData.DoubleRuledTypes);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage($"*{nameof(DoubleRuledRequest)}*");
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithRejectingPreHandlerCheck_DoesNotRunHandler()
+    {
+        var probe = new HandlerProbe();
+        await using var provider = BuildProvider(probe, UseCaseRegistrationTestData.RuledTypes);
+        using var scope = provider.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<RuledRequest, int>>();
+
+        var act = () => handler.HandleAsync(new RuledRequest { Name = "machine", IsRejected = true });
+
+        await act.Should().ThrowAsync<ForbiddenAccessException>();
+        probe.RuleRunCount.Should().Be(1);
+        probe.RunCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithInvalidInput_DoesNotRunPreHandlerCheck()
+    {
+        var probe = new HandlerProbe();
+        await using var provider = BuildProvider(probe, UseCaseRegistrationTestData.RuledTypes);
+        using var scope = provider.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<RuledRequest, int>>();
+
+        var act = () => handler.HandleAsync(
+            new RuledRequest { Name = UseCaseRegistrationTestData.BlankName, IsRejected = false });
+
+        await act.Should().ThrowAsync<AppValidationException>();
+        probe.RuleRunCount.Should().Be(0);
+        probe.RunCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WithoutResult_RunsPreHandlerCheck()
+    {
+        var probe = new HandlerProbe();
+        await using var provider = BuildProvider(probe, UseCaseRegistrationTestData.NoResultTypes);
+        using var scope = provider.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<NoResultRequest>>();
+
+        await handler.HandleAsync(new NoResultRequest { Name = "machine" });
+
+        probe.RuleRunCount.Should().Be(1);
+        probe.RunCount.Should().Be(1);
+    }
+
+    private static ServiceProvider BuildProvider(HandlerProbe probe, Type[] types)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(probe);
+        services.AddUseCases(types);
+
+        return services.BuildServiceProvider(true);
     }
 }

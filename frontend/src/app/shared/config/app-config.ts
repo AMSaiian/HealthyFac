@@ -30,6 +30,7 @@ const appConfigSchema = z.object({
   authUrl: publicHttpsUrl,
   authRealm: nonBlankText,
   authClientId: nonBlankText,
+  primeUiLicenseKey: nonBlankText,
 });
 
 export type AppConfig = Readonly<z.infer<typeof appConfigSchema>>;

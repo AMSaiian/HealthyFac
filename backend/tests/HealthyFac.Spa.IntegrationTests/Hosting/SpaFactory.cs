@@ -12,6 +12,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
     public const string AuthUrl = "https://auth.healthyfac.test";
     public const string AuthRealm = "healthyfac";
     public const string AuthClientId = "healthyfac-spa";
+    public const string PrimeUiLicenseKey = "test-primeui-license-key";
     public const string SilentSsoFileName = "silent-check-sso.html";
     public const string HashedAssetName = "main-ABCDEFGH.js";
     public const string LookalikeFileName = "data-ABCDEFGHx.json";
@@ -55,6 +56,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         builder.UseSetting("Spa:ContentRoot", _contentRoot);
         builder.UseSetting("Spa:ApiBaseUrl", ApiBaseUrl);
         builder.UseSetting("Spa:AuthUrl", AuthUrl);
+        builder.UseSetting("Spa:PrimeUiLicenseKey", PrimeUiLicenseKey);
 
         foreach (var (key, value) in _settings)
         {

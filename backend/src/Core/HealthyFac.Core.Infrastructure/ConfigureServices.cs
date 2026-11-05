@@ -9,6 +9,7 @@ using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Employees.CompleteProvisioning;
 using HealthyFac.Core.Application.Employees.FailProvisioning;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
+using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.InviteLinks;
@@ -17,9 +18,10 @@ using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Email;
 using HealthyFac.Shared.Infrastructure.Messaging;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
+using HealthyFac.Shared.Infrastructure.RichText;
 using HealthyFac.Shared.Infrastructure.Time;
 
 namespace HealthyFac.Core.Infrastructure;
@@ -48,6 +50,8 @@ public static class ConfigureServices
         )
         {
             services.AddSharedTime();
+            services.AddSharedRichText();
+            services.AddScoped<SoftDeleteInterceptor>();
             services.AddScoped<AuditableEntityInterceptor>();
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);
@@ -67,7 +71,9 @@ public static class ConfigureServices
                         .ConfigureParentOnlyTracing());
                 options.UseExceptionProcessor();
 
-                options.AddInterceptors(provider.GetRequiredService<AuditableEntityInterceptor>());
+                options.AddInterceptors(
+                    provider.GetRequiredService<SoftDeleteInterceptor>(),
+                    provider.GetRequiredService<AuditableEntityInterceptor>());
 
                 if (environment.IsDevelopment())
                 {

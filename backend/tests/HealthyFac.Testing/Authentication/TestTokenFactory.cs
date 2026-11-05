@@ -26,7 +26,9 @@ public sealed class TestTokenFactory
     [
         "employees:invite",
         "employees:manage",
+        "machines:read",
         "machines:write",
+        "machines:delete",
     ];
 
     private const string KeyId = "test-key";
@@ -59,6 +61,11 @@ public sealed class TestTokenFactory
         if (claims.EmployeeId is not null)
         {
             tokenClaims[KeycloakClaimTypes.EmployeeId] = claims.EmployeeId;
+        }
+
+        if (claims.DepartmentIds.Count > 0)
+        {
+            tokenClaims[KeycloakClaimTypes.DepartmentIds] = claims.DepartmentIds.ToArray();
         }
 
         return Sign(tokenClaims, claims.Issuer, claims.Audience, claims.IssuedAt, claims.Lifetime);

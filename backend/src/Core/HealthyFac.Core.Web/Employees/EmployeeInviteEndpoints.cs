@@ -1,16 +1,14 @@
+using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
-using HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
-using HealthyFac.Core.Application.Employees.ResendEmployeeInvite;
-using HealthyFac.Core.Application.Employees.VerifyEmployeeInvite;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
 using ApplicationCreateEmployeeInviteRequest =
-    HealthyFac.Core.Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest;
+    HealthyFac.Core.Application.Employees.CreateEmployeeInviteRequest;
 using ApplicationResendEmployeeInviteRequest =
-    HealthyFac.Core.Application.Employees.ResendEmployeeInvite.ResendEmployeeInviteRequest;
+    HealthyFac.Core.Application.Employees.ResendEmployeeInviteRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 

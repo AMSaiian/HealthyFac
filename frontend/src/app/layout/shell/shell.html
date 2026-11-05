@@ -1,12 +1,16 @@
-<p-toolbar>
+<p-toolbar class="flex-none rounded-none">
   <ng-template #start>
-    <p-button
-      icon="pi pi-bars"
+    <button
+      pButton
+      type="button"
+      iconOnly
       [text]="true"
       [attr.aria-label]="'SHELL.MENU' | translate"
       [attr.aria-expanded]="shellStore.isMenuOpen()"
-      (onClick)="shellStore.toggleMenu()"
-    />
+      (click)="shellStore.toggleMenu()"
+    >
+      <i class="pi pi-bars"></i>
+    </button>
     <span class="ml-2 font-bold">{{ 'SHELL.TITLE' | translate }}</span>
   </ng-template>
   <ng-template #end>
@@ -28,22 +32,60 @@
           >{{ 'LANGUAGE.' + (language | uppercase) | translate }}</ng-template
         >
       </p-select>
-      <p-button
-        [icon]="themeStore.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+      <button
+        pButton
+        type="button"
+        iconOnly
         [text]="true"
         [attr.aria-label]="'SHELL.THEME_TOGGLE' | translate"
-        (onClick)="themeStore.toggle()"
-      />
+        (click)="themeStore.toggle()"
+      >
+        <i [class]="themeStore.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+      </button>
       @if (authStore.isAuthenticated()) {
-        <p-button
-          icon="pi pi-sign-out"
+        <button
+          pButton
+          type="button"
+          iconOnly
           [text]="true"
           [attr.aria-label]="'SHELL.SIGN_OUT' | translate"
-          (onClick)="authStore.logout()"
-        />
+          (click)="authStore.logout()"
+        >
+          <i class="pi pi-sign-out"></i>
+        </button>
       }
     </div>
   </ng-template>
 </p-toolbar>
+<p-drawer
+  position="left"
+  styleClass="w-72"
+  [modal]="true"
+  [header]="'SHELL.MENU' | translate"
+  [visible]="shellStore.isMenuOpen()"
+  (onHide)="shellStore.closeMenu()"
+>
+  <nav [attr.aria-label]="'SHELL.MENU' | translate">
+    <ul class="flex flex-col gap-1">
+      @for (item of shellStore.navItems(); track item.path) {
+        <li>
+          <a
+            class="flex items-center gap-2 rounded p-2"
+            routerLinkActive="bg-surface-100 dark:bg-surface-800"
+            [routerLink]="item.path"
+            [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+          >
+            <i [class]="item.icon"></i>
+            <span>{{ item.labelKey | translate }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+</p-drawer>
 <p-toast />
-<router-outlet />
+<p-confirmdialog />
+<hf-action-host />
+<main class="flex min-h-0 min-w-0 flex-1 flex-col">
+  <router-outlet />
+</main>

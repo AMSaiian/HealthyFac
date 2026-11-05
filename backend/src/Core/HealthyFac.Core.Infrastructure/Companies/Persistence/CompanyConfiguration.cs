@@ -16,6 +16,7 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
     {
         builder.ConfigureEntity();
         builder.ConfigureAuditable();
+        builder.ConfigureSoftDeletable();
 
         builder.Property(company => company.Name)
             .HasMaxLength(CompanyValidationConstants.NameMaxLength)

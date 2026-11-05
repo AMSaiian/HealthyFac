@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using HealthyFac.Gateway.Web.RateLimiting.Fallback;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;

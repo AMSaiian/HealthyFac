@@ -16,6 +16,8 @@ public sealed class ValidationRequestHandlerDecoratorTests
 
     public ValidationRequestHandlerDecoratorTests()
     {
+        ValidationNames.UseJsonNames();
+
         _decorator = new ValidationRequestHandlerDecorator<ValidatedRequest, int>(
             new FixedResultHandler(),
             [new ValidatedRequestValidator()],
@@ -31,7 +33,7 @@ public sealed class ValidationRequestHandlerDecoratorTests
         var entry = _logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Information).Subject;
         entry.Exception.Should().BeNull();
         var errors = entry.Properties[ErrorsKey].Should().BeAssignableTo<IDictionary<string, string[]>>().Subject;
-        errors["Name"].Should().ContainSingle(ValidationMessages.NameRequired);
+        errors["name"].Should().ContainSingle(ValidationMessages.NameRequired);
     }
 
     [Fact]

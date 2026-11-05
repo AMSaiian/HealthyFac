@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.Configuration.DotEnv;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;

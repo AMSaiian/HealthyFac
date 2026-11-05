@@ -11,6 +11,9 @@ public static class SeedingValidationConstants
         public const int MaxPerDepartment = 100;
         public const int MaxSupervisorsPerDepartment = 10;
         public const int MaxOpenInvitesPerCompany = 50;
+
+        /// <summary>The number of departments of the test tenant. Keycloak lists the same number of IDs.</summary>
+        public const int TestTenantDepartments = 2;
     }
 
     public static class InviteLifetime
@@ -29,5 +32,12 @@ public static class SeedingValidationConstants
         public const string RecreationOnlyInDevelopment =
             "Forced recreation of development data deletes business data, so it is allowed only in the Development "
             + "environment.";
+
+        public static readonly string TestTenantDepartmentCount =
+            $"The test tenant needs exactly {Counts.TestTenantDepartments} department IDs.";
+
+        public const string TestTenantDepartmentIdEmpty = "A test tenant department ID must not be empty.";
+
+        public const string TestTenantDepartmentIdDuplicated = "The test tenant department IDs must be distinct.";
     }
 }

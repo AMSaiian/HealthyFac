@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
@@ -150,3 +151,9 @@ public sealed class CancellingHandler(CancellationTrigger trigger) : RequestHand
         cancellationToken.ThrowIfCancellationRequested();
     }
 }
+
+public sealed class TestRecordedPreHandlerCheck : PassThroughPreHandlerCheck<TestRecorded>;
+
+public sealed class TestFailingPreHandlerCheck : PassThroughPreHandlerCheck<TestFailing>;
+
+public sealed class TestCancellingPreHandlerCheck : PassThroughPreHandlerCheck<TestCancelling>;

@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
+
 namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
 
 /// <summary>

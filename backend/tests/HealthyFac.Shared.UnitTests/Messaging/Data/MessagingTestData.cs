@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging;
 
 namespace HealthyFac.Shared.UnitTests.Messaging.Data;
@@ -24,10 +26,10 @@ public static class MessagingTestData
     public static readonly Guid InboxMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000010");
 
     public static InboxMessage CreateInboxMessage() =>
-        new(InboxMessageId, PingMessageType, PingPayload, Now, traceParent: null, ActorId, CompanyId);
+        new(InboxMessageId, PingMessageType, PingPayload, Now, null, ActorId, CompanyId);
 
     public static OutboxMessage CreateOutboxMessage() =>
-        new(PingMessageType, PingPayload, Now, traceParent: null, ActorId, CompanyId);
+        new(PingMessageType, PingPayload, Now, null, ActorId, CompanyId);
 
     public static List<TimeSpan> ScheduleRetries(OutboxMessage message, int count)
     {

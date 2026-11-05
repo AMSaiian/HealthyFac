@@ -2,6 +2,18 @@ import { definePreset } from '@primeuix/themes';
 import Lara from '@primeuix/themes/lara';
 
 export const HealthyFacPreset = definePreset(Lara, {
+  components: {
+    datepicker: {
+      panel: { padding: '0.5rem' },
+      header: { padding: '0 0 0.375rem 0' },
+      title: { fontSize: '0.875rem' },
+      selectMonth: { padding: '0.25rem 0.375rem', fontSize: '0.875rem' },
+      selectYear: { padding: '0.25rem 0.375rem', fontSize: '0.875rem' },
+      dayView: { margin: '0.375rem 0 0 0' },
+      weekDay: { padding: '0.25rem', fontSize: '0.75rem' },
+      date: { width: '1.75rem', height: '1.75rem', padding: '0.25rem', fontSize: '0.875rem' },
+    },
+  },
   semantic: {
     primary: {
       50: '#FDF5EF',

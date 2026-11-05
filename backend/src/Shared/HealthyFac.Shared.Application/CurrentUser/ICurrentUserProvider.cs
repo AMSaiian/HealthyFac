@@ -39,4 +39,11 @@ public interface ICurrentUserProvider
     /// </summary>
     /// <returns>The actor if one is set; otherwise, null.</returns>
     ActorContext? TryGetActor();
+
+    /// <summary>
+    /// Retrieves the whole actor of the scope or throws if unavailable.
+    /// </summary>
+    /// <returns>The actor of the scope.</returns>
+    /// <exception cref="ErrorHandling.UnauthorizedAccessException">Thrown when the scope has no actor.</exception>
+    ActorContext GetActor();
 }

@@ -5,6 +5,7 @@ using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 
@@ -22,6 +23,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
     {
         builder.ConfigureEntity();
         builder.ConfigureAuditable();
+        builder.ConfigureSoftDeletable();
 
         builder.Property(employee => employee.Email)
             .HasMaxLength(EmployeeValidationConstants.EmailMaxLength)
@@ -71,11 +73,12 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
                     nameof(Employee) + nameof(Employee.Id), nameof(Department) + nameof(Department.Id)));
 
         builder.HasIndex(employee => employee.Email)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter);
 
         builder.HasIndex(employee => employee.IdentityUserId)
             .IsUnique()
-            .HasFilter("identity_user_id IS NOT NULL");
+            .HasFilter($"identity_user_id IS NOT NULL AND {SoftDeleteConstants.NotDeletedFilter}");
 
         builder.HasNotBlankCheck(employee => employee.Email)
             .HasNotBlankCheck(employee => employee.FirstName)

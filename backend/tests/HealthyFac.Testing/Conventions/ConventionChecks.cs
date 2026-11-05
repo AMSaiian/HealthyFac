@@ -192,6 +192,28 @@ public static class ConventionChecks
         FindConstructorParameters(assembly, typeof(DbContext).IsAssignableFrom);
 
     /// <summary>
+    /// Finds the string members of use case requests and integration messages that no text rule covers. It checks
+    /// every type that implements <c>IRequest</c> (a consumed message too), every type with an
+    /// <c>AbstractValidator</c>, and every nested <c>HealthyFac</c> type that holds strings. A message that the
+    /// service only publishes is out of scope. A type with a string
+    /// member or a string list needs a validator. Each string member needs a text rule (<c>SingleLineText</c> or
+    /// <c>MultilineText</c>), and each member of a nested type needs a child validator rule.
+    /// </summary>
+    /// <param name="assemblies">The Application assemblies to inspect.</param>
+    /// <returns>One line for each type without a validator and each member without a rule.</returns>
+    public static IReadOnlyList<string> FindStringsWithoutTextRule(IEnumerable<Assembly> assemblies) =>
+        TextRuleInspection.FindViolations(assemblies);
+
+    /// <summary>
+    /// Finds the parts of a use case that are not in the namespace of their request: the handler, the input
+    /// validator, and the pre-handler check. It is the closest reflection check to "one use-case file".
+    /// </summary>
+    /// <param name="assemblies">The Application assemblies to inspect.</param>
+    /// <returns>One line for each part outside the namespace of its request.</returns>
+    public static IReadOnlyList<string> FindUseCasePartsOutsideRequestNamespace(IEnumerable<Assembly> assemblies) =>
+        UseCasePartInspection.FindViolations(assemblies);
+
+    /// <summary>
     /// Lists each namespace of the assembly with its folders below the assembly root. A namespace outside the
     /// assembly name (e.g., an extension class in <c>Microsoft.Extensions.DependencyInjection</c>) has no folder in
     /// the project, so the method skips it.

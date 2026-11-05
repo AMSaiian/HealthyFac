@@ -4,6 +4,7 @@ import { Shell } from '@app/layout/shell/shell';
 
 @Component({
   imports: [Shell],
+  host: { class: 'flex h-dvh flex-col' },
   selector: 'hf-root',
   templateUrl: './app.html',
 })

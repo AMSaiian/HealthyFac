@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Infrastructure.Messaging.Persistence;
+using HealthyFac.Shared.Infrastructure.Persistence.Collations;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
@@ -41,6 +43,33 @@ public static class ModelBuilderExtensions
                                 .Property(property.Name)
                                 .HasColumnName(property.Name.ToSnakeCase()));
                 });
+
+            return modelBuilder;
+        }
+
+        /// <summary>
+        /// Creates the <see cref="CollationNames.CaseInsensitive"/> collation and sets it on every text property
+        /// that has no collation of its own. A <c>jsonb</c> column is skipped, because PostgreSQL has no collation
+        /// for it. Call it after the entity configurations and before <see cref="ToSnakeCaseConventions"/>.
+        /// </summary>
+        /// <returns>The <see cref="ModelBuilder"/> instance for chained configuration.</returns>
+        public ModelBuilder UseCaseInsensitiveText()
+        {
+            modelBuilder.HasCollation(
+                CollationNames.CaseInsensitive,
+                CollationNames.CaseInsensitiveLocale,
+                CollationNames.IcuProvider,
+                false);
+
+            modelBuilder.Model
+                .GetEntityTypes()
+                .SelectMany(entity => entity.GetProperties())
+                .Where(property =>
+                    property.ClrType == typeof(string)
+                    && property.GetCollation() is null
+                    && property.GetColumnType() != MessagingPersistenceConstants.PayloadColumnType)
+                .ToList()
+                .ForEach(property => property.SetCollation(CollationNames.CaseInsensitive));
 
             return modelBuilder;
         }

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Web.Authentication;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -11,12 +12,14 @@ namespace HealthyFac.Shared.UnitTests.CurrentUser.Data;
 public static class ActorClaimsTestData
 {
     public const string OtherServiceClientId = "healthyfac-gateway";
+    public const string InvalidDepartmentId = "not-a-guid";
 
     public static ClaimsPrincipal CreatePrincipal(
         string? subject,
         IEnumerable<string> organizations,
         string? employeeId,
-        string? clientId = null
+        string? clientId = null,
+        IEnumerable<string>? departmentIds = null
     )
     {
         var claims = organizations
@@ -37,6 +40,9 @@ public static class ActorClaimsTestData
         {
             claims.Add(new Claim(KeycloakClaimTypes.ClientId, clientId));
         }
+
+        claims.AddRange(
+            (departmentIds ?? []).Select(departmentId => new Claim(KeycloakClaimTypes.DepartmentIds, departmentId)));
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "test"));
     }

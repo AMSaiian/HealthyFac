@@ -36,6 +36,7 @@ public static class ObservabilityConstants
     public static class Spans
     {
         public const string Validation = "UseCase.Validate";
+        public const string PreHandlerCheck = "UseCase.PreHandlerCheck";
         public const string Encrypt = "IdEncryption.Encrypt";
         public const string Decrypt = "IdEncryption.Decrypt";
         public const string RazorRender = "Razor.Render";

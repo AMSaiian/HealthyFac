@@ -4,7 +4,8 @@
   },
   "TITLES": {
     "HOME": "Головна",
-    "NOT_FOUND": "Сторінку не знайдено"
+    "NOT_FOUND": "Сторінку не знайдено",
+    "MACHINES": "Обладнання"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -39,6 +40,77 @@
       "SERVER": "Сервер не зміг обробити запит. Спробуйте пізніше.",
       "UNKNOWN": "Запит не вдався."
     }
+  },
+  "ACTIONS": {
+    "SAVE": "Зберегти",
+    "CANCEL": "Скасувати"
+  },
+  "RICH_TEXT": {
+    "BOLD": "Жирний",
+    "ITALIC": "Курсив",
+    "UNDERLINE": "Підкреслений",
+    "STRIKE": "Закреслений",
+    "ORDERED_LIST": "Нумерований список",
+    "BULLET_LIST": "Маркований список",
+    "LINK": "Посилання",
+    "CLEAN": "Очистити форматування"
+  },
+  "MACHINES": {
+    "TITLE": "Обладнання",
+    "ADD_NEW": "Додати",
+    "ACTIONS": "Дії з рядком",
+    "UPDATE": "Редагувати",
+    "DELETE": "Видалити",
+    "DELETE_HEADER": "Видалення обладнання",
+    "DELETE_MESSAGE": "Видалити обладнання {{name}}?",
+    "DELETED": "Обладнання видалено.",
+    "EMPTY": "Обладнання не знайдено.",
+    "COLUMNS": {
+      "NAME": "Назва",
+      "SERIAL_NUMBER": "Серійний номер",
+      "DEPARTMENT": "Відділ",
+      "STATE": "Стан",
+      "CREATED_AT": "Створено",
+      "UPDATED_AT": "Змінено"
+    },
+    "STATES": {
+      "OPERATIONAL": "Працює",
+      "IN_MAINTENANCE": "На обслуговуванні",
+      "OUT_OF_SERVICE": "Не працює"
+    },
+    "FILTERS": {
+      "NAME_PLACEHOLDER": "Фільтр за назвою",
+      "SERIAL_NUMBER_PLACEHOLDER": "Фільтр за серійним номером",
+      "DEPARTMENT_PLACEHOLDER": "Оберіть відділи",
+      "STATE_PLACEHOLDER": "Оберіть стани",
+      "CREATED_AT_PLACEHOLDER": "Оберіть дати створення",
+      "UPDATED_AT_PLACEHOLDER": "Оберіть дати оновлення"
+    },
+    "TOASTS": {
+      "SUCCESS": "Готово",
+      "CREATED": "Обладнання створено.",
+      "UPDATED": "Обладнання оновлено.",
+      "SERIAL_NUMBER_TAKEN": "Обладнання з таким серійним номером уже існує."
+    },
+    "FORM": {
+      "CREATE_TITLE": "Нове обладнання",
+      "UPDATE_TITLE": "Редагування обладнання",
+      "NAME": "Назва",
+      "SERIAL_NUMBER": "Серійний номер",
+      "DEPARTMENT": "Відділ",
+      "DESCRIPTION": "Опис",
+      "NO_CHANGES": "Змін немає",
+      "ERRORS": {
+        "REQUIRED": "Це поле обов'язкове.",
+        "TOO_LONG": "Значення задовге."
+      },
+      "NAME_PLACEHOLDER": "Введіть назву",
+      "SERIAL_NUMBER_PLACEHOLDER": "Введіть серійний номер",
+      "DEPARTMENT_PLACEHOLDER": "Оберіть відділ",
+      "DESCRIPTION_PLACEHOLDER": "Опишіть верстат",
+      "INVALID": "Форма містить помилки"
+    },
+    "COLUMNS_CHOOSER": "Стовпці"
   },
   "PRIMENG": {
     "dayNames": ["Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота"],

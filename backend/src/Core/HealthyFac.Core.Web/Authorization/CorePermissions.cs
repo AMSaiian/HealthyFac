@@ -28,12 +28,14 @@ public static class CorePermissions
 
     public static class Machines
     {
+        public const string Read = "machines:read";
         public const string Write = "machines:write";
+        public const string Delete = "machines:delete";
 
         /// <summary>
         /// Holds every permission of the machines feature. <see cref="CorePermissions.All"/> spreads this set, so a
         /// permission that is missing here has no policy.
         /// </summary>
-        public static readonly FrozenSet<string> All = [Write];
+        public static readonly FrozenSet<string> All = [Read, Write, Delete];
     }
 }

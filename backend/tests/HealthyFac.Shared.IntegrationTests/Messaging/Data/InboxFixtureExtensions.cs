@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ public static class InboxFixtureExtensions
                     messageType,
                     InboxProcessorTestData.PayloadFor(text),
                     receivedOn,
-                    traceParent: null,
+                    null,
                     actorId,
                     companyId));
 
@@ -38,7 +39,7 @@ public static class InboxFixtureExtensions
                 TransportTestData.PingMessageType,
                 payload,
                 InboxTestData.Now,
-                traceParent: null,
+                null,
                 InboxProcessorTestData.UserActorId,
                 InboxProcessorTestData.UserCompanyId));
 

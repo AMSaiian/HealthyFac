@@ -5,6 +5,7 @@ using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 
@@ -22,6 +23,7 @@ public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvi
     {
         builder.ConfigureEntity();
         builder.ConfigureAuditable();
+        builder.ConfigureSoftDeletable();
 
         builder.Property(invite => invite.Email)
             .HasMaxLength(EmployeeValidationConstants.EmailMaxLength)
@@ -71,7 +73,7 @@ public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvi
 
         builder.HasIndex(invite => new { invite.CompanyId, invite.Email })
             .IsUnique()
-            .HasFilter("accepted_at IS NULL");
+            .HasFilter($"accepted_at IS NULL AND {SoftDeleteConstants.NotDeletedFilter}");
 
         builder.HasNotBlankCheck(invite => invite.Email)
             .HasNotBlankCheck(invite => invite.FirstName)

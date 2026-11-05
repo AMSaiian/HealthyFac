@@ -1,0 +1,38 @@
+<p-dialog
+  styleClass="w-[40rem] max-w-[95vw]"
+  appendTo="body"
+  [modal]="true"
+  [draggable]="false"
+  [closeOnEscape]="!isSaving()"
+  [header]="title() | translate"
+  [(visible)]="isVisible"
+  (onHide)="cancelled.emit()"
+>
+  <div class="relative max-h-[80dvh] overflow-auto p-1">
+    <ng-content />
+  </div>
+  <ng-template #footer>
+    <span
+      [pTooltip]="saveDisabledReason() ? (saveDisabledReason()! | translate) : ''"
+      [tooltipDisabled]="!isSaveDisabled() || saveDisabledReason() === null"
+    >
+      <button
+        pButton
+        type="button"
+        [disabled]="isSaveDisabled() || isSaving()"
+        (click)="save.emit()"
+      >
+        {{ 'ACTIONS.SAVE' | translate }}
+      </button>
+    </span>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      [disabled]="isSaving()"
+      (click)="cancelled.emit()"
+    >
+      {{ 'ACTIONS.CANCEL' | translate }}
+    </button>
+  </ng-template>
+</p-dialog>

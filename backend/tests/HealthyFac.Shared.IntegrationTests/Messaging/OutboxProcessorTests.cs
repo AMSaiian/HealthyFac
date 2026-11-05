@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using LinqToDB;

@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Testing.Authentication;
 

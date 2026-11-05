@@ -34,4 +34,10 @@ public static class ConventionTestData
         LayerDependencyTestData.CoreApplication,
         LayerDependencyTestData.SharedApplication,
     ];
+
+    public static readonly string[] UseCaseAssemblies =
+    [
+        LayerDependencyTestData.CoreApplication,
+        LayerDependencyTestData.SharedApplication,
+    ];
 }

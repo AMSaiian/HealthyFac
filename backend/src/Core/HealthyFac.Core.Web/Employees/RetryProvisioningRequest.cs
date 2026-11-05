@@ -1,5 +1,6 @@
+using HealthyFac.Core.Web.Machines;
 using ApplicationRetryProvisioningRequest =
-    HealthyFac.Core.Application.Employees.RetryProvisioning.RetryProvisioningRequest;
+    HealthyFac.Core.Application.Employees.RetryProvisioningRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 

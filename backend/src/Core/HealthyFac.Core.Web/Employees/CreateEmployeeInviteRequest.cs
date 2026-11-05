@@ -1,6 +1,7 @@
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Core.Web.Machines;
 using ApplicationCreateEmployeeInviteRequest =
-    HealthyFac.Core.Application.Employees.CreateEmployeeInvite.CreateEmployeeInviteRequest;
+    HealthyFac.Core.Application.Employees.CreateEmployeeInviteRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 

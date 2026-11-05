@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { AuthStore } from './auth.store';
 import { KEYCLOAK } from './keycloak';
+import { Permission } from './permissions';
 import { SessionEndedError } from './session-errors';
 import { asKeycloak, createFakeKeycloak, type FakeKeycloak } from './testing/fake-keycloak';
 
@@ -226,5 +227,50 @@ describe('AuthStore', () => {
       expect(keycloak.updateToken).toHaveBeenCalled();
     });
     expect(keycloak.login).not.toHaveBeenCalled();
+  });
+
+  it('init_WithPermissionsClaim_ExposesPermissions', async () => {
+    keycloak.init.mockResolvedValue(true);
+    keycloak.idTokenParsed = { permissions: [Permission.MachinesRead, Permission.MachinesWrite] };
+    const store = createStore();
+
+    await store.init();
+
+    expect(store.permissions()).toEqual([Permission.MachinesRead, Permission.MachinesWrite]);
+    expect(store.hasPermission(Permission.MachinesRead)).toBe(true);
+    expect(store.hasPermission(Permission.MachinesDelete)).toBe(false);
+  });
+
+  it('refresh_WithNewPermissions_UpdatesPermissions', async () => {
+    keycloak.init.mockResolvedValue(true);
+    keycloak.idTokenParsed = { permissions: [Permission.MachinesRead] };
+    const store = createStore();
+    await store.init();
+
+    keycloak.idTokenParsed = { permissions: [Permission.MachinesRead, Permission.MachinesDelete] };
+    keycloak.onAuthRefreshSuccess?.();
+
+    expect(store.permissions()).toEqual([Permission.MachinesRead, Permission.MachinesDelete]);
+  });
+
+  it('hasPermission_WithoutClaim_ReturnsFalse', async () => {
+    keycloak.init.mockResolvedValue(true);
+    keycloak.idTokenParsed = {};
+    const store = createStore();
+    await store.init();
+
+    const result = store.hasPermission(Permission.MachinesRead);
+
+    expect(result).toBe(false);
+  });
+
+  it('init_WithMalformedPermissionsClaim_KeepsOnlyTextValues', async () => {
+    keycloak.init.mockResolvedValue(true);
+    keycloak.idTokenParsed = { permissions: [Permission.MachinesRead, 42, null] };
+    const store = createStore();
+
+    await store.init();
+
+    expect(store.permissions()).toEqual([Permission.MachinesRead]);
   });
 });

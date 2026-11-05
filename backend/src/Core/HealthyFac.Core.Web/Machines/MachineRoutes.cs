@@ -7,5 +7,8 @@ public static class MachineRoutes
 {
     public const string BaseRoute = "/machines";
     public const string Root = "/";
+    public const string IdParameter = "id";
+    public const string ById = "/{" + IdParameter + "}";
+    public const string Search = "/search";
     public const string ResourceLocationFormat = "{0}/{1}";
 }

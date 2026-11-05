@@ -26,7 +26,7 @@ public static class CheckConstraintConstants
 
     public static class Templates
     {
-        public const string NotBlank = @"""{0}"" ~ '\S'";
+        public const string NotBlank = @"""{0}"" COLLATE ""default"" ~ '\S'";
         public const string Length = @"char_length(""{0}"") BETWEEN {1} AND {2}";
         public const string Range = @"""{0}"" BETWEEN {1} AND {2}";
         public const string NotEmptyGuid = @"""{0}"" <> '{1}'";

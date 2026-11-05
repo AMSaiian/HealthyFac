@@ -1,7 +1,10 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -138,3 +141,5 @@ public sealed class TestPingValidator : AbstractValidator<TestPing>
             .MaximumLength(TextMaxLength);
     }
 }
+
+public sealed class TestPingPreHandlerCheck : PassThroughPreHandlerCheck<TestPing>;

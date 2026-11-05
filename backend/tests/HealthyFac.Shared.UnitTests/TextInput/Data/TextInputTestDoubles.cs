@@ -1,3 +1,4 @@
+using FluentValidation;
 using HealthyFac.Shared.Application.TextInput;
 
 namespace HealthyFac.Shared.UnitTests.TextInput.Data;
@@ -6,10 +7,8 @@ public sealed record TextInputRequest
 {
     public string? Name { get; init; }
 
-    [MultilineText]
     public string? Notes { get; init; }
 
-    [RawText]
     public string? Token { get; init; }
 
     public List<string>? Tags { get; init; }
@@ -24,12 +23,31 @@ public sealed record TextInputAddress
     public string? Street { get; init; }
 }
 
-/// <summary>
-/// A mutable node, so a test can close a reference cycle.
-/// </summary>
-public sealed class TextInputNode
+public sealed class TextInputAddressValidator : AbstractValidator<TextInputAddress>
 {
-    public string? Label { get; set; }
+    public TextInputAddressValidator()
+    {
+        RuleFor(address => address.Street).SingleLineText();
+    }
+}
 
-    public TextInputNode? Next { get; set; }
+public sealed class TextInputRequestValidator : AbstractValidator<TextInputRequest>
+{
+    public TextInputRequestValidator()
+    {
+        RuleFor(request => request.Name).SingleLineText();
+
+        RuleFor(request => request.Notes).MultilineText();
+
+        RuleFor(request => request.Token).SingleLineText();
+
+        RuleForEach(request => request.Tags).SingleLineText();
+
+        RuleFor(request => request.Address!)
+            .SetValidator(new TextInputAddressValidator())
+            .When(request => request.Address is not null);
+
+        RuleForEach(request => request.Addresses)
+            .SetValidator(new TextInputAddressValidator());
+    }
 }

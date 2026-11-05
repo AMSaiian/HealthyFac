@@ -1,4 +1,6 @@
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

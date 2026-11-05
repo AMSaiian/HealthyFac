@@ -1,0 +1,4 @@
+@let action = store.active();
+@if (action && component.hasValue()) {
+  <ng-container *ngComponentOutlet="component.value(); inputs: { action }" />
+}

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 namespace HealthyFac.Shared.Infrastructure.HttpFailures;
 

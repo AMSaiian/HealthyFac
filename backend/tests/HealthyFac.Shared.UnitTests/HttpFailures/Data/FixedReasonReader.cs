@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 
 namespace HealthyFac.Shared.UnitTests.HttpFailures.Data;

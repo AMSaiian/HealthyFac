@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using LinqToDB;
 using Microsoft.Extensions.DependencyInjection;

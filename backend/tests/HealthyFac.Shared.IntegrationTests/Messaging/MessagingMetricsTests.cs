@@ -1,4 +1,5 @@
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;

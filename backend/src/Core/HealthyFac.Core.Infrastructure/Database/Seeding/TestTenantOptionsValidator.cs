@@ -12,6 +12,15 @@ public sealed class TestTenantOptionsValidator : AbstractValidator<TestTenantOpt
         RuleFor(options => options.SupervisorIdentityId).NotEmpty();
         RuleFor(options => options.SupervisorEmployeeId).NotEmpty();
 
+        RuleFor(options => options.DepartmentIds)
+            .Cascade(CascadeMode.Stop)
+            .Must(departmentIds => departmentIds.Count == SeedingValidationConstants.Counts.TestTenantDepartments)
+            .WithMessage(SeedingValidationConstants.Messages.TestTenantDepartmentCount)
+            .Must(departmentIds => departmentIds.All(departmentId => departmentId != Guid.Empty))
+            .WithMessage(SeedingValidationConstants.Messages.TestTenantDepartmentIdEmpty)
+            .Must(departmentIds => departmentIds.Distinct().Count() == departmentIds.Count)
+            .WithMessage(SeedingValidationConstants.Messages.TestTenantDepartmentIdDuplicated);
+
         RuleFor(options => options.CompanyName)
             .NotEmpty()
             .MaximumLength(CompanyValidationConstants.NameMaxLength);

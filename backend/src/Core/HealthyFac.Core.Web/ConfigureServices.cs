@@ -2,6 +2,7 @@ using Serilog;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Core.Web.Departments;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
@@ -146,6 +147,7 @@ public static class ConfigureServices
 
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapMachineEndpoints();
+            versionedGroup.MapDepartmentEndpoints();
             versionedGroup.MapEmployeeInviteEndpoints();
             versionedGroup.MapEmployeeEndpoints();
 

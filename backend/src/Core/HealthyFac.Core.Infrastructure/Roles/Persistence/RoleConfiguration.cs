@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using HealthyFac.Core.Application.Roles;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 
@@ -15,6 +16,7 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
     public void Configure(EntityTypeBuilder<Role> builder)
     {
         builder.ConfigureEntity();
+        builder.ConfigureSoftDeletable();
 
         builder.Property(role => role.Code)
             .IsRequired();
@@ -24,7 +26,8 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .IsRequired();
 
         builder.HasIndex(role => role.Code)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter);
 
         builder.HasEnumerationCheck(role => role.Code)
             .HasNotBlankCheck(role => role.Name);

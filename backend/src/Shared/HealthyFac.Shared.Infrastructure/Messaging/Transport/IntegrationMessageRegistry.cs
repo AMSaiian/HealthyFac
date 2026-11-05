@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging.Transport;
 

@@ -10,6 +10,8 @@ public static class KeycloakRealmFixtureExtensions
 {
     private const string RealmAdminPath = "admin/realms/healthyfac";
     private const string TokenPath = "realms/healthyfac/protocol/openid-connect/token";
+    private const string OpenIdScope = "openid";
+    private const string IdTokenField = "id_token";
 
     extension(KeycloakRealmFixture fixture)
     {
@@ -45,6 +47,29 @@ public static class KeycloakRealmFixtureExtensions
             var clientId = await fixture.Server.CreatePasswordGrantClientAsync();
 
             return await RequestSupervisorTokenClaimsAsync(fixture.Server, clientId);
+        }
+
+        public async Task<JsonObject> GetSupervisorIdTokenClaimsAsync()
+        {
+            var clientId = await fixture.Server.CreatePasswordGrantClientAsync();
+            using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
+            using var response = await client.PostAsync(
+                TokenPath,
+                new FormUrlEncodedContent(
+                    new Dictionary<string, string>
+                    {
+                        ["grant_type"] = "password",
+                        ["client_id"] = clientId,
+                        ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
+                        ["username"] = RealmTestData.SupervisorEmail,
+                        ["password"] = RealmTestData.SupervisorPassword,
+                        ["scope"] = OpenIdScope,
+                    }));
+            response.EnsureSuccessStatusCode();
+
+            var body = await response.Content.ReadFromJsonAsync<JsonObject>();
+
+            return DecodePayload(body![IdTokenField]!.GetValue<string>());
         }
 
         public async Task<JsonObject> GetAuthServiceAccessTokenClaimsAsync()

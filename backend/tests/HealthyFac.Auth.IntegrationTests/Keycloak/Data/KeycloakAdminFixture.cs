@@ -1,7 +1,9 @@
+using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.Infrastructure.Keycloak;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Caching;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Testing.Containers;

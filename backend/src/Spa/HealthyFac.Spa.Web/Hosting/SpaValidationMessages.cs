@@ -14,6 +14,7 @@ public static class SpaValidationMessages
     public const string AuthUrlMustNotEndWithSlash = "The auth URL must not end with a slash.";
     public const string AuthRealmRequired = "The auth realm must not be blank.";
     public const string AuthClientIdRequired = "The auth client ID must not be blank.";
+    public const string PrimeUiLicenseKeyRequired = "The PrimeUI license key must not be blank.";
     public const string HashedFileNamePatternRequired = "The hashed file name pattern must not be blank.";
 
     public const string HashedFileNamePatternInvalid =

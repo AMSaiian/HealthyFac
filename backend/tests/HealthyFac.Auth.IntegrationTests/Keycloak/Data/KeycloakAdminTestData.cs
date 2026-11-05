@@ -1,4 +1,5 @@
 using Bogus;
+using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Auth.Application.Identities;
 
 namespace HealthyFac.Auth.IntegrationTests.Keycloak.Data;
@@ -56,6 +57,7 @@ public static class KeycloakAdminTestData
         return new NewIdentity
         {
             EmployeeId = employeeId,
+            DepartmentIds = [Guid.CreateVersion7(), Guid.CreateVersion7()],
             Email = $"{employeeId:N}@{EmailDomain}",
             FirstName = faker.Name.FirstName(),
             LastName = faker.Name.LastName(),

@@ -39,8 +39,6 @@ public sealed class CoreDevelopmentDataSeeder(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ILogger<CoreDevelopmentDataSeeder> _logger = logger;
 
-    private const int TestTenantDepartmentCount = 2;
-
     private readonly DevelopmentDataOptions _options = seedingOptions.Value.DevelopmentData;
     private readonly IInviteTokenService _inviteTokenService = inviteTokenService;
     private int _seedOffset;
@@ -48,8 +46,9 @@ public sealed class CoreDevelopmentDataSeeder(
     /// <summary>
     /// Adds the development data. The generated data enters only when the database holds no company yet, so a
     /// restart does not duplicate it. The test tenant enters when its company does not exist yet. With
-    /// <see cref="DevelopmentDataOptions.IsRecreationForced"/>, it first deletes the existing business data and then
-    /// adds everything again. Run it after the required roles exist.
+    /// <see cref="DevelopmentDataOptions.IsRecreationForced"/>, it first deletes the existing business data, the
+    /// outbox messages, and the inbox messages, and then adds everything again. Run it after the required roles
+    /// exist.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
@@ -59,8 +58,8 @@ public sealed class CoreDevelopmentDataSeeder(
         if (_options.IsRecreationForced)
         {
             _logger.LogWarning(
-                "Forced recreation of development data: deleting all companies, departments, machines, employees, "
-                + "and invites.");
+                "Forced recreation of development data: deleting all companies, departments, machines (also the "
+                + "deleted ones), employees, invites, outbox messages, and inbox messages.");
 
             await DeleteBusinessDataAsync(cancellationToken);
         }
@@ -161,12 +160,18 @@ public sealed class CoreDevelopmentDataSeeder(
         _dbContext.Companies.Add(company);
 
         var departments = _options.GetDepartmentNames()
-            .Take(TestTenantDepartmentCount)
-            .Select((name, index) => new Department
+            .Take(SeedingValidationConstants.Counts.TestTenantDepartments)
+            .Select((name, index) =>
             {
-                CompanyId = tenant.CompanyId,
-                Name = name,
-                TimeZoneId = _options.GetTimeZoneIds()[index % _options.GetTimeZoneIds().Count],
+                var department = new Department
+                {
+                    CompanyId = tenant.CompanyId,
+                    Name = name,
+                    TimeZoneId = _options.GetTimeZoneIds()[index % _options.GetTimeZoneIds().Count],
+                };
+                _dbContext.Entry(department).Property(entity => entity.Id).CurrentValue = tenant.DepartmentIds[index];
+
+                return department;
             })
             .ToList();
         _dbContext.Departments.AddRange(departments);
@@ -192,11 +197,13 @@ public sealed class CoreDevelopmentDataSeeder(
 
     private async Task DeleteBusinessDataAsync(CancellationToken cancellationToken)
     {
-        await _dbContext.Employees.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.EmployeeInvites.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Machines.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Departments.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Companies.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.OutboxMessages.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.InboxMessages.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Employees.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.EmployeeInvites.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Machines.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Departments.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Companies.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
     }
 
     private void AddEmployees(

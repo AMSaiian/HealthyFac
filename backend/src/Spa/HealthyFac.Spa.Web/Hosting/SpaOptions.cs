@@ -35,6 +35,12 @@ public sealed class SpaOptions
     public required string AuthClientId { get; init; }
 
     /// <summary>
+    /// The PrimeUI license key. PrimeNG checks it in the browser, so it is public by design. The host sends it to the
+    /// browser in <c>/config.json</c>.
+    /// </summary>
+    public required string PrimeUiLicenseKey { get; init; }
+
+    /// <summary>
     /// A .NET regular expression for the content hash in a file name (the Angular <c>outputHashing</c> part). A file
     /// that matches never changes, so it gets the immutable cache header.
     /// </summary>

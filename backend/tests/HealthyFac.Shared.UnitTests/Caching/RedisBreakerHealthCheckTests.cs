@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.UnitTests.Caching.Data;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;

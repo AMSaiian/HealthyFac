@@ -1,9 +1,0 @@
-@if (store.isIntroVisible()) {
-  <p-card class="m-4 block">
-    <p class="mb-4">{{ 'HOME.INTRO' | translate }}</p>
-    <p-button
-      [label]="'HOME.DISMISS' | translate"
-      (onClick)="store.dismissIntro()"
-    />
-  </p-card>
-}

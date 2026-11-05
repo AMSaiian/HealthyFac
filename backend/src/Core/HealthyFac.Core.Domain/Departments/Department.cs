@@ -6,7 +6,7 @@ namespace HealthyFac.Core.Domain.Departments;
 /// Represents a department of a company. Machines and employees belong to departments, and the department
 /// time zone is the reference for every planned local time in it.
 /// </summary>
-public class Department : IEntity, IAuditable
+public class Department : IEntity, IAuditable, ISoftDeletable
 {
     public Guid Id { get; private set; } = Guid.CreateVersion7();
     public required Guid CompanyId { get; init; }
@@ -19,4 +19,6 @@ public class Department : IEntity, IAuditable
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
     public Guid? UpdatedBy { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 }

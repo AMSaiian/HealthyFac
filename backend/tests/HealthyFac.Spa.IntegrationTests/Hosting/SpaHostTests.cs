@@ -174,7 +174,7 @@ public sealed partial class SpaHostTests
         json.RootElement.EnumerateObject()
             .Select(property => property.Name)
             .Should()
-            .Equal("apiBaseUrl", "authUrl", "authRealm", "authClientId");
+            .Equal("apiBaseUrl", "authUrl", "authRealm", "authClientId", "primeUiLicenseKey");
     }
 
     [Fact]

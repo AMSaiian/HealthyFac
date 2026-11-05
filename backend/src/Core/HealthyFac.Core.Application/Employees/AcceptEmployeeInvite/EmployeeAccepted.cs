@@ -22,4 +22,6 @@ public sealed record EmployeeAccepted : IIntegrationMessage
     public required string LastName { get; init; }
 
     public required string RoleCode { get; init; }
+
+    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
 }

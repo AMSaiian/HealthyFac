@@ -12,4 +12,6 @@ public sealed class RuntimeConfigResponse
     public required string AuthRealm { get; init; }
 
     public required string AuthClientId { get; init; }
+
+    public required string PrimeUiLicenseKey { get; init; }
 }

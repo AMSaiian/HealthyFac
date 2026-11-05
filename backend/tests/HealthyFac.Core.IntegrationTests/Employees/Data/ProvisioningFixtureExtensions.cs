@@ -1,10 +1,10 @@
+using System.Collections.Frozen;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees.DeactivateEmployee;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Application.Employees.CompleteProvisioning;
 using HealthyFac.Core.Application.Employees.FailProvisioning;
-using HealthyFac.Core.Application.Employees.RetryProvisioning;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -65,7 +65,7 @@ public static class ProvisioningFixtureExtensions
 
         public async Task<RetryProvisioningResponse> RetryProvisioningAsync(Guid companyId, Guid employeeId)
         {
-            using var scope = fixture.ScopeFactory.CreateScope();
+            using var scope = fixture.CreateUserScope(companyId, []);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<RetryProvisioningRequest, RetryProvisioningResponse>>();
 
@@ -77,7 +77,13 @@ public static class ProvisioningFixtureExtensions
         public async Task DeactivateEmployeeAsync(Guid companyId, Guid employeeId, Guid actorUserId)
         {
             using var scope = fixture.CreateActorScope(
-                new ActorContext { Kind = ActorKind.User, UserId = actorUserId, CompanyId = companyId });
+                new ActorContext
+                {
+                    Kind = ActorKind.User,
+                    UserId = actorUserId,
+                    CompanyId = companyId,
+                    DepartmentIds = FrozenSet<Guid>.Empty,
+                });
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<DeactivateEmployeeRequest>>();
 
             await handler.HandleAsync(

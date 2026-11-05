@@ -131,4 +131,25 @@ public sealed class ConventionTests
 
         violations.Should().BeEmpty();
     }
+
+    [Fact]
+    public void ApplicationStrings_InAssemblies_HaveTextRule()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindStringsWithoutTextRule(ConventionTestData.UseCaseAssemblies.Select(Assembly.Load)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UseCaseParts_InAssemblies_ShareTheRequestNamespace()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindUseCasePartsOutsideRequestNamespace(
+                ConventionTestData.UseCaseAssemblies.Select(Assembly.Load)));
+
+        violations.Should().BeEmpty();
+    }
 }

@@ -17,6 +17,7 @@ public static class ProvisioningTestData
     public const string ServiceNameKey = "Service:Name";
     public const string PollingIntervalMilliseconds = "50";
     public const string OutboxProcessorTypeName = "OutboxProcessor";
+    public const string DepartmentIdsAttribute = "department_ids";
     public const string FirstName = "Ada";
     public const string LastName = "Worker";
     public const string KeycloakUnavailableMessage = "The Keycloak server is not reachable.";
@@ -44,6 +45,7 @@ public static class ProvisioningTestData
             FirstName = FirstName,
             LastName = LastName,
             RoleCode = roleCode,
+            DepartmentIds = [Guid.CreateVersion7(), Guid.CreateVersion7()],
         };
     }
 

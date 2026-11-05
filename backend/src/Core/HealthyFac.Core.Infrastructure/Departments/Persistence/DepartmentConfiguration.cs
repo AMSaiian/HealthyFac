@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using HealthyFac.Core.Application.Departments;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 
@@ -19,6 +20,7 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
     {
         builder.ConfigureEntity();
         builder.ConfigureAuditable();
+        builder.ConfigureSoftDeletable();
 
         builder.Property(department => department.Name)
             .HasMaxLength(DepartmentValidationConstants.NameMaxLength)
@@ -36,7 +38,8 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
         builder.HasAlternateKey(department => new { department.Id, department.CompanyId });
 
         builder.HasIndex(department => new { department.CompanyId, department.Name })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter);
 
         builder.HasNotBlankCheck(department => department.Name)
             .HasNotBlankCheck(department => department.TimeZoneId)

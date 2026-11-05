@@ -1,6 +1,7 @@
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Gateway.Web.Revocation;
+using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Revocation;

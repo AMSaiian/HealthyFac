@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using HealthyFac.Testing.Tracing;
 

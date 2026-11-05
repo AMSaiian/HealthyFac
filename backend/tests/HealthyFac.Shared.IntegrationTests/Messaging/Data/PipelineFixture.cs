@@ -1,5 +1,5 @@
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using Microsoft.Extensions.DependencyInjection;
+using HealthyFac.Shared.Infrastructure.Messaging;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
 

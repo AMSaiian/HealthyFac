@@ -1,11 +1,11 @@
-using HealthyFac.Core.Application.Employees.RetryProvisioning;
+using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using ApplicationDeactivateEmployeeRequest =
     HealthyFac.Core.Application.Employees.DeactivateEmployee.DeactivateEmployeeRequest;
 using ApplicationRetryProvisioningRequest =
-    HealthyFac.Core.Application.Employees.RetryProvisioning.RetryProvisioningRequest;
+    HealthyFac.Core.Application.Employees.RetryProvisioningRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 

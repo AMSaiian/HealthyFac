@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
