@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace HealthyFac.Shared.Web.CurrentUser;
+namespace HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 
 public sealed class ServiceActorOptionsValidator : AbstractValidator<ServiceActorOptions>
 {

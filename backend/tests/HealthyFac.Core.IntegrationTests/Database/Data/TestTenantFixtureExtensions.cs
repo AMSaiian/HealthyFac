@@ -68,6 +68,17 @@ public static class TestTenantFixtureExtensions
                 .CountAsync(department => department.CompanyId == companyId);
         }
 
+        public async Task<IReadOnlyList<Guid>> LoadDepartmentIdsAsync(Guid companyId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+                .Departments
+                .Where(department => department.CompanyId == companyId)
+                .Select(department => department.Id)
+                .ToListAsync();
+        }
+
         public async Task<int> CountOutboxMessagesAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();

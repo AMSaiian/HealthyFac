@@ -1,9 +1,11 @@
+using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Core.Infrastructure.Database;
+namespace HealthyFac.Core.Infrastructure.Database.Initialization;
 
 /// <summary>
 /// Provides the database initialization entry point for a host.

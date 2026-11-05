@@ -2,7 +2,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Polly.CircuitBreaker;
 using StackExchange.Redis;
 
-namespace HealthyFac.Shared.Infrastructure.Caching;
+namespace HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 
 /// <summary>
 /// Reports <see cref="HealthStatus.Degraded"/> while the Redis breaker is not closed, and never

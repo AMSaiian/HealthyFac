@@ -7,9 +7,10 @@ const VALID_CONFIG = {
   authUrl: VALID_AUTH_URL,
   authRealm: 'healthyfac',
   authClientId: 'healthyfac-spa',
+  primeUiLicenseKey: 'test-primeui-license-key',
 };
 const URL_FIELDS = ['apiBaseUrl', 'authUrl'] as const;
-const TEXT_FIELDS = ['authRealm', 'authClientId'] as const;
+const TEXT_FIELDS = ['authRealm', 'authClientId', 'primeUiLicenseKey'] as const;
 
 describe('parseAppConfig', () => {
   it('parseAppConfig_WithValidConfig_ReturnsConfig', () => {

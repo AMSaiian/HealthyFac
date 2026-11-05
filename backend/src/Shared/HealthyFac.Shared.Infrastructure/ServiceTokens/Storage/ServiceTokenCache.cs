@@ -1,8 +1,9 @@
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// Holds the access tokens of the service itself, so every outgoing call reuses a token until it nears its expiry.

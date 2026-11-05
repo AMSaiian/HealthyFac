@@ -2,8 +2,8 @@ import { isDevMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 
 import { App } from '@app/app';
-import { appConfig } from '@app/app.config';
-import { APP_CONFIG, APP_CONFIG_PATH, AppConfigError, parseAppConfig } from '@shared/config/app-config';
+import { createAppConfig } from '@app/app.config';
+import { APP_CONFIG_PATH, AppConfigError, parseAppConfig } from '@shared/config/app-config';
 import { startErrorMessage } from '@shared/errors/start-error-message';
 
 async function start(): Promise<void> {
@@ -12,10 +12,7 @@ async function start(): Promise<void> {
     throw new AppConfigError(`${APP_CONFIG_PATH} returned status ${response.status}.`);
   }
   const config = parseAppConfig(await response.json());
-  await bootstrapApplication(App, {
-    ...appConfig,
-    providers: [...appConfig.providers, { provide: APP_CONFIG, useValue: config }],
-  });
+  await bootstrapApplication(App, createAppConfig(config));
 }
 
 start().catch((error: unknown) => {

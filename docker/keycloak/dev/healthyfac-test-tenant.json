@@ -24,6 +24,10 @@
       "attributes": {
         "employee_id": [
           "${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID}"
+        ],
+        "department_ids": [
+          "${HEALTHYFAC_TEST_DEPARTMENT_A_ID}",
+          "${HEALTHYFAC_TEST_DEPARTMENT_B_ID}"
         ]
       },
       "credentials": [

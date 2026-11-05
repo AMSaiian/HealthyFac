@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// Defines the key format of the token store. Every key starts with the service name, so two services never share a

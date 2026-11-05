@@ -1,6 +1,5 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.CreateEmployeeInvite;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
@@ -80,11 +79,32 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var (companyId, _) = await ArrangeCompanyAsync();
         var (_, foreignDepartmentIds) = await ArrangeCompanyAsync();
 
-        var act = () => CreateAsync(companyId, InviteTestData.ForeignDepartmentEmail, foreignDepartmentIds);
+        var act = () => CreateAsync(
+            companyId,
+            InviteTestData.ForeignDepartmentEmail,
+            foreignDepartmentIds,
+            foreignDepartmentIds);
 
         await act.Should()
             .ThrowAsync<NotFoundException>()
             .WithMessage(EmployeeInviteErrors.Rejections.DepartmentsNotFound);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithDepartmentOutsideActor_ThrowsForbidden()
+    {
+        var (companyId, departmentIds) = await ArrangeCompanyAsync();
+
+        var act = () => CreateAsync(
+            companyId,
+            InviteTestData.OutsideActorEmail,
+            departmentIds,
+            [departmentIds[0]]);
+
+        await act.Should().ThrowAsync<ForbiddenAccessException>();
+        var inviteCount = await _fixture.CountInvitesAsync(companyId, InviteTestData.OutsideActorEmail);
+
+        inviteCount.Should().Be(0);
     }
 
     [Fact]
@@ -166,9 +186,14 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         return messages.Where(message => message.InviteId == inviteId).ToList();
     }
 
-    private async Task<Guid> CreateAsync(Guid companyId, string email, IReadOnlyList<Guid> departmentIds)
+    private async Task<Guid> CreateAsync(
+        Guid companyId,
+        string email,
+        IReadOnlyList<Guid> departmentIds,
+        IEnumerable<Guid>? actorDepartmentIds = null
+    )
     {
-        using var scope = _fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.CreateUserScope(companyId, actorDepartmentIds ?? departmentIds);
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse>>();
 

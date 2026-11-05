@@ -1,7 +1,7 @@
 namespace HealthyFac.Shared.Application.CurrentUser;
 
 /// <summary>
-/// Defines the scope checks of the actor. Rule validators call them, so every use case checks the company and the
+/// Defines the scope checks of the actor. Pre-handler checks call them, so every use case checks the company and the
 /// departments in the same way.
 /// </summary>
 public static class ActorContextScopeChecks

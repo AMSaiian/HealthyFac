@@ -1,6 +1,6 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Infrastructure;
-using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Web;
 using HealthyFac.Shared.Web.Configuration;
 

@@ -2,7 +2,7 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using Polly.CircuitBreaker;
 using StackExchange.Redis;
 
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// Keeps the token entries and the fetch locks in Redis through the shared <see cref="IConnectionMultiplexer"/>.

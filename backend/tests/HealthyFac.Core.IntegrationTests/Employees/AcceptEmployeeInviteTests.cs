@@ -51,6 +51,18 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
     }
 
     [Fact]
+    public async Task AcceptEmployeeInvite_Always_SendsInviteDepartments()
+    {
+        var arranged = await ArrangeAsync(InviteTestData.AcceptDepartmentsEmail);
+
+        var employeeId = await _fixture.AcceptInviteAsync(arranged.Token);
+
+        var messages = await ReadAcceptedMessagesAsync(employeeId);
+
+        messages.Should().ContainSingle().Which.DepartmentIds.Should().BeEquivalentTo(arranged.DepartmentIds);
+    }
+
+    [Fact]
     public async Task AcceptAsync_SameTokenTwice_SecondCallThrowsGenericNotFound()
     {
         var arranged = await ArrangeAsync(InviteTestData.AcceptTwiceEmail);

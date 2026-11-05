@@ -1,5 +1,7 @@
+using System.Collections.Frozen;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
 using UnauthorizedAccessException = HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException;
 
@@ -23,6 +25,7 @@ public sealed class ActorClaimsReaderTests
                     UserId = ActorTestData.UserId,
                     CompanyId = ActorTestData.CompanyId,
                     EmployeeId = ActorTestData.EmployeeId,
+                    DepartmentIds = FrozenSet<Guid>.Empty,
                 });
     }
 
@@ -154,6 +157,7 @@ public sealed class ActorClaimsReaderTests
                     Kind = ActorKind.User,
                     UserId = ActorTestData.UserId,
                     CompanyId = ActorTestData.CompanyId,
+                    DepartmentIds = FrozenSet<Guid>.Empty,
                 });
     }
 
@@ -234,6 +238,55 @@ public sealed class ActorClaimsReaderTests
                     UserId = ActorTestData.UserId,
                     CompanyId = ActorTestData.CompanyId,
                     EmployeeId = ActorTestData.EmployeeId,
+                    DepartmentIds = FrozenSet<Guid>.Empty,
                 });
+    }
+
+    [Fact]
+    public void Read_WithDepartmentClaims_ReturnsDepartmentIds()
+    {
+        var principal = ActorClaimsTestData.CreatePrincipal(
+            ActorTestData.UserId.ToString(),
+            [ActorTestData.CompanyId.ToString()],
+            ActorTestData.EmployeeId.ToString(),
+            departmentIds: [ActorTestData.FirstDepartmentId.ToString(), ActorTestData.SecondDepartmentId.ToString()]);
+
+        var actor = ActorClaimsReader.Read(
+            principal,
+            ActorClaimsTestData.NoHeaders,
+            ActorClaimsTestData.NoServiceClients);
+
+        actor.DepartmentIds.Should()
+            .BeEquivalentTo([ActorTestData.FirstDepartmentId, ActorTestData.SecondDepartmentId]);
+    }
+
+    [Fact]
+    public void Read_WithoutDepartmentClaim_ReturnsEmptyDepartments()
+    {
+        var actor = ActorClaimsReader.Read(
+            ActorClaimsTestData.ValidPrincipal,
+            ActorClaimsTestData.NoHeaders,
+            ActorClaimsTestData.NoServiceClients);
+
+        actor.DepartmentIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Read_WithInvalidDepartmentClaim_ThrowsUnauthorized()
+    {
+        var principal = ActorClaimsTestData.CreatePrincipal(
+            ActorTestData.UserId.ToString(),
+            [ActorTestData.CompanyId.ToString()],
+            ActorTestData.EmployeeId.ToString(),
+            departmentIds: [ActorClaimsTestData.InvalidDepartmentId]);
+
+        var act = () => ActorClaimsReader.Read(
+            principal,
+            ActorClaimsTestData.NoHeaders,
+            ActorClaimsTestData.NoServiceClients);
+
+        act.Should()
+            .Throw<UnauthorizedAccessException>()
+            .WithMessage(CurrentUserErrors.DepartmentIdsInvalid().Message);
     }
 }

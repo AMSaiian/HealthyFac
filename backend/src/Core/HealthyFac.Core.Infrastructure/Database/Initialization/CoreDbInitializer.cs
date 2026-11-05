@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace HealthyFac.Core.Infrastructure.Database;
+namespace HealthyFac.Core.Infrastructure.Database.Initialization;
 
 /// <summary>
 /// Initializes the core database and performs data seeding operations.

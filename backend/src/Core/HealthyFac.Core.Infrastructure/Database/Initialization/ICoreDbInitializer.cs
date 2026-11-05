@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Infrastructure.Database;
+namespace HealthyFac.Core.Infrastructure.Database.Initialization;
 
 /// <summary>
 /// Defines database initialization and data seeding operations.
@@ -11,7 +11,7 @@ public interface ICoreDbInitializer
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default);
+    Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default(CancellationToken));
 
     /// <summary>
     /// Seeds required core data into the database.
@@ -19,7 +19,7 @@ public interface ICoreDbInitializer
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task SeedRequiredDataAsync(CancellationToken cancellationToken = default);
+    Task SeedRequiredDataAsync(CancellationToken cancellationToken = default(CancellationToken));
 
     /// <summary>
     /// Seeds optional development and test data into the database.
@@ -27,5 +27,5 @@ public interface ICoreDbInitializer
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task SeedOptionalDataAsync(CancellationToken cancellationToken = default);
+    Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

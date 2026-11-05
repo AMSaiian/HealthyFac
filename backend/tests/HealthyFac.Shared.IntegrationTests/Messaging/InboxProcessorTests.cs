@@ -1,5 +1,5 @@
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.Logging;

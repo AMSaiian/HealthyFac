@@ -5,7 +5,10 @@ using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Shared.Infrastructure.Persistence.Enumerations;
 using HealthyFac.Shared.Infrastructure.Persistence;
 
 namespace HealthyFac.Core.Infrastructure.Database;
@@ -75,6 +78,7 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
         modelBuilder.ApplyConfigurationsFromAssembly(CoreInfrastructureAssembly.Instance);
         modelBuilder.ApplyOutboxConfiguration();
         modelBuilder.ApplyInboxConfiguration();
+        modelBuilder.UseCaseInsensitiveText();
         modelBuilder.ToSnakeCaseConventions();
         modelBuilder.HasPostgreSqlExtensions(DatabaseConstants.RequiredPostgresExtensions);
     }

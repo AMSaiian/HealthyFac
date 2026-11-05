@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
@@ -46,6 +47,7 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
                 Kind = ActorKind.User,
                 UserId = InboxProcessorTestData.UserActorId,
                 CompanyId = InboxProcessorTestData.UserCompanyId,
+                DepartmentIds = FrozenSet<Guid>.Empty,
             });
         scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestRecorded { Text = InboxProcessorTestData.EndToEndText });

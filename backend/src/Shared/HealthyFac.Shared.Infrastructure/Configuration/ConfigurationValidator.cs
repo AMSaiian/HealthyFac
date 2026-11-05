@@ -31,7 +31,7 @@ public sealed class ConfigurationValidator<TOptions>(
         }
 
         var errors = validationResult.Errors
-            .Select(error => ConfigurationValidationConstants.FormatFailure(
+            .Select(error => FormatFailure(
                     typeof(TOptions).Name,
                     error.PropertyName,
                     error.ErrorMessage
@@ -40,4 +40,10 @@ public sealed class ConfigurationValidator<TOptions>(
 
         return ValidateOptionsResult.Fail(errors);
     }
+
+    private static string FormatFailure(
+        string optionsName,
+        string propertyName,
+        string errorMessage
+    ) => $"Options validation failed for '{optionsName}.{propertyName}': {errorMessage}";
 }

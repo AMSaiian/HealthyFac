@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.Messaging;
 
-namespace HealthyFac.Auth.Application.Identities;
+namespace HealthyFac.Auth.Application.Identities.ProvisionIdentity;
 
 public sealed record IdentityProvisioningFailed : IIntegrationMessage
 {

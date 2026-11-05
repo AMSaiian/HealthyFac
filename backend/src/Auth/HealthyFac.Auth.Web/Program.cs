@@ -1,6 +1,6 @@
 using HealthyFac.Auth.Application;
 using HealthyFac.Auth.Infrastructure;
-using HealthyFac.Auth.Infrastructure.Database;
+using HealthyFac.Auth.Infrastructure.Database.Initialization;
 using HealthyFac.Auth.Web;
 using HealthyFac.Shared.Web.Configuration;
 

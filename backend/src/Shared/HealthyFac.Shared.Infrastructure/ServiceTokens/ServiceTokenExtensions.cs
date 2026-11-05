@@ -1,6 +1,8 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Exchange;
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using HealthyFac.Shared.Infrastructure.Time;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

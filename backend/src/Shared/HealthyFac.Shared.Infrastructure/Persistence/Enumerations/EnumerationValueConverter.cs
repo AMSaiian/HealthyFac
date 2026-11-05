@@ -1,7 +1,7 @@
 using HealthyFac.Shared.Domain.Enumerations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace HealthyFac.Shared.Infrastructure.Persistence;
+namespace HealthyFac.Shared.Infrastructure.Persistence.Enumerations;
 
 /// <summary>
 /// Stores an <see cref="Enumeration{TEnum}"/> member as its value, and reads it back through the declared

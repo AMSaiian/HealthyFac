@@ -14,6 +14,8 @@ public static class IdentityErrors
         public const string FirstNameRequired = "First name is required.";
         public const string LastNameRequired = "Last name is required.";
         public const string RoleCodeRequired = "RoleCode is required.";
+        public const string DepartmentIdsRequired = "At least one department ID is required.";
+        public const string DepartmentIdEmpty = "A department ID must not be empty.";
         public const string IdentityUserIdInvalid = "IdentityUserId must not be empty when it is set.";
         public const string DeactivatedAtRequired = "DeactivatedAt is required.";
     }

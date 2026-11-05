@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using HealthyFac.Spa.Web.Hosting;
+using HealthyFac.Spa.Web.IndexDocument.Csp;
 using HealthyFac.Spa.Web.IndexDocument;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;

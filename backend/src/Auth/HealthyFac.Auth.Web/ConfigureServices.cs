@@ -1,4 +1,5 @@
 using HealthyFac.Auth.Infrastructure.Database;
+using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.HealthChecks;

@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.HttpFailures;
+namespace HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 /// <summary>
 /// Reads the reason of an OAuth 2.0 error response (RFC 6749, section 5.2). With both fields, the reason is

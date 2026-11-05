@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Web.Authentication;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Testing.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

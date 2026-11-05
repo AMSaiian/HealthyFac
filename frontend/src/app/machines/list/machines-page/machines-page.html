@@ -1,0 +1,35 @@
+<header class="flex flex-none items-center justify-between">
+  <h1 class="text-2xl font-bold">{{ 'MACHINES.TITLE' | translate }}</h1>
+  <div class="flex items-center gap-2">
+    @if (store.canWrite()) {
+      <button
+        pButton
+        type="button"
+        (click)="store.requestCreate()"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'MACHINES.ADD_NEW' | translate }}
+      </button>
+    }
+  </div>
+</header>
+<hf-machine-grid
+  [rows]="page().items"
+  [totalCount]="page().totalCount"
+  [isLoading]="store.machines.isLoading()"
+  [columns]="store.visibleColumns()"
+  [offset]="store.offset()"
+  [limit]="store.limit()"
+  [sort]="store.sort()"
+  [filter]="store.filter()"
+  [departments]="employee.departmentOptions()"
+  [canWrite]="store.canWrite()"
+  [canDelete]="store.canDelete()"
+  (filterChange)="store.setFilter($event)"
+  (sortChange)="store.setSort($event)"
+  (pageChange)="store.setPage($event.offset, $event.limit)"
+  (columnsChange)="store.setColumns($event)"
+  (columnsReorder)="store.reorderColumns($event)"
+  (updateRequested)="store.requestUpdate($event)"
+  (deleteRequested)="store.requestDelete($event)"
+/>

@@ -28,6 +28,16 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
+    public async Task SeedTestTenant_Always_UsesConfiguredDepartmentIds()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        var departmentIds = await _fixture.LoadDepartmentIdsAsync(DatabaseTestData.TestTenantCompanyId);
+
+        departmentIds.Should().BeEquivalentTo(DatabaseTestData.TestTenant.DepartmentIds);
+    }
+
+    [Fact]
     public async Task SeedOptionalData_WithTestTenant_AddsNoEmployeeAcceptedOutboxRow()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);

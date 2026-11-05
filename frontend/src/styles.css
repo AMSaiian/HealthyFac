@@ -12,3 +12,12 @@
 }
 
 @custom-variant dark (&:where(.app-dark, .app-dark *));
+
+@layer components {
+  [data-hf-calm] {
+    --p-inputtext-invalid-border-color: var(--p-inputtext-border-color);
+    --p-select-invalid-border-color: var(--p-select-border-color);
+    --p-inputtext-invalid-placeholder-color: var(--p-inputtext-placeholder-color);
+    --p-select-invalid-placeholder-color: var(--p-select-placeholder-color);
+  }
+}

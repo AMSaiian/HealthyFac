@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.HttpFailures;
+namespace HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 /// <summary>
 /// Asks an ordered list of readers and returns the first reason that is not blank. It reads no field itself.

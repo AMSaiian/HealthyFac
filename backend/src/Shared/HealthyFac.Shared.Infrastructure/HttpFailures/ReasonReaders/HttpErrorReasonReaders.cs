@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.HttpFailures;
+namespace HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 public static class HttpErrorReasonReaders
 {

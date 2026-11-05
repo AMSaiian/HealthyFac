@@ -1,7 +1,7 @@
 using HealthyFac.Shared.Domain.Enumerations;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Shared.Infrastructure.Persistence;
+namespace HealthyFac.Shared.Infrastructure.Persistence.Enumerations;
 
 /// <summary>
 /// Provides extension methods for mapping enumerations to text columns.

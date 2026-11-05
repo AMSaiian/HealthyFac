@@ -1,0 +1,83 @@
+using System.Net;
+using HealthyFac.Core.ApiTests.Hosting;
+using HealthyFac.Core.ApiTests.Machines.Data;
+
+namespace HealthyFac.Core.ApiTests.Machines;
+
+public sealed class MachineInputTests(CoreApiFixture fixture) : IClassFixture<CoreApiFixture>
+{
+    private readonly CoreApiFixture _fixture = fixture;
+
+    [Fact]
+    public async Task Get_WithInvalidEncryptedId_ReturnsNotFoundWithoutLeak()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Get,
+            $"{MachineApiTestData.MachinesPath}/{MachineApiTestData.InvalidEncryptedId}",
+            claims);
+        var body = await response.Content.ReadAsStringAsync();
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        body.Should().NotContain(MachineApiTestData.StackTraceMarker);
+        body.Should().NotContain(MachineApiTestData.InvalidEncryptedId);
+    }
+
+    [Fact]
+    public async Task Search_WithStateFilterAndSort_BindsEnumerations()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            claims,
+            MachineApiTestData.SearchWithStateFilterBody);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Search_WithDepartmentFilter_DecryptsIds()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            claims,
+            _fixture.CreateSearchBodyWithDepartment(_fixture.DepartmentId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [MemberData(nameof(MachineApiTestData.BadFilterBodies), MemberType = typeof(MachineApiTestData))]
+    public async Task Search_WithBadFilterValue_Returns400(string body)
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            claims,
+            body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Search_WithSortOnState_Returns400()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            claims,
+            MachineApiTestData.SearchSortedByStateBody);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+}

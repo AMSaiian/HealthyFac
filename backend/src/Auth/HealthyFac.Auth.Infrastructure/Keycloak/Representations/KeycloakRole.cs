@@ -1,4 +1,4 @@
-namespace HealthyFac.Auth.Infrastructure.Keycloak;
+namespace HealthyFac.Auth.Infrastructure.Keycloak.Representations;
 
 public sealed record KeycloakRole
 {

@@ -1,8 +1,9 @@
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// Keeps access tokens in an <see cref="ITokenCacheStorage"/> (Redis), one for each key, until they near their

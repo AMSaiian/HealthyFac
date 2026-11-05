@@ -14,6 +14,8 @@ public static class InviteTestData
     public const string ConflictEmailOtherCase = "ANN2@plant.com";
     public const string EmployedEmail = "employed@plant.com";
     public const string ForeignDepartmentEmail = "foreign@plant.com";
+    public const string AcceptDepartmentsEmail = "accept-departments@plant.com";
+    public const string OutsideActorEmail = "outside@plant.com";
     public const string DuplicateDepartmentEmail = "duplicate@plant.com";
     public const string ResendExpiredEmail = "resend-expired@plant.com";
     public const string ResendOutboxEmail = "resend-outbox@plant.com";

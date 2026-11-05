@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using HealthyFac.Shared.Application.CurrentUser;
 
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Exchange;
 
 /// <summary>
 /// Exchanges the token of the user of the current request for a token of one target audience and sets it on every

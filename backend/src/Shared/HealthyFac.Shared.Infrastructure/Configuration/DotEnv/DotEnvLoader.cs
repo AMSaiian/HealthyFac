@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.Configuration;
+namespace HealthyFac.Shared.Infrastructure.Configuration.DotEnv;
 
 /// <summary>
 /// Loads the nearest dotenv file into the process environment.
@@ -23,7 +23,7 @@ public static class DotEnvLoader
 
         DotNetEnv.Env.Load(
             path,
-            new DotNetEnv.LoadOptions(setEnvVars: true, clobberExistingVars: false));
+            new DotNetEnv.LoadOptions(true, false));
 
         return path;
     }

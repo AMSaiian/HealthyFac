@@ -4,7 +4,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   imports: [RouterLink, TranslatePipe],
-  selector: 'hf-not-found',
-  templateUrl: './not-found.html',
+  host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col' },
+  selector: 'hf-not-found-page',
+  templateUrl: './not-found-page.html',
 })
-export class NotFound {}
+export class NotFoundPage {}

@@ -23,6 +23,7 @@ public static class EmployeeInviteApiFixtureExtensions
             {
                 Subject = Guid.NewGuid(),
                 Organizations = [fixture.CompanyId.ToString()],
+                DepartmentIds = [fixture.DepartmentId.ToString()],
             };
 
         public async Task<HttpResponseMessage> PostCreateInviteAsync(

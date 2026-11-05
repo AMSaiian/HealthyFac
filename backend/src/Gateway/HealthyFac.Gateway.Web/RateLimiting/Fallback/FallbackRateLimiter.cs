@@ -3,7 +3,7 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using Polly.CircuitBreaker;
 using StackExchange.Redis;
 
-namespace HealthyFac.Gateway.Web.RateLimiting;
+namespace HealthyFac.Gateway.Web.RateLimiting.Fallback;
 
 /// <summary>
 /// Limits through Redis, so every gateway instance shares one counter, and falls back to a local limiter when

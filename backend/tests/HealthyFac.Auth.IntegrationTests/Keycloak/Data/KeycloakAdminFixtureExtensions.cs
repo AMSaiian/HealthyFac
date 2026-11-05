@@ -36,6 +36,14 @@ public static class KeycloakAdminFixtureExtensions
             return roles.Select(role => role.Name).ToList();
         }
 
+        public async Task<IReadOnlyList<string>> LoadUserAttributeValuesAsync(Guid userId, string attributeName)
+        {
+            var user = await fixture.Api.GetAsync<JsonObject>($"{UsersPath}/{userId}");
+
+            return user["attributes"]?[attributeName]?.AsArray().Select(value => value!.GetValue<string>()).ToList()
+                ?? [];
+        }
+
         public async Task<bool> IsUserEnabledAsync(Guid userId)
         {
             var user = await fixture.Api.GetAsync<JsonObject>($"{UsersPath}/{userId}");

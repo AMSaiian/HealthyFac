@@ -11,7 +11,7 @@ namespace HealthyFac.Core.Domain.Employees;
 /// signature over the invite ID and the salt with a key from configuration, so the database never holds a
 /// usable token.
 /// </summary>
-public class EmployeeInvite : IEntity, IAuditable
+public class EmployeeInvite : IEntity, IAuditable, ISoftDeletable
 {
     private readonly List<Department> _departments = [];
 
@@ -79,6 +79,8 @@ public class EmployeeInvite : IEntity, IAuditable
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
     public Guid? UpdatedBy { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     public bool CanAccept(DateTime now) => AcceptedAt is null && now < ExpiresAt;
 

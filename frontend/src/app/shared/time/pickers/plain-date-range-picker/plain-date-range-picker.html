@@ -1,0 +1,10 @@
+<p-datepicker
+  selectionMode="range"
+  appendTo="body"
+  [readonlyInput]="true"
+  [ngModel]="pickerValue()"
+  [invalid]="invalid()"
+  [disabled]="disabled()"
+  (ngModelChange)="onPickerChange($event)"
+  (onBlur)="touch.emit()"
+/>

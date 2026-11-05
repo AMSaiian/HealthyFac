@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// Keeps the token entries and the fetch locks of the <see cref="TokenStore"/>, so the instances of a service share

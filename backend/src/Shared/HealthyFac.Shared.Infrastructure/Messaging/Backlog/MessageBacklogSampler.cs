@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 
-namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
+namespace HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 
 /// <summary>
 /// Samples the pending outbox and inbox rows every <see cref="MessagingConstants.BacklogSampleInterval"/> and

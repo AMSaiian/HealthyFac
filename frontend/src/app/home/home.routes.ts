@@ -1,6 +1,6 @@
 import type { Routes } from '@angular/router';
 
 import { HomeStore } from './home.store';
-import { Welcome } from './welcome/welcome';
+import { WelcomePage } from './welcome/welcome-page';
 
-export const HOME_ROUTES: Routes = [{ path: '', component: Welcome, providers: [HomeStore] }];
+export const HOME_ROUTES: Routes = [{ path: '', component: WelcomePage, providers: [HomeStore] }];

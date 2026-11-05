@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Web.CurrentUser;
+namespace HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 
 /// <summary>
 /// Configures which services may call this service with a service token (Client Credentials).

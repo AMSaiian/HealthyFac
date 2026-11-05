@@ -1,5 +1,5 @@
 using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
-using HealthyFac.Core.Application.Employees.VerifyEmployeeInvite;
+using HealthyFac.Core.Application.Employees;
 
 namespace HealthyFac.Core.UnitTests.Employees.InviteTokens.Data;
 

@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
-using HealthyFac.Core.Application.Employees.ResendEmployeeInvite;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -139,7 +138,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
 
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
-        using var scope = _fixture.ScopeFactory.CreateScope();
+        using var scope = _fixture.CreateUserScope(companyId, []);
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>();
 

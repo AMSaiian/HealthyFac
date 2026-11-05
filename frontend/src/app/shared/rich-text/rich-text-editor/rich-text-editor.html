@@ -1,0 +1,65 @@
+<p-editor
+  styleClass="h-64"
+  [ngModel]="value()"
+  [readonly]="readonly() || disabled()"
+  [placeholder]="placeholder()"
+  [invalid]="isInvalidShown()"
+  (ngModelChange)="onEditorChange($event)"
+  (onBlur)="touch.emit()"
+>
+  <ng-template #header>
+    <span class="ql-formats">
+      <button
+        type="button"
+        class="ql-bold"
+        [attr.aria-label]="'RICH_TEXT.BOLD' | translate"
+      ></button>
+      <button
+        type="button"
+        class="ql-italic"
+        [attr.aria-label]="'RICH_TEXT.ITALIC' | translate"
+      ></button>
+      <button
+        type="button"
+        class="ql-underline"
+        [attr.aria-label]="'RICH_TEXT.UNDERLINE' | translate"
+      ></button>
+      <button
+        type="button"
+        class="ql-strike"
+        [attr.aria-label]="'RICH_TEXT.STRIKE' | translate"
+      ></button>
+    </span>
+    <span class="ql-formats">
+      <button
+        type="button"
+        class="ql-list"
+        value="ordered"
+        [attr.aria-label]="'RICH_TEXT.ORDERED_LIST' | translate"
+      ></button>
+      <button
+        type="button"
+        class="ql-list"
+        value="bullet"
+        [attr.aria-label]="'RICH_TEXT.BULLET_LIST' | translate"
+      ></button>
+    </span>
+    <span class="ql-formats">
+      <button
+        type="button"
+        class="ql-link"
+        [attr.aria-label]="'RICH_TEXT.LINK' | translate"
+      ></button>
+      <button
+        type="button"
+        class="ql-clean"
+        [attr.aria-label]="'RICH_TEXT.CLEAN' | translate"
+      ></button>
+    </span>
+  </ng-template>
+</p-editor>
+<span
+  class="self-end text-sm"
+  [class.text-red-500]="isTooLong()"
+  >{{ length() }} / {{ characterLimit() }}</span
+>

@@ -1,4 +1,4 @@
-namespace HealthyFac.Auth.Infrastructure.Database;
+namespace HealthyFac.Auth.Infrastructure.Database.Initialization;
 
 /// <summary>
 /// Defines the database initialization of the auth service. The service has no required or optional seed data.
@@ -11,5 +11,5 @@ public interface IAuthDbInitializer
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default);
+    Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

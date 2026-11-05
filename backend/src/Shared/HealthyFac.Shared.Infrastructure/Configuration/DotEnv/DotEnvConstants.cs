@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.Configuration;
+namespace HealthyFac.Shared.Infrastructure.Configuration.DotEnv;
 
 /// <summary>
 /// Defines constants for locating and loading dotenv files.

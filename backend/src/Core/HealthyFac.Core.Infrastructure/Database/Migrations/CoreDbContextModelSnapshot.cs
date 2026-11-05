@@ -17,6 +17,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasAnnotation("Npgsql:CollationDefinition:case_insensitive", "und-u-ks-level2,und-u-ks-level2,icu,False")
                 .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -36,11 +37,20 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
+                        .HasColumnName("name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -54,7 +64,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.ToTable("companies", null, t =>
                         {
-                            t.HasCheckConstraint("ck_company_name_not_blank", "\"name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_company_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
                         });
                 });
 
@@ -76,17 +86,27 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
+                        .HasColumnName("name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("TimeZoneId")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("time_zone_id");
+                        .HasColumnName("time_zone_id")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -99,15 +119,16 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("deleted_at IS NULL");
 
                     b.ToTable("departments", null, t =>
                         {
                             t.HasCheckConstraint("ck_department_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("ck_department_name_not_blank", "\"name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_department_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_department_time_zone_id_not_blank", "\"time_zone_id\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_department_time_zone_id_not_blank", "\"time_zone_id\" COLLATE \"default\" ~ '\\S'");
                         });
                 });
 
@@ -129,17 +150,27 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("character varying(254)")
-                        .HasColumnName("email");
+                        .HasColumnName("email")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("first_name");
+                        .HasColumnName("first_name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<Guid?>("IdentityUserId")
                         .HasColumnType("uuid")
@@ -149,7 +180,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("last_name");
+                        .HasColumnName("last_name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime?>("ProvisioningRetriedAt")
                         .HasColumnType("timestamp with time zone")
@@ -184,11 +216,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("deleted_at IS NULL");
 
                     b.HasIndex("IdentityUserId")
                         .IsUnique()
-                        .HasFilter("identity_user_id IS NOT NULL");
+                        .HasFilter("identity_user_id IS NOT NULL AND deleted_at IS NULL");
 
                     b.HasIndex("RoleId");
 
@@ -196,11 +229,11 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         {
                             t.HasCheckConstraint("ck_employee_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("ck_employee_email_not_blank", "\"email\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_employee_email_not_blank", "\"email\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_employee_first_name_not_blank", "\"first_name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_employee_first_name_not_blank", "\"first_name\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_employee_last_name_not_blank", "\"last_name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_employee_last_name_not_blank", "\"last_name\" COLLATE \"default\" ~ '\\S'");
 
                             t.HasCheckConstraint("ck_employee_role_id_not_empty", "\"role_id\" <> '00000000-0000-0000-0000-000000000000'");
 
@@ -230,11 +263,20 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("character varying(254)")
-                        .HasColumnName("email");
+                        .HasColumnName("email")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone")
@@ -243,12 +285,14 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<string>("FirstName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("first_name");
+                        .HasColumnName("first_name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("LastName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("last_name");
+                        .HasColumnName("last_name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid")
@@ -279,17 +323,17 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.HasIndex("CompanyId", "Email")
                         .IsUnique()
-                        .HasFilter("accepted_at IS NULL");
+                        .HasFilter("accepted_at IS NULL AND deleted_at IS NULL");
 
                     b.ToTable("employee_invites", null, t =>
                         {
                             t.HasCheckConstraint("ck_employee_invite_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("ck_employee_invite_email_not_blank", "\"email\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_employee_invite_email_not_blank", "\"email\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_employee_invite_first_name_not_blank", "\"first_name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_employee_invite_first_name_not_blank", "\"first_name\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_employee_invite_last_name_not_blank", "\"last_name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_employee_invite_last_name_not_blank", "\"last_name\" COLLATE \"default\" ~ '\\S'");
 
                             t.HasCheckConstraint("ck_employee_invite_role_id_not_empty", "\"role_id\" <> '00000000-0000-0000-0000-000000000000'");
                         });
@@ -313,21 +357,37 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasColumnName("description")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
+                        .HasColumnName("name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("serial_number");
+                        .HasColumnName("serial_number")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("State")
                         .IsRequired()
@@ -345,7 +405,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("CompanyId", "SerialNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_machines_company_id_serial_number")
+                        .HasFilter("deleted_at IS NULL");
 
                     b.HasIndex("DepartmentId", "CompanyId");
 
@@ -355,9 +418,11 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("ck_machine_department_id_not_empty", "\"department_id\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("ck_machine_name_not_blank", "\"name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_machine_description_length", "char_length(\"description\") BETWEEN 0 AND 5000");
 
-                            t.HasCheckConstraint("ck_machine_serial_number_not_blank", "\"serial_number\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_machine_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
+
+                            t.HasCheckConstraint("ck_machine_serial_number_not_blank", "\"serial_number\" COLLATE \"default\" ~ '\\S'");
 
                             t.HasCheckConstraint("ck_machine_state_allowed", "\"state\" IN ('inMaintenance', 'operational', 'outOfService')");
                         });
@@ -375,22 +440,32 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(10)")
                         .HasColumnName("code");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
+                        .HasColumnName("name")
+                        .UseCollation("case_insensitive");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("deleted_at IS NULL");
 
                     b.ToTable("roles", null, t =>
                         {
                             t.HasCheckConstraint("ck_role_code_allowed", "\"code\" IN ('supervisor', 'worker')");
 
-                            t.HasCheckConstraint("ck_role_name_not_blank", "\"name\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_role_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
                         });
                 });
 
@@ -415,7 +490,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<string>("Error")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
-                        .HasColumnName("error");
+                        .HasColumnName("error")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime?>("FailedOn")
                         .HasColumnType("timestamp with time zone")
@@ -440,13 +516,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
-                        .HasColumnName("trace_parent");
+                        .HasColumnName("trace_parent")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("type");
+                        .HasColumnName("type")
+                        .UseCollation("case_insensitive");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -488,7 +566,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<string>("Error")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
-                        .HasColumnName("error");
+                        .HasColumnName("error")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime>("NextAttemptOn")
                         .HasColumnType("timestamp with time zone")
@@ -509,13 +588,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
-                        .HasColumnName("trace_parent");
+                        .HasColumnName("trace_parent")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("type");
+                        .HasColumnName("type")
+                        .UseCollation("case_insensitive");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()

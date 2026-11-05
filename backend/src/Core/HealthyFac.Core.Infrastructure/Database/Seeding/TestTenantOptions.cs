@@ -12,6 +12,8 @@ public sealed class TestTenantOptions
 
     public required string CompanyName { get; init; }
 
+    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
+
     public required Guid SupervisorIdentityId { get; init; }
 
     public required Guid SupervisorEmployeeId { get; init; }

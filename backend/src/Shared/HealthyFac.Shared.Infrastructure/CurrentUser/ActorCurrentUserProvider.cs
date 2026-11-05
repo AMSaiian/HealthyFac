@@ -20,4 +20,6 @@ public sealed class ActorCurrentUserProvider(ActorContextHolder holder) : ICurre
     public Guid GetCompanyId() => TryGetCompanyId() ?? throw CurrentUserErrors.CompanyMissing();
 
     public ActorContext? TryGetActor() => _holder.Current;
+
+    public ActorContext GetActor() => TryGetActor() ?? throw CurrentUserErrors.ActorMissing();
 }

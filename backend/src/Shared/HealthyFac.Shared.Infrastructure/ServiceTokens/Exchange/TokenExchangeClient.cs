@@ -1,7 +1,9 @@
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Exchange;
 
 /// <summary>
 /// Exchanges the access token of a user for a short token of one target audience, and keeps the exchanged tokens

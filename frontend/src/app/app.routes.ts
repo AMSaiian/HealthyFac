@@ -10,6 +10,12 @@ export const routes: Routes = [
     loadChildren: () => import('@home/home.routes').then((m) => m.HOME_ROUTES),
   },
   {
+    path: 'machines',
+    title: 'TITLES.MACHINES',
+    canActivate: [authGuard],
+    loadChildren: () => import('@machines/machines.routes').then((m) => m.MACHINES_ROUTES),
+  },
+  {
     path: '',
     loadChildren: () => import('@fallback/fallback.routes').then((m) => m.FALLBACK_ROUTES),
   },

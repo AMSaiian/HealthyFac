@@ -1,4 +1,4 @@
-namespace HealthyFac.Auth.Application.Identities;
+namespace HealthyFac.Auth.Application.Identities.ProvisionIdentity;
 
 /// <summary>
 /// Defines the reasons that <c>IdentityProvisioningFailed</c> carries. Each reason is a failure that no retry can fix.

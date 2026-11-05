@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HealthyFac.Shared.Infrastructure.HttpFailures;
+namespace HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 internal static class JsonReasonFields
 {

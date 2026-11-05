@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HealthyFac.Shared.Infrastructure.HttpFailures;
+namespace HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 /// <summary>
 /// A scalar property of the root object of a JSON text. A reader of an error format checks the kind of the value

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { patchState, signalStore, withMethods, withProps, withState } from '@ngrx/signals';
 
 import { KEYCLOAK } from './keycloak';
+import { type Permission, readPermissions } from './permissions';
 import { isSessionEndedByServer, SessionEndedError } from './session-errors';
 
 const MIN_TOKEN_VALIDITY_SECONDS = 30;
@@ -19,7 +20,7 @@ const createPendingOperations = (): PendingOperations => ({ login: null, refresh
 
 export const AuthStore = signalStore(
   { providedIn: 'root' },
-  withState({ isAuthenticated: false }),
+  withState({ isAuthenticated: false, permissions: [] as readonly string[] }),
   withProps(() => ({
     _keycloak: inject(KEYCLOAK),
     _router: inject(Router),
@@ -62,6 +63,9 @@ export const AuthStore = signalStore(
 
     return {
       async init(): Promise<void> {
+        store._keycloak.onAuthRefreshSuccess = (): void => {
+          patchState(store, { permissions: readPermissions(store._keycloak.idTokenParsed) });
+        };
         store._keycloak.onTokenExpired = (): void => {
           refresh().catch((error: unknown) =>
             error instanceof SessionEndedError ? login(store._router.url) : undefined,
@@ -73,9 +77,12 @@ export const AuthStore = signalStore(
           pkceMethod: 'S256',
           checkLoginIframe: false,
         });
-        patchState(store, { isAuthenticated });
+        patchState(store, { isAuthenticated, permissions: readPermissions(store._keycloak.idTokenParsed) });
       },
       login,
+      hasPermission(permission: Permission): boolean {
+        return store.permissions().includes(permission);
+      },
       logout(): Promise<void> {
         return store._keycloak.logout({ redirectUri: `${location.origin}/` });
       },

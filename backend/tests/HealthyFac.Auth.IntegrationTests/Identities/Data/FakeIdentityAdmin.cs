@@ -1,3 +1,4 @@
+using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Auth.Application.Identities;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;

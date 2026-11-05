@@ -1,4 +1,4 @@
-namespace HealthyFac.Auth.Application.Identities;
+namespace HealthyFac.Auth.Application.Identities.IdentityAdmin;
 
 /// <summary>
 /// The admin operations of the identity provider that the auth service needs. Every method that changes state is safe

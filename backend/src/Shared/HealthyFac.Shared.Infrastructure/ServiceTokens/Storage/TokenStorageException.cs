@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// Signals that the <see cref="ITokenCacheStorage"/> failed or was skipped. The <see cref="TokenStore"/> handles it

@@ -1,11 +1,12 @@
 using System.Diagnostics.Metrics;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 using Instruments = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Messaging.Instruments;
 using Processors = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Messaging.Processors;
 using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Messaging.Tags;
 using Units = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Units;
 
-namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
+namespace HealthyFac.Shared.Infrastructure.Messaging;
 
 /// <summary>
 /// Holds the instruments of the <see cref="ObservabilityConstants.Meters.Messaging"/> meter. The processors record

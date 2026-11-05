@@ -143,6 +143,7 @@ public sealed class SpaOptionsValidatorTests
         AuthUrl = authUrl,
         AuthRealm = authRealm,
         AuthClientId = authClientId,
+        PrimeUiLicenseKey = SpaFactory.PrimeUiLicenseKey,
         HashedFileNamePattern = hashPattern,
         ImmutableCacheSeconds = cacheSeconds,
         PermissionsPolicy = permissionsPolicy,

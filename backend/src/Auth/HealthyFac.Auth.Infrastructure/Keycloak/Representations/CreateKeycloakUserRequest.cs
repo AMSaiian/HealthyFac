@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using HealthyFac.Shared.Application.Logging;
 
-namespace HealthyFac.Auth.Infrastructure.Keycloak;
+namespace HealthyFac.Auth.Infrastructure.Keycloak.Representations;
 
 public sealed record CreateKeycloakUserRequest
 {

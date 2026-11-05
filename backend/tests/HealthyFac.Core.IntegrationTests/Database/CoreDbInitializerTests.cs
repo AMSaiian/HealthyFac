@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.IntegrationTests.Database.Data;

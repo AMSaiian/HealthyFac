@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser.Data;

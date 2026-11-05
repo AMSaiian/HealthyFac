@@ -2,7 +2,6 @@ using Microsoft.Extensions.Time.Testing;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using HealthyFac.Testing.Containers;

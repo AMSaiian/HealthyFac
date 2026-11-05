@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using HealthyFac.Auth.Application;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
 
@@ -50,6 +52,7 @@ public class AuthDbContext(DbContextOptions<AuthDbContext> options)
     {
         modelBuilder.ApplyOutboxConfiguration();
         modelBuilder.ApplyInboxConfiguration();
+        modelBuilder.UseCaseInsensitiveText();
         modelBuilder.ToSnakeCaseConventions();
         modelBuilder.HasPostgreSqlExtensions(DatabaseConstants.RequiredPostgresExtensions);
     }

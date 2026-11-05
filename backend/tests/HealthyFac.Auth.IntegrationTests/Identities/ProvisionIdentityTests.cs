@@ -1,3 +1,4 @@
+using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
 using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
@@ -25,6 +26,23 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         user.RoleNames.Should().Contain(message.RoleCode);
         provisioned.Should().ContainSingle().Which.IdentityUserId.Should().Be(user.UserId.GetValueOrDefault());
         mailCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ProvisionIdentity_WithDepartments_WritesDepartmentAttribute()
+    {
+        var message = ProvisioningTestData.CreateAccepted();
+
+        await _fixture.ProvisionAsync(message);
+
+        var userId = await _fixture.Keycloak.Admin.FindUserIdByEmployeeIdAsync(
+            message.EmployeeId,
+            CancellationToken.None);
+        var departmentIds = await _fixture.Keycloak.LoadUserAttributeValuesAsync(
+            userId!.Value,
+            ProvisioningTestData.DepartmentIdsAttribute);
+
+        departmentIds.Select(Guid.Parse).Should().BeEquivalentTo(message.DepartmentIds);
     }
 
     [Fact]

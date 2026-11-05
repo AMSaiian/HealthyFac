@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Web.CurrentUser;
+namespace HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 
 /// <summary>
 /// Defines the validator messages for the service actor configuration.

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace HealthyFac.Auth.Infrastructure.Database;
+namespace HealthyFac.Auth.Infrastructure.Database.Initialization;
 
 /// <summary>
 /// Initializes the auth database.
@@ -25,7 +25,7 @@ public class AuthDbInitializer(
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default)
+    public async Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
         if (!_environment.IsDevelopment())
         {

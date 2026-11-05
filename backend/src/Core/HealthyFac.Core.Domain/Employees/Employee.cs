@@ -8,7 +8,7 @@ namespace HealthyFac.Core.Domain.Employees;
 /// is the business mirror of the identity, so task lists and schedules can show and filter people without a
 /// call to Keycloak. Only <see cref="EmployeeInvite.Accept"/> creates an employee.
 /// </summary>
-public class Employee : IEntity, IAuditable
+public class Employee : IEntity, IAuditable, ISoftDeletable
 {
     private readonly List<Department> _departments = [];
 
@@ -71,6 +71,8 @@ public class Employee : IEntity, IAuditable
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
     public Guid? UpdatedBy { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
+    public Guid? DeletedBy { get; private set; }
 
     /// <summary>
     /// Adds the employee to <paramref name="department"/>. Assigning a department again changes nothing. Load

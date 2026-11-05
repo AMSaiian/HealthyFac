@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
+namespace HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 
 /// <summary>
 /// The pending rows of one messaging table at the time of a sample.

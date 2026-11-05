@@ -1,8 +1,11 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.Messaging.Backlog;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
+namespace HealthyFac.Shared.Infrastructure.Messaging;
 
 public static class ProcessingExtensions
 {

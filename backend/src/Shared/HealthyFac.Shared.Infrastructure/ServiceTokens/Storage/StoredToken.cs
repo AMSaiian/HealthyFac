@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// The JSON value of a token entry in the <see cref="ITokenCacheStorage"/>: the access token and the moment at

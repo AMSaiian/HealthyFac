@@ -46,6 +46,29 @@ public sealed class RealmImportTests(KeycloakRealmFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async Task UserToken_ForTestSupervisor_CarriesDepartmentIds()
+    {
+        var claims = await _fixture.GetSupervisorAccessTokenClaimsAsync();
+
+        claims[RealmTestData.DepartmentIdsClaim]!.AsArray()
+            .Select(value => Guid.Parse(value!.GetValue<string>()))
+            .Should()
+            .BeEquivalentTo([RealmTestData.DepartmentAId, RealmTestData.DepartmentBId]);
+    }
+
+    [Fact]
+    public async Task IdToken_ForTestSupervisor_CarriesPermissionsOnly()
+    {
+        var claims = await _fixture.GetSupervisorIdTokenClaimsAsync();
+
+        claims[RealmTestData.PermissionsClaim]!.AsArray()
+            .Select(value => value!.GetValue<string>())
+            .Should()
+            .Contain(RealmTestData.MachinePermissions);
+        claims.Select(claim => claim.Key).Should().NotContain(RealmTestData.DepartmentIdsClaim);
+    }
+
+    [Fact]
     public async Task PasswordGrant_ForSupervisor_TokenCarriesPermissionsOnly()
     {
         var claims = await _fixture.GetSupervisorAccessTokenClaimsAsync();

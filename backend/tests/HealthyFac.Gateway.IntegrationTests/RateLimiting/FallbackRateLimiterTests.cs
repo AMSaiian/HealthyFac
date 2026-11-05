@@ -1,4 +1,5 @@
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
+using HealthyFac.Gateway.Web.RateLimiting.Fallback;
 using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Testing.Caching;

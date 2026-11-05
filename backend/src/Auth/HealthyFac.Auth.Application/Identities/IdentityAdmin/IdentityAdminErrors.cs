@@ -1,4 +1,4 @@
-namespace HealthyFac.Auth.Application.Identities;
+namespace HealthyFac.Auth.Application.Identities.IdentityAdmin;
 
 /// <summary>
 /// Defines the exceptions of the identity provider admin client. The texts never hold an email or a name.

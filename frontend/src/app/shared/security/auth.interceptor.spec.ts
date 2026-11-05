@@ -47,7 +47,13 @@ describe('authInterceptor', () => {
         provideHttpClientTesting(),
         {
           provide: APP_CONFIG,
-          useValue: { apiBaseUrl: API, authUrl: 'https://auth.healthyfac.test', authRealm: 'r', authClientId: 'c' },
+          useValue: {
+            apiBaseUrl: API,
+            authUrl: 'https://auth.healthyfac.test',
+            authRealm: 'r',
+            authClientId: 'c',
+            primeUiLicenseKey: 'k',
+          },
         },
         { provide: AuthStore, useValue: store },
       ],

@@ -1,7 +1,7 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
 
-namespace HealthyFac.Shared.Infrastructure.CurrentUser;
+namespace HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 
 public sealed class ServiceOptionsValidator : AbstractValidator<ServiceOptions>
 {

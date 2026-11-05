@@ -27,11 +27,11 @@ internal sealed class MachineFaker : Faker<Machine>
     )
     {
         UseSeed(seed);
-        RuleFor(
-            machine => machine.Name,
-            faker => $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}");
-        RuleFor(machine => machine.SerialNumber, faker => faker.Random.Replace(serialNumberPattern));
-        RuleFor(machine => machine.CompanyId, _ => department.CompanyId);
-        RuleFor(machine => machine.DepartmentId, _ => department.Id);
+        CustomInstantiator(faker => new Machine(
+            department.CompanyId,
+            department.Id,
+            $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}",
+            faker.Random.Replace(serialNumberPattern),
+            null));
     }
 }

@@ -17,6 +17,7 @@ namespace HealthyFac.Auth.Infrastructure.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasAnnotation("Npgsql:CollationDefinition:case_insensitive", "und-u-ks-level2,und-u-ks-level2,icu,False")
                 .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -43,7 +44,8 @@ namespace HealthyFac.Auth.Infrastructure.Database.Migrations
                     b.Property<string>("Error")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
-                        .HasColumnName("error");
+                        .HasColumnName("error")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime?>("FailedOn")
                         .HasColumnType("timestamp with time zone")
@@ -68,13 +70,15 @@ namespace HealthyFac.Auth.Infrastructure.Database.Migrations
 
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
-                        .HasColumnName("trace_parent");
+                        .HasColumnName("trace_parent")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("type");
+                        .HasColumnName("type")
+                        .UseCollation("case_insensitive");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -116,7 +120,8 @@ namespace HealthyFac.Auth.Infrastructure.Database.Migrations
                     b.Property<string>("Error")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
-                        .HasColumnName("error");
+                        .HasColumnName("error")
+                        .UseCollation("case_insensitive");
 
                     b.Property<DateTime>("NextAttemptOn")
                         .HasColumnType("timestamp with time zone")
@@ -137,13 +142,15 @@ namespace HealthyFac.Auth.Infrastructure.Database.Migrations
 
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
-                        .HasColumnName("trace_parent");
+                        .HasColumnName("trace_parent")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("type");
+                        .HasColumnName("type")
+                        .UseCollation("case_insensitive");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()

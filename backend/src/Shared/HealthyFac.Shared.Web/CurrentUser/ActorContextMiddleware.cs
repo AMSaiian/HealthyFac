@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 

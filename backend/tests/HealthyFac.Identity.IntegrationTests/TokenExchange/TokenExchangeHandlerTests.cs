@@ -2,6 +2,7 @@ using HealthyFac.Identity.IntegrationTests.Realm.Data;
 using HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Caching;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using Microsoft.Extensions.Configuration;

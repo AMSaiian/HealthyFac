@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 
-namespace HealthyFac.Shared.Infrastructure.CurrentUser;
+namespace HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 
 /// <summary>
 /// Defines the validator messages for the service configuration.

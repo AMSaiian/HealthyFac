@@ -1,5 +1,5 @@
 using System.Diagnostics.Metrics;
-using HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;

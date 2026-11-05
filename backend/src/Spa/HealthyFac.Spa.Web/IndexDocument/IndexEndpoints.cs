@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using HealthyFac.Spa.Web.Hosting;
+using HealthyFac.Spa.Web.IndexDocument.Csp;
 using HealthyFac.Spa.Web.StaticAssets;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;

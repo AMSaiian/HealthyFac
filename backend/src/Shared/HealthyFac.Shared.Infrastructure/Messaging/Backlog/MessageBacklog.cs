@@ -1,4 +1,7 @@
-namespace HealthyFac.Shared.Infrastructure.Messaging.Processing;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
+
+namespace HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 
 /// <summary>
 /// The last sample of the pending outbox and inbox rows, which the backlog gauges report.

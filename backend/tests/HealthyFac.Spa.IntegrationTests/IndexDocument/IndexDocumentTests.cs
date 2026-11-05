@@ -1,3 +1,4 @@
+using HealthyFac.Spa.Web.IndexDocument.Csp;
 using HealthyFac.Spa.Web.IndexDocument;
 
 namespace HealthyFac.Spa.IntegrationTests.IndexDocument;

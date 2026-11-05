@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace HealthyFac.Shared.Infrastructure.Caching;
+namespace HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 
 public static class RedisBreakerHealthCheckExtensions
 {

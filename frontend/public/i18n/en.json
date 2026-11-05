@@ -4,7 +4,8 @@
   },
   "TITLES": {
     "HOME": "Home",
-    "NOT_FOUND": "Page not found"
+    "NOT_FOUND": "Page not found",
+    "MACHINES": "Machines"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -39,6 +40,77 @@
       "SERVER": "The server failed to process the request. Try again later.",
       "UNKNOWN": "The request failed."
     }
+  },
+  "ACTIONS": {
+    "SAVE": "Save",
+    "CANCEL": "Cancel"
+  },
+  "RICH_TEXT": {
+    "BOLD": "Bold",
+    "ITALIC": "Italic",
+    "UNDERLINE": "Underline",
+    "STRIKE": "Strikethrough",
+    "ORDERED_LIST": "Numbered list",
+    "BULLET_LIST": "Bulleted list",
+    "LINK": "Link",
+    "CLEAN": "Clear formatting"
+  },
+  "MACHINES": {
+    "TITLE": "Machines",
+    "ADD_NEW": "Add new",
+    "ACTIONS": "Row actions",
+    "UPDATE": "Update",
+    "DELETE": "Delete",
+    "DELETE_HEADER": "Delete machine",
+    "DELETE_MESSAGE": "Delete the machine {{name}}?",
+    "DELETED": "The machine is deleted.",
+    "EMPTY": "No machines found.",
+    "COLUMNS": {
+      "NAME": "Name",
+      "SERIAL_NUMBER": "Serial number",
+      "DEPARTMENT": "Department",
+      "STATE": "State",
+      "CREATED_AT": "Created",
+      "UPDATED_AT": "Updated"
+    },
+    "STATES": {
+      "OPERATIONAL": "Operational",
+      "IN_MAINTENANCE": "In maintenance",
+      "OUT_OF_SERVICE": "Out of service"
+    },
+    "FILTERS": {
+      "NAME_PLACEHOLDER": "Filter by name",
+      "SERIAL_NUMBER_PLACEHOLDER": "Filter by serial number",
+      "DEPARTMENT_PLACEHOLDER": "Select departments",
+      "STATE_PLACEHOLDER": "Select states",
+      "CREATED_AT_PLACEHOLDER": "Select created dates",
+      "UPDATED_AT_PLACEHOLDER": "Select updated dates"
+    },
+    "TOASTS": {
+      "SUCCESS": "Done",
+      "CREATED": "The machine is created.",
+      "UPDATED": "The machine is updated.",
+      "SERIAL_NUMBER_TAKEN": "A machine with this serial number already exists."
+    },
+    "FORM": {
+      "CREATE_TITLE": "New machine",
+      "UPDATE_TITLE": "Update machine",
+      "NAME": "Name",
+      "SERIAL_NUMBER": "Serial number",
+      "DEPARTMENT": "Department",
+      "DESCRIPTION": "Description",
+      "NO_CHANGES": "No changes provided",
+      "ERRORS": {
+        "REQUIRED": "This field is required.",
+        "TOO_LONG": "The value is too long."
+      },
+      "NAME_PLACEHOLDER": "Enter the name",
+      "SERIAL_NUMBER_PLACEHOLDER": "Enter the serial number",
+      "DEPARTMENT_PLACEHOLDER": "Select a department",
+      "DESCRIPTION_PLACEHOLDER": "Describe the machine",
+      "INVALID": "Form is not valid"
+    },
+    "COLUMNS_CHOOSER": "Columns"
   },
   "PRIMENG": {
     "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],

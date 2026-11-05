@@ -1,4 +1,4 @@
-namespace HealthyFac.Spa.Web.IndexDocument;
+namespace HealthyFac.Spa.Web.IndexDocument.Csp;
 
 public static class ContentSecurityPolicy
 {

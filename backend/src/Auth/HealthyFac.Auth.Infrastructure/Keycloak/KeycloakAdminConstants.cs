@@ -16,6 +16,9 @@ public static class KeycloakAdminConstants
     /// <summary>The user attribute that holds the employee ID. The user profile of the realm declares it.</summary>
     public const string EmployeeIdAttribute = "employee_id";
 
+    /// <summary>The multi-value user attribute that holds the department IDs. The user profile declares it.</summary>
+    public const string DepartmentIdsAttribute = "department_ids";
+
     public const string EnabledProperty = "enabled";
 
     /// <summary>The credential type of a password.</summary>

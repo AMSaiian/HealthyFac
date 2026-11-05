@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.ServiceTokens;
+namespace HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 /// <summary>
 /// An access token that the token endpoint just issued, with the moment at which a holder replaces it and the moment

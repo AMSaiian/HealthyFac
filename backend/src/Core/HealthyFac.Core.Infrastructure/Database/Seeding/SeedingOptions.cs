@@ -1,6 +1,4 @@
-using HealthyFac.Core.Infrastructure.Database.Seeding;
-
-namespace HealthyFac.Core.Infrastructure.Database;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 
 /// <summary>
 /// Configures which data sets the initializer seeds on startup.

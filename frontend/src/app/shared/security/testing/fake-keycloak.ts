@@ -10,7 +10,9 @@ export interface FakeKeycloak {
   token: string | undefined;
   refreshToken: string | undefined;
   tokenParsed: object | undefined;
+  idTokenParsed: object | undefined;
   onTokenExpired: (() => void) | undefined;
+  onAuthRefreshSuccess: (() => void) | undefined;
 }
 
 export function createFakeKeycloak(): FakeKeycloak {
@@ -23,7 +25,9 @@ export function createFakeKeycloak(): FakeKeycloak {
     token: 'token-1',
     refreshToken: 'refresh-1',
     tokenParsed: {},
+    idTokenParsed: {},
     onTokenExpired: undefined,
+    onAuthRefreshSuccess: undefined,
   };
 }
 

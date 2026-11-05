@@ -1,8 +1,7 @@
 using FluentValidation;
-using HealthyFac.Core.Infrastructure.Database.Seeding;
 using Microsoft.Extensions.Hosting;
 
-namespace HealthyFac.Core.Infrastructure.Database;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 
 public sealed class SeedingOptionsValidator : AbstractValidator<SeedingOptions>
 {

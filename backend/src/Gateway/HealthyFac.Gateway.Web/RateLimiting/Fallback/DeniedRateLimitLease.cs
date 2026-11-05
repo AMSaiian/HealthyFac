@@ -1,6 +1,6 @@
 using System.Threading.RateLimiting;
 
-namespace HealthyFac.Gateway.Web.RateLimiting;
+namespace HealthyFac.Gateway.Web.RateLimiting.Fallback;
 
 /// <summary>
 /// A lease that grants nothing and consumes nothing. A synchronous acquire returns it, so the caller continues
