@@ -54,6 +54,32 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
+    public async Task SeedRequiredDataAsync_WithSoftDeletedRole_AddsOneActiveRoleAndKeepsDeletedRowDeleted()
+    {
+        await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
+        using (var deleteScope = _fixture.ScopeFactory.CreateScope())
+        {
+            await deleteScope.ServiceProvider.GetRequiredService<CoreDbContext>()
+                .Roles
+                .Where(role => role.Code == RoleCode.Supervisor)
+                .ExecuteUpdateAsync(update => update.SetProperty(role => role.DeletedAt, DateTime.UtcNow));
+        }
+
+        await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
+
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var supervisors = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+            .Roles
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(role => role.Code == RoleCode.Supervisor)
+            .ToListAsync();
+
+        supervisors.Where(role => role.DeletedAt is null).Should().ContainSingle();
+        supervisors.Where(role => role.DeletedAt is not null).Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task SeedOptionalDataAsync_RunTwice_LeavesFirstRunEntitiesUnchanged()
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
