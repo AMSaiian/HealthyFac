@@ -42,3 +42,5 @@ Repository rules override plugin skills and their workflows. This includes the T
 The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) reformat changed C# files and build the solution. They report build warnings and errors in those files to the agent that stops. Fix every reported item before you finish the turn.
 
 This file imports `AGENTS.md` on purpose. Claude Code skips `AGENTS.md` when a `CLAUDE.md` exists, so the import keeps the shared project context in scope. It also imports `README.md`, so every session knows the product domain. Put shared, agent-agnostic content in `AGENTS.md`. Keep this file for Claude Code specifics only.
+
+@.claude/rules/agent-workflow.md
