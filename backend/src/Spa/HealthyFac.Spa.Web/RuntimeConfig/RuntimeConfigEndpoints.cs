@@ -35,6 +35,7 @@ public static class RuntimeConfigEndpoints
             AuthUrl = options.Value.AuthUrl,
             AuthRealm = options.Value.AuthRealm,
             AuthClientId = options.Value.AuthClientId,
+            PrimeUiLicenseKey = options.Value.PrimeUiLicenseKey,
         };
     }
 }

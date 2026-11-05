@@ -15,12 +15,23 @@ const RESTRICTED_IMPORT_PATTERNS = [
   { group: ['zone.js', 'zone.js/*'], message: ZONELESS_MESSAGE },
   { group: ['@angular/material'], message: 'Use PrimeNG.' },
   { group: ['../*'], message: ALIAS_MESSAGE },
-  { group: ['@app/shared/*', '@app/home/*', '@app/fallback/*'], message: FEATURE_ALIAS_MESSAGE },
+  { group: ['@app/shared/*', '@app/home/*', '@app/fallback/*', '@app/machines/*'], message: FEATURE_ALIAS_MESSAGE },
   {
     group: ['**/services/*', '**/models/*', '**/components/*', '**/utils/*', '**/helpers/*', '**/stores/*'],
     message: LAYOUT_MESSAGE,
   },
 ];
+
+const HOST_DISPLAY_SYNTAX = {
+  selector:
+    "Decorator[expression.callee.name='Component'] > CallExpression > ObjectExpression:not(:has(Property[key.name='host'] > ObjectExpression > Property[key.name='class'][value.value=/(^|\\s)(flex|inline-flex|grid|block|contents|hidden)(\\s|$)/]))",
+  message: 'Set the host display in host: { class }.',
+};
+
+const STORE_IMPORT_PATTERN = {
+  group: ['**/*.store', '@*/**/*.store'],
+  message: 'Only pages and action hosts inject stores.',
+};
 
 const RESTRICTED_SYNTAX = [
   {
@@ -33,6 +44,7 @@ const RESTRICTED_SYNTAX = [
     message: 'Components use the OnPush default.',
   },
   { selector: 'TSEnumMember > Literal[raw=/^-?\\d/]', message: 'Use a string enum, not a numeric enum.' },
+  HOST_DISPLAY_SYNTAX,
 ];
 
 const ZONELESS_PATH = {
@@ -62,13 +74,25 @@ const ZOD_PATH = {
   message: 'Use zod/mini.',
 };
 
-const HTTP_ACCESS_PATH = {
+const HTTP_CLIENT_PATH = {
   name: '@angular/common/http',
-  importNames: ['HttpClient', 'httpResource'],
-  message: 'Make HTTP requests only in a store (*.store.ts) or in shared/.',
+  importNames: ['HttpClient'],
+  message: 'Call HttpClient only in a *-api.ts service.',
 };
 
-const BASE_IMPORT_PATHS = [TEMPORAL_PATH, FORMS_PATH, ZONELESS_PATH, ZOD_PATH];
+const HTTP_RESOURCE_PATH = {
+  name: '@angular/common/http',
+  importNames: ['httpResource'],
+  message: 'Call HttpClient in a *-api.ts service; stores read with rxResource.',
+};
+
+const BUTTON_PATH = {
+  name: 'primeng/button',
+  importNames: ['Button', 'ButtonModule', 'ButtonLabel', 'ButtonIcon'],
+  message: 'Use the pButton directive (ButtonDirective).',
+};
+
+const BASE_IMPORT_PATHS = [TEMPORAL_PATH, FORMS_PATH, ZONELESS_PATH, ZOD_PATH, BUTTON_PATH, HTTP_RESOURCE_PATH];
 
 const importRule = (paths) => ['error', { paths, patterns: RESTRICTED_IMPORT_PATTERNS }];
 
@@ -100,6 +124,7 @@ module.exports = defineConfig([
       '@angular-eslint/component-selector': ['error', { type: 'element', prefix: 'hf', style: 'kebab-case' }],
       '@angular-eslint/prefer-inject': 'error',
       curly: ['error', 'all'],
+      '@typescript-eslint/no-deprecated': 'error',
       '@typescript-eslint/naming-convention': [
         'error',
         { selector: 'memberLike', modifiers: ['private'], format: ['camelCase'], leadingUnderscore: 'require' },
@@ -116,7 +141,7 @@ module.exports = defineConfig([
       '@typescript-eslint/prefer-enum-initializers': 'error',
       '@typescript-eslint/no-mixed-enums': 'error',
       'sort-imports': ['error', { ignoreDeclarationSort: true, ignoreCase: true }],
-      'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_ACCESS_PATH]),
+      'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_CLIENT_PATH]),
       'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX, ...CLOCK_SYNTAX],
       'no-restricted-globals': [
         'error',
@@ -133,7 +158,36 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ['src/app/**/*.store.ts', 'src/app/**/*.spec.ts', 'src/app/shared/**/*.ts'],
+    files: ['src/app/**/*.ts'],
+    ignores: [
+      'src/app/**/*-page.ts',
+      'src/app/**/*-host.ts',
+      'src/app/**/*.routes.ts',
+      'src/app/**/*.store.ts',
+      'src/app/**/*.spec.ts',
+      'src/app/layout/**',
+      'src/app/shared/**',
+      'src/app/app.ts',
+      'src/app/app.config.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_CLIENT_PATH],
+          patterns: [...RESTRICTED_IMPORT_PATTERNS, STORE_IMPORT_PATTERN],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/app/**/*.store.ts', 'src/app/shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_CLIENT_PATH]),
+    },
+  },
+  {
+    files: ['src/app/**/*.spec.ts', 'src/app/**/*-api.ts', 'src/app/shared/http/**/*.ts'],
     rules: {
       'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH]),
     },
@@ -147,7 +201,14 @@ module.exports = defineConfig([
   {
     files: ['src/app/shared/time/temporal.ts'],
     rules: {
-      'no-restricted-imports': importRule([FORMS_PATH, ZONELESS_PATH, KEYCLOAK_PATH, ZOD_PATH]),
+      'no-restricted-imports': importRule([
+        FORMS_PATH,
+        ZONELESS_PATH,
+        KEYCLOAK_PATH,
+        ZOD_PATH,
+        BUTTON_PATH,
+        HTTP_RESOURCE_PATH,
+      ]),
     },
   },
   {

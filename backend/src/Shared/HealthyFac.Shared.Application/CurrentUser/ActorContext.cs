@@ -18,4 +18,10 @@ public sealed record ActorContext
     public Guid? CompanyId { get; init; }
 
     public Guid? EmployeeId { get; init; }
+
+    /// <summary>
+    /// The IDs of the departments of the employee. A user token fills them. Every other actor (anonymous, service
+    /// flow, restored message actor) has none, so a rule that needs departments fails closed for them.
+    /// </summary>
+    public required IReadOnlySet<Guid> DepartmentIds { get; init; }
 }

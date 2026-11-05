@@ -115,6 +115,8 @@ services:
       IMPORT_USERS_MERGEROLES: "true"
       HEALTHYFAC_SPA_URL: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
       HEALTHYFAC_TEST_COMPANY_ID: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      HEALTHYFAC_TEST_DEPARTMENT_A_ID: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
+      HEALTHYFAC_TEST_DEPARTMENT_B_ID: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
@@ -269,8 +271,12 @@ services:
       Jwt__IsHttpsMetadataRequired: "false"
       # The test company and supervisor. Keycloak imports the same values (see the keycloak service), so the
       # supervisor can sign in. Core seeds them only when IsOptionalDataSeeded is true (the Development default).
+      # true deletes the Core business data, outbox, and inbox, and seeds again on every start.
+      Seeding__DevelopmentData__IsRecreationForced: ${HEALTHYFAC_SEED_RECREATE:-false}
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
       Seeding__DevelopmentData__TestTenant__CompanyName: Test Company
+      Seeding__DevelopmentData__TestTenant__DepartmentIds__0: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
+      Seeding__DevelopmentData__TestTenant__DepartmentIds__1: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
@@ -379,6 +385,8 @@ services:
       Spa__ApiBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}
       # The public URL of Keycloak. The host sends it to the browser in /config.json and allows it in the CSP.
       Spa__AuthUrl: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}
+      # The PrimeUI license key. The host sends it to the browser in /config.json; a change needs only a restart.
+      Spa__PrimeUiLicenseKey: ${PRIMEUI_LICENSE_KEY:?set PRIMEUI_LICENSE_KEY in .env}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       Metrics__Endpoint: http://lgtm:4317

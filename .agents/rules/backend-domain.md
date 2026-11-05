@@ -6,6 +6,7 @@ description: "Rules for the Domain layer."
 # Domain Layer Rules
 *   **Base Interface:** Every entity implements `IEntity` or `IEntity<TId>` (`HealthyFac.Shared.Domain.Entities`).
 *   **Auditing:** Implement `IAuditable` on every entity that a user can create or update; system-only data (e.g., seeded reference data) does not need it. Never set `CreatedAt`, `CreatedBy`, `UpdatedAt`, or `UpdatedBy` in a constructor: the `AuditableEntityInterceptor` sets them.
+*   **Soft Delete:** Every entity implements `ISoftDeletable`, and its configuration calls `ConfigureSoftDeletable()`. A removal goes through `Remove`; the `SoftDeleteInterceptor` turns it into an update. Every unique index on the entity filters out deleted rows (`SoftDeleteConstants.NotDeletedFilter`). A query that must see deleted rows calls `IgnoreQueryFilters()`. The architecture tests and `SoftDeleteModelTests` check it.
 *   **Encapsulation:** Use `private set` or `init` for entity properties.
 *   **Rich Domain Models:** Put each state change that must keep an invariant into an entity method (e.g., `machine.StartMaintenance()`), mainly on aggregate roots. Keep an entity without invariants as plain properties.
 *   **Entity Naming:** Name entities with singular nouns (`Machine`), so they do not collide with the plural feature namespaces.

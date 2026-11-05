@@ -18,6 +18,7 @@
       "@shared/*": ["./src/app/shared/*"],
       "@home/*": ["./src/app/home/*"],
       "@fallback/*": ["./src/app/fallback/*"],
+      "@machines/*": ["./src/app/machines/*"],
       "@public/*": ["./public/*"]
     }
   },

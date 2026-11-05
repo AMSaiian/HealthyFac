@@ -34,6 +34,10 @@ public sealed class SpaOptionsValidator : AbstractValidator<SpaOptions>
             .NotEmpty()
             .WithMessage(SpaValidationMessages.AuthClientIdRequired);
 
+        RuleFor(options => options.PrimeUiLicenseKey)
+            .NotEmpty()
+            .WithMessage(SpaValidationMessages.PrimeUiLicenseKeyRequired);
+
         RuleFor(options => options.HashedFileNamePattern)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
