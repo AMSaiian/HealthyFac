@@ -55,19 +55,25 @@ public class CoreDbInitializer(
     }
 
     /// <summary>
-    /// Seeds the global roles into the core database context with one atomic upsert on the role code. It inserts
-    /// missing roles and updates the names of existing ones, so it is safe to run on every start, also when
-    /// several instances start at the same time.
+    /// Seeds the global roles into the core database context with one atomic <c>INSERT ... ON CONFLICT</c>
+    /// statement on the role code. The conflict target repeats the filter of the unique index
+    /// (<c>deleted_at IS NULL</c>), because PostgreSQL otherwise finds no matching index. The statement inserts
+    /// missing roles and updates the names of existing ones. A soft-deleted role does not block it. It is safe
+    /// to run on every start, also when several instances start at the same time.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public Task SeedRequiredDataAsync(CancellationToken cancellationToken = default(CancellationToken))
-        => _dbContext.Roles
-            .UpsertRange(RoleSeed.Roles)
-            .On(role => role.Code)
-            .WhenMatched((existing, seeded) => new Role { Code = existing.Code, Name = seeded.Name })
-            .RunAsync(cancellationToken);
+        => _dbContext.Database.ExecuteSqlRawAsync(
+            RoleTable.UpsertSql,
+            [
+                RoleSeed.Roles.Select(_ => Guid.CreateVersion7()).ToArray(),
+                RoleSeed.Roles.Select(role => role.Code.Value).ToArray(),
+                RoleSeed.Roles.Select(role => role.Name).ToArray(),
+            ],
+            cancellationToken
+        );
 
     /// <summary>
     /// Seeds generated development data into the core database context. It adds nothing when a company already

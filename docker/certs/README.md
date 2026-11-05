@@ -24,3 +24,7 @@ mkcert -cert-file docker/certs/healthyfac.test.pem -key-file docker/certs/health
 | `healthyfac.test-key.pem` | The private key. Compose mounts it read-only. Never commit it and never copy it into an image. |
 
 The launch profile `https` of the gateway reads the same files.
+
+## Verify stack
+
+The isolated verify stack (`scripts/verify-stack.ps1`) uses its own names, `api.hfverify.test`, `auth.hfverify.test`, and `app.hfverify.test`, so its Keycloak cookies never overwrite the dev sign-in. The script creates `hfverify.test.pem` and `hfverify.test-key.pem` in this folder with mkcert when they are missing. Git ignores both files.

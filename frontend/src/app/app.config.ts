@@ -3,7 +3,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import localeUk from '@angular/common/locales/uk';
 import type { ApplicationConfig } from '@angular/core';
 import { ErrorHandler, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter, TitleStrategy } from '@angular/router';
+import { provideRouter, TitleStrategy, withComponentInputBinding } from '@angular/router';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -34,7 +34,7 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
     providers: [
       { provide: APP_CONFIG, useValue: config },
       provideBrowserGlobalErrorListeners(),
-      provideRouter(routes),
+      provideRouter(routes, withComponentInputBinding()),
       provideAppInitializer(() => inject(AuthStore).init()),
       provideHttpClient(withInterceptors([apiBaseUrlInterceptor, problemDetailsInterceptor, authInterceptor])),
       provideTranslateService({

@@ -33,4 +33,16 @@ public static class RichTextTestData
         "<p><!-- comment -->a</p>",
         "<h1>a</h1>",
     };
+
+    public static TheoryData<string, int> VisibleLengthCases => new()
+    {
+        { "<p>a</p>", 1 },
+        { "<p><br></p>", 0 },
+        { "<p>&amp;</p>", 1 },
+        { "<ol><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span>ab</li></ol>", 2 },
+        { "<p>e" + (char)0x0301 + "</p>", 1 },
+        { "<p>e&#x301;</p>", 1 },
+        { "<p>" + (char)0x0958 + "</p>", 2 },
+        { "<p><strong>ab</strong> <em>c</em></p>", 4 },
+    };
 }

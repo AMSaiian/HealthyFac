@@ -4,7 +4,8 @@ import type { FormValueControl } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Editor } from 'primeng/editor';
 
-import { richTextLength } from '@shared/rich-text/rich-text-length';
+import { normalizeRichTextHtml } from '@shared/rich-text/rich-text-html';
+import { visibleTextLength } from '@shared/rich-text/rich-text-length';
 
 const EMPTY_EDITOR_HTML = '<p><br></p>';
 
@@ -26,10 +27,10 @@ export class RichTextEditor implements FormValueControl<string | null> {
   readonly touch = output<void>();
 
   protected readonly isInvalidShown = computed(() => this.invalid() && this.touched());
-  protected readonly length = computed(() => richTextLength(this.value()));
+  protected readonly length = computed(() => visibleTextLength(this.value()));
   protected readonly isTooLong = computed(() => this.length() > (this.characterLimit() ?? Infinity));
 
   protected onEditorChange(html: string | null): void {
-    this.value.set(html === null || html === '' || html === EMPTY_EDITOR_HTML ? null : html);
+    this.value.set(html === null || html === '' || html === EMPTY_EDITOR_HTML ? null : normalizeRichTextHtml(html));
   }
 }

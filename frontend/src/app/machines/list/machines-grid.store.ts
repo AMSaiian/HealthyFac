@@ -1,5 +1,6 @@
 import { computed, effect, inject, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { signalStore, withComputed, withHooks, withMethods, withProps } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
@@ -20,6 +21,9 @@ import { toSearchBody } from '@machines/list/machine-query';
 import { INITIAL_GRID } from '@machines/list/machines-grid.store.utils';
 import { MachinesApi } from '@machines/machines-api';
 
+const MACHINES_PATH = '/machines';
+const ERROR_CODES_PATH = 'error-codes';
+
 export const MachinesGridStore = signalStore(
   withGridState<MachineFilter, MachineSortColumn, MachineColumn>(INITIAL_GRID),
   withProps(() => ({
@@ -27,6 +31,7 @@ export const MachinesGridStore = signalStore(
     _clock: inject(CLOCK),
     _actions: inject(ActionStore),
     _api: inject(MachinesApi),
+    _router: inject(Router),
     _confirmation: inject(ConfirmationService),
     _messages: inject(MessageService),
     _translate: inject(TranslateService),
@@ -34,6 +39,7 @@ export const MachinesGridStore = signalStore(
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.MachinesWrite)),
     canDelete: computed(() => store._auth.hasPermission(Permission.MachinesDelete)),
+    canReadErrorCodes: computed(() => store._auth.hasPermission(Permission.MachineErrorCodesRead)),
   })),
   withProps((store) => ({
     machines: rxResource({
@@ -70,6 +76,9 @@ export const MachinesGridStore = signalStore(
       },
       requestUpdate(id: string): void {
         void store._actions.dispatch({ type: MachineActionType.Update, payload: { machineId: id } });
+      },
+      openErrorCodes(id: string): void {
+        void store._router.navigate([MACHINES_PATH, id, ERROR_CODES_PATH]);
       },
       requestDelete(machine: Machine): void {
         store._confirmation.confirm({

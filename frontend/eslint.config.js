@@ -80,6 +80,13 @@ const HTTP_CLIENT_PATH = {
   message: 'Call HttpClient only in a *-api.ts service.',
 };
 
+const ACTIVATED_ROUTE_PATH = {
+  name: '@angular/router',
+  importNames: ['ActivatedRoute'],
+  message:
+    'Rule Route Params: read a route param as an input() of the route page (withComponentInputBinding), and pass it to the store with a method.',
+};
+
 const HTTP_RESOURCE_PATH = {
   name: '@angular/common/http',
   importNames: ['httpResource'],
@@ -92,7 +99,15 @@ const BUTTON_PATH = {
   message: 'Use the pButton directive (ButtonDirective).',
 };
 
-const BASE_IMPORT_PATHS = [TEMPORAL_PATH, FORMS_PATH, ZONELESS_PATH, ZOD_PATH, BUTTON_PATH, HTTP_RESOURCE_PATH];
+const BASE_IMPORT_PATHS = [
+  TEMPORAL_PATH,
+  FORMS_PATH,
+  ZONELESS_PATH,
+  ZOD_PATH,
+  BUTTON_PATH,
+  HTTP_RESOURCE_PATH,
+  ACTIVATED_ROUTE_PATH,
+];
 
 const importRule = (paths) => ['error', { paths, patterns: RESTRICTED_IMPORT_PATTERNS }];
 
@@ -163,6 +178,7 @@ module.exports = defineConfig([
       'src/app/**/*-page.ts',
       'src/app/**/*-host.ts',
       'src/app/**/*.routes.ts',
+      'src/app/**/*.resolver.ts',
       'src/app/**/*.store.ts',
       'src/app/**/*.spec.ts',
       'src/app/layout/**',

@@ -1,5 +1,5 @@
 <p-editor
-  styleClass="h-64"
+  [pt]="{ content: { class: 'h-64' } }"
   [ngModel]="value()"
   [readonly]="readonly() || disabled()"
   [placeholder]="placeholder()"

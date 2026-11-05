@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Application.RichText;
+
 namespace HealthyFac.Core.Application.Machines;
 
 /// <summary>
@@ -17,4 +19,8 @@ public static class MachineErrors
 
     public static readonly string DescriptionTooLong =
         $"The description must have at most {MachineValidationConstants.DescriptionMaxLength} characters.";
+
+    public static readonly string DescriptionTooMuchFormatting =
+        $"The description formatting is too large. The stored HTML must have at most {RichTextConstants.HtmlMaxLength} "
+        + "characters.";
 }

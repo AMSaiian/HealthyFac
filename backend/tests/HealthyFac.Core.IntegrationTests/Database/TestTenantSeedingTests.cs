@@ -60,4 +60,32 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
         tenantCompanyCount.Should().Be(1);
         companyCount.Should().Be(companyCountAfterFirstRun);
     }
+
+    [Fact]
+    public async Task SeedOptionalData_WithTestTenant_CreatesMachinesWithErrorCodesInEachDepartment()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        var machines = await _fixture.LoadTenantMachineCodesAsync(DatabaseTestData.TestTenantCompanyId);
+
+        machines.Should()
+            .HaveCount(DatabaseTestData.TestTenantDepartmentCount * DatabaseTestData.MachinesPerDepartment);
+        machines.GroupBy(machine => machine.DepartmentId)
+            .Select(group => group.Key)
+            .Should()
+            .BeEquivalentTo(DatabaseTestData.TestTenant.DepartmentIds);
+        machines.Should().OnlyContain(machine => machine.ErrorCodeCount == DatabaseTestData.ErrorCodesPerMachine);
+    }
+
+    [Fact]
+    public async Task SeedOptionalData_TwiceWithTestTenant_AddsNoMachinesAndNoErrorCodes()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+        var machinesAfterFirstRun = await _fixture.LoadTenantMachineCodesAsync(DatabaseTestData.TestTenantCompanyId);
+
+        await _fixture.RunSeederAsync(DatabaseTestData.TestTenantOptions);
+
+        var machinesAfterSecondRun = await _fixture.LoadTenantMachineCodesAsync(DatabaseTestData.TestTenantCompanyId);
+        machinesAfterSecondRun.Should().BeEquivalentTo(machinesAfterFirstRun);
+    }
 }

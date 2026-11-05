@@ -39,6 +39,10 @@ public static class MachineTestData
 
     public static string TooLongDescription => new('a', DescriptionLimit + 1);
 
+    /// <summary>5000 visible characters in 500 bold runs: about 13,500 HTML characters.</summary>
+    public static string FormattedDescriptionAtVisibleLimit =>
+        "<p>" + string.Concat(Enumerable.Repeat("<strong>aaaaaaaaaa</strong>", DescriptionLimit / 10)) + "</p>";
+
     public static SearchMachinesRequest CreateSearch(
         Guid companyId,
         MachineGridFilter? filter = null,

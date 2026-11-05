@@ -79,6 +79,23 @@ public static class TestTenantFixtureExtensions
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<TenantMachineCodes>> LoadTenantMachineCodesAsync(Guid companyId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+            return await dbContext.Machines
+                .AsNoTracking()
+                .Where(machine => machine.CompanyId == companyId)
+                .Select(machine => new TenantMachineCodes
+                {
+                    MachineId = machine.Id,
+                    DepartmentId = machine.DepartmentId,
+                    ErrorCodeCount = dbContext.MachineErrorCodes.Count(code => code.MachineId == machine.Id),
+                })
+                .ToListAsync();
+        }
+
         public async Task<int> CountOutboxMessagesAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -86,6 +103,13 @@ public static class TestTenantFixtureExtensions
             return await scope.ServiceProvider.GetRequiredService<CoreDbContext>().OutboxMessages.CountAsync();
         }
     }
+}
+
+public sealed record TenantMachineCodes
+{
+    public required Guid MachineId { get; init; }
+    public required Guid DepartmentId { get; init; }
+    public required int ErrorCodeCount { get; init; }
 }
 
 public sealed record SeededEmployee

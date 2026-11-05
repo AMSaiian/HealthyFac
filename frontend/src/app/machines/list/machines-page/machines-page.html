@@ -25,6 +25,7 @@
   [departments]="employee.departmentOptions()"
   [canWrite]="store.canWrite()"
   [canDelete]="store.canDelete()"
+  [canReadErrorCodes]="store.canReadErrorCodes()"
   (filterChange)="store.setFilter($event)"
   (sortChange)="store.setSort($event)"
   (pageChange)="store.setPage($event.offset, $event.limit)"
@@ -32,4 +33,5 @@
   (columnsReorder)="store.reorderColumns($event)"
   (updateRequested)="store.requestUpdate($event)"
   (deleteRequested)="store.requestDelete($event)"
+  (errorCodesRequested)="store.openErrorCodes($event)"
 />

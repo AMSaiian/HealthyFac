@@ -37,6 +37,9 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
         RuleFor(options => options.MachinesPerDepartment)
             .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxPerDepartment);
 
+        RuleFor(options => options.ErrorCodesPerMachine)
+            .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxPerDepartment);
+
         RuleFor(options => options.SupervisorsPerDepartment)
             .InclusiveBetween(0, SeedingValidationConstants.Counts.MaxSupervisorsPerDepartment);
 
