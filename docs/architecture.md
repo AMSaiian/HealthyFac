@@ -82,10 +82,10 @@ This document records the service boundaries and the decisions that connect the 
 
 ## Use Case Rules
 
-- **Run order:** logging, input validation, rule validation, downstream scope, handler. Input validation rejects bad input before any query.
-- **Rule validator:** every use case has one `IRuleValidator<TRequest>`. It checks scope only: the actor works inside their own company and departments (`ActorContextScopeChecks`). A failed check returns `403`. Other stateful rules (uniqueness, existence, state) stay in the handler. A use case without a scope rule declares an empty subclass of `PassThroughRuleValidator<TRequest>`. `AddUseCases` fails at start-up for a request without exactly one rule validator, so a use case cannot skip the check in silence.
+- **Run order:** logging, input validation, pre-handler check, downstream scope, handler. Input validation rejects bad input before any query.
+- **Pre-handler check:** every use case has one `IPreHandlerCheck<TRequest>`. It checks scope only: the actor works inside their own company and departments (`ActorContextScopeChecks`). A failed check returns `403`. Other stateful rules (uniqueness, existence, state) stay in the handler. A use case without a scope rule declares an empty subclass of `PassThroughPreHandlerCheck<TRequest>`. `AddUseCases` fails at start-up for a request without exactly one pre-handler check, so a use case cannot skip the check in silence.
 - **Data scope:** a handler that loads one resource filters the query by the company and the departments of the actor. A resource outside them is "not found" (`404`), so the answer does not show that it exists.
-- **Permissions:** endpoint policies check permissions. The rule validator never does.
+- **Permissions:** endpoint policies check permissions. The pre-handler check never does.
 
 ## Machines
 
@@ -186,8 +186,10 @@ This document records the service boundaries and the decisions that connect the 
 
 ## Text Input
 
-- **Normalize:** the shared JSON options of the API and the messages (`TextInputJson`, Shared.Infrastructure) trim each string on read and apply Unicode NFC. A `[MultilineText]` field also turns `\r\n` and `\r` into `\n`. A `[RawText]` field (e.g., a token) stays unchanged. Query and route strings hold only IDs today; the first search filter adds a binder.
-- **Reject:** `TextInputValidator<TRequest>` runs through the validation decorator for every use case. It rejects the null character in every field and control characters in single-line fields (tabs and line breaks pass in multi-line fields). HTTP returns `400`. A message fails at the first attempt. The error names the field, never the value. No layer removes a character silently.
+- **Normalize:** the shared JSON options of the API and the messages (`TextInputJson`, Shared.Infrastructure) turn `
+` and `` into `
+`, trim each string on read, and apply Unicode NFC. Query and route strings hold only IDs today; the first search filter adds a binder.
+- **Reject:** each validator gives every string member `SingleLineText()` or `MultilineText()` (`TextInputRuleExtensions`, Shared.Application). The rule rejects the null character in every field and control characters in single-line fields (tabs and line breaks pass in multi-line fields). HTTP returns `400`. A message fails at the first attempt. The error key is the JSON name of the field (camelCase), and the error never holds the value. An architecture test checks that no string is left without a rule. No layer removes a character silently.
 - **Field semantics:** `EmailAddresses.Normalize` (Shared.Domain) trims and lower-cases every email in requests, messages, and entities. Keycloak stores emails in lower case too.
 - **Output:** Razor and the web app encode HTML on output. No layer sanitizes HTML on input. The only HTML field is the machine description: a rich text policy rejects what is outside the allow-list (see **Machines**), and the web app shows it through the Angular sanitizer.
 - **Null character in messages:** PostgreSQL `jsonb` rejects `\u0000`, so such a message never reaches the inbox table. The inbox insert fails, and Rebus moves the message to the error queue after its retries.
