@@ -1,5 +1,4 @@
 using HealthyFac.Core.Application.Machines.SearchMachines;
-using HealthyFac.Core.Web.Employees;
 using HealthyFac.Shared.Application.Grids;
 using ApplicationSearchMachinesRequest = HealthyFac.Core.Application.Machines.SearchMachines.SearchMachinesRequest;
 

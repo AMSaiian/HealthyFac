@@ -5,7 +5,7 @@ namespace HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 
 public static class ProxyClientExtensions
 {
-    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(milliseconds: 250);
 
     extension(HttpClient client)
     {

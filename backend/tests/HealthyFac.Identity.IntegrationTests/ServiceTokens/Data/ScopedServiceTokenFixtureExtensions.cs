@@ -20,9 +20,9 @@ public static class ScopedServiceTokenFixtureExtensions
         {
             var form = new Dictionary<string, string>
             {
-                ["grant_type"] = "client_credentials",
-                ["client_id"] = ScopedServiceTokenTestData.ServiceClientId,
-                ["client_secret"] = ScopedServiceTokenTestData.ServiceClientSecret,
+                [key: "grant_type"] = "client_credentials",
+                [key: "client_id"] = ScopedServiceTokenTestData.ServiceClientId,
+                [key: "client_secret"] = ScopedServiceTokenTestData.ServiceClientSecret,
             };
 
             if (scope is not null)

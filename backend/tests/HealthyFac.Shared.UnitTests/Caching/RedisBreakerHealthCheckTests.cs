@@ -1,5 +1,5 @@
-using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.Infrastructure.Caching;
+using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.UnitTests.Caching.Data;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 using HealthyFac.Testing.Caching;
@@ -28,7 +28,7 @@ public sealed class RedisBreakerHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), CancellationToken.None);
 
         result.Status.Should().Be(HealthStatus.Degraded);
-        counter.CallCount.Should().Be(0);
+        counter.CallCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -52,6 +52,6 @@ public sealed class RedisBreakerHealthCheckTests
         var result = await healthCheck.CheckHealthAsync(new HealthCheckContext(), CancellationToken.None);
 
         result.Status.Should().Be(HealthStatus.Healthy);
-        counter.CallCount.Should().Be(0);
+        counter.CallCount.Should().Be(expected: 0);
     }
 }

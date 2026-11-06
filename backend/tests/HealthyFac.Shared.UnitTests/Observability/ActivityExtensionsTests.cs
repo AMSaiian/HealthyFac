@@ -26,7 +26,7 @@ public sealed class ActivityExtensionsTests : IDisposable
     [MemberData(nameof(ActivityOutcomeTestData.Rejections), MemberType = typeof(ActivityOutcomeTestData))]
     public void MarkException_WithExpectedRejection_LeavesStatusUnsetAndRecordsNoException(Exception exception)
     {
-        using var activity = _source.StartActivity("rejection");
+        using var activity = _source.StartActivity(name: "rejection");
 
         activity.MarkException(exception);
 
@@ -39,7 +39,7 @@ public sealed class ActivityExtensionsTests : IDisposable
     [MemberData(nameof(ActivityOutcomeTestData.Failures), MemberType = typeof(ActivityOutcomeTestData))]
     public void MarkException_WithUnexpectedException_SetsErrorStatusAndRecordsException(Exception exception)
     {
-        using var activity = _source.StartActivity("failure");
+        using var activity = _source.StartActivity(name: "failure");
 
         activity.MarkException(exception);
 

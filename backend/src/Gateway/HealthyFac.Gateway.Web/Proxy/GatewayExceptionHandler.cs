@@ -23,7 +23,7 @@ internal sealed class GatewayExceptionHandler(ILogger<GatewayExceptionHandler> l
             return true;
         }
 
-        _logger.LogError(exception, "Unhandled exception in the gateway");
+        _logger.LogError(exception, message: "Unhandled exception in the gateway");
 
         await httpContext.Response.WriteGatewayProblemAsync(
             StatusCodes.Status500InternalServerError,

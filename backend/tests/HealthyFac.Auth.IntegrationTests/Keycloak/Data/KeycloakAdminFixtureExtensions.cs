@@ -7,8 +7,8 @@ public static class KeycloakAdminFixtureExtensions
 {
     private const string OrganizationsPath = "admin/realms/healthyfac/organizations";
     private const string UsersPath = "admin/realms/healthyfac/users";
-    private static readonly TimeSpan MailTimeout = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan MailPollInterval = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan MailTimeout = TimeSpan.FromSeconds(seconds: 30);
+    private static readonly TimeSpan MailPollInterval = TimeSpan.FromMilliseconds(milliseconds: 250);
 
     extension(KeycloakAdminFixture fixture)
     {
@@ -40,7 +40,10 @@ public static class KeycloakAdminFixtureExtensions
         {
             var user = await fixture.Api.GetAsync<JsonObject>($"{UsersPath}/{userId}");
 
-            return user["attributes"]?[attributeName]?.AsArray().Select(value => value!.GetValue<string>()).ToList()
+            return user[propertyName: "attributes"]?[attributeName]
+                    ?.AsArray()
+                    .Select(value => value!.GetValue<string>())
+                    .ToList()
                 ?? [];
         }
 
@@ -48,7 +51,7 @@ public static class KeycloakAdminFixtureExtensions
         {
             var user = await fixture.Api.GetAsync<JsonObject>($"{UsersPath}/{userId}");
 
-            return user["enabled"]!.GetValue<bool>();
+            return user[propertyName: "enabled"]!.GetValue<bool>();
         }
 
         public Task SetPasswordAsync(Guid userId, string password)

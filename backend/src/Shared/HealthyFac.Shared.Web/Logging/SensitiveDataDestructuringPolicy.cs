@@ -23,7 +23,7 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
     public bool TryDestructure(
         object? value,
         ILogEventPropertyValueFactory propertyValueFactory,
-        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)]
+        [System.Diagnostics.CodeAnalysis.NotNullWhen(returnValue: true)]
         out LogEventPropertyValue? result
     )
     {
@@ -132,7 +132,7 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
     {
         if (propertyValue is null)
         {
-            return new ScalarValue(null);
+            return new ScalarValue(value: null);
         }
 
         if (propertyValue is string)
@@ -169,18 +169,16 @@ public sealed class SensitiveDataDestructuringPolicy : IDestructuringPolicy
         return new ScalarValue(SensitiveDataMasker.Mask(propertyValue, attribute));
     }
 
-    private static bool IsSimpleType(Type type)
-    {
-        return type.IsPrimitive
-            || type.IsEnum
-            || type == typeof(string)
-            || type == typeof(decimal)
-            || type == typeof(Guid)
-            || type == typeof(DateTime)
-            || type == typeof(DateTimeOffset)
-            || type == typeof(TimeSpan)
-            || type == typeof(Uri);
-    }
+    private static bool IsSimpleType(Type type) =>
+        type.IsPrimitive
+        || type.IsEnum
+        || type == typeof(string)
+        || type == typeof(decimal)
+        || type == typeof(Guid)
+        || type == typeof(DateTime)
+        || type == typeof(DateTimeOffset)
+        || type == typeof(TimeSpan)
+        || type == typeof(Uri);
 
     private sealed class TypeMaskingPlan
     {

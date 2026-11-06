@@ -7,7 +7,7 @@ public sealed record NamedRequest
 {
     public string SerialNumber { get; init; } = string.Empty;
 
-    [JsonPropertyName("custom_label")]
+    [JsonPropertyName(name: "custom_label")]
     public string Label { get; init; } = "label";
 
     public NamedChild? Child { get; init; }

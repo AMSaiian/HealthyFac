@@ -1,6 +1,5 @@
 using System.Net;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
-using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
@@ -95,7 +94,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
 
         var memberIds = await _fixture.LoadOrganizationMemberIdsAsync(organizationId.Value);
 
-        memberIds.Count(memberId => memberId == userId).Should().Be(1);
+        memberIds.Count(memberId => memberId == userId).Should().Be(expected: 1);
     }
 
     [Fact]
@@ -110,7 +109,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
 
         var roleNames = await _fixture.LoadRealmRoleNamesAsync(userId);
 
-        roleNames.Count(roleName => roleName == KeycloakAdminTestData.WorkerRoleName).Should().Be(1);
+        roleNames.Count(roleName => roleName == KeycloakAdminTestData.WorkerRoleName).Should().Be(expected: 1);
     }
 
     [Fact]

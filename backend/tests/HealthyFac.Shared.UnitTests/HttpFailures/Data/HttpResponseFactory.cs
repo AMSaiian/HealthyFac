@@ -14,6 +14,6 @@ public static class HttpResponseFactory
         new(statusCode)
         {
             RequestMessage = new HttpRequestMessage(HttpMethod.Post, url),
-            Content = content ?? new StringContent(body ?? string.Empty, Encoding.UTF8, "application/json"),
+            Content = content ?? new StringContent(body ?? string.Empty, Encoding.UTF8, mediaType: "application/json"),
         };
 }

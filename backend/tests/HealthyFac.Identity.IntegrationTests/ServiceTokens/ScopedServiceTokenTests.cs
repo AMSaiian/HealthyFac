@@ -30,7 +30,7 @@ public sealed class ScopedServiceTokenTests(ScopedServiceTokenFixture fixture)
     [Fact]
     public async Task ServiceToken_WithoutDownstreamScope_CarriesNoPermission()
     {
-        var claims = await _fixture.RequestServiceTokenClaimsAsync(null);
+        var claims = await _fixture.RequestServiceTokenClaimsAsync(scope: null);
 
         claims.Select(claim => claim.Key).Should().NotContain(RealmTestData.PermissionsClaim);
     }

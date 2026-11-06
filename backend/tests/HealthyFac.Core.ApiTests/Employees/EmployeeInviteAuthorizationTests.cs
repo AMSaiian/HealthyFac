@@ -14,7 +14,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture) : I
     [Fact]
     public async Task CreateInvite_WithoutToken_Returns401()
     {
-        var response = await _fixture.PostCreateInviteAsync(null);
+        var response = await _fixture.PostCreateInviteAsync(claims: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -64,7 +64,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture) : I
     {
         var extraFields = new Dictionary<string, object?>
         {
-            ["companyId"] = _fixture.IdEncryptor.Encrypt(EmployeeInviteApiTestData.OtherCompanyId),
+            [key: "companyId"] = _fixture.IdEncryptor.Encrypt(EmployeeInviteApiTestData.OtherCompanyId),
         };
 
         var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);

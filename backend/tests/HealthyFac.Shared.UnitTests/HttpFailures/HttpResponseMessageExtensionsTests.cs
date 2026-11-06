@@ -33,7 +33,7 @@ public sealed class HttpResponseMessageExtensionsTests
         exception.Which.Message.Should()
             .Contain(HttpMethod.Post.Method)
             .And.Contain(HttpFailureTestData.RequestPath)
-            .And.Contain("409")
+            .And.Contain(expected: "409")
             .And.Contain(nameof(HttpStatusCode.Conflict))
             .And.Contain(HttpFailureTestData.ProblemDetail);
     }
@@ -50,9 +50,9 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.Message.Should()
-            .Contain("504")
+            .Contain(expected: "504")
             .And.NotContain(HttpFailureTestData.HtmlText)
-            .And.NotContain("html");
+            .And.NotContain(unexpected: "html");
     }
 
     [Fact]
@@ -67,8 +67,8 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.Message.Should()
-            .Contain("400")
-            .And.NotContain(new string(HttpFailureTestData.KeptCharacter, 10));
+            .Contain(expected: "400")
+            .And.NotContain(new string(HttpFailureTestData.KeptCharacter, count: 10));
     }
 
     [Fact]
@@ -83,9 +83,9 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.Message.Should()
-            .Contain("400")
+            .Contain(expected: "400")
             .And.Contain(HttpFailureTestData.ProblemDetail)
-            .And.NotContain(new string(HttpFailureTestData.KeptCharacter, 10));
+            .And.NotContain(new string(HttpFailureTestData.KeptCharacter, count: 10));
     }
 
     [Fact]
@@ -100,9 +100,9 @@ public sealed class HttpResponseMessageExtensionsTests
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.Message.Should()
-            .Contain("400")
+            .Contain(expected: "400")
             .And.NotContain(HttpFailureTestData.ProblemDetail)
-            .And.NotContain(new string(HttpFailureTestData.KeptCharacter, 10));
+            .And.NotContain(new string(HttpFailureTestData.KeptCharacter, count: 10));
     }
 
     [Fact]

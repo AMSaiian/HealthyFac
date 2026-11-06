@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.UnitTests.TextInput.Data;
 
 namespace HealthyFac.Shared.UnitTests.TextInput;

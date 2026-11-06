@@ -6,9 +6,9 @@ public static class TokenStorageTestData
     public const string FirstOwner = "owner-a";
     public const string SecondOwner = "owner-b";
 
-    public static readonly TimeSpan TimeToLive = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan TimeToLive = TimeSpan.FromMinutes(minutes: 5);
 
-    public static readonly TimeSpan LockTimeToLive = TimeSpan.FromSeconds(10);
+    public static readonly TimeSpan LockTimeToLive = TimeSpan.FromSeconds(seconds: 10);
 
     public static string NewKey() => $"test:token:{Guid.NewGuid():N}";
 }

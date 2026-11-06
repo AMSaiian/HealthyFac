@@ -18,7 +18,7 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
             InboxProcessorTestData.RecordedMessageType,
             InboxProcessorTestData.AnonymousActorText,
             KnownActors.Anonymous.UserId,
-            null,
+            companyId: null,
             InboxTestData.Now);
         var processor = _fixture.Create<InboxProcessor>();
 
@@ -162,7 +162,7 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
         row.AttemptCount.Should().Be(InboxProcessorTestData.MaxAttemptCount);
         errors.Should()
             .ContainSingle()
-            .Which.Properties["MessageId"]
+            .Which.Properties[key: "MessageId"]
             .Should()
             .Be(InboxProcessorTestData.AtLimitRowId);
     }
@@ -175,14 +175,14 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
                 InboxProcessorTestData.FailedRowId,
                 InboxProcessorTestData.RecordedMessageType,
                 InboxProcessorTestData.FailedRowText,
-                InboxTestData.Now.AddSeconds(-2)));
+                InboxTestData.Now.AddSeconds(value: -2)));
         await _fixture.AddPendingInboxRowAsync(
             InboxProcessorTestData.ValidAfterFailedRowId,
             InboxProcessorTestData.RecordedMessageType,
             InboxProcessorTestData.ValidAfterFailedText,
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
-            InboxTestData.Now.AddSeconds(-1));
+            InboxTestData.Now.AddSeconds(value: -1));
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
@@ -192,7 +192,7 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
 
         failedRow.ProcessedOn.Should().BeNull();
         failedRow.FailedOn.Should().NotBeNull();
-        failedRow.AttemptCount.Should().Be(1);
+        failedRow.AttemptCount.Should().Be(expected: 1);
         validRow.ProcessedOn.Should().Be(InboxTestData.Now);
     }
 
@@ -205,14 +205,14 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
             InboxProcessorTestData.ValidAfterUnregisteredText,
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
-            InboxTestData.Now.AddSeconds(-2));
+            InboxTestData.Now.AddSeconds(value: -2));
         await _fixture.AddPendingInboxRowAsync(
             InboxProcessorTestData.ValidAfterUnregisteredRowId,
             InboxProcessorTestData.RecordedMessageType,
             InboxProcessorTestData.ValidAfterUnregisteredText,
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
-            InboxTestData.Now.AddSeconds(-1));
+            InboxTestData.Now.AddSeconds(value: -1));
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);

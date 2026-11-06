@@ -1,9 +1,9 @@
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
-using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 
@@ -93,9 +93,9 @@ internal sealed class MessageBacklogSampler(
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
-            _metrics.UpdateBacklog(null);
+            _metrics.UpdateBacklog(backlog: null);
             _logger.LogWarning(
-                exception, "The message backlog sample failed. The next sample runs after the interval.");
+                exception, message: "The message backlog sample failed. The next sample runs after the interval.");
         }
     }
 }

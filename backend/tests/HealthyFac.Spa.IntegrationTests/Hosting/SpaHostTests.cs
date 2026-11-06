@@ -13,17 +13,17 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/");
+        var response = await client.GetAsync(requestUri: "/");
         var html = await response.Content.ReadAsStringAsync();
 
-        var htmlNonces = NonceInHtml().Matches(html).Select(match => match.Groups[1].Value).ToList();
+        var htmlNonces = NonceInHtml().Matches(html).Select(match => match.Groups[groupnum: 1].Value).ToList();
         var headerNonce = NonceInHeader()
             .Match(response.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Single())
-            .Groups[1].Value;
+            .Groups[groupnum: 1].Value;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         html.Should().NotContain(SpaFactory.NoncePlaceholder);
-        htmlNonces.Should().HaveCount(2);
+        htmlNonces.Should().HaveCount(expected: 2);
         htmlNonces.Should().OnlyContain(nonce => nonce == headerNonce && nonce.Length > 0);
     }
 
@@ -33,17 +33,17 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var first = await client.GetAsync("/");
-        var second = await client.GetAsync("/");
+        var first = await client.GetAsync(requestUri: "/");
+        var second = await client.GetAsync(requestUri: "/");
 
         var firstHeader = first.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Single();
         var secondHeader = second.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Single();
 
         NonceInHeader()
             .Match(firstHeader)
-            .Groups[1]
+            .Groups[groupnum: 1]
             .Value.Should()
-            .NotBe(NonceInHeader().Match(secondHeader).Groups[1].Value);
+            .NotBe(NonceInHeader().Match(secondHeader).Groups[groupnum: 1].Value);
     }
 
     [Fact]
@@ -52,14 +52,14 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/machines/42");
+        var response = await client.GetAsync(requestUri: "/machines/42");
         var html = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Content.Headers.ContentType?.ToString().Should().Be("text/html; charset=utf-8");
-        html.Should().Contain("hf-root");
-        response.Headers.GetValues(HeaderNames.CacheControl).Should().Contain("no-cache");
-        response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().Contain("nosniff");
+        response.Content.Headers.ContentType?.ToString().Should().Be(expected: "text/html; charset=utf-8");
+        html.Should().Contain(expected: "hf-root");
+        response.Headers.GetValues(HeaderNames.CacheControl).Should().Contain(expected: "no-cache");
+        response.Headers.GetValues(HeaderNames.XContentTypeOptions).Should().Contain(expected: "nosniff");
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/missing-12345678.js");
+        var response = await client.GetAsync(requestUri: "/missing-12345678.js");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -82,31 +82,31 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.CacheControl?.ToString().Should().Be("public, max-age=31536000, immutable");
+        response.Headers.CacheControl?.ToString().Should().Be(expected: "public, max-age=31536000, immutable");
     }
 
     [Fact]
     public async Task GetHashedAsset_WithConfiguredSeconds_ReturnsThatMaxAge()
     {
         await using var spa = new SpaFactory(
-            settings: new Dictionary<string, string> { ["Spa:ImmutableCacheSeconds"] = "60" });
+            settings: new Dictionary<string, string> { [key: "Spa:ImmutableCacheSeconds"] = "60" });
         using var client = spa.CreateClient();
 
         var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}");
 
-        response.Headers.CacheControl?.ToString().Should().Be("public, max-age=60, immutable");
+        response.Headers.CacheControl?.ToString().Should().Be(expected: "public, max-age=60, immutable");
     }
 
     [Fact]
     public async Task GetRoot_WithConfiguredPermissionsPolicy_ReturnsThatHeader()
     {
         await using var spa = new SpaFactory(
-            settings: new Dictionary<string, string> { ["Spa:PermissionsPolicy"] = "camera=(self)" });
+            settings: new Dictionary<string, string> { [key: "Spa:PermissionsPolicy"] = "camera=(self)" });
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/");
+        var response = await client.GetAsync(requestUri: "/");
 
-        response.Headers.GetValues("Permissions-Policy").Should().Equal("camera=(self)");
+        response.Headers.GetValues(name: "Permissions-Policy").Should().Equal("camera=(self)");
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync($"/{SpaFactory.LookalikeFileName}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.CacheControl?.ToString().Should().Be("no-cache");
+        response.Headers.CacheControl?.ToString().Should().Be(expected: "no-cache");
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.CacheControl?.ToString().Should().Be("no-cache");
+        response.Headers.CacheControl?.ToString().Should().Be(expected: "no-cache");
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/index.html");
+        var response = await client.GetAsync(requestUri: "/index.html");
         var html = await response.Content.ReadAsStringAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -151,15 +151,15 @@ public sealed partial class SpaHostTests
     public async Task GetConfigJson_WithConfiguredSeconds_ReturnsPublicMaxAge()
     {
         await using var spa = new SpaFactory(
-            settings: new Dictionary<string, string> { ["Spa:RuntimeConfigCacheSeconds"] = "60" });
+            settings: new Dictionary<string, string> { [key: "Spa:RuntimeConfigCacheSeconds"] = "60" });
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/config.json");
+        var response = await client.GetAsync(requestUri: "/config.json");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.CacheControl?.ToString().Should().Be("public, max-age=60");
-        json.RootElement.GetProperty("apiBaseUrl").GetString().Should().Be(SpaFactory.ApiBaseUrl);
+        response.Headers.CacheControl?.ToString().Should().Be(expected: "public, max-age=60");
+        json.RootElement.GetProperty(propertyName: "apiBaseUrl").GetString().Should().Be(SpaFactory.ApiBaseUrl);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/config.json");
+        var response = await client.GetAsync(requestUri: "/config.json");
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
         json.RootElement.EnumerateObject()
@@ -208,7 +208,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory(isTelemetryEnabled: true);
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync("/");
+        var response = await client.GetAsync(requestUri: "/");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -216,16 +216,16 @@ public sealed partial class SpaHostTests
     [Fact]
     public void Startup_WithMissingIndexFile_Fails()
     {
-        using var spa = new SpaFactory(false);
+        using var spa = new SpaFactory(hasIndexFile: false);
 
         var act = () => spa.CreateClient();
 
         act.Should().Throw<FileNotFoundException>();
     }
 
-    [GeneratedRegex("nonce=\"([^\"]*)\"", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(pattern: "nonce=\"([^\"]*)\"", RegexOptions.IgnoreCase)]
     private static partial Regex NonceInHtml();
 
-    [GeneratedRegex("'nonce-([^']*)'")]
+    [GeneratedRegex(pattern: "'nonce-([^']*)'")]
     private static partial Regex NonceInHeader();
 }

@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
-using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
@@ -35,20 +34,20 @@ public static class InboxProcessorTestData
     public const int OneCall = 1;
     public const int FailedAttemptCount = 1;
 
-    public static readonly Guid UserActorId = Guid.Parse("019a0000-0000-7000-8000-0000000000b1");
-    public static readonly Guid UserCompanyId = Guid.Parse("019a0000-0000-7000-8000-0000000000d1");
-    public static readonly Guid AnonymousRowId = Guid.Parse("019a0000-0000-7000-8000-000000000201");
-    public static readonly Guid UserRowId = Guid.Parse("019a0000-0000-7000-8000-000000000202");
-    public static readonly Guid FailingRowId = Guid.Parse("019a0000-0000-7000-8000-000000000203");
-    public static readonly Guid UnregisteredRowId = Guid.Parse("019a0000-0000-7000-8000-000000000204");
-    public static readonly Guid ValidAfterUnregisteredRowId = Guid.Parse("019a0000-0000-7000-8000-000000000205");
+    public static readonly Guid UserActorId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000b1");
+    public static readonly Guid UserCompanyId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000d1");
+    public static readonly Guid AnonymousRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000201");
+    public static readonly Guid UserRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000202");
+    public static readonly Guid FailingRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000203");
+    public static readonly Guid UnregisteredRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000204");
+    public static readonly Guid ValidAfterUnregisteredRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000205");
 
-    public static readonly Guid AtLimitRowId = Guid.Parse("019a0000-0000-7000-8000-000000000206");
-    public static readonly Guid FailedRowId = Guid.Parse("019a0000-0000-7000-8000-000000000207");
-    public static readonly Guid ValidAfterFailedRowId = Guid.Parse("019a0000-0000-7000-8000-000000000208");
-    public static readonly Guid InvalidPayloadRowId = Guid.Parse("019a0000-0000-7000-8000-000000000209");
-    public static readonly Guid UnreadablePayloadRowId = Guid.Parse("019a0000-0000-7000-8000-00000000020a");
-    public static readonly Guid ControlCharacterRowId = Guid.Parse("019a0000-0000-7000-8000-00000000020b");
+    public static readonly Guid AtLimitRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000206");
+    public static readonly Guid FailedRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000207");
+    public static readonly Guid ValidAfterFailedRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000208");
+    public static readonly Guid InvalidPayloadRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000209");
+    public static readonly Guid UnreadablePayloadRowId = Guid.Parse(input: "019a0000-0000-7000-8000-00000000020a");
+    public static readonly Guid ControlCharacterRowId = Guid.Parse(input: "019a0000-0000-7000-8000-00000000020b");
 
     public static readonly int MaxAttemptCount =
         new MessagingOptions { QueueName = QueueName }.InboxMaxAttemptCount;
@@ -66,12 +65,12 @@ public static class InboxProcessorTestData
             messageType,
             PayloadFor(text),
             receivedOn,
-            null,
+            traceParent: null,
             UserActorId,
             UserCompanyId);
         for (var attempt = 0; attempt < attemptCount; attempt++)
         {
-            row.RecordFailure(receivedOn.AddHours(-1), SeededError, NoAttemptLimit);
+            row.RecordFailure(receivedOn.AddHours(value: -1), SeededError, NoAttemptLimit);
         }
 
         return row;
@@ -84,10 +83,10 @@ public static class InboxProcessorTestData
             messageType,
             PayloadFor(text),
             receivedOn,
-            null,
+            traceParent: null,
             UserActorId,
             UserCompanyId);
-        row.RecordFailure(receivedOn, SeededError, 1);
+        row.RecordFailure(receivedOn, SeededError, maxAttemptCount: 1);
 
         return row;
     }

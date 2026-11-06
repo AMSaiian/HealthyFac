@@ -1,8 +1,7 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.Infrastructure.ServiceTokens.Exchange;
 using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
-using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -29,7 +28,7 @@ public sealed class TokenExchangeHarness : IDisposable
                 new FixedHttpClientFactory(TokenEndpoint),
                 Options.Create(ServiceTokenTestData.Options),
                 Time,
-                new FixedRandom(0)),
+                new FixedRandom(value: 0)),
             store,
             serviceOptions);
 

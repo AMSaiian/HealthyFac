@@ -27,7 +27,7 @@ public sealed class SensitiveDataMaskerTests
             ShowLast = 4,
         };
 
-        SensitiveDataMasker.Mask(123456789, attribute).Should().Be("***MASKED***6789");
+        SensitiveDataMasker.Mask(value: 123456789, attribute).Should().Be(expected: "***MASKED***6789");
     }
 
     [Fact]
@@ -38,6 +38,6 @@ public sealed class SensitiveDataMaskerTests
             IsLengthPreserved = true,
         };
 
-        SensitiveDataMasker.Mask("secret123", attribute).Should().Be("*********");
+        SensitiveDataMasker.Mask(value: "secret123", attribute).Should().Be(expected: "*********");
     }
 }

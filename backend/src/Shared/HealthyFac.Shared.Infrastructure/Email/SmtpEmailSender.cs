@@ -62,11 +62,11 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
     {
         try
         {
-            await client.DisconnectAsync(true, CancellationToken.None);
+            await client.DisconnectAsync(quit: true, CancellationToken.None);
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "The SMTP disconnect failed after the server accepted the message.");
+            _logger.LogWarning(exception, message: "The SMTP disconnect failed after the server accepted the message.");
         }
     }
 
@@ -85,6 +85,6 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
         SmtpSecurity.None => SecureSocketOptions.None,
         SmtpSecurity.StartTls => SecureSocketOptions.StartTls,
         SmtpSecurity.SslOnConnect => SecureSocketOptions.SslOnConnect,
-        _ => throw new ArgumentOutOfRangeException(nameof(security), security, null),
+        _ => throw new ArgumentOutOfRangeException(nameof(security), security, message: null),
     };
 }

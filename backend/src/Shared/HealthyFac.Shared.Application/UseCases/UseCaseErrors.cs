@@ -1,5 +1,3 @@
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
-
 namespace HealthyFac.Shared.Application.UseCases;
 
 /// <summary>

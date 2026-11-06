@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application.Departments;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;

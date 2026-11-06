@@ -9,7 +9,7 @@ public sealed class MessageStateTests
     {
         var message = MessagingTestData.CreateOutboxMessage();
 
-        var firstDelays = MessagingTestData.ScheduleRetries(message, 3);
+        var firstDelays = MessagingTestData.ScheduleRetries(message, count: 3);
 
         var cappedDelays = MessagingTestData.ScheduleRetries(message, MessagingTestData.CappedRetryCount);
 
@@ -23,7 +23,7 @@ public sealed class MessageStateTests
     {
         var message = MessagingTestData.CreateInboxMessage();
 
-        var firstDelays = MessagingTestData.RecordFailures(message, 3);
+        var firstDelays = MessagingTestData.RecordFailures(message, count: 3);
 
         var cappedDelays = MessagingTestData.RecordFailures(message, MessagingTestData.CappedRetryCount);
 
@@ -37,7 +37,7 @@ public sealed class MessageStateTests
     {
         var message = MessagingTestData.CreateOutboxMessage();
 
-        message.ScheduleRetry(MessagingTestData.Now, new string('x', MessagingTestData.ErrorMaxLength + 50));
+        message.ScheduleRetry(MessagingTestData.Now, new string(c: 'x', MessagingTestData.ErrorMaxLength + 50));
 
         message.Error.Should().HaveLength(MessagingTestData.ErrorMaxLength);
     }
@@ -49,7 +49,7 @@ public sealed class MessageStateTests
 
         message.RecordFailure(
             MessagingTestData.Now,
-            new string('x', MessagingTestData.ErrorMaxLength + 50),
+            new string(c: 'x', MessagingTestData.ErrorMaxLength + 50),
             MessagingTestData.HighAttemptLimit);
 
         message.Error.Should().HaveLength(MessagingTestData.ErrorMaxLength);
@@ -64,7 +64,7 @@ public sealed class MessageStateTests
         var act = () => message.ScheduleRetry(MessagingTestData.Now, MessagingTestData.RetryError);
 
         act.Should().Throw<InvalidOperationException>();
-        message.AttemptCount.Should().Be(0);
+        message.AttemptCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class MessageStateTests
             MessagingTestData.HighAttemptLimit);
 
         act.Should().Throw<InvalidOperationException>();
-        message.AttemptCount.Should().Be(0);
+        message.AttemptCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -89,9 +89,9 @@ public sealed class MessageStateTests
 
         message.RecordFailure(MessagingTestData.Now, MessagingTestData.RetryError, MessagingTestData.ThreeAttemptLimit);
 
-        message.AttemptCount.Should().Be(1);
+        message.AttemptCount.Should().Be(expected: 1);
         message.FailedOn.Should().BeNull();
-        message.NextAttemptOn.Should().Be(MessagingTestData.Now.AddSeconds(2));
+        message.NextAttemptOn.Should().Be(MessagingTestData.Now.AddSeconds(value: 2));
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class MessageStateTests
             MessagingTestData.RetryError,
             MessagingTestData.SingleAttemptLimit);
 
-        message.AttemptCount.Should().Be(1);
+        message.AttemptCount.Should().Be(expected: 1);
         message.FailedOn.Should().Be(MessagingTestData.Now);
         message.NextAttemptOn.Should().Be(nextAttemptOn);
     }
@@ -125,7 +125,7 @@ public sealed class MessageStateTests
             MessagingTestData.SingleAttemptLimit);
 
         act.Should().Throw<InvalidOperationException>();
-        message.AttemptCount.Should().Be(1);
+        message.AttemptCount.Should().Be(expected: 1);
     }
 
     [Fact]

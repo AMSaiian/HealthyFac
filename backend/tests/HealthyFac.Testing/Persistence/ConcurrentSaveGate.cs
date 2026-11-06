@@ -54,7 +54,7 @@ public sealed class ConcurrentSaveGate : SaveChangesInterceptor
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         var participant = _participant.Value;

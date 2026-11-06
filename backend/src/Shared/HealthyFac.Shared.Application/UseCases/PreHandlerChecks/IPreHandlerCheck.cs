@@ -11,7 +11,9 @@ public interface IPreHandlerCheck<in TRequest>
     /// Checks the scope of the actor against the request.
     /// </summary>
     /// <param name="request">The request to check.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <returns>A task that completes when the request is inside the scope.</returns>
     /// <exception cref="ErrorHandling.ForbiddenAccessException">
     /// Thrown when the request names a company or a department outside the actor scope.

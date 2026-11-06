@@ -21,8 +21,10 @@ public static class UserProfileFileTestData
     public static JsonNode ReadEmbeddedProfile()
     {
         var realm = JsonNode.Parse(File.ReadAllText(KeycloakFiles.Find(RealmFileDirectory, RealmFileName)))!;
-        var profileText = realm["components"]![UserProfileProviderKey]![0]![ConfigKey]![ProfileConfigKey]![0]!
-            .GetValue<string>();
+        var profileText =
+            realm[propertyName: "components"]![UserProfileProviderKey]![index: 0]![ConfigKey]![ProfileConfigKey]![
+                    index: 0]!
+                .GetValue<string>();
 
         return JsonNode.Parse(profileText)!;
     }

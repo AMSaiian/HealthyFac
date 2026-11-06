@@ -11,7 +11,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
 {
     private readonly GatewayEnvironment _environment = environment;
 
-    private readonly EchoServer _core = new(true);
+    private readonly EchoServer _core = new(useForwardedHeaders: true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -29,7 +29,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         using var response = await client.GetAsync(RevocationTestData.CoreRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         using var response = await client.GetAsync(RevocationTestData.CoreRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        _core.RequestCount.Should().Be(1);
+        _core.RequestCount.Should().Be(expected: 1);
     }
 
     private static Task RevokeAsync(GatewayFactory gateway, Guid userId) =>

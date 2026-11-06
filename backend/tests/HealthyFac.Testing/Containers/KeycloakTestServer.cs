@@ -54,16 +54,16 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         "healthyfac-claims",
     ];
 
-    private static readonly TimeSpan ConfigJobTimeout = TimeSpan.FromSeconds(120);
+    private static readonly TimeSpan ConfigJobTimeout = TimeSpan.FromSeconds(seconds: 120);
 
     private static readonly IReadOnlyDictionary<string, string> ConfigJobOptions = new Dictionary<string, string>
     {
-        ["IMPORT_VARSUBSTITUTION_ENABLED"] = "true",
-        ["IMPORT_VARSUBSTITUTION_PREFIX"] = "${",
-        ["IMPORT_VARSUBSTITUTION_SUFFIX"] = "}",
-        ["IMPORT_VARSUBSTITUTION_UNDEFINEDISERROR"] = "false",
-        ["IMPORT_MANAGED_ORGANIZATION"] = "no-delete",
-        ["IMPORT_USERS_MERGEROLES"] = "true",
+        [key: "IMPORT_VARSUBSTITUTION_ENABLED"] = "true",
+        [key: "IMPORT_VARSUBSTITUTION_PREFIX"] = "${",
+        [key: "IMPORT_VARSUBSTITUTION_SUFFIX"] = "}",
+        [key: "IMPORT_VARSUBSTITUTION_UNDEFINEDISERROR"] = "false",
+        [key: "IMPORT_MANAGED_ORGANIZATION"] = "no-delete",
+        [key: "IMPORT_USERS_MERGEROLES"] = "true",
     };
 
     private readonly HttpClient _client = new();
@@ -94,7 +94,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         if (blankNames.Any())
         {
             throw new ArgumentException(
-                $"The environment variables have blank values: {string.Join(", ", blankNames)}.",
+                $"The environment variables have blank values: {string.Join(separator: ", ", blankNames)}.",
                 nameof(environment));
         }
 
@@ -116,11 +116,11 @@ public sealed class KeycloakTestServer : IAsyncDisposable
             .WithNetwork(_network)
             .WithResourceMapping(KeycloakFiles.Find(RealmDirectory, RealmFileName), $"{ConfigDirectory}/")
             .WithResourceMapping(KeycloakFiles.Find(TestTenantDirectory, TestTenantFileName), $"{ConfigDirectory}/")
-            .WithEnvironment("KEYCLOAK_URL", KeycloakInternalAddress)
-            .WithEnvironment("KEYCLOAK_USER", AdminUsername)
-            .WithEnvironment("KEYCLOAK_PASSWORD", AdminPassword)
+            .WithEnvironment(name: "KEYCLOAK_URL", KeycloakInternalAddress)
+            .WithEnvironment(name: "KEYCLOAK_USER", AdminUsername)
+            .WithEnvironment(name: "KEYCLOAK_PASSWORD", AdminPassword)
             .WithEnvironment(
-                "IMPORT_FILES_LOCATIONS",
+                name: "IMPORT_FILES_LOCATIONS",
                 $"{ConfigDirectory}/{RealmFileName},{ConfigDirectory}/{TestTenantFileName}")
             .WithWaitStrategy(
                 Wait.ForUnixContainer()
@@ -161,16 +161,16 @@ public sealed class KeycloakTestServer : IAsyncDisposable
             new FormUrlEncodedContent(
                 new Dictionary<string, string>
                 {
-                    ["grant_type"] = "password",
-                    ["client_id"] = AdminClientId,
-                    ["username"] = AdminUsername,
-                    ["password"] = AdminPassword,
+                    [key: "grant_type"] = "password",
+                    [key: "client_id"] = AdminClientId,
+                    [key: "username"] = AdminUsername,
+                    [key: "password"] = AdminPassword,
                 }));
         response.EnsureSuccessStatusCode();
 
         var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
-        return body!["access_token"]!.GetValue<string>();
+        return body![propertyName: "access_token"]!.GetValue<string>();
     }
 
     /// <summary>
@@ -184,17 +184,17 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         var adminToken = await GetAdminTokenAsync();
         using var request = new HttpRequestMessage(HttpMethod.Post, ClientsPath)
         {
-            Headers = { Authorization = new AuthenticationHeaderValue("Bearer", adminToken) },
+            Headers = { Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken) },
             Content = JsonContent.Create(
                 new JsonObject
                 {
-                    ["clientId"] = clientId,
-                    ["enabled"] = true,
-                    ["publicClient"] = false,
-                    ["secret"] = PasswordGrantClientSecret,
-                    ["standardFlowEnabled"] = false,
-                    ["directAccessGrantsEnabled"] = true,
-                    ["defaultClientScopes"] = new JsonArray(
+                    [propertyName: "clientId"] = clientId,
+                    [propertyName: "enabled"] = true,
+                    [propertyName: "publicClient"] = false,
+                    [propertyName: "secret"] = PasswordGrantClientSecret,
+                    [propertyName: "standardFlowEnabled"] = false,
+                    [propertyName: "directAccessGrantsEnabled"] = true,
+                    [propertyName: "defaultClientScopes"] = new JsonArray(
                         PasswordGrantClientScopes.Select(scope => (JsonNode)JsonValue.Create(scope)).ToArray()),
                 }),
         };
@@ -225,15 +225,11 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         }
     }
 
-    private static bool IsKeycloakSetting(KeyValuePair<string, string> entry)
-    {
-        return entry.Key.StartsWith(KeycloakVariablePrefix, StringComparison.Ordinal);
-    }
+    private static bool IsKeycloakSetting(KeyValuePair<string, string> entry) =>
+        entry.Key.StartsWith(KeycloakVariablePrefix, StringComparison.Ordinal);
 
-    private static bool IsKeycloakVariable(KeyValuePair<string, string> entry)
-    {
-        return IsKeycloakSetting(entry) || entry.Key is SupervisorIdentityIdVariable or SupervisorEmailVariable;
-    }
+    private static bool IsKeycloakVariable(KeyValuePair<string, string> entry) => IsKeycloakSetting(entry)
+        || entry.Key is SupervisorIdentityIdVariable or SupervisorEmailVariable;
 
     /// <summary>
     /// Testcontainers checks that a container still runs on each wait round and throws
@@ -242,9 +238,6 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     /// </summary>
     private sealed class NeverReady : IWaitUntil
     {
-        public Task<bool> UntilAsync(IContainer container)
-        {
-            return Task.FromResult(false);
-        }
+        public Task<bool> UntilAsync(IContainer container) => Task.FromResult(result: false);
     }
 }

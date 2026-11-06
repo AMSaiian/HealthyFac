@@ -1,13 +1,13 @@
-using HealthyFac.Shared.Infrastructure.Configuration;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Infrastructure.IdEncryption;
+using HealthyFac.Shared.Web.IdEncryption.Converters;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using HealthyFac.Shared.Application.IdEncryption;
-using HealthyFac.Shared.Infrastructure.IdEncryption;
-using HealthyFac.Shared.Web.IdEncryption.Converters;
 
 namespace HealthyFac.Shared.Web.IdEncryption;
 
@@ -67,7 +67,7 @@ public static class IdEncryptionExtensions
             }
 
             var hasIgnore = property.AttributeProvider?
-                    .GetCustomAttributes(typeof(IgnoreIdEncryptionAttribute), false)
+                    .GetCustomAttributes(typeof(IgnoreIdEncryptionAttribute), inherit: false)
                     .Length
                 > 0;
 

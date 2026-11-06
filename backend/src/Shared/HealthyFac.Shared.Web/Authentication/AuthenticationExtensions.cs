@@ -1,7 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
-using HealthyFac.Shared.Web.CurrentUser;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;

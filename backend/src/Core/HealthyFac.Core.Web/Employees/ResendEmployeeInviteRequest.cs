@@ -1,4 +1,3 @@
-using HealthyFac.Core.Web.Machines;
 using ApplicationResendEmployeeInviteRequest =
     HealthyFac.Core.Application.Employees.ResendEmployeeInviteRequest;
 

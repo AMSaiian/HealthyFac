@@ -24,7 +24,7 @@ public sealed class EncryptedGuidConverterTests
         var json = JsonSerializer.Serialize(value, _options);
 
         json.Should().StartWith($"\"{IdEncryptionConstants.CurrentVersionPrefix}");
-        var unquoted = json.Trim('"');
+        var unquoted = json.Trim(trimChar: '"');
         _encryptor.Decrypt(unquoted).Should().Be(value);
     }
 

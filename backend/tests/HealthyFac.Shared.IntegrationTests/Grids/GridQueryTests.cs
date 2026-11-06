@@ -65,7 +65,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
 
         var actualIds = await dbContext.Rows
             .Where(row => row.Group == GridTestData.SortGroup)
-            .ApplySort(null, GridTestSortMap.Instance)
+            .ApplySort(sort: null, GridTestSortMap.Instance)
             .Select(row => row.Id)
             .ToListAsync();
 
@@ -118,7 +118,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
         var actualIds = await dbContext.Rows
             .Where(row => row.Group == GridTestData.DatesGroup)
             .ApplyFilter(new GridTestFilter { At = range })
-            .ApplySort(null, GridTestSortMap.Instance)
+            .ApplySort(sort: null, GridTestSortMap.Instance)
             .Select(row => row.Id)
             .ToListAsync();
 
@@ -128,7 +128,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
     [Fact]
     public async Task DateRangeFilter_OnNullableColumn_ExcludesRowsWithoutValue()
     {
-        var range = new DateRangeFilter { From = AtIndex(0) };
+        var range = new DateRangeFilter { From = AtIndex(index: 0) };
         await using var dbContext = _fixture.CreateDbContext();
 
         var count = await dbContext.Rows
@@ -148,11 +148,11 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
         var response = await dbContext.Rows
             .Where(row => row.Group == GridTestData.TextGroup)
             .ApplyFilter(filter)
-            .ApplySort(null, GridTestSortMap.Instance)
-            .ToGridResponseAsync(0, 1, row => row.Text, default(CancellationToken));
+            .ApplySort(sort: null, GridTestSortMap.Instance)
+            .ToGridResponseAsync(offset: 0, limit: 1, row => row.Text, default(CancellationToken));
 
-        response.TotalCount.Should().Be(2);
-        response.Items.Should().HaveCount(1);
+        response.TotalCount.Should().Be(expected: 2);
+        response.Items.Should().HaveCount(expected: 1);
     }
 
     private static DateTime? AtIndex(int? index) =>

@@ -1,6 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
-using HealthyFac.Shared.Infrastructure.Messaging;
 
 namespace HealthyFac.Shared.UnitTests.Messaging.Data;
 
@@ -19,17 +18,21 @@ public static class MessagingTestData
     public const int SingleAttemptLimit = 1;
     public const int ThreeAttemptLimit = 3;
 
-    public static readonly DateTime Now = new(2026, 10, 21, 12, 0, 0, DateTimeKind.Utc);
-    public static readonly DateTime EarlierProcessedOn = new(2026, 10, 20, 8, 0, 0, DateTimeKind.Utc);
-    public static readonly Guid ActorId = Guid.Parse("019a0000-0000-7000-8000-0000000000a1");
-    public static readonly Guid CompanyId = Guid.Parse("019a0000-0000-7000-8000-0000000000c1");
-    public static readonly Guid InboxMessageId = Guid.Parse("019a0000-0000-7000-8000-000000000010");
+    public static readonly DateTime Now = new(
+        year: 2026, month: 10, day: 21, hour: 12, minute: 0, second: 0, DateTimeKind.Utc);
+
+    public static readonly DateTime EarlierProcessedOn = new(
+        year: 2026, month: 10, day: 20, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
+
+    public static readonly Guid ActorId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000a1");
+    public static readonly Guid CompanyId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000c1");
+    public static readonly Guid InboxMessageId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000010");
 
     public static InboxMessage CreateInboxMessage() =>
-        new(InboxMessageId, PingMessageType, PingPayload, Now, null, ActorId, CompanyId);
+        new(InboxMessageId, PingMessageType, PingPayload, Now, traceParent: null, ActorId, CompanyId);
 
     public static OutboxMessage CreateOutboxMessage() =>
-        new(PingMessageType, PingPayload, Now, null, ActorId, CompanyId);
+        new(PingMessageType, PingPayload, Now, traceParent: null, ActorId, CompanyId);
 
     public static List<TimeSpan> ScheduleRetries(OutboxMessage message, int count)
     {
@@ -56,7 +59,7 @@ public static class MessagingTestData
     }
 
     public static List<TimeSpan> ExpectedFirstDelays =>
-        [TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4), TimeSpan.FromSeconds(8)];
+        [TimeSpan.FromSeconds(seconds: 2), TimeSpan.FromSeconds(seconds: 4), TimeSpan.FromSeconds(seconds: 8)];
 
     public static TheoryData<Type> ContextInterfaces =>
     [

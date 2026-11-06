@@ -24,7 +24,9 @@ public static class Predicates
         /// Joins two predicates with <c>AndAlso</c>.
         /// </summary>
         /// <param name="right">The second predicate, or <see langword="null"/> for a field without a value.</param>
-        /// <returns>The joined predicate, or <see langword="null"/> when both sides are <see langword="null"/>.</returns>
+        /// <returns>
+        /// The joined predicate, or <see langword="null"/> when both sides are <see langword="null"/>.
+        /// </returns>
         public Expression<Func<T, bool>>? And(Expression<Func<T, bool>>? right) =>
             Join(left, right, Expression.AndAlso);
 
@@ -32,7 +34,9 @@ public static class Predicates
         /// Joins two predicates with <c>OrElse</c>.
         /// </summary>
         /// <param name="right">The second predicate, or <see langword="null"/> for a field without a value.</param>
-        /// <returns>The joined predicate, or <see langword="null"/> when both sides are <see langword="null"/>.</returns>
+        /// <returns>
+        /// The joined predicate, or <see langword="null"/> when both sides are <see langword="null"/>.
+        /// </returns>
         public Expression<Func<T, bool>>? Or(Expression<Func<T, bool>>? right) =>
             Join(left, right, Expression.OrElse);
     }
@@ -62,7 +66,7 @@ public static class Predicates
             return left;
         }
 
-        var rightBody = new ParameterReplacer(right.Parameters[0], left.Parameters[0]).Visit(right.Body);
+        var rightBody = new ParameterReplacer(right.Parameters[index: 0], left.Parameters[index: 0]).Visit(right.Body);
 
         return Expression.Lambda<Func<T, bool>>(join(left.Body, rightBody), left.Parameters);
     }

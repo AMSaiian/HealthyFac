@@ -1,4 +1,3 @@
-using HealthyFac.Shared.Domain.Enumerations;
 using HealthyFac.Shared.UnitTests.Enumerations.Data;
 
 namespace HealthyFac.Shared.UnitTests.Enumerations;
@@ -63,7 +62,7 @@ public sealed class EnumerationTests
     [Fact]
     public void Equals_WithSameValue_ReturnsTrueAndMatchingHashCode()
     {
-        var resolved = MachineStateTestEnumeration.FromValue("operational");
+        var resolved = MachineStateTestEnumeration.FromValue(value: "operational");
 
         resolved.Should().Be(MachineStateTestEnumeration.Operational);
         resolved.GetHashCode().Should().Be(MachineStateTestEnumeration.Operational.GetHashCode());

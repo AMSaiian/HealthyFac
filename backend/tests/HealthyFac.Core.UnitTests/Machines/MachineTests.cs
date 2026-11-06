@@ -25,7 +25,7 @@ public sealed class MachineTests
 
         machine.ChangeState(MachineState.InMaintenance, MachineTestData.LaterStartedAt);
 
-        machine.StateHistory.Should().HaveCount(2);
+        machine.StateHistory.Should().HaveCount(expected: 2);
         machine.StateHistory.MaxBy(row => row.StartedAt)
             .Should()
             .BeEquivalentTo(

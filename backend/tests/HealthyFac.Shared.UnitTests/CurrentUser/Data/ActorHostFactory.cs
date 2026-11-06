@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;

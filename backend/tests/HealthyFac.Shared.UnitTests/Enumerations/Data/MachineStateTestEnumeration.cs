@@ -7,9 +7,9 @@ namespace HealthyFac.Shared.UnitTests.Enumerations.Data;
 /// </summary>
 public sealed class MachineStateTestEnumeration : Enumeration<MachineStateTestEnumeration>
 {
-    public static readonly MachineStateTestEnumeration Operational = new("operational");
-    public static readonly MachineStateTestEnumeration InMaintenance = new("inMaintenance");
-    public static readonly MachineStateTestEnumeration OutOfService = new("outOfService");
+    public static readonly MachineStateTestEnumeration Operational = new(value: "operational");
+    public static readonly MachineStateTestEnumeration InMaintenance = new(value: "inMaintenance");
+    public static readonly MachineStateTestEnumeration OutOfService = new(value: "outOfService");
 
     private MachineStateTestEnumeration(string value)
         : base(value)

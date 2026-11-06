@@ -4,9 +4,9 @@ public static class IdEncryptionCollectionConventionTestData
 {
     public static readonly byte[] PrimaryKey = AesKwIdEncryptorTestData.PrimaryKey;
 
-    public static readonly Guid FirstId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    public static readonly Guid SecondId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-    public static readonly Guid ThirdId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    public static readonly Guid FirstId = Guid.Parse(input: "11111111-1111-1111-1111-111111111111");
+    public static readonly Guid SecondId = Guid.Parse(input: "22222222-2222-2222-2222-222222222222");
+    public static readonly Guid ThirdId = Guid.Parse(input: "33333333-3333-3333-3333-333333333333");
 
     public const string DepartmentIdsPropertyName = "departmentIds";
     public const string MachineIdsPropertyName = "machineIds";
@@ -20,7 +20,7 @@ public static class IdEncryptionCollectionConventionTestData
 
     public static TheoryData<CollectionConventionTestModel> Models =>
     [
-        new CollectionConventionTestModel
+        new()
         {
             DepartmentIds = [FirstId, SecondId],
             MachineIds = [ThirdId, FirstId],

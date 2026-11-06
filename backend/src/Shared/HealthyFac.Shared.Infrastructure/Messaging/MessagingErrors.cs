@@ -1,5 +1,3 @@
-using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
-using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging;

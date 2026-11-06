@@ -1,4 +1,3 @@
-using HealthyFac.Core.Web.Employees;
 using HealthyFac.Shared.Application.IdEncryption;
 using Microsoft.AspNetCore.Mvc;
 using ApplicationDeleteMachineRequest = HealthyFac.Core.Application.Machines.DeleteMachineRequest;

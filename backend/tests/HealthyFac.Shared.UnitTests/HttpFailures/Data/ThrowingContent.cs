@@ -8,7 +8,7 @@ namespace HealthyFac.Shared.UnitTests.HttpFailures.Data;
 public sealed class ThrowingContent : HttpContent
 {
     protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
-        throw new InvalidOperationException("The content must not be read.");
+        throw new InvalidOperationException(message: "The content must not be read.");
 
     protected override bool TryComputeLength(out long length)
     {

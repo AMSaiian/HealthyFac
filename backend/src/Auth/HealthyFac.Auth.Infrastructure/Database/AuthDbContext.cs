@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using HealthyFac.Auth.Application;
+using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
-using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Auth.Infrastructure.Database;
 

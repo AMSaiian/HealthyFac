@@ -15,7 +15,7 @@ public sealed class FakeLocalRateLimiter : ReplenishingRateLimiter
 
     public override bool IsAutoReplenishing => false;
 
-    public override TimeSpan ReplenishmentPeriod => TimeSpan.FromMinutes(1);
+    public override TimeSpan ReplenishmentPeriod => TimeSpan.FromMinutes(minutes: 1);
 
     public override RateLimiterStatistics? GetStatistics() => null;
 

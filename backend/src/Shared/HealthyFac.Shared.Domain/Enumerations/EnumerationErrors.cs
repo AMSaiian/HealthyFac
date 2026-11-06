@@ -9,5 +9,5 @@ public static class EnumerationErrors
         new($"'{value}' is not a known {enumerationType.Name} value.");
 
     public static ArgumentException ValueRequired(string parameterName) =>
-        new("An enumeration value cannot be null, empty, or whitespace.", parameterName);
+        new(message: "An enumeration value cannot be null, empty, or whitespace.", parameterName);
 }

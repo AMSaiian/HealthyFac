@@ -38,7 +38,7 @@ public class MachineErrorCodeConfiguration : IEntityTypeConfiguration<MachineErr
         builder.HasNotBlankCheck(errorCode => errorCode.Code)
             .HasLengthCheck(
                 errorCode => errorCode.Description,
-                0,
+                minLength: 0,
                 RichTextConstants.HtmlMaxLength
             )
             .HasNotEmptyGuidCheck(errorCode => errorCode.MachineId);

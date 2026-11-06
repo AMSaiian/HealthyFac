@@ -25,7 +25,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             MachineTestData.CreateSearch(tenant.CompanyId));
 
         response.Items.Select(item => item.Id).Should().Equal(firstId);
-        response.TotalCount.Should().Be(1);
+        response.TotalCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             MachineTestData.CreateSearch(tenant.CompanyId, CreateStateFilter(MachineState.Operational)));
 
         response.Items.Select(item => item.Id).Should().Equal(machineId);
-        response.Items[0].State.Should().Be(MachineState.Operational);
+        response.Items[index: 0].State.Should().Be(MachineState.Operational);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             MachineTestData.CreateSearch(tenant.CompanyId, CreateStateFilter(MachineState.InMaintenance)));
 
         response.Items.Select(item => item.Id).Should().Equal(inMaintenanceIds);
-        response.Items[0].State.Should().Be(MachineState.InMaintenance);
+        response.Items[index: 0].State.Should().Be(MachineState.InMaintenance);
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             MachineTestData.CreateSearch(tenant.CompanyId));
 
         response.Items.Should().BeEmpty();
-        response.TotalCount.Should().Be(0);
+        response.TotalCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             CreatedAt = new DateRangeFilter
             {
                 From = MachineTestData.FirstCreatedAt,
-                To = MachineTestData.FirstCreatedAt.AddDays(4),
+                To = MachineTestData.FirstCreatedAt.AddDays(value: 4),
             },
         };
         var sort = new GridSort<MachineSortColumn>
@@ -117,8 +117,8 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
                 MachineTestData.SecondPageOffset,
                 MachineTestData.PageSize));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[1], ids[0]);
-        response.TotalCount.Should().Be(4);
+        response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 0]);
+        response.TotalCount.Should().Be(expected: 4);
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             MachineTestData.CreateSearch(tenant.CompanyId));
 
         response.Items.Select(item => item.Id).Should().Equal(keptId);
-        response.TotalCount.Should().Be(1);
+        response.TotalCount.Should().Be(expected: 1);
     }
 
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, Guid departmentId, string serialNumber) =>
@@ -192,14 +192,14 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFix
             tenant.FirstDepartmentId,
             MachineTestData.CreateSingleMachineSeed());
         await _fixture.AddStateRowAsync(
-            ids[0],
+            ids[index: 0],
             MachineState.InMaintenance,
             MachineTestData.FirstCreatedAt.AddDays(MachineTestData.EarlierStateDays));
         await _fixture.AddStateRowAsync(
-            ids[0],
+            ids[index: 0],
             MachineState.Operational,
             MachineTestData.FirstCreatedAt.AddDays(MachineTestData.LaterStateDays));
 
-        return ids[0];
+        return ids[index: 0];
     }
 }

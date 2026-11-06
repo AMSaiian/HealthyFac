@@ -9,8 +9,8 @@ namespace HealthyFac.Testing.Tracing;
 /// </summary>
 public sealed class SpanCapture : IDisposable
 {
-    private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan PollDelay = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(seconds: 30);
+    private static readonly TimeSpan PollDelay = TimeSpan.FromMilliseconds(milliseconds: 100);
 
     private readonly ConcurrentQueue<Activity> _spans = new();
     private readonly ActivityListener _listener;

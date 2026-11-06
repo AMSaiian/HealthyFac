@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Employees;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -36,7 +36,7 @@ public sealed class FailProvisioningRequestHandler(
             ?? throw EmployeeProvisioningErrors.EmployeeMissing(request.EmployeeId);
 
         _logger.LogWarning(
-            "Provisioning of employee {EmployeeId} failed with reason {Reason}.",
+            message: "Provisioning of employee {EmployeeId} failed with reason {Reason}.",
             request.EmployeeId,
             request.Reason);
 

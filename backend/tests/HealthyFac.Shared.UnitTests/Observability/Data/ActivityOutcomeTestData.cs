@@ -8,17 +8,17 @@ public static class ActivityOutcomeTestData
 {
     public static TheoryData<Exception> Rejections => new()
     {
-        new AppValidationException([new ValidationFailure("Name", "required")]),
-        new NotFoundException("missing"),
-        new UnauthorizedAccessException("anonymous"),
-        new ForbiddenAccessException("denied"),
-        new ConflictException("duplicate"),
-        new UnprocessableException("rule"),
+        new AppValidationException([new ValidationFailure(propertyName: "Name", errorMessage: "required")]),
+        new NotFoundException(message: "missing"),
+        new UnauthorizedAccessException(message: "anonymous"),
+        new ForbiddenAccessException(message: "denied"),
+        new ConflictException(message: "duplicate"),
+        new UnprocessableException(message: "rule"),
     };
 
     public static TheoryData<Exception> Failures => new()
     {
-        new InvalidOperationException("broken"),
+        new InvalidOperationException(message: "broken"),
         new NullReferenceException(),
         new TimeoutException(),
     };

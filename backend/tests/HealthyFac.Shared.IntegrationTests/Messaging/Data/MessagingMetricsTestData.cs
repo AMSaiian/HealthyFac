@@ -18,13 +18,13 @@ public static class MessagingMetricsTestData
     public const int NoMessages = 0;
     public const double NoAge = 0;
 
-    public static readonly Guid HandledRowId = Guid.Parse("019a0000-0000-7000-8000-000000000501");
-    public static readonly Guid RetriedRowId = Guid.Parse("019a0000-0000-7000-8000-000000000502");
-    public static readonly Guid PermanentRowId = Guid.Parse("019a0000-0000-7000-8000-000000000503");
-    public static readonly Guid AttemptLimitRowId = Guid.Parse("019a0000-0000-7000-8000-000000000504");
-    public static readonly Guid CancelledRowId = Guid.Parse("019a0000-0000-7000-8000-000000000505");
-    public static readonly Guid PendingInboxRowId = Guid.Parse("019a0000-0000-7000-8000-000000000506");
-    public static readonly Guid FailedInboxRowId = Guid.Parse("019a0000-0000-7000-8000-000000000507");
+    public static readonly Guid HandledRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000501");
+    public static readonly Guid RetriedRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000502");
+    public static readonly Guid PermanentRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000503");
+    public static readonly Guid AttemptLimitRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000504");
+    public static readonly Guid CancelledRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000505");
+    public static readonly Guid PendingInboxRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000506");
+    public static readonly Guid FailedInboxRowId = Guid.Parse(input: "019a0000-0000-7000-8000-000000000507");
 
     public static DateTime OutboxOccurredOn => InboxTestData.Now.AddSeconds(-OutboxAgeSeconds);
 

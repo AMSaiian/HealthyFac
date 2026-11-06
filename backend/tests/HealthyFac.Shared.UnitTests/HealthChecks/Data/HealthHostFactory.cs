@@ -44,7 +44,7 @@ public static class HealthHostFactory
                     if (hasFallbackPolicy)
                     {
                         services.AddAuthentication(DenyScheme)
-                            .AddScheme<AuthenticationSchemeOptions, DenyHandler>(DenyScheme, null);
+                            .AddScheme<AuthenticationSchemeOptions, DenyHandler>(DenyScheme, configureOptions: null);
                         services.AddAuthorizationBuilder()
                             .SetAuthenticatedFallbackPolicy();
                     }

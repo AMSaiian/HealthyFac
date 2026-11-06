@@ -26,7 +26,7 @@ public sealed class BrokerConnectionProviderTests(TransportFixture fixture) : IC
             BrokerTestData.CloseReplyCode,
             BrokerTestData.CloseReplyText,
             BrokerTestData.CloseTimeout,
-            false);
+            abort: false);
 
         var secondConnection = await provider.GetConnectionAsync();
 

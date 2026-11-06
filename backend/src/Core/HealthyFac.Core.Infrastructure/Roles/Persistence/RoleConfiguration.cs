@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using HealthyFac.Core.Application.Roles;
 using HealthyFac.Core.Domain.Roles;
-using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HealthyFac.Core.Infrastructure.Roles.Persistence;
 

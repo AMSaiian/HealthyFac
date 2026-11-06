@@ -70,7 +70,7 @@ public sealed class SpaOptionsValidator : AbstractValidator<SpaOptions>
             .WithMessage(httpsMessage)
             .Must(value => !LoopbackHosts.Contains(new Uri(value).Host, StringComparer.OrdinalIgnoreCase))
             .WithMessage(loopbackMessage)
-            .Must(value => !value.EndsWith('/'))
+            .Must(value => !value.EndsWith(value: '/'))
             .WithMessage(trailingSlashMessage);
 
     private static bool IsValidRegex(string pattern)

@@ -22,11 +22,11 @@ public sealed record DateRangeFilter
     /// <typeparam name="T">The entity type.</typeparam>
     /// <returns>The predicate for a <c>Where</c> call, or <see langword="null"/> when both bounds are open.</returns>
     public Expression<Func<T, bool>>? ToPredicate<T>(Expression<Func<T, DateTime>> selector) =>
-        BuildPredicate<T>(Expression.Convert(selector.Body, typeof(DateTime?)), selector.Parameters[0]);
+        BuildPredicate<T>(Expression.Convert(selector.Body, typeof(DateTime?)), selector.Parameters[index: 0]);
 
     /// <inheritdoc cref="ToPredicate{T}(Expression{Func{T, DateTime}})"/>
     public Expression<Func<T, bool>>? ToPredicate<T>(Expression<Func<T, DateTime?>> selector) =>
-        BuildPredicate<T>(selector.Body, selector.Parameters[0]);
+        BuildPredicate<T>(selector.Body, selector.Parameters[index: 0]);
 
     private Expression<Func<T, bool>>? BuildPredicate<T>(Expression column, ParameterExpression parameter) =>
         Predicates

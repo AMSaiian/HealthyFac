@@ -18,7 +18,7 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
 
     private const string DownClientAddress = "203.0.113.200";
 
-    private readonly EchoServer _core = new(true);
+    private readonly EchoServer _core = new(useForwardedHeaders: true);
     private readonly RedisTestServer _stoppedRedis = new();
 
     public async Task InitializeAsync()
@@ -73,7 +73,7 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
         using var response = await client.GetAsync(RevocationTestData.CoreRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        readsWhileOpen.Should().Be(1);
-        store.ReadCount.Should().Be(3);
+        readsWhileOpen.Should().Be(expected: 1);
+        store.ReadCount.Should().Be(expected: 3);
     }
 }

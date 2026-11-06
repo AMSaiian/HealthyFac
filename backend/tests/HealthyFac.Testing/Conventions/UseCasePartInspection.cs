@@ -1,7 +1,7 @@
 using System.Reflection;
 using FluentValidation;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
 namespace HealthyFac.Testing.Conventions;
 

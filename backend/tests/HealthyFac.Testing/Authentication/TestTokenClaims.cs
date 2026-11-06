@@ -6,9 +6,9 @@ namespace HealthyFac.Testing.Authentication;
 /// </summary>
 public sealed record TestTokenClaims
 {
-    public static readonly Guid DefaultCompanyId = Guid.Parse("0190f3a0-0000-7000-8000-000000000001");
-    public static readonly Guid DefaultSubject = Guid.Parse("0190f3a0-0000-7000-8000-000000000002");
-    public static readonly Guid DefaultEmployeeId = Guid.Parse("0190f3a0-0000-7000-8000-000000000003");
+    public static readonly Guid DefaultCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
+    public static readonly Guid DefaultSubject = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
+    public static readonly Guid DefaultEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
 
     /// <summary>The <c>sub</c> claim. Set it to <see langword="null"/> to leave the claim out.</summary>
     public Guid? Subject { get; init; } = DefaultSubject;

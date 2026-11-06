@@ -1,19 +1,19 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
-using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using HealthyFac.Testing.Containers;
-using HealthyFac.Testing.Persistence;
 
 namespace HealthyFac.Core.IntegrationTests.Database.Data;
 
@@ -41,7 +41,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile(DatabaseTestData.SettingsFileName, false)
+            .AddJsonFile(DatabaseTestData.SettingsFileName, optional: false)
             .AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
@@ -60,7 +60,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         services.AddSingleton<IEmailSender>(EmailSender);
         services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
 
-        _services = services.BuildServiceProvider(true);
+        _services = services.BuildServiceProvider(validateScopes: true);
 
         using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<CoreDbContext>().Database.MigrateAsync();

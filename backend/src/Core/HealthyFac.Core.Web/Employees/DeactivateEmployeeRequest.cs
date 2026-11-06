@@ -1,4 +1,3 @@
-using HealthyFac.Core.Web.Machines;
 using ApplicationDeactivateEmployeeRequest =
     HealthyFac.Core.Application.Employees.DeactivateEmployee.DeactivateEmployeeRequest;
 

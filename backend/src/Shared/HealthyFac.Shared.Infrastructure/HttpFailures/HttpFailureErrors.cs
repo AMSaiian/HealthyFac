@@ -24,7 +24,7 @@ public static class HttpFailureErrors
         return new HttpRequestException(
             reason is null
                 ? message
-                : $"{message} Reason: {reason}", null, statusCode);
+                : $"{message} Reason: {reason}", inner: null, statusCode);
     }
 
     private static string WithoutQuery(Uri uri) =>

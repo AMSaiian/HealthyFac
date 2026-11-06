@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -100,7 +99,7 @@ public sealed class TokenStore(
     )
     {
         var lockKey = TokenCacheKeys.ForLock(_serviceName, key);
-        var owner = Guid.NewGuid().ToString("N");
+        var owner = Guid.NewGuid().ToString(format: "N");
         var outcome = await TryAcquireLockAsync(lockKey, owner, cancellationToken);
 
         if (outcome == LockOutcome.Acquired)
@@ -159,6 +158,7 @@ public sealed class TokenStore(
         catch (TokenStorageException exception)
         {
             _logger.LogWarning(
+                message:
                 "Token lock {LockKey} could not be taken. The call fetches the token itself. Failure: {FailureMessage}",
                 lockKey,
                 exception.Message);
@@ -225,7 +225,7 @@ public sealed class TokenStore(
         catch (TokenStorageException exception)
         {
             _logger.LogWarning(
-                "Token entry {Key} could not be stored. The call keeps the token. Failure: {FailureMessage}",
+                message: "Token entry {Key} could not be stored. The call keeps the token. Failure: {FailureMessage}",
                 key,
                 exception.Message);
         }
@@ -240,6 +240,7 @@ public sealed class TokenStore(
         catch (TokenStorageException exception)
         {
             _logger.LogWarning(
+                message:
                 "Token lock {LockKey} could not be released. It ends with its time to live. Failure: {FailureMessage}",
                 lockKey,
                 exception.Message);
@@ -271,7 +272,7 @@ public sealed class TokenStore(
         var stored = StoredToken.FromJson(json);
         if (stored is null)
         {
-            _logger.LogWarning("Token entry {Key} is not a valid entry. The call treats it as missing.", key);
+            _logger.LogWarning(message: "Token entry {Key} is not a valid entry. The call treats it as missing.", key);
 
             return null;
         }
@@ -281,7 +282,7 @@ public sealed class TokenStore(
 
     private void LogReadFailure(string key, TokenStorageException exception) =>
         _logger.LogWarning(
-            "Token entry {Key} could not be read. The call treats it as missing. Failure: {FailureMessage}",
+            message: "Token entry {Key} could not be read. The call treats it as missing. Failure: {FailureMessage}",
             key,
             exception.Message);
 }

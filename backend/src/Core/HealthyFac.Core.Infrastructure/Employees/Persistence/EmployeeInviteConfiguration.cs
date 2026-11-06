@@ -1,13 +1,13 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
-using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HealthyFac.Core.Infrastructure.Employees.Persistence;
 
@@ -56,7 +56,7 @@ public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvi
         builder.HasMany(invite => invite.Departments)
             .WithMany()
             .UsingEntity(
-                "employee_invite_departments",
+                joinEntityName: "employee_invite_departments",
                 department => department.HasOne(typeof(Department))
                     .WithMany()
                     .HasForeignKey(nameof(Department) + nameof(Department.Id), nameof(Department.CompanyId))

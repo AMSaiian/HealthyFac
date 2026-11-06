@@ -31,7 +31,7 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
         using var response = await client.GetAsync(RouteHostTestData.CoreUrl);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        _core.RequestCount.Should().Be(1);
+        _core.RequestCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
         using var response = await client.GetAsync(RouteHostTestData.KeycloakUrl);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        _keycloak.RequestCount.Should().Be(1);
+        _keycloak.RequestCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _keycloak.RequestCount.Should().Be(0);
+        _keycloak.RequestCount.Should().Be(expected: 0);
     }
 
     private GatewayFactory CreateGateway() =>

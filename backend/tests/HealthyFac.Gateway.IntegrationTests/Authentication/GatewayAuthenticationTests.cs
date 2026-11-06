@@ -10,7 +10,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
 {
     private readonly GatewayEnvironment _environment = environment;
 
-    private readonly EchoServer _core = new(true);
+    private readonly EchoServer _core = new(useForwardedHeaders: true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -25,7 +25,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -61,10 +61,10 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateClient();
 
-        using var response = await client.PostAsync(AuthenticationTestData.VerifyInviteRoute, null);
+        using var response = await client.PostAsync(AuthenticationTestData.VerifyInviteRoute, content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        _core.RequestCount.Should().Be(1);
+        _core.RequestCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -77,6 +77,6 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        _core.RequestCount.Should().Be(0);
+        _core.RequestCount.Should().Be(expected: 0);
     }
 }

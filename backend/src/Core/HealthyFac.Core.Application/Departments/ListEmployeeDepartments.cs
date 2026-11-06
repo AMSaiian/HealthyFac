@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Departments;

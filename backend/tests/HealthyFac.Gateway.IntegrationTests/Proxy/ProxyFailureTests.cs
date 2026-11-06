@@ -3,9 +3,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
-using HealthyFac.Testing.Authentication;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 using HealthyFac.Gateway.Web.Proxy;
+using HealthyFac.Testing.Authentication;
 using HealthyFac.Testing.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -88,7 +88,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         using var client = gateway.CreateClient();
         var secretToken = gateway.Tokens.CreateToken(new TestTokenClaims());
         using var request = new HttpRequestMessage(HttpMethod.Get, ProxyFailureTestData.MachinesRoute);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secretToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", secretToken);
 
         using var response = await client.SendAsync(request);
 

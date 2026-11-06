@@ -3,7 +3,7 @@ namespace HealthyFac.Shared.UnitTests.IdEncryption.Data;
 public static class ConverterTestData
 {
     public static readonly byte[] PrimaryKey = AesKwIdEncryptorTestData.PrimaryKey;
-    public static readonly Guid SampleGuid = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    public static readonly Guid SampleGuid = Guid.Parse(input: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     public static TheoryData<Guid> ValidGuids =>
     [

@@ -1,4 +1,3 @@
-using LinqToDB;
 using LinqToDB.DataProvider.PostgreSQL;
 using LinqToDB.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +52,7 @@ internal static class InboxClaimExtensions
                     && message.NextAttemptOn <= now)
                 .OrderBy(message => message.ReceivedOn)
                 .Select(message => message.Id)
-                .Take(1)
+                .Take(count: 1)
                 .ToLinqToDB()
                 .AsPostgreSQL()
                 .SubQueryTableHint(PostgreSQLHints.ForUpdate, PostgreSQLHints.SkipLocked);

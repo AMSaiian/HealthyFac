@@ -10,10 +10,10 @@ public sealed record CreateKeycloakUserRequest
     [SensitiveData]
     public required string Email { get; init; }
 
-    [JsonPropertyName("emailVerified")]
+    [JsonPropertyName(name: "emailVerified")]
     public required bool IsEmailVerified { get; init; }
 
-    [JsonPropertyName("enabled")]
+    [JsonPropertyName(name: "enabled")]
     public required bool IsEnabled { get; init; }
 
     [SensitiveData]

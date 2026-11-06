@@ -1,7 +1,7 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Shared.Application.Messaging;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Auth.Application.Identities.ProvisionIdentity;
@@ -139,7 +139,7 @@ public sealed class ProvisionIdentityRequestHandler(
     private async Task PublishFailedAsync(EmployeeAccepted request, string reason, CancellationToken cancellationToken)
     {
         _logger.LogWarning(
-            "Provisioning of employee {EmployeeId} failed with reason {Reason}.",
+            message: "Provisioning of employee {EmployeeId} failed with reason {Reason}.",
             request.EmployeeId,
             reason);
 

@@ -12,7 +12,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
 {
     private readonly GatewayEnvironment _environment = environment;
 
-    private readonly EchoServer _core = new(true);
+    private readonly EchoServer _core = new(useForwardedHeaders: true);
 
     public Task InitializeAsync() => _core.StartAsync();
 
@@ -27,12 +27,12 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
 
         using var response = await client.PostVerifyInviteAsync();
 
-        var hasRetryAfter = response.Headers.TryGetValues("Retry-After", out var retryAfterValues);
+        var hasRetryAfter = response.Headers.TryGetValues(name: "Retry-After", out var retryAfterValues);
 
         response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
         hasRetryAfter.Should().BeTrue();
         int.TryParse(retryAfterValues!.Single(), out var retryAfterSeconds).Should().BeTrue();
-        retryAfterSeconds.Should().BeInRange(1, 60);
+        retryAfterSeconds.Should().BeInRange(minimumValue: 1, maximumValue: 60);
         _core.RequestCount.Should().Be(RateLimitTestData.StrictPermitLimit);
     }
 
@@ -81,11 +81,11 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
     {
         await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);
         using var client = gateway.CreateClient();
-        using var firstResponse = await client.PostVerifyInviteAsync("198.51.100.1");
-        using var secondResponse = await client.PostVerifyInviteAsync("198.51.100.2");
-        using var thirdResponse = await client.PostVerifyInviteAsync("198.51.100.3");
+        using var firstResponse = await client.PostVerifyInviteAsync(forwardedFor: "198.51.100.1");
+        using var secondResponse = await client.PostVerifyInviteAsync(forwardedFor: "198.51.100.2");
+        using var thirdResponse = await client.PostVerifyInviteAsync(forwardedFor: "198.51.100.3");
 
-        using var response = await client.PostVerifyInviteAsync("198.51.100.4");
+        using var response = await client.PostVerifyInviteAsync(forwardedFor: "198.51.100.4");
 
         response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
         _core.RequestCount.Should().Be(RateLimitTestData.StrictPermitLimit);

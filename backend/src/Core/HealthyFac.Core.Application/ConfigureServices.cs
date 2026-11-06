@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Shared.Application.UseCases;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.Application;
 

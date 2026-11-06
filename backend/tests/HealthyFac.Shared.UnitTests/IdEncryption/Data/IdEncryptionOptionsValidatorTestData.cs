@@ -30,15 +30,15 @@ public static class IdEncryptionOptionsValidatorTestData
     public static TheoryData<IdEncryptionOptions, string> InvalidKeySetsWithExpectedError => new()
     {
         {
-            CreateOptions(CreateKey(DefaultPrefix, false), CreateKey(SecondPrefix, false)),
+            CreateOptions(CreateKey(DefaultPrefix, isDefault: false), CreateKey(SecondPrefix, isDefault: false)),
             IdEncryptionValidationMessages.Keys.ExactlyOneDefaultRequired
         },
         {
-            CreateOptions(CreateKey(DefaultPrefix, true), CreateKey(SecondPrefix, true)),
+            CreateOptions(CreateKey(DefaultPrefix, isDefault: true), CreateKey(SecondPrefix, isDefault: true)),
             IdEncryptionValidationMessages.Keys.ExactlyOneDefaultRequired
         },
         {
-            CreateOptions(CreateKey(DefaultPrefix, true), CreateKey(DefaultPrefix, false)),
+            CreateOptions(CreateKey(DefaultPrefix, isDefault: true), CreateKey(DefaultPrefix, isDefault: false)),
             IdEncryptionValidationMessages.Prefix.DuplicatesNotAllowed
         },
     };

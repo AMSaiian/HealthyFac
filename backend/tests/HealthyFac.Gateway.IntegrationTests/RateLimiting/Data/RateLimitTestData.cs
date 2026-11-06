@@ -12,13 +12,13 @@ public static class RateLimitTestData
 
     public static IReadOnlyDictionary<string, string> DefaultLimitOfTwo { get; } = new Dictionary<string, string>
     {
-        ["RateLimiting:Default:PermitLimit"] = DefaultPermitLimit.ToString(),
-        ["RateLimiting:Default:WindowSeconds"] = "60",
+        [key: "RateLimiting:Default:PermitLimit"] = DefaultPermitLimit.ToString(),
+        [key: "RateLimiting:Default:WindowSeconds"] = "60",
     };
 
     public static IReadOnlyDictionary<string, string> StrictLimitOfThree { get; } = new Dictionary<string, string>
     {
-        ["RateLimiting:Strict:PermitLimit"] = StrictPermitLimit.ToString(),
-        ["RateLimiting:Strict:WindowSeconds"] = "60",
+        [key: "RateLimiting:Strict:PermitLimit"] = StrictPermitLimit.ToString(),
+        [key: "RateLimiting:Strict:WindowSeconds"] = "60",
     };
 }

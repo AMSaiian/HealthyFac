@@ -1,8 +1,8 @@
 using System.Collections.Frozen;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
-using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using UnauthorizedAccessException = HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;
@@ -91,7 +91,7 @@ public sealed class ActorClaimsReaderTests
     public void Read_WithNonGuidSubject_Throws()
     {
         var principal = ActorClaimsTestData.CreatePrincipal(
-            "not-a-guid",
+            subject: "not-a-guid",
             [ActorTestData.CompanyId.ToString()],
             ActorTestData.EmployeeId.ToString());
 
@@ -111,7 +111,7 @@ public sealed class ActorClaimsReaderTests
         var principal = ActorClaimsTestData.CreatePrincipal(
             ActorTestData.UserId.ToString(),
             [ActorTestData.CompanyId.ToString()],
-            null);
+            employeeId: null);
 
         var act = () => ActorClaimsReader.Read(
             principal,
@@ -191,7 +191,7 @@ public sealed class ActorClaimsReaderTests
     [Fact]
     public void Read_WithServiceTokenAndInvalidCompanyHeader_Throws()
     {
-        var headers = ActorClaimsTestData.ActorHeaders(ActorTestData.UserId.ToString(), "not-a-guid");
+        var headers = ActorClaimsTestData.ActorHeaders(ActorTestData.UserId.ToString(), companyId: "not-a-guid");
 
         var act = () => ActorClaimsReader.Read(
             IncomingTokenTestData.ServicePrincipal,

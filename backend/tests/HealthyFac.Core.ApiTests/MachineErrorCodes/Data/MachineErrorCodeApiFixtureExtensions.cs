@@ -16,7 +16,7 @@ public static class MachineErrorCodeApiFixtureExtensions
             + $"/{MachineErrorCodeApiTestData.ErrorCodesSegment}";
 
         public string CreateErrorCodeBody(string code) =>
-            new JsonObject { ["code"] = code }.ToJsonString();
+            new JsonObject { [propertyName: "code"] = code }.ToJsonString();
 
         public async Task<EncryptedErrorCode> ArrangeErrorCodeAsync(string serialNumberSuffix, string code)
         {
@@ -24,7 +24,8 @@ public static class MachineErrorCodeApiFixtureExtensions
                 MachineErrorCodeApiTestData.SerialNumberPrefix + serialNumberSuffix);
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var errorCode = new MachineErrorCode(fixture.IdEncryptor.Decrypt(encryptedMachineId), code, null);
+            var errorCode = new MachineErrorCode(
+                fixture.IdEncryptor.Decrypt(encryptedMachineId), code, description: null);
 
             dbContext.MachineErrorCodes.Add(errorCode);
             await dbContext.SaveChangesAsync();

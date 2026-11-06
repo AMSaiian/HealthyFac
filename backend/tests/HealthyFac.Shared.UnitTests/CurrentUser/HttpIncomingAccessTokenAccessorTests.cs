@@ -53,7 +53,7 @@ public sealed class HttpIncomingAccessTokenAccessorTests
     [Fact]
     public void TryGetUserAccessToken_OutsideHttpRequest_ReturnsNull()
     {
-        var accessor = CreateAccessor(null);
+        var accessor = CreateAccessor(context: null);
 
         var token = accessor.TryGetUserAccessToken();
 

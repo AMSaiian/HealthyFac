@@ -14,7 +14,7 @@ public static class EmailTestData
     public const string SpanRecipient = "span-check@example.test";
     public const string ParentName = "test-parent";
 
-    public static readonly TimeSpan TimeoutTolerance = TimeSpan.FromSeconds(15);
+    public static readonly TimeSpan TimeoutTolerance = TimeSpan.FromSeconds(seconds: 15);
 
     public static EmailMessage Message => MessageFor(Recipient);
 

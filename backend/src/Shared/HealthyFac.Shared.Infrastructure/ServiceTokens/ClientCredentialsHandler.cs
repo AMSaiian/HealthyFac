@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using Microsoft.Extensions.Options;
 

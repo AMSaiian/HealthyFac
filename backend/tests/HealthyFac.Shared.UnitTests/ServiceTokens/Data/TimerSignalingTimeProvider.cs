@@ -9,7 +9,7 @@ namespace HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 /// </summary>
 public sealed class TimerSignalingTimeProvider : FakeTimeProvider
 {
-    private readonly SemaphoreSlim _created = new(0);
+    private readonly SemaphoreSlim _created = new(initialCount: 0);
 
     public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
     {

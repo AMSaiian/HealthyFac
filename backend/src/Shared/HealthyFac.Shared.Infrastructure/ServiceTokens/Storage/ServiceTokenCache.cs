@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
 

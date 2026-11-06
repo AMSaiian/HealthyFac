@@ -1,4 +1,3 @@
-using LinqToDB;
 using LinqToDB.DataProvider.PostgreSQL;
 using LinqToDB.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +50,7 @@ internal static class OutboxClaimExtensions
                 .Where(message => message.ProcessedOn == null && message.NextAttemptOn <= now)
                 .OrderBy(message => message.OccurredOn)
                 .Select(message => message.Id)
-                .Take(1)
+                .Take(count: 1)
                 .ToLinqToDB()
                 .AsPostgreSQL()
                 .SubQueryTableHint(PostgreSQLHints.ForUpdate, PostgreSQLHints.SkipLocked);

@@ -12,7 +12,7 @@ public static class CorePermissionsTestData
         {
             Name = feature.Name,
             Constants = ReadConstants(feature),
-            All = (FrozenSet<string>)feature.GetField(nameof(CorePermissions.All))!.GetValue(null)!,
+            All = (FrozenSet<string>)feature.GetField(nameof(CorePermissions.All))!.GetValue(obj: null)!,
         })
         .ToList();
 

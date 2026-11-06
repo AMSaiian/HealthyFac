@@ -1,10 +1,9 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
-using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.Infrastructure.Keycloak;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Caching;
-using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Testing.Containers;
 using Microsoft.Extensions.Configuration;
@@ -61,7 +60,7 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
                 },
             });
 
-        var baseAddress = Keycloak.BaseAddress.TrimEnd('/');
+        var baseAddress = Keycloak.BaseAddress.TrimEnd(trimChar: '/');
         Settings = new Dictionary<string, string?>
         {
             [$"{KeycloakAdminOptions.SectionName}:BaseAddress"] = baseAddress,
@@ -85,7 +84,7 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
         services.AddSharedRedis(configuration);
         services.AddKeycloakIdentityAdmin(configuration);
 
-        _services = services.BuildServiceProvider(true);
+        _services = services.BuildServiceProvider(validateScopes: true);
     }
 
     /// <summary>
@@ -109,7 +108,7 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
         services.AddServiceOptions(configuration);
         services.AddSharedRedis(configuration);
         services.AddKeycloakIdentityAdmin(configuration);
-        var provider = services.BuildServiceProvider(true);
+        var provider = services.BuildServiceProvider(validateScopes: true);
         _extraServices.Add(provider);
 
         return provider.GetRequiredService<IIdentityAdmin>();

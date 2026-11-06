@@ -1,18 +1,17 @@
 using System.Collections.Frozen;
 using System.Linq.Expressions;
 using HealthyFac.Shared.Application.Filters;
-using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Domain.Enumerations;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids.Data;
 
 public sealed class GridSortColumn : Enumeration<GridSortColumn>
 {
-    public static readonly GridSortColumn Text = new("text");
-    public static readonly GridSortColumn Number = new("number");
-    public static readonly GridSortColumn Amount = new("amount");
-    public static readonly GridSortColumn At = new("at");
-    public static readonly GridSortColumn Key = new("key");
+    public static readonly GridSortColumn Text = new(value: "text");
+    public static readonly GridSortColumn Number = new(value: "number");
+    public static readonly GridSortColumn Amount = new(value: "amount");
+    public static readonly GridSortColumn At = new(value: "at");
+    public static readonly GridSortColumn Key = new(value: "key");
 
     private GridSortColumn(string value)
         : base(value)

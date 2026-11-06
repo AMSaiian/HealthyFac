@@ -1,8 +1,8 @@
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Application.MachineErrorCodes;
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.MachineErrorCodes.Data;
+using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.MachineErrorCodes;

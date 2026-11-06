@@ -18,8 +18,8 @@ public sealed class MailpitTestServer : IAsyncDisposable
     private const string MessagePathFormat = "/api/v1/message/{0}";
 
     private readonly IContainer _container = new ContainerBuilder(TestImages.Mailpit)
-        .WithPortBinding(SmtpContainerPort, true)
-        .WithPortBinding(ApiContainerPort, true)
+        .WithPortBinding(SmtpContainerPort, assignRandomHostPort: true)
+        .WithPortBinding(ApiContainerPort, assignRandomHostPort: true)
         .WithWaitStrategy(
             Wait.ForUnixContainer()
                 .UntilHttpRequestIsSucceeded(request => request
@@ -84,34 +84,34 @@ public sealed class MailpitTestServer : IAsyncDisposable
 
     private sealed record MailpitMessageList
     {
-        [JsonPropertyName("messages")]
+        [JsonPropertyName(name: "messages")]
         public required IReadOnlyList<MailpitMessageSummary> Messages { get; init; }
     }
 
     private sealed record MailpitMessageSummary
     {
-        [JsonPropertyName("ID")]
+        [JsonPropertyName(name: "ID")]
         public required string Id { get; init; }
 
-        [JsonPropertyName("To")]
+        [JsonPropertyName(name: "To")]
         public required IReadOnlyList<MailpitAddress> To { get; init; }
 
-        [JsonPropertyName("Subject")]
+        [JsonPropertyName(name: "Subject")]
         public required string Subject { get; init; }
     }
 
     private sealed record MailpitAddress
     {
-        [JsonPropertyName("Address")]
+        [JsonPropertyName(name: "Address")]
         public required string Address { get; init; }
     }
 
     private sealed record MailpitMessageDetail
     {
-        [JsonPropertyName("Text")]
+        [JsonPropertyName(name: "Text")]
         public required string Text { get; init; }
 
-        [JsonPropertyName("HTML")]
+        [JsonPropertyName(name: "HTML")]
         public required string Html { get; init; }
     }
 }

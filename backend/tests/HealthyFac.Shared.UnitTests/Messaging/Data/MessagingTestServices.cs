@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Time.Testing;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Shared.UnitTests.Messaging.Data;
 
@@ -22,6 +22,6 @@ public static class MessagingTestServices
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(MessagingTestData.ConnectionString));
 
-        return services.BuildServiceProvider(true);
+        return services.BuildServiceProvider(validateScopes: true);
     }
 }

@@ -8,9 +8,9 @@ namespace HealthyFac.Shared.Application.CurrentUser;
 /// </summary>
 public sealed class ActorKind : Enumeration<ActorKind>
 {
-    public static readonly ActorKind User = new("user");
-    public static readonly ActorKind Service = new("service");
-    public static readonly ActorKind Anonymous = new("anonymous");
+    public static readonly ActorKind User = new(value: "user");
+    public static readonly ActorKind Service = new(value: "service");
+    public static readonly ActorKind Anonymous = new(value: "anonymous");
 
     private ActorKind(string value)
         : base(value)

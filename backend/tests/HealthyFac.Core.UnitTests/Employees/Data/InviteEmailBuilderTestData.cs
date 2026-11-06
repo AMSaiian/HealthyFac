@@ -12,7 +12,8 @@ public static class InviteEmailBuilderTestData
     public const string ParentName = "test-parent";
     public const string ExpiryInUtc = "2026-11-03 14:30 UTC";
 
-    public static readonly DateTime ExpiresAt = new(2026, 11, 3, 14, 30, 0, DateTimeKind.Utc);
+    public static readonly DateTime ExpiresAt = new(
+        year: 2026, month: 11, day: 3, hour: 14, minute: 30, second: 0, DateTimeKind.Utc);
 
     public static EmployeeInviteEmailModel Model(string link = Link) => new()
     {

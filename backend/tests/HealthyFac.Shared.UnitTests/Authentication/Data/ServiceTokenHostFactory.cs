@@ -1,12 +1,11 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Web.Authentication;
-using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Shared.Web.CurrentUser;
+using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Testing.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -10,7 +10,7 @@ public sealed class BrokerConnectionProvider : IAsyncDisposable
 {
     private readonly ConnectionFactory _factory;
 
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _gate = new(initialCount: 1, maxCount: 1);
 
     private IConnection? _connection;
 
@@ -30,7 +30,7 @@ public sealed class BrokerConnectionProvider : IAsyncDisposable
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>An open connection to the broker.</returns>
-    public async Task<IConnection> GetConnectionAsync(CancellationToken cancellationToken = default)
+    public async Task<IConnection> GetConnectionAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
         await _gate.WaitAsync(cancellationToken);
         try

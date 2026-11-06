@@ -30,5 +30,5 @@ public sealed class RecordingResourceHandler : HttpMessageHandler
     }
 
     private static string? ReadHeader(HttpRequestMessage request, string name) =>
-        request.Headers.TryGetValues(name, out var values) ? string.Join(",", values) : null;
+        request.Headers.TryGetValues(name, out var values) ? string.Join(separator: ",", values) : null;
 }

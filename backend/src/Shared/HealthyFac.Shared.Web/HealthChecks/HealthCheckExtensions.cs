@@ -1,9 +1,9 @@
 using System.Net.Mime;
 using System.Text.Json;
+using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
-using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -134,7 +134,7 @@ public static class HealthCheckExtensions
         await writer.FlushAsync(context.RequestAborted);
 
         await context.Response.Body.WriteAsync(
-            stream.GetBuffer().AsMemory(0, (int)stream.Length),
+            stream.GetBuffer().AsMemory(start: 0, (int)stream.Length),
             context.RequestAborted);
     }
 }

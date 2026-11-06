@@ -16,7 +16,7 @@ public sealed class CheckConstraintSqlTests
     )
     {
         var previous = CultureInfo.CurrentCulture;
-        CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+        CultureInfo.CurrentCulture = new CultureInfo(name: "de-DE");
 
         try
         {
@@ -36,7 +36,8 @@ public sealed class CheckConstraintSqlTests
     [Fact]
     public void ConstraintName_WhenOverIdentifierLimit_Throws()
     {
-        var act = () => CheckConstraintSql.ConstraintName(CheckConstraintTestData.LongEntity, "name", "not_blank");
+        var act = () => CheckConstraintSql.ConstraintName(
+            CheckConstraintTestData.LongEntity, column: "name", rule: "not_blank");
 
         act.Should().Throw<ArgumentException>();
     }

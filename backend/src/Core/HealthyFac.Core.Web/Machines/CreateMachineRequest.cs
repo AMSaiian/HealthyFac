@@ -1,4 +1,3 @@
-using HealthyFac.Core.Web.Employees;
 using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachineRequest;
 
 namespace HealthyFac.Core.Web.Machines;

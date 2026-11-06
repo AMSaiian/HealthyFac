@@ -23,15 +23,15 @@ public static class ProvisioningTestData
     public const string KeycloakUnavailableMessage = "The Keycloak server is not reachable.";
     public const string RedisUnavailableMessage = "The Redis server is not reachable.";
 
-    public static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(30);
-    public static readonly TimeSpan PollDelay = TimeSpan.FromMilliseconds(100);
+    public static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(seconds: 30);
+    public static readonly TimeSpan PollDelay = TimeSpan.FromMilliseconds(milliseconds: 100);
     public const int DelayedDeactivationMinutes = 10;
 
-    public static readonly TimeSpan QuietPeriod = TimeSpan.FromSeconds(3);
-    public static readonly TimeSpan ExpectedRevocationTimeToLive = TimeSpan.FromSeconds(360);
-    public static readonly TimeSpan MinimumRevocationTimeToLive = TimeSpan.FromSeconds(300);
+    public static readonly TimeSpan QuietPeriod = TimeSpan.FromSeconds(seconds: 3);
+    public static readonly TimeSpan ExpectedRevocationTimeToLive = TimeSpan.FromSeconds(seconds: 360);
+    public static readonly TimeSpan MinimumRevocationTimeToLive = TimeSpan.FromSeconds(seconds: 300);
 
-    public static readonly Guid ActorId = Guid.Parse("0190f3a0-0000-7000-8000-0000000000a1");
+    public static readonly Guid ActorId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000a1");
 
     public static EmployeeAccepted CreateAccepted(Guid? companyId = null, string roleCode = "worker")
     {
@@ -67,7 +67,7 @@ public static class ProvisioningTestData
     public static TheoryData<EmployeeDeactivated> ValidDeactivatedMessages => new()
     {
         CreateDeactivated(Guid.CreateVersion7()),
-        CreateDeactivated(null),
+        CreateDeactivated(identityUserId: null),
     };
 
     public static TheoryData<EmployeeDeactivated, string> InvalidDeactivatedMessagesWithExpectedError => new()

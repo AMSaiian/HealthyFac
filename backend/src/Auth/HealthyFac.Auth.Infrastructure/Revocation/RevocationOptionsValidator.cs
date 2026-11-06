@@ -7,11 +7,11 @@ public sealed class RevocationOptionsValidator : AbstractValidator<RevocationOpt
     public RevocationOptionsValidator()
     {
         RuleFor(options => options.TokenLifetimeSeconds)
-            .GreaterThan(0)
+            .GreaterThan(valueToCompare: 0)
             .WithMessage(RevocationValidationMessages.TokenLifetimeInvalid);
 
         RuleFor(options => options.ClockSkewSeconds)
-            .GreaterThanOrEqualTo(0)
+            .GreaterThanOrEqualTo(valueToCompare: 0)
             .WithMessage(RevocationValidationMessages.ClockSkewInvalid);
     }
 }

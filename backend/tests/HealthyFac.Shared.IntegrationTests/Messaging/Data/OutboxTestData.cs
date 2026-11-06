@@ -9,7 +9,7 @@ public static class OutboxTestData
     public const string ActorStampedText = "actor stamped";
     public const int FirstAttemptCount = 1;
 
-    public static readonly Guid UserId = Guid.Parse("019a0000-0000-7000-8000-0000000000a1");
-    public static readonly Guid CompanyId = Guid.Parse("019a0000-0000-7000-8000-0000000000c1");
+    public static readonly Guid UserId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000a1");
+    public static readonly Guid CompanyId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000c1");
     public const int SecondAttemptCount = 2;
 }

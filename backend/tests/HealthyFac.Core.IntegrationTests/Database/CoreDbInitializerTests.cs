@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Roles;
-using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Domain.Emails;
@@ -126,7 +126,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         foreach (var machine in machines)
         {
             var timeline = machine.OrderBy(row => row.StartedAt).ToList();
-            var machineName = timeline[0].MachineName;
+            var machineName = timeline[index: 0].MachineName;
             var cycleIndex = ReadMachineIndex(machineName) % DatabaseTestData.ExpectedHistoriesByCycleIndex.Count;
 
             timeline.Select(row => row.State)

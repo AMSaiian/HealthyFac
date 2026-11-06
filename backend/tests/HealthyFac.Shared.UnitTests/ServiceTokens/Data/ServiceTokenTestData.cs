@@ -1,5 +1,5 @@
-using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 
@@ -41,10 +41,10 @@ public static class ServiceTokenTestData
     public const string InvalidClientBody =
         $$"""{"error":"invalid_client","error_description":"{{InvalidClientDescription}}"}""";
 
-    public static readonly Guid FirstUserId = Guid.Parse("019a0000-0000-7000-8000-0000000000a1");
-    public static readonly Guid SecondUserId = Guid.Parse("019a0000-0000-7000-8000-0000000000a2");
+    public static readonly Guid FirstUserId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000a1");
+    public static readonly Guid SecondUserId = Guid.Parse(input: "019a0000-0000-7000-8000-0000000000a2");
 
-    public static readonly TimeSpan ReuseAdvance = TimeSpan.FromSeconds(60);
+    public static readonly TimeSpan ReuseAdvance = TimeSpan.FromSeconds(seconds: 60);
 
     public static readonly TimeSpan NearExpiryAdvance =
         TimeSpan.FromSeconds(TokenLifetimeSeconds - RefreshMarginSeconds + 1);
@@ -59,7 +59,7 @@ public static class ServiceTokenTestData
 
     public static readonly TimeSpan AfterLockTimeoutAdvance = TimeSpan.FromSeconds(LockTimeoutSeconds + 1);
 
-    public static readonly TimeSpan CallsReachCacheDelay = TimeSpan.FromMilliseconds(200);
+    public static readonly TimeSpan CallsReachCacheDelay = TimeSpan.FromMilliseconds(milliseconds: 200);
 
     public static ServiceTokenOptions Options => CreateOptions();
 

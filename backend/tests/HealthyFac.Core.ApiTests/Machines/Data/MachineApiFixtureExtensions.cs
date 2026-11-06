@@ -49,21 +49,21 @@ public static class MachineApiFixtureExtensions
         public string CreateSearchBodyWithDepartment(Guid departmentId) =>
             new JsonObject
             {
-                ["offset"] = 0,
-                ["limit"] = 25,
-                ["filter"] = new JsonObject
+                [propertyName: "offset"] = 0,
+                [propertyName: "limit"] = 25,
+                [propertyName: "filter"] = new JsonObject
                 {
-                    ["departmentIds"] = new JsonObject
-                        { ["ids"] = new JsonArray(fixture.IdEncryptor.Encrypt(departmentId)) },
+                    [propertyName: "departmentIds"] = new JsonObject
+                        { [propertyName: "ids"] = new JsonArray(fixture.IdEncryptor.Encrypt(departmentId)) },
                 },
             }.ToJsonString();
 
         public string CreateUpdateBody(string serialNumber) =>
             new JsonObject
             {
-                ["name"] = MachineApiTestData.MachineName,
-                ["serialNumber"] = serialNumber,
-                ["departmentId"] = fixture.IdEncryptor.Encrypt(fixture.DepartmentId),
+                [propertyName: "name"] = MachineApiTestData.MachineName,
+                [propertyName: "serialNumber"] = serialNumber,
+                [propertyName: "departmentId"] = fixture.IdEncryptor.Encrypt(fixture.DepartmentId),
             }.ToJsonString();
 
         public async Task<string> ArrangeMachineAsync(string serialNumber)
@@ -75,7 +75,7 @@ public static class MachineApiFixtureExtensions
                 fixture.DepartmentId,
                 MachineApiTestData.MachineName,
                 serialNumber,
-                null,
+                description: null,
                 scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
 
             dbContext.Machines.Add(machine);

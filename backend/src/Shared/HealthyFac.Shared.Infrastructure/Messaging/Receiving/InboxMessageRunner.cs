@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Observability;
-using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -76,7 +76,7 @@ internal sealed class InboxMessageRunner(
         }
 
         _logger.LogInformation(
-            "Inbox message {MessageId} of type {MessageType} handled.",
+            message: "Inbox message {MessageId} of type {MessageType} handled.",
             handled.Value.Id,
             handled.Value.Type);
         _metrics.RecordHandled(handled.Value.Type);

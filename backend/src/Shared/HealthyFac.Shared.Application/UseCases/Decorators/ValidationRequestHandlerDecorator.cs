@@ -26,7 +26,9 @@ internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
     /// Validates the request, then executes the inner handler.
     /// </summary>
     /// <param name="request">The incoming request to validate and execute.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <returns>The response of type <typeparamref name="TResponse"/> from the inner handler.</returns>
     /// <exception cref="AppValidationException">
     /// Thrown when one or more validators report a failure for <paramref name="request"/>.
@@ -46,7 +48,9 @@ internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
     /// handler span and the validation span stay siblings and each shows its own duration.
     /// </summary>
     /// <param name="request">The incoming request to validate.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation requests.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
     /// <exception cref="AppValidationException">
     /// Thrown when one or more validators report a failure for <paramref name="request"/>.
     /// </exception>
@@ -61,7 +65,7 @@ internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
             .WithTag(ObservabilityConstants.Tags.ValidatorCount, applicableValidators.Count);
 
         _logger.LogTrace(
-            "Validation entered for {RequestName} with {ValidatorCount} validator(s)",
+            message: "Validation entered for {RequestName} with {ValidatorCount} validator(s)",
             requestName,
             applicableValidators.Count);
 
@@ -80,7 +84,7 @@ internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
             if (failures.Count != 0)
             {
                 _logger.LogInformation(
-                    "Validation rejected {RequestName}: {@Errors}",
+                    message: "Validation rejected {RequestName}: {@Errors}",
                     requestName,
                     new ValidationResult(failures).ToDictionary());
 
@@ -91,6 +95,6 @@ internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
         }
 
         activity.MarkSuccess();
-        _logger.LogTrace("Validation exited for {RequestName} with no failures", requestName);
+        _logger.LogTrace(message: "Validation exited for {RequestName} with no failures", requestName);
     }
 }

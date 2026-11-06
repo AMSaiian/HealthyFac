@@ -1,6 +1,3 @@
-using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
-using HealthyFac.Shared.Infrastructure.Messaging.Sending;
-
 namespace HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 
 /// <summary>

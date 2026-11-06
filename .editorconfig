@@ -79,6 +79,12 @@ dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
 resharper_align_multiline_binary_expressions_chain = false
 resharper_align_multiline_statement_conditions = false
 resharper_apply_auto_detected_rules = false
+resharper_arguments_anonymous_function = positional
+resharper_arguments_literal = named
+resharper_arguments_named = positional
+resharper_arguments_other = positional
+resharper_arguments_skip_single = false
+resharper_arguments_string_literal = named
 resharper_autodetect_indent_settings = false
 resharper_braces_for_for = required
 resharper_braces_for_foreach = required
@@ -127,6 +133,11 @@ resharper_wrap_chained_binary_patterns = chop_if_long
 resharper_wrap_chained_method_calls = chop_if_long
 
 # ReSharper inspection severities
+resharper_arguments_style_anonymous_function_highlighting = none
+resharper_arguments_style_literal_highlighting = suggestion
+resharper_arguments_style_named_expression_highlighting = none
+resharper_arguments_style_other_highlighting = none
+resharper_arguments_style_string_literal_highlighting = suggestion
 resharper_arrange_redundant_parentheses_highlighting = hint
 resharper_arrange_this_qualifier_highlighting = hint
 resharper_arrange_type_member_modifiers_highlighting = hint

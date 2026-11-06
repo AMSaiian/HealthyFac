@@ -112,7 +112,7 @@ internal static class ActorClaimsReader
             .Select(claim => claim.Value)
             .ToList();
 
-        if (organizations.Count != 1 || !Guid.TryParse(organizations[0], out var companyId))
+        if (organizations.Count != 1 || !Guid.TryParse(organizations[index: 0], out var companyId))
         {
             throw CurrentUserErrors.OrganizationInvalid();
         }

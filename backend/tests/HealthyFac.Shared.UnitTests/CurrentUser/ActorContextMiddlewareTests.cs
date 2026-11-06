@@ -1,4 +1,3 @@
-using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 using Microsoft.AspNetCore.TestHost;

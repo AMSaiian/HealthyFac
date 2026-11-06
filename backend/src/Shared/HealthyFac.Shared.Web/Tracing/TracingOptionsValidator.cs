@@ -8,7 +8,7 @@ public sealed class TracingOptionsValidator : AbstractValidator<TracingOptions>
     public TracingOptionsValidator()
     {
         RuleFor(options => options.SamplingRatio)
-            .InclusiveBetween(0.0, 1.0)
+            .InclusiveBetween(from: 0.0, to: 1.0)
             .WithMessage(TracingValidationMessages.SamplingRatioOutOfRange);
 
         RuleFor(options => options.Endpoint)

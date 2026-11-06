@@ -12,18 +12,18 @@ public static class LoggingDecoratorTestData
 
     public static TheoryData<Exception, LogLevel> RejectionsWithLevel => new()
     {
-        { new NotFoundException("missing"), LogLevel.Information },
-        { new ConflictException("duplicate"), LogLevel.Information },
-        { new ConflictException("repeated") { Level = LogLevel.Warning }, LogLevel.Warning },
-        { new UnprocessableException("rule"), LogLevel.Information },
-        { new UnauthorizedAccessException("anonymous"), LogLevel.Warning },
-        { new ForbiddenAccessException("denied"), LogLevel.Warning },
+        { new NotFoundException(message: "missing"), LogLevel.Information },
+        { new ConflictException(message: "duplicate"), LogLevel.Information },
+        { new ConflictException(message: "repeated") { Level = LogLevel.Warning }, LogLevel.Warning },
+        { new UnprocessableException(message: "rule"), LogLevel.Information },
+        { new UnauthorizedAccessException(message: "anonymous"), LogLevel.Warning },
+        { new ForbiddenAccessException(message: "denied"), LogLevel.Warning },
         { new ErrorLevelRejectionException(), LogLevel.Error },
     };
 
     public static TheoryData<Exception> IgnoredRejections => new()
     {
-        new AppValidationException([new ValidationFailure("Name", "required")]),
-        new NotFoundException("quiet") { Level = null },
+        new AppValidationException([new ValidationFailure(propertyName: "Name", errorMessage: "required")]),
+        new NotFoundException(message: "quiet") { Level = null },
     };
 }

@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
-using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +19,7 @@ public static class OutboxFixtureExtensions
                         messageType,
                         OutboxProcessorTestData.Payload,
                         InboxTestData.Now,
-                        null,
+                        traceParent: null,
                         TransportTestData.ActorId,
                         TransportTestData.CompanyId));
             }

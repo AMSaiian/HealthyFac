@@ -52,7 +52,7 @@ internal sealed class MachineFaker : Faker<Machine>
                 department.Id,
                 $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}",
                 faker.Random.Replace(serialNumberPattern),
-                null,
+                description: null,
                 firstStartedAt);
 
             var changedStates =

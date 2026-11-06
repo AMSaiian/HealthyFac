@@ -22,7 +22,7 @@ public sealed class TextInputJsonTests
     {
         var json = JsonSerializer.Serialize(new TextInputRequest { Name = " padded " }, Options);
 
-        json.Should().Contain("\" padded \"");
+        json.Should().Contain(expected: "\" padded \"");
     }
 
     private static JsonSerializerOptions CreateOptions()

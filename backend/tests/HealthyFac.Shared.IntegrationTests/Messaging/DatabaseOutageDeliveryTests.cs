@@ -21,7 +21,7 @@ public sealed class DatabaseOutageDeliveryTests(DatabaseOutageFixture fixture) :
             TransportTestData.ErrorQueueName);
 
         row.Should().NotBeNull();
-        errorQueueCount.Should().Be(0);
+        errorQueueCount.Should().Be(expected: 0);
         _fixture.InjectedFailureCount.Should().BeGreaterThanOrEqualTo(DatabaseOutageTestData.FailedCommandCount);
     }
 }

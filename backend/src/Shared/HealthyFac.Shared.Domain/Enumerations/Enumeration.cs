@@ -116,7 +116,7 @@ public abstract class Enumeration<TEnum> : IEquatable<Enumeration<TEnum>>, IComp
         var ordered = typeof(TEnum)
             .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
             .Where(field => field.IsInitOnly && typeof(TEnum).IsAssignableFrom(field.FieldType))
-            .Select(field => (TEnum)field.GetValue(null)!)
+            .Select(field => (TEnum)field.GetValue(obj: null)!)
             .ToList();
 
         return new MemberCatalog

@@ -2,7 +2,8 @@ namespace HealthyFac.Shared.Application.DownstreamScopes;
 
 /// <summary>
 /// Holds the downstream scopes of the current flow. The service token handler reads them to ask Keycloak for a token
-/// that carries only the permissions of the flow. The value flows with the asynchronous call chain, because a handler of
+/// that carries only the permissions of the flow. The value flows with the asynchronous call chain, because a handler
+/// of
 /// <c>IHttpClientFactory</c> lives in its own DI scope.
 /// </summary>
 public interface IDownstreamScopeHolder

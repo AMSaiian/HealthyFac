@@ -24,7 +24,7 @@ public sealed class ValidationNamesTests
     {
         var result = new NamedRequestValidator().Validate(new NamedRequest());
 
-        result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain("'Serial Number'");
+        result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Contain(expected: "'Serial Number'");
     }
 
     [Fact]
@@ -33,6 +33,6 @@ public sealed class ValidationNamesTests
         ValidationNames.UseJsonNames();
         var result = new NamedRequestValidator().Validate(new NamedRequest());
 
-        result.Errors.Should().ContainSingle().Which.PropertyName.Should().Be("serialNumber");
+        result.Errors.Should().ContainSingle().Which.PropertyName.Should().Be(expected: "serialNumber");
     }
 }

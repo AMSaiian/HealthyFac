@@ -8,19 +8,19 @@ public static class ProxyFailureTestData
     public const string RouteIdKey = "RouteId";
     public const string CoreRouteId = "core";
 
-    public static readonly TimeSpan SlowResponseDelay = TimeSpan.FromSeconds(3);
-    public static readonly TimeSpan TimeoutResponseLimit = TimeSpan.FromSeconds(2.5);
-    public static readonly TimeSpan UnhealthyWaitLimit = TimeSpan.FromSeconds(15);
+    public static readonly TimeSpan SlowResponseDelay = TimeSpan.FromSeconds(seconds: 3);
+    public static readonly TimeSpan TimeoutResponseLimit = TimeSpan.FromSeconds(value: 2.5);
+    public static readonly TimeSpan UnhealthyWaitLimit = TimeSpan.FromSeconds(seconds: 15);
 
     public static IReadOnlyDictionary<string, string> OneSecondActivityTimeout { get; } =
         new Dictionary<string, string>
         {
-            ["ReverseProxy:Clusters:core:HttpRequest:ActivityTimeout"] = "00:00:01",
+            [key: "ReverseProxy:Clusters:core:HttpRequest:ActivityTimeout"] = "00:00:01",
         };
 
     public static IReadOnlyDictionary<string, string> OneSecondHealthCheckInterval { get; } =
         new Dictionary<string, string>
         {
-            ["ReverseProxy:Clusters:core:HealthCheck:Active:Interval"] = "00:00:01",
+            [key: "ReverseProxy:Clusters:core:HealthCheck:Active:Interval"] = "00:00:01",
         };
 }

@@ -51,10 +51,10 @@ public record MachineResponse
             UpdatedAt = machine.UpdatedAt,
         };
 
-        var machineParameter = template.Parameters[0];
-        var selectorBody = new ParameterReplacer(MachineCurrentState.Selector.Parameters[0], machineParameter)
+        var machineParameter = template.Parameters[index: 0];
+        var selectorBody = new ParameterReplacer(MachineCurrentState.Selector.Parameters[index: 0], machineParameter)
             .Visit(MachineCurrentState.Selector.Body);
-        var body = new ParameterReplacer(template.Parameters[1], selectorBody).Visit(template.Body);
+        var body = new ParameterReplacer(template.Parameters[index: 1], selectorBody).Visit(template.Body);
 
         return Expression.Lambda<Func<Machine, MachineResponse>>(body, machineParameter);
     }

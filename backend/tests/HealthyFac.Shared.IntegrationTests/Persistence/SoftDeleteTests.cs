@@ -18,8 +18,8 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         var rows = await dbContext.SoftDeletables.IgnoreQueryFilters().Where(entity => entity.Id == id).ToListAsync();
 
         rows.Should().ContainSingle();
-        rows[0].DeletedAt.Should().Be(SoftDeleteTestData.Now.UtcDateTime);
-        rows[0].DeletedBy.Should().Be(SoftDeleteTestData.ActorId);
+        rows[index: 0].DeletedAt.Should().Be(SoftDeleteTestData.Now.UtcDateTime);
+        rows[index: 0].DeletedBy.Should().Be(SoftDeleteTestData.ActorId);
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         await using var dbContext = _fixture.CreateDbContext();
         var visibleCount = await dbContext.SoftDeletables.CountAsync(entity => entity.Id == id);
 
-        visibleCount.Should().Be(0);
+        visibleCount.Should().Be(expected: 0);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         await using var dbContext = _fixture.CreateDbContext();
         var rowCount = await dbContext.Plains.CountAsync(plain => plain.Id == entity.Id);
 
-        rowCount.Should().Be(0);
+        rowCount.Should().Be(expected: 0);
     }
 
     private async Task<Guid> ArrangeSoftDeletableAsync()

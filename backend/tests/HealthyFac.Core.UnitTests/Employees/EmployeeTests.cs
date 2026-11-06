@@ -182,7 +182,7 @@ public sealed class EmployeeTests
 
         employee.AssignDepartment(department);
 
-        employee.Departments.Should().HaveCount(2).And.Contain(department);
+        employee.Departments.Should().HaveCount(expected: 2).And.Contain(department);
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public sealed class EmployeeTests
 
         employee.AssignDepartment(department);
 
-        employee.Departments.Should().HaveCount(2);
+        employee.Departments.Should().HaveCount(expected: 2);
     }
 
     [Fact]

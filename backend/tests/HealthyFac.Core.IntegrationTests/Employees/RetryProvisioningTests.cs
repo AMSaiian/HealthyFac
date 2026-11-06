@@ -23,7 +23,7 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
 
         response.EmployeeId.Should().Be(arranged.EmployeeId);
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
-        messages.Should().HaveCount(2);
+        messages.Should().HaveCount(expected: 2);
         messages.Select(message => message.Email).Should().OnlyContain(email => email == employee.Email);
     }
 
@@ -39,7 +39,7 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
 
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
         employee.ProvisioningRetriedAt.Should().NotBeNull();
-        messages.Should().HaveCount(2);
+        messages.Should().HaveCount(expected: 2);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture) : IClass
                 Guid.CreateVersion7())));
 
         race.SaveCounts.Should().Equal(1, 1);
-        failures.Count(failure => failure is null).Should().Be(1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()

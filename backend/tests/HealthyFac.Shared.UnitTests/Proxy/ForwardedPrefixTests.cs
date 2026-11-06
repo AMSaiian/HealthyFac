@@ -12,7 +12,7 @@ public sealed class ForwardedPrefixTests
     {
         using var host = await ForwardedPrefixHostFactory.StartAsync(ForwardedPrefixHostFactory.TrustedClientAddress);
         using var client = host.GetTestClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/v1/machines");
+        using var request = new HttpRequestMessage(HttpMethod.Get, requestUri: "/v1/machines");
         request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, PublicPrefix);
 
         using var response = await client.SendAsync(request);
@@ -28,8 +28,8 @@ public sealed class ForwardedPrefixTests
         using var host = await ForwardedPrefixHostFactory.StartAsync(
             ForwardedPrefixHostFactory.UntrustedClientAddress);
         using var client = host.GetTestClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/v1/machines");
-        request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, "/evil");
+        using var request = new HttpRequestMessage(HttpMethod.Get, requestUri: "/v1/machines");
+        request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, value: "/evil");
 
         using var response = await client.SendAsync(request);
 

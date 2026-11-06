@@ -1,7 +1,7 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Observability;
-using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -84,7 +84,8 @@ internal sealed class OutboxProcessor(
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogError(exception, "The outbox processor run failed. The next run starts after the interval.");
+            _logger.LogError(
+                exception, message: "The outbox processor run failed. The next run starts after the interval.");
         }
     }
 

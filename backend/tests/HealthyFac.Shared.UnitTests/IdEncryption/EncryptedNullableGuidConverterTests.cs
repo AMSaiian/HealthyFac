@@ -20,9 +20,9 @@ public sealed class EncryptedNullableGuidConverterTests
     [Fact]
     public void Write_WhenNull_WritesJsonNull()
     {
-        var json = JsonSerializer.Serialize<Guid?>(null, _options);
+        var json = JsonSerializer.Serialize<Guid?>(value: null, _options);
 
-        json.Should().Be("null");
+        json.Should().Be(expected: "null");
     }
 
     [Theory]
@@ -32,7 +32,7 @@ public sealed class EncryptedNullableGuidConverterTests
         var json = JsonSerializer.Serialize(value, _options);
 
         json.Should().StartWith($"\"{IdEncryptionConstants.CurrentVersionPrefix}");
-        var unquoted = json.Trim('"');
+        var unquoted = json.Trim(trimChar: '"');
         _encryptor.Decrypt(unquoted).Should().Be(value!.Value);
     }
 

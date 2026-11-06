@@ -17,7 +17,8 @@ public sealed class GatewayExceptionHandlerTests
     {
         var context = CreateContext(CancellationToken.None);
 
-        var isHandled = await _handler.TryHandleAsync(context, new InvalidOperationException(SecretDetail), default);
+        var isHandled = await _handler.TryHandleAsync(
+            context, new InvalidOperationException(SecretDetail), cancellationToken: default(CancellationToken));
 
         var body = await ReadBodyAsync(context);
 
@@ -35,7 +36,8 @@ public sealed class GatewayExceptionHandlerTests
         await abortedSource.CancelAsync();
         var context = CreateContext(abortedSource.Token);
 
-        var isHandled = await _handler.TryHandleAsync(context, new OperationCanceledException(), default);
+        var isHandled = await _handler.TryHandleAsync(
+            context, new OperationCanceledException(), cancellationToken: default(CancellationToken));
 
         var body = await ReadBodyAsync(context);
 

@@ -1,6 +1,6 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
-using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Auth.Application.Identities.RevokeIdentity;
@@ -43,7 +43,7 @@ public sealed class RevokeIdentityRequestHandler(
         if (request.IdentityUserId is not { } userId)
         {
             _logger.LogInformation(
-                "Revocation skipped: employee {EmployeeId} has no identity.",
+                message: "Revocation skipped: employee {EmployeeId} has no identity.",
                 request.EmployeeId);
 
             return;
@@ -51,6 +51,6 @@ public sealed class RevokeIdentityRequestHandler(
 
         await _identityAdmin.DisableUserAsync(userId, cancellationToken);
         await _identityAdmin.LogoutUserAsync(userId, cancellationToken);
-        await _sessionRevoker.RevokeAsync(userId, _timeProvider.GetUtcNow().AddSeconds(1), cancellationToken);
+        await _sessionRevoker.RevokeAsync(userId, _timeProvider.GetUtcNow().AddSeconds(seconds: 1), cancellationToken);
     }
 }

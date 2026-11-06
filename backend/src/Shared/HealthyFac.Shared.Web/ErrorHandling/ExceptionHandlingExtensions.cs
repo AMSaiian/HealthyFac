@@ -30,9 +30,6 @@ public static class ExceptionHandlingExtensions
         /// Adds the shared exception handler middleware to the application pipeline.
         /// </summary>
         /// <returns>The <see cref="IApplicationBuilder"/> instance for chained configuration.</returns>
-        public IApplicationBuilder UseSharedExceptionHandling()
-        {
-            return app.UseExceptionHandler();
-        }
+        public IApplicationBuilder UseSharedExceptionHandling() => app.UseExceptionHandler();
     }
 }

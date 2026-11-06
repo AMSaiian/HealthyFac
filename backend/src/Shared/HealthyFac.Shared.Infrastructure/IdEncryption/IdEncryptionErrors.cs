@@ -19,7 +19,7 @@ public static class IdEncryptionErrors
         new($"Unsupported or missing ID encryption version prefix in '{encryptedId}'.");
 
     public static FormatException InvalidBase64UrlEncoding(Exception innerException) =>
-        new("Invalid Base64Url encoding in encrypted identifier.", innerException);
+        new(message: "Invalid Base64Url encoding in encrypted identifier.", innerException);
 
     public static FormatException UnexpectedCiphertextLength(int actualLength) =>
         new(
@@ -28,10 +28,10 @@ public static class IdEncryptionErrors
         );
 
     public static CryptographicException AuthenticationFailed(Exception innerException) =>
-        new("Identifier authentication failed: integrity check tag is invalid or tampered.", innerException);
+        new(message: "Identifier authentication failed: integrity check tag is invalid or tampered.", innerException);
 
     public static CryptographicException PayloadLengthMismatch() =>
-        new("Decrypted payload length mismatch.");
+        new(message: "Decrypted payload length mismatch.");
 
     public static InvalidOperationException NoKeysConfigured(string configurationPath) =>
         new(
@@ -40,5 +40,5 @@ public static class IdEncryptionErrors
         );
 
     public static InvalidOperationException NoDefaultKeyConfigured() =>
-        new("No default ID encryption key configuration was found.");
+        new(message: "No default ID encryption key configuration was found.");
 }

@@ -1,4 +1,3 @@
-using HealthyFac.Core.Web.Employees;
 using HealthyFac.Shared.Application.IdEncryption;
 using ApplicationUpdateMachineRequest = HealthyFac.Core.Application.Machines.UpdateMachineRequest;
 

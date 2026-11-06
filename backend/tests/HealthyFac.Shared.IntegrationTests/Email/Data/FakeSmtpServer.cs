@@ -17,7 +17,7 @@ public sealed class FakeSmtpServer : IAsyncDisposable
     private const string QuitCommand = "QUIT";
     private const string DataCommand = "DATA";
 
-    private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
+    private readonly TcpListener _listener = new(IPAddress.Loopback, port: 0);
     private readonly CancellationTokenSource _stop = new();
     private readonly FakeSmtpBehavior _behavior;
     private readonly Task _acceptLoop;
@@ -37,7 +37,7 @@ public sealed class FakeSmtpServer : IAsyncDisposable
     /// <returns>A port number that was free a moment ago.</returns>
     public static int FindClosedPort()
     {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        using var listener = new TcpListener(IPAddress.Loopback, port: 0);
         listener.Start();
 
         return ((IPEndPoint)listener.LocalEndpoint).Port;
@@ -98,7 +98,7 @@ public sealed class FakeSmtpServer : IAsyncDisposable
         {
             if (line.StartsWith(QuitCommand, StringComparison.OrdinalIgnoreCase))
             {
-                connection.LingerState = new LingerOption(true, 0);
+                connection.LingerState = new LingerOption(enable: true, seconds: 0);
 
                 return;
             }

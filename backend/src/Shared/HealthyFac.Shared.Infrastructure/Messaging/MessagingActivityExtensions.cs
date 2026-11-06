@@ -35,7 +35,7 @@ internal static class MessagingActivityExtensions
         )
         {
             var name = $"{operation} {messageType}";
-            var activity = ActivityContext.TryParse(traceParent, null, isRemote: true, out var parent)
+            var activity = ActivityContext.TryParse(traceParent, traceState: null, isRemote: true, out var parent)
                 ? source.StartActivity(name, kind, parent)
                 : source.StartActivity(name, kind);
 

@@ -23,7 +23,7 @@ public static class DotEnvLoader
 
         DotNetEnv.Env.Load(
             path,
-            new DotNetEnv.LoadOptions(true, false));
+            new DotNetEnv.LoadOptions(setEnvVars: true, clobberExistingVars: false));
 
         return path;
     }

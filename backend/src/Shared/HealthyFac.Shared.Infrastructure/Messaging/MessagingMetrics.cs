@@ -48,10 +48,10 @@ internal sealed class MessagingMetrics
     }
 
     public void RecordPublished(string messageType) =>
-        _published.Add(1, ProcessorTag(Processors.Outbox), MessageTypeTag(messageType));
+        _published.Add(delta: 1, ProcessorTag(Processors.Outbox), MessageTypeTag(messageType));
 
     public void RecordHandled(string messageType) =>
-        _handled.Add(1, ProcessorTag(Processors.Inbox), MessageTypeTag(messageType));
+        _handled.Add(delta: 1, ProcessorTag(Processors.Inbox), MessageTypeTag(messageType));
 
     /// <summary>
     /// Counts a failed attempt that leaves the message pending for a later attempt.
@@ -59,7 +59,7 @@ internal sealed class MessagingMetrics
     /// <param name="processor">The processor, from <see cref="Processors"/>.</param>
     /// <param name="messageType">The stable contract name of the message.</param>
     public void RecordRetried(string processor, string messageType) =>
-        _retried.Add(1, ProcessorTag(processor), MessageTypeTag(messageType));
+        _retried.Add(delta: 1, ProcessorTag(processor), MessageTypeTag(messageType));
 
     /// <summary>
     /// Counts an inbox message that gets the failed state, so no processor claims it again.
@@ -68,7 +68,7 @@ internal sealed class MessagingMetrics
     /// <param name="failure">The reason, from <see cref="ObservabilityConstants.Messaging.Failures"/>.</param>
     public void RecordFailed(string messageType, string failure) =>
         _failed.Add(
-            1,
+            delta: 1,
             ProcessorTag(Processors.Inbox),
             MessageTypeTag(messageType),
             new KeyValuePair<string, object?>(Tags.Failure, failure));
@@ -139,7 +139,7 @@ internal sealed class MessagingMetrics
     }
 
     private static double AgeInSeconds(PendingBacklog backlog, DateTime now) =>
-        backlog.OldestOn is null ? 0 : Math.Max(0, (now - backlog.OldestOn.Value).TotalSeconds);
+        backlog.OldestOn is null ? 0 : Math.Max(val1: 0, (now - backlog.OldestOn.Value).TotalSeconds);
 
     private static KeyValuePair<string, object?> ProcessorTag(string processor) => new(Tags.Processor, processor);
 

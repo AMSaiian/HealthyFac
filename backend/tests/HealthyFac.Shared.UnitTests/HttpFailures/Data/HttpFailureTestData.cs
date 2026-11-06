@@ -1,6 +1,6 @@
 using System.Text;
-using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
+using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 
 namespace HealthyFac.Shared.UnitTests.HttpFailures.Data;
 
@@ -55,7 +55,7 @@ public static class HttpFailureTestData
         };
 
     public static IReadOnlyDictionary<string, JsonTopLevelField> Parse(string json) =>
-        JsonTopLevelFields.Read(Encoding.UTF8.GetBytes(json), true);
+        JsonTopLevelFields.Read(Encoding.UTF8.GetBytes(json), isComplete: true);
 
     public static string LongReason() =>
         new string(KeptCharacter, HttpFailureConstants.MaxReasonLength)

@@ -1,5 +1,4 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
-using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using Microsoft.Extensions.Configuration;

@@ -1,5 +1,4 @@
 using HealthyFac.Spa.Web.IndexDocument.Csp;
-using HealthyFac.Spa.Web.IndexDocument;
 
 namespace HealthyFac.Spa.IntegrationTests.IndexDocument;
 
@@ -33,7 +32,7 @@ public sealed class IndexDocumentTests
 
         policy.Should().Contain($"connect-src 'self' {ApiBaseUrl} {AuthOrigin};");
         policy.Should().Contain($"frame-src 'self' {AuthOrigin};");
-        policy.Should().Contain("frame-ancestors 'none'");
+        policy.Should().Contain(expected: "frame-ancestors 'none'");
     }
 
     [Fact]

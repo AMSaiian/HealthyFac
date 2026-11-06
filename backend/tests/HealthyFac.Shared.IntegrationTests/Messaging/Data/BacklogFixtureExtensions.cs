@@ -1,6 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
-using HealthyFac.Shared.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,7 +24,7 @@ public static class BacklogFixtureExtensions
                         OutboxProcessorTestData.PublishedMessageType,
                         OutboxProcessorTestData.Payload,
                         MessagingMetricsTestData.OutboxOccurredOn,
-                        null,
+                        traceParent: null,
                         InboxTestData.ActorId,
                         InboxTestData.CompanyId));
             }
@@ -36,7 +35,7 @@ public static class BacklogFixtureExtensions
                     InboxProcessorTestData.RecordedMessageType,
                     InboxProcessorTestData.PayloadFor(MessagingMetricsTestData.HandledText),
                     MessagingMetricsTestData.InboxReceivedOn,
-                    null,
+                    traceParent: null,
                     InboxTestData.ActorId,
                     InboxTestData.CompanyId));
             dbContext.InboxMessages.Add(
@@ -44,7 +43,7 @@ public static class BacklogFixtureExtensions
                     Guid.CreateVersion7(),
                     InboxProcessorTestData.FailingMessageType,
                     MessagingMetricsTestData.RetriedText,
-                    MessagingMetricsTestData.InboxReceivedOn.AddHours(-1)));
+                    MessagingMetricsTestData.InboxReceivedOn.AddHours(value: -1)));
 
             await dbContext.SaveChangesAsync();
         }

@@ -1,5 +1,4 @@
 using HealthyFac.Shared.Infrastructure.Configuration.DotEnv;
-using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace HealthyFac.Shared.Web.Configuration;

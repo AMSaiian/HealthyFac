@@ -1,8 +1,8 @@
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Application.MachineErrorCodes.SearchMachineErrorCodes;
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.MachineErrorCodes.Data;
+using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
@@ -45,7 +45,7 @@ public sealed class SearchMachineErrorCodesTests(CoreDatabaseFixture fixture) : 
             MachineErrorCodeSearchTestData.CreateSearch(tenant.CompanyId, machineId));
 
         response.Items.Select(item => item.Id).Should().Equal(activeId);
-        response.TotalCount.Should().Be(1);
+        response.TotalCount.Should().Be(expected: 1);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed class SearchMachineErrorCodesTests(CoreDatabaseFixture fixture) : 
             tenant.BothDepartmentIds,
             MachineErrorCodeSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter, sort));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[0], ids[1]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[index: 0], ids[index: 1]);
     }
 
     [Fact]
@@ -82,8 +82,8 @@ public sealed class SearchMachineErrorCodesTests(CoreDatabaseFixture fixture) : 
         {
             CreatedAt = new DateRangeFilter
             {
-                From = MachineErrorCodeSearchTestData.FirstCreatedAt.AddDays(1),
-                To = MachineErrorCodeSearchTestData.FirstCreatedAt.AddDays(3),
+                From = MachineErrorCodeSearchTestData.FirstCreatedAt.AddDays(value: 1),
+                To = MachineErrorCodeSearchTestData.FirstCreatedAt.AddDays(value: 3),
             },
         };
         var sort = new GridSort<MachineErrorCodeSortColumn>
@@ -97,7 +97,7 @@ public sealed class SearchMachineErrorCodesTests(CoreDatabaseFixture fixture) : 
             tenant.BothDepartmentIds,
             MachineErrorCodeSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter, sort));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[1], ids[2]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 2]);
     }
 
     [Theory]

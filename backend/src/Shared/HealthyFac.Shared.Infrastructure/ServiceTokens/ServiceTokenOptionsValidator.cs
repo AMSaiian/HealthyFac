@@ -20,19 +20,19 @@ public sealed class ServiceTokenOptionsValidator : AbstractValidator<ServiceToke
             .WithMessage(ServiceTokenValidationMessages.ClientSecretRequired);
 
         RuleFor(options => options.RefreshMarginSeconds)
-            .GreaterThanOrEqualTo(0)
+            .GreaterThanOrEqualTo(valueToCompare: 0)
             .WithMessage(ServiceTokenValidationMessages.RefreshMarginInvalid);
 
         RuleFor(options => options.RefreshJitterSeconds)
-            .GreaterThanOrEqualTo(0)
+            .GreaterThanOrEqualTo(valueToCompare: 0)
             .WithMessage(ServiceTokenValidationMessages.RefreshJitterInvalid);
 
         RuleFor(options => options.LockTimeoutSeconds)
-            .GreaterThan(0)
+            .GreaterThan(valueToCompare: 0)
             .WithMessage(ServiceTokenValidationMessages.LockTimeoutInvalid);
 
         RuleFor(options => options.LockPollMilliseconds)
-            .GreaterThan(0)
+            .GreaterThan(valueToCompare: 0)
             .WithMessage(ServiceTokenValidationMessages.LockPollInvalid);
 
         RuleFor(options => options)

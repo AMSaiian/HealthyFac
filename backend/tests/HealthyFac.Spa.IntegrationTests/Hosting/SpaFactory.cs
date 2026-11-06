@@ -34,29 +34,31 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         _isTelemetryEnabled = isTelemetryEnabled;
         _settings = settings ?? new Dictionary<string, string>();
         _contentRoot = Path.Combine(Path.GetTempPath(), $"healthyfac-spa-{Guid.NewGuid():N}");
-        Directory.CreateDirectory(Path.Combine(_contentRoot, "i18n"));
+        Directory.CreateDirectory(Path.Combine(_contentRoot, path2: "i18n"));
         if (hasIndexFile)
         {
             File.WriteAllText(
-                Path.Combine(_contentRoot, "index.html"),
+                Path.Combine(_contentRoot, path2: "index.html"),
                 $"<html><body><hf-root ngCspNonce=\"{NoncePlaceholder}\"></hf-root>"
                 + $"<script nonce=\"{NoncePlaceholder}\"></script></body></html>");
         }
 
-        File.WriteAllText(Path.Combine(_contentRoot, HashedAssetName), "console.log(1);");
-        File.WriteAllText(Path.Combine(_contentRoot, LookalikeFileName), "x");
-        File.WriteAllText(Path.Combine(_contentRoot, UnhashedFileName), "{}");
-        File.WriteAllText(Path.Combine(_contentRoot, SilentSsoFileName), "<html></html>");
-        File.WriteAllText(Path.Combine(_contentRoot, "config.json"), "{\"apiBaseUrl\":\"https://file.example.com\"}");
+        File.WriteAllText(Path.Combine(_contentRoot, HashedAssetName), contents: "console.log(1);");
+        File.WriteAllText(Path.Combine(_contentRoot, LookalikeFileName), contents: "x");
+        File.WriteAllText(Path.Combine(_contentRoot, UnhashedFileName), contents: "{}");
+        File.WriteAllText(Path.Combine(_contentRoot, SilentSsoFileName), contents: "<html></html>");
+        File.WriteAllText(
+            Path.Combine(_contentRoot, path2: "config.json"),
+            contents: "{\"apiBaseUrl\":\"https://file.example.com\"}");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(TestEnvironment);
-        builder.UseSetting("Spa:ContentRoot", _contentRoot);
-        builder.UseSetting("Spa:ApiBaseUrl", ApiBaseUrl);
-        builder.UseSetting("Spa:AuthUrl", AuthUrl);
-        builder.UseSetting("Spa:PrimeUiLicenseKey", PrimeUiLicenseKey);
+        builder.UseSetting(key: "Spa:ContentRoot", _contentRoot);
+        builder.UseSetting(key: "Spa:ApiBaseUrl", ApiBaseUrl);
+        builder.UseSetting(key: "Spa:AuthUrl", AuthUrl);
+        builder.UseSetting(key: "Spa:PrimeUiLicenseKey", PrimeUiLicenseKey);
 
         foreach (var (key, value) in _settings)
         {
@@ -65,9 +67,9 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
 
         if (_isTelemetryEnabled)
         {
-            builder.UseSetting("Tracing:IsEnabled", bool.TrueString);
-            builder.UseSetting("Metrics:IsEnabled", bool.TrueString);
-            builder.UseSetting("OpenTelemetryLogging:IsEnabled", bool.TrueString);
+            builder.UseSetting(key: "Tracing:IsEnabled", bool.TrueString);
+            builder.UseSetting(key: "Metrics:IsEnabled", bool.TrueString);
+            builder.UseSetting(key: "OpenTelemetryLogging:IsEnabled", bool.TrueString);
         }
     }
 
@@ -76,7 +78,7 @@ public sealed class SpaFactory : WebApplicationFactory<Program>
         base.Dispose(isDisposing);
         if (isDisposing && Directory.Exists(_contentRoot))
         {
-            Directory.Delete(_contentRoot, true);
+            Directory.Delete(_contentRoot, recursive: true);
         }
     }
 }

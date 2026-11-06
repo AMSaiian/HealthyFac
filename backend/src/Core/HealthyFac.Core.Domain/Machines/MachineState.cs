@@ -8,9 +8,9 @@ namespace HealthyFac.Core.Domain.Machines;
 /// </summary>
 public sealed class MachineState : Enumeration<MachineState>
 {
-    public static readonly MachineState Operational = new("operational");
-    public static readonly MachineState InMaintenance = new("inMaintenance");
-    public static readonly MachineState OutOfService = new("outOfService");
+    public static readonly MachineState Operational = new(value: "operational");
+    public static readonly MachineState InMaintenance = new(value: "inMaintenance");
+    public static readonly MachineState OutOfService = new(value: "outOfService");
 
     private MachineState(string value)
         : base(value)
