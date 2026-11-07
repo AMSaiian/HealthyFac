@@ -1,9 +1,6 @@
-using HealthyFac.Auth.Application.Identities;
-using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
-using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
-using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 

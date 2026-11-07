@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Application.Configuration;
 using HealthyFac.Shared.UnitTests.Configuration.Data;
 
 namespace HealthyFac.Shared.UnitTests.Configuration;

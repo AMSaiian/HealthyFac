@@ -3,7 +3,7 @@ using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using ApplicationDeactivateEmployeeRequest =
-    HealthyFac.Core.Application.Employees.DeactivateEmployee.DeactivateEmployeeRequest;
+    HealthyFac.Core.Application.Employees.DeactivateEmployeeRequest;
 using ApplicationRetryProvisioningRequest =
     HealthyFac.Core.Application.Employees.RetryProvisioningRequest;
 

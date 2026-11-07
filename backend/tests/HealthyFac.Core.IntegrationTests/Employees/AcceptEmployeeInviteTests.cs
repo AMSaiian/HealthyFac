@@ -1,11 +1,10 @@
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
-using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 

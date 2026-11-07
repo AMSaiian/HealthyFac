@@ -26,7 +26,6 @@
     <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Application\HealthyFac.Telemetry.Application.csproj" />
     <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Infrastructure\HealthyFac.Telemetry.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Web\HealthyFac.Telemetry.Web.csproj" />
-    <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Application\HealthyFac.Core.Application.csproj" />
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 

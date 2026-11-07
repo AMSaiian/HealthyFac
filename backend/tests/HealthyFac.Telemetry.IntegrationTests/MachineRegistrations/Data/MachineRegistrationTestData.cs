@@ -1,5 +1,5 @@
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Domain.Gateways;
-using HealthyFac.Telemetry.Application.MachineRegistrations;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 

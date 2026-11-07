@@ -1,10 +1,10 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.Extensions.Logging;
-using HealthyFac.Core.Messaging.Employees;
 
-namespace HealthyFac.Auth.Application.Identities.RevokeIdentity;
+namespace HealthyFac.Auth.Application.Identities;
 
 public sealed class RevokeIdentityPreHandlerCheck : PassThroughPreHandlerCheck<EmployeeDeactivated>;
 

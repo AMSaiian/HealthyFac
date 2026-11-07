@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Infrastructure.Configuration;
+namespace HealthyFac.Shared.Application.Configuration;
 
 public static class ConfigurationValidationMessages
 {

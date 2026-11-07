@@ -1,4 +1,3 @@
-using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Core.Messaging.Employees;
 

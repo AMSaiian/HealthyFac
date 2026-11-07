@@ -1,11 +1,11 @@
+using HealthyFac.Auth.Messaging.Identities;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using HealthyFac.Auth.Messaging.Identities;
 
-namespace HealthyFac.Core.Application.Employees.FailProvisioning;
+namespace HealthyFac.Core.Application.Employees;
 
 public sealed class FailProvisioningPreHandlerCheck : PassThroughPreHandlerCheck<IdentityProvisioningFailed>;
 

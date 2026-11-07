@@ -1,11 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentValidation;
 
-namespace HealthyFac.Shared.Infrastructure.Configuration;
+namespace HealthyFac.Shared.Application.Configuration;
 
 /// <summary>
 /// Provides validation rules for URI settings, shared by the options validators of every layer that references
-/// Shared.Infrastructure.
+/// Shared.Application.
 /// </summary>
 public static class UriRuleBuilderExtensions
 {

@@ -1,15 +1,27 @@
+using System.Reflection;
+using HealthyFac.Core.Messaging;
+using HealthyFac.Shared.Application;
+using HealthyFac.Shared.Domain;
+using HealthyFac.Shared.Infrastructure;
+using HealthyFac.Shared.Web;
+using HealthyFac.Telemetry.Application;
+using HealthyFac.Telemetry.Domain;
+using HealthyFac.Telemetry.Infrastructure;
+using HealthyFac.Telemetry.Web;
+
 namespace HealthyFac.Telemetry.ArchitectureTests.Dependencies.Data;
 
 public static class LayerDependencyTestData
 {
-    public const string TelemetryDomain = "HealthyFac.Telemetry.Domain";
-    public const string TelemetryApplication = "HealthyFac.Telemetry.Application";
-    public const string TelemetryInfrastructure = "HealthyFac.Telemetry.Infrastructure";
-    public const string TelemetryWeb = "HealthyFac.Telemetry.Web";
-    public const string SharedDomain = "HealthyFac.Shared.Domain";
-    public const string SharedApplication = "HealthyFac.Shared.Application";
-    public const string SharedInfrastructure = "HealthyFac.Shared.Infrastructure";
-    public const string SharedWeb = "HealthyFac.Shared.Web";
+    public static readonly string TelemetryDomain = TelemetryDomainAssembly.Instance.GetName().Name!;
+    public static readonly string TelemetryApplication = TelemetryApplicationAssembly.Instance.GetName().Name!;
+    public static readonly string TelemetryInfrastructure = TelemetryInfrastructureAssembly.Instance.GetName().Name!;
+    public static readonly string TelemetryWeb = TelemetryWebAssembly.Instance.GetName().Name!;
+    public static readonly string CoreMessaging = CoreMessagingAssembly.Instance.GetName().Name!;
+    public static readonly string SharedDomain = SharedDomainAssembly.Instance.GetName().Name!;
+    public static readonly string SharedApplication = SharedApplicationAssembly.Instance.GetName().Name!;
+    public static readonly string SharedInfrastructure = SharedInfrastructureAssembly.Instance.GetName().Name!;
+    public static readonly string SharedWeb = SharedWebAssembly.Instance.GetName().Name!;
     public const string EntityFrameworkCore = "Microsoft.EntityFrameworkCore";
     public const string AspNetCore = "Microsoft.AspNetCore";
     public const string Npgsql = "Npgsql";
@@ -52,4 +64,25 @@ public static class LayerDependencyTestData
         { SharedApplication, OpenTelemetry },
         { SharedInfrastructure, OpenTelemetry },
     };
+
+    private static readonly Dictionary<string, Assembly> Labels = new[]
+    {
+        TelemetryDomainAssembly.Instance,
+        TelemetryApplicationAssembly.Instance,
+        TelemetryInfrastructureAssembly.Instance,
+        TelemetryWebAssembly.Instance,
+        CoreMessagingAssembly.Instance,
+        SharedDomainAssembly.Instance,
+        SharedApplicationAssembly.Instance,
+        SharedInfrastructureAssembly.Instance,
+        SharedWebAssembly.Instance,
+    }.ToDictionary(assembly => assembly.GetName().Name!);
+
+    /// <summary>
+    /// Returns the assembly of a layer name. The names come from the assembly label classes, so a rename of a label
+    /// breaks the build instead of changing what a test scans.
+    /// </summary>
+    /// <param name="name">The assembly name from this class.</param>
+    /// <returns>The assembly that the label class of the name points to.</returns>
+    public static Assembly Resolve(string name) => Labels[name];
 }

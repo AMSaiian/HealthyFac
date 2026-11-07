@@ -1,7 +1,7 @@
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application;
-using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;

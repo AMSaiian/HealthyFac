@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
@@ -7,7 +8,6 @@ using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 

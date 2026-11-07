@@ -1,6 +1,7 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Application.Messaging;
@@ -8,9 +9,8 @@ using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
-using HealthyFac.Core.Messaging.Employees;
 
-namespace HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
+namespace HealthyFac.Core.Application.Employees;
 
 public record AcceptEmployeeInviteRequest : IRequest<AcceptEmployeeInviteResponse>
 {

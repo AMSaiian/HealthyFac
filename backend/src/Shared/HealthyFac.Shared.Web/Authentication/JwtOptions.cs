@@ -1,5 +1,5 @@
 using FluentValidation;
-using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Application.Configuration;
 
 namespace HealthyFac.Shared.Web.Authentication;
 

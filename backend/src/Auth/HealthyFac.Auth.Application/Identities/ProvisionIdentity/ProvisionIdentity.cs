@@ -1,10 +1,10 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
+using HealthyFac.Auth.Messaging.Identities;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.Extensions.Logging;
-using HealthyFac.Core.Messaging.Employees;
-using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Auth.Application.Identities.ProvisionIdentity;
 

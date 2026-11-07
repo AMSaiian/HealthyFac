@@ -8,8 +8,8 @@ namespace HealthyFac.Testing.Conventions;
 
 /// <summary>
 /// Compares the namespace of each use case request with the namespaces of its handler, input validator, and
-/// pre-handler check. An integration message is out of scope: its contract lives in the Messaging project of the
-/// producer, and the handler lives in the consumer.
+/// pre-handler check. For an integration message the contract lives in the Messaging project of the producer, so the
+/// handler and the pre-handler check must share one namespace with each other. The validator stays with the contract.
 /// </summary>
 internal static class UseCasePartInspection
 {
@@ -20,14 +20,17 @@ internal static class UseCasePartInspection
             .ToList();
         var violations = new SortedSet<string>(StringComparer.Ordinal);
 
-        var requests = types.Where(type => type.ImplementsGeneric(typeof(IRequest<>)))
-            .Where(type => !typeof(IIntegrationMessage).IsAssignableFrom(type));
-
-        foreach (var request in requests)
+        foreach (var request in types.Where(type => type.ImplementsGeneric(typeof(IRequest<>))))
         {
-            foreach (var part in types.Where(type => IsPartOf(type, request)))
+            var isMessage = typeof(IIntegrationMessage).IsAssignableFrom(request);
+            var parts = types.Where(type => IsPartOf(type, request)).ToList();
+            var anchorNamespace = isMessage
+                ? parts.FirstOrDefault(part => !IsValidatorOf(part, request))?.Namespace
+                : request.Namespace;
+
+            foreach (var part in parts.Where(part => !(isMessage && IsValidatorOf(part, request))))
             {
-                if (part.Namespace != request.Namespace)
+                if (part.Namespace != anchorNamespace)
                 {
                     violations.Add($"{part.DisplayName}: not in the namespace of {request.DisplayName}");
                 }

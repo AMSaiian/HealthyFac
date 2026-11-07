@@ -40,4 +40,12 @@ public static class ConventionTestData
         LayerDependencyTestData.TelemetryApplication,
         LayerDependencyTestData.SharedApplication,
     ];
+
+    public static readonly string[] MessageAssemblies =
+    [
+        LayerDependencyTestData.TelemetryApplication,
+        LayerDependencyTestData.TelemetryInfrastructure,
+        LayerDependencyTestData.TelemetryWeb,
+        LayerDependencyTestData.CoreMessaging,
+    ];
 }

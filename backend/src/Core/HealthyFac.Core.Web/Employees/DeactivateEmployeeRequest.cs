@@ -1,5 +1,5 @@
 using ApplicationDeactivateEmployeeRequest =
-    HealthyFac.Core.Application.Employees.DeactivateEmployee.DeactivateEmployeeRequest;
+    HealthyFac.Core.Application.Employees.DeactivateEmployeeRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 

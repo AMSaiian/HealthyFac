@@ -1,6 +1,6 @@
 using System.Text.Json;
 using HealthyFac.Core.Application;
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
+using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;

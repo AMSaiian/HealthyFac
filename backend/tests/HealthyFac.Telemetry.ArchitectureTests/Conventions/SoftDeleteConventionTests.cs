@@ -1,6 +1,6 @@
-using System.Reflection;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.ArchitectureTests.Conventions.Data;
+using HealthyFac.Telemetry.ArchitectureTests.Dependencies.Data;
 
 namespace HealthyFac.Telemetry.ArchitectureTests.Conventions;
 
@@ -12,7 +12,7 @@ public sealed class SoftDeleteConventionTests
     {
         var violations = string.Join(
             Environment.NewLine,
-            Assembly.Load(assemblyName)
+            LayerDependencyTestData.Resolve(assemblyName)
                 .GetTypes()
                 .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(IEntity).IsAssignableFrom(type))
                 .Where(type => !typeof(ISoftDeletable).IsAssignableFrom(type))

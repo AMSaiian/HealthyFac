@@ -1,18 +1,14 @@
 using System.Collections.Frozen;
+using HealthyFac.Auth.Messaging.Identities;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
-using HealthyFac.Core.Application.Employees.CompleteProvisioning;
-using HealthyFac.Core.Application.Employees.DeactivateEmployee;
-using HealthyFac.Core.Application.Employees.FailProvisioning;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using HealthyFac.Core.Messaging.Employees;
-using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Core.IntegrationTests.Employees.Data;
 

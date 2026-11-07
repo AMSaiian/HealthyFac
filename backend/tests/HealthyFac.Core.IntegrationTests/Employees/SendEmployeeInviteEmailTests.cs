@@ -1,11 +1,11 @@
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 

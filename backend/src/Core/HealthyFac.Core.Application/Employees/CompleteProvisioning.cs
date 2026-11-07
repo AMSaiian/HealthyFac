@@ -1,13 +1,12 @@
-using HealthyFac.Core.Application.Employees.DeactivateEmployee;
+using HealthyFac.Auth.Messaging.Identities;
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
-using HealthyFac.Core.Messaging.Employees;
-using HealthyFac.Auth.Messaging.Identities;
 
-namespace HealthyFac.Core.Application.Employees.CompleteProvisioning;
+namespace HealthyFac.Core.Application.Employees;
 
 public sealed class CompleteProvisioningPreHandlerCheck : PassThroughPreHandlerCheck<IdentityProvisioned>;
 

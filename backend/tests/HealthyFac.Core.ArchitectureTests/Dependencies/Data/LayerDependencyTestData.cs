@@ -1,20 +1,32 @@
+using System.Reflection;
+using HealthyFac.Auth.Messaging;
+using HealthyFac.Core.Application;
+using HealthyFac.Core.Domain;
+using HealthyFac.Core.Infrastructure;
+using HealthyFac.Core.Messaging;
+using HealthyFac.Core.Web;
+using HealthyFac.Shared.Application;
+using HealthyFac.Shared.Domain;
+using HealthyFac.Shared.Infrastructure;
+using HealthyFac.Shared.Web;
+
 namespace HealthyFac.Core.ArchitectureTests.Dependencies.Data;
 
 public static class LayerDependencyTestData
 {
-    public const string CoreDomain = "HealthyFac.Core.Domain";
-    public const string CoreApplication = "HealthyFac.Core.Application";
-    public const string CoreInfrastructure = "HealthyFac.Core.Infrastructure";
-    public const string CoreWeb = "HealthyFac.Core.Web";
-    public const string CoreMessaging = "HealthyFac.Core.Messaging";
-    public const string AuthMessaging = "HealthyFac.Auth.Messaging";
+    public static readonly string CoreDomain = CoreDomainAssembly.Instance.GetName().Name!;
+    public static readonly string CoreApplication = CoreApplicationAssembly.Instance.GetName().Name!;
+    public static readonly string CoreInfrastructure = CoreInfrastructureAssembly.Instance.GetName().Name!;
+    public static readonly string CoreWeb = CoreWebAssembly.Instance.GetName().Name!;
+    public static readonly string CoreMessaging = CoreMessagingAssembly.Instance.GetName().Name!;
+    public static readonly string AuthMessaging = AuthMessagingAssembly.Instance.GetName().Name!;
     public const string AuthApplication = "HealthyFac.Auth.Application";
     public const string AuthInfrastructure = "HealthyFac.Auth.Infrastructure";
     public const string AuthWeb = "HealthyFac.Auth.Web";
-    public const string SharedDomain = "HealthyFac.Shared.Domain";
-    public const string SharedApplication = "HealthyFac.Shared.Application";
-    public const string SharedInfrastructure = "HealthyFac.Shared.Infrastructure";
-    public const string SharedWeb = "HealthyFac.Shared.Web";
+    public static readonly string SharedDomain = SharedDomainAssembly.Instance.GetName().Name!;
+    public static readonly string SharedApplication = SharedApplicationAssembly.Instance.GetName().Name!;
+    public static readonly string SharedInfrastructure = SharedInfrastructureAssembly.Instance.GetName().Name!;
+    public static readonly string SharedWeb = SharedWebAssembly.Instance.GetName().Name!;
     public const string EntityFrameworkCore = "Microsoft.EntityFrameworkCore";
     public const string AspNetCore = "Microsoft.AspNetCore";
     public const string Npgsql = "Npgsql";
@@ -63,4 +75,26 @@ public static class LayerDependencyTestData
         { CoreMessaging, AuthInfrastructure },
         { CoreMessaging, AuthWeb },
     };
+
+    private static readonly Dictionary<string, Assembly> Labels = new[]
+    {
+        CoreDomainAssembly.Instance,
+        CoreApplicationAssembly.Instance,
+        CoreInfrastructureAssembly.Instance,
+        CoreWebAssembly.Instance,
+        CoreMessagingAssembly.Instance,
+        AuthMessagingAssembly.Instance,
+        SharedDomainAssembly.Instance,
+        SharedApplicationAssembly.Instance,
+        SharedInfrastructureAssembly.Instance,
+        SharedWebAssembly.Instance,
+    }.ToDictionary(assembly => assembly.GetName().Name!);
+
+    /// <summary>
+    /// Returns the assembly of a layer name. The names come from the assembly label classes, so a rename of a label
+    /// breaks the build instead of changing what a test scans.
+    /// </summary>
+    /// <param name="name">The assembly name from this class.</param>
+    /// <returns>The assembly that the label class of the name points to.</returns>
+    public static Assembly Resolve(string name) => Labels[name];
 }

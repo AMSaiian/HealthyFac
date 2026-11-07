@@ -1,4 +1,3 @@
-using System.Reflection;
 using HealthyFac.Auth.ArchitectureTests.Dependencies.Data;
 using NetArchTest.Rules;
 
@@ -13,7 +12,7 @@ public sealed class LayerDependencyTests
     )]
     public void Layer_WithForbiddenNamespace_HasNoTypeThatDependsOnIt(string layer, string forbiddenNamespace)
     {
-        var result = Types.InAssembly(Assembly.Load(layer))
+        var result = Types.InAssembly(LayerDependencyTestData.Resolve(layer))
             .ShouldNot()
             .HaveDependencyOnAny(forbiddenNamespace)
             .GetResult();

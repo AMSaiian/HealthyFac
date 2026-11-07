@@ -1,11 +1,11 @@
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
+using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Core.Messaging.Machines;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 

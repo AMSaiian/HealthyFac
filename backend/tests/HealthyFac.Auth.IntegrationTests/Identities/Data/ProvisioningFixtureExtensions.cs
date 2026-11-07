@@ -3,9 +3,10 @@ using HealthyFac.Auth.Application;
 using HealthyFac.Auth.Application.Identities;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
-using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
+using HealthyFac.Auth.Messaging.Identities;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
@@ -15,8 +16,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using HealthyFac.Core.Messaging.Employees;
-using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 

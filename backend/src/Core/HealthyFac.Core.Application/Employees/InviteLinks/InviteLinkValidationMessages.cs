@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Infrastructure.Employees.InviteLinks;
+namespace HealthyFac.Core.Application.Employees.InviteLinks;
 
 /// <summary>
 /// Defines the validator messages for the invite link configuration.
