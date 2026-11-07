@@ -38,6 +38,16 @@ public static class ConventionTestData
     public static readonly string[] UseCaseAssemblies =
     [
         LayerDependencyTestData.CoreApplication,
+        LayerDependencyTestData.CoreMessaging,
         LayerDependencyTestData.SharedApplication,
+    ];
+
+    public static readonly string[] MessageAssemblies =
+    [
+        LayerDependencyTestData.CoreApplication,
+        LayerDependencyTestData.CoreInfrastructure,
+        LayerDependencyTestData.CoreWeb,
+        LayerDependencyTestData.CoreMessaging,
+        LayerDependencyTestData.AuthMessaging,
     ];
 }

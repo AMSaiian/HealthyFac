@@ -36,6 +36,12 @@ public static class GridValidatorTestData
         DateTimeKind.Local,
     };
 
+    public static TheoryData<DateTime, DateTime> RangesWithFromNotBeforeTo => new()
+    {
+        { RangeEnd, RangeStart },
+        { RangeStart, RangeStart },
+    };
+
     public static TheoryData<IReadOnlyList<Guid>?> InvalidIdLists => new()
     {
         null,

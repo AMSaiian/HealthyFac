@@ -1,5 +1,6 @@
 using System.Reflection;
 using FluentValidation;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
@@ -7,7 +8,8 @@ namespace HealthyFac.Testing.Conventions;
 
 /// <summary>
 /// Compares the namespace of each use case request with the namespaces of its handler, input validator, and
-/// pre-handler check.
+/// pre-handler check. An integration message is out of scope: its contract lives in the Messaging project of the
+/// producer, and the handler lives in the consumer.
 /// </summary>
 internal static class UseCasePartInspection
 {
@@ -18,7 +20,10 @@ internal static class UseCasePartInspection
             .ToList();
         var violations = new SortedSet<string>(StringComparer.Ordinal);
 
-        foreach (var request in types.Where(type => type.ImplementsGeneric(typeof(IRequest<>))))
+        var requests = types.Where(type => type.ImplementsGeneric(typeof(IRequest<>)))
+            .Where(type => !typeof(IIntegrationMessage).IsAssignableFrom(type));
+
+        foreach (var request in requests)
         {
             foreach (var part in types.Where(type => IsPartOf(type, request)))
             {

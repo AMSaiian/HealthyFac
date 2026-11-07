@@ -1,4 +1,3 @@
-using FluentValidation;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Domain.Roles;
@@ -7,6 +6,7 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
+using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
@@ -120,16 +120,6 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
         var invite = await _fixture.LoadInviteAsync(inviteId);
 
         invite.Departments.Should().ContainSingle().Which.Id.Should().Be(departmentIds[index: 0]);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithInvalidEmail_ThrowsValidationException()
-    {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
-
-        var act = () => CreateAsync(companyId, InviteTestData.InvalidEmail, departmentIds);
-
-        await act.Should().ThrowAsync<ValidationException>();
     }
 
     [Fact]

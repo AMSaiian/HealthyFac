@@ -23,6 +23,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Core.Infrastructure;
 

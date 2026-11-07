@@ -12,6 +12,8 @@ ENV DOTNET_NOLOGO=1 \
 COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac.slnx ./
 COPY src/Core/HealthyFac.Core.Domain/*.csproj          src/Core/HealthyFac.Core.Domain/
 COPY src/Core/HealthyFac.Core.Application/*.csproj     src/Core/HealthyFac.Core.Application/
+COPY src/Core/HealthyFac.Core.Messaging/*.csproj       src/Core/HealthyFac.Core.Messaging/
+COPY src/Auth/HealthyFac.Auth.Messaging/*.csproj       src/Auth/HealthyFac.Auth.Messaging/
 COPY src/Core/HealthyFac.Core.Infrastructure/*.csproj  src/Core/HealthyFac.Core.Infrastructure/
 COPY src/Core/HealthyFac.Core.Web/*.csproj             src/Core/HealthyFac.Core.Web/
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj          src/Shared/HealthyFac.Shared.Domain/

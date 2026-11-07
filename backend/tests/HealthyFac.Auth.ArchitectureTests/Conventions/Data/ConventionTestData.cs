@@ -22,6 +22,7 @@ public static class ConventionTestData
         LayerDependencyTestData.AuthApplication,
         LayerDependencyTestData.AuthInfrastructure,
         LayerDependencyTestData.AuthWeb,
+        LayerDependencyTestData.AuthMessaging,
     ];
 
     public static TheoryData<string> ApplicationAssemblies =>
@@ -32,6 +33,16 @@ public static class ConventionTestData
     public static readonly string[] UseCaseAssemblies =
     [
         LayerDependencyTestData.AuthApplication,
+        LayerDependencyTestData.AuthMessaging,
         LayerDependencyTestData.SharedApplication,
+    ];
+
+    public static readonly string[] MessageAssemblies =
+    [
+        LayerDependencyTestData.AuthApplication,
+        LayerDependencyTestData.AuthInfrastructure,
+        LayerDependencyTestData.AuthWeb,
+        LayerDependencyTestData.CoreMessaging,
+        LayerDependencyTestData.AuthMessaging,
     ];
 }

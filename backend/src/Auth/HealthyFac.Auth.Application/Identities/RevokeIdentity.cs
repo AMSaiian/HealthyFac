@@ -2,6 +2,7 @@ using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.Extensions.Logging;
+using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Auth.Application.Identities.RevokeIdentity;
 

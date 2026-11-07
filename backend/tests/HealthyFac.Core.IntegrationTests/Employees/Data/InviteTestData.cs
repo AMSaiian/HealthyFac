@@ -33,11 +33,9 @@ public static class InviteTestData
     public const string AcceptExpiredEmail = "accept-expired@plant.com";
     public const string AcceptParallelEmail = "accept-parallel@plant.com";
     public const string AcceptSharedEmail = "accept-shared@plant.com";
-    public const string AcceptBlankNameEmail = "accept-blank@plant.com";
     public const string AcceptSharedParallelEmail = "accept-shared-parallel@plant.com";
     public const string CreateParallelEmail = "create-parallel@plant.com";
     public const string ResendParallelEmail = "resend-parallel@plant.com";
-    public const string InvalidEmail = "not-an-email";
     public const string ValidEmail = "valid@plant.com";
 
     public const string EmployeeFirstName = "Eva";

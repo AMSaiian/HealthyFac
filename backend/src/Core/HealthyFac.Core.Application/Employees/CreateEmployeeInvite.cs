@@ -12,6 +12,7 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Emails;
 using Microsoft.EntityFrameworkCore;
+using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Core.Application.Employees;
 

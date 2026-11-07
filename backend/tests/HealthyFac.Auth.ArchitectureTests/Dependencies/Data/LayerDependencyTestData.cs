@@ -5,6 +5,11 @@ public static class LayerDependencyTestData
     public const string AuthApplication = "HealthyFac.Auth.Application";
     public const string AuthInfrastructure = "HealthyFac.Auth.Infrastructure";
     public const string AuthWeb = "HealthyFac.Auth.Web";
+    public const string AuthMessaging = "HealthyFac.Auth.Messaging";
+    public const string CoreMessaging = "HealthyFac.Core.Messaging";
+    public const string CoreApplication = "HealthyFac.Core.Application";
+    public const string CoreInfrastructure = "HealthyFac.Core.Infrastructure";
+    public const string CoreWeb = "HealthyFac.Core.Web";
     public const string SharedApplication = "HealthyFac.Shared.Application";
     public const string SharedInfrastructure = "HealthyFac.Shared.Infrastructure";
     public const string SharedWeb = "HealthyFac.Shared.Web";
@@ -28,5 +33,13 @@ public static class LayerDependencyTestData
         { AuthWeb, LinqToDB },
         { AuthApplication, OpenTelemetry },
         { AuthInfrastructure, OpenTelemetry },
+        { AuthMessaging, AuthApplication },
+        { AuthMessaging, AuthInfrastructure },
+        { AuthMessaging, AuthWeb },
+        { AuthMessaging, SharedInfrastructure },
+        { AuthMessaging, SharedWeb },
+        { AuthMessaging, CoreApplication },
+        { AuthMessaging, CoreInfrastructure },
+        { AuthMessaging, CoreWeb },
     };
 }

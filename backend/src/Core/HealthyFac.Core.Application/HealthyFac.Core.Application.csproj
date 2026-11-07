@@ -3,6 +3,8 @@
     <ItemGroup>
         <ProjectReference Include="..\HealthyFac.Core.Domain\HealthyFac.Core.Domain.csproj"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj"/>
+        <ProjectReference Include="..\..\Auth\HealthyFac.Auth.Messaging\HealthyFac.Auth.Messaging.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

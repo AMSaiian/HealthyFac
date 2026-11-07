@@ -1,3 +1,5 @@
+using HealthyFac.Core.Messaging.Employees;
+
 namespace HealthyFac.Core.Application.Employees;
 
 /// <summary>
@@ -5,8 +7,7 @@ namespace HealthyFac.Core.Application.Employees;
 /// </summary>
 public static class EmployeeValidationConstants
 {
-    /// <summary>The longest email address that SMTP allows (RFC 5321).</summary>
-    public const int EmailMaxLength = 254;
+    public const int EmailMaxLength = EmployeeMessageLimits.EmailMaxLength;
 
-    public const int NameMaxLength = 100;
+    public const int NameMaxLength = EmployeeMessageLimits.NameMaxLength;
 }

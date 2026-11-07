@@ -12,6 +12,13 @@ public static class KnownActorsTestData
     public static readonly Guid KeycloakUserId = Guid.Parse(input: "3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b");
     public static readonly Guid AnonymousId = Guid.Parse(input: "8a43dd69-0d6c-521b-9dad-f9c07cb5be51");
 
+    public static TheoryData<Guid, ActorKind> KindOfCases => new()
+    {
+        { KnownActors.Anonymous.UserId, ActorKind.Anonymous },
+        { ServiceActor.OutboxProcessor.For(ServiceName.Core).UserId, ActorKind.Service },
+        { KeycloakUserId, ActorKind.User },
+    };
+
     public static TheoryData<string> ActorValues
     {
         get

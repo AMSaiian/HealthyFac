@@ -2,6 +2,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Auth.Messaging\HealthyFac.Auth.Messaging.csproj"/>
+        <ProjectReference Include="..\..\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

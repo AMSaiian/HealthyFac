@@ -152,4 +152,25 @@ public sealed class ConventionTests
 
         violations.Should().BeEmpty();
     }
+
+    [Fact]
+    public void IntegrationMessages_InServiceAssemblies_LiveInMessagingAssembly()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindMessagesOutsideMessagingAssembly(
+                ConventionTestData.MessageAssemblies.Select(Assembly.Load)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void IntegrationMessages_InServiceAssemblies_HaveNoCopy()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindDuplicateMessages(ConventionTestData.MessageAssemblies.Select(Assembly.Load)));
+
+        violations.Should().BeEmpty();
+    }
 }

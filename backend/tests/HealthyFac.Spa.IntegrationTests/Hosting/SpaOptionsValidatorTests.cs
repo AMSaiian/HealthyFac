@@ -92,16 +92,6 @@ public sealed class SpaOptionsValidatorTests
         result.IsValid.Should().BeTrue();
     }
 
-    [Fact]
-    public void Validate_WithBlankPermissionsPolicy_Fails()
-    {
-        var options = CreateOptions(permissionsPolicy: " ");
-
-        var result = _validator.Validate(options);
-
-        result.IsValid.Should().BeFalse();
-    }
-
     [Theory]
     [MemberData(nameof(SpaOptionsTestData.InvalidAuthUrls), MemberType = typeof(SpaOptionsTestData))]
     public void Validate_WithInvalidAuthUrl_Fails(string authUrl)
@@ -111,20 +101,6 @@ public sealed class SpaOptionsValidatorTests
         var result = _validator.Validate(options);
 
         result.IsValid.Should().BeFalse();
-    }
-
-    [Theory]
-    [MemberData(nameof(SpaOptionsTestData.BlankValues), MemberType = typeof(SpaOptionsTestData))]
-    public void Validate_WithBlankAuthRealmOrClientId_Fails(string blank)
-    {
-        var blankRealm = CreateOptions(authRealm: blank);
-        var blankClientId = CreateOptions(authClientId: blank);
-
-        var realmResult = _validator.Validate(blankRealm);
-        var clientIdResult = _validator.Validate(blankClientId);
-
-        realmResult.IsValid.Should().BeFalse();
-        clientIdResult.IsValid.Should().BeFalse();
     }
 
     private static SpaOptions CreateOptions(

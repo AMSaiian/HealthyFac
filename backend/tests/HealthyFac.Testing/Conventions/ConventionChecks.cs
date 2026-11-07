@@ -206,6 +206,25 @@ public static class ConventionChecks
         TextRuleInspection.FindViolations(assemblies);
 
     /// <summary>
+    /// Finds the integration messages (types that implement <c>IIntegrationMessage</c>) that no
+    /// <c>HealthyFac.&lt;Service&gt;.Messaging</c> assembly declares.
+    /// </summary>
+    /// <param name="assemblies">The assemblies of the service and of every Messaging project it references.</param>
+    /// <returns>One line for each message in another assembly.</returns>
+    public static IReadOnlyList<string> FindMessagesOutsideMessagingAssembly(IEnumerable<Assembly> assemblies) =>
+        [.. MessageContractInspection.FindOutsideMessagingAssembly(assemblies)];
+
+    /// <summary>
+    /// Finds the integration messages that more than one type declares, by <c>MessageType</c> or by type name. A
+    /// copy of a contract in a consumer keeps the stored name and drifts from the original, so the full name alone
+    /// does not find it.
+    /// </summary>
+    /// <param name="assemblies">The assemblies of the service and of every Messaging project it references.</param>
+    /// <returns>One line for each name that two or more types share.</returns>
+    public static IReadOnlyList<string> FindDuplicateMessages(IEnumerable<Assembly> assemblies) =>
+        [.. MessageContractInspection.FindDuplicates(assemblies)];
+
+    /// <summary>
     /// Finds the parts of a use case that are not in the namespace of their request: the handler, the input
     /// validator, and the pre-handler check. It is the closest reflection check to "one use-case file".
     /// </summary>

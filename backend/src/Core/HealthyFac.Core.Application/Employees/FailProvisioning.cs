@@ -3,6 +3,7 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Core.Application.Employees.FailProvisioning;
 

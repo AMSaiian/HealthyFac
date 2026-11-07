@@ -15,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
+using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 

@@ -11,6 +11,8 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Auth.Messaging.Identities;
 
 namespace HealthyFac.Core.IntegrationTests.Employees.Data;
 

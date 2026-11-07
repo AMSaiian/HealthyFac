@@ -7,6 +7,7 @@ using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 

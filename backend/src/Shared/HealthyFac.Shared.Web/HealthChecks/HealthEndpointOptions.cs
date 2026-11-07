@@ -1,3 +1,6 @@
+using System.Net;
+using FluentValidation;
+
 namespace HealthyFac.Shared.Web.HealthChecks;
 
 /// <summary>
@@ -13,4 +16,14 @@ public sealed class HealthEndpointOptions
     /// Add the same port to <c>ASPNETCORE_HTTP_PORTS</c> or to the URLs of the service, so Kestrel listens on it.
     /// </summary>
     public required int Port { get; init; }
+}
+
+public sealed class HealthEndpointOptionsValidator : AbstractValidator<HealthEndpointOptions>
+{
+    public HealthEndpointOptionsValidator()
+    {
+        RuleFor(options => options.Port)
+            .GreaterThan(IPEndPoint.MinPort)
+            .LessThanOrEqualTo(IPEndPoint.MaxPort);
+    }
 }

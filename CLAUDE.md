@@ -39,7 +39,9 @@ To add a rule:
 Repository rules override plugin skills and their workflows. This includes the TDD, planning, and brainstorming skills. When a skill conflicts with a rule, follow the rule. When you dispatch a subagent, copy the rules that apply to its files into its prompt.
 
 ## Verification Hook
-The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) reformat changed C# files and build the solution. They report build warnings and errors in those files to the agent that stops. Fix every reported item before you finish the turn.
+The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) use git only. They resolve the checkout from the hook `cwd` (`git -C <cwd> rev-parse --show-toplevel`) and do nothing when `cwd` is outside a checkout. They also do nothing when the working tree equals the fingerprint that the `UserPromptSubmit` hook (`record-turn-start.ps1`) stored at the start of the turn, or the fingerprint of the last clean verification. Otherwise they reformat the changed C# files, build the solution, and report build warnings and errors to the agent that stops. Fix every reported item before you finish the turn.
+
+One verification or cleanup per checkout runs at a time (named mutex). The cleanup runs on a private copy of `backend/` and never overwrites a file that another writer changed or deleted during the run. Sessions that share one checkout share its changed files: give each session its own worktree. `.claude/hooks/tests/hook-scope.tests.ps1` checks the skip, the lock, and the guard.
 
 This file imports `AGENTS.md` on purpose. Claude Code skips `AGENTS.md` when a `CLAUDE.md` exists, so the import keeps the shared project context in scope. It also imports `README.md`, so every session knows the product domain. Put shared, agent-agnostic content in `AGENTS.md`. Keep this file for Claude Code specifics only.
 

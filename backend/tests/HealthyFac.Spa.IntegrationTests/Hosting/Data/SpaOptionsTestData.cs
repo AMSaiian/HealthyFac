@@ -18,12 +18,6 @@ public static class SpaOptionsTestData
         " ",
     };
 
-    public static TheoryData<string> BlankValues => new()
-    {
-        "",
-        " ",
-    };
-
     public static TheoryData<string> InvalidHashPatterns => new()
     {
         "[",

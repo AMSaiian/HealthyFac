@@ -5,6 +5,7 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
+using HealthyFac.Core.Messaging.Employees;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
