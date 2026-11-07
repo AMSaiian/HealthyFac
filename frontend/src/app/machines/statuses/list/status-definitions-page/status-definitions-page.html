@@ -1,0 +1,55 @@
+<header class="flex flex-none items-center justify-between">
+  <div class="flex items-center gap-2">
+    <a
+      pButton
+      routerLink="/machines"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [rounded]="true"
+      [attr.aria-label]="'STATUS_DEFINITIONS.BACK' | translate"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h1 class="text-2xl font-bold">{{ 'STATUS_DEFINITIONS.TITLE' | translate }} {{ store.machine()?.name }}</h1>
+  </div>
+  <div class="flex items-center gap-2">
+    @if (store.canWrite()) {
+      <button
+        pButton
+        type="button"
+        (click)="store.requestCreate()"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'STATUS_DEFINITIONS.ADD_NEW' | translate }}
+      </button>
+    }
+  </div>
+</header>
+<hf-status-definition-grid
+  [rows]="page().items"
+  [totalCount]="page().totalCount"
+  [isLoading]="store.statuses.isLoading()"
+  [columns]="store.visibleColumns()"
+  [offset]="store.offset()"
+  [limit]="store.limit()"
+  [sort]="store.sort()"
+  [filter]="store.filter()"
+  [canWrite]="store.canWrite()"
+  [canDelete]="store.canDelete()"
+  (filterChange)="store.setFilter($event)"
+  (sortChange)="store.setSort($event)"
+  (pageChange)="store.setPage($event.offset, $event.limit)"
+  (columnsChange)="store.setColumns($event)"
+  (columnsReorder)="store.reorderColumns($event)"
+  (updateRequested)="store.requestUpdate($event)"
+  (deleteRequested)="store.requestDelete($event)"
+/>
+@if (store.editor(); as editor) {
+  <hf-status-definition-drawer-host
+    [machineId]="store.machineId() ?? ''"
+    [statusDefinitionId]="editor.statusDefinitionId"
+    (saved)="store.onSaved()"
+    (cancelled)="store.closeEditor()"
+  />
+}

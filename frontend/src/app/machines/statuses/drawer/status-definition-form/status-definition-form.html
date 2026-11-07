@@ -1,0 +1,53 @@
+<div class="flex flex-col gap-1">
+  <label for="status-definition-code">{{ 'STATUS_DEFINITIONS.FORM.CODE' | translate }}</label>
+  @for (error of statusDefinitionForm.code().errors(); track $index) {
+    @if (isShown(statusDefinitionForm.code)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <input
+    pInputText
+    id="status-definition-code"
+    autocomplete="off"
+    [placeholder]="'STATUS_DEFINITIONS.FORM.CODE_PLACEHOLDER' | translate"
+    [attr.data-hf-calm]="isShown(statusDefinitionForm.code) ? null : ''"
+    [formField]="statusDefinitionForm.code"
+  />
+</div>
+<div class="flex flex-col gap-1">
+  <label for="status-definition-severity">{{ 'STATUS_DEFINITIONS.FORM.SEVERITY' | translate }}</label>
+  <p-select
+    inputId="status-definition-severity"
+    optionLabel="labelKey"
+    optionValue="value"
+    appendTo="body"
+    [options]="severityOptions"
+    [formField]="statusDefinitionForm.severity"
+  >
+    <ng-template
+      #selectedItem
+      let-option
+    >
+      {{ option.labelKey | translate }}
+    </ng-template>
+    <ng-template
+      #item
+      let-option
+    >
+      {{ option.labelKey | translate }}
+    </ng-template>
+  </p-select>
+</div>
+<div class="flex flex-col gap-1">
+  <span>{{ 'STATUS_DEFINITIONS.FORM.DESCRIPTION' | translate }}</span>
+  @for (error of statusDefinitionForm.description().errors(); track $index) {
+    @if (isShown(statusDefinitionForm.description)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <hf-rich-text-editor
+    [formField]="statusDefinitionForm.description"
+    [characterLimit]="descriptionMaxLength"
+    [placeholder]="'STATUS_DEFINITIONS.FORM.DESCRIPTION_PLACEHOLDER' | translate"
+  />
+</div>

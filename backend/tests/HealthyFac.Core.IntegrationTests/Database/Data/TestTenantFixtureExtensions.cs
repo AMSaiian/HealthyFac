@@ -4,6 +4,8 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -23,7 +25,8 @@ public static class TestTenantFixtureExtensions
                 scope.ServiceProvider.GetRequiredService<TimeProvider>(),
                 Options.Create(options),
                 NullLogger<CoreDevelopmentDataSeeder>.Instance,
-                fixture.InviteTokenService);
+                fixture.InviteTokenService,
+                scope.ServiceProvider.GetRequiredService<IOutbox>());
 
             await seeder.SeedAsync(CancellationToken.None);
         }
@@ -81,7 +84,7 @@ public static class TestTenantFixtureExtensions
                 .ToListAsync();
         }
 
-        public async Task<IReadOnlyList<TenantMachineCodes>> LoadTenantMachineCodesAsync(Guid companyId)
+        public async Task<IReadOnlyList<TenantMachine>> LoadTenantMachineAsync(Guid companyId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
@@ -89,11 +92,10 @@ public static class TestTenantFixtureExtensions
             return await dbContext.Machines
                 .AsNoTracking()
                 .Where(machine => machine.CompanyId == companyId)
-                .Select(machine => new TenantMachineCodes
+                .Select(machine => new TenantMachine
                 {
                     MachineId = machine.Id,
                     DepartmentId = machine.DepartmentId,
-                    ErrorCodeCount = dbContext.MachineErrorCodes.Count(code => code.MachineId == machine.Id),
                 })
                 .ToListAsync();
         }
@@ -145,7 +147,7 @@ public static class TestTenantFixtureExtensions
                 .ExecuteUpdateAsync(update => update.SetProperty(row => row.DeletedAt, DateTime.UtcNow));
 
             return await dbContext.MachineStateHistories
-                .IgnoreQueryFilters()
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .Select(row => row.Id)
                 .ToListAsync();
         }
@@ -156,16 +158,18 @@ public static class TestTenantFixtureExtensions
 
             return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .MachineStateHistories
-                .IgnoreQueryFilters()
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .Select(row => row.Id)
                 .ToListAsync();
         }
 
-        public async Task<int> CountOutboxMessagesAsync()
+        public async Task<int> CountOutboxMessagesAsync(string messageType)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
 
-            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>().OutboxMessages.CountAsync();
+            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+                .OutboxMessages
+                .CountAsync(message => message.Type == messageType);
         }
     }
 }
@@ -179,11 +183,10 @@ public sealed record SeededStateRow
     public required DateTime StartedAt { get; init; }
 }
 
-public sealed record TenantMachineCodes
+public sealed record TenantMachine
 {
     public required Guid MachineId { get; init; }
     public required Guid DepartmentId { get; init; }
-    public required int ErrorCodeCount { get; init; }
 }
 
 public sealed record SeededEmployee

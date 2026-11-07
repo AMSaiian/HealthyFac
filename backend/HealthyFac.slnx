@@ -23,6 +23,12 @@
   <Folder Name="/src/Spa/">
     <Project Path="src/Spa/HealthyFac.Spa.Web/HealthyFac.Spa.Web.csproj" />
   </Folder>
+  <Folder Name="/src/Telemetry/">
+    <Project Path="src/Telemetry/HealthyFac.Telemetry.Application/HealthyFac.Telemetry.Application.csproj" />
+    <Project Path="src/Telemetry/HealthyFac.Telemetry.Domain/HealthyFac.Telemetry.Domain.csproj" />
+    <Project Path="src/Telemetry/HealthyFac.Telemetry.Infrastructure/HealthyFac.Telemetry.Infrastructure.csproj" />
+    <Project Path="src/Telemetry/HealthyFac.Telemetry.Web/HealthyFac.Telemetry.Web.csproj" />
+  </Folder>
   <Folder Name="/src/Tools/">
     <Project Path="src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.csproj" />
   </Folder>
@@ -37,6 +43,10 @@
     <Project Path="tests/HealthyFac.Identity.IntegrationTests/HealthyFac.Identity.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Shared.IntegrationTests/HealthyFac.Shared.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Spa.IntegrationTests/HealthyFac.Spa.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Telemetry.ArchitectureTests/HealthyFac.Telemetry.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.Telemetry.ApiTests/HealthyFac.Telemetry.ApiTests.csproj" />
+    <Project Path="tests/HealthyFac.Telemetry.IntegrationTests/HealthyFac.Telemetry.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Telemetry.UnitTests/HealthyFac.Telemetry.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Testing/HealthyFac.Testing.csproj" />
     <Project Path="tests/HealthyFac.Shared.UnitTests/HealthyFac.Shared.UnitTests.csproj" />
   </Folder>

@@ -1,0 +1,23 @@
+{
+  "Seeding": {
+    "DevelopmentData": {
+      "TestTenant": {
+        "CompanyName": "Test Company",
+        "SupervisorFirstName": "Test",
+        "SupervisorLastName": "Supervisor"
+      },
+      "SeedMachines": [
+        {
+          "MachineId": "0190f3a0-0000-7000-8000-000000000101",
+          "GatewayId": "seedmachineone22",
+          "DepartmentIndex": 0
+        },
+        {
+          "MachineId": "0190f3a0-0000-7000-8000-000000000102",
+          "GatewayId": "seedmachinetwo22",
+          "DepartmentIndex": 1
+        }
+      ]
+    }
+  }
+}

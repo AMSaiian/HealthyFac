@@ -123,6 +123,7 @@ services:
       HEALTHYFAC_TEST_SUPERVISOR_PASSWORD: ${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD:?set HEALTHYFAC_TEST_SUPERVISOR_PASSWORD in .env}
       KEYCLOAK_AUTH_CLIENT_SECRET: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
       KEYCLOAK_CORE_CLIENT_SECRET: ${KEYCLOAK_CORE_CLIENT_SECRET:?set KEYCLOAK_CORE_CLIENT_SECRET in .env}
+      KEYCLOAK_TELEMETRY_CLIENT_SECRET: ${KEYCLOAK_TELEMETRY_CLIENT_SECRET:?set KEYCLOAK_TELEMETRY_CLIENT_SECRET in .env}
     depends_on:
       keycloak:
         condition: service_healthy
@@ -242,6 +243,8 @@ services:
       - ALL
     volumes:
       - core-logs:/app/logs
+      # The seed data file (company name, supervisor name, seed machines). Core reads it in Development only.
+      - ./backend/seed:/app/seed:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
@@ -274,14 +277,11 @@ services:
       # true deletes the Core business data, outbox, and inbox, and seeds again on every start.
       Seeding__DevelopmentData__IsRecreationForced: ${HEALTHYFAC_SEED_RECREATE:-false}
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      Seeding__DevelopmentData__TestTenant__CompanyName: Test Company
       Seeding__DevelopmentData__TestTenant__DepartmentIds__0: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
       Seeding__DevelopmentData__TestTenant__DepartmentIds__1: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
-      Seeding__DevelopmentData__TestTenant__SupervisorFirstName: Test
-      Seeding__DevelopmentData__TestTenant__SupervisorLastName: Supervisor
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       Metrics__Endpoint: http://lgtm:4317
@@ -299,6 +299,137 @@ services:
       rabbitmq:
         condition: service_healthy
       mailpit:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+
+  # The job hashes the passwords of .env into the data volume and gives the volume to the broker user, then it exits.
+  mosquitto-init:
+    container_name: healthyfac-mosquitto-init
+    image: eclipse-mosquitto:2.1.2-alpine
+    restart: "no"
+    user: "0:0"
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        rm -f /mosquitto/data/passwords
+        && mosquitto_passwd -b -c /mosquitto/data/passwords telemetry "$$MOSQUITTO_TELEMETRY_PASSWORD"
+        && mosquitto_passwd -b /mosquitto/data/passwords sender "$$MOSQUITTO_SENDER_PASSWORD"
+        && chown -R 1883:1883 /mosquitto/data
+        && chmod 0600 /mosquitto/data/passwords
+    environment:
+      MOSQUITTO_TELEMETRY_PASSWORD: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
+      MOSQUITTO_SENDER_PASSWORD: ${MOSQUITTO_SENDER_PASSWORD:?set MOSQUITTO_SENDER_PASSWORD in .env}
+    volumes:
+      - mosquitto-data:/mosquitto/data
+
+  # The broker for the machine messages. It is separate from RabbitMQ, so a flooding sender cannot slow down the
+  # business messages, and a device never gets the credentials of the internal broker.
+  mosquitto:
+    container_name: healthyfac-mosquitto
+    image: eclipse-mosquitto:2.1.2-alpine
+    restart: unless-stopped
+    user: "1883:1883"
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    ports:
+      - "${MOSQUITTO_PORT:-1883}:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/acl:/mosquitto/config/acl:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      mosquitto-init:
+        condition: service_completed_successfully
+
+  telemetry:
+    container_name: healthyfac-telemetry
+    build:
+      context: ./backend
+      dockerfile: src/Telemetry/HealthyFac.Telemetry.Web/Dockerfile
+    image: healthyfac/telemetry:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - telemetry-logs:/app/logs
+      # The seed data file (seed machines). Telemetry reads it in Development only.
+      - ./backend/seed:/app/seed:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_telemetry;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      # The SPA sends the encrypted machine ID, so the keys equal the keys of Core.
+      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
+      IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      IdEncryption__Keys__0__IsDefault: "true"
+      ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Messaging__QueueName: telemetry
+      # The issuer is the public URL of the realm (the gateway). Telemetry reads the metadata and the signing keys
+      # from the internal address of Keycloak.
+      Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
+      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
+      Jwt__IsHttpsMetadataRequired: "false"
+      MqttIntake__IsEnabled: "true"
+      MqttIntake__Host: mosquitto
+      MqttIntake__Username: telemetry
+      MqttIntake__Password: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
+      MqttIntake__ClientId: telemetry
+      MqttIntake__ConsumerCount: "2"
+      # The test tenant IDs of Core. The seed machines of the seed data file belong to its departments.
+      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      Seeding__DevelopmentData__TestTenant__DepartmentIds__0: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
+      Seeding__DevelopmentData__TestTenant__DepartmentIds__1: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
+      Proxy__KnownNetworks__0: 172.16.0.0/12
+      Tracing__Endpoint: http://lgtm:4317
+      Metrics__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
+    ports:
+      - "${TELEMETRY_PORT:-8083}:8080"
+      - "127.0.0.1:${TELEMETRY_HEALTH_PORT:-8094}:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      mosquitto:
         condition: service_healthy
       lgtm:
         condition: service_healthy
@@ -424,6 +555,8 @@ services:
       ReverseProxy__Clusters__core__Destinations__main__Address: http://core:8080/
       # The active health check of the cluster calls the health port of Core, not the API port.
       ReverseProxy__Clusters__core__Destinations__main__Health: http://core:8090/
+      ReverseProxy__Clusters__telemetry__Destinations__main__Address: http://telemetry:8080/
+      ReverseProxy__Clusters__telemetry__Destinations__main__Health: http://telemetry:8090/
       ReverseProxy__Clusters__keycloak__Destinations__main__Address: http://keycloak:8080/
       ReverseProxy__Clusters__spa__Destinations__main__Address: http://spa:8080/
       ReverseProxy__Clusters__spa__Destinations__main__Health: http://spa:8090/
@@ -434,6 +567,7 @@ services:
       # Each public route answers one logical name. A host without a port matches every port.
       ReverseProxy__Routes__core__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__core-invite-public__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__telemetry__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-realm__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-resources__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
@@ -457,6 +591,8 @@ services:
     # runs only after a healthy Keycloak, so its success also covers the Keycloak routes.
     depends_on:
       core:
+        condition: service_started
+      telemetry:
         condition: service_started
       spa:
         condition: service_started
@@ -493,5 +629,7 @@ volumes:
   rabbitmq-data:
   lgtm-data:
   core-logs:
+  mosquitto-data:
+  telemetry-logs:
   auth-logs:
   mailpit-data:

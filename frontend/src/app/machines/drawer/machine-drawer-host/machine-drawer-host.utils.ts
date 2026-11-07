@@ -1,6 +1,6 @@
 import type { DepartmentOption } from '@shared/employee/employee-api';
 
-import type { MachineFormValue } from '@machines/drawer/machine-form-schema';
+import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 
 const SINGLE_DEPARTMENT_COUNT = 1;
 

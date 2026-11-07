@@ -7,4 +7,5 @@ namespace HealthyFac.Core.Infrastructure.Machines.Persistence;
 public static class MachineIndexNames
 {
     public const string CompanySerialNumber = "ix_machines_company_id_serial_number";
+    public const string GatewayId = "ix_machines_gateway_id";
 }

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Testing.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -63,7 +64,6 @@ public static class MachineApiFixtureExtensions
             {
                 [propertyName: "name"] = MachineApiTestData.MachineName,
                 [propertyName: "serialNumber"] = serialNumber,
-                [propertyName: "departmentId"] = fixture.IdEncryptor.Encrypt(fixture.DepartmentId),
             }.ToJsonString();
 
         public async Task<string> ArrangeMachineAsync(string serialNumber)
@@ -73,6 +73,7 @@ public static class MachineApiFixtureExtensions
             var machine = new Machine(
                 fixture.CompanyId,
                 fixture.DepartmentId,
+                GatewayIds.Create(),
                 MachineApiTestData.MachineName,
                 serialNumber,
                 description: null,

@@ -34,7 +34,7 @@ interface Setup {
   grid: GridAccess;
 }
 
-function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadErrorCodes?: boolean } = {}): Setup {
+function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadStatuses?: boolean } = {}): Setup {
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
   TestBed.configureTestingModule({ providers: [provideTranslateService()] });
   const fixture = TestBed.createComponent(MachineGrid);
@@ -46,7 +46,7 @@ function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadErrorCode
   fixture.componentRef.setInput('sort', null);
   fixture.componentRef.setInput('filter', filter);
   fixture.componentRef.setInput('departments', []);
-  fixture.componentRef.setInput('canReadErrorCodes', options.canReadErrorCodes ?? false);
+  fixture.componentRef.setInput('canReadStatuses', options.canReadStatuses ?? false);
   fixture.detectChanges();
   const emitted: Partial<MachineFilter>[] = [];
   fixture.componentInstance.filterChange.subscribe((patch) => emitted.push(patch));
@@ -103,13 +103,13 @@ describe('MachineGrid', () => {
     expect(grid.table().filters[MachineColumn.Name][0].value).toBe('applied');
   });
 
-  it('menuItems_WithErrorCodesPermission_HoldsErrorCodesItem', () => {
-    const { grid } = setup(EMPTY_FILTER, { canReadErrorCodes: true });
+  it('menuItems_WithStatusesPermission_HoldsStatusesItem', () => {
+    const { grid } = setup(EMPTY_FILTER, { canReadStatuses: true });
 
     expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-list']);
   });
 
-  it('menuItems_WithoutErrorCodesPermission_HoldsNoErrorCodesItem', () => {
+  it('menuItems_WithoutStatusesPermission_HoldsNoStatusesItem', () => {
     const { grid } = setup();
 
     expect(grid.menuItems()).toEqual([]);

@@ -1,0 +1,93 @@
+<div class="flex flex-none items-start justify-between gap-2">
+  <h2 class="min-w-0 truncate text-xl font-bold">{{ item().value.name }}</h2>
+  @if (canWrite()) {
+    <div class="flex flex-none gap-2">
+      @if (item().isDeleted) {
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          (click)="restoreRequested.emit()"
+        >
+          <i class="pi pi-undo"></i>
+          {{ 'METRICS.RESTORE' | translate }}
+        </button>
+      } @else {
+        <button
+          pButton
+          type="button"
+          (click)="editRequested.emit()"
+        >
+          <i class="pi pi-pencil"></i>
+          {{ 'METRICS.EDIT' | translate }}
+        </button>
+        <button
+          pButton
+          type="button"
+          severity="danger"
+          [outlined]="true"
+          (click)="removeRequested.emit()"
+        >
+          <i class="pi pi-trash"></i>
+          {{ 'METRICS.DELETE' | translate }}
+        </button>
+      }
+    </div>
+  }
+</div>
+@if (errors().length > 0) {
+  <p-message severity="warn">
+    <div class="flex flex-col">
+      <span>{{ 'METRICS.ITEM_ERRORS' | translate }}</span>
+      @for (error of errors(); track $index) {
+        <span>{{ error }}</span>
+      }
+    </div>
+  </p-message>
+}
+<dl class="flex flex-none flex-col">
+  <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+    <dt class="text-muted-color">{{ 'METRICS.DETAIL.KEY' | translate }}</dt>
+    <dd class="min-w-0 break-all">{{ item().value.key }}</dd>
+  </div>
+  <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+    <dt class="text-muted-color">{{ 'METRICS.DETAIL.KIND' | translate }}</dt>
+    <dd>{{ kindLabelKeys[item().value.valueKind] | translate }}</dd>
+  </div>
+  @if (isNumeric()) {
+    <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+      <dt class="text-muted-color">{{ 'METRICS.DETAIL.UNIT' | translate }}</dt>
+      <dd>
+        @if (unitOption(); as option) {
+          {{ option.isUnitless ? ('METRICS.UNIT_WITHOUT_ABBREVIATION' | translate) : option.label }}
+        } @else {
+          {{ emptyCell }}
+        }
+      </dd>
+    </div>
+    <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+      <dt class="text-muted-color">{{ 'METRICS.DETAIL.RANGE' | translate }}</dt>
+      <dd>{{ range() }}</dd>
+    </div>
+  }
+  @if (isStateSet()) {
+    <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+      <dt class="text-muted-color">{{ 'METRICS.DETAIL.STATES' | translate }}</dt>
+      <dd class="flex flex-wrap gap-1">
+        @for (state of item().value.states; track state) {
+          <p-tag
+            severity="secondary"
+            [value]="state"
+          />
+        }
+      </dd>
+    </div>
+  }
+  <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+    <dt class="text-muted-color">{{ 'METRICS.DETAIL.DESCRIPTION' | translate }}</dt>
+    <dd
+      class="min-w-0 break-words"
+      [innerHTML]="item().value.description ?? emptyCell"
+    ></dd>
+  </div>
+</dl>

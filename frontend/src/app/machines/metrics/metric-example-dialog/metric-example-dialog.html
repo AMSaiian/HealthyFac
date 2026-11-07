@@ -1,0 +1,42 @@
+<p-dialog
+  styleClass="w-[48rem] max-w-[95vw]"
+  appendTo="body"
+  [contentStyle]="contentStyle"
+  [modal]="true"
+  [draggable]="false"
+  [header]="'METRICS.EXAMPLE.TITLE' | translate"
+  [(visible)]="isVisible"
+  (onHide)="closed.emit()"
+>
+  @if (text(); as example) {
+    <p class="mb-2 text-muted-color">{{ 'METRICS.EXAMPLE.REVISION' | translate: { revision: revision() } }}</p>
+    <pre class="max-h-[50dvh] overflow-auto rounded-border border border-surface p-3 text-sm">{{ example }}</pre>
+  } @else {
+    <div class="flex min-h-48">
+      <hf-empty-state
+        icon="pi pi-chart-line"
+        messageKey="METRICS.EXAMPLE.EMPTY"
+      />
+    </div>
+  }
+  <ng-template #footer>
+    @if (text() !== null) {
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        (click)="copy()"
+      >
+        <i class="pi pi-copy"></i>
+        {{ 'METRICS.EXAMPLE.COPY' | translate }}
+      </button>
+    }
+    <button
+      pButton
+      type="button"
+      (click)="closed.emit()"
+    >
+      {{ 'METRICS.EXAMPLE.CLOSE' | translate }}
+    </button>
+  </ng-template>
+</p-dialog>

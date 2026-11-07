@@ -12,9 +12,11 @@ public static class RealmTestData
     public const string SpaUrl = "http://localhost:4200";
     public const string AuthClientSecret = "test-auth-client-secret";
     public const string CoreClientSecret = "test-core-client-secret";
+    public const string TelemetryClientSecret = "test-telemetry-client-secret";
     public const string PublicAuthUrl = "https://auth.healthyfac.test";
     public const string InternalHost = "keycloak:8080";
     public const string CoreClientId = "healthyfac-core";
+    public const string TelemetryClientId = "healthyfac-telemetry";
     public const string AuthClientId = "healthyfac-auth";
     public const string PermissionsClaim = KeycloakClaimTypes.Permissions;
     public const string SupervisorRoleName = "supervisor";
@@ -43,6 +45,7 @@ public static class RealmTestData
         [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
         [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
         [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
+        [key: "KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = TelemetryClientSecret,
         [key: "KC_HOSTNAME"] = PublicAuthUrl,
         [key: "KC_HOSTNAME_BACKCHANNEL_DYNAMIC"] = "true",
     };
@@ -68,16 +71,29 @@ public static class RealmTestData
         DepartmentIdsClaim,
     ];
 
-    public static IReadOnlyList<string> ExpectedPermissions { get; } =
+    public static IReadOnlyList<string> CorePermissions { get; } =
     [
         "employees:invite",
         "employees:manage",
         "machines:read",
         "machines:write",
         "machines:delete",
-        "machine-error-codes:read",
-        "machine-error-codes:write",
-        "machine-error-codes:delete",
+    ];
+
+    public static IReadOnlyList<string> TelemetryPermissions { get; } =
+    [
+        "metric-definitions:read",
+        "metric-definitions:write",
+        "status-definitions:read",
+        "status-definitions:write",
+        "status-definitions:delete",
+    ];
+
+    /// <summary>The permissions of a token that the web app gets: the permissions of both APIs.</summary>
+    public static IReadOnlyList<string> ExpectedPermissions { get; } =
+    [
+        .. CorePermissions,
+        .. TelemetryPermissions,
     ];
 
     public static IReadOnlyList<string> MachinePermissions { get; } =
@@ -85,8 +101,5 @@ public static class RealmTestData
         "machines:read",
         "machines:write",
         "machines:delete",
-        "machine-error-codes:read",
-        "machine-error-codes:write",
-        "machine-error-codes:delete",
     ];
 }

@@ -86,6 +86,14 @@
 <p-toast position="bottom-right" />
 <p-confirmdialog />
 <hf-action-host />
-<main class="flex min-h-0 min-w-0 flex-1 flex-col">
+<main
+  class="relative flex min-h-0 min-w-0 flex-1 flex-col"
+  [attr.aria-busy]="navigationStore.isSpinnerVisible()"
+>
   <router-outlet />
+  @if (navigationStore.isSpinnerVisible()) {
+    <div class="absolute inset-0 z-10 flex bg-surface-0/60 dark:bg-surface-900/60">
+      <hf-loading-spinner />
+    </div>
+  }
 </main>

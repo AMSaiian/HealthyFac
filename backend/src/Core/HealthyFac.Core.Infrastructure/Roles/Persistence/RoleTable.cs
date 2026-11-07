@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
+using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Infrastructure.Roles.Persistence;
 

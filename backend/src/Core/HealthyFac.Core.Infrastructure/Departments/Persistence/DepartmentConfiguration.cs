@@ -1,9 +1,9 @@
 using HealthyFac.Core.Application.Departments;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
+using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
-using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

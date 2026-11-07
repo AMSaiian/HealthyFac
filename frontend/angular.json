@@ -34,7 +34,7 @@
               }
             ],
             "styles": ["src/styles.css"],
-            "allowedCommonJsDependencies": ["quill-delta"]
+            "allowedCommonJsDependencies": ["quill-delta", "slugify"]
           },
           "configurations": {
             "production": {

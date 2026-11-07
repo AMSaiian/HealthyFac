@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -28,17 +29,24 @@ public sealed class DeleteMachinePreHandlerCheck(ICurrentUserProvider currentUse
 }
 
 /// <summary>
-/// Removes a machine, its error codes, and its state history. The save interceptor turns each removal into a soft
-/// delete, so the rows stay and the query filter hides them. One save stores all removals together. A machine
-/// outside the company or the departments of the actor, and a machine that is already deleted, are "not found".
+/// Removes a machine and its state history, and queues the <see cref="MachineDeleted"/> message in the same save.
+/// The save interceptor turns each removal into a soft delete, so the rows stay and the query filter hides them.
+/// One save stores all removals together. A machine outside the company or the departments of the actor, and a
+/// machine that is already deleted, are "not found".
 /// </summary>
 /// <param name="dbContext">Loads the machine and saves the removal.</param>
 /// <param name="currentUser">Provides the departments of the actor.</param>
-public sealed class DeleteMachineRequestHandler(ICoreDbContext dbContext, ICurrentUserProvider currentUser)
+/// <param name="outbox">Queues the message for the Telemetry service.</param>
+public sealed class DeleteMachineRequestHandler(
+    ICoreDbContext dbContext,
+    ICurrentUserProvider currentUser,
+    IOutbox outbox
+)
     : RequestHandler<DeleteMachineRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly ICurrentUserProvider _currentUser = currentUser;
+    private readonly IOutbox _outbox = outbox;
 
     protected override async Task HandleInternalAsync(
         DeleteMachineRequest request,
@@ -54,17 +62,13 @@ public sealed class DeleteMachineRequestHandler(ICoreDbContext dbContext, ICurre
                 cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 
-        var errorCodes = await _dbContext.MachineErrorCodes
-            .Where(errorCode => errorCode.MachineId == machine.Id)
-            .ToListAsync(cancellationToken);
-
         var stateHistory = await _dbContext.MachineStateHistories
             .Where(row => row.MachineId == machine.Id)
             .ToListAsync(cancellationToken);
 
-        _dbContext.MachineErrorCodes.RemoveRange(errorCodes);
         _dbContext.MachineStateHistories.RemoveRange(stateHistory);
         _dbContext.Machines.Remove(machine);
+        _outbox.Add(new MachineDeleted { MachineId = machine.Id, CompanyId = machine.CompanyId });
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

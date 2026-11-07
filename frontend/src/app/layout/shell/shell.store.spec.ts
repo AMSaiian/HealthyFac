@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationStart, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 
 import { AuthStore } from '@shared/security/auth.store';
@@ -13,11 +13,11 @@ const MACHINES_PATH = '/machines';
 
 interface Setup {
   store: InstanceType<typeof ShellStore>;
-  events: Subject<NavigationEnd>;
+  events: Subject<NavigationStart>;
 }
 
 function setup(options: { isAuthenticated: boolean; hasPermission: boolean }): Setup {
-  const events = new Subject<NavigationEnd>();
+  const events = new Subject<NavigationStart>();
   TestBed.configureTestingModule({
     providers: [
       ShellStore,
@@ -58,11 +58,11 @@ describe('ShellStore', () => {
     expect(store.navItems()).toEqual([]);
   });
 
-  it('navigationEnd_WhenMenuOpen_ClosesMenu', () => {
+  it('navigationStart_WhenMenuOpen_ClosesMenu', () => {
     const { store, events } = setup({ isAuthenticated: true, hasPermission: true });
     store.toggleMenu();
 
-    events.next(new NavigationEnd(1, MACHINES_PATH, MACHINES_PATH));
+    events.next(new NavigationStart(1, MACHINES_PATH));
 
     expect(store.isMenuOpen()).toBe(false);
   });

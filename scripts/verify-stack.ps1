@@ -28,9 +28,9 @@ $DevProject = 'healthyfac'
 $ReadyTimeout = [TimeSpan]::FromMinutes(15)
 $AppTimeout = [TimeSpan]::FromMinutes(2)
 $PollInterval = [TimeSpan]::FromSeconds(5)
-$ReadyServices = @('core', 'auth', 'spa', 'gateway')
+$ReadyServices = @('core', 'telemetry', 'auth', 'spa', 'gateway')
 $RealmJob = 'keycloak-config'
-$BuiltImages = @('core', 'auth', 'spa', 'gateway') | ForEach-Object { "healthyfac-verify/${_}:local" }
+$BuiltImages = @('core', 'telemetry', 'auth', 'spa', 'gateway') | ForEach-Object { "healthyfac-verify/${_}:local" }
 $HostsFile = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
 
 $repo = git rev-parse --show-toplevel 2>$null

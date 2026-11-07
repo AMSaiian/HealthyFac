@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.IntegrationTests.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +16,9 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         await RemoveSoftDeletableAsync(id);
 
         await using var dbContext = _fixture.CreateDbContext();
-        var rows = await dbContext.SoftDeletables.IgnoreQueryFilters().Where(entity => entity.Id == id).ToListAsync();
+        var rows = await dbContext.SoftDeletables.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .Where(entity => entity.Id == id)
+            .ToListAsync();
 
         rows.Should().ContainSingle();
         rows[index: 0].DeletedAt.Should().Be(SoftDeleteTestData.Now.UtcDateTime);

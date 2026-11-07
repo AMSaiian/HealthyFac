@@ -1,0 +1,32 @@
+M:Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.IgnoreQueryFilters``1(System.Linq.IQueryable{``0});Name the filters to ignore: IgnoreQueryFilters([name]). See backend-infrastructure.md, Query Filters.
+M:Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder.HasQueryFilter(System.Linq.Expressions.LambdaExpression);Name the filter: HasQueryFilter(name, ...). See backend-infrastructure.md, Query Filters.
+M:Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder`1.HasQueryFilter(System.Linq.Expressions.Expression{System.Func{`0,System.Boolean}});Name the filter: HasQueryFilter(name, ...). See backend-infrastructure.md, Query Filters.
+M:Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder`1.HasQueryFilter(System.Linq.Expressions.LambdaExpression);Name the filter: HasQueryFilter(name, ...). See backend-infrastructure.md, Query Filters.
+P:System.Threading.Tasks.Task`1.Result;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.Wait;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.Wait(System.Int32);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.Wait(System.TimeSpan);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.Wait(System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.Wait(System.Int32,System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.Wait(System.TimeSpan,System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.TaskAwaiter.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.TaskAwaiter`1.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.ValueTaskAwaiter.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.ValueTaskAwaiter`1.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.ConfiguredTaskAwaitable.ConfiguredTaskAwaiter.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1.ConfiguredTaskAwaiter.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1.ConfiguredValueTaskAwaiter.GetResult;Never block on a task: await it. See backend-general.md, Awaited Results.
+P:System.Threading.Tasks.ValueTask`1.Result;Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task[]);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task[],System.TimeSpan);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task[],System.Int32);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task[],System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task[],System.Int32,System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.ReadOnlySpan{System.Threading.Tasks.Task});Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAll(System.Collections.Generic.IEnumerable{System.Threading.Tasks.Task},System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAny(System.Threading.Tasks.Task[]);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAny(System.Threading.Tasks.Task[],System.TimeSpan);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAny(System.Threading.Tasks.Task[],System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAny(System.Threading.Tasks.Task[],System.Int32);Never block on a task: await it. See backend-general.md, Awaited Results.
+M:System.Threading.Tasks.Task.WaitAny(System.Threading.Tasks.Task[],System.Int32,System.Threading.CancellationToken);Never block on a task: await it. See backend-general.md, Awaited Results.

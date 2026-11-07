@@ -13,6 +13,8 @@ import { Toolbar } from 'primeng/toolbar';
 import { ActionHost } from '@shared/actions/action-host/action-host';
 import { Language } from '@shared/i18n/i18n.constants';
 import { LanguageStore } from '@shared/i18n/language.store';
+import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
+import { NavigationStore } from '@shared/loading/navigation.store';
 import { AuthStore } from '@shared/security/auth.store';
 import { ThemeStore } from '@shared/theme/theme.store';
 
@@ -22,6 +24,7 @@ import { ShellStore } from './shell.store';
   imports: [
     ActionHost,
     FormsModule,
+    LoadingSpinner,
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
@@ -44,5 +47,6 @@ export class Shell {
   protected readonly languageStore = inject(LanguageStore);
   protected readonly themeStore = inject(ThemeStore);
   protected readonly authStore = inject(AuthStore);
+  protected readonly navigationStore = inject(NavigationStore);
   protected readonly languages = Object.values(Language);
 }

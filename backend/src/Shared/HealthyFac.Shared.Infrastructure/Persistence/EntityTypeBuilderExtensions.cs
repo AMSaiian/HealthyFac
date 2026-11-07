@@ -47,8 +47,8 @@ public static class EntityTypeBuilderExtensions
 
     /// <summary>
     /// Configures the soft delete columns for entities implementing <see cref="ISoftDeletable"/> and hides deleted
-    /// rows from every query with a global query filter. A query that must see deleted rows calls
-    /// <c>IgnoreQueryFilters()</c>.
+    /// rows from every query with a named global query filter. A query that must see deleted rows calls
+    /// <c>IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])</c>.
     /// </summary>
     public static EntityTypeBuilder<TEntity> ConfigureSoftDeletable<TEntity>(this EntityTypeBuilder<TEntity> builder)
         where TEntity : class, ISoftDeletable
@@ -59,7 +59,7 @@ public static class EntityTypeBuilderExtensions
         builder.Property(deletable => deletable.DeletedBy)
             .IsRequired(required: false);
 
-        builder.HasQueryFilter(deletable => deletable.DeletedAt == null);
+        builder.HasQueryFilter(SoftDeleteConstants.QueryFilterName, deletable => deletable.DeletedAt == null);
 
         return builder;
     }

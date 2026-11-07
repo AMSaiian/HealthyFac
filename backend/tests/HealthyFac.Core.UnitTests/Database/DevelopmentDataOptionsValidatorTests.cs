@@ -29,6 +29,54 @@ public sealed class DevelopmentDataOptionsValidatorTests
 
     [Theory]
     [MemberData(
+        nameof(SeedMachinesValidatorTestData.ValidSeedMachines),
+        MemberType = typeof(SeedMachinesValidatorTestData)
+    )]
+    public void Validate_WithValidSeedMachines_IsValid(IReadOnlyList<SeedMachineOptions> seedMachines)
+    {
+        var result = _validator.Validate(
+            new DevelopmentDataOptions
+            {
+                TestTenant = DevelopmentDataOptionsValidatorTestData.ValidTestTenant,
+                SeedMachines = seedMachines,
+            });
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [MemberData(
+        nameof(SeedMachinesValidatorTestData.InvalidSeedMachines),
+        MemberType = typeof(SeedMachinesValidatorTestData)
+    )]
+    public void Validate_WithInvalidSeedMachines_ReportsThatRule(
+        IReadOnlyList<SeedMachineOptions> seedMachines,
+        string message
+    )
+    {
+        var result = _validator.Validate(
+            new DevelopmentDataOptions
+            {
+                TestTenant = DevelopmentDataOptionsValidatorTestData.ValidTestTenant,
+                SeedMachines = seedMachines,
+            });
+
+        result.Errors.Should().ContainSingle(error => error.ErrorMessage == message);
+    }
+
+    [Fact]
+    public void Validate_WithSeedMachinesAndNoTestTenant_ReportsDepartmentIndex()
+    {
+        var result = _validator.Validate(
+            new DevelopmentDataOptions { SeedMachines = [SeedMachinesValidatorTestData.SingleSeedMachine] });
+
+        result.Errors.Should()
+            .ContainSingle(error =>
+                error.ErrorMessage == SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange);
+    }
+
+    [Theory]
+    [MemberData(
         nameof(DevelopmentDataOptionsValidatorTestData.InvalidTestTenants),
         MemberType = typeof(DevelopmentDataOptionsValidatorTestData)
     )]

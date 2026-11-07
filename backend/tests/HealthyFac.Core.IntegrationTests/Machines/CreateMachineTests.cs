@@ -1,8 +1,11 @@
+using EntityFramework.Exceptions.Common;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Domain.Gateways;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
@@ -28,6 +31,84 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         machine.Name.Should().Be(MachineTestData.MachineName);
         machine.Description.Should().Be(MachineTestData.BulletListDescription);
         machine.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreateMachine_WithValidRequest_StoresGatewayId()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber);
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+
+        GatewayIds.IsValid(machine.GatewayId).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CreateMachine_WithTakenGatewayId_ThrowsUniqueConstraint()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var gatewayId = GatewayIds.Create();
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId, tenant.FirstDepartmentId, gatewayId, MachineTestData.SerialNumber);
+
+        var act = () => _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId, tenant.FirstDepartmentId, gatewayId, MachineTestData.OtherSerialNumber);
+
+        await act.Should().ThrowAsync<UniqueConstraintException>();
+    }
+
+    [Fact]
+    public async Task CreateMachine_WithValidRequest_StoresMachineCreatedOutboxRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber);
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineCreated>();
+        var message = messages.Where(candidate => candidate.MachineId == machineId).ToList();
+
+        message.Should().ContainSingle();
+        message[index: 0].GatewayId.Should().Be(machine.GatewayId);
+        message[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        message[index: 0].DepartmentId.Should().Be(tenant.FirstDepartmentId);
+    }
+
+    [Fact]
+    public async Task CreateMachine_WithTakenSerialNumber_StoresNoOutboxRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber);
+        var before = await _fixture.ReadOutboxMessagesAsync<MachineCreated>();
+
+        var act = () => _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            tenant.FirstDepartmentId,
+            MachineTestData.OtherMachineName,
+            MachineTestData.SerialNumber);
+
+        await act.Should().ThrowAsync<ConflictException>();
+        var after = await _fixture.ReadOutboxMessagesAsync<MachineCreated>();
+
+        after.Should().HaveCount(before.Count);
     }
 
     [Fact]

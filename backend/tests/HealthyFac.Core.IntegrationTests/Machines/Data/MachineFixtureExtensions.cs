@@ -6,6 +6,8 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Shared.Domain.Gateways;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +22,13 @@ public static class MachineFixtureExtensions
     private static Machine CreateMachine(Guid companyId, Guid departmentId, MachineSeed seed)
     {
         var machine = new Machine(
-            companyId, departmentId, seed.Name, seed.SerialNumber, description: null, seed.CreatedAt);
+            companyId,
+            departmentId,
+            GatewayIds.Create(),
+            seed.Name,
+            seed.SerialNumber,
+            description: null,
+            seed.CreatedAt);
 
         if (seed.State != MachineState.Operational)
         {
@@ -73,7 +81,6 @@ public static class MachineFixtureExtensions
             Guid companyId,
             IEnumerable<Guid> actorDepartmentIds,
             Guid machineId,
-            Guid departmentId,
             string name,
             string serialNumber,
             string? description = null
@@ -87,7 +94,6 @@ public static class MachineFixtureExtensions
                 {
                     CompanyId = companyId,
                     Id = machineId,
-                    DepartmentId = departmentId,
                     Name = name,
                     SerialNumber = serialNumber,
                     Description = description,
@@ -151,6 +157,28 @@ public static class MachineFixtureExtensions
             return machines.Select(machine => machine.Id).ToList();
         }
 
+        public async Task AddMachineWithGatewayIdAsync(
+            Guid companyId,
+            Guid departmentId,
+            string gatewayId,
+            string serialNumber
+        )
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            dbContext.Machines.Add(
+                new Machine(
+                    companyId,
+                    departmentId,
+                    gatewayId,
+                    MachineTestData.MachineName,
+                    serialNumber,
+                    description: null,
+                    TimeProvider.System.GetUtcNow().UtcDateTime));
+            await dbContext.SaveChangesAsync();
+        }
+
         public async Task AddStateRowAsync(Guid machineId, MachineState state, DateTime startedAt)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -177,7 +205,7 @@ public static class MachineFixtureExtensions
 
             return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .MachineStateHistories
-                .IgnoreQueryFilters()
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
                 .Where(row => row.MachineId == machineId)
                 .OrderBy(row => row.StartedAt)
@@ -190,7 +218,7 @@ public static class MachineFixtureExtensions
 
             return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .Machines
-                .IgnoreQueryFilters()
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
                 .Where(machine => machine.CompanyId == companyId && machine.SerialNumber == serialNumber)
                 .ToListAsync();
@@ -202,7 +230,7 @@ public static class MachineFixtureExtensions
 
             return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .Machines
-                .IgnoreQueryFilters()
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
                 .SingleAsync(machine => machine.Id == machineId);
         }

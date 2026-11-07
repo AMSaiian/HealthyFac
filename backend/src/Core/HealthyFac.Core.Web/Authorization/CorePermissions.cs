@@ -12,7 +12,7 @@ public static class CorePermissions
     /// Holds every permission of the Core API. The service registers the policies from this set, so a permission
     /// that is missing here has no policy, and its endpoint fails with status 500.
     /// </summary>
-    public static readonly FrozenSet<string> All = [.. Employees.All, .. Machines.All, .. MachineErrorCodes.All];
+    public static readonly FrozenSet<string> All = [.. Employees.All, .. Machines.All];
 
     public static class Employees
     {
@@ -35,19 +35,6 @@ public static class CorePermissions
         /// <summary>
         /// Holds every permission of the machines feature. <see cref="CorePermissions.All"/> spreads this set, so a
         /// permission that is missing here has no policy.
-        /// </summary>
-        public static readonly FrozenSet<string> All = [Read, Write, Delete];
-    }
-
-    public static class MachineErrorCodes
-    {
-        public const string Read = "machine-error-codes:read";
-        public const string Write = "machine-error-codes:write";
-        public const string Delete = "machine-error-codes:delete";
-
-        /// <summary>
-        /// Holds every permission of the machine error codes feature. <see cref="CorePermissions.All"/> spreads this
-        /// set, so a permission that is missing here has no policy.
         /// </summary>
         public static readonly FrozenSet<string> All = [Read, Write, Delete];
     }

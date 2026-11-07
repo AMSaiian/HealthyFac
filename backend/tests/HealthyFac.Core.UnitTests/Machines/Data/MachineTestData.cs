@@ -1,5 +1,6 @@
 using Bogus;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Shared.Domain.Gateways;
 
 namespace HealthyFac.Core.UnitTests.Machines.Data;
 
@@ -27,5 +28,5 @@ public static class MachineTestData
     ];
 
     public static Machine CreateMachine() =>
-        new(CompanyId, DepartmentId, Name, SerialNumber, description: null, StartedAt);
+        new(CompanyId, DepartmentId, GatewayIds.Create(), Name, SerialNumber, description: null, StartedAt);
 }

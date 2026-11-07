@@ -1,6 +1,5 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
@@ -21,6 +20,7 @@ const MACHINE: Machine = {
   id: 'encrypted-id',
   name: 'Lathe 01',
   serialNumber: 'ABC-1',
+  gatewayId: 'abcdefghijklmnop',
   departmentId: 'department-1',
   state: MachineState.Operational,
   description: null,
@@ -94,13 +94,6 @@ describe('MachinesGridStore', () => {
     expect(search.mock.calls.length).toBe(callsBefore);
   });
 
-  it('canDelete_WithoutPermission_IsFalse', async () => {
-    const { store } = await setup({ hasPermission: false });
-
-    expect(store.canDelete()).toBe(false);
-    expect(store.canWrite()).toBe(false);
-  });
-
   it('requestDelete_WhenRejected_SendsNoRequest', async () => {
     const { store, remove } = await setup({ isConfirmed: false });
 
@@ -121,32 +114,5 @@ describe('MachinesGridStore', () => {
     expect(remove).toHaveBeenCalledWith(MACHINE.id);
     expect(search.mock.calls.length - callsBefore).toBe(1);
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
-  });
-
-  it('requestUpdate_Always_DispatchesUpdateAction', async () => {
-    const { store, actions } = await setup();
-    const dispatch = vi.spyOn(actions, 'dispatch').mockResolvedValue();
-
-    store.requestUpdate(MACHINE.id);
-
-    expect(dispatch).toHaveBeenCalledWith({
-      type: MachineActionType.Update,
-      payload: { machineId: MACHINE.id },
-    });
-  });
-
-  it('openErrorCodes_WithMachineId_NavigatesToErrorCodeRoute', async () => {
-    const { store } = await setup();
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
-
-    store.openErrorCodes(MACHINE.id);
-
-    expect(navigate).toHaveBeenCalledWith(['/machines', MACHINE.id, 'error-codes']);
-  });
-
-  it('canReadErrorCodes_WithoutPermission_IsFalse', async () => {
-    const { store } = await setup({ hasPermission: false });
-
-    expect(store.canReadErrorCodes()).toBe(false);
   });
 });

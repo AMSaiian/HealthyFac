@@ -648,7 +648,7 @@
     },
     {
       "name": "healthyfac-claims",
-      "description": "Audience of the Core API, the employee ID of the user, and the permissions of the user for the Core API",
+      "description": "Audiences of the Core and Telemetry APIs, the employee ID of the user, and the permissions of the user for both APIs",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "false",
@@ -662,6 +662,18 @@
           "consentRequired": false,
           "config": {
             "included.client.audience": "healthyfac-core",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "healthyfac-telemetry-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-telemetry",
             "id.token.claim": "false",
             "access.token.claim": "true",
             "introspection.token.claim": "true"
@@ -713,6 +725,22 @@
             "userinfo.token.claim": "false",
             "introspection.token.claim": "true"
           }
+        },
+        {
+          "name": "healthyfac-telemetry-permissions",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "usermodel.clientRoleMapping.clientId": "healthyfac-telemetry",
+            "claim.name": "permissions",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
         }
       ]
     }
@@ -730,10 +758,14 @@
               "employees:manage",
               "machines:read",
               "machines:write",
-              "machines:delete",
-              "machine-error-codes:read",
-              "machine-error-codes:write",
-              "machine-error-codes:delete"
+              "machines:delete"
+            ],
+            "healthyfac-telemetry": [
+              "metric-definitions:read",
+              "metric-definitions:write",
+              "status-definitions:read",
+              "status-definitions:write",
+              "status-definitions:delete"
             ]
           }
         }
@@ -747,10 +779,14 @@
             "healthyfac-core": [
               "machines:read",
               "machines:write",
-              "machines:delete",
-              "machine-error-codes:read",
-              "machine-error-codes:write",
-              "machine-error-codes:delete"
+              "machines:delete"
+            ],
+            "healthyfac-telemetry": [
+              "metric-definitions:read",
+              "metric-definitions:write",
+              "status-definitions:read",
+              "status-definitions:write",
+              "status-definitions:delete"
             ]
           }
         }
@@ -777,18 +813,28 @@
         {
           "name": "machines:delete",
           "description": "Delete machines"
+        }
+      ],
+      "healthyfac-telemetry": [
+        {
+          "name": "metric-definitions:read",
+          "description": "View the metric definitions, the metric units, and the payload schema of a machine"
         },
         {
-          "name": "machine-error-codes:read",
-          "description": "View and search machine error codes"
+          "name": "metric-definitions:write",
+          "description": "Apply changes to the metric definitions of a machine"
         },
         {
-          "name": "machine-error-codes:write",
-          "description": "Create and change machine error codes"
+          "name": "status-definitions:read",
+          "description": "View and search status definitions"
         },
         {
-          "name": "machine-error-codes:delete",
-          "description": "Delete machine error codes"
+          "name": "status-definitions:write",
+          "description": "Create and change status definitions"
+        },
+        {
+          "name": "status-definitions:delete",
+          "description": "Delete status definitions"
         }
       ]
     }
@@ -800,6 +846,28 @@
       "enabled": true,
       "publicClient": false,
       "secret": "${KEYCLOAK_CORE_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "healthyfac-claims"
+      ],
+      "optionalClientScopes": [
+        "organization"
+      ]
+    },
+    {
+      "clientId": "healthyfac-telemetry",
+      "name": "HealthyFac Telemetry API",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${KEYCLOAK_TELEMETRY_CLIENT_SECRET}",
       "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,

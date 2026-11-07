@@ -2,7 +2,14 @@ import { HttpClient, type HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
-import type { CreateMachineResponse, Machine, MachineBody, MachinesPage, SearchMachinesBody } from '@machines/machine';
+import type {
+  CreateMachineResponse,
+  Machine,
+  MachineBody,
+  MachinesPage,
+  MachineUpdateBody,
+  SearchMachinesBody,
+} from '@machines/machine';
 
 const MACHINES_URL = '/api/core/v1/machines';
 const MACHINES_SEARCH_URL = `${MACHINES_URL}/search`;
@@ -32,7 +39,7 @@ export class MachinesApi {
     return this._http.post<CreateMachineResponse>(MACHINES_URL, body, options);
   }
 
-  update(id: string, body: MachineBody, options?: WriteOptions): Observable<void> {
+  update(id: string, body: MachineUpdateBody, options?: WriteOptions): Observable<void> {
     return this._http.put<void>(machineUrl(id), body, options);
   }
 

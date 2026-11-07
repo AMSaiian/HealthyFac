@@ -38,7 +38,8 @@ import {
   FILTER_READERS,
   FILTER_WRITERS,
   MENU_DELETE_KEY,
-  MENU_ERROR_CODES_KEY,
+  MENU_METRICS_KEY,
+  MENU_STATUSES_KEY,
   MENU_UPDATE_KEY,
   SORTABLE_COLUMNS,
   STATE_LABEL_KEYS,
@@ -78,7 +79,8 @@ export class MachineGrid {
   readonly departments = input.required<readonly DepartmentOption[]>();
   readonly canWrite = input(false);
   readonly canDelete = input(false);
-  readonly canReadErrorCodes = input(false);
+  readonly canReadStatuses = input(false);
+  readonly canReadMetrics = input(false);
 
   readonly filterChange = output<Partial<MachineFilter>>();
   readonly sortChange = output<MachineSort | null>();
@@ -87,7 +89,8 @@ export class MachineGrid {
   readonly columnsReorder = output<readonly MachineColumn[]>();
   readonly updateRequested = output<string>();
   readonly deleteRequested = output<Machine>();
-  readonly errorCodesRequested = output<string>();
+  readonly statusesRequested = output<string>();
+  readonly metricsRequested = output<string>();
 
   protected readonly table = viewChild.required(Table);
   protected readonly MachineColumn = MachineColumn;
@@ -98,7 +101,8 @@ export class MachineGrid {
   private readonly _labels = toSignal(
     this._translate.stream([
       ...Object.values(STATE_LABEL_KEYS),
-      MENU_ERROR_CODES_KEY,
+      MENU_METRICS_KEY,
+      MENU_STATUSES_KEY,
       MENU_UPDATE_KEY,
       MENU_DELETE_KEY,
     ]),
@@ -125,17 +129,28 @@ export class MachineGrid {
   }));
   protected readonly tableDepartments = computed(() => [...this.departments()]);
   protected readonly tableColumns = computed(() => [...this.columns()]);
-  protected readonly hasRowActions = computed(() => this.canWrite() || this.canDelete() || this.canReadErrorCodes());
+  protected readonly hasRowActions = computed(
+    () => this.canWrite() || this.canDelete() || this.canReadStatuses() || this.canReadMetrics(),
+  );
 
   protected activeMachine: Machine | null = null;
 
   protected readonly menuItems = computed<MenuItem[]>(() => [
-    ...(this.canReadErrorCodes()
+    ...(this.canReadMetrics()
       ? [
           {
-            label: this._labels()[MENU_ERROR_CODES_KEY] ?? MENU_ERROR_CODES_KEY,
+            label: this._labels()[MENU_METRICS_KEY] ?? MENU_METRICS_KEY,
+            icon: 'pi pi-chart-line',
+            command: (): void => this._emitMetrics(),
+          },
+        ]
+      : []),
+    ...(this.canReadStatuses()
+      ? [
+          {
+            label: this._labels()[MENU_STATUSES_KEY] ?? MENU_STATUSES_KEY,
             icon: 'pi pi-list',
-            command: (): void => this._emitErrorCodes(),
+            command: (): void => this._emitStatuses(),
           },
         ]
       : []),
@@ -217,9 +232,15 @@ export class MachineGrid {
     menu.toggle(event);
   }
 
-  private _emitErrorCodes(): void {
+  private _emitMetrics(): void {
     if (this.activeMachine !== null) {
-      this.errorCodesRequested.emit(this.activeMachine.id);
+      this.metricsRequested.emit(this.activeMachine.id);
+    }
+  }
+
+  private _emitStatuses(): void {
+    if (this.activeMachine !== null) {
+      this.statusesRequested.emit(this.activeMachine.id);
     }
   }
 

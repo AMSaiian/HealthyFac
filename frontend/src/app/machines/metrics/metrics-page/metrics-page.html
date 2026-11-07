@@ -1,0 +1,139 @@
+<header class="flex flex-none items-center justify-between gap-2">
+  <div class="flex min-w-0 items-center gap-2">
+    <a
+      pButton
+      routerLink="/machines"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [rounded]="true"
+      [attr.aria-label]="'METRICS.BACK' | translate"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h1 class="min-w-0 truncate text-2xl font-bold">{{ 'METRICS.TITLE' | translate }} {{ store.machine()?.name }}</h1>
+  </div>
+  <div class="flex flex-none items-center gap-2">
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      [disabled]="store.isNotRegistered()"
+      (click)="store.openExample()"
+    >
+      <i class="pi pi-code"></i>
+      {{ 'METRICS.EXAMPLE_PAYLOAD' | translate }}
+    </button>
+    @if (store.canWrite()) {
+      <span
+        [pTooltip]="changesDisabledReason() ? (changesDisabledReason()! | translate) : ''"
+        [tooltipDisabled]="store.canApply() || changesDisabledReason() === null"
+      >
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          [disabled]="!store.canApply()"
+          (click)="store.requestDiscard()"
+        >
+          {{ 'METRICS.DISCARD' | translate }}
+        </button>
+      </span>
+      <span
+        [pTooltip]="changesDisabledReason() ? (changesDisabledReason()! | translate) : ''"
+        [tooltipDisabled]="store.canApply() || changesDisabledReason() === null"
+      >
+        <button
+          pButton
+          type="button"
+          [disabled]="!store.canApply()"
+          (click)="store.apply()"
+        >
+          {{ 'METRICS.APPLY' | translate }}
+        </button>
+      </span>
+    }
+  </div>
+</header>
+@if (store.isNotRegistered()) {
+  <hf-empty-state
+    icon="pi pi-clock"
+    messageKey="METRICS.NOT_REGISTERED"
+  />
+  <div class="flex flex-none justify-center">
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      (click)="store.reload()"
+    >
+      {{ 'METRICS.RELOAD' | translate }}
+    </button>
+  </div>
+} @else if (isEmpty()) {
+  <hf-empty-state
+    icon="pi pi-chart-line"
+    messageKey="METRICS.EMPTY"
+  />
+  @if (store.canWrite()) {
+    <div class="flex flex-none justify-center">
+      <button
+        pButton
+        type="button"
+        (click)="store.startAdd()"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'METRICS.ADD_NEW' | translate }}
+      </button>
+    </div>
+  }
+} @else {
+  <div class="flex min-h-0 flex-1 gap-4">
+    <hf-metric-list
+      [items]="store.items()"
+      [selectedId]="store.selectedId()"
+      [itemErrors]="store.itemErrors()"
+      [canWrite]="store.canWrite()"
+      [isLoading]="isLoading()"
+      (selected)="store.select($event)"
+      (addRequested)="store.startAdd()"
+    />
+    @if (store.editInitial(); as initial) {
+      <hf-metric-form
+        [initialValue]="initial"
+        [isNew]="store.edit()?.localId === null"
+        [takenKeys]="store.takenKeys()"
+        [unitGroups]="unitGroups()"
+        [isUnitsLoading]="store.units.isLoading()"
+        [isDoneDisabled]="!store.canDone()"
+        [doneDisabledReason]="doneDisabledReason()"
+        (valueChange)="store.setDraft($event)"
+        (validityChange)="store.setDraftValidity($event)"
+        (done)="store.done()"
+        (cancelled)="store.cancelEdit()"
+      />
+    } @else if (store.selected(); as item) {
+      <hf-metric-detail
+        [item]="item"
+        [errors]="selectedErrors()"
+        [canWrite]="store.canWrite()"
+        [unitGroups]="unitGroups()"
+        (editRequested)="store.startEdit()"
+        (removeRequested)="store.remove(item.localId)"
+        (restoreRequested)="store.restore(item.localId)"
+      />
+    } @else {
+      <hf-empty-state
+        icon="pi pi-list"
+        messageKey="METRICS.SELECT_HINT"
+      />
+    }
+  </div>
+}
+@if (store.isExampleOpen()) {
+  <hf-metric-example-dialog
+    [revision]="store.revision()"
+    [text]="store.examplePayload()"
+    (closed)="store.closeExample()"
+  />
+}
