@@ -36,21 +36,10 @@ public sealed class EncryptedNullableGuidConverterTests
         _encryptor.Decrypt(unquoted).Should().Be(value!.Value);
     }
 
-    [Fact]
-    public void Read_WhenJsonNull_ReturnsNull()
+    [Theory]
+    [MemberData(nameof(ConverterTestData.JsonNullOrEmptyValues), MemberType = typeof(ConverterTestData))]
+    public void Read_WhenJsonNullOrEmptyString_ReturnsNull(string json)
     {
-        var json = "null";
-
-        var result = JsonSerializer.Deserialize<Guid?>(json, _options);
-
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void Read_WhenEmptyString_ReturnsNull()
-    {
-        var json = "\"\"";
-
         var result = JsonSerializer.Deserialize<Guid?>(json, _options);
 
         result.Should().BeNull();

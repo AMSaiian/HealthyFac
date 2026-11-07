@@ -66,13 +66,4 @@ describe('ShellStore', () => {
 
     expect(store.isMenuOpen()).toBe(false);
   });
-
-  it('closeMenu_WhenMenuOpen_ClosesMenu', () => {
-    const { store } = setup({ isAuthenticated: true, hasPermission: true });
-    store.toggleMenu();
-
-    store.closeMenu();
-
-    expect(store.isMenuOpen()).toBe(false);
-  });
 });

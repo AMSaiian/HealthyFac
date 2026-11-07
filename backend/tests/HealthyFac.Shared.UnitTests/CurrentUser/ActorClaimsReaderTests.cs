@@ -29,52 +29,13 @@ public sealed class ActorClaimsReaderTests
                 });
     }
 
-    [Fact]
-    public void Read_WithTwoOrganizations_Throws()
-    {
-        var principal = ActorClaimsTestData.CreatePrincipal(
-            ActorTestData.UserId.ToString(),
-            [ActorTestData.CompanyId.ToString(), ActorTestData.OtherCompanyId.ToString()],
-            ActorTestData.EmployeeId.ToString());
-
-        var act = () => ActorClaimsReader.Read(
-            principal,
-            ActorClaimsTestData.NoHeaders,
-            ActorClaimsTestData.NoServiceClients);
-
-        act.Should()
-            .Throw<UnauthorizedAccessException>()
-            .WithMessage(CurrentUserErrors.OrganizationInvalid().Message);
-    }
-
     [Theory]
-    [MemberData(
-        nameof(ActorClaimsTestData.JsonOrganizationValues),
-        MemberType = typeof(ActorClaimsTestData)
-    )]
-    public void Read_WithJsonOrganizationValue_Throws(string organization)
+    [MemberData(nameof(ActorClaimsTestData.InvalidOrganizations), MemberType = typeof(ActorClaimsTestData))]
+    public void Read_WithInvalidOrganizationClaims_Throws(string[] organizations)
     {
         var principal = ActorClaimsTestData.CreatePrincipal(
             ActorTestData.UserId.ToString(),
-            [organization],
-            ActorTestData.EmployeeId.ToString());
-
-        var act = () => ActorClaimsReader.Read(
-            principal,
-            ActorClaimsTestData.NoHeaders,
-            ActorClaimsTestData.NoServiceClients);
-
-        act.Should()
-            .Throw<UnauthorizedAccessException>()
-            .WithMessage(CurrentUserErrors.OrganizationInvalid().Message);
-    }
-
-    [Fact]
-    public void Read_WithNoOrganization_Throws()
-    {
-        var principal = ActorClaimsTestData.CreatePrincipal(
-            ActorTestData.UserId.ToString(),
-            [],
+            organizations,
             ActorTestData.EmployeeId.ToString());
 
         var act = () => ActorClaimsReader.Read(

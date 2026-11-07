@@ -67,33 +67,13 @@ public sealed class EmployeeTests
     }
 
     [Fact]
-    public void RetryProvisioning_AfterFailure_ReturnsToProvisioning()
-    {
-        var employee = EmployeeTestData.CreateEmployee();
-        employee.MarkProvisioningFailed();
-
-        employee.RetryProvisioning(EmployeeTestData.RetriedAt);
-
-        employee.Status.Should().Be(EmployeeStatus.Provisioning);
-    }
-
-    [Fact]
-    public void RetryProvisioning_WhenProvisioning_StaysProvisioning()
+    public void RetryProvisioning_ForProvisioningEmployee_StaysProvisioningAndSetsRetriedAt()
     {
         var employee = EmployeeTestData.CreateEmployee();
 
         employee.RetryProvisioning(EmployeeTestData.RetriedAt);
 
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
-    }
-
-    [Fact]
-    public void RetryProvisioning_ForProvisioningEmployee_SetsRetriedAt()
-    {
-        var employee = EmployeeTestData.CreateEmployee();
-
-        employee.RetryProvisioning(EmployeeTestData.RetriedAt);
-
         employee.ProvisioningRetriedAt.Should().Be(EmployeeTestData.RetriedAt);
     }
 

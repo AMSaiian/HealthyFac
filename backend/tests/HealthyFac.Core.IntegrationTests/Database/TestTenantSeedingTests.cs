@@ -97,20 +97,6 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
-    public async Task SeedOptionalData_TwiceWithTestTenant_CreatesOneCompany()
-    {
-        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
-        var companyCountAfterFirstRun = await _fixture.CountCompaniesAsync();
-
-        await _fixture.RunSeederAsync(DatabaseTestData.TestTenantOptions);
-
-        var tenantCompanyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
-        var companyCount = await _fixture.CountCompaniesAsync();
-        tenantCompanyCount.Should().Be(expected: 1);
-        companyCount.Should().Be(companyCountAfterFirstRun);
-    }
-
-    [Fact]
     public async Task SeedOptionalData_WithTestTenant_CreatesMachinesInEachDepartment()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
@@ -126,14 +112,21 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
-    public async Task SeedOptionalData_TwiceWithTestTenant_AddsNoMachines()
+    public async Task SeedOptionalData_TwiceWithTestTenant_AddsNoCompanyAndNoMachines()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+        var companyCountAfterFirstRun = await _fixture.CountCompaniesAsync();
         var machinesAfterFirstRun = await _fixture.LoadTenantMachineAsync(DatabaseTestData.TestTenantCompanyId);
 
         await _fixture.RunSeederAsync(DatabaseTestData.TestTenantOptions);
 
+        var tenantCompanyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
+        var companyCount = await _fixture.CountCompaniesAsync();
         var machinesAfterSecondRun = await _fixture.LoadTenantMachineAsync(DatabaseTestData.TestTenantCompanyId);
+
+        tenantCompanyCount.Should().Be(expected: 1);
+        companyCount.Should().Be(companyCountAfterFirstRun);
+
         machinesAfterSecondRun.Should().BeEquivalentTo(machinesAfterFirstRun);
     }
 }

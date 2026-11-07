@@ -9,21 +9,13 @@ const FIRST: DepartmentOption = { id: 'department-1', name: 'Assembly' };
 const SECOND: DepartmentOption = { id: 'department-2', name: 'Paint' };
 
 describe('withDefaultDepartment', () => {
-  it('withDefaultDepartment_WithEmptyIdAndOneDepartment_FillsItIn', () => {
-    const result = withDefaultDepartment(PREFILLED, [FIRST]);
+  it.each([
+    { name: 'EmptyIdAndOneDepartment_FillsItIn', departmentId: '', departments: [FIRST], expected: FIRST.id },
+    { name: 'EmptyIdAndTwoDepartments_StaysEmpty', departmentId: '', departments: [FIRST, SECOND], expected: '' },
+    { name: 'SetId_StaysUnchanged', departmentId: SECOND.id, departments: [FIRST], expected: SECOND.id },
+  ])('withDefaultDepartment_With$name', ({ departmentId, departments, expected }) => {
+    const result = withDefaultDepartment({ ...PREFILLED, departmentId }, departments);
 
-    expect(result.departmentId).toBe(FIRST.id);
-  });
-
-  it('withDefaultDepartment_WithEmptyIdAndTwoDepartments_StaysEmpty', () => {
-    const result = withDefaultDepartment(PREFILLED, [FIRST, SECOND]);
-
-    expect(result.departmentId).toBe('');
-  });
-
-  it('withDefaultDepartment_WithSetId_StaysUnchanged', () => {
-    const result = withDefaultDepartment({ ...PREFILLED, departmentId: SECOND.id }, [FIRST]);
-
-    expect(result.departmentId).toBe(SECOND.id);
+    expect(result.departmentId).toBe(expected);
   });
 });
