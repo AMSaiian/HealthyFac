@@ -3,9 +3,10 @@ using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.RichText;
+using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
-using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -31,6 +32,14 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .HasMaxLength(MachineValidationConstants.SerialNumberMaxLength)
             .IsRequired();
 
+        builder.Property(machine => machine.GatewayId)
+            .HasMaxLength(GatewayIds.Length)
+            .IsRequired();
+
+        builder.HasIndex(machine => machine.GatewayId)
+            .HasDatabaseName(MachineIndexNames.GatewayId)
+            .IsUnique();
+
         builder.HasIndex(machine => new { machine.CompanyId, machine.SerialNumber })
             .HasDatabaseName(MachineIndexNames.CompanySerialNumber)
             .IsUnique()
@@ -49,6 +58,7 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
 
         builder.HasNotBlankCheck(machine => machine.Name)
             .HasNotBlankCheck(machine => machine.SerialNumber)
+            .HasLengthCheck(machine => machine.GatewayId, GatewayIds.Length, GatewayIds.Length)
             .HasLengthCheck(machine => machine.Description, minLength: 0, RichTextConstants.HtmlMaxLength)
             .HasNotEmptyGuidCheck(machine => machine.CompanyId)
             .HasNotEmptyGuidCheck(machine => machine.DepartmentId);

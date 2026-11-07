@@ -1,0 +1,8 @@
+# telemetry reads the messages of every gateway, through the shared subscription of its instances.
+user telemetry
+topic read healthyfac/gateways/+/messages
+
+# sender writes the messages of every gateway. A later feature gives each gateway its own user, and this rule then
+# becomes "pattern write healthyfac/gateways/%u/messages".
+user sender
+topic write healthyfac/gateways/+/messages

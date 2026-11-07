@@ -29,6 +29,7 @@ export interface Machine {
   readonly id: string;
   readonly name: string;
   readonly serialNumber: string;
+  readonly gatewayId: string;
   readonly departmentId: string;
   readonly state: MachineState;
   readonly description: string | null;
@@ -42,6 +43,9 @@ export interface MachineBody {
   readonly departmentId: string;
   readonly description: string | null;
 }
+
+/** The department of a machine is fixed after the create, so the update body has none. */
+export type MachineUpdateBody = Omit<MachineBody, 'departmentId'>;
 
 export interface CreateMachineResponse {
   readonly id: string;

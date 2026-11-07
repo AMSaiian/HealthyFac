@@ -12,6 +12,7 @@ public sealed class ServiceName : Enumeration<ServiceName>
     public static readonly ServiceName Auth = new(value: "auth");
     public static readonly ServiceName Gateway = new(value: "gateway");
     public static readonly ServiceName Spa = new(value: "spa");
+    public static readonly ServiceName Telemetry = new(value: "telemetry");
 
     private ServiceName(string value)
         : base(value)

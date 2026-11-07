@@ -1,0 +1,25 @@
+<hf-action-dialog
+  [title]="store.isUpdate() ? 'STATUS_DEFINITIONS.FORM.UPDATE_TITLE' : 'STATUS_DEFINITIONS.FORM.CREATE_TITLE'"
+  [isSaveDisabled]="saveDisabledReason() !== null"
+  [saveDisabledReason]="saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="onSave()"
+  (cancelled)="cancelled.emit()"
+>
+  @if (store.initialValue(); as initial) {
+    <hf-status-definition-form
+      [initialValue]="initial"
+      (valueChange)="onValueChange($event)"
+      (validityChange)="onValidityChange($event)"
+    />
+  } @else {
+    <div class="flex min-h-48">
+      <hf-loading-spinner />
+    </div>
+  }
+  @if (store.isSaving()) {
+    <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+      <hf-loading-spinner />
+    </div>
+  }
+</hf-action-dialog>

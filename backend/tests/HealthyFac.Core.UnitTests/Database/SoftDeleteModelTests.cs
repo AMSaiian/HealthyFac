@@ -1,6 +1,6 @@
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Core.UnitTests.Database.Data;
 using HealthyFac.Shared.Domain.Entities;
-using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -17,7 +17,8 @@ public sealed class SoftDeleteModelTests
         var entityTypes = GetSoftDeletableEntityTypes();
 
         var entitiesWithoutFilter = entityTypes
-            .Where(entity => entity.GetDeclaredQueryFilters().Count == 0)
+            .Where(entity => entity.GetDeclaredQueryFilters()
+                .All(filter => filter.Key != SoftDeleteConstants.QueryFilterName))
             .Select(entity => entity.DisplayName())
             .ToList();
 
@@ -33,6 +34,7 @@ public sealed class SoftDeleteModelTests
             .Where(index => index.IsUnique)
             .Where(index => index.GetFilter()?.Contains(SoftDeleteConstants.NotDeletedFilter) != true)
             .Select(index => $"{index.DeclaringEntityType.DisplayName()}.{index.GetDatabaseName()}")
+            .Except(SoftDeleteModelTestData.UnfilteredUniqueIndexes)
             .ToList();
 
         indexesWithoutFilter.Should().BeEmpty();

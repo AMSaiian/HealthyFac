@@ -15,8 +15,6 @@ public static class DatabaseTestData
     public const int SeededCompanyCount = 2;
     public const int SeededDepartmentCount = 6;
     public const int SeededMachineCount = 24;
-    public const int SeededErrorCodeCount = 96;
-    public const int ErrorCodesPerMachine = 4;
     public const int SeededStateHistoryCount = 42;
     public const int MachineNameNumberLength = 2;
     public const int MachinesPerDepartment = 4;
@@ -46,6 +44,27 @@ public static class DatabaseTestData
         SupervisorEmail = TestSupervisorEmail,
         SupervisorFirstName = "Test",
         SupervisorLastName = "Supervisor",
+    };
+
+    public static readonly Guid FirstSeedMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
+    public static readonly Guid SecondSeedMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000102");
+    public const string FirstSeedGatewayId = "seedmachineone22";
+    public const string SecondSeedGatewayId = "seedmachinetwo22";
+
+    public static readonly IReadOnlyList<SeedMachineOptions> SeedMachines =
+    [
+        new() { MachineId = FirstSeedMachineId, GatewayId = FirstSeedGatewayId, DepartmentIndex = 0 },
+        new() { MachineId = SecondSeedMachineId, GatewayId = SecondSeedGatewayId, DepartmentIndex = 1 },
+    ];
+
+    public static readonly SeedingOptions ForcedRecreationWithSeedMachinesOptions = new()
+    {
+        DevelopmentData = new DevelopmentDataOptions
+        {
+            IsRecreationForced = true,
+            TestTenant = TestTenant,
+            SeedMachines = SeedMachines,
+        },
     };
 
     public static readonly SeedingOptions ForcedRecreationWithTestTenantOptions = new()

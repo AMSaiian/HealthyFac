@@ -58,7 +58,7 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
           load: async () => {
             const [host, form] = await Promise.all([
               import('@machines/drawer/machine-drawer-host/machine-drawer-host'),
-              import('@machines/drawer/machine-form-schema'),
+              import('@machines/drawer/machine-form/machine-form-schema'),
             ]);
             return { component: host.MachineDrawerHost, schema: form.machineActionPayloadSchema };
           },

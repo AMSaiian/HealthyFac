@@ -1,7 +1,6 @@
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
-using HealthyFac.Core.Domain.MachineErrorCodes;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.Persistence;
@@ -27,8 +26,6 @@ public interface ICoreDbContext : ITransactionalDbContext
     DbSet<EmployeeInvite> EmployeeInvites { get; }
 
     DbSet<Machine> Machines { get; }
-
-    DbSet<MachineErrorCode> MachineErrorCodes { get; }
 
     DbSet<MachineStateHistory> MachineStateHistories { get; }
 

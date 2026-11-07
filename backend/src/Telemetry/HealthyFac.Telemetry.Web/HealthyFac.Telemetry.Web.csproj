@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <ItemGroup>
+        <ProjectReference Include="..\HealthyFac.Telemetry.Application\HealthyFac.Telemetry.Application.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Telemetry.Infrastructure\HealthyFac.Telemetry.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Asp.Versioning.Http" />
+        <PackageReference Include="Scrutor" />
+        <PackageReference Include="Serilog.AspNetCore"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="..\..\..\seed\seed.Development.json" Link="seed\seed.Development.json"
+                 CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+</Project>

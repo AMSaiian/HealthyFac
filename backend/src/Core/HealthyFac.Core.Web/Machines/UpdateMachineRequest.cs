@@ -7,7 +7,6 @@ public record UpdateMachineRequest
 {
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
-    public required Guid DepartmentId { get; init; }
     public string? Description { get; init; }
 }
 
@@ -26,7 +25,6 @@ public static class UpdateMachineRequestExtensions
                 Id = MachineRouteIds.Decrypt(encryptedId, idEncryptor),
                 Name = request.Name,
                 SerialNumber = request.SerialNumber,
-                DepartmentId = request.DepartmentId,
                 Description = request.Description,
             };
     }

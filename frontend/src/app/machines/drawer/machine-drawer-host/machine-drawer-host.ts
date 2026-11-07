@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner'
 import { MachinesApi } from '@machines/machines-api';
 
 import { MachineDrawerStore } from '@machines/drawer/machine-drawer.store';
-import { machineFormSchema, type MachineFormValue } from '@machines/drawer/machine-form-schema';
+import { machineFormSchema, type MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 import { MachineForm } from '@machines/drawer/machine-form/machine-form';
 
 import { withDefaultDepartment } from './machine-drawer-host.utils';

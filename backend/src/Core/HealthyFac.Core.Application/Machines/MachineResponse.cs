@@ -17,6 +17,8 @@ public record MachineResponse
 
     public required Guid DepartmentId { get; init; }
 
+    public required string GatewayId { get; init; }
+
     public required MachineState State { get; init; }
 
     public string? Description { get; init; }
@@ -45,6 +47,7 @@ public record MachineResponse
             Name = machine.Name,
             SerialNumber = machine.SerialNumber,
             DepartmentId = machine.DepartmentId,
+            GatewayId = machine.GatewayId,
             State = state,
             Description = machine.Description,
             CreatedAt = machine.CreatedAt,

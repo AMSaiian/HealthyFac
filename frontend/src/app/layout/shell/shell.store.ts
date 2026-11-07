@@ -1,6 +1,6 @@
 import { computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationStart, Router } from '@angular/router';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { filter } from 'rxjs';
 
@@ -33,7 +33,7 @@ export const ShellStore = signalStore(
     onInit(store) {
       store._router.events
         .pipe(
-          filter((event) => event instanceof NavigationEnd),
+          filter((event) => event instanceof NavigationStart),
           takeUntilDestroyed(),
         )
         .subscribe(() => store.closeMenu());

@@ -19,8 +19,6 @@ public record UpdateMachineRequest : IRequest
 
     public required string SerialNumber { get; init; }
 
-    public required Guid DepartmentId { get; init; }
-
     public string? Description { get; init; }
 }
 
@@ -41,10 +39,6 @@ public class UpdateMachineRequestValidator : AbstractValidator<UpdateMachineRequ
         RuleFor(x => x.Id)
             .NotEmpty()
             .WithMessage(MachineErrors.MachineIdRequired);
-
-        RuleFor(x => x.DepartmentId)
-            .NotEmpty()
-            .WithMessage(MachineErrors.DepartmentIdRequired);
     }
 }
 
@@ -57,16 +51,15 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
     {
         var actor = _currentUser.GetActor();
         actor.EnsureCompany(request.CompanyId);
-        actor.EnsureDepartments([request.DepartmentId]);
 
         return Task.CompletedTask;
     }
 }
 
 /// <summary>
-/// Changes the name, serial number, department, and description of a machine. A machine outside the company or the
-/// departments of the actor is "not found". The serial number must stay unique among the machines of the company
-/// that are not deleted, ignoring case.
+/// Changes the name, serial number, and description of a machine. The department never changes. A machine outside
+/// the company or the departments of the actor is "not found". The serial number must stay unique among the
+/// machines of the company that are not deleted, ignoring case.
 /// </summary>
 /// <remarks>
 /// The handler checks the serial number against the other machines first. The unique index catches a parallel
@@ -94,7 +87,7 @@ public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext, ICurre
                 cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 
-        machine.Update(request.DepartmentId, request.Name, request.SerialNumber, request.Description);
+        machine.Update(request.Name, request.SerialNumber, request.Description);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(
             candidate => candidate.CompanyId == machine.CompanyId

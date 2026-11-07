@@ -6,7 +6,8 @@
     "HOME": "Home",
     "NOT_FOUND": "Page not found",
     "MACHINES": "Machines",
-    "MACHINE_ERROR_CODES": "Error codes"
+    "STATUS_DEFINITIONS": "Statuses",
+    "METRICS": "Metrics"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -65,7 +66,8 @@
     "ACTIONS": "Row actions",
     "UPDATE": "Update",
     "DELETE": "Delete",
-    "ERROR_CODES": "Error codes",
+    "METRICS": "Metrics",
+    "STATUSES": "Statuses",
     "DELETE_HEADER": "Delete machine",
     "DELETE_MESSAGE": "Delete the machine {{name}}?",
     "DELETED": "The machine is deleted.",
@@ -103,6 +105,8 @@
       "NAME": "Name",
       "SERIAL_NUMBER": "Serial number",
       "DEPARTMENT": "Department",
+      "GATEWAY_ID": "Gateway ID",
+      "COPY_GATEWAY_ID": "Copy gateway ID",
       "DESCRIPTION": "Description",
       "NO_CHANGES": "No changes provided",
       "ERRORS": {
@@ -117,38 +121,41 @@
     },
     "COLUMNS_CHOOSER": "Columns"
   },
-  "MACHINE_ERROR_CODES": {
-    "TITLE": "Error codes of",
+  "STATUS_DEFINITIONS": {
+    "TITLE": "Statuses of",
     "BACK": "Back to machines",
     "ADD_NEW": "Add new",
     "ACTIONS": "Row actions",
     "UPDATE": "Update",
     "DELETE": "Delete",
-    "DELETE_HEADER": "Delete error code",
-    "DELETE_MESSAGE": "Delete the error code {{code}}?",
-    "EMPTY": "No error codes found.",
+    "DELETE_HEADER": "Delete status",
+    "DELETE_MESSAGE": "Delete the status {{code}}?",
+    "EMPTY": "No statuses found.",
     "COLUMNS": {
       "CODE": "Code",
+      "SEVERITY": "Severity",
       "CREATED_AT": "Created",
       "UPDATED_AT": "Updated"
     },
     "FILTERS": {
-      "CODE_PLACEHOLDER": "Filter by code"
+      "CODE_PLACEHOLDER": "Filter by code",
+      "SEVERITY_PLACEHOLDER": "Filter by severity"
     },
     "TOASTS": {
       "SUCCESS": "Done",
-      "CREATED": "The error code is created.",
-      "UPDATED": "The error code is updated.",
-      "DELETED": "The error code is deleted.",
-      "CODE_TAKEN": "An error code with this code already exists for this machine."
+      "CREATED": "The status is created.",
+      "UPDATED": "The status is updated.",
+      "DELETED": "The status is deleted.",
+      "CODE_TAKEN": "A status with this code already exists for this machine."
     },
     "FORM": {
-      "CREATE_TITLE": "New error code",
-      "UPDATE_TITLE": "Update error code",
+      "CREATE_TITLE": "New status",
+      "UPDATE_TITLE": "Update status",
       "CODE": "Code",
       "CODE_PLACEHOLDER": "Enter the code",
+      "SEVERITY": "Severity",
       "DESCRIPTION": "Description",
-      "DESCRIPTION_PLACEHOLDER": "Describe the error and the actions to take",
+      "DESCRIPTION_PLACEHOLDER": "Describe the status and the actions to take",
       "NO_CHANGES": "No changes provided",
       "INVALID": "Form is not valid",
       "ERRORS": {
@@ -156,7 +163,121 @@
         "TOO_LONG": "The value is too long."
       }
     },
+    "SEVERITIES": {
+      "INFO": "Info",
+      "WARNING": "Warning",
+      "ERROR": "Error"
+    },
     "COLUMNS_CHOOSER": "Columns"
+  },
+  "METRICS": {
+    "TITLE": "Metrics:",
+    "BACK": "Back to machines",
+    "ADD_NEW": "Add metric",
+    "EXAMPLE_PAYLOAD": "Example payload",
+    "DISCARD": "Discard",
+    "APPLY": "Apply changes",
+    "EDIT": "Edit",
+    "DELETE": "Delete",
+    "RESTORE": "Restore",
+    "RELOAD": "Reload",
+    "EMPTY": "This machine has no metrics yet.",
+    "NOT_REGISTERED": "The machine is not ready for metrics yet. Try again in a few seconds.",
+    "ITEM_ERRORS": "The server rejected this metric:",
+    "DISABLED": {
+      "NO_CHANGES": "There are no changes",
+      "FORM_OPEN": "Finish the open form first"
+    },
+    "MARKERS": {
+      "NEW": "New",
+      "EDITED": "Edited",
+      "DELETED": "Deleted",
+      "INVALID": "Rejected"
+    },
+    "KINDS": {
+      "NUMERIC": "Number",
+      "BOOLEAN": "Yes / no",
+      "STATE_SET": "State set"
+    },
+    "DETAIL": {
+      "KEY": "Key",
+      "KIND": "Kind",
+      "UNIT": "Unit",
+      "RANGE": "Range",
+      "STATES": "States",
+      "DESCRIPTION": "Description"
+    },
+    "FORM": {
+      "NAME": "Name",
+      "NAME_PLACEHOLDER": "Enter a name",
+      "KEY": "Key",
+      "KEY_PLACEHOLDER": "Enter a key",
+      "KIND": "Kind",
+      "UNIT": "Unit",
+      "UNIT_PLACEHOLDER": "Select a unit",
+      "MIN": "Minimum",
+      "MAX": "Maximum",
+      "STATES": "States",
+      "STATE_PLACEHOLDER": "Enter a state",
+      "ADD_STATE": "Add",
+      "REMOVE_STATE": "Remove the state",
+      "DESCRIPTION": "Description",
+      "DESCRIPTION_PLACEHOLDER": "Describe the metric",
+      "DONE": "Done",
+      "NO_CHANGES": "No changes provided",
+      "INVALID": "The form has errors",
+      "ERRORS": {
+        "REQUIRED": "This field is required.",
+        "TOO_LONG": "The value is too long.",
+        "KEY_INVALID": "Use lower case letters, digits, underscores, and dots between parts.",
+        "KEY_TAKEN": "Another metric of this machine has this key.",
+        "UNIT_REQUIRED": "A numeric metric needs a unit.",
+        "RANGE": "The minimum must be below the maximum.",
+        "STATES_TOO_FEW": "A state set needs at least 2 states.",
+        "STATES_DUPLICATED": "The states must be unique."
+      }
+    },
+    "EXAMPLE": {
+      "TITLE": "Example payload",
+      "REVISION": "Revision {{revision}}",
+      "COPY": "Copy",
+      "CLOSE": "Close",
+      "EMPTY": "This machine has no metrics, so there is no example."
+    },
+    "CONFIRM": {
+      "HEADER": "Unsaved changes",
+      "ACCEPT": "Discard",
+      "DRAFT_MESSAGE": "The open form has changes. Discard them?",
+      "DISCARD_MESSAGE": "Discard all staged changes?",
+      "LEAVE_MESSAGE": "You have changes that are not applied. Leave the page and lose them?"
+    },
+    "TOASTS": {
+      "SUCCESS": "Done",
+      "APPLIED": "The changes are applied.",
+      "CONFLICT": "The metrics changed since you opened the page, or a key is taken. Reload and apply again.",
+      "INVALID": "The server rejected some metrics. Check the marked items."
+    },
+    "UNIT_WITHOUT_ABBREVIATION": "count",
+    "QUANTITY_KINDS": {
+      "TEMPERATURE": "Temperature",
+      "PRESSURE": "Pressure",
+      "ROTATIONAL_SPEED": "Rotational speed",
+      "SPEED": "Speed",
+      "ACCELERATION": "Acceleration",
+      "LENGTH": "Length",
+      "FREQUENCY": "Frequency",
+      "ELECTRIC_CURRENT": "Electric current",
+      "ELECTRIC_POTENTIAL": "Electric potential",
+      "POWER": "Power",
+      "ENERGY": "Energy",
+      "VOLUME_FLOW": "Volume flow",
+      "VOLUME": "Volume",
+      "RATIO": "Ratio",
+      "RELATIVE_HUMIDITY": "Relative humidity",
+      "DURATION": "Duration",
+      "SCALAR": "Scalar"
+    },
+    "SELECT_HINT": "Select a metric to see its details."
   },
   "PRIMENG": {
     "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],

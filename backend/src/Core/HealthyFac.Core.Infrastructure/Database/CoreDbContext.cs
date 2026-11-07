@@ -2,7 +2,6 @@ using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
-using HealthyFac.Core.Domain.MachineErrorCodes;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -34,8 +33,6 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
     public DbSet<EmployeeInvite> EmployeeInvites => Set<EmployeeInvite>();
 
     public DbSet<Machine> Machines => Set<Machine>();
-
-    public DbSet<MachineErrorCode> MachineErrorCodes => Set<MachineErrorCode>();
 
     public DbSet<MachineStateHistory> MachineStateHistories => Set<MachineStateHistory>();
 

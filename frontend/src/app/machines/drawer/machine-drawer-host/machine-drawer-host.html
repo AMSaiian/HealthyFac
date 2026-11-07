@@ -9,6 +9,8 @@
   @if (startValue(); as initial) {
     <hf-machine-form
       [initialValue]="initial"
+      [isUpdate]="store.isUpdate()"
+      [gatewayId]="store.gatewayId()"
       [departments]="employee.departmentOptions()"
       [isDepartmentsLoading]="employee.departments.isLoading()"
       (valueChange)="onValueChange($event)"

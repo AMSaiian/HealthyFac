@@ -2,6 +2,7 @@ using Bogus;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Shared.Domain.Gateways;
 
 namespace HealthyFac.Core.Infrastructure.Machines.Seeding;
 
@@ -50,6 +51,7 @@ internal sealed class MachineFaker : Faker<Machine>
             var machine = new Machine(
                 department.CompanyId,
                 department.Id,
+                GatewayIds.Create(),
                 $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}",
                 faker.Random.Replace(serialNumberPattern),
                 description: null,

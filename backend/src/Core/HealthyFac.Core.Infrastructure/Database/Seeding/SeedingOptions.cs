@@ -1,3 +1,6 @@
+using FluentValidation;
+using Microsoft.Extensions.Hosting;
+
 namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 
 /// <summary>
@@ -12,4 +15,14 @@ public sealed class SeedingOptions
     public bool IsOptionalDataSeeded { get; init; }
 
     public DevelopmentDataOptions DevelopmentData { get; init; } = new();
+}
+
+public sealed class SeedingOptionsValidator : AbstractValidator<SeedingOptions>
+{
+    public SeedingOptionsValidator(IHostEnvironment environment)
+    {
+        RuleFor(options => options.DevelopmentData)
+            .NotNull()
+            .SetValidator(new DevelopmentDataOptionsValidator(environment));
+    }
 }

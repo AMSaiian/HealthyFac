@@ -58,6 +58,11 @@ const TEMPORAL_PATH = {
   message: 'Import Temporal from @shared/time/temporal.',
 };
 
+const SLUGIFY_PATH = {
+  name: 'slugify',
+  message: 'Import slugify only in @shared/text/slugify.',
+};
+
 const FORMS_PATH = {
   name: '@angular/forms',
   importNames: ['ReactiveFormsModule', 'FormBuilder', 'FormGroup', 'FormControl', 'FormArray'],
@@ -101,6 +106,7 @@ const BUTTON_PATH = {
 
 const BASE_IMPORT_PATHS = [
   TEMPORAL_PATH,
+  SLUGIFY_PATH,
   FORMS_PATH,
   ZONELESS_PATH,
   ZOD_PATH,
@@ -179,6 +185,7 @@ module.exports = defineConfig([
       'src/app/**/*-host.ts',
       'src/app/**/*.routes.ts',
       'src/app/**/*.resolver.ts',
+      'src/app/**/*.guard.ts',
       'src/app/**/*.store.ts',
       'src/app/**/*.spec.ts',
       'src/app/layout/**',
@@ -212,6 +219,20 @@ module.exports = defineConfig([
     files: ['src/app/shared/security/**/*.ts'],
     rules: {
       'no-restricted-imports': importRule(BASE_IMPORT_PATHS),
+    },
+  },
+  {
+    files: ['src/app/shared/text/slugify.ts'],
+    rules: {
+      'no-restricted-imports': importRule([
+        TEMPORAL_PATH,
+        FORMS_PATH,
+        ZONELESS_PATH,
+        KEYCLOAK_PATH,
+        ZOD_PATH,
+        BUTTON_PATH,
+        HTTP_RESOURCE_PATH,
+      ]),
     },
   },
   {

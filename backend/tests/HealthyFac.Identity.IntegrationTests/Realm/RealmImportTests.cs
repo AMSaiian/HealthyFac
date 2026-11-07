@@ -82,6 +82,14 @@ public sealed class RealmImportTests(KeycloakRealmFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async Task PasswordGrant_ForSupervisor_TokenCarriesAudienceOfBothApis()
+    {
+        var claims = await _fixture.GetSupervisorAccessTokenClaimsAsync();
+
+        claims.Audiences().Should().Contain([RealmTestData.CoreClientId, RealmTestData.TelemetryClientId]);
+    }
+
+    [Fact]
     public async Task ServiceAccountToken_HasClientIdWithoutClientHostOrAddress()
     {
         var claims = await _fixture.GetAuthServiceAccessTokenClaimsAsync();

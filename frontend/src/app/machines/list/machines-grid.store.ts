@@ -22,7 +22,8 @@ import { INITIAL_GRID } from '@machines/list/machines-grid.store.utils';
 import { MachinesApi } from '@machines/machines-api';
 
 const MACHINES_PATH = '/machines';
-const ERROR_CODES_PATH = 'error-codes';
+const STATUSES_PATH = 'statuses';
+const METRICS_PATH = 'metrics';
 
 export const MachinesGridStore = signalStore(
   withGridState<MachineFilter, MachineSortColumn, MachineColumn>(INITIAL_GRID),
@@ -39,7 +40,8 @@ export const MachinesGridStore = signalStore(
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.MachinesWrite)),
     canDelete: computed(() => store._auth.hasPermission(Permission.MachinesDelete)),
-    canReadErrorCodes: computed(() => store._auth.hasPermission(Permission.MachineErrorCodesRead)),
+    canReadStatuses: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsRead)),
+    canReadMetrics: computed(() => store._auth.hasPermission(Permission.MetricDefinitionsRead)),
   })),
   withProps((store) => ({
     machines: rxResource({
@@ -77,8 +79,11 @@ export const MachinesGridStore = signalStore(
       requestUpdate(id: string): void {
         void store._actions.dispatch({ type: MachineActionType.Update, payload: { machineId: id } });
       },
-      openErrorCodes(id: string): void {
-        void store._router.navigate([MACHINES_PATH, id, ERROR_CODES_PATH]);
+      openMetrics(id: string): void {
+        void store._router.navigate([MACHINES_PATH, id, METRICS_PATH]);
+      },
+      openStatuses(id: string): void {
+        void store._router.navigate([MACHINES_PATH, id, STATUSES_PATH]);
       },
       requestDelete(machine: Machine): void {
         store._confirmation.confirm({

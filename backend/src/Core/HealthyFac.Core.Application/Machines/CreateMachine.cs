@@ -3,9 +3,11 @@ using FluentValidation;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Shared.Domain.Gateways;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Machines;
@@ -70,11 +72,13 @@ public sealed class CreateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// </remarks>
 /// <param name="dbContext">Reads the department and the serial numbers and saves the machine.</param>
 /// <param name="timeProvider">Provides the start of the first state of the machine.</param>
-public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider timeProvider)
+/// <param name="outbox">Queues the <see cref="MachineCreated"/> message in the save of the machine.</param>
+public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider timeProvider, IOutbox outbox)
     : IRequestHandler<CreateMachineRequest, CreateMachineResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IOutbox _outbox = outbox;
 
     public async Task<CreateMachineResponse> HandleAsync(
         CreateMachineRequest request,
@@ -93,6 +97,7 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider 
         var machine = new Machine(
             request.CompanyId,
             request.DepartmentId,
+            GatewayIds.Create(),
             request.Name,
             request.SerialNumber,
             request.Description,
@@ -109,6 +114,14 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider 
         }
 
         _dbContext.Machines.Add(machine);
+        _outbox.Add(
+            new MachineCreated
+            {
+                MachineId = machine.Id,
+                GatewayId = machine.GatewayId,
+                CompanyId = machine.CompanyId,
+                DepartmentId = machine.DepartmentId,
+            });
 
         try
         {

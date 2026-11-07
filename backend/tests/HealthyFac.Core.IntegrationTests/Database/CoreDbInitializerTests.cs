@@ -3,7 +3,9 @@ using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Domain.Emails;
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -70,7 +72,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         using var scope = _fixture.ScopeFactory.CreateScope();
         var supervisors = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
-            .IgnoreQueryFilters()
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AsNoTracking()
             .Where(role => role.Code == RoleCode.Supervisor)
             .ToListAsync();
@@ -174,7 +176,8 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             recreateScope.ServiceProvider.GetRequiredService<TimeProvider>(),
             Options.Create(DatabaseTestData.ForcedRecreationOptions),
             NullLogger<CoreDevelopmentDataSeeder>.Instance,
-            _fixture.InviteTokenService);
+            _fixture.InviteTokenService,
+            recreateScope.ServiceProvider.GetRequiredService<IOutbox>());
 
         await seeder.SeedAsync(CancellationToken.None);
 
@@ -184,7 +187,6 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var departmentCount = await dbContext.Departments.CountAsync();
         var machineCount = await dbContext.Machines.CountAsync();
-        var errorCodeCount = await dbContext.MachineErrorCodes.CountAsync();
         var inviteCount = await dbContext.EmployeeInvites.CountAsync();
         var employeeCount = await dbContext.Employees.CountAsync();
 
@@ -196,28 +198,8 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             .And.NotIntersectWith(stateRowIdsBefore);
         departmentCount.Should().Be(DatabaseTestData.SeededDepartmentCount);
         machineCount.Should().Be(DatabaseTestData.SeededMachineCount);
-        errorCodeCount.Should().Be(DatabaseTestData.SeededErrorCodeCount);
         inviteCount.Should().Be(DatabaseTestData.SeededInviteCount);
         employeeCount.Should().Be(DatabaseTestData.SeededEmployeeCount);
-    }
-
-    [Fact]
-    public async Task SeedOptionalDataAsync_OnEmptyDatabase_CreatesUniqueErrorCodesForEachMachine()
-    {
-        await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
-
-        using var scope = _fixture.ScopeFactory.CreateScope();
-        var codesPerMachine = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
-            .MachineErrorCodes
-            .GroupBy(errorCode => errorCode.MachineId)
-            .Select(group => new
-                { Total = group.Count(), Distinct = group.Select(code => code.Code).Distinct().Count() })
-            .ToListAsync();
-
-        codesPerMachine.Should().HaveCount(DatabaseTestData.SeededMachineCount);
-        codesPerMachine.Should()
-            .OnlyContain(group => group.Total == DatabaseTestData.ErrorCodesPerMachine
-                && group.Distinct == DatabaseTestData.ErrorCodesPerMachine);
     }
 
     private static int ReadMachineIndex(string machineName) =>

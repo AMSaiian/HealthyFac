@@ -11,12 +11,13 @@ import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
 
 import { MachineDrawerStore } from './machine-drawer.store';
-import type { MachineFormValue } from './machine-form-schema';
+import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 
 const MACHINE: Machine = {
   id: 'encrypted-id',
   name: 'Lathe 01',
   serialNumber: 'ABC-1',
+  gatewayId: 'abcdefghijklmnop',
   departmentId: 'department-1',
   state: MachineState.Operational,
   description: '<p>old</p>',
@@ -30,6 +31,8 @@ const VALUE: MachineFormValue = {
   departmentId: 'department-2',
   description: '<p>new</p>',
 };
+
+const UPDATE_BODY = { name: 'Lathe 02', serialNumber: 'XYZ-2', description: '<p>new</p>' };
 
 const TRIMMED_BODY = {
   name: 'Lathe 02',
@@ -93,7 +96,7 @@ describe('MachineDrawerStore', () => {
 
     expect(api.update).toHaveBeenCalledWith(
       MACHINE.id,
-      TRIMMED_BODY,
+      UPDATE_BODY,
       expect.objectContaining({ context: expect.anything() }),
     );
     expect(complete).toHaveBeenCalledWith(MachineActionType.Saved);
@@ -145,6 +148,16 @@ describe('MachineDrawerStore', () => {
       departmentId: MACHINE.departmentId,
       description: MACHINE.description,
     });
+  });
+
+  it('load_ForUpdate_IgnoresPayloadDepartmentAndExposesGatewayId', async () => {
+    const { store } = setup();
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id, departmentId: 'department-9' } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store.prefilledValue()?.departmentId).toBe(MACHINE.departmentId);
+    expect(store.gatewayId()).toBe(MACHINE.gatewayId);
   });
 
   it('start_ForCreate_PrefillsFromPayload', () => {

@@ -1,14 +1,18 @@
+using System.Globalization;
 using Bogus;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Companies.Seeding;
 using HealthyFac.Core.Infrastructure.Departments.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
-using HealthyFac.Core.Infrastructure.MachineErrorCodes.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
+using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -28,12 +32,14 @@ namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 /// <param name="seedingOptions">The validated seeding options.</param>
 /// <param name="logger">The logger for the forced recreation warning.</param>
 /// <param name="inviteTokenService">The service that creates the salt of the test tenant invite.</param>
+/// <param name="outbox">Queues a <see cref="MachineCreated"/> message for each seeded machine.</param>
 public sealed class CoreDevelopmentDataSeeder(
     CoreDbContext dbContext,
     TimeProvider timeProvider,
     IOptions<SeedingOptions> seedingOptions,
     ILogger<CoreDevelopmentDataSeeder> logger,
-    IInviteTokenService inviteTokenService
+    IInviteTokenService inviteTokenService,
+    IOutbox outbox
 )
 {
     private readonly CoreDbContext _dbContext = dbContext;
@@ -42,6 +48,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
     private readonly DevelopmentDataOptions _options = seedingOptions.Value.DevelopmentData;
     private readonly IInviteTokenService _inviteTokenService = inviteTokenService;
+    private readonly IOutbox _outbox = outbox;
     private int _seedOffset;
 
     /// <summary>
@@ -104,7 +111,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var department in departments)
         {
-            AddMachinesWithErrorCodes(department, now);
+            AddMachines(department, now);
 
             AddEmployees(
                 EmployeeInviteFaker.WithProfile(
@@ -178,8 +185,10 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var department in departments)
         {
-            AddMachinesWithErrorCodes(department, now);
+            AddMachines(department, now);
         }
+
+        AddSeedMachines(tenant, departments, now);
 
         var invite = new EmployeeInvite(
             tenant.CompanyId,
@@ -204,16 +213,21 @@ public sealed class CoreDevelopmentDataSeeder(
     {
         await _dbContext.OutboxMessages.ExecuteDeleteAsync(cancellationToken);
         await _dbContext.InboxMessages.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Employees.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.EmployeeInvites.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.MachineErrorCodes.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.MachineStateHistories.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Machines.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Departments.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Companies.IgnoreQueryFilters().ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Employees.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.EmployeeInvites.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.MachineStateHistories.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Machines.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Departments.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.Companies.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
-    private void AddMachinesWithErrorCodes(Department department, DateTime now)
+    private void AddMachines(Department department, DateTime now)
     {
         var machines = new MachineFaker(
                 department,
@@ -223,13 +237,45 @@ public sealed class CoreDevelopmentDataSeeder(
                 NextSeed())
             .Generate(_options.MachinesPerDepartment);
         _dbContext.Machines.AddRange(machines);
+        machines.ForEach(AddMachineCreated);
+    }
 
-        foreach (var machine in machines)
+    private void AddSeedMachines(TestTenantOptions tenant, List<Department> departments, DateTime now)
+    {
+        var seeds = _options.GetSeedMachines();
+
+        for (var index = 0; index < seeds.Count; index++)
         {
-            _dbContext.MachineErrorCodes.AddRange(
-                new MachineErrorCodeFaker(machine, NextSeed()).Generate(_options.ErrorCodesPerMachine));
+            var seed = seeds[index];
+            var machine = new Machine(
+                seed.MachineId,
+                tenant.CompanyId,
+                departments[seed.DepartmentIndex].Id,
+                seed.GatewayId,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    SeedingValidationConstants.SeedMachineNaming.NameFormat,
+                    index + 1),
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    SeedingValidationConstants.SeedMachineNaming.SerialNumberFormat,
+                    index + 1),
+                description: null,
+                now.AddDays(-SeedingValidationConstants.StateHistory.MinStartDaysBeforeNow));
+            _dbContext.Machines.Add(machine);
+            AddMachineCreated(machine);
         }
     }
+
+    private void AddMachineCreated(Machine machine) =>
+        _outbox.Add(
+            new MachineCreated
+            {
+                MachineId = machine.Id,
+                GatewayId = machine.GatewayId,
+                CompanyId = machine.CompanyId,
+                DepartmentId = machine.DepartmentId,
+            });
 
     private void AddEmployees(
         EmployeeInviteFaker inviteFaker,

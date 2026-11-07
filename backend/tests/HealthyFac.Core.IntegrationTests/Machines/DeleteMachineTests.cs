@@ -1,7 +1,7 @@
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Core.IntegrationTests.MachineErrorCodes.Data;
+using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 
@@ -25,6 +25,35 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture) : IClassFixt
         machine.DeletedAt.Should().NotBeNull();
         machine.DeletedBy.Should().NotBeNull();
         await get.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task DeleteMachine_WithActiveMachine_StoresMachineDeletedOutboxRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineDeleted>();
+        var message = messages.Where(candidate => candidate.MachineId == machineId).ToList();
+
+        message.Should().ContainSingle();
+        message[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+    }
+
+    [Fact]
+    public async Task DeleteMachine_InForeignDepartment_StoresNoOutboxRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+
+        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, [tenant.SecondDepartmentId], machineId);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineDeleted>();
+
+        messages.Should().NotContain(candidate => candidate.MachineId == machineId);
     }
 
     [Fact]
@@ -54,33 +83,6 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture) : IClassFixt
     }
 
     [Fact]
-    public async Task DeleteMachine_WithErrorCodes_SoftDeletesAllItsErrorCodes()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant);
-        var firstId = await _fixture.CreateMachineErrorCodeAsync(
-            tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            machineId,
-            MachineErrorCodeTestData.Code);
-        var secondId = await _fixture.CreateMachineErrorCodeAsync(
-            tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            machineId,
-            MachineErrorCodeTestData.OtherCode);
-
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
-
-        var first = await _fixture.LoadMachineErrorCodeRowAsync(firstId);
-        var second = await _fixture.LoadMachineErrorCodeRowAsync(secondId);
-
-        first.DeletedAt.Should().NotBeNull();
-        first.DeletedBy.Should().NotBeNull();
-        second.DeletedAt.Should().NotBeNull();
-        second.DeletedBy.Should().NotBeNull();
-    }
-
-    [Fact]
     public async Task DeleteMachine_Always_SoftDeletesStateHistory()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
@@ -104,35 +106,6 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture) : IClassFixt
 
         history.Should().HaveCount(expected: 2).And.OnlyContain(row => row.DeletedAt != null);
         otherHistory.Should().ContainSingle().Which.DeletedAt.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task DeleteMachine_WithErrorCodes_KeepsErrorCodesOfOtherMachineActive()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant);
-        var otherMachineId = await _fixture.CreateMachineAsync(
-            tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
-            MachineTestData.OtherMachineName,
-            MachineTestData.OtherSerialNumber);
-        await _fixture.CreateMachineErrorCodeAsync(
-            tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            machineId,
-            MachineErrorCodeTestData.Code);
-        var otherId = await _fixture.CreateMachineErrorCodeAsync(
-            tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            otherMachineId,
-            MachineErrorCodeTestData.Code);
-
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
-
-        var other = await _fixture.LoadMachineErrorCodeRowAsync(otherId);
-
-        other.DeletedAt.Should().BeNull();
     }
 
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant) =>

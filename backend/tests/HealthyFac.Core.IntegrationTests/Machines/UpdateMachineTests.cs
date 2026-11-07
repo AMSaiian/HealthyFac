@@ -19,17 +19,33 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
             tenant.CompanyId,
             tenant.BothDepartmentIds,
             machineId,
-            tenant.SecondDepartmentId,
             MachineTestData.OtherMachineName,
             MachineTestData.OtherSerialNumber,
             MachineTestData.LinkDescription);
 
         var machine = await _fixture.LoadMachineRowAsync(machineId);
 
-        machine.DepartmentId.Should().Be(tenant.SecondDepartmentId);
         machine.Name.Should().Be(MachineTestData.OtherMachineName);
         machine.Description.Should().Be(MachineTestData.LinkDescription);
         machine.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WithValidRequest_KeepsDepartment()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+
+        await _fixture.UpdateMachineAsync(
+            tenant.CompanyId,
+            tenant.BothDepartmentIds,
+            machineId,
+            MachineTestData.OtherMachineName,
+            MachineTestData.OtherSerialNumber);
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+
+        machine.DepartmentId.Should().Be(tenant.FirstDepartmentId);
     }
 
     [Fact]
@@ -43,7 +59,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
             tenant.CompanyId,
             tenant.BothDepartmentIds,
             machineId,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumberOtherCase);
 
@@ -60,7 +75,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
             tenant.CompanyId,
             tenant.BothDepartmentIds,
             machineId,
-            tenant.FirstDepartmentId,
             MachineTestData.OtherMachineName,
             MachineTestData.SerialNumberOtherCase);
 
@@ -77,31 +91,10 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
             tenant.CompanyId,
             [tenant.SecondDepartmentId],
             machineId,
-            tenant.SecondDepartmentId,
             MachineTestData.OtherMachineName,
             MachineTestData.OtherSerialNumber);
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineErrors.MachineNotFound);
-    }
-
-    [Fact]
-    public async Task UpdateMachine_ToDepartmentOutsideActor_ThrowsForbidden()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
-
-        var act = () => _fixture.UpdateMachineAsync(
-            tenant.CompanyId,
-            [tenant.FirstDepartmentId],
-            machineId,
-            tenant.SecondDepartmentId,
-            MachineTestData.OtherMachineName,
-            MachineTestData.OtherSerialNumber);
-
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
-        var machine = await _fixture.LoadMachineRowAsync(machineId);
-
-        machine.DepartmentId.Should().Be(tenant.FirstDepartmentId);
     }
 
     [Fact]
@@ -114,7 +107,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture) : IClassFixt
             tenant.CompanyId,
             tenant.BothDepartmentIds,
             machineId,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.BulletListDescription);

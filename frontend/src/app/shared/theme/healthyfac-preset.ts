@@ -3,6 +3,12 @@ import Lara from '@primeuix/themes/lara';
 
 export const HealthyFacPreset = definePreset(Lara, {
   components: {
+    tag: {
+      colorScheme: {
+        light: { secondary: { background: '{surface.200}', color: '{surface.600}' } },
+        dark: { secondary: { background: '{surface.700}', color: '{surface.300}' } },
+      },
+    },
     datepicker: {
       panel: { padding: '0.5rem' },
       header: { padding: '0 0 0.375rem 0' },

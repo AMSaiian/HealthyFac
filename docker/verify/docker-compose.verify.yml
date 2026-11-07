@@ -41,6 +41,18 @@ services:
     image: healthyfac-verify/core:local
     ports: !reset []
 
+  mosquitto-init:
+    container_name: healthyfac-verify-mosquitto-init
+
+  mosquitto:
+    container_name: healthyfac-verify-mosquitto
+    ports: !reset []
+
+  telemetry:
+    container_name: healthyfac-verify-telemetry
+    image: healthyfac-verify/telemetry:local
+    ports: !reset []
+
   auth:
     container_name: healthyfac-verify-auth
     image: healthyfac-verify/auth:local

@@ -2,9 +2,11 @@ export const Permission = {
   MachinesRead: 'machines:read',
   MachinesWrite: 'machines:write',
   MachinesDelete: 'machines:delete',
-  MachineErrorCodesRead: 'machine-error-codes:read',
-  MachineErrorCodesWrite: 'machine-error-codes:write',
-  MachineErrorCodesDelete: 'machine-error-codes:delete',
+  MetricDefinitionsRead: 'metric-definitions:read',
+  MetricDefinitionsWrite: 'metric-definitions:write',
+  StatusDefinitionsRead: 'status-definitions:read',
+  StatusDefinitionsWrite: 'status-definitions:write',
+  StatusDefinitionsDelete: 'status-definitions:delete',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

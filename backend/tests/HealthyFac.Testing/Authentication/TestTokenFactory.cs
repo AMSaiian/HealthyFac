@@ -29,9 +29,6 @@ public sealed class TestTokenFactory
         "machines:read",
         "machines:write",
         "machines:delete",
-        "machine-error-codes:read",
-        "machine-error-codes:write",
-        "machine-error-codes:delete",
     ];
 
     private const string KeyId = "test-key";

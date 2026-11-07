@@ -33,6 +33,7 @@
     "primeng": "^22.1.4",
     "quill": "^2.0.3",
     "rxjs": "~7.8.0",
+    "slugify": "1.6.9",
     "tailwindcss": "^4.3.4",
     "tailwindcss-primeui": "^0.6.1",
     "temporal-polyfill": "^1.0.6",

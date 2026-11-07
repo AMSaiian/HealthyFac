@@ -9,7 +9,7 @@ ENV DOTNET_NOLOGO=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Copy only the files that affect restore, so this layer caches across source edits.
-COPY Directory.Build.props Directory.Packages.props HealthyFac.slnx ./
+COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac.slnx ./
 COPY src/Core/HealthyFac.Core.Domain/*.csproj          src/Core/HealthyFac.Core.Domain/
 COPY src/Core/HealthyFac.Core.Application/*.csproj     src/Core/HealthyFac.Core.Application/
 COPY src/Core/HealthyFac.Core.Infrastructure/*.csproj  src/Core/HealthyFac.Core.Infrastructure/
@@ -26,6 +26,8 @@ RUN dotnet restore src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.cspro
 # ---------- publish ----------
 FROM restore AS publish
 COPY src/ src/
+# The Web project links the seed data file as content (never published), so the build needs it.
+COPY seed/ seed/
 
 # The restore layer already warmed the package cache, so this resolves offline and stays fast.
 # UseAppHost=false drops the native launcher, because the entry point calls "dotnet" directly.

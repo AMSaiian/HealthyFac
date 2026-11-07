@@ -48,6 +48,12 @@ public static class SeedingValidationConstants
     /// </summary>
     public const int MachineNameSuffixLength = 3;
 
+    public static class SeedMachineNaming
+    {
+        public const string NameFormat = "Seed machine {0:00}";
+        public const string SerialNumberFormat = "SEED-{0:0000}";
+    }
+
     public static class Messages
     {
         public const string RecreationOnlyInDevelopment =
@@ -60,5 +66,17 @@ public static class SeedingValidationConstants
         public const string TestTenantDepartmentIdEmpty = "A test tenant department ID must not be empty.";
 
         public const string TestTenantDepartmentIdDuplicated = "The test tenant department IDs must be distinct.";
+
+        public const string SeedMachineIdEmpty = "A seed machine ID must not be empty.";
+
+        public const string SeedMachineIdDuplicated = "The seed machine IDs must be distinct.";
+
+        public const string SeedMachineGatewayIdInvalid =
+            "A seed machine gateway ID must have the gateway ID format.";
+
+        public const string SeedMachineGatewayIdDuplicated = "The seed machine gateway IDs must be distinct.";
+
+        public const string SeedMachineDepartmentIndexOutOfRange =
+            "A seed machine department index must point into the test tenant department IDs.";
     }
 }

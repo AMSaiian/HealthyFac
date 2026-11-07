@@ -1,0 +1,50 @@
+<div class="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+  @if (isLoading()) {
+    @for (row of skeletons; track row) {
+      <p-skeleton
+        height="3.5rem"
+        class="flex-none"
+      />
+    }
+  } @else {
+    @for (item of items(); track item.localId) {
+      <button
+        type="button"
+        class="flex w-full flex-none flex-col gap-1 rounded-border border border-surface p-3 text-start hover:bg-emphasis"
+        [class.bg-highlight]="item.localId === selectedId()"
+        [class.opacity-60]="item.isDeleted"
+        (click)="selected.emit(item.localId)"
+      >
+        <span class="flex items-center justify-between gap-2">
+          <span
+            class="min-w-0 truncate font-medium"
+            [class.line-through]="item.isDeleted"
+          >
+            {{ item.value.name }}
+          </span>
+          @if (markerOf(item); as marker) {
+            <p-tag
+              class="flex-none"
+              [severity]="markerSeverities[marker]"
+              [value]="markerLabelKeys[marker] | translate"
+            />
+          }
+        </span>
+        <span class="min-w-0 truncate text-sm text-muted-color">{{ item.value.key }}</span>
+      </button>
+    }
+  }
+</div>
+@if (canWrite()) {
+  <button
+    pButton
+    type="button"
+    class="flex-none"
+    severity="secondary"
+    [disabled]="isLoading()"
+    (click)="addRequested.emit()"
+  >
+    <i class="pi pi-plus"></i>
+    {{ 'METRICS.ADD_NEW' | translate }}
+  </button>
+}

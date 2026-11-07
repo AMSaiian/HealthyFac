@@ -35,7 +35,7 @@ public sealed class TokenExchangeTests(TokenExchangeFixture fixture)
         claims[RealmTestData.PermissionsClaim]!.AsArray()
             .Select(value => value!.GetValue<string>())
             .Should()
-            .BeEquivalentTo(RealmTestData.ExpectedPermissions);
+            .BeEquivalentTo(RealmTestData.CorePermissions);
     }
 
     [Fact]
