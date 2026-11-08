@@ -4,7 +4,8 @@ using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
-public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+[Collection(GatewayProxyCollection.Name)]
+public sealed class CoreRouteTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
 
@@ -13,9 +14,9 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
 
     private readonly EchoServer _core = new(useForwardedHeaders: true);
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task CoreRoute_WithVersionedPath_RemovesPublicPrefix()
@@ -23,7 +24,8 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(requestUri: "/api/core/v1/machines");
+        var response = await client.GetAsync(
+            requestUri: "/api/core/v1/machines", TestContext.Current.CancellationToken);
 
         var forwardedRequest = _core.Requests.Single();
 
@@ -37,7 +39,8 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(requestUri: "/api/core/v1/machines");
+        using var response = await client.GetAsync(
+            requestUri: "/api/core/v1/machines", TestContext.Current.CancellationToken);
 
         var forwardedRequest = _core.Requests.Single();
 
@@ -51,9 +54,10 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(requestUri: "/api/core/v1/machines");
+        var response = await client.GetAsync(
+            requestUri: "/api/core/v1/machines", TestContext.Current.CancellationToken);
 
-        var publicPath = await response.Content.ReadAsStringAsync();
+        var publicPath = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         publicPath.Should().Be(expected: "/api/core/v1/machines");
     }
@@ -64,7 +68,8 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(requestUri: "/api/core/v1/employee-invites/verify?page=2&size=10");
+        var response = await client.GetAsync(
+            requestUri: "/api/core/v1/employee-invites/verify?page=2&size=10", TestContext.Current.CancellationToken);
 
         var forwardedRequest = _core.Requests.Single();
 
@@ -80,7 +85,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(path);
+        var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -93,7 +98,7 @@ public sealed class CoreRouteTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(requestUri: "/api/other/v1/x");
+        var response = await client.GetAsync(requestUri: "/api/other/v1/x", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 

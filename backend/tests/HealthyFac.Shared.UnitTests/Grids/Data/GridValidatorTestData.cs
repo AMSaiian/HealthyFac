@@ -44,7 +44,7 @@ public static class GridValidatorTestData
 
     public static TheoryData<IReadOnlyList<Guid>?> InvalidIdLists => new()
     {
-        null,
+        (IReadOnlyList<Guid>?)null,
         new List<Guid> { Guid.Empty },
         new List<Guid> { Guid.NewGuid(), Guid.Empty },
     };

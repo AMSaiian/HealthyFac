@@ -40,7 +40,7 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
 
     public IIdentityAdmin Admin => _services.GetRequiredService<IIdentityAdmin>();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await Task.WhenAll(
             Keycloak.StartAsync(KeycloakAdminTestData.RealmEnvironment),
@@ -114,7 +114,17 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
         return provider.GetRequiredService<IIdentityAdmin>();
     }
 
-    public async Task DisposeAsync()
+    /// <summary>
+    /// Deletes the users and clients that tests created in Keycloak and empties Redis, which holds the cached service
+    /// token. The next call fetches a new token.
+    /// </summary>
+    public async ValueTask ResetAsync()
+    {
+        await Keycloak.DeleteTestIdentitiesAsync();
+        await Redis.FlushAsync();
+    }
+
+    public async ValueTask DisposeAsync()
     {
         foreach (var extraServices in _extraServices)
         {

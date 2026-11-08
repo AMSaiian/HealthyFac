@@ -4,7 +4,8 @@ using HealthyFac.Core.ApiTests.Machines.Data;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
-public sealed class MachineInputTests(CoreApiFixture fixture) : IClassFixture<CoreApiFixture>
+[Collection(CoreApiCollection.Name)]
+public sealed class MachineInputTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 
@@ -17,7 +18,7 @@ public sealed class MachineInputTests(CoreApiFixture fixture) : IClassFixture<Co
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{MachineApiTestData.InvalidEncryptedId}",
             claims);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         body.Should().NotContain(MachineApiTestData.StackTraceMarker);

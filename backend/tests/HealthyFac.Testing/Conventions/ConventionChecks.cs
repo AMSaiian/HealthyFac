@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using HealthyFac.Shared.Application;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Resetting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Xunit;
 
 namespace HealthyFac.Testing.Conventions;
 
@@ -168,6 +170,42 @@ public static class ConventionChecks
             .Select(type => type.DisplayName)
             .ToList();
     }
+
+    /// <summary>
+    /// Finds the fixture types that two or more test classes use as a class fixture. Each of those classes starts its
+    /// own container set, so related classes belong in one collection (<c>ICollectionFixture&lt;T&gt;</c>).
+    /// </summary>
+    /// <param name="assembly">The test assembly to inspect.</param>
+    /// <returns>One line for each shared fixture type, with the names of its test classes.</returns>
+    public static IReadOnlyList<string> FindSharedClassFixtures(Assembly assembly) =>
+        assembly.GetSourceTypes()
+            .SelectMany(testClass => testClass.GetInterfaces()
+                .Where(implemented => implemented.IsGenericType
+                    && implemented.GetGenericTypeDefinition() == typeof(IClassFixture<>))
+                .Select(implemented => (Fixture: implemented.GetGenericArguments()[0], TestClass: testClass)))
+            .GroupBy(usage => usage.Fixture)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key.DisplayName}: "
+                + string.Join(separator: ", ", group.Select(usage => usage.TestClass.DisplayName)))
+            .ToList();
+
+    /// <summary>
+    /// Finds the collection fixture types that do not implement <see cref="IResetBeforeEachTest"/>. Such a fixture
+    /// leaves the rows, messages, and cache entries of one test to the next test of the collection.
+    /// </summary>
+    /// <param name="assembly">The test assembly to inspect.</param>
+    /// <returns>The names of the collection fixture types without a reset.</returns>
+    public static IReadOnlyList<string> FindCollectionFixturesWithoutReset(Assembly assembly) =>
+        assembly.GetSourceTypes()
+            .Where(type => type.IsDefined(typeof(CollectionDefinitionAttribute), inherit: false))
+            .SelectMany(collection => collection.GetInterfaces()
+                .Where(implemented => implemented.IsGenericType
+                    && implemented.GetGenericTypeDefinition() == typeof(ICollectionFixture<>))
+                .Select(implemented => implemented.GetGenericArguments()[0]))
+            .Distinct()
+            .Where(fixture => !typeof(IResetBeforeEachTest).IsAssignableFrom(fixture))
+            .Select(fixture => fixture.DisplayName)
+            .ToList();
 
     public static IReadOnlyList<string> FindControllers(Assembly assembly) =>
         assembly.GetSourceTypes()

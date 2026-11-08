@@ -10,7 +10,7 @@ public sealed class OverlapProbeInterceptor : SaveChangesInterceptor
 {
     private static readonly TimeSpan HoldLimit = TimeSpan.FromSeconds(seconds: 10);
 
-    private readonly TaskCompletionSource _secondStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private TaskCompletionSource _secondStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _isArmed;
     private int _startedCount;
     private int _hasOverlapped;
@@ -18,6 +18,15 @@ public sealed class OverlapProbeInterceptor : SaveChangesInterceptor
     public bool HasOverlapped => Volatile.Read(ref _hasOverlapped) == 1;
 
     public void Arm() => Interlocked.Exchange(ref _isArmed, value: 1);
+
+    public void Reset()
+    {
+        Interlocked.Exchange(ref _isArmed, value: 0);
+        Interlocked.Exchange(ref _startedCount, value: 0);
+        Interlocked.Exchange(ref _hasOverlapped, value: 0);
+        Interlocked.Exchange(
+            ref _secondStarted, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+    }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,

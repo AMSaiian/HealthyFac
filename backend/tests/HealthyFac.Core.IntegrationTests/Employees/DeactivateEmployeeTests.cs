@@ -6,7 +6,8 @@ using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
-public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreEmployeesCollection.Name)]
+public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

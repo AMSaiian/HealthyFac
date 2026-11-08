@@ -22,7 +22,8 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
         {
             scope.ServiceProvider.GetRequiredService<IOutbox>()
                 .Add(new TestRecorded { Text = TracingTestData.LinkedText });
-            await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
+            await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
+                .SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var spans = await capture.WaitForSpansAsync(
@@ -51,7 +52,8 @@ public sealed class EndToEndTests(PipelineFixture fixture) : IClassFixture<Pipel
             });
         scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestRecorded { Text = InboxProcessorTestData.EndToEndText });
-        await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
+        await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
+            .SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var calls = await _fixture.WaitForHandledCallsAsync(InboxProcessorTestData.EndToEndText);
 

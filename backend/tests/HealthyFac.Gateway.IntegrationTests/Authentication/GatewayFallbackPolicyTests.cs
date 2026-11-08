@@ -4,15 +4,16 @@ using HealthyFac.Gateway.IntegrationTests.Hosting;
 
 namespace HealthyFac.Gateway.IntegrationTests.Authentication;
 
+[Collection(GatewayProxyCollection.Name)]
 public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
-    : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+    : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
     private readonly EchoServer _core = new(useForwardedHeaders: true);
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task Route_WithoutAuthorizationPolicy_WithoutToken_Returns401()
@@ -22,7 +23,8 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
             settings: FallbackPolicyTestData.UnprotectedRouteSettings);
         using var client = gateway.CreateClient();
 
-        using var response = await client.GetAsync(FallbackPolicyTestData.UnprotectedRoute);
+        using var response = await client.GetAsync(
+            FallbackPolicyTestData.UnprotectedRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
@@ -37,7 +39,8 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
             settings: FallbackPolicyTestData.UnprotectedRouteSettings);
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(FallbackPolicyTestData.UnprotectedRoute);
+        using var response = await client.GetAsync(
+            FallbackPolicyTestData.UnprotectedRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -50,7 +53,8 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateClient();
 
-        using var response = await client.GetAsync(FallbackPolicyTestData.UnknownRoute);
+        using var response = await client.GetAsync(
+            FallbackPolicyTestData.UnknownRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 

@@ -141,7 +141,7 @@ public sealed class ClientCredentialsHandlerTests
             new DownstreamScopeCallHandler(harness),
             harness.DownstreamScopes);
 
-        await decorator.HandleAsync(new DownstreamScopeCallRequest());
+        await decorator.HandleAsync(new DownstreamScopeCallRequest(), TestContext.Current.CancellationToken);
 
         harness.ReadScopes().Should().Be(ServiceTokenTestData.FirstPrefixedScope);
     }
@@ -231,7 +231,8 @@ public sealed class ClientCredentialsHandlerTests
         var otherInstance = harness.CreateClient();
         using var first = await harness.CallAsync();
 
-        using var second = await otherInstance.GetAsync(ServiceTokenTestData.ResourceUrl);
+        using var second = await otherInstance.GetAsync(
+            ServiceTokenTestData.ResourceUrl, TestContext.Current.CancellationToken);
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
         harness.Resource.Authorizations.Should()
@@ -320,7 +321,8 @@ public sealed class ClientCredentialsHandlerTests
         var otherInstance = harness.CreateClient();
         harness.TokenEndpoint.HoldResponses();
         var firstCall = harness.CallAsync();
-        var secondCall = otherInstance.GetAsync(ServiceTokenTestData.ResourceUrl);
+        var secondCall = otherInstance.GetAsync(
+            ServiceTokenTestData.ResourceUrl, TestContext.Current.CancellationToken);
         await harness.Time.WaitForTimersAsync(count: 2);
         harness.TokenEndpoint.ReleaseResponses();
         using var first = await firstCall;

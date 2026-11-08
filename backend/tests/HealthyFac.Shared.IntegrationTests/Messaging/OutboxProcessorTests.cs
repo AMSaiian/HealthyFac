@@ -9,10 +9,11 @@ using Npgsql;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class OutboxProcessorTests(TransportFixture fixture)
-    : IClassFixture<TransportFixture>, IDisposable
+[Collection(MessagingTransportCollection.Name)]
+public sealed class OutboxProcessorTests(TransportCollectionFixture fixture)
+    : IDisposable
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     private readonly TestSubscriber _subscriber =
         new(fixture.BrokerConnectionString, OutboxProcessorTestData.SubscriberQueueName);
@@ -79,15 +80,16 @@ public sealed class OutboxProcessorTests(TransportFixture fixture)
         var firstContext = firstScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
         var secondContext = secondScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
 
-        var claimedIds = await firstContext.RunInTransactionAsync(async token =>
-        {
-            var firstClaim = await firstContext.ClaimNextOutboxMessageAsync(InboxTestData.Now, token);
-            var secondClaim = await secondContext.RunInTransactionAsync(
-                secondToken => secondContext.ClaimNextOutboxMessageAsync(InboxTestData.Now, secondToken),
-                token);
+        var claimedIds = await firstContext.RunInTransactionAsync(
+            async token =>
+            {
+                var firstClaim = await firstContext.ClaimNextOutboxMessageAsync(InboxTestData.Now, token);
+                var secondClaim = await secondContext.RunInTransactionAsync(
+                    secondToken => secondContext.ClaimNextOutboxMessageAsync(InboxTestData.Now, secondToken),
+                    token);
 
-            return (First: firstClaim?.Id, Second: secondClaim?.Id);
-        });
+                return (First: firstClaim?.Id, Second: secondClaim?.Id);
+            }, TestContext.Current.CancellationToken);
 
         claimedIds.First.Should().NotBeNull();
         claimedIds.Second.Should().NotBe(claimedIds.First!.Value);

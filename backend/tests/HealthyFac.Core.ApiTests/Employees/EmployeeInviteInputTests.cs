@@ -8,7 +8,8 @@ using HealthyFac.Shared.Application.TextInput;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
-public sealed class EmployeeInviteInputTests(CoreApiFixture fixture) : IClassFixture<CoreApiFixture>
+[Collection(CoreApiCollection.Name)]
+public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 
@@ -22,7 +23,7 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture) : IClassFix
 
         var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
 
-        var body = await response.Content.ReadFromJsonAsync<JsonObject>();
+        var body = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
         var text = body!.ToJsonString();
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -53,7 +54,7 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture) : IClassFix
 
         var response = await _fixture.PostCreateInviteAsync(claims, mixedCase);
 
-        var body = await response.Content.ReadFromJsonAsync<JsonObject>();
+        var body = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
 
         accepted.IsSuccessStatusCode.Should().BeTrue();
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);

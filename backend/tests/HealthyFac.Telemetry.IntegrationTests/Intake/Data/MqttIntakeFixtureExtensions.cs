@@ -33,16 +33,6 @@ public static class MqttIntakeFixtureExtensions
             return messages;
         }
 
-        public async Task WaitUntilConnectedAsync()
-        {
-            var deadline = DateTime.UtcNow + WaitLimit;
-
-            while (!fixture.State.IsConnected && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(PollInterval);
-            }
-        }
-
         public async Task<IReadOnlyList<ReceivedMessage>> WaitForTopicMessagesAsync(string topic, int expectedCount)
         {
             IReadOnlyList<ReceivedMessage> messages = [];

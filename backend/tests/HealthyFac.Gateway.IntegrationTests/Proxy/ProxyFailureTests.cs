@@ -13,7 +13,8 @@ using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
-public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>
+[Collection(GatewayProxyCollection.Name)]
+public sealed class ProxyFailureTests(GatewayEnvironment environment)
 {
     private readonly GatewayEnvironment _environment = environment;
 
@@ -23,9 +24,10 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         await using var gateway = _environment.CreateGateway(ProxyFailureTestData.ClosedPortAddress);
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(ProxyFailureTestData.MachinesRoute);
+        using var response = await client.GetAsync(
+            ProxyFailureTestData.MachinesRoute, TestContext.Current.CancellationToken);
 
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         response.Content.Headers.ContentType!.MediaType.Should().Be(ProxyFailureTestData.ProblemJsonMediaType);
@@ -43,10 +45,11 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         using var client = gateway.CreateAuthenticatedClient();
         var startedAt = Stopwatch.GetTimestamp();
 
-        using var response = await client.GetAsync(ProxyFailureTestData.MachinesRoute);
+        using var response = await client.GetAsync(
+            ProxyFailureTestData.MachinesRoute, TestContext.Current.CancellationToken);
 
         var elapsed = Stopwatch.GetElapsedTime(startedAt);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.GatewayTimeout);
         problem!.Title.Should().Be(GatewayProblemDetailsConstants.GatewayTimeout.Title);
@@ -69,9 +72,10 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
             ProxyFailureTestData.UnhealthyWaitLimit);
         var requestCountBeforeAct = core.RequestCount;
 
-        using var response = await client.GetAsync(ProxyFailureTestData.MachinesRoute);
+        using var response = await client.GetAsync(
+            ProxyFailureTestData.MachinesRoute, TestContext.Current.CancellationToken);
 
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         problem!.Title.Should().Be(GatewayProblemDetailsConstants.ServiceUnavailable.Title);
@@ -90,7 +94,7 @@ public sealed class ProxyFailureTests(GatewayEnvironment environment) : IClassFi
         using var request = new HttpRequestMessage(HttpMethod.Get, ProxyFailureTestData.MachinesRoute);
         request.Headers.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", secretToken);
 
-        using var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
         var warnings = logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ToList();
         var leakedEntries = logs.Entries

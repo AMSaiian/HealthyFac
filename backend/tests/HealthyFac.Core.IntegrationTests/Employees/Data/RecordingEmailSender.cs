@@ -12,6 +12,8 @@ public sealed class RecordingEmailSender : IEmailSender
 
     public IReadOnlyCollection<EmailMessage> Messages => _messages;
 
+    public void Reset() => _messages.Clear();
+
     public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
         _messages.Enqueue(message);

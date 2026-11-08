@@ -5,7 +5,8 @@ using HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Database;
 
-public sealed class DevelopmentSeedTests(TelemetryDatabaseFixture fixture) : IClassFixture<TelemetryDatabaseFixture>
+[Collection(TelemetrySeedingCollection.Name)]
+public sealed class DevelopmentSeedTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

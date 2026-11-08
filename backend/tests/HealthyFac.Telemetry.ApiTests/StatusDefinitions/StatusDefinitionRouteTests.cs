@@ -4,7 +4,8 @@ using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.ApiTests.StatusDefinitions;
 
-public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture) : IClassFixture<TelemetryApiFixture>
+[Collection(TelemetryApiCollection.Name)]
+public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
 

@@ -15,9 +15,9 @@ public sealed class ForwardedPrefixTests
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri: "/v1/machines");
         request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, PublicPrefix);
 
-        using var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
-        var pathBase = await response.Content.ReadAsStringAsync();
+        var pathBase = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         pathBase.Should().Be(PublicPrefix);
     }
@@ -31,9 +31,9 @@ public sealed class ForwardedPrefixTests
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri: "/v1/machines");
         request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, value: "/evil");
 
-        using var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
-        var pathBase = await response.Content.ReadAsStringAsync();
+        var pathBase = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         pathBase.Should().BeEmpty();
     }

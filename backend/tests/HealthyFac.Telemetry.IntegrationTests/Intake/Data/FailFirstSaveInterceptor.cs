@@ -15,6 +15,8 @@ public sealed class FailFirstSaveInterceptor : SaveChangesInterceptor
 
     public void Arm(Exception failure) => Interlocked.Exchange(ref _failure, failure);
 
+    public void Reset() => Interlocked.Exchange(ref _failure, value: null);
+
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,

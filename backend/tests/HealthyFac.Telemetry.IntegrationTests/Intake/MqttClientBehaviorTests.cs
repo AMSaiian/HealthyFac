@@ -6,9 +6,10 @@ using MQTTnet.Protocol;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
-public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFixture<MosquittoFixture>
+[Collection(TelemetryMqttCollection.Name)]
+public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 {
-    private readonly MosquittoFixture _fixture = fixture;
+    private readonly MosquittoFixture _fixture = fixture.Mosquitto;
 
     [Fact]
     public async Task SharedSubscription_WithTwoClients_DeliversEachMessageExactlyOnceInTotal()
@@ -30,7 +31,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
         }
 
         await ReceivingClient.WaitUntilAsync(() => received.Count >= IntakeTestData.MessageCount);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         received.Should().HaveCount(IntakeTestData.MessageCount);
         received.Distinct().Should().HaveCount(IntakeTestData.MessageCount);
@@ -84,14 +85,14 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
                 string.Format(IntakeTestData.GatewayTopicFormat, arg0: "gateway0"),
                 string.Format(IntakeTestData.PayloadFormat, arg0: 0));
             await ReceivingClient.WaitUntilAsync(() => first.Count >= 1);
-            await Task.Delay(IntakeTestData.QuietPeriod);
+            await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
         }
 
         var second = new ConcurrentBag<string>();
         var reconnected = await _fixture.ConnectTelemetryAsync(
             clientId, isCleanStart: false, IntakeTestData.SessionExpirySeconds);
         await using var receivingAgain = new ReceivingClient(reconnected, second);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         second.Should().BeEmpty();
     }
@@ -114,7 +115,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
                 liveReceived.Count + deadReceived.Count >= IntakeTestData.MessageCount);
         }
 
-        await Task.Delay(IntakeTestData.ExpiryWait);
+        await Task.Delay(IntakeTestData.ExpiryWait, TestContext.Current.CancellationToken);
 
         deadReceived.Should().NotBeEmpty();
         liveReceived.Distinct().Should().HaveCount(IntakeTestData.MessageCount - deadReceived.Count);
@@ -136,10 +137,10 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
             await deadMember.SubscribeAsync(sharedFilter);
         }
 
-        await Task.Delay(IntakeTestData.ExpiryWait);
+        await Task.Delay(IntakeTestData.ExpiryWait, TestContext.Current.CancellationToken);
         await PublishBatchAsync(offset: 0);
         await ReceivingClient.WaitUntilAsync(() => liveReceived.Count >= IntakeTestData.MessageCount);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         liveReceived.Distinct().Should().HaveCount(IntakeTestData.MessageCount);
         deadReceived.Should().BeEmpty();
@@ -160,7 +161,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
             await ReceivingClient.WaitUntilAsync(() => first.Count >= 1);
         }
 
-        await Task.Delay(IntakeTestData.ReconnectDelay);
+        await Task.Delay(IntakeTestData.ReconnectDelay, TestContext.Current.CancellationToken);
         var second = new ConcurrentBag<string>();
         var reconnected = await _fixture.ConnectTelemetryAsync(
             clientId, isCleanStart: false, IntakeTestData.ShortSessionExpirySeconds);
@@ -187,7 +188,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
 
         await PublishBatchAsync(offset: 0);
         await ReceivingClient.WaitUntilAsync(() => liveReceived.Count >= IntakeTestData.MessageCount);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
         var liveCountWhileOffline = liveReceived.Count;
         var reconnected = await _fixture.ConnectTelemetryAsync(
             clientId: "offline-client", isCleanStart: false, IntakeTestData.SessionExpirySeconds);
@@ -214,14 +215,14 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
         await held.SubscribeAsync(sharedFilter);
         await PublishBatchAsync(offset: 0, IntakeTestData.LargeMessageCount);
         await ReceivingClient.WaitUntilAsync(() => held.Count >= IntakeTestData.ReceiveWindow);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
         var heldBeforeUnsubscribe = held.Count;
 
         await held.UnsubscribeAsync(sharedFilter);
         await held.AcknowledgeHeldAndContinueAsync();
-        await ReceivingClient.WaitUntilAsync(
-            () => liveReceived.Count + heldReceived.Count >= IntakeTestData.LargeMessageCount);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await ReceivingClient.WaitUntilAsync(() =>
+            liveReceived.Count + heldReceived.Count >= IntakeTestData.LargeMessageCount);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         heldBeforeUnsubscribe.Should().Be(IntakeTestData.ReceiveWindow);
         heldReceived.Count.Should().BeGreaterThan(IntakeTestData.ReceiveWindow);
@@ -243,7 +244,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
         await PublishBatchAsync(offset: 0);
 
         await ReceivingClient.WaitUntilAsync(() => stayingReceived.Count >= IntakeTestData.MessageCount);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         stayingReceived.Distinct().Should().HaveCount(IntakeTestData.MessageCount);
         leavingReceived.Should().BeEmpty();
@@ -259,7 +260,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
             {
                 Reason = MqttClientDisconnectOptionsReason.NormalDisconnection,
                 SessionExpiryInterval = 0,
-            });
+            }, TestContext.Current.CancellationToken);
         client.Dispose();
 
         var (again, result) = await _fixture.ConnectTelemetryWithResultAsync(
@@ -274,7 +275,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
     {
         const string clientId = "kept-session-client";
         var (client, _) = await _fixture.ConnectTelemetryWithResultAsync(clientId, IntakeTestData.SessionExpirySeconds);
-        await client.DisconnectAsync();
+        await client.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
         client.Dispose();
 
         var (again, result) = await _fixture.ConnectTelemetryWithResultAsync(
@@ -289,10 +290,10 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
     {
         const string clientId = "taken-over-session-client";
         var (client, _) = await _fixture.ConnectTelemetryWithResultAsync(clientId, IntakeTestData.SessionExpirySeconds);
-        await client.DisconnectAsync();
+        await client.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
         client.Dispose();
         var cleaning = await _fixture.ConnectTelemetryAsync(clientId, isCleanStart: true, sessionExpirySeconds: 0);
-        await cleaning.DisconnectAsync();
+        await cleaning.DisconnectAsync(cancellationToken: TestContext.Current.CancellationToken);
         cleaning.Dispose();
 
         var (again, result) = await _fixture.ConnectTelemetryWithResultAsync(
@@ -323,7 +324,8 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
     {
         using var client = _fixture.CreateClient();
 
-        var result = await client.ConnectAsync(_fixture.CreateOptions(user: null, password: null));
+        var result = await client.ConnectAsync(
+            _fixture.CreateOptions(user: null, password: null), TestContext.Current.CancellationToken);
 
         result.ResultCode.Should().Be(MqttClientConnectResultCode.NotAuthorized);
         client.IsConnected.Should().BeFalse();
@@ -334,7 +336,9 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
     {
         using var client = _fixture.CreateClient();
 
-        var result = await client.ConnectAsync(_fixture.CreateOptions(user: "telemetry", password: "wrong-password"));
+        var result = await client.ConnectAsync(
+            _fixture.CreateOptions(user: "telemetry", password: "wrong-password"),
+            TestContext.Current.CancellationToken);
 
         result.ResultCode.Should().Be(MqttClientConnectResultCode.NotAuthorized);
         client.IsConnected.Should().BeFalse();
@@ -356,7 +360,7 @@ public sealed class MqttClientBehaviorTests(MosquittoFixture fixture) : IClassFi
             sender, string.Format(IntakeTestData.GatewayTopicFormat, arg0: "gateway0"), payload: "{}");
 
         await ReceivingClient.WaitUntilAsync(() => telemetryReceived.Count >= 1);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         telemetryReceived.Should().ContainSingle();
         senderReceived.Should().BeEmpty();

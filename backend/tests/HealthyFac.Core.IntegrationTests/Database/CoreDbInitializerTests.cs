@@ -13,7 +13,8 @@ using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 
-public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreSeedingCollection.Name)]
+public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 
@@ -27,7 +28,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         var roles = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
             .AsNoTracking()
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         roles.Select(role => role.Code).Should().BeEquivalentTo(DatabaseTestData.RoleCodes);
         roles.Select(role => role.Id).Should().OnlyHaveUniqueItems().And.NotContain(Guid.Empty);
@@ -41,7 +42,9 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             await changeScope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .Roles
                 .Where(role => role.Code == RoleCode.Worker)
-                .ExecuteUpdateAsync(update => update.SetProperty(role => role.Name, DatabaseTestData.ChangedRoleName));
+                .ExecuteUpdateAsync(
+                    update => update.SetProperty(role => role.Name, DatabaseTestData.ChangedRoleName),
+                    TestContext.Current.CancellationToken);
         }
 
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
@@ -51,7 +54,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             .Roles
             .Where(role => role.Code == RoleCode.Worker)
             .Select(role => role.Name)
-            .SingleAsync();
+            .SingleAsync(TestContext.Current.CancellationToken);
         workerName.Should().NotBe(DatabaseTestData.ChangedRoleName);
     }
 
@@ -64,7 +67,9 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             await deleteScope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .Roles
                 .Where(role => role.Code == RoleCode.Supervisor)
-                .ExecuteUpdateAsync(update => update.SetProperty(role => role.DeletedAt, DateTime.UtcNow));
+                .ExecuteUpdateAsync(
+                    update => update.SetProperty(role => role.DeletedAt, DateTime.UtcNow),
+                    TestContext.Current.CancellationToken);
         }
 
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
@@ -75,7 +80,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AsNoTracking()
             .Where(role => role.Code == RoleCode.Supervisor)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         supervisors.Where(role => role.DeletedAt is null).Should().ContainSingle();
         supervisors.Where(role => role.DeletedAt is not null).Should().ContainSingle();
@@ -108,7 +113,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         var machineNames = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Machines
             .Select(machine => machine.Name)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         machineNames.Should()
             .NotBeEmpty()
@@ -157,8 +162,10 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
 
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
-        var employeeEmails = await dbContext.Employees.Select(employee => employee.Email).ToListAsync();
-        var inviteEmails = await dbContext.EmployeeInvites.Select(invite => invite.Email).ToListAsync();
+        var employeeEmails = await dbContext.Employees.Select(employee => employee.Email)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        var inviteEmails = await dbContext.EmployeeInvites.Select(invite => invite.Email)
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         employeeEmails.Should().NotBeEmpty().And.OnlyContain(email => email == EmailAddresses.Normalize(email));
         inviteEmails.Should().NotBeEmpty().And.OnlyContain(email => email == EmailAddresses.Normalize(email));
@@ -185,10 +192,10 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture) : IClass
         var stateRowIdsAfter = await _fixture.LoadAllStateRowIdsAsync();
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
-        var departmentCount = await dbContext.Departments.CountAsync();
-        var machineCount = await dbContext.Machines.CountAsync();
-        var inviteCount = await dbContext.EmployeeInvites.CountAsync();
-        var employeeCount = await dbContext.Employees.CountAsync();
+        var departmentCount = await dbContext.Departments.CountAsync(TestContext.Current.CancellationToken);
+        var machineCount = await dbContext.Machines.CountAsync(TestContext.Current.CancellationToken);
+        var inviteCount = await dbContext.EmployeeInvites.CountAsync(TestContext.Current.CancellationToken);
+        var employeeCount = await dbContext.Employees.CountAsync(TestContext.Current.CancellationToken);
 
         companyIdsAfter.Should()
             .HaveCount(DatabaseTestData.SeededCompanyCount)

@@ -1,11 +1,13 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
+using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations;
 
-public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture) : IClassFixture<TelemetryDatabaseFixture>
+[Collection(TelemetryIntakeCollection.Name)]
+public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

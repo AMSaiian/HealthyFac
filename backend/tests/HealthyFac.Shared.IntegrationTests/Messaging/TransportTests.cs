@@ -4,9 +4,10 @@ using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class TransportTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingTransportCollection.Name)]
+public sealed class TransportTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public async Task RebusDelivery_WithActorHeaders_StoresInboxRowWithActor()

@@ -6,16 +6,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Gateway.IntegrationTests.Revocation;
 
+[Collection(GatewayLimitsCollection.Name)]
 public sealed class RevocationTests(GatewayEnvironment environment)
-    : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+    : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
 
     private readonly EchoServer _core = new(useForwardedHeaders: true);
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task Revocation_TokenIssuedBefore_Returns401()
@@ -26,7 +27,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenAge));
 
-        using var response = await client.GetAsync(RevocationTestData.CoreRoute);
+        using var response = await client.GetAsync(RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         _core.RequestCount.Should().Be(expected: 0);
@@ -41,7 +42,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenYoungAge));
 
-        using var response = await client.GetAsync(RevocationTestData.CoreRoute);
+        using var response = await client.GetAsync(RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         _core.RequestCount.Should().Be(expected: 1);

@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
-public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreEmployeesCollection.Name)]
+public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

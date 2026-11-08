@@ -1,14 +1,16 @@
 using System.Net;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Resetting;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Gateway.IntegrationTests.Hosting;
 
 /// <summary>
-/// Holds the Redis server that the tests of one class share. Each gateway the tests create gets its own client
+/// Holds the Redis server that the tests of the <c>GatewayProxy</c> or the <c>GatewayLimits</c> collection share.
+/// <see cref="ResetAsync"/> empties Redis before each test. Each gateway the tests create gets its own client
 /// address, so a test never inherits the rate limit counters of an earlier test.
 /// </summary>
-public sealed class GatewayEnvironment : IAsyncLifetime
+public sealed class GatewayEnvironment : IAsyncLifetime, IResetBeforeEachTest
 {
     private const string ClientAddressPrefix = "203.0.113.";
 
@@ -17,9 +19,11 @@ public sealed class GatewayEnvironment : IAsyncLifetime
 
     public string RedisConnectionString => _redis.ConnectionString;
 
-    public Task InitializeAsync() => _redis.StartAsync();
+    public async ValueTask InitializeAsync() => await _redis.StartAsync();
 
-    public Task DisposeAsync() => _redis.DisposeAsync().AsTask();
+    public async ValueTask ResetAsync() => await _redis.FlushAsync();
+
+    public ValueTask DisposeAsync() => _redis.DisposeAsync();
 
     public IPAddress NextClientAddress() =>
         IPAddress.Parse(ClientAddressPrefix + Interlocked.Increment(ref _clientAddressCounter));

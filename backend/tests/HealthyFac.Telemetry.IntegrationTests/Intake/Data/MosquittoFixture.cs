@@ -5,18 +5,14 @@ using MQTTnet.Protocol;
 namespace HealthyFac.Telemetry.IntegrationTests.Intake.Data;
 
 /// <summary>
-/// Starts the Mosquitto test broker once for all tests of a class and creates MQTT 5 clients for it.
+/// Creates MQTT 5 clients for the Mosquitto test broker that the owner started. The owner disposes the broker.
 /// </summary>
-public sealed class MosquittoFixture : IAsyncLifetime
+public sealed class MosquittoFixture(MosquittoTestBroker broker)
 {
     private readonly MqttClientFactory _factory = new();
-    private readonly MosquittoTestBroker _broker = new();
+    private readonly MosquittoTestBroker _broker = broker;
 
     public MosquittoTestBroker Broker => _broker;
-
-    public Task InitializeAsync() => _broker.StartAsync();
-
-    public Task DisposeAsync() => _broker.DisposeAsync().AsTask();
 
     public MqttClientOptions CreateOptions(
         string? user,

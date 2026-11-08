@@ -66,12 +66,12 @@ public static class EmployeeTestData
         ExpiresAt.AddSeconds(value: 1),
     ];
 
-    public static TheoryData<Action<Employee>> TransitionsOutOfProvisioning =>
-    [
+    public static TheoryData<Action<Employee>> TransitionsOutOfProvisioning => new()
+    {
         employee => employee.Activate(IdentityUserId),
         employee => employee.MarkProvisioningFailed(),
         employee => employee.Deactivate(),
-    ];
+    };
 
     public static TheoryData<Action<Employee>, bool> RetryAbilityByStatus => new()
     {
@@ -98,11 +98,11 @@ public static class EmployeeTestData
         { null, null, false },
     };
 
-    public static TheoryData<Action<Employee>> TransitionsToStatusThatCannotRetry =>
-    [
+    public static TheoryData<Action<Employee>> TransitionsToStatusThatCannotRetry => new()
+    {
         employee => employee.Activate(IdentityUserId),
         employee => employee.Deactivate(),
-    ];
+    };
 
     public static EmployeeInvite CreateInvite(string email = Email)
         => new(CompanyId, email, RoleId, [CompanyDepartments.Generate()], TokenSalt, ExpiresAt);

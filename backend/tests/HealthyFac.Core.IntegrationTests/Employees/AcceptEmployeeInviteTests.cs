@@ -8,7 +8,8 @@ using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
-public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreEmployeesCollection.Name)]
+public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

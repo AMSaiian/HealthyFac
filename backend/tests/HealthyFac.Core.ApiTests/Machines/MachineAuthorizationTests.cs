@@ -4,7 +4,8 @@ using HealthyFac.Core.ApiTests.Machines.Data;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
-public sealed class MachineAuthorizationTests(CoreApiFixture fixture) : IClassFixture<CoreApiFixture>
+[Collection(CoreApiCollection.Name)]
+public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 
@@ -106,7 +107,7 @@ public sealed class MachineAuthorizationTests(CoreApiFixture fixture) : IClassFi
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{machineId}",
             claims);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Contain(machineId);

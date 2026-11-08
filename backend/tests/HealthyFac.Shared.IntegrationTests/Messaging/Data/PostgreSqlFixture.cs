@@ -2,15 +2,19 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
-public sealed class PostgreSqlFixture : IAsyncLifetime
+public sealed class PostgreSqlFixture : IAsyncLifetime, IResetBeforeEachTest
 {
     private readonly PostgreSqlTestDatabase _database = new();
+
+    private DatabaseResetter _resetter = null!;
 
     public ServiceProvider Services { get; private set; } = null!;
 
@@ -26,7 +30,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
 
     public IServiceScope CreateScopeWithoutActor() => Services.CreateScope();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
 
@@ -39,10 +43,14 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         Services = services.BuildServiceProvider(validateScopes: true);
 
         using var scope = Services.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>().Database.EnsureCreatedAsync();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+        await dbContext.Database.EnsureCreatedAsync();
+        _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask ResetAsync() => await _resetter.ResetAsync();
+
+    public async ValueTask DisposeAsync()
     {
         await Services.DisposeAsync();
         await _database.DisposeAsync();

@@ -16,7 +16,7 @@ public static class GatewayIdsTestData
     public static TheoryData<string?> InvalidIds =>
         new()
         {
-            { null },
+            { (string?)null },
             { string.Empty },
             { "abcdefghijklmno" },
             { "abcdefghijklmnopq" },

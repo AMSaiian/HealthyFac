@@ -13,7 +13,11 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 
 ## Build and Test
 *   Build: `dotnet build backend/HealthyFac.slnx`
-*   Test: `dotnet test backend/HealthyFac.slnx`
+*   Test: xUnit v3 on Microsoft Testing Platform (set in `global.json`). A full run is the build and two test commands. `--test-modules` runs the built files and does not build, so the build comes first. Run the unit command first, and run the integration command only when it passes.
+    *   Unit and architecture tests (no containers, default limit): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll"`
+    *   Integration and API tests (containers, at most 4 projects at a time): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll" --max-parallel-test-modules 4`
+    *   Without `--max-parallel-test-modules`, `dotnet test` runs `Environment.ProcessorCount` test projects at a time. The unit command uses that default.
+*   One project: `dotnet test --project <project> --filter <VSTest filter>`.
 *   Frontend: `cd frontend && npm run lint && npx ng build && npx ng test --watch=false`
 
 ## Rules

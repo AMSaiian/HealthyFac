@@ -3,10 +3,10 @@ using HealthyFac.Identity.IntegrationTests.ServiceTokens.Data;
 
 namespace HealthyFac.Identity.IntegrationTests.ServiceTokens;
 
-public sealed class ScopedServiceTokenTests(ScopedServiceTokenFixture fixture)
-    : IClassFixture<ScopedServiceTokenFixture>
+[Collection(KeycloakRealmCollection.Name)]
+public sealed class ScopedServiceTokenTests(KeycloakRealmCollectionFixture fixture)
 {
-    private readonly ScopedServiceTokenFixture _fixture = fixture;
+    private readonly ScopedServiceTokenFixture _fixture = fixture.ScopedServiceToken;
 
     [Fact]
     public async Task ServiceToken_WithOneDownstreamScope_CarriesOnlyItsPermission()

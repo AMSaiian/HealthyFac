@@ -6,6 +6,8 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,24 +27,25 @@ namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 /// One instance serves every test class of <see cref="KeycloakCollection"/>. The host uses the Redis container of
 /// <see cref="Keycloak"/>, so the run starts one Redis container.
 /// </remarks>
-public sealed class ProvisioningFixture : IAsyncLifetime
+public sealed class ProvisioningFixture : IAsyncLifetime, IResetBeforeEachTest
 {
     private readonly PostgreSqlTestDatabase _database = new();
     private readonly RabbitMqTestBroker _broker = new();
 
     private IHost _host = null!;
     private IBus _publisher = null!;
+    private DatabaseResetter _resetter = null!;
 
     public KeycloakAdminFixture Keycloak { get; } = new();
 
     public IServiceScopeFactory ScopeFactory => _host.Services.GetRequiredService<IServiceScopeFactory>();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await Task.WhenAll(
             _database.StartAsync(),
             _broker.StartAsync(),
-            Keycloak.InitializeAsync());
+            Keycloak.InitializeAsync().AsTask());
 
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
         builder.Configuration.AddInMemoryCollection(Keycloak.Settings);
@@ -70,7 +73,9 @@ public sealed class ProvisioningFixture : IAsyncLifetime
         _host = builder.Build();
         using (var scope = _host.Services.CreateScope())
         {
-            await scope.ServiceProvider.GetRequiredService<AuthDbContext>().Database.MigrateAsync();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
+            await dbContext.Database.MigrateAsync();
+            _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
         }
 
         await _host.StartAsync();
@@ -81,7 +86,17 @@ public sealed class ProvisioningFixture : IAsyncLifetime
             .Start();
     }
 
-    public async Task DisposeAsync()
+    /// <summary>
+    /// Empties the input queue, deletes every row of the auth database, and resets Keycloak and Redis.
+    /// </summary>
+    public async ValueTask ResetAsync()
+    {
+        await _broker.PurgeQueuesAsync(ProvisioningTestData.QueueName);
+        await _resetter.ResetAsync();
+        await Keycloak.ResetAsync();
+    }
+
+    public async ValueTask DisposeAsync()
     {
         _publisher.Dispose();
         await _host.StopAsync();

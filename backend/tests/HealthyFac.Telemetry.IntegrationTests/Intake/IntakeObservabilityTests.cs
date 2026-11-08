@@ -1,25 +1,41 @@
 using System.Diagnostics;
 using HealthyFac.Telemetry.Application.Intake;
-using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
-using Microsoft.Extensions.Options;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
-public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClassFixture<MqttIntakeFixture>
+[Collection(TelemetryMqttCollection.Name)]
+public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsyncLifetime
 {
     private const string TraceParentHeader = "traceparent";
+    private const int ConsumerCount = 1;
 
     private readonly MqttIntakeFixture _fixture = fixture;
+
+    private readonly string _sharedGroup = NewName();
+
+    private StartedIntake _intake = null!;
+
+    public async ValueTask InitializeAsync()
+    {
+        _intake = _fixture.CreateIntake(_sharedGroup, NewName(), consumerCount: ConsumerCount);
+        await _intake.Service.StartAsync(CancellationToken.None);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(_intake, ConsumerCount);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _intake.Service.StopAsync(CancellationToken.None);
+        await _intake.DisposeAsync();
+    }
 
     [Theory]
     [MemberData(nameof(IntakeObservabilityTestData.Results), MemberType = typeof(IntakeObservabilityTestData))]
     public async Task Intake_WithMessage_RecordsConsumerSpanCounterAndDuration(IntakeResultCase scenario)
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = scenario.IsLongTopic
             ? ReceiveMachineMessageTestData.TopicFor(IntakeObservabilityTestData.LongGatewayId)
@@ -57,7 +73,7 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
         span.GetTagItem(Constants.Messaging.Tags.SystemName).Should().Be(Constants.Intake.MqttSystem);
         span.GetTagItem(Constants.Messaging.Tags.OperationType).Should().Be(Constants.Messaging.Operations.Process);
         span.GetTagItem(Constants.Messaging.Tags.DestinationName).Should().Be(topic);
-        span.GetTagItem(Constants.Intake.Tags.ConsumerGroup).Should().Be(SharedGroup());
+        span.GetTagItem(Constants.Intake.Tags.ConsumerGroup).Should().Be(_sharedGroup);
         span.GetTagItem(Constants.Intake.Tags.ConsumerIndex).Should().Be(expected: 0);
         span.GetTagItem(Constants.Intake.Tags.Result).Should().Be(scenario.Result);
         span.GetTagItem(Constants.Intake.Tags.ErrorCode).Should().Be(scenario.ErrorCode);
@@ -70,7 +86,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithTransientFailureOnce_RecordsRedeliveryThenStored()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         using var capture = new SpanCapture(Constants.Intake.Source);
@@ -95,7 +110,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithMessage_StartsTheUseCaseSpanUnderTheConsumerSpan()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         using var capture = new SpanCapture(Constants.Intake.Source, Constants.Sources.UseCases);
@@ -105,10 +119,9 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
             ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage()));
 
         var consumer = (await capture.WaitForSpansAsync(span => IsOnTopic(span, topic), expectedCount: 1)).Single();
-        var useCase = capture.Spans.Single(
-            span => span.Source.Name == Constants.Sources.UseCases
-                && span.DisplayName == nameof(ReceiveMachineMessageRequest)
-                && span.TraceId == consumer.TraceId);
+        var useCase = capture.Spans.Single(span => span.Source.Name == Constants.Sources.UseCases
+            && span.DisplayName == nameof(ReceiveMachineMessageRequest)
+            && span.TraceId == consumer.TraceId);
 
         useCase.ParentSpanId.Should().Be(consumer.SpanId);
     }
@@ -116,7 +129,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithTraceParentProperty_ContinuesThatTrace()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         var traceId = ActivityTraceId.CreateRandom();
@@ -138,7 +150,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithoutTraceParentProperty_StartsANewTrace()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         using var capture = new SpanCapture(Constants.Intake.Source);
@@ -156,7 +167,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithStoredMessage_RecordsTheLagBetweenSamplingAndReceipt()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         var sampledAt = DateTime.UtcNow - IntakeObservabilityTestData.Lag;
@@ -180,7 +190,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithRejectedMessage_RecordsNoLag()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         using var capture = new SpanCapture(Constants.Intake.Source);
@@ -196,21 +205,18 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     }
 
     [Fact]
-    public async Task Intake_WhileConnected_ReportsTheConsumerCountAsConnectedSessions()
+    public void Intake_WhileConnected_ReportsTheConsumerCountAsConnectedSessions()
     {
-        await _fixture.WaitUntilConnectedAsync();
         using var connected = Collect<int>(Constants.Intake.Instruments.ConsumersConnected);
 
         connected.RecordObservableInstruments();
 
-        var expectedCount = _fixture.Database.GetSingleton<IOptions<MqttIntakeOptions>>().Value.ConsumerCount;
-        connected.LastMeasurement!.Value.Should().Be(expectedCount);
+        connected.LastMeasurement!.Value.Should().Be(ConsumerCount);
     }
 
     [Fact]
     public async Task Intake_WhileASaveRuns_ReportsOneMessageInFlight()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         using var capture = new SpanCapture(Constants.Intake.Source);
@@ -232,7 +238,6 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
     [Fact]
     public async Task Intake_WithMessage_UsesOnlyAllowedTagsAndNoGatewayId()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         using var capture = new SpanCapture(Constants.Intake.Source);
@@ -290,9 +295,9 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IClass
 
     private MetricCollector<T> Collect<T>(string instrument)
         where T : struct =>
-        new(_fixture.MeterFactory, Constants.Intake.Meter, instrument);
+        new(_intake.MeterFactory, Constants.Intake.Meter, instrument);
 
-    private string SharedGroup() => _fixture.Database.GetSingleton<IOptions<MqttIntakeOptions>>().Value.SharedGroup;
+    private static string NewName() => Guid.NewGuid().ToString(format: "N");
 
     private static bool IsOnTopic(Activity span, string topic) =>
         Equals(span.GetTagItem(Constants.Messaging.Tags.DestinationName), topic);

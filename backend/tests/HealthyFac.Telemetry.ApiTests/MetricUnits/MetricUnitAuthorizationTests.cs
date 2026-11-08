@@ -4,7 +4,8 @@ using HealthyFac.Telemetry.ApiTests.MetricUnits.Data;
 
 namespace HealthyFac.Telemetry.ApiTests.MetricUnits;
 
-public sealed class MetricUnitAuthorizationTests(TelemetryApiFixture fixture) : IClassFixture<TelemetryApiFixture>
+[Collection(TelemetryApiCollection.Name)]
+public sealed class MetricUnitAuthorizationTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
 
@@ -13,7 +14,7 @@ public sealed class MetricUnitAuthorizationTests(TelemetryApiFixture fixture) : 
     {
         using var client = _fixture.CreateClient();
 
-        var response = await client.GetAsync(MetricUnitApiTestData.UnitsPath);
+        var response = await client.GetAsync(MetricUnitApiTestData.UnitsPath, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -35,7 +36,7 @@ public sealed class MetricUnitAuthorizationTests(TelemetryApiFixture fixture) : 
 
         var response = await _fixture.SendAsync(HttpMethod.Get, MetricUnitApiTestData.UnitsPath, claims);
 
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Contain(expected: "DegreeCelsius");

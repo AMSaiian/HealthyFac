@@ -5,19 +5,20 @@ using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 
 namespace HealthyFac.Gateway.IntegrationTests.CrossOrigin;
 
-public sealed class GatewayCorsTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+[Collection(GatewayProxyCollection.Name)]
+public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
     private readonly EchoServer _core = new(useForwardedHeaders: true);
     private readonly EchoServer _keycloak = new();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _core.StartAsync();
         await _keycloak.StartAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _core.DisposeAsync();
         await _keycloak.DisposeAsync();
@@ -79,7 +80,8 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IClassFix
             preflightStatusCodes.Add(preflight.StatusCode);
         }
 
-        using var response = await client.GetAsync(GatewayCorsTestData.MachinesRoute);
+        using var response = await client.GetAsync(
+            GatewayCorsTestData.MachinesRoute, TestContext.Current.CancellationToken);
 
         preflightStatusCodes.Should().OnlyContain(statusCode => statusCode == HttpStatusCode.NoContent);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

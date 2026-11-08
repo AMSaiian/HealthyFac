@@ -5,21 +5,24 @@ using HealthyFac.Testing.Containers;
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
 
 /// <summary>
-/// Starts the realm and creates the temporary target client of the exchange tests: a client with one role, and an
-/// optional client scope on <c>healthyfac-core</c> that adds the target audience. It also starts Redis, because the
-/// token store of <c>AddServiceTokens</c> keeps the exchanged tokens there.
+/// Creates the temporary target client of the exchange tests in the started realm: a client with one role, and an
+/// optional client scope on <c>healthyfac-core</c> that adds the target audience. It also holds the Redis server,
+/// because the token store of <c>AddServiceTokens</c> keeps the exchanged tokens there.
 /// </summary>
-public sealed class TokenExchangeFixture : IAsyncLifetime
+public sealed class TokenExchangeFixture
 {
-    public KeycloakRealmFixture Realm { get; } = new();
-
-    public RedisTestServer Redis { get; } = new();
-
-    public async Task InitializeAsync()
+    public TokenExchangeFixture(KeycloakRealmFixture realm, RedisTestServer redis)
     {
-        await Redis.StartAsync();
-        await Realm.InitializeAsync();
+        Realm = realm;
+        Redis = redis;
+    }
 
+    public KeycloakRealmFixture Realm { get; }
+
+    public RedisTestServer Redis { get; }
+
+    public async ValueTask InitializeAsync()
+    {
         var targetUuid = await Realm.CreateClientAsync(
             new JsonObject
             {
@@ -46,11 +49,5 @@ public sealed class TokenExchangeFixture : IAsyncLifetime
             });
         var coreUuid = await Realm.FindClientUuidAsync(RealmTestData.CoreClientId);
         await Realm.AddClientScopeAsync(coreUuid, scopeId, isDefault: false);
-    }
-
-    public async Task DisposeAsync()
-    {
-        await Realm.DisposeAsync();
-        await Redis.DisposeAsync();
     }
 }

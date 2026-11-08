@@ -10,6 +10,7 @@ using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,9 +18,11 @@ using Microsoft.Extensions.Hosting;
 
 namespace HealthyFac.Core.IntegrationTests.Database.Data;
 
-public sealed class CoreDatabaseFixture : IAsyncLifetime
+public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 {
     private readonly PostgreSqlTestDatabase _database = new();
+
+    private DatabaseResetter _resetter = null!;
 
     private ServiceProvider _services = null!;
 
@@ -35,7 +38,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
 
     public IInviteTokenService InviteTokenService => _services.GetRequiredService<IInviteTokenService>();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
 
@@ -65,9 +68,25 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime
         using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<CoreDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();
+        _resetter = await DatabaseResetter.CreateAsync(
+            _database.ConnectionString,
+            scope.ServiceProvider.GetRequiredService<CoreDbContext>());
     }
 
-    public async Task DisposeAsync()
+    /// <summary>
+    /// Deletes every row, clears the recorded emails, and seeds the required roles again. Roles are not kept, because
+    /// the initializer tests change and soft-delete them.
+    /// </summary>
+    public async ValueTask ResetAsync()
+    {
+        await _resetter.ResetAsync();
+        EmailSender.Reset();
+
+        using var scope = ScopeFactory.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();
+    }
+
+    public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
         await _database.DisposeAsync();

@@ -6,14 +6,29 @@ using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
-public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFixture<MqttIntakeFixture>
+[Collection(TelemetryMqttCollection.Name)]
+public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IAsyncLifetime
 {
     private readonly MqttIntakeFixture _fixture = fixture;
+
+    private StartedIntake _intake = null!;
+
+    public async ValueTask InitializeAsync()
+    {
+        _intake = _fixture.CreateIntake(NewName(), NewName());
+        await _intake.Service.StartAsync(CancellationToken.None);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(_intake);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _intake.Service.StopAsync(CancellationToken.None);
+        await _intake.DisposeAsync();
+    }
 
     [Fact]
     public async Task Intake_WithPublishedValidMessage_StoresMessage()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
 
@@ -29,7 +44,6 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
     [Fact]
     public async Task Intake_WithTransientFailureOnce_RedeliversAndStoresOnce()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
         var savesBefore = _fixture.SaveFailure.SaveCount;
@@ -38,7 +52,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
         await _fixture.PublishAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
 
         var messages = await _fixture.WaitForMessagesAsync(machine.MachineId, expectedCount: 1);
-        await Task.Delay(TimeSpan.FromSeconds(seconds: 2));
+        await Task.Delay(TimeSpan.FromSeconds(seconds: 2), TestContext.Current.CancellationToken);
         var messagesAfter = await _fixture.Database.LoadReceivedMessagesAsync(machine.MachineId);
 
         messages.Should().ContainSingle();
@@ -49,7 +63,6 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
     [Fact]
     public async Task Intake_WithNonTransientFailure_StoresProcessingFailedAndAcknowledges()
     {
-        await _fixture.WaitUntilConnectedAsync();
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
@@ -65,7 +78,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
             ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage(nextSampledAt)));
 
         var storedForMachine = await _fixture.WaitForMessagesAsync(machine.MachineId, expectedCount: 1);
-        await Task.Delay(TimeSpan.FromSeconds(seconds: 2));
+        await Task.Delay(TimeSpan.FromSeconds(seconds: 2), TestContext.Current.CancellationToken);
         var onTopic = await _fixture.Database.LoadReceivedMessagesByTopicAsync(topic);
         var storedForMachineAfter = await _fixture.Database.LoadReceivedMessagesAsync(machine.MachineId);
         var failed = onTopic
@@ -82,9 +95,8 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
     [Fact]
     public async Task HealthCheck_WhileConnected_IsHealthy()
     {
-        await _fixture.WaitUntilConnectedAsync();
-
-        var result = await CreateHealthCheck().CheckHealthAsync(new HealthCheckContext());
+        var result = await CreateHealthCheck()
+            .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -97,7 +109,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
         var result = await new MqttIntakeHealthCheck(
                 Options.Create(new MqttIntakeOptions { IsEnabled = true }),
                 state)
-            .CheckHealthAsync(new HealthCheckContext());
+            .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(HealthStatus.Degraded);
     }
@@ -111,7 +123,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
         var result = await new MqttIntakeHealthCheck(
                 Options.Create(new MqttIntakeOptions { IsEnabled = true, ConsumerCount = 2 }),
                 state)
-            .CheckHealthAsync(new HealthCheckContext());
+            .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(HealthStatus.Degraded);
     }
@@ -126,7 +138,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
         var result = await new MqttIntakeHealthCheck(
                 Options.Create(new MqttIntakeOptions { IsEnabled = true, ConsumerCount = 2 }),
                 state)
-            .CheckHealthAsync(new HealthCheckContext());
+            .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -137,11 +149,13 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IClassFi
         var result = await new MqttIntakeHealthCheck(
                 Options.Create(new MqttIntakeOptions { IsEnabled = false }),
                 new MqttIntakeState())
-            .CheckHealthAsync(new HealthCheckContext());
+            .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
 
+    private static string NewName() => Guid.NewGuid().ToString(format: "N");
+
     private MqttIntakeHealthCheck CreateHealthCheck() =>
-        new(Options.Create(new MqttIntakeOptions { IsEnabled = true }), _fixture.State);
+        new(Options.Create(new MqttIntakeOptions { IsEnabled = true }), _intake.State);
 }

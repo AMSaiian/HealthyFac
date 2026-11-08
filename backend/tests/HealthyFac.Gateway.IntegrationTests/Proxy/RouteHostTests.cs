@@ -4,19 +4,20 @@ using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
-public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+[Collection(GatewayProxyCollection.Name)]
+public sealed class RouteHostTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
     private readonly EchoServer _core = new(useForwardedHeaders: true);
     private readonly EchoServer _keycloak = new();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _core.StartAsync();
         await _keycloak.StartAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _core.DisposeAsync();
         await _keycloak.DisposeAsync();
@@ -28,7 +29,7 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(RouteHostTestData.CoreUrl);
+        using var response = await client.GetAsync(RouteHostTestData.CoreUrl, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         _core.RequestCount.Should().Be(expected: 1);
@@ -40,7 +41,8 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(RouteHostTestData.CoreUrlOnAuthHost);
+        using var response = await client.GetAsync(
+            RouteHostTestData.CoreUrlOnAuthHost, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -53,7 +55,8 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = CreateGateway();
         using var client = gateway.CreateClient();
 
-        using var response = await client.GetAsync(RouteHostTestData.KeycloakUrl);
+        using var response = await client.GetAsync(
+            RouteHostTestData.KeycloakUrl, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         _keycloak.RequestCount.Should().Be(expected: 1);
@@ -65,7 +68,8 @@ public sealed class RouteHostTests(GatewayEnvironment environment) : IClassFixtu
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(RouteHostTestData.KeycloakUrlOnApiHost);
+        using var response = await client.GetAsync(
+            RouteHostTestData.KeycloakUrlOnApiHost, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 

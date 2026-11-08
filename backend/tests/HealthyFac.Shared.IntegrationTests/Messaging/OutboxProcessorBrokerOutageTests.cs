@@ -3,9 +3,10 @@ using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class OutboxProcessorBrokerOutageTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingBrokerOutageCollection.Name)]
+public sealed class OutboxProcessorBrokerOutageTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public async Task OutboxProcessor_WhenBrokerRejects_SchedulesRetryAndStopsRunAfterFirstFailure()

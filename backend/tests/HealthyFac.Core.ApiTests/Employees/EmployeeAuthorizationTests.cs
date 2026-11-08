@@ -4,7 +4,8 @@ using HealthyFac.Core.ApiTests.Hosting;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
-public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture) : IClassFixture<CoreApiFixture>
+[Collection(CoreApiCollection.Name)]
+public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 

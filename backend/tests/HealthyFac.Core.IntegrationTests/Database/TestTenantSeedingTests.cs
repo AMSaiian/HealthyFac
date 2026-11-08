@@ -9,7 +9,8 @@ using HealthyFac.Core.Messaging.Machines;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 
-public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreSeedingCollection.Name)]
+public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

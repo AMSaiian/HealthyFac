@@ -7,7 +7,8 @@ using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
-public sealed class GetStatusDefinitionTests(TelemetryDatabaseFixture fixture) : IClassFixture<TelemetryDatabaseFixture>
+[Collection(TelemetryDefinitionsCollection.Name)]
+public sealed class GetStatusDefinitionTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

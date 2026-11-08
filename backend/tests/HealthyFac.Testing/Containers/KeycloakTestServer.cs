@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
@@ -45,6 +46,8 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     private const string ConfigDirectory = "/config";
     private const string TokenPathFormat = "realms/{0}/protocol/openid-connect/token";
     private const string ClientsPath = $"admin/realms/{RealmName}/clients";
+    private const string UsersPath = $"admin/realms/{RealmName}/users";
+    private const int MaxListedUsers = 1000;
     private const string PasswordGrantClientIdPrefix = "test-password-grant-";
 
     private static readonly string[] PasswordGrantClientScopes =
@@ -67,6 +70,9 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     };
 
     private readonly HttpClient _client = new();
+    private readonly ConcurrentQueue<string> _createdClientIds = new();
+
+    private HashSet<string> _baseUserIds = [];
 
     private INetwork? _network;
     private KeycloakContainer? _container;
@@ -152,6 +158,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         }
 
         _client.BaseAddress = new Uri(BaseAddress);
+        _baseUserIds = [.. await ListUserIdsAsync()];
     }
 
     public async Task<string> GetAdminTokenAsync()
@@ -202,7 +209,34 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         using var response = await _client.SendAsync(request);
         response.EnsureSuccessStatusCode();
 
+        _createdClientIds.Enqueue(response.Headers.Location!.Segments[^1]);
+
         return clientId;
+    }
+
+    /// <summary>
+    /// Deletes the clients that <see cref="CreatePasswordGrantClientAsync"/> created and every user that does not exist
+    /// right after <see cref="StartAsync"/>. It keeps the realm, its base clients, and its base users. Keycloak
+    /// identifies a client by its own ID, which the create call returns in the <c>Location</c> header.
+    /// </summary>
+    public async Task DeleteTestIdentitiesAsync()
+    {
+        var testUserIds = (await ListUserIdsAsync()).Where(id => !_baseUserIds.Contains(id)).ToArray();
+        if (_createdClientIds.IsEmpty && testUserIds.Length == 0)
+        {
+            return;
+        }
+
+        var adminToken = await GetAdminTokenAsync();
+        while (_createdClientIds.TryDequeue(out var id))
+        {
+            await DeleteAsync($"{ClientsPath}/{id}", adminToken);
+        }
+
+        foreach (var id in testUserIds)
+        {
+            await DeleteAsync($"{UsersPath}/{id}", adminToken);
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -223,6 +257,33 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         {
             await _network.DisposeAsync();
         }
+    }
+
+    private async Task<IReadOnlyList<string>> ListUserIdsAsync()
+    {
+        var adminToken = await GetAdminTokenAsync();
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{UsersPath}?max={MaxListedUsers}")
+        {
+            Headers = { Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken) },
+        };
+
+        using var response = await _client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var users = await response.Content.ReadFromJsonAsync<JsonArray>();
+
+        return users!.Select(user => user![propertyName: "id"]!.GetValue<string>()).ToArray();
+    }
+
+    private async Task DeleteAsync(string path, string adminToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, path)
+        {
+            Headers = { Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken) },
+        };
+
+        using var response = await _client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
     }
 
     private static bool IsKeycloakSetting(KeyValuePair<string, string> entry) =>

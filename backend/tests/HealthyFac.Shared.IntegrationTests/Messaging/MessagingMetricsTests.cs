@@ -8,9 +8,10 @@ using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class MessagingMetricsTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingTransportCollection.Name)]
+public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public async Task OutboxProcessor_WithPendingRow_CountsPublished()

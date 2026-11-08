@@ -6,9 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingTransportCollection.Name)]
+public sealed class InboxProcessorTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public async Task InboxProcessor_WithAnonymousActor_RestoresAnonymous()

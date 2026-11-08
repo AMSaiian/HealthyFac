@@ -1,13 +1,14 @@
-using HealthyFac.Shared.IntegrationTests.Revocation.Data;
+using HealthyFac.Shared.IntegrationTests.SharedRedis;
+using HealthyFac.Shared.IntegrationTests.SharedRedis.Data;
 
 namespace HealthyFac.Shared.IntegrationTests.Revocation;
 
-public sealed class RedisTokenRevocationStoreTests(RevocationStoreFixture fixture)
-    : IClassFixture<RevocationStoreFixture>
+[Collection(SharedRedisCollection.Name)]
+public sealed class RedisTokenRevocationStoreTests(SharedRedisFixture fixture)
 {
     private static readonly TimeSpan TimeToLive = TimeSpan.FromMinutes(minutes: 6);
 
-    private readonly RevocationStoreFixture _fixture = fixture;
+    private readonly SharedRedisFixture _fixture = fixture;
 
     [Fact]
     public async Task GetRevokedAt_WithoutEntry_ReturnsNull()
