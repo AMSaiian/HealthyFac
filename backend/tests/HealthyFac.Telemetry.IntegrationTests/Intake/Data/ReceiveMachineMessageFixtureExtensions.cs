@@ -54,12 +54,17 @@ public static class ReceiveMachineMessageFixtureExtensions
             return new ArrangedIntakeMachine(machineId, registration!.GatewayId);
         }
 
-        public async Task ReceiveAsync(string topic, byte[] payload, DateTime? receivedAt = null)
+        public async Task<ReceiveMachineMessageResponse> ReceiveAsync(
+            string topic,
+            byte[] payload,
+            DateTime? receivedAt = null
+        )
         {
             using var scope = fixture.ScopeFactory.CreateScope();
-            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<ReceiveMachineMessageRequest>>();
+            var handler = scope.ServiceProvider
+                .GetRequiredService<IRequestHandler<ReceiveMachineMessageRequest, ReceiveMachineMessageResponse>>();
 
-            await handler.HandleAsync(
+            return await handler.HandleAsync(
                 new ReceiveMachineMessageRequest
                 {
                     Topic = topic,

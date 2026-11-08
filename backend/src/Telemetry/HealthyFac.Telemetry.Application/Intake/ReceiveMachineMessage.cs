@@ -13,7 +13,7 @@ namespace HealthyFac.Telemetry.Application.Intake;
 /// <summary>
 /// A raw MQTT message of a machine: its topic, its bytes, and the moment of receipt.
 /// </summary>
-public record ReceiveMachineMessageRequest : IRequest
+public record ReceiveMachineMessageRequest : IRequest<ReceiveMachineMessageResponse>
 {
     public required string Topic { get; init; }
 
@@ -22,6 +22,20 @@ public record ReceiveMachineMessageRequest : IRequest
     public required byte[] Payload { get; init; }
 
     public required DateTime ReceivedAt { get; init; }
+}
+
+/// <summary>
+/// The outcome of the intake for one message. The MQTT service records its trace tags and metrics from it.
+/// </summary>
+public record ReceiveMachineMessageResponse
+{
+    public required ReceiveMachineMessageResult Result { get; init; }
+
+    /// <summary>The first envelope error code of a rejected message, else <see langword="null"/>.</summary>
+    public string? ErrorCode { get; init; }
+
+    /// <summary>The sampling time of the message, or <see langword="null"/> when it is unreadable.</summary>
+    public DateTime? SampledAt { get; init; }
 }
 
 public class ReceiveMachineMessageRequestValidator : AbstractValidator<ReceiveMachineMessageRequest>
@@ -66,21 +80,21 @@ public sealed class ReceiveMachineMessagePreHandlerCheck : PassThroughPreHandler
 public sealed class ReceiveMachineMessageRequestHandler(
     ITelemetryDbContext dbContext,
     IMachineMessageParser machineMessageParser
-) : RequestHandler<ReceiveMachineMessageRequest>
+) : IRequestHandler<ReceiveMachineMessageRequest, ReceiveMachineMessageResponse>
 {
     private readonly ITelemetryDbContext _dbContext = dbContext;
     private readonly IMachineMessageParser _machineMessageParser = machineMessageParser;
 
-    protected override async Task HandleInternalAsync(
+    public async Task<ReceiveMachineMessageResponse> HandleAsync(
         ReceiveMachineMessageRequest request,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         var message = await BuildAsync(request, cancellationToken);
 
         if (await IsStoredAsync(message.Received, cancellationToken))
         {
-            return;
+            return ToResponse(message, ReceiveMachineMessageResult.Duplicate);
         }
 
         _dbContext.ReceivedMessages.Add(message.Received);
@@ -100,8 +114,32 @@ public sealed class ReceiveMachineMessageRequestHandler(
             {
                 throw;
             }
+
+            return ToResponse(message, ReceiveMachineMessageResult.Duplicate);
         }
+
+        return ToResponse(message, GetStoredResult(message));
     }
+
+    private static ReceiveMachineMessageResult GetStoredResult(BuiltMessage message)
+    {
+        if (message.IsRejected)
+        {
+            return ReceiveMachineMessageResult.Rejected;
+        }
+
+        return message.Received.Errors.Count > 0
+            ? ReceiveMachineMessageResult.StoredWithErrors
+            : ReceiveMachineMessageResult.Stored;
+    }
+
+    private static ReceiveMachineMessageResponse ToResponse(BuiltMessage message, ReceiveMachineMessageResult result) =>
+        new()
+        {
+            Result = result,
+            ErrorCode = result == ReceiveMachineMessageResult.Rejected ? message.Received.Errors[0].Code : null,
+            SampledAt = message.Received.SampledAt,
+        };
 
     private async Task<bool> IsStoredAsync(ReceivedMessage message, CancellationToken cancellationToken)
     {
@@ -161,6 +199,7 @@ public sealed class ReceiveMachineMessageRequestHandler(
             {
                 Received = NewReceived(
                     request, registrationId, schema.Revision, parsed.SampledAt, payload.Text, parsed.Errors),
+                IsRejected = true,
             };
         }
 
@@ -253,6 +292,7 @@ public sealed class ReceiveMachineMessageRequestHandler(
                 sampledAt: null,
                 payload.Text,
                 [new IntakeError { Path = string.Empty, Code = code }]),
+            IsRejected = true,
         };
     }
 
@@ -277,6 +317,9 @@ public sealed class ReceiveMachineMessageRequestHandler(
     private sealed class BuiltMessage
     {
         public required ReceivedMessage Received { get; init; }
+
+        /// <summary>An envelope error: the message is stored with its error and no readings.</summary>
+        public bool IsRejected { get; init; }
 
         public IReadOnlyList<NumericReading> Numeric { get; init; } = [];
 

@@ -140,6 +140,60 @@ public static class ObservabilityConstants
     }
 
     /// <summary>
+    /// The names of the Telemetry MQTT intake. The source and the meter are named after the .NET namespace of the
+    /// intake and are registered by the Telemetry service itself.
+    /// </summary>
+    public static class Intake
+    {
+        public const string Source = "HealthyFac.Telemetry.Intake";
+        public const string Meter = Source;
+
+        /// <summary>The value of <see cref="Messaging.Tags.SystemName"/> for the MQTT broker.</summary>
+        public const string MqttSystem = "mqtt";
+
+        /// <summary>The subscription pattern. It holds no gateway ID, so a span name stays fixed.</summary>
+        public const string DestinationPattern = "healthyfac/gateways/+/messages";
+
+        public const string SpanName = $"{Messaging.Operations.Process} {DestinationPattern}";
+
+        public static class Tags
+        {
+            /// <summary>The shared subscription group of the consumers.</summary>
+            public const string ConsumerGroup = "messaging.consumer.group.name";
+
+            public const string ConsumerIndex = "healthyfac.intake.consumer_index";
+
+            /// <summary>The result of a message, from <see cref="Results"/>.</summary>
+            public const string Result = "healthyfac.intake.result";
+
+            /// <summary>The envelope error code of a rejected message. The set of codes is small and fixed.</summary>
+            public const string ErrorCode = "healthyfac.intake.error_code";
+        }
+
+        public static class Results
+        {
+            public const string Stored = "stored";
+            public const string StoredWithErrors = "stored_with_errors";
+            public const string Rejected = "rejected";
+            public const string Duplicate = "duplicate";
+            public const string Invalid = "invalid";
+            public const string Failed = "failed";
+            public const string Redelivery = "redelivery";
+        }
+
+        public static class Instruments
+        {
+            public const string Messages = "healthyfac.intake.messages";
+            public const string HandleDuration = "healthyfac.intake.handle.duration";
+            public const string Lag = "healthyfac.intake.lag";
+            public const string InFlight = "healthyfac.intake.in_flight";
+            public const string ConsumersConnected = "healthyfac.intake.consumers.connected";
+            public const string OrphanEmptied = "healthyfac.intake.orphan.emptied";
+            public const string DrainTimeouts = "healthyfac.intake.drain.timeouts";
+        }
+    }
+
+    /// <summary>
     /// The meter names. A meter is named after its .NET namespace, like an activity source. The built-in meters
     /// of ASP.NET Core and <c>HttpClient</c> come with the instrumentation packages, so only the others are here.
     /// </summary>
@@ -156,6 +210,7 @@ public static class ObservabilityConstants
     {
         public const string Seconds = "s";
         public const string Messages = "{message}";
+        public const string Sessions = "{session}";
     }
 
     public static class Outcomes

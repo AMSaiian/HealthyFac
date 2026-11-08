@@ -94,6 +94,7 @@ public static class ConfigureServices
             services.AddSingleton<IMetricSchemaGenerator, MetricSchemaGenerator>();
             services.AddSingleton<IMachineMessageParser, MachineMessageParser>();
             services.AddSingleton<MqttIntakeState>();
+            services.AddSingleton<IntakeMetrics>();
             services.AddSingleton<MqttIntakeService>();
             services.AddHostedService(provider => provider.GetRequiredService<MqttIntakeService>());
 

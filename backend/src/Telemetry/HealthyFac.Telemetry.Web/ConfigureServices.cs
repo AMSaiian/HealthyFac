@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
@@ -20,6 +21,8 @@ using HealthyFac.Telemetry.Web.MetricDefinitions;
 using HealthyFac.Telemetry.Web.MetricUnits;
 using HealthyFac.Telemetry.Web.StatusDefinitions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Serilog;
 
 namespace HealthyFac.Telemetry.Web;
@@ -91,6 +94,10 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
+            services.ConfigureOpenTelemetryTracerProvider(
+                tracing => tracing.AddSource(ObservabilityConstants.Intake.Source));
+            services.ConfigureOpenTelemetryMeterProvider(
+                metrics => metrics.AddMeter(ObservabilityConstants.Intake.Meter));
 
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<TelemetryDbContext>(

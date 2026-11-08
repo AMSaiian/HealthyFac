@@ -1,7 +1,9 @@
 using System.Buffers;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using MQTTnet;
+using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
@@ -95,6 +97,8 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
         await MqttDrainFixture.WaitUntilConnectedAsync(intake);
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var payload = Payloads(offset: 0, count: 1).Single();
+        using var timeouts = Collect(Constants.Intake.Instruments.DrainTimeouts);
+        using var messages = Collect(Constants.Intake.Instruments.Messages);
         _fixture.SlowSave.Arm(VerySlowSaveDelay);
         await _fixture.PublishAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
         await WaitUntilSaveStartedAsync();
@@ -116,6 +120,8 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
         stored.Should().BeEmpty();
         reconnect.IsSessionPresent.Should().BeTrue();
         redelivered.Should().ContainSingle().Which.Should().Equal(payload);
+        timeouts.GetMeasurementSnapshot().Sum(measurement => measurement.Value).Should().Be(expected: 1);
+        messages.GetMeasurementSnapshot().Should().BeEmpty();
     }
 
     [Fact]
@@ -130,6 +136,7 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId),
             Payloads(offset: 0, IntakeTestData.MessageCount));
         var intake = _fixture.CreateIntake(group, clientId);
+        using var emptied = Collect(Constants.Intake.Instruments.OrphanEmptied);
 
         await intake.Service.StartAsync(CancellationToken.None);
 
@@ -141,6 +148,7 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
 
         messages.Should().HaveCount(IntakeTestData.MessageCount);
         reconnect.IsSessionPresent.Should().BeFalse();
+        emptied.GetMeasurementSnapshot().Sum(measurement => measurement.Value).Should().Be(IntakeTestData.MessageCount);
     }
 
     [Fact]
@@ -201,6 +209,9 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
 
         presentIndexes.Should().BeEmpty();
     }
+
+    private MetricCollector<long> Collect(string instrument) =>
+        new(_fixture.MeterFactory, Constants.Intake.Meter, instrument);
 
     private static string NewName() => Guid.NewGuid().ToString(format: "N");
 
