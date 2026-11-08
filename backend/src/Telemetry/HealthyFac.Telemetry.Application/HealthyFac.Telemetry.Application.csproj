@@ -3,6 +3,7 @@
     <ItemGroup>
         <ProjectReference Include="..\HealthyFac.Telemetry.Domain\HealthyFac.Telemetry.Domain.csproj"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj"/>
+        <ProjectReference Include="..\..\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

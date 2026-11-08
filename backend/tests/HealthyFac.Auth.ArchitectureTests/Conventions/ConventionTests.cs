@@ -1,5 +1,5 @@
-using System.Reflection;
 using HealthyFac.Auth.ArchitectureTests.Conventions.Data;
+using HealthyFac.Auth.ArchitectureTests.Dependencies.Data;
 using HealthyFac.Testing.Conventions;
 
 namespace HealthyFac.Auth.ArchitectureTests.Conventions;
@@ -11,7 +11,8 @@ public sealed class ConventionTests
     public void OptionsClasses_InAssembly_DeclareSectionName(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindOptionsWithoutSectionName(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindOptionsWithoutSectionName(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -21,7 +22,8 @@ public sealed class ConventionTests
     public void ExtensionMethods_OnSetupReceivers_UseReceiverPrefix(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindExtensionMethodsWithWrongPrefix(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindExtensionMethodsWithWrongPrefix(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -33,7 +35,7 @@ public sealed class ConventionTests
         var violations = string.Join(
             Environment.NewLine,
             ConventionChecks.FindTechnicalRootFolders(
-                Assembly.Load(assemblyName),
+                LayerDependencyTestData.Resolve(assemblyName),
                 ConventionTestData.TechnicalRootFolderNames
             )
         );
@@ -46,7 +48,8 @@ public sealed class ConventionTests
     public void Booleans_InAssembly_HaveIsHasOrCanPrefix(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindBooleansWithoutPrefix(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindBooleansWithoutPrefix(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -56,7 +59,8 @@ public sealed class ConventionTests
     public void CancellationTokenParameters_InAssembly_AreNamedCancellationToken(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindCancellationTokensWithWrongName(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindCancellationTokensWithWrongName(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -66,7 +70,8 @@ public sealed class ConventionTests
     public void ProtectedAbstractSteps_InAssembly_EndWithInternal(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindAbstractStepsWithoutInternalSuffix(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindAbstractStepsWithoutInternalSuffix(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -77,7 +82,7 @@ public sealed class ConventionTests
     {
         var violations = string.Join(
             Environment.NewLine,
-            ConventionChecks.FindCapturedPrimaryConstructorParameters(Assembly.Load(assemblyName)));
+            ConventionChecks.FindCapturedPrimaryConstructorParameters(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -87,7 +92,7 @@ public sealed class ConventionTests
     public void Records_InAssembly_HaveNoPrimaryConstructor(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindPositionalRecords(Assembly.Load(assemblyName)));
+            Environment.NewLine, ConventionChecks.FindPositionalRecords(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -97,7 +102,8 @@ public sealed class ConventionTests
     public void UseCaseHandlers_WithoutResult_DeriveFromRequestHandler(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindDirectUnitHandlers(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindDirectUnitHandlers(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -107,7 +113,7 @@ public sealed class ConventionTests
     public void Types_InAssembly_AreNotControllers(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindControllers(Assembly.Load(assemblyName)));
+            Environment.NewLine, ConventionChecks.FindControllers(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -117,7 +123,8 @@ public sealed class ConventionTests
     public void Middleware_InAssembly_ImplementsIMiddleware(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindConventionMiddleware(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindConventionMiddleware(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -127,7 +134,8 @@ public sealed class ConventionTests
     public void ApplicationTypes_InAssembly_InjectNoConcreteDbContext(string assemblyName)
     {
         var violations = string.Join(
-            Environment.NewLine, ConventionChecks.FindDbContextInjections(Assembly.Load(assemblyName)));
+            Environment.NewLine,
+            ConventionChecks.FindDbContextInjections(LayerDependencyTestData.Resolve(assemblyName)));
 
         violations.Should().BeEmpty();
     }
@@ -137,7 +145,8 @@ public sealed class ConventionTests
     {
         var violations = string.Join(
             Environment.NewLine,
-            ConventionChecks.FindStringsWithoutTextRule(ConventionTestData.UseCaseAssemblies.Select(Assembly.Load)));
+            ConventionChecks.FindStringsWithoutTextRule(
+                ConventionTestData.UseCaseAssemblies.Select(LayerDependencyTestData.Resolve)));
 
         violations.Should().BeEmpty();
     }
@@ -148,7 +157,40 @@ public sealed class ConventionTests
         var violations = string.Join(
             Environment.NewLine,
             ConventionChecks.FindUseCasePartsOutsideRequestNamespace(
-                ConventionTestData.UseCaseAssemblies.Select(Assembly.Load)));
+                ConventionTestData.UseCaseAssemblies.Select(LayerDependencyTestData.Resolve)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void IntegrationMessages_InServiceAssemblies_LiveInMessagingAssembly()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindMessagesOutsideMessagingAssembly(
+                ConventionTestData.MessageAssemblies.Select(LayerDependencyTestData.Resolve)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void IntegrationMessages_InServiceAssemblies_HaveNoCopy()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindDuplicateMessages(
+                ConventionTestData.MessageAssemblies.Select(LayerDependencyTestData.Resolve)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MessagingAssemblies_InServiceAssemblies_ReferenceNoServiceLayer()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindMessagingServiceDependencies(
+                ConventionTestData.MessageAssemblies.Select(LayerDependencyTestData.Resolve)));
 
         violations.Should().BeEmpty();
     }

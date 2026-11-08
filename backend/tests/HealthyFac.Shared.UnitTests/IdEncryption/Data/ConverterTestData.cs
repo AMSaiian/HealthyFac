@@ -17,6 +17,8 @@ public static class ConverterTestData
         Guid.Empty,
     ];
 
+    public static TheoryData<string> JsonNullOrEmptyValues => new() { "null", "\"\"" };
+
     public static TheoryData<string> MalformedTokens => new()
     {
         "not-an-encrypted-id",

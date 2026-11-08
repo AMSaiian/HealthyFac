@@ -1,4 +1,5 @@
 using EntityFramework.Exceptions.PostgreSQL;
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -9,7 +10,6 @@ using HealthyFac.Shared.Infrastructure.RichText;
 using HealthyFac.Shared.Infrastructure.Time;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Application.Intake;
-using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Application.MetricSchemas;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Initialization;

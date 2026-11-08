@@ -3,6 +3,7 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;

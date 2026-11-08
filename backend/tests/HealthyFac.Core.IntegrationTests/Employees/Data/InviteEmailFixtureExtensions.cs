@@ -3,6 +3,7 @@ using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.Email;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

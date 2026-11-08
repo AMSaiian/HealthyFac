@@ -11,6 +11,8 @@ ENV DOTNET_NOLOGO=1 \
 # Copy only the files that affect restore, so this layer caches across source edits.
 COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac.slnx ./
 COPY src/Auth/HealthyFac.Auth.Application/*.csproj     src/Auth/HealthyFac.Auth.Application/
+COPY src/Auth/HealthyFac.Auth.Messaging/*.csproj       src/Auth/HealthyFac.Auth.Messaging/
+COPY src/Core/HealthyFac.Core.Messaging/*.csproj       src/Core/HealthyFac.Core.Messaging/
 COPY src/Auth/HealthyFac.Auth.Infrastructure/*.csproj  src/Auth/HealthyFac.Auth.Infrastructure/
 COPY src/Auth/HealthyFac.Auth.Web/*.csproj             src/Auth/HealthyFac.Auth.Web/
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj          src/Shared/HealthyFac.Shared.Domain/

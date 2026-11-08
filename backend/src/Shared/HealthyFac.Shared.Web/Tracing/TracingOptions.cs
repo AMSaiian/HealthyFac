@@ -1,3 +1,6 @@
+using FluentValidation;
+using HealthyFac.Shared.Application.Configuration;
+
 namespace HealthyFac.Shared.Web.Tracing;
 
 /// <summary>
@@ -23,4 +26,22 @@ public sealed class TracingOptions
 
     /// <summary>Extra activity source names to listen to, beyond the shared use case source.</summary>
     public string[] AdditionalSources { get; init; } = [];
+}
+
+public sealed class TracingOptionsValidator : AbstractValidator<TracingOptions>
+{
+    public TracingOptionsValidator()
+    {
+        RuleFor(options => options.SamplingRatio)
+            .InclusiveBetween(from: 0.0, to: 1.0)
+            .WithMessage(TracingValidationMessages.SamplingRatioOutOfRange);
+
+        RuleFor(options => options.Endpoint)
+            .MustBeAbsoluteHttpUri()
+            .When(options => !string.IsNullOrWhiteSpace(options.Endpoint));
+
+        RuleForEach(options => options.AdditionalSources)
+            .NotEmpty()
+            .WithMessage(TracingValidationMessages.SourceNameRequired);
+    }
 }

@@ -49,6 +49,13 @@ public static class InboxProcessorTestData
     public static readonly Guid UnreadablePayloadRowId = Guid.Parse(input: "019a0000-0000-7000-8000-00000000020a");
     public static readonly Guid ControlCharacterRowId = Guid.Parse(input: "019a0000-0000-7000-8000-00000000020b");
 
+    public static TheoryData<Guid, string> PermanentlyInvalidPayloads => new()
+    {
+        { InvalidPayloadRowId, InvalidPayload },
+        { UnreadablePayloadRowId, UnreadablePayload },
+        { ControlCharacterRowId, ControlCharacterPayload },
+    };
+
     public static readonly int MaxAttemptCount =
         new MessagingOptions { QueueName = QueueName }.InboxMaxAttemptCount;
 

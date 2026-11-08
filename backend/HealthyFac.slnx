@@ -3,12 +3,14 @@
   <Folder Name="/src/Auth/">
     <Project Path="src/Auth/HealthyFac.Auth.Application/HealthyFac.Auth.Application.csproj" />
     <Project Path="src/Auth/HealthyFac.Auth.Infrastructure/HealthyFac.Auth.Infrastructure.csproj" />
+    <Project Path="src/Auth/HealthyFac.Auth.Messaging/HealthyFac.Auth.Messaging.csproj" />
     <Project Path="src/Auth/HealthyFac.Auth.Web/HealthyFac.Auth.Web.csproj" />
   </Folder>
   <Folder Name="/src/Core/">
     <Project Path="src/Core/HealthyFac.Core.Application/HealthyFac.Core.Application.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Domain/HealthyFac.Core.Domain.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Infrastructure/HealthyFac.Core.Infrastructure.csproj" />
+    <Project Path="src/Core/HealthyFac.Core.Messaging/HealthyFac.Core.Messaging.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Web/HealthyFac.Core.Web.csproj" />
   </Folder>
   <Folder Name="/src/Gateway/">

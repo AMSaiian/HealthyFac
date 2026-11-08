@@ -1,7 +1,5 @@
-using HealthyFac.Auth.Application.Identities;
-using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
-using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
@@ -74,7 +72,7 @@ public static class ProvisioningTestData
     {
         {
             CreateDeactivated(Guid.Empty),
-            IdentityErrors.Validation.IdentityUserIdInvalid
+            EmployeeMessageErrors.Validation.IdentityUserIdInvalid
         },
     };
 }

@@ -1,7 +1,6 @@
 using System.Globalization;
 using Bogus;
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
@@ -11,6 +10,7 @@ using HealthyFac.Core.Infrastructure.Companies.Seeding;
 using HealthyFac.Core.Infrastructure.Departments.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

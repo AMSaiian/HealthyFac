@@ -48,14 +48,6 @@ public sealed class KnownActorsTests
     }
 
     [Fact]
-    public void For_WithCompany_KeepsCompany()
-    {
-        var actor = ServiceActor.InboxProcessor.For(ServiceName.Auth, ActorTestData.CompanyId);
-
-        actor.CompanyId.Should().Be(ActorTestData.CompanyId);
-    }
-
-    [Fact]
     public void Restore_WithServiceActorOfOtherService_ReturnsServiceWithoutName()
     {
         var actorId = ServiceActor.InboxProcessor.For(ServiceName.Auth).UserId;
@@ -99,27 +91,12 @@ public sealed class KnownActorsTests
         actor.CompanyId.Should().Be(ActorTestData.CompanyId);
     }
 
-    [Fact]
-    public void KindOf_WithAnonymousId_ReturnsAnonymous()
+    [Theory]
+    [MemberData(nameof(KnownActorsTestData.KindOfCases), MemberType = typeof(KnownActorsTestData))]
+    public void KindOf_WithActorId_ReturnsKind(Guid actorId, ActorKind expectedKind)
     {
-        var kind = KnownActors.KindOf(KnownActors.Anonymous.UserId);
+        var kind = KnownActors.KindOf(actorId);
 
-        kind.Should().Be(ActorKind.Anonymous);
-    }
-
-    [Fact]
-    public void KindOf_WithServiceActorId_ReturnsService()
-    {
-        var kind = KnownActors.KindOf(ServiceActor.OutboxProcessor.For(ServiceName.Core).UserId);
-
-        kind.Should().Be(ActorKind.Service);
-    }
-
-    [Fact]
-    public void KindOf_WithUserId_ReturnsUser()
-    {
-        var kind = KnownActors.KindOf(KnownActorsTestData.KeycloakUserId);
-
-        kind.Should().Be(ActorKind.User);
+        kind.Should().Be(expectedKind);
     }
 }

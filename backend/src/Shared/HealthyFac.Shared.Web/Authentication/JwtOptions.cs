@@ -1,3 +1,6 @@
+using FluentValidation;
+using HealthyFac.Shared.Application.Configuration;
+
 namespace HealthyFac.Shared.Web.Authentication;
 
 /// <summary>
@@ -24,4 +27,22 @@ public sealed class JwtOptions
 
     /// <summary>Set to false only for a development Keycloak without HTTPS.</summary>
     public bool IsHttpsMetadataRequired { get; init; } = true;
+}
+
+public sealed class JwtOptionsValidator : AbstractValidator<JwtOptions>
+{
+    public JwtOptionsValidator()
+    {
+        RuleFor(options => options.Issuer)
+            .MustBeAbsoluteHttpUri()
+            .WithMessage(AuthenticationValidationMessages.IssuerInvalid);
+
+        RuleFor(options => options.MetadataAddress)
+            .MustBeAbsoluteHttpUri()
+            .WithMessage(AuthenticationValidationMessages.MetadataAddressInvalid);
+
+        RuleFor(options => options.Audience)
+            .NotEmpty()
+            .WithMessage(AuthenticationValidationMessages.AudienceMissing);
+    }
 }

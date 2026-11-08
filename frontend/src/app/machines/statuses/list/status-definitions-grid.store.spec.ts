@@ -131,22 +131,15 @@ describe('StatusDefinitionsGridStore', () => {
     });
   }
 
-  it('openMachine_AfterOtherMachineWasChanged_StartsFromInitialGridState', async () => {
+  it.each([
+    { name: 'AfterOtherMachineWasChanged_StartsFromInitialGridState', secondMachineId: OTHER_MACHINE_ID },
+    { name: 'ForSameMachineAgain_StartsFromInitialGridState', secondMachineId: MACHINE_ID },
+  ])('openMachine_$name', async ({ secondMachineId }) => {
     const { store, search } = await setup({ isMachineSet: false });
 
-    await dirtyThenOpen(store, MACHINE_ID, OTHER_MACHINE_ID);
+    await dirtyThenOpen(store, MACHINE_ID, secondMachineId);
 
-    expectInitialSearch(search, OTHER_MACHINE_ID);
-    expect(store.visibleColumns()).toEqual(Object.values(StatusDefinitionColumn));
-    expect(store.editor()).toBeNull();
-  });
-
-  it('openMachine_ForSameMachineAgain_StartsFromInitialGridState', async () => {
-    const { store, search } = await setup({ isMachineSet: false });
-
-    await dirtyThenOpen(store, MACHINE_ID, MACHINE_ID);
-
-    expectInitialSearch(search, MACHINE_ID);
+    expectInitialSearch(search, secondMachineId);
     expect(store.visibleColumns()).toEqual(Object.values(StatusDefinitionColumn));
     expect(store.editor()).toBeNull();
   });

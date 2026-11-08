@@ -1,4 +1,5 @@
 using EntityFramework.Exceptions.Common;
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Entities;

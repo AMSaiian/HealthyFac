@@ -1,3 +1,6 @@
+using FluentValidation;
+using HealthyFac.Shared.Application.Configuration;
+
 namespace HealthyFac.Shared.Web.Metrics;
 
 /// <summary>
@@ -16,4 +19,18 @@ public sealed class MetricsOptions
 
     /// <summary>Extra meter names to listen to, beyond the shared meters (e.g., <c>Npgsql</c>).</summary>
     public string[] AdditionalMeters { get; init; } = [];
+}
+
+public sealed class MetricsOptionsValidator : AbstractValidator<MetricsOptions>
+{
+    public MetricsOptionsValidator()
+    {
+        RuleFor(options => options.Endpoint)
+            .MustBeAbsoluteHttpUri()
+            .When(options => !string.IsNullOrWhiteSpace(options.Endpoint));
+
+        RuleForEach(options => options.AdditionalMeters)
+            .NotEmpty()
+            .WithMessage(MetricsValidationMessages.MeterNameRequired);
+    }
 }

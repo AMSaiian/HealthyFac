@@ -73,8 +73,9 @@ public static class MetricDefinitionTestData
         new(c: 'a', MetricDefinitionRules.KeyMaxLength + 1),
     ];
 
-    public static TheoryData<double, double> AscendingRanges => new()
+    public static TheoryData<double?, double?> AscendingRanges => new()
     {
+        { -20, null },
         { -20, 200 },
         { 0, double.Epsilon },
         { double.MinValue, double.MaxValue },

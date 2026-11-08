@@ -36,6 +36,13 @@ public static class TransportTestData
     public static readonly Guid NotJsonMessageId = Guid.Parse(input: "019a0000-0000-7000-8000-00000000010b");
     public static readonly Guid NullCharacterMessageId = Guid.Parse(input: "019a0000-0000-7000-8000-00000000010c");
 
+    public static TheoryData<string, Guid, bool> FailFastDeliveries => new()
+    {
+        { PingPayload, HeaderlessMessageId, false },
+        { NotJsonPayload, NotJsonMessageId, true },
+        { NullCharacterEscapePayload, NullCharacterMessageId, true },
+    };
+
     public static Dictionary<string, string> ActorHeaders() =>
         new()
         {

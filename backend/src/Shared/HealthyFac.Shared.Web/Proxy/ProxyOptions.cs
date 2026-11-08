@@ -1,3 +1,6 @@
+using System.Net;
+using FluentValidation;
+
 namespace HealthyFac.Shared.Web.Proxy;
 
 /// <summary>
@@ -26,4 +29,23 @@ public sealed class ProxyOptions
     /// unreachable except through the proxy. A directly reachable service lets any caller spoof its address.
     /// </summary>
     public bool IsEveryProxyTrusted { get; init; }
+}
+
+public sealed class ProxyOptionsValidator : AbstractValidator<ProxyOptions>
+{
+    public ProxyOptionsValidator()
+    {
+        RuleFor(options => options.ForwardLimit)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
+            .When(options => !options.IsEveryProxyTrusted)
+            .WithMessage(ProxyValidationMessages.ForwardLimitTooSmall);
+
+        RuleForEach(options => options.KnownProxies)
+            .Must(proxy => IPAddress.TryParse(proxy, out _))
+            .WithMessage(ProxyValidationMessages.ProxyAddressInvalid);
+
+        RuleForEach(options => options.KnownNetworks)
+            .Must(network => IPNetwork.TryParse(network, out _))
+            .WithMessage(ProxyValidationMessages.NetworkInvalid);
+    }
 }

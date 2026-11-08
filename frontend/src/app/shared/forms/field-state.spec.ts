@@ -1,21 +1,13 @@
 import { isFieldInvalid } from './field-state';
 
 describe('isFieldInvalid', () => {
-  it('isFieldInvalid_BeforeTouchAndSubmit_ReturnsFalse', () => {
-    const result = isFieldInvalid({ isInvalid: true, isTouched: false });
+  it.each([
+    ['before touch', { isInvalid: true, isTouched: false }, false],
+    ['after touch', { isInvalid: true, isTouched: true }, true],
+    ['when valid', { isInvalid: false, isTouched: true }, false],
+  ])('isFieldInvalid_%s_ReturnsExpected', (_name, state, expected) => {
+    const result = isFieldInvalid(state);
 
-    expect(result).toBe(false);
-  });
-
-  it('isFieldInvalid_AfterTouch_ReturnsTrue', () => {
-    const result = isFieldInvalid({ isInvalid: true, isTouched: true });
-
-    expect(result).toBe(true);
-  });
-
-  it('isFieldInvalid_WhenValid_ReturnsFalse', () => {
-    const afterTouch = isFieldInvalid({ isInvalid: false, isTouched: true });
-
-    expect(afterTouch).toBe(false);
+    expect(result).toBe(expected);
   });
 });

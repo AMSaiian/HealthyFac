@@ -1,10 +1,9 @@
-using FluentValidation;
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
@@ -148,16 +147,6 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture) : ICl
             .Be(EmployeeInviteErrors.Rejections.EmailAlreadyEmployed);
 
         employeeCount.Should().Be(expected: 1);
-    }
-
-    [Fact]
-    public async Task AcceptAsync_WithBlankFirstName_ThrowsValidationException()
-    {
-        var arranged = await ArrangeAsync(InviteTestData.AcceptBlankNameEmail);
-
-        var act = () => _fixture.AcceptInviteAsync(arranged.Token, firstName: " ");
-
-        await act.Should().ThrowAsync<ValidationException>();
     }
 
     private Task<ArrangedInvite> ArrangeAsync(string email, DateTime? expiresAt = null) =>

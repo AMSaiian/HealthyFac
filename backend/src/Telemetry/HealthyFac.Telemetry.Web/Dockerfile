@@ -12,6 +12,7 @@ ENV DOTNET_NOLOGO=1 \
 COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac.slnx ./
 COPY src/Telemetry/HealthyFac.Telemetry.Domain/*.csproj          src/Telemetry/HealthyFac.Telemetry.Domain/
 COPY src/Telemetry/HealthyFac.Telemetry.Application/*.csproj     src/Telemetry/HealthyFac.Telemetry.Application/
+COPY src/Core/HealthyFac.Core.Messaging/*.csproj                 src/Core/HealthyFac.Core.Messaging/
 COPY src/Telemetry/HealthyFac.Telemetry.Infrastructure/*.csproj  src/Telemetry/HealthyFac.Telemetry.Infrastructure/
 COPY src/Telemetry/HealthyFac.Telemetry.Web/*.csproj             src/Telemetry/HealthyFac.Telemetry.Web/
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj          src/Shared/HealthyFac.Shared.Domain/

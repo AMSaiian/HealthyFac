@@ -1,3 +1,6 @@
+using FluentValidation;
+using HealthyFac.Shared.Application.Configuration;
+
 namespace HealthyFac.Shared.Web.CrossOrigin;
 
 /// <summary>
@@ -29,4 +32,42 @@ public sealed class CorsPolicyOptions
     /// <see cref="CorsConstants.MaxPreflightMaxAgeSeconds"/>.
     /// </summary>
     public int PreflightMaxAgeSeconds { get; init; }
+}
+
+public sealed class CorsPolicyOptionsValidator : AbstractValidator<CorsPolicyOptions>
+{
+    public CorsPolicyOptionsValidator()
+    {
+        When(
+            options => options.IsEnabled,
+            () =>
+            {
+                RuleFor(options => options.AllowedOrigins)
+                    .NotEmpty()
+                    .WithMessage(CorsValidationMessages.OriginsRequired);
+
+                RuleForEach(options => options.AllowedOrigins)
+                    .Must(BeWildcardOrOrigin)
+                    .WithMessage(CorsValidationMessages.OriginInvalid);
+
+                RuleFor(options => options.PreflightMaxAgeSeconds)
+                    .GreaterThan(valueToCompare: 0)
+                    .WithMessage(CorsValidationMessages.PreflightMaxAgeRequired)
+                    .LessThanOrEqualTo(CorsConstants.MaxPreflightMaxAgeSeconds)
+                    .WithMessage(CorsValidationMessages.PreflightMaxAgeAboveBrowserLimit);
+
+                RuleFor(options => options.AllowedOrigins)
+                    .Must(origins => !origins.Contains(CorsConstants.Wildcard))
+                    .When(options => options.IsCredentialsAllowed)
+                    .WithMessage(CorsValidationMessages.CredentialsWithWildcardOrigin);
+            });
+    }
+
+    private static bool BeWildcardOrOrigin(string origin)
+        => origin == CorsConstants.Wildcard || IsOrigin(origin);
+
+    private static bool IsOrigin(string value)
+        => UriRuleBuilderExtensions.TryCreateAbsoluteHttpUri(value, out var uri)
+            && uri.PathAndQuery == CorsConstants.RootPath
+            && !value.EndsWith(CorsConstants.RootPath);
 }

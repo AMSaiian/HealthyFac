@@ -1,11 +1,11 @@
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
-using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
+using HealthyFac.Core.Messaging.Employees;
+using HealthyFac.Core.Messaging.Machines;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 
@@ -97,20 +97,6 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
-    public async Task SeedOptionalData_TwiceWithTestTenant_CreatesOneCompany()
-    {
-        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
-        var companyCountAfterFirstRun = await _fixture.CountCompaniesAsync();
-
-        await _fixture.RunSeederAsync(DatabaseTestData.TestTenantOptions);
-
-        var tenantCompanyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
-        var companyCount = await _fixture.CountCompaniesAsync();
-        tenantCompanyCount.Should().Be(expected: 1);
-        companyCount.Should().Be(companyCountAfterFirstRun);
-    }
-
-    [Fact]
     public async Task SeedOptionalData_WithTestTenant_CreatesMachinesInEachDepartment()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
@@ -126,14 +112,21 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture) : IClass
     }
 
     [Fact]
-    public async Task SeedOptionalData_TwiceWithTestTenant_AddsNoMachines()
+    public async Task SeedOptionalData_TwiceWithTestTenant_AddsNoCompanyAndNoMachines()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+        var companyCountAfterFirstRun = await _fixture.CountCompaniesAsync();
         var machinesAfterFirstRun = await _fixture.LoadTenantMachineAsync(DatabaseTestData.TestTenantCompanyId);
 
         await _fixture.RunSeederAsync(DatabaseTestData.TestTenantOptions);
 
+        var tenantCompanyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
+        var companyCount = await _fixture.CountCompaniesAsync();
         var machinesAfterSecondRun = await _fixture.LoadTenantMachineAsync(DatabaseTestData.TestTenantCompanyId);
+
+        tenantCompanyCount.Should().Be(expected: 1);
+        companyCount.Should().Be(companyCountAfterFirstRun);
+
         machinesAfterSecondRun.Should().BeEquivalentTo(machinesAfterFirstRun);
     }
 }

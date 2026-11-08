@@ -1,59 +1,46 @@
 #Requires -Version 7
-# Stop and SubagentStop hook: formats the backend files touched this turn, builds the solution, and reports build
+# Stop and SubagentStop hook: formats the backend changed files, builds the solution, and reports build
 # warnings and errors in those files back to the agent that stops. It also reports C# lines longer than
 # max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
 # that agent, so a subagent fixes its own diagnostics before it reports to the main session.
-# The hook checks each checkout (the main one or a git worktree) that holds a file the stopping agent changed with
-# Edit, Write, MultiEdit, or NotebookEdit, read from that agent's transcript. Only when it finds none does it fall
-# back to the checkout of the hook input cwd, then to CLAUDE_PROJECT_DIR.
-# A file counts as touched when its content hash differs from the hash saved at the previous stop. The hash
-# state lives in the .git directory, so edits made outside Edit/Write (e.g. sed) count too, and uncommitted
-# changes from earlier turns do not trigger a rebuild.
+# The hook uses git only. It resolves the checkout (the main one or a git worktree) from the hook input cwd with
+# "git -C <cwd> rev-parse --show-toplevel" and exits when cwd is outside a checkout. It never falls back to
+# CLAUDE_PROJECT_DIR or to the script folder, and it reads no transcript. The changed files are the files that git
+# reports as changed in that checkout (git diff --name-only HEAD plus the untracked files).
+# A changed file counts as new when its content hash differs from the hash saved at the previous stop. The hash
+# state lives in the git directory of the checkout, so uncommitted changes from earlier stops do not trigger a
+# rebuild. Limit: sessions that share one checkout share this state and these files. Give each session its own
+# worktree to separate them.
+# One verification or cleanup per checkout runs at a time (named mutex), and the cleanup never overwrites a file
+# that another writer changed or deleted during the run (cleanup-changed.ps1).
+# The hook does nothing (no build, no cleanup, no report) when the working tree equals the fingerprint that
+# record-turn-start.ps1 stored at the start of the turn (UserPromptSubmit, by session_id), or the fingerprint of the
+# last clean verification of the checkout. The fingerprint is the git status plus the git hash of each listed file
+# (worktree-fingerprint.ps1).
 # The hook blocks once per stop attempt. When stop_hook_active is set, it reports and lets the turn end,
 # so a warning Claude cannot fix does not loop. Files with diagnostics stay out of the saved state,
 # so the next stop checks them again.
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'worktree-fingerprint.ps1')
 
 $hookInput = try { [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { $null }
 $solutionPath = 'backend/HealthyFac.slnx'
-$editTools = 'Edit', 'Write', 'MultiEdit', 'NotebookEdit'
 
-# Walks up from a path to the nearest directory that holds .git: a folder in the main checkout, a file in a
-# worktree. The path can name a file that no longer exists. GetFullPath gives the backslash form that the build
-# diagnostics use.
-function Get-CheckoutRoot([string] $path) {
-  if (-not $path) { return }
-  $dir = $path
-  while ($dir -and -not (Test-Path -LiteralPath $dir -PathType Container)) { $dir = Split-Path $dir }
-  while ($dir) {
-    if (Test-Path -LiteralPath (Join-Path $dir '.git')) { return [IO.Path]::GetFullPath($dir).TrimEnd('\', '/') }
-    $dir = Split-Path $dir
-  }
+# The checkout (main or worktree) that holds the directory, in the backslash form that the build diagnostics use,
+# or nothing when the directory is not inside a checkout.
+function Get-WorktreeRoot([string] $directory) {
+  if (-not $directory -or -not (Test-Path -LiteralPath $directory -PathType Container)) { return }
+  $root = git -C $directory rev-parse --show-toplevel 2>$null
+  if ($LASTEXITCODE -ne 0 -or -not $root) { return }
+  [IO.Path]::GetFullPath($root).TrimEnd([char]92, [char]47)
 }
 
-# A subagent writes its own transcript (agent_transcript_path); transcript_path names the main session. The string
-# checks skip the large tool result lines before the JSON parse, so a long transcript takes well under a second.
-function Get-EditedCheckouts {
-  $transcript = if ($hookInput.agent_transcript_path) { $hookInput.agent_transcript_path } else {
-    $hookInput.transcript_path
-  }
-  if (-not $transcript -or -not (Test-Path -LiteralPath $transcript)) { return }
-
-  $dirs = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-  foreach ($line in [IO.File]::ReadLines($transcript)) {
-    if ($line.IndexOf('"type":"tool_use"', [StringComparison]::Ordinal) -lt 0) { continue }
-    if ($line -notmatch '"name":"(Edit|Write|MultiEdit|NotebookEdit)"') { continue }
-    $entry = try { $line | ConvertFrom-Json -Depth 32 } catch { continue }
-    if ($entry.type -ne 'assistant') { continue }
-    foreach ($content in @($entry.message.content)) {
-      if ($content.type -ne 'tool_use' -or $content.name -notin $editTools) { continue }
-      $file = if ($content.input.file_path) { $content.input.file_path } else { $content.input.notebook_path }
-      if ($file) { [void]$dirs.Add((Split-Path $file)) }
-    }
-  }
-
-  $dirs | ForEach-Object { Get-CheckoutRoot $_ } | Sort-Object -Unique
+# The named mutex of a checkout, shared with cleanup-changed.ps1.
+function New-CheckoutMutex([string] $repo) {
+  $repoHash = [Convert]::ToHexString(
+    [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($repo.ToLowerInvariant())))
+  [Threading.Mutex]::new($false, "Local\HealthyFac-verify-$($repoHash.Substring(0, 16))")
 }
 
 function Get-ChangedBackendFiles([string] $repo) {
@@ -76,7 +63,7 @@ function Get-ContentHashes([string[]] $files) {
 }
 
 function Get-ChangedFrontendFiles([string] $repo) {
-  $patterns = '*.ts', '*.html', '*.css', '*.json'
+  $patterns = '*.ts', '*.html', '*.css', '*.json', '*.webmanifest'
   $tracked = @(git diff --name-only HEAD -- $patterns 2>$null)
   $untracked = @(git ls-files -o --exclude-standard -- $patterns 2>$null)
 
@@ -86,7 +73,7 @@ function Get-ChangedFrontendFiles([string] $repo) {
     Where-Object { Test-Path (Join-Path $repo $_) }
 }
 
-# Formats the frontend files touched this turn with Prettier, then lints the frontend. The hash state works as in
+# Formats the frontend changed files with Prettier, then lints the frontend. The hash state works as in
 # Invoke-Verification, in its own file. A lint failure lists the ESLint output lines. The hook runs no build or test.
 function Invoke-FrontendVerification([string] $repo) {
   $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
@@ -123,7 +110,7 @@ function Invoke-FrontendVerification([string] $repo) {
 
     if ($lintFailed) {
       $result.Problems = @('Frontend lint failed (npm run lint in frontend/):') +
-        @($output | Where-Object { $_ -match 'S' -and $_ -notmatch '^> ' } | Select-Object -First 40)
+        @($output | Where-Object { $_ -match '\S' -and $_ -notmatch '^> ' } | Select-Object -First 40)
     }
     return $result
   }
@@ -162,9 +149,7 @@ function Invoke-Verification([string] $repo) {
   # Parallel subagents can stop at the same time. A named mutex per checkout runs one verification at a time, so
   # two builds do not lock each other's output files and two runs do not overwrite the hash state. The wait stays
   # below the hook timeout. A run that the hook timeout kills leaves the mutex abandoned, and the next run takes it.
-  $repoHash = [Convert]::ToHexString(
-    [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($repo.ToLowerInvariant())))
-  $lock = [Threading.Mutex]::new($false, "Local\HealthyFac-verify-$($repoHash.Substring(0, 16))")
+  $lock = New-CheckoutMutex $repo
   $lockWait = [TimeSpan]::FromSeconds(480)
   $hasLock = try { $lock.WaitOne($lockWait) } catch [Threading.AbandonedMutexException] { $true }
   if (-not $hasLock) {
@@ -194,7 +179,9 @@ function Invoke-Verification([string] $repo) {
 
     $touchedCode = @($touched | Where-Object { $_ -like '*.cs' })
     if ($touchedCode.Count -gt 0) {
-      & (Join-Path $PSScriptRoot 'cleanup-changed.ps1') -Files $touchedCode -Repo $repo | Out-Null
+      $cleanupNotes = @(& (Join-Path $PSScriptRoot 'cleanup-changed.ps1') -Files $touchedCode -Repo $repo |
+          Where-Object { $_ -like 'Cleanup *' })
+      if ($cleanupNotes.Count -gt 0) { $result.Notice = $cleanupNotes -join [Environment]::NewLine }
     }
 
     # The hook builds into its own artifacts folder (gitignored, outside the backend Docker context). A test run in
@@ -238,26 +225,51 @@ function Invoke-Verification([string] $repo) {
   }
 }
 
-$checkouts = @(Get-EditedCheckouts | Where-Object { Test-Path (Join-Path $_ $solutionPath) })
-if ($checkouts.Count -eq 0) {
-  $fallback = Get-CheckoutRoot $hookInput.cwd
-  if (-not $fallback) { $fallback = Get-CheckoutRoot $env:CLAUDE_PROJECT_DIR }
-  if (-not $fallback) { $fallback = Get-CheckoutRoot $PSScriptRoot }
-  $checkouts = @($fallback | Where-Object { $_ -and (Test-Path (Join-Path $_ $solutionPath)) })
-}
-if ($checkouts.Count -eq 0) { exit 0 }
+$worktree = Get-WorktreeRoot $hookInput.cwd
+if (-not $worktree -or -not (Test-Path (Join-Path $worktree $solutionPath))) { exit 0 }
+$checkouts = @($worktree)
 
-$results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout; Invoke-FrontendVerification $checkout })
+# The skip: no file changed since the start of the turn, or since the last clean verification.
+$fingerprint = Get-WorktreeFingerprint $worktree
+$turnPath = if ($hookInput.session_id) { Get-TurnFingerprintPath $worktree $hookInput.session_id }
+$verifiedPath = Get-GitStatePath $worktree 'claude-verify-fingerprint.txt'
+$isUnchangedInTurn = $turnPath -and (Test-Path -LiteralPath $turnPath) -and
+  ((Get-Content -LiteralPath $turnPath -Raw).Trim() -eq $fingerprint)
+$isUnchangedSinceVerified = (Test-Path -LiteralPath $verifiedPath) -and
+  ((Get-Content -LiteralPath $verifiedPath -Raw).Trim() -eq $fingerprint)
+if ($isUnchangedInTurn -or $isUnchangedSinceVerified) { exit 0 }
+
+# One lock around the whole run: the frontend step formats live files and writes its own state, so it belongs to the
+# same critical section as the backend step. The mutex is re-entrant, so Invoke-Verification and the cleanup take it
+# again in the same thread.
+$outerLock = New-CheckoutMutex $worktree
+$hasOuterLock = try { $outerLock.WaitOne([TimeSpan]::FromSeconds(480)) } catch [Threading.AbandonedMutexException] { $true }
+if (-not $hasOuterLock) {
+  $outerLock.Dispose()
+  Write-Output "Verification of $worktree skipped: another run held the lock for 480 seconds. The next stop checks the files again."
+  exit 0
+}
+try {
+  $results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout; Invoke-FrontendVerification $checkout })
+}
+finally {
+  $outerLock.ReleaseMutex()
+  $outerLock.Dispose()
+}
 $results | Where-Object Notice | ForEach-Object { Write-Output $_.Notice }
 
 $failed = @($results | Where-Object { $_.Problems.Count -gt 0 })
-if ($failed.Count -eq 0) { exit 0 }
+if ($failed.Count -eq 0) {
+  New-Item -ItemType Directory -Force (Split-Path $verifiedPath) | Out-Null
+  Set-Content -LiteralPath $verifiedPath -Value (Get-WorktreeFingerprint $worktree) -Encoding utf8NoBOM
+  exit 0
+}
 
 $report = @(
-  'The build, the line length check, or the frontend lint reports problems in the files touched this turn. ' +
+  'The build, the line length check, or the frontend lint reports problems in the changed files of the checkout. ' +
     'Fix every item before you finish.'
   foreach ($result in $failed) {
-    if ($checkouts.Count -gt 1) { "In $($result.Repo):" }
+    "Changed files in $($result.Repo):"
     $result.Problems
   }
 ) -join [Environment]::NewLine

@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;

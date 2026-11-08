@@ -92,21 +92,13 @@ describe('StatusDefinitionGrid', () => {
     expect(emittedSorts).toEqual([null]);
   });
 
-  it('menuItems_WithWriteOnly_HoldsOneItem', () => {
-    const { grid } = setup({ canWrite: true });
+  it.each([
+    { name: 'WithWriteOnly_HoldsOneItem', canWrite: true, canDelete: false, itemCount: 1 },
+    { name: 'WithWriteAndDelete_HoldsTwoItems', canWrite: true, canDelete: true, itemCount: 2 },
+    { name: 'WithoutPermissions_IsEmpty', canWrite: false, canDelete: false, itemCount: 0 },
+  ])('menuItems_$name', ({ canWrite, canDelete, itemCount }) => {
+    const { grid } = setup({ canWrite, canDelete });
 
-    expect(grid.menuItems()).toHaveLength(1);
-  });
-
-  it('menuItems_WithWriteAndDelete_HoldsTwoItems', () => {
-    const { grid } = setup({ canWrite: true, canDelete: true });
-
-    expect(grid.menuItems()).toHaveLength(2);
-  });
-
-  it('menuItems_WithoutPermissions_IsEmpty', () => {
-    const { grid } = setup();
-
-    expect(grid.menuItems()).toEqual([]);
+    expect(grid.menuItems()).toHaveLength(itemCount);
   });
 });

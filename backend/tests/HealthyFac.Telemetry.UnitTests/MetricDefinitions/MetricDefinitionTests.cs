@@ -24,18 +24,9 @@ public sealed class MetricDefinitionTests
         isValid.Should().BeFalse();
     }
 
-    [Fact]
-    public void Constructor_WithOneBound_Succeeds()
-    {
-        var metric = MetricDefinitionTestData.CreateNumeric(min: -20);
-
-        metric.Min.Should().Be(expected: -20);
-        metric.Max.Should().BeNull();
-    }
-
     [Theory]
     [MemberData(nameof(MetricDefinitionTestData.AscendingRanges), MemberType = typeof(MetricDefinitionTestData))]
-    public void Constructor_WithMinBelowMax_StoresRange(double min, double max)
+    public void Constructor_WithValidRange_StoresRange(double? min, double? max)
     {
         var metric = MetricDefinitionTestData.CreateNumeric(min, max);
 

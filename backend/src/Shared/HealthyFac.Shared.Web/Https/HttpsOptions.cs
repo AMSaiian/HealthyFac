@@ -1,3 +1,6 @@
+using System.Net;
+using FluentValidation;
+
 namespace HealthyFac.Shared.Web.Https;
 
 /// <summary>
@@ -32,4 +35,37 @@ public sealed class HttpsOptions
     /// every subdomain, serves HTTPS. Removal from a preload list takes months.
     /// </summary>
     public bool IsHstsPreloaded { get; init; }
+}
+
+public sealed class HttpsOptionsValidator : AbstractValidator<HttpsOptions>
+{
+    public HttpsOptionsValidator()
+    {
+        RuleFor(options => options.RedirectPort)
+            .NotNull()
+            .When(options => options.IsRedirectEnabled)
+            .WithMessage(HttpsValidationMessages.RedirectPortRequired);
+
+        RuleFor(options => options.RedirectPort)
+            .InclusiveBetween(IPEndPoint.MinPort, IPEndPoint.MaxPort)
+            .WithMessage(HttpsValidationMessages.PortOutOfRange);
+
+        RuleFor(options => options.HstsMaxAgeDays)
+            .GreaterThanOrEqualTo(valueToCompare: 1)
+            .When(options => options.IsHstsEnabled)
+            .WithMessage(HttpsValidationMessages.MaxAgeMustBePositive);
+
+        RuleFor(options => options)
+            .Must(MeetPreloadRequirements)
+            .When(options => options.IsHstsPreloaded)
+            .WithMessage(HttpsValidationMessages.PreloadRequirementsNotMet);
+    }
+
+    private static bool MeetPreloadRequirements(HttpsOptions options)
+        => options is
+        {
+            IsHstsEnabled: true,
+            IsHstsSubDomainsIncluded: true,
+            HstsMaxAgeDays: >= HttpsConstants.PreloadMinimumMaxAgeDays,
+        };
 }

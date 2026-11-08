@@ -1,3 +1,6 @@
+using FluentValidation;
+using HealthyFac.Shared.Application.Configuration;
+
 namespace HealthyFac.Shared.Web.Logging;
 
 /// <summary>
@@ -13,4 +16,14 @@ public sealed class OpenTelemetryLoggingOptions
 
     /// <summary>Set to false to keep the exporter off even when an endpoint is configured.</summary>
     public bool IsEnabled { get; init; } = true;
+}
+
+public sealed class OpenTelemetryLoggingOptionsValidator : AbstractValidator<OpenTelemetryLoggingOptions>
+{
+    public OpenTelemetryLoggingOptionsValidator()
+    {
+        RuleFor(options => options.Endpoint)
+            .MustBeAbsoluteHttpUri()
+            .When(options => !string.IsNullOrWhiteSpace(options.Endpoint));
+    }
 }

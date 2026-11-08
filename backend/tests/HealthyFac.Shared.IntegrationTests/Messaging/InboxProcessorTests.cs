@@ -55,59 +55,20 @@ public sealed class InboxProcessorTests(TransportFixture fixture) : IClassFixtur
         actor.Kind.Should().Be(ActorKind.User);
     }
 
-    [Fact]
-    public async Task Process_WithInvalidPayload_FailsAtFirstAttempt()
+    [Theory]
+    [MemberData(
+        nameof(InboxProcessorTestData.PermanentlyInvalidPayloads),
+        MemberType = typeof(InboxProcessorTestData))]
+    public async Task Process_WithPermanentlyInvalidPayload_FailsAtFirstAttempt(Guid rowId, string payload)
     {
-        await _fixture.AddPingInboxRowAsync(
-            InboxProcessorTestData.InvalidPayloadRowId,
-            InboxProcessorTestData.InvalidPayload);
+        await _fixture.AddPingInboxRowAsync(rowId, payload);
         var callsBefore = _fixture.Recorder.Count;
         var processor = _fixture.Create<InboxProcessor>();
 
         await processor.RunAsync(CancellationToken.None);
 
-        var row = await _fixture.ReadInboxRowAsync(InboxProcessorTestData.InvalidPayloadRowId);
-        var errors = _fixture.ReadErrorLogs(InboxProcessorTestData.InvalidPayloadRowId);
-
-        row.FailedOn.Should().NotBeNull();
-        row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
-        _fixture.Recorder.Count.Should().Be(callsBefore);
-        errors.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task Process_WithUnreadablePayload_FailsAtFirstAttempt()
-    {
-        await _fixture.AddPingInboxRowAsync(
-            InboxProcessorTestData.UnreadablePayloadRowId,
-            InboxProcessorTestData.UnreadablePayload);
-        var callsBefore = _fixture.Recorder.Count;
-        var processor = _fixture.Create<InboxProcessor>();
-
-        await processor.RunAsync(CancellationToken.None);
-
-        var row = await _fixture.ReadInboxRowAsync(InboxProcessorTestData.UnreadablePayloadRowId);
-        var errors = _fixture.ReadErrorLogs(InboxProcessorTestData.UnreadablePayloadRowId);
-
-        row.FailedOn.Should().NotBeNull();
-        row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);
-        _fixture.Recorder.Count.Should().Be(callsBefore);
-        errors.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task Process_WithControlCharacter_FailsAtFirstAttempt()
-    {
-        await _fixture.AddPingInboxRowAsync(
-            InboxProcessorTestData.ControlCharacterRowId,
-            InboxProcessorTestData.ControlCharacterPayload);
-        var callsBefore = _fixture.Recorder.Count;
-        var processor = _fixture.Create<InboxProcessor>();
-
-        await processor.RunAsync(CancellationToken.None);
-
-        var row = await _fixture.ReadInboxRowAsync(InboxProcessorTestData.ControlCharacterRowId);
-        var errors = _fixture.ReadErrorLogs(InboxProcessorTestData.ControlCharacterRowId);
+        var row = await _fixture.ReadInboxRowAsync(rowId);
+        var errors = _fixture.ReadErrorLogs(rowId);
 
         row.FailedOn.Should().NotBeNull();
         row.AttemptCount.Should().Be(InboxProcessorTestData.FailedAttemptCount);

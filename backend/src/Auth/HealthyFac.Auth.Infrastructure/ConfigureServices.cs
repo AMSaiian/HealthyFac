@@ -1,11 +1,10 @@
 using EntityFramework.Exceptions.PostgreSQL;
 using HealthyFac.Auth.Application;
-using HealthyFac.Auth.Application.Identities.ProvisionIdentity;
-using HealthyFac.Auth.Application.Identities.RevokeIdentity;
 using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Auth.Infrastructure.Database.Initialization;
 using HealthyFac.Auth.Infrastructure.Keycloak;
 using HealthyFac.Auth.Infrastructure.Revocation;
+using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;

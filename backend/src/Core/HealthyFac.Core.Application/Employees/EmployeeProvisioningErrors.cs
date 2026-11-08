@@ -9,8 +9,6 @@ public static class EmployeeProvisioningErrors
     public static class Validation
     {
         public const string EmployeeIdRequired = "EmployeeId is required.";
-        public const string IdentityUserIdRequired = "IdentityUserId is required.";
-        public const string ReasonRequired = "Reason is required.";
     }
 
     public static class Rejections

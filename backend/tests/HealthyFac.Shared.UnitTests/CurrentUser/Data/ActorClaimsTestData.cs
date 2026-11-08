@@ -91,9 +91,11 @@ public static class ActorClaimsTestData
         Guid.Empty.ToString(),
     };
 
-    public static TheoryData<string> JsonOrganizationValues => new()
+    public static TheoryData<string[]> InvalidOrganizations => new()
     {
-        $"[\"{ActorTestData.CompanyId}\"]",
-        $"[\"{ActorTestData.CompanyId}\",\"{ActorTestData.OtherCompanyId}\"]",
+        new[] { ActorTestData.CompanyId.ToString(), ActorTestData.OtherCompanyId.ToString() },
+        new[] { $"[\"{ActorTestData.CompanyId}\"]" },
+        new[] { $"[\"{ActorTestData.CompanyId}\",\"{ActorTestData.OtherCompanyId}\"]" },
+        Array.Empty<string>(),
     };
 }

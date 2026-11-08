@@ -5,6 +5,14 @@ public static class ConventionConstants
     public const string ProjectAssemblyPrefix = "HealthyFac.";
     public const string UnitAdapterType = "HealthyFac.Shared.Application.UseCases.UnitRequestHandlerAdapter`1";
 
+    public static class Messaging
+    {
+        public const string AssemblyNamePattern = @"^HealthyFac\.[A-Za-z]+\.Messaging$";
+
+        public static readonly string[] AllowedProjectReferences =
+            ["HealthyFac.Shared.Application", "HealthyFac.Shared.Domain"];
+    }
+
     public static class Options
     {
         public const string TypeSuffix = "Options";

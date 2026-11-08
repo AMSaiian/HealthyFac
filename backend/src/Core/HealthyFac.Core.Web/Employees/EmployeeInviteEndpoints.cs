@@ -1,5 +1,4 @@
 using HealthyFac.Core.Application.Employees;
-using HealthyFac.Core.Application.Employees.AcceptEmployeeInvite;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.IdEncryption;

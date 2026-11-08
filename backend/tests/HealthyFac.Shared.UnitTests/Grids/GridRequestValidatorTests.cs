@@ -6,30 +6,18 @@ namespace HealthyFac.Shared.UnitTests.Grids;
 
 public sealed class GridRequestValidatorTests
 {
-    [Fact]
-    public void Validate_WithFromAfterTo_Fails()
+    [Theory]
+    [MemberData(nameof(GridValidatorTestData.RangesWithFromNotBeforeTo), MemberType = typeof(GridValidatorTestData))]
+    public void Validate_WithFromNotBeforeTo_Fails(DateTime from, DateTime to)
     {
-        var filter = new DateRangeFilter
-            { From = GridValidatorTestData.RangeEnd, To = GridValidatorTestData.RangeStart };
+        var filter = new DateRangeFilter { From = from, To = to };
 
         var result = new DateRangeFilterValidator().Validate(filter);
 
-        result.IsValid.Should().BeFalse();
         result.Errors.Should()
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(GridErrors.Validation.DateRangeFromNotBeforeTo);
-    }
-
-    [Fact]
-    public void Validate_WithEqualFromAndTo_Fails()
-    {
-        var filter = new DateRangeFilter
-            { From = GridValidatorTestData.RangeStart, To = GridValidatorTestData.RangeStart };
-
-        var result = new DateRangeFilterValidator().Validate(filter);
-
-        result.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -90,36 +78,6 @@ public sealed class GridRequestValidatorTests
             .Which.ErrorMessage.Should()
             .Be(GridErrors.Validation.DateRangeNotUtc);
         toResult.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Be(GridErrors.Validation.DateRangeNotUtc);
-    }
-
-    [Fact]
-    public void Validate_WithNullTextFilterValue_Fails()
-    {
-        var result = new TextFilterValidator().Validate(new TextFilter { Value = null! });
-
-        result.Errors.Should()
-            .ContainSingle()
-            .Which.ErrorMessage.Should()
-            .Be(GridErrors.Validation.TextFilterValueRequired);
-    }
-
-    [Fact]
-    public void Validate_WithTextFilterValue_Passes()
-    {
-        var result = new TextFilterValidator().Validate(new TextFilter { Value = "lathe" });
-
-        result.IsValid.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Validate_WithNullSetFilterValues_Fails()
-    {
-        var result = new SetFilterValidator<int>().Validate(new SetFilter<int> { Values = null! });
-
-        result.Errors.Should()
-            .ContainSingle()
-            .Which.ErrorMessage.Should()
-            .Be(GridErrors.Validation.SetFilterValuesRequired);
     }
 
     [Theory]

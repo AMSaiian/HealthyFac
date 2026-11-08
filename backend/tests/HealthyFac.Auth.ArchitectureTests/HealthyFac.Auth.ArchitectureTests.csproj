@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Auth\HealthyFac.Auth.Application\HealthyFac.Auth.Application.csproj" />
+    <ProjectReference Include="..\..\src\Auth\HealthyFac.Auth.Messaging\HealthyFac.Auth.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj" />
     <ProjectReference Include="..\..\src\Auth\HealthyFac.Auth.Infrastructure\HealthyFac.Auth.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Auth\HealthyFac.Auth.Web\HealthyFac.Auth.Web.csproj" />
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />

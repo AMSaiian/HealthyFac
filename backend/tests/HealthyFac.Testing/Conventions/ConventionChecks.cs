@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using HealthyFac.Shared.Application;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -156,7 +157,7 @@ public static class ConventionChecks
     /// <returns>The names of the direct implementations.</returns>
     public static IReadOnlyList<string> FindDirectUnitHandlers(Assembly assembly)
     {
-        var adapterType = typeof(IRequestHandler<>).Assembly.GetType(
+        var adapterType = SharedApplicationAssembly.Instance.GetType(
             ConventionConstants.UnitAdapterType,
             throwOnError: true
         );
@@ -204,6 +205,35 @@ public static class ConventionChecks
     /// <returns>One line for each type without a validator and each member without a rule.</returns>
     public static IReadOnlyList<string> FindStringsWithoutTextRule(IEnumerable<Assembly> assemblies) =>
         TextRuleInspection.FindViolations(assemblies);
+
+    /// <summary>
+    /// Finds the integration messages (types that implement <c>IIntegrationMessage</c>) that no
+    /// <c>HealthyFac.&lt;Service&gt;.Messaging</c> assembly declares.
+    /// </summary>
+    /// <param name="assemblies">The assemblies of the service and of every Messaging project it references.</param>
+    /// <returns>One line for each message in another assembly.</returns>
+    public static IReadOnlyList<string> FindMessagesOutsideMessagingAssembly(IEnumerable<Assembly> assemblies) =>
+        [.. MessageContractInspection.FindOutsideMessagingAssembly(assemblies)];
+
+    /// <summary>
+    /// Finds the <c>HealthyFac.&lt;Service&gt;.Messaging</c> assemblies that reference a <c>HealthyFac</c> assembly
+    /// other than <c>Shared.Application</c> and <c>Shared.Domain</c>: a layer of any service, another Messaging
+    /// project, or a later service. It reads the referenced assemblies, so no list of services needs an update.
+    /// </summary>
+    /// <param name="assemblies">The assemblies to inspect. Only the Messaging ones among them are checked.</param>
+    /// <returns>One line for each disallowed reference.</returns>
+    public static IReadOnlyList<string> FindMessagingServiceDependencies(IEnumerable<Assembly> assemblies) =>
+        [.. MessageContractInspection.FindDisallowedReferences(assemblies)];
+
+    /// <summary>
+    /// Finds the integration messages that more than one type declares, by <c>MessageType</c> or by type name. A
+    /// copy of a contract in a consumer sits in another namespace and drifts from the original, so the full name
+    /// does not find it. The same type name in two namespaces counts as a copy.
+    /// </summary>
+    /// <param name="assemblies">The assemblies of the service and of every Messaging project it references.</param>
+    /// <returns>One line for each name that two or more types share.</returns>
+    public static IReadOnlyList<string> FindDuplicateMessages(IEnumerable<Assembly> assemblies) =>
+        [.. MessageContractInspection.FindDuplicates(assemblies)];
 
     /// <summary>
     /// Finds the parts of a use case that are not in the namespace of their request: the handler, the input
