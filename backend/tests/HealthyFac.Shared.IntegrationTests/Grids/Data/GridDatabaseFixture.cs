@@ -9,7 +9,7 @@ public sealed class GridDatabaseFixture : IAsyncLifetime
 
     public IReadOnlyList<GridTestEntity> Rows { get; private set; } = [];
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
         var rows = GridTestData.CreateRows();
@@ -20,7 +20,7 @@ public sealed class GridDatabaseFixture : IAsyncLifetime
         Rows = rows;
     }
 
-    public async Task DisposeAsync() => await _database.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _database.DisposeAsync();
 
     public GridTestDbContext CreateDbContext()
     {

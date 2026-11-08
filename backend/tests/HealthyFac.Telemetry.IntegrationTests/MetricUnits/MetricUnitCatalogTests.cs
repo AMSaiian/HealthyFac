@@ -1,9 +1,11 @@
+using HealthyFac.Telemetry.IntegrationTests.Database;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricUnits.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MetricUnits;
 
-public sealed class MetricUnitCatalogTests(TelemetryDatabaseFixture fixture) : IClassFixture<TelemetryDatabaseFixture>
+[Collection(TelemetrySeedingCollection.Name)]
+public sealed class MetricUnitCatalogTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

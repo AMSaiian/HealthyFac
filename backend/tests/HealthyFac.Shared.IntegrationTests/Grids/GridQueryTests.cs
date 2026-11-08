@@ -25,7 +25,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
             .Where(row => row.Group == GridTestData.SortGroup)
             .ApplySort(sort, GridTestSortMap.Instance)
             .Select(row => row.Id)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         actualIds.Should().Equal(expectedIds);
     }
@@ -44,7 +44,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
         {
             pages.Add(
                 await query.ToGridResponseAsync(
-                    offset, GridTestData.PageSize, row => row.Id, default(CancellationToken)));
+                    offset, GridTestData.PageSize, row => row.Id, TestContext.Current.CancellationToken));
         }
 
         var ids = pages.SelectMany(page => page.Items).ToList();
@@ -67,7 +67,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
             .Where(row => row.Group == GridTestData.SortGroup)
             .ApplySort(sort: null, GridTestSortMap.Instance)
             .Select(row => row.Id)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         actualIds.Should().Equal(expectedIds);
     }
@@ -82,7 +82,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
             .Where(row => row.Group == GridTestData.TextGroup)
             .ApplyFilter(filter)
             .Select(row => row.Text)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         texts.Should().BeEquivalentTo("ABC", "abd");
     }
@@ -97,7 +97,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
             .Where(row => row.Group == GridTestData.TextGroup)
             .ApplyFilter(filter)
             .Select(row => row.Text)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         texts.Should().BeEquivalentTo("50% off");
     }
@@ -120,7 +120,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
             .ApplyFilter(new GridTestFilter { At = range })
             .ApplySort(sort: null, GridTestSortMap.Instance)
             .Select(row => row.Id)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         actualIds.Should().Equal(expectedIds);
     }
@@ -134,7 +134,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
         var count = await dbContext.Rows
             .Where(row => row.Group == GridTestData.DatesGroup)
             .ApplyFilter(new GridTestFilter { OptionalAt = range })
-            .CountAsync();
+            .CountAsync(TestContext.Current.CancellationToken);
 
         count.Should().Be(GridTestData.DatesRowCount / 2);
     }
@@ -149,7 +149,7 @@ public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<
             .Where(row => row.Group == GridTestData.TextGroup)
             .ApplyFilter(filter)
             .ApplySort(sort: null, GridTestSortMap.Instance)
-            .ToGridResponseAsync(offset: 0, limit: 1, row => row.Text, default(CancellationToken));
+            .ToGridResponseAsync(offset: 0, limit: 1, row => row.Text, TestContext.Current.CancellationToken);
 
         response.TotalCount.Should().Be(expected: 2);
         response.Items.Should().HaveCount(expected: 1);

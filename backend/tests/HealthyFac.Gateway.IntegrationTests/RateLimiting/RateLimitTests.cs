@@ -8,15 +8,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
-public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+[Collection(GatewayLimitsCollection.Name)]
+public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
 
     private readonly EchoServer _core = new(useForwardedHeaders: true);
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task StrictPolicy_OverLimit_Returns429WithRetryAfter()
@@ -45,7 +46,7 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
 
         using var response = await client.PostVerifyInviteAsync();
 
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
 
         response.Content.Headers.ContentType!.MediaType.Should().Be(RateLimitTestData.ProblemJsonMediaType);
         problem!.Status.Should().Be(StatusCodes.Status429TooManyRequests);
@@ -98,7 +99,8 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IClassFixtu
         using var client = gateway.CreateAuthenticatedClient();
         await client.SpendStrictLimitAsync();
 
-        using var response = await client.GetAsync(RateLimitTestData.MachinesRoute);
+        using var response = await client.GetAsync(
+            RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

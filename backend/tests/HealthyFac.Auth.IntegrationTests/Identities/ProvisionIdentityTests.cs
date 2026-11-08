@@ -147,7 +147,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         await _fixture.PublishAcceptedAsync(messageId, message);
         await _fixture.PublishAcceptedAsync(messageId, message);
         await _fixture.WaitForInboxMessageProcessedAsync(messageId);
-        await Task.Delay(ProvisioningTestData.QuietPeriod);
+        await Task.Delay(ProvisioningTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         var inboxCount = await _fixture.CountInboxMessagesAsync(messageId);
         var mailCount = await _fixture.CountMailsToAsync(message.Email);

@@ -2,17 +2,18 @@ using HealthyFac.Shared.IntegrationTests.Messaging.Data;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class BrokerConnectionProviderTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingTransportCollection.Name)]
+public sealed class BrokerConnectionProviderTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public async Task GetConnectionAsync_CalledTwice_ReturnsSameConnection()
     {
         await using var provider = _fixture.CreateBrokerConnectionProvider();
-        var firstConnection = await provider.GetConnectionAsync();
+        var firstConnection = await provider.GetConnectionAsync(TestContext.Current.CancellationToken);
 
-        var secondConnection = await provider.GetConnectionAsync();
+        var secondConnection = await provider.GetConnectionAsync(TestContext.Current.CancellationToken);
 
         secondConnection.Should().BeSameAs(firstConnection);
     }
@@ -21,14 +22,15 @@ public sealed class BrokerConnectionProviderTests(TransportFixture fixture) : IC
     public async Task GetConnectionAsync_AfterConnectionClosed_ReturnsNewOpenConnection()
     {
         await using var provider = _fixture.CreateBrokerConnectionProvider();
-        var firstConnection = await provider.GetConnectionAsync();
+        var firstConnection = await provider.GetConnectionAsync(TestContext.Current.CancellationToken);
         await firstConnection.CloseAsync(
             BrokerTestData.CloseReplyCode,
             BrokerTestData.CloseReplyText,
             BrokerTestData.CloseTimeout,
-            abort: false);
+            abort: false,
+            TestContext.Current.CancellationToken);
 
-        var secondConnection = await provider.GetConnectionAsync();
+        var secondConnection = await provider.GetConnectionAsync(TestContext.Current.CancellationToken);
 
         secondConnection.Should().NotBeSameAs(firstConnection);
         secondConnection.IsOpen.Should().BeTrue();

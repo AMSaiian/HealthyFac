@@ -56,7 +56,7 @@ public static class MetricDefinitionTestData
         "spindle.temperature",
         "door_open",
         "line1.zone2.value_3",
-        new(c: 'a', MetricDefinitionRules.KeyMaxLength),
+        new string(c: 'a', MetricDefinitionRules.KeyMaxLength),
     ];
 
     public static TheoryData<string> InvalidKeys =>
@@ -70,7 +70,7 @@ public static class MetricDefinitionTestData
         "spindle.",
         "_spindle",
         "spindle-temperature",
-        new(c: 'a', MetricDefinitionRules.KeyMaxLength + 1),
+        new string(c: 'a', MetricDefinitionRules.KeyMaxLength + 1),
     ];
 
     public static TheoryData<double?, double?> AscendingRanges => new()

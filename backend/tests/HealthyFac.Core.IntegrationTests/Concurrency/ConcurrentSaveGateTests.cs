@@ -4,7 +4,8 @@ using HealthyFac.Testing.Persistence;
 
 namespace HealthyFac.Core.IntegrationTests.Concurrency;
 
-public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture) : IClassFixture<GateDatabaseFixture>
+[Collection(CoreSaveGateCollection.Name)]
+public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
 {
     private readonly GateDatabaseFixture _fixture = fixture;
 

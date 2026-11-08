@@ -4,10 +4,10 @@ using HealthyFac.Identity.IntegrationTests.TokenExchange.Data;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
-[Collection(TokenExchangeCollection.Name)]
-public sealed class TokenExchangeTests(TokenExchangeFixture fixture)
+[Collection(KeycloakRealmCollection.Name)]
+public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
 {
-    private readonly TokenExchangeFixture _fixture = fixture;
+    private readonly TokenExchangeFixture _fixture = fixture.TokenExchange;
 
     [Fact]
     public async Task Exchange_WithTargetAudience_ReturnsTokenForTargetOnly()

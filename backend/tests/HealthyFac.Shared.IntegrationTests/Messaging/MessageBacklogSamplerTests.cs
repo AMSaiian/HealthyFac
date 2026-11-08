@@ -14,7 +14,8 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 /// The two tests share one database. The second test marks every pending row processed, so the first test sees only
 /// its own rows in either order.
 /// </summary>
-public sealed class MessageBacklogSamplerTests(PostgreSqlFixture fixture) : IClassFixture<PostgreSqlFixture>
+[Collection(MessagingStorageCollection.Name)]
+public sealed class MessageBacklogSamplerTests(PostgreSqlFixture fixture)
 {
     private readonly PostgreSqlFixture _fixture = fixture;
 

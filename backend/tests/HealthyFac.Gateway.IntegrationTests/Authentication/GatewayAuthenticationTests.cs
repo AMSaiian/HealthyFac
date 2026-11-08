@@ -5,16 +5,17 @@ using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Gateway.IntegrationTests.Authentication;
 
+[Collection(GatewayProxyCollection.Name)]
 public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
-    : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+    : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
 
     private readonly EchoServer _core = new(useForwardedHeaders: true);
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task CoreRoute_WithoutToken_Returns401()
@@ -22,7 +23,8 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateClient();
 
-        using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
+        using var response = await client.GetAsync(
+            AuthenticationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         _core.RequestCount.Should().Be(expected: 0);
@@ -35,7 +37,8 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         using var client = gateway.CreateAuthenticatedClient(
             new TestTokenClaims { Audience = AuthenticationTestData.OtherAudience });
 
-        using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
+        using var response = await client.GetAsync(
+            AuthenticationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         _core.RequestCount.Should().Be(expected: 0);
@@ -47,7 +50,8 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(AuthenticationTestData.CoreRoute);
+        using var response = await client.GetAsync(
+            AuthenticationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
         var forwardedRequest = _core.Requests.Single();
 
@@ -61,7 +65,8 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateClient();
 
-        using var response = await client.PostAsync(AuthenticationTestData.VerifyInviteRoute, content: null);
+        using var response = await client.PostAsync(
+            AuthenticationTestData.VerifyInviteRoute, content: null, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         _core.RequestCount.Should().Be(expected: 1);
@@ -73,7 +78,8 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(_core);
         using var client = gateway.CreateAuthenticatedClient();
 
-        using var response = await client.GetAsync(AuthenticationTestData.AdminRoute);
+        using var response = await client.GetAsync(
+            AuthenticationTestData.AdminRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 

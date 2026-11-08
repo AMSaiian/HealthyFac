@@ -5,16 +5,17 @@ using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
+[Collection(GatewayLimitsCollection.Name)]
 public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
-    : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+    : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
 
     private readonly EchoServer _core = new(useForwardedHeaders: true);
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task DefaultPolicy_TwoUsersFromOneAddress_HaveSeparateLimits()
@@ -25,8 +26,10 @@ public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
             gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });
         await firstUserClient.SpendDefaultLimitAsync();
 
-        using var firstUserResponse = await firstUserClient.GetAsync(RateLimitTestData.MachinesRoute);
-        using var secondUserResponse = await secondUserClient.GetAsync(RateLimitTestData.MachinesRoute);
+        using var firstUserResponse = await firstUserClient.GetAsync(
+            RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+        using var secondUserResponse = await secondUserClient.GetAsync(
+            RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
 
         firstUserResponse.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
         secondUserResponse.StatusCode.Should().Be(HttpStatusCode.OK);

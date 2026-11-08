@@ -16,7 +16,7 @@ public sealed class MailpitFixture : IAsyncLifetime
 
     public IEmailSender EmailSender => _services.GetRequiredService<IEmailSender>();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _server.StartAsync();
 
@@ -37,7 +37,7 @@ public sealed class MailpitFixture : IAsyncLifetime
         _services = services.BuildServiceProvider(validateScopes: true);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
         await _server.DisposeAsync();

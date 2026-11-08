@@ -4,8 +4,9 @@ using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
+[Collection(GatewayProxyCollection.Name)]
 public sealed class TelemetryRouteTests(GatewayEnvironment environment)
-    : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+    : IAsyncLifetime
 {
     private const string ForwardedPrefixHeader = "X-Forwarded-Prefix";
     private const string PublicPrefix = "/api/telemetry";
@@ -14,13 +15,13 @@ public sealed class TelemetryRouteTests(GatewayEnvironment environment)
     private readonly EchoServer _core = new(useForwardedHeaders: true);
     private readonly EchoServer _telemetry = new(useForwardedHeaders: true);
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _core.StartAsync();
         await _telemetry.StartAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _core.DisposeAsync();
         await _telemetry.DisposeAsync();
@@ -32,7 +33,8 @@ public sealed class TelemetryRouteTests(GatewayEnvironment environment)
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(requestUri: "/api/telemetry/v1/machines/abc/metric-definitions");
+        var response = await client.GetAsync(
+            requestUri: "/api/telemetry/v1/machines/abc/metric-definitions", TestContext.Current.CancellationToken);
 
         var forwardedRequest = _telemetry.Requests.Single();
 
@@ -49,7 +51,7 @@ public sealed class TelemetryRouteTests(GatewayEnvironment environment)
         await using var gateway = CreateGateway();
         using var client = gateway.CreateAuthenticatedClient();
 
-        var response = await client.GetAsync(path);
+        var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -62,7 +64,8 @@ public sealed class TelemetryRouteTests(GatewayEnvironment environment)
         await using var gateway = CreateGateway();
         using var client = gateway.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/api/telemetry/v1/machines/abc/metric-definitions");
+        var response = await client.GetAsync(
+            requestUri: "/api/telemetry/v1/machines/abc/metric-definitions", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 

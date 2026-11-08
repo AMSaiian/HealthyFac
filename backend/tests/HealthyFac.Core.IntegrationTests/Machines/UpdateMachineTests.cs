@@ -5,7 +5,8 @@ using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
-public sealed class UpdateMachineTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreMachinesCollection.Name)]
+public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

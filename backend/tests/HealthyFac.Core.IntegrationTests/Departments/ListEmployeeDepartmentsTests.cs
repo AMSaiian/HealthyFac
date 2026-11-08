@@ -1,12 +1,14 @@
 using HealthyFac.Core.Application.Departments;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.IntegrationTests.Employees;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Departments;
 
-public sealed class ListEmployeeDepartmentsTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreEmployeesCollection.Name)]
+public sealed class ListEmployeeDepartmentsTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 
@@ -21,7 +23,8 @@ public sealed class ListEmployeeDepartmentsTests(CoreDatabaseFixture fixture) : 
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ListEmployeeDepartmentsRequest, ListEmployeeDepartmentsResponse>>();
 
-        var response = await handler.HandleAsync(new ListEmployeeDepartmentsRequest());
+        var response = await handler.HandleAsync(
+            new ListEmployeeDepartmentsRequest(), TestContext.Current.CancellationToken);
 
         response.Items.Should()
             .ContainSingle()
@@ -38,7 +41,8 @@ public sealed class ListEmployeeDepartmentsTests(CoreDatabaseFixture fixture) : 
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ListEmployeeDepartmentsRequest, ListEmployeeDepartmentsResponse>>();
 
-        var response = await handler.HandleAsync(new ListEmployeeDepartmentsRequest());
+        var response = await handler.HandleAsync(
+            new ListEmployeeDepartmentsRequest(), TestContext.Current.CancellationToken);
 
         response.Items.Select(item => item.Name)
             .Should()

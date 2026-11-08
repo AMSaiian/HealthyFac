@@ -39,7 +39,8 @@ public sealed class ValidationRequestHandlerDecoratorTests
     [Fact]
     public async Task HandleAsync_WhenValidationPasses_LogsNoInformationEntryAndCallsHandler()
     {
-        var result = await _decorator.HandleAsync(new ValidatedRequest { Name = "Press" });
+        var result = await _decorator.HandleAsync(
+            new ValidatedRequest { Name = "Press" }, TestContext.Current.CancellationToken);
 
         result.Should().Be("Press".Length);
         _logger.Entries.Should().NotContain(e => e.Level >= LogLevel.Information);

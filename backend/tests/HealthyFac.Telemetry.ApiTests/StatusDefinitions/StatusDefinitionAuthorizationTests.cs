@@ -4,7 +4,8 @@ using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.ApiTests.StatusDefinitions;
 
-public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixture) : IClassFixture<TelemetryApiFixture>
+[Collection(TelemetryApiCollection.Name)]
+public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
 
@@ -34,7 +35,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
             _fixture.StatusDefinitionsPath(machineId),
             claims,
             _fixture.CreateStatusDefinitionBody(StatusDefinitionApiTestData.Code));
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         response.Headers.Location!.ToString().Should().StartWith("/" + _fixture.StatusDefinitionsPath(machineId) + "/");
@@ -117,7 +118,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
             HttpMethod.Get,
             $"{_fixture.StatusDefinitionsPath(status.MachineId)}/{status.Id}",
             claims);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Contain(status.Id);

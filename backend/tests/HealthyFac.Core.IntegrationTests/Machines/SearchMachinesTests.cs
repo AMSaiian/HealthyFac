@@ -8,7 +8,8 @@ using HealthyFac.Shared.Application.Grids;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
-public sealed class SearchMachinesTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreMachinesCollection.Name)]
+public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

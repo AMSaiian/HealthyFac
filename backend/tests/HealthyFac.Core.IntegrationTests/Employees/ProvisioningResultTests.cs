@@ -4,7 +4,8 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
-public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreEmployeesCollection.Name)]
+public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 

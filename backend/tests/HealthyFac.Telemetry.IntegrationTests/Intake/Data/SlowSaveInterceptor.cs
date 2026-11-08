@@ -13,6 +13,12 @@ public sealed class SlowSaveInterceptor : SaveChangesInterceptor
 
     public bool HasStarted => Volatile.Read(ref _hasStarted) == 1;
 
+    public void Reset()
+    {
+        Interlocked.Exchange(ref _hasStarted, value: 0);
+        Interlocked.Exchange(ref _delayTicks, value: 0);
+    }
+
     public void Arm(TimeSpan delay)
     {
         Interlocked.Exchange(ref _hasStarted, value: 0);

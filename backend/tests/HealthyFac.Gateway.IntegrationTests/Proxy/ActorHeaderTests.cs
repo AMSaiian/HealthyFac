@@ -4,15 +4,16 @@ using HealthyFac.Shared.Infrastructure.CurrentUser;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
-public sealed class ActorHeaderTests(GatewayEnvironment environment) : IClassFixture<GatewayEnvironment>, IAsyncLifetime
+[Collection(GatewayProxyCollection.Name)]
+public sealed class ActorHeaderTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;
 
     private readonly EchoServer _core = new();
 
-    public Task InitializeAsync() => _core.StartAsync();
+    public async ValueTask InitializeAsync() => await _core.StartAsync();
 
-    public Task DisposeAsync() => _core.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _core.DisposeAsync();
 
     [Fact]
     public async Task Gateway_WithActorHeadersFromClient_RemovesThem()
@@ -23,7 +24,8 @@ public sealed class ActorHeaderTests(GatewayEnvironment environment) : IClassFix
         client.DefaultRequestHeaders.Add(ActorHeaderNames.CompanyId, ActorHeaderTestData.ForgedCompanyId);
         client.DefaultRequestHeaders.Add(ActorHeaderTestData.KeptHeader, ActorHeaderTestData.KeptValue);
 
-        using var response = await client.GetAsync(ActorHeaderTestData.VersionedPath);
+        using var response = await client.GetAsync(
+            ActorHeaderTestData.VersionedPath, TestContext.Current.CancellationToken);
 
         var forwardedRequest = _core.Requests.Single();
 

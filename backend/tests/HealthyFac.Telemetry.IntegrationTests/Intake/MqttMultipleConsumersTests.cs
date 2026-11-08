@@ -2,10 +2,28 @@ using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
-public sealed class MqttMultipleConsumersTests(MqttTwoConsumerIntakeFixture fixture)
-    : IClassFixture<MqttTwoConsumerIntakeFixture>
+[Collection(TelemetryMqttCollection.Name)]
+public sealed class MqttMultipleConsumersTests(MqttIntakeFixture fixture)
+    : IAsyncLifetime
 {
-    private readonly MqttTwoConsumerIntakeFixture _fixture = fixture;
+    private const int ConsumerCount = 2;
+
+    private readonly MqttIntakeFixture _fixture = fixture;
+
+    private StartedIntake _intake = null!;
+
+    public async ValueTask InitializeAsync()
+    {
+        _intake = _fixture.CreateIntake(NewName(), NewName(), consumerCount: ConsumerCount);
+        await _intake.Service.StartAsync(CancellationToken.None);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(_intake, ConsumerCount);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _intake.Service.StopAsync(CancellationToken.None);
+        await _intake.DisposeAsync();
+    }
 
     [Fact]
     public async Task Intake_WithTwoConsumers_ProcessesTwoMessagesAtTheSameTime()
@@ -24,4 +42,6 @@ public sealed class MqttMultipleConsumersTests(MqttTwoConsumerIntakeFixture fixt
         messages.Should().HaveCount(expected: 2);
         _fixture.OverlapProbe.HasOverlapped.Should().BeTrue();
     }
+
+    private static string NewName() => Guid.NewGuid().ToString(format: "N");
 }

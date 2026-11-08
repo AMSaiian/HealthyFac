@@ -13,8 +13,8 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/");
-        var html = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         var htmlNonces = NonceInHtml().Matches(html).Select(match => match.Groups[groupnum: 1].Value).ToList();
         var headerNonce = NonceInHeader()
@@ -33,8 +33,8 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var first = await client.GetAsync(requestUri: "/");
-        var second = await client.GetAsync(requestUri: "/");
+        var first = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
+        var second = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
 
         var firstHeader = first.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Single();
         var secondHeader = second.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Single();
@@ -52,8 +52,8 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/machines/42");
-        var html = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync(requestUri: "/machines/42", TestContext.Current.CancellationToken);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.ToString().Should().Be(expected: "text/html; charset=utf-8");
@@ -68,7 +68,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/missing-12345678.js");
+        var response = await client.GetAsync(requestUri: "/missing-12345678.js", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -79,7 +79,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}");
+        var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.CacheControl?.ToString().Should().Be(expected: "public, max-age=31536000, immutable");
@@ -92,7 +92,7 @@ public sealed partial class SpaHostTests
             settings: new Dictionary<string, string> { [key: "Spa:ImmutableCacheSeconds"] = "60" });
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}");
+        var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}", TestContext.Current.CancellationToken);
 
         response.Headers.CacheControl?.ToString().Should().Be(expected: "public, max-age=60, immutable");
     }
@@ -104,7 +104,7 @@ public sealed partial class SpaHostTests
             settings: new Dictionary<string, string> { [key: "Spa:PermissionsPolicy"] = "camera=(self)" });
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/");
+        var response = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
 
         response.Headers.GetValues(name: "Permissions-Policy").Should().Equal("camera=(self)");
     }
@@ -115,7 +115,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.LookalikeFileName}");
+        var response = await client.GetAsync($"/{SpaFactory.LookalikeFileName}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.CacheControl?.ToString().Should().Be(expected: "no-cache");
@@ -127,7 +127,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}");
+        var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.CacheControl?.ToString().Should().Be(expected: "no-cache");
@@ -139,8 +139,8 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/index.html");
-        var html = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync(requestUri: "/index.html", TestContext.Current.CancellationToken);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         html.Should().NotContain(SpaFactory.NoncePlaceholder);
@@ -154,8 +154,9 @@ public sealed partial class SpaHostTests
             settings: new Dictionary<string, string> { [key: "Spa:RuntimeConfigCacheSeconds"] = "60" });
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/config.json");
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var response = await client.GetAsync(requestUri: "/config.json", TestContext.Current.CancellationToken);
+        using var json = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.CacheControl?.ToString().Should().Be(expected: "public, max-age=60");
@@ -168,8 +169,9 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/config.json");
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var response = await client.GetAsync(requestUri: "/config.json", TestContext.Current.CancellationToken);
+        using var json = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
         json.RootElement.EnumerateObject()
             .Select(property => property.Name)
@@ -183,7 +185,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.SilentSsoFileName}");
+        var response = await client.GetAsync($"/{SpaFactory.SilentSsoFileName}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.GetValues(HeaderNames.ContentSecurityPolicy)
@@ -197,7 +199,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}");
+        var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}", TestContext.Current.CancellationToken);
 
         response.Headers.Contains(HeaderNames.ContentSecurityPolicy).Should().BeFalse();
     }
@@ -208,7 +210,7 @@ public sealed partial class SpaHostTests
         await using var spa = new SpaFactory(isTelemetryEnabled: true);
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync(requestUri: "/");
+        var response = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

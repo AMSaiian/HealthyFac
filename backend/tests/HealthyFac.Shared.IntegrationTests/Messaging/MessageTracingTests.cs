@@ -6,9 +6,10 @@ using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class MessageTracingTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingTransportCollection.Name)]
+public sealed class MessageTracingTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public async Task Process_WithoutTraceParent_StartsNewTrace()

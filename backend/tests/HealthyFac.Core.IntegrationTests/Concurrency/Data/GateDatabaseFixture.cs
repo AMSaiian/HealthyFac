@@ -1,22 +1,28 @@
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.IntegrationTests.Concurrency.Data;
 
-public sealed class GateDatabaseFixture : IAsyncLifetime
+public sealed class GateDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 {
     private readonly PostgreSqlTestDatabase _database = new();
 
-    public async Task InitializeAsync()
+    private DatabaseResetter _resetter = null!;
+
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
 
         await using var context = CreateContext();
         await context.Database.EnsureCreatedAsync();
+        _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, context);
     }
 
-    public Task DisposeAsync() => _database.DisposeAsync().AsTask();
+    public async ValueTask ResetAsync() => await _resetter.ResetAsync();
+
+    public ValueTask DisposeAsync() => _database.DisposeAsync();
 
     public async Task SaveRecordAsync(ConcurrentSaveGate gate)
     {

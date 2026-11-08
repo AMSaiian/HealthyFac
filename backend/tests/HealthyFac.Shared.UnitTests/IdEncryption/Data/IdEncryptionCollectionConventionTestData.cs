@@ -20,7 +20,7 @@ public static class IdEncryptionCollectionConventionTestData
 
     public static TheoryData<CollectionConventionTestModel> Models =>
     [
-        new()
+        new CollectionConventionTestModel
         {
             DepartmentIds = [FirstId, SecondId],
             MachineIds = [ThirdId, FirstId],

@@ -2,13 +2,15 @@ using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 
-public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) : IClassFixture<CoreDatabaseFixture>
+[Collection(CoreMachinesCollection.Name)]
+public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 
@@ -18,14 +20,15 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture) :
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
-        var companyId = await dbContext.RunInTransactionAsync(async cancellationToken =>
-        {
-            var company = new Company { Name = TransactionTestData.CommittedCompanyName };
-            dbContext.Companies.Add(company);
-            await dbContext.SaveChangesAsync(cancellationToken);
+        var companyId = await dbContext.RunInTransactionAsync(
+            async cancellationToken =>
+            {
+                var company = new Company { Name = TransactionTestData.CommittedCompanyName };
+                dbContext.Companies.Add(company);
+                await dbContext.SaveChangesAsync(cancellationToken);
 
-            return company.Id;
-        });
+                return company.Id;
+            }, TestContext.Current.CancellationToken);
 
         var companyCount = await CountCompaniesAsync(TransactionTestData.CommittedCompanyName);
 

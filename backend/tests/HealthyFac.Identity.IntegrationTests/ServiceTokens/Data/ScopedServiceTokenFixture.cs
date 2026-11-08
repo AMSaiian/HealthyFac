@@ -4,21 +4,24 @@ using HealthyFac.Identity.IntegrationTests.Realm.Data;
 namespace HealthyFac.Identity.IntegrationTests.ServiceTokens.Data;
 
 /// <summary>
-/// Starts the realm and creates the temporary service client of the scoped service token tests: two client roles of
+/// Creates the temporary service client of the scoped service token tests in the started realm: two client roles of
 /// <c>healthyfac-core</c>, a composite realm role that groups them, and a confidential client whose service account
 /// holds that role. The client has <c>fullScopeAllowed: false</c> and one optional client scope for each role, with a
 /// role scope mapping.
 /// </summary>
-public sealed class ScopedServiceTokenFixture : IAsyncLifetime
+public sealed class ScopedServiceTokenFixture
 {
     private static readonly string[] ServiceClientDefaultScopes = ["basic", "service_account", "healthyfac-claims"];
 
-    public KeycloakRealmFixture Realm { get; } = new();
-
-    public async Task InitializeAsync()
+    public ScopedServiceTokenFixture(KeycloakRealmFixture realm)
     {
-        await Realm.InitializeAsync();
+        Realm = realm;
+    }
 
+    public KeycloakRealmFixture Realm { get; }
+
+    public async ValueTask InitializeAsync()
+    {
         var coreUuid = await Realm.FindClientUuidAsync(RealmTestData.CoreClientId);
         var first = await Realm.CreateClientRoleAsync(coreUuid, ScopedServiceTokenTestData.FirstPermission);
         var second = await Realm.CreateClientRoleAsync(coreUuid, ScopedServiceTokenTestData.SecondPermission);
@@ -43,8 +46,6 @@ public sealed class ScopedServiceTokenFixture : IAsyncLifetime
         await AddDownstreamScopeAsync(serviceUuid, coreUuid, ScopedServiceTokenTestData.FirstScope, first);
         await AddDownstreamScopeAsync(serviceUuid, coreUuid, ScopedServiceTokenTestData.SecondScope, second);
     }
-
-    public async Task DisposeAsync() => await Realm.DisposeAsync();
 
     private async Task AddDownstreamScopeAsync(string serviceUuid, string coreUuid, string scopeName, JsonObject role)
     {

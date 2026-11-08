@@ -1,8 +1,8 @@
-namespace HealthyFac.Shared.IntegrationTests.ServiceTokens.Data;
+namespace HealthyFac.Shared.IntegrationTests.SharedRedis.Data;
 
-public static class TokenStorageFixtureExtensions
+public static class SharedRedisFixtureExtensions
 {
-    extension(TokenStorageFixture fixture)
+    extension(SharedRedisFixture fixture)
     {
         /// <summary>
         /// Reads the time to live of a key straight from Redis.

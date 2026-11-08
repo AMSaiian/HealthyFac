@@ -6,6 +6,7 @@ using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Initialization;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,13 +14,14 @@ using Microsoft.Extensions.Hosting;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Database.Data;
 
-public sealed class TelemetryDatabaseFixture : IAsyncLifetime
+public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 {
     private readonly PostgreSqlTestDatabase _database = new();
     private readonly Action<IDictionary<string, string?>>? _configureSettings;
     private readonly Action<IServiceCollection>? _configureServices;
 
     private ServiceProvider _services = null!;
+    private DatabaseResetter _resetter = null!;
 
     public TelemetryDatabaseFixture()
     {
@@ -67,7 +69,7 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime
         where TService : class
         => _services.GetRequiredService<TService>();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
 
@@ -96,11 +98,24 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime
         _services = services.BuildServiceProvider(validateScopes: true);
 
         using var scope = ScopeFactory.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<TelemetryDbContext>().Database.MigrateAsync();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+        await dbContext.Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ITelemetryDbInitializer>().SeedRequiredDataAsync();
+        _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
+    }
+
+    /// <summary>
+    /// Deletes every row and seeds the required data again, because a test may change the unit catalog.
+    /// </summary>
+    public async ValueTask ResetAsync()
+    {
+        await _resetter.ResetAsync();
+
+        using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ITelemetryDbInitializer>().SeedRequiredDataAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
         await _database.DisposeAsync();

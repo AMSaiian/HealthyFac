@@ -21,9 +21,10 @@ public sealed class ServiceTokenEndpointTests
         using var host = await ServiceTokenHostFactory.StartAsync(_tokens);
         using var client = CreateClient(host, [ServiceTokenHostFactory.InvitePermission]);
 
-        using var response = await client.GetAsync(ServiceTokenHostFactory.InviteRoute);
+        using var response = await client.GetAsync(
+            ServiceTokenHostFactory.InviteRoute, TestContext.Current.CancellationToken);
 
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().Be(ActorTestData.UserId.ToString());
     }
@@ -34,7 +35,8 @@ public sealed class ServiceTokenEndpointTests
         using var host = await ServiceTokenHostFactory.StartAsync(_tokens);
         using var client = CreateClient(host, []);
 
-        using var response = await client.GetAsync(ServiceTokenHostFactory.InviteRoute);
+        using var response = await client.GetAsync(
+            ServiceTokenHostFactory.InviteRoute, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

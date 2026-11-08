@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<PostgreSqlFixture>
+[Collection(MessagingStorageCollection.Name)]
+public sealed class OutboxTests(PostgreSqlFixture fixture)
 {
     private readonly PostgreSqlFixture _fixture = fixture;
 
@@ -27,7 +28,8 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
         scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestActorStamped { Text = OutboxTestData.ActorStampedText });
 
-        await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
+        await scope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
+            .SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var stored = await ReadActorStampedMessageAsync();
 
@@ -52,7 +54,8 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
         using var publishScope = _fixture.CreateScope();
         publishScope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestConcurrentPublish { Text = OutboxTestData.BusinessChangeText });
-        await publishScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>().SaveChangesAsync();
+        await publishScope.ServiceProvider.GetRequiredService<ITestServiceDbContext>()
+            .SaveChangesAsync(TestContext.Current.CancellationToken);
         using var firstScope = _fixture.CreateScope();
         using var secondScope = _fixture.CreateScope();
         var firstContext = firstScope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
@@ -61,7 +64,7 @@ public sealed class OutboxTests(PostgreSqlFixture fixture) : IClassFixture<Postg
         var secondMessage = await LoadMessageAsync(secondContext);
         firstContext.Entry(firstMessage).Property(message => message.AttemptCount).CurrentValue =
             OutboxTestData.FirstAttemptCount;
-        await firstContext.SaveChangesAsync();
+        await firstContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         secondContext.Entry(secondMessage).Property(message => message.AttemptCount).CurrentValue =
             OutboxTestData.SecondAttemptCount;
 

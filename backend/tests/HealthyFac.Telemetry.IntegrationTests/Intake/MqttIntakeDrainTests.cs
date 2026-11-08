@@ -7,26 +7,27 @@ using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConst
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
-public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixture<MqttDrainFixture>
+[Collection(TelemetryMqttCollection.Name)]
+public sealed class MqttIntakeDrainTests(MqttIntakeFixture fixture)
 {
     private static readonly TimeSpan SlowSaveDelay = TimeSpan.FromSeconds(seconds: 3);
     private static readonly TimeSpan VerySlowSaveDelay = TimeSpan.FromSeconds(seconds: 20);
 
-    private readonly MqttDrainFixture _fixture = fixture;
+    private readonly MqttIntakeFixture _fixture = fixture;
 
     [Fact]
     public async Task Restart_OfSingleInstance_StoresMessagesPublishedWhileStopped()
     {
         var group = NewName();
         var clientId = NewName();
-        var first = _fixture.CreateIntake(group, clientId);
+        await using var first = _fixture.CreateIntake(group, clientId);
         await first.Service.StartAsync(CancellationToken.None);
-        await MqttDrainFixture.WaitUntilConnectedAsync(first);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(first);
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         await first.Service.StopAsync(CancellationToken.None);
         await _fixture.PublishAllAsync(topic, Payloads(offset: 0, IntakeTestData.MessageCount));
-        var second = _fixture.CreateIntake(group, clientId);
+        await using var second = _fixture.CreateIntake(group, clientId);
 
         await second.Service.StartAsync(CancellationToken.None);
 
@@ -40,9 +41,9 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
     public async Task Stop_WithMessageInFlight_FinishesItAndKeepsTheSession()
     {
         var clientId = NewName();
-        var intake = _fixture.CreateIntake(NewName(), clientId);
+        await using var intake = _fixture.CreateIntake(NewName(), clientId);
         await intake.Service.StartAsync(CancellationToken.None);
-        await MqttDrainFixture.WaitUntilConnectedAsync(intake);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(intake);
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         _fixture.SlowSave.Arm(SlowSaveDelay);
         await _fixture.PublishAllAsync(
@@ -65,19 +66,19 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
     {
         var group = NewName();
         var clientId = NewName();
-        var first = _fixture.CreateIntake(group, clientId);
+        await using var first = _fixture.CreateIntake(group, clientId);
         await first.Service.StartAsync(CancellationToken.None);
-        await MqttDrainFixture.WaitUntilConnectedAsync(first);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(first);
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
         _fixture.SlowSave.Arm(SlowSaveDelay);
         await _fixture.PublishAllAsync(topic, Payloads(offset: 0, count: 1));
         await WaitUntilSaveStartedAsync();
         await _fixture.PublishAllAsync(topic, Payloads(offset: 1, count: 1));
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
         await first.Service.StopAsync(CancellationToken.None);
         var storedAfterStop = await _fixture.Database.LoadReceivedMessagesAsync(machine.MachineId);
-        var second = _fixture.CreateIntake(group, clientId);
+        await using var second = _fixture.CreateIntake(group, clientId);
 
         await second.Service.StartAsync(CancellationToken.None);
 
@@ -92,13 +93,13 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
     public async Task Stop_WhenDrainTimesOut_KeepsTheSession()
     {
         var clientId = NewName();
-        var intake = _fixture.CreateIntake(NewName(), clientId, drainTimeoutSeconds: 1);
+        await using var intake = _fixture.CreateIntake(NewName(), clientId, drainTimeoutSeconds: 1);
         await intake.Service.StartAsync(CancellationToken.None);
-        await MqttDrainFixture.WaitUntilConnectedAsync(intake);
+        await MqttIntakeFixture.WaitUntilConnectedAsync(intake);
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
         var payload = Payloads(offset: 0, count: 1).Single();
-        using var timeouts = Collect(Constants.Intake.Instruments.DrainTimeouts);
-        using var messages = Collect(Constants.Intake.Instruments.Messages);
+        using var timeouts = Collect(intake, Constants.Intake.Instruments.DrainTimeouts);
+        using var messages = Collect(intake, Constants.Intake.Instruments.Messages);
         _fixture.SlowSave.Arm(VerySlowSaveDelay);
         await _fixture.PublishAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
         await WaitUntilSaveStartedAsync();
@@ -115,7 +116,7 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
             return Task.CompletedTask;
         };
         var reconnect = await _fixture.ReconnectAsync(ConsumerClientId(clientId, index: 0), client);
-        await Task.Delay(IntakeTestData.QuietPeriod);
+        await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         stored.Should().BeEmpty();
         reconnect.IsSessionPresent.Should().BeTrue();
@@ -135,8 +136,8 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
         await _fixture.PublishAllAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId),
             Payloads(offset: 0, IntakeTestData.MessageCount));
-        var intake = _fixture.CreateIntake(group, clientId);
-        using var emptied = Collect(Constants.Intake.Instruments.OrphanEmptied);
+        await using var intake = _fixture.CreateIntake(group, clientId);
+        using var emptied = Collect(intake, Constants.Intake.Instruments.OrphanEmptied);
 
         await intake.Service.StartAsync(CancellationToken.None);
 
@@ -163,15 +164,15 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId),
             Payloads(offset: 0, count: 1));
         _fixture.SaveFailure.Arm(new TimeoutException());
-        var first = _fixture.CreateIntake(group, clientId);
+        await using var first = _fixture.CreateIntake(group, clientId);
         await first.Service.StartAsync(CancellationToken.None);
         await first.Service.OrphanCheckCompleted;
         await first.Service.StopAsync(CancellationToken.None);
         var storedAfterFailure = await _fixture.Database.LoadReceivedMessagesAsync(machine.MachineId);
         using var probe = _fixture.CreateClient();
         var reconnect = await _fixture.ReconnectAsync(orphanId, probe);
-        await probe.DisconnectAsync(new MqttClientDisconnectOptions());
-        var second = _fixture.CreateIntake(group, clientId);
+        await probe.DisconnectAsync(new MqttClientDisconnectOptions(), TestContext.Current.CancellationToken);
+        await using var second = _fixture.CreateIntake(group, clientId);
 
         await second.Service.StartAsync(CancellationToken.None);
 
@@ -188,7 +189,7 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
     public async Task Start_WithoutOrphans_CreatesNoSession()
     {
         var clientId = NewName();
-        var intake = _fixture.CreateIntake(NewName(), clientId);
+        await using var intake = _fixture.CreateIntake(NewName(), clientId);
 
         await intake.Service.StartAsync(CancellationToken.None);
 
@@ -210,8 +211,8 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
         presentIndexes.Should().BeEmpty();
     }
 
-    private MetricCollector<long> Collect(string instrument) =>
-        new(_fixture.MeterFactory, Constants.Intake.Meter, instrument);
+    private static MetricCollector<long> Collect(StartedIntake intake, string instrument) =>
+        new(intake.MeterFactory, Constants.Intake.Meter, instrument);
 
     private static string NewName() => Guid.NewGuid().ToString(format: "N");
 
@@ -220,10 +221,9 @@ public sealed class MqttIntakeDrainTests(MqttDrainFixture fixture) : IClassFixtu
 
     private static List<byte[]> Payloads(int offset, int count) =>
         Enumerable.Range(offset, count)
-            .Select(
-                index => ReceiveMachineMessageTestData.Bytes(
-                    ReceiveMachineMessageTestData.CreateMessage(
-                        ReceiveMachineMessageTestData.SampledAt.AddSeconds(index))))
+            .Select(index => ReceiveMachineMessageTestData.Bytes(
+                ReceiveMachineMessageTestData.CreateMessage(
+                    ReceiveMachineMessageTestData.SampledAt.AddSeconds(index))))
             .ToList();
 
     private async Task WaitUntilSaveStartedAsync()

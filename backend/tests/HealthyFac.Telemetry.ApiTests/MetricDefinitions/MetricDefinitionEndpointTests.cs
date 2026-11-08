@@ -6,7 +6,8 @@ using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.ApiTests.MetricDefinitions;
 
-public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture) : IClassFixture<TelemetryApiFixture>
+[Collection(TelemetryApiCollection.Name)]
+public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
 
@@ -62,7 +63,7 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture) :
 
         var response = await _fixture.SendAsync(HttpMethod.Get, _fixture.DefinitionsPath(machineId), claims);
 
-        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
         var definition = body[propertyName: "definitions"]!.AsArray().Single()!;
 
         applied.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -94,7 +95,7 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture) :
 
         var response = await _fixture.SendAsync(HttpMethod.Get, _fixture.SchemaPath(machineId), claims);
 
-        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body[propertyName: "revision"]!.GetValue<int>().Should().Be(expected: 1);
@@ -131,7 +132,7 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture) :
             _fixture.DefinitionsPath(machineId),
             claims,
             MetricDefinitionApiTestData.InvalidKeyBody);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         body.Should().Contain(expected: "created[0].key");
@@ -161,7 +162,7 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture) :
             HttpMethod.Get,
             _fixture.DefinitionsPath(MetricDefinitionApiTestData.InvalidEncryptedId),
             claims);
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         body.Should().NotContain(MetricDefinitionApiTestData.InvalidEncryptedId);

@@ -6,11 +6,12 @@ using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
+using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MetricDefinitions;
 
+[Collection(TelemetryDefinitionsCollection.Name)]
 public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture fixture)
-    : IClassFixture<TelemetryDatabaseFixture>
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

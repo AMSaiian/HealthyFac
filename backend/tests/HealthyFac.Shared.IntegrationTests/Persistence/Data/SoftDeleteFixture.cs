@@ -15,7 +15,7 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
 
     public FakeTimeProvider TimeProvider { get; } = new(SoftDeleteTestData.Now);
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
         _actorLease = _holder.Enter(SoftDeleteTestData.Actor);
@@ -23,7 +23,7 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
         await dbContext.Database.EnsureCreatedAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _actorLease?.Dispose();
         await _database.DisposeAsync();

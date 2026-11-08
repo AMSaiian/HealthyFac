@@ -2,9 +2,10 @@ using HealthyFac.Identity.IntegrationTests.Realm.Data;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm;
 
-public sealed class RealmImportTests(KeycloakRealmFixture fixture) : IClassFixture<KeycloakRealmFixture>
+[Collection(KeycloakRealmCollection.Name)]
+public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
 {
-    private readonly KeycloakRealmFixture _fixture = fixture;
+    private readonly KeycloakRealmFixture _fixture = fixture.Realm;
 
     [Fact]
     public async Task Import_WithPlaceholders_CreatesOrganizationWithCompanyAlias()

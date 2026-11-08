@@ -23,6 +23,21 @@ public sealed class RedisTestServer : IAsyncDisposable
         ConnectionString = _container.GetConnectionString();
     }
 
+    /// <summary>
+    /// Deletes every key of the database (<c>FLUSHDB</c>), so a test starts without the cache and counter entries of an
+    /// earlier test.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when <c>redis-cli</c> exits with a non-zero code.</exception>
+    public async Task FlushAsync()
+    {
+        var result = await _container.ExecAsync(["redis-cli", "FLUSHDB"]);
+
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException($"FLUSHDB exited with code {result.ExitCode}: {result.Stderr}");
+        }
+    }
+
     public Task StopAsync() => _container.StopAsync();
 
     public ValueTask DisposeAsync() => _container.DisposeAsync();

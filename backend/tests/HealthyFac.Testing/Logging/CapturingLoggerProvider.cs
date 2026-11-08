@@ -13,6 +13,8 @@ public sealed class CapturingLoggerProvider : ILoggerProvider
 
     public IReadOnlyCollection<CapturedLogEntry> Entries => _entries;
 
+    public void Reset() => _entries.Clear();
+
     public ILogger CreateLogger(string categoryName) => new CapturingCategoryLogger(categoryName, _entries);
 
     public void Dispose()

@@ -14,9 +14,9 @@ public sealed class HealthTests : IAsyncLifetime
 
     private readonly RedisTestServer _redis = new();
 
-    public Task InitializeAsync() => _redis.StartAsync();
+    public async ValueTask InitializeAsync() => await _redis.StartAsync();
 
-    public Task DisposeAsync() => _redis.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _redis.DisposeAsync();
 
     [Fact]
     public async Task HealthReady_WithRedisRunning_ReturnsHealthy()

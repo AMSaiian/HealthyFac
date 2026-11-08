@@ -10,10 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Identity.IntegrationTests.TokenExchange;
 
-[Collection(TokenExchangeCollection.Name)]
-public sealed class TokenExchangeHandlerTests(TokenExchangeFixture fixture)
+[Collection(KeycloakRealmCollection.Name)]
+public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fixture)
 {
-    private readonly TokenExchangeFixture _fixture = fixture;
+    private readonly TokenExchangeFixture _fixture = fixture.TokenExchange;
 
     [Fact]
     public async Task UserDelegatedHandler_AgainstKeycloak_SendsTokenWithTargetAudience()
@@ -24,7 +24,8 @@ public sealed class TokenExchangeHandlerTests(TokenExchangeFixture fixture)
         var clientFactory = provider.GetRequiredService<IHttpClientFactory>();
         var client = clientFactory.CreateClient(TokenExchangeTestData.EchoClientName);
 
-        using var response = await client.GetAsync(TokenExchangeTestData.EchoUrl);
+        using var response = await client.GetAsync(
+            TokenExchangeTestData.EchoUrl, TestContext.Current.CancellationToken);
 
         var claims = KeycloakRealmFixtureExtensions.DecodePayload(echo.ReceivedToken!);
         claims.Audiences().Should().Equal(TokenExchangeTestData.TargetClientId);

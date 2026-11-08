@@ -14,7 +14,7 @@ public sealed class DownstreamScopeRequestHandlerDecoratorTests
         var inner = new DownstreamScopeProbeHandler<DeclaringRequest>(_holder);
         var decorator = new DownstreamScopeRequestHandlerDecorator<DeclaringRequest, string>(inner, _holder);
 
-        await decorator.HandleAsync(new DeclaringRequest());
+        await decorator.HandleAsync(new DeclaringRequest(), TestContext.Current.CancellationToken);
 
         inner.SeenScopes.Should()
             .Equal(DownstreamScopeTestData.FirstDownstreamScope, DownstreamScopeTestData.SecondDownstreamScope);
@@ -26,7 +26,7 @@ public sealed class DownstreamScopeRequestHandlerDecoratorTests
         var inner = new DownstreamScopeProbeHandler<PlainRequest>(_holder);
         var decorator = new DownstreamScopeRequestHandlerDecorator<PlainRequest, string>(inner, _holder);
 
-        await decorator.HandleAsync(new PlainRequest());
+        await decorator.HandleAsync(new PlainRequest(), TestContext.Current.CancellationToken);
 
         inner.SeenScopes.Should().BeEmpty();
     }
@@ -38,7 +38,7 @@ public sealed class DownstreamScopeRequestHandlerDecoratorTests
         var decorator = new DownstreamScopeRequestHandlerDecorator<PlainRequest, string>(inner, _holder);
         using var parent = _holder.Enter(DownstreamScopeTestData.FirstDownstreamScope);
 
-        await decorator.HandleAsync(new PlainRequest());
+        await decorator.HandleAsync(new PlainRequest(), TestContext.Current.CancellationToken);
 
         inner.SeenScopes.Should().BeEmpty();
     }

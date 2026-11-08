@@ -18,7 +18,7 @@ public sealed class FallbackRateLimiterTests
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
         await _redis.FailAsync(RedisConstants.Resilience.MinimumThroughput - 1);
 
-        using var lease = await limiter.AcquireAsync();
+        using var lease = await limiter.AcquireAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         var state = _redis.State;
 
@@ -33,7 +33,7 @@ public sealed class FallbackRateLimiterTests
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
         await _redis.OpenBreakerAsync();
 
-        using var lease = await limiter.AcquireAsync();
+        using var lease = await limiter.AcquireAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         lease.IsAcquired.Should().BeTrue();
         primary.CallCount.Should().Be(expected: 0);
@@ -46,7 +46,7 @@ public sealed class FallbackRateLimiterTests
         var primary = new FakePrimaryRateLimiter(() => primaryLease);
         await using var limiter = CreateLimiter(primary, new FakeLocalRateLimiter());
 
-        var lease = await limiter.AcquireAsync();
+        var lease = await limiter.AcquireAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         var state = _redis.State;
 
@@ -70,7 +70,7 @@ public sealed class FallbackRateLimiterTests
             FallbackRateLimiterTestData.Window,
             _redis);
 
-        using var lease = await limiter.AcquireAsync();
+        using var lease = await limiter.AcquireAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         createLocalCallCount.Should().Be(expected: 0);
     }

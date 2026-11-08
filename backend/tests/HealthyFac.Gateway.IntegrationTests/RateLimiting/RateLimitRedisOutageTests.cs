@@ -11,13 +11,13 @@ public sealed class RateLimitRedisOutageTests : IAsyncLifetime
 
     private readonly RedisTestServer _redis = new();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _redis.StartAsync();
         await _redis.StopAsync();
     }
 
-    public Task DisposeAsync() => _redis.DisposeAsync().AsTask();
+    public ValueTask DisposeAsync() => _redis.DisposeAsync();
 
     [Fact]
     public async Task StrictPolicy_WhenRedisIsDown_FallsBackToLocalLimit()
@@ -45,7 +45,8 @@ public sealed class RateLimitRedisOutageTests : IAsyncLifetime
         var statusCodes = new List<HttpStatusCode>();
         for (var attempt = 0; attempt < RateLimitTestData.DefaultRequestsDuringOutage; attempt++)
         {
-            using var response = await client.GetAsync(RateLimitTestData.MachinesRoute);
+            using var response = await client.GetAsync(
+                RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
             statusCodes.Add(response.StatusCode);
         }
 

@@ -20,7 +20,7 @@ public static class IdEncryptionConventionTestData
 
     public static TheoryData<ConventionTestModel> ModelsWithTenantId =>
     [
-        new()
+        new ConventionTestModel
         {
             Id = SampleId,
             MachineId = SampleMachineId,

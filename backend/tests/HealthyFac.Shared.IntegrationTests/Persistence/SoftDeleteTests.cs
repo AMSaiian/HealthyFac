@@ -18,7 +18,7 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         await using var dbContext = _fixture.CreateDbContext();
         var rows = await dbContext.SoftDeletables.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .Where(entity => entity.Id == id)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         rows.Should().ContainSingle();
         rows[index: 0].DeletedAt.Should().Be(SoftDeleteTestData.Now.UtcDateTime);
@@ -33,7 +33,8 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         await RemoveSoftDeletableAsync(id);
 
         await using var dbContext = _fixture.CreateDbContext();
-        var visibleCount = await dbContext.SoftDeletables.CountAsync(entity => entity.Id == id);
+        var visibleCount = await dbContext.SoftDeletables.CountAsync(
+            entity => entity.Id == id, TestContext.Current.CancellationToken);
 
         visibleCount.Should().Be(expected: 0);
     }
@@ -45,18 +46,20 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         await using (var arrange = _fixture.CreateDbContext())
         {
             arrange.Plains.Add(entity);
-            await arrange.SaveChangesAsync();
+            await arrange.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var act = _fixture.CreateDbContext())
         {
-            var tracked = await act.Plains.SingleAsync(plain => plain.Id == entity.Id);
+            var tracked = await act.Plains.SingleAsync(
+                plain => plain.Id == entity.Id, TestContext.Current.CancellationToken);
             act.Plains.Remove(tracked);
-            await act.SaveChangesAsync();
+            await act.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var dbContext = _fixture.CreateDbContext();
-        var rowCount = await dbContext.Plains.CountAsync(plain => plain.Id == entity.Id);
+        var rowCount = await dbContext.Plains.CountAsync(
+            plain => plain.Id == entity.Id, TestContext.Current.CancellationToken);
 
         rowCount.Should().Be(expected: 0);
     }

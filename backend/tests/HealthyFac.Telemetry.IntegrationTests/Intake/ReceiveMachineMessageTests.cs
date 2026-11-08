@@ -6,8 +6,8 @@ using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
+[Collection(TelemetryIntakeCollection.Name)]
 public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
-    : IClassFixture<TelemetryDatabaseFixture>
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

@@ -5,9 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
-public sealed class InboxClaimQueryTests(TransportFixture fixture) : IClassFixture<TransportFixture>
+[Collection(MessagingTransportCollection.Name)]
+public sealed class InboxClaimQueryTests(TransportCollectionFixture fixture)
 {
-    private readonly TransportFixture _fixture = fixture;
+    private readonly TransportCollectionFixture _fixture = fixture;
 
     [Fact]
     public void InboxClaimQuery_GeneratedSql_LimitsToOneRowAndSkipsLocked()

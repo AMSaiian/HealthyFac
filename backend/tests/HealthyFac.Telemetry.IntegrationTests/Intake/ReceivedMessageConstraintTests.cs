@@ -7,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
+[Collection(TelemetryIntakeCollection.Name)]
 public sealed class ReceivedMessageConstraintTests(TelemetryDatabaseFixture fixture)
-    : IClassFixture<TelemetryDatabaseFixture>
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

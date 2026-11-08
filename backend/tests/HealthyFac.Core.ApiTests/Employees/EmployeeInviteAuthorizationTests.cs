@@ -7,7 +7,8 @@ using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
-public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture) : IClassFixture<CoreApiFixture>
+[Collection(CoreApiCollection.Name)]
+public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 

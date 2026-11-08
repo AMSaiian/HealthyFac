@@ -2,12 +2,14 @@ using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
+using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations;
 
-public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture) : IClassFixture<TelemetryDatabaseFixture>
+[Collection(TelemetryIntakeCollection.Name)]
+public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 

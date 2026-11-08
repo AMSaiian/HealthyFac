@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup Condition="'$(XunitTestProject)' == 'true'">
+    <!-- The entry point that xunit.v3 generates blocks on RunAsync in a synchronous Main (RS0030). This switch silences only that generated file. Approved by Artur, 2026-11-08. Remove it when xUnit generates an async Main. -->
+    <DefineConstants>$(DefineConstants);XUNIT_GENERATED_DISABLE_WARNINGS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(XunitTestProject)' == 'true'">
+    <Content Include="$(MSBuildThisFileDirectory)tests/xunit.runner.json" Link="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

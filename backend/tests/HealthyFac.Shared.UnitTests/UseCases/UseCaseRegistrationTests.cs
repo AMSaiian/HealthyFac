@@ -118,7 +118,7 @@ public sealed class UseCaseRegistrationTests
         using var scope = provider.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<NoResultRequest>>();
 
-        await handler.HandleAsync(new NoResultRequest { Name = "machine" });
+        await handler.HandleAsync(new NoResultRequest { Name = "machine" }, TestContext.Current.CancellationToken);
 
         probe.RuleRunCount.Should().Be(expected: 1);
         probe.RunCount.Should().Be(expected: 1);

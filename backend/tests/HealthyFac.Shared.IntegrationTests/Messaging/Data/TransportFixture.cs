@@ -9,6 +9,7 @@ using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Logging;
+using HealthyFac.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,10 @@ public class TransportFixture : IAsyncLifetime
 
     private IBus _publisher = null!;
 
+    private DatabaseResetter _resetter = null!;
+
+    private bool _isBrokerStopped;
+
     public string BrokerConnectionString => _broker.ConnectionString;
 
     public HandlerRecorder Recorder { get; } = new();
@@ -48,7 +53,7 @@ public class TransportFixture : IAsyncLifetime
     /// </summary>
     public IMeterFactory MeterFactory => _host.Services.GetRequiredService<IMeterFactory>();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _database.StartAsync();
         await _broker.StartAsync();
@@ -89,7 +94,9 @@ public class TransportFixture : IAsyncLifetime
         _host = builder.Build();
         using (var scope = _host.Services.CreateScope())
         {
-            await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>().Database.EnsureCreatedAsync();
+            var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+            await dbContext.Database.EnsureCreatedAsync();
+            _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
         }
 
         await _host.StartAsync();
@@ -100,7 +107,7 @@ public class TransportFixture : IAsyncLifetime
             .Start();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _publisher.Dispose();
         await _host.StopAsync();
@@ -133,7 +140,31 @@ public class TransportFixture : IAsyncLifetime
     {
     }
 
-    public Task StopBrokerAsync() => _broker.StopAsync();
+    public async Task StopBrokerAsync()
+    {
+        _isBrokerStopped = true;
+
+        await _broker.StopAsync();
+    }
+
+    /// <summary>
+    /// Deletes every row, empties the input and error queues, and clears the recorded calls, logs, and cancellation
+    /// state. A stopped broker keeps its state, because a stopped container cannot purge, and a restart would change
+    /// its port, which the bus of the host does not follow. A test that stops the broker therefore belongs to a
+    /// collection that needs no running broker afterwards.
+    /// </summary>
+    protected async ValueTask ResetStateAsync()
+    {
+        if (!_isBrokerStopped)
+        {
+            await _broker.PurgeQueuesAsync(TransportTestData.QueueName, TransportTestData.ErrorQueueName);
+        }
+
+        await _resetter.ResetAsync();
+        Recorder.Reset();
+        Logs.Reset();
+        CancellationTrigger.Reset();
+    }
 
     public IServiceScope CreateScope(ActorContext? actor = null) =>
         _host.Services.GetRequiredService<IServiceScopeFactory>()

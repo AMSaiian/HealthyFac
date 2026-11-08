@@ -87,6 +87,14 @@ public sealed class HandlerRecorder
             _calls.Add(call);
         }
     }
+
+    public void Reset()
+    {
+        lock (_calls)
+        {
+            _calls.Clear();
+        }
+    }
 }
 
 public sealed class RecordingHandler(
@@ -133,7 +141,13 @@ public sealed record TestCancelling : IIntegrationMessage, IRequest
 /// </summary>
 public sealed class CancellationTrigger
 {
-    public CancellationTokenSource Source { get; } = new();
+    public CancellationTokenSource Source { get; private set; } = new();
+
+    public void Reset()
+    {
+        Source.Dispose();
+        Source = new CancellationTokenSource();
+    }
 }
 
 /// <summary>
