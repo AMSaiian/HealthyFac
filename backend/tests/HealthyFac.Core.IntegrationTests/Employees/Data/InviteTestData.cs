@@ -3,9 +3,7 @@ namespace HealthyFac.Core.IntegrationTests.Employees.Data;
 public static class InviteTestData
 {
     public const string CompanyName = "Plant Co";
-    public const string FirstDepartmentName = "Assembly";
-    public const string SecondDepartmentName = "Packaging";
-    public const string DepartmentTimeZoneId = "Europe/Kyiv";
+    public const string CompanyTimeZoneId = "Europe/Kyiv";
 
     public const string RawEmail = " Ann@Plant.COM ";
     public const string NormalizedEmail = "ann@plant.com";
@@ -13,10 +11,6 @@ public static class InviteTestData
     public const string ConflictEmail = "ann2@plant.com";
     public const string ConflictEmailOtherCase = "ANN2@plant.com";
     public const string EmployedEmail = "employed@plant.com";
-    public const string ForeignDepartmentEmail = "foreign@plant.com";
-    public const string AcceptDepartmentsEmail = "accept-departments@plant.com";
-    public const string OutsideActorEmail = "outside@plant.com";
-    public const string DuplicateDepartmentEmail = "duplicate@plant.com";
     public const string ResendExpiredEmail = "resend-expired@plant.com";
     public const string ResendOutboxEmail = "resend-outbox@plant.com";
     public const string ResendTokenEmail = "resend-token@plant.com";

@@ -6,8 +6,6 @@ public sealed record NewIdentity
 {
     public required Guid EmployeeId { get; init; }
 
-    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
-
     [SensitiveData]
     public required string Email { get; init; }
 

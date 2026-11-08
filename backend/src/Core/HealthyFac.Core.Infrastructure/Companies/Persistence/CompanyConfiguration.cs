@@ -22,6 +22,13 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
             .HasMaxLength(CompanyValidationConstants.NameMaxLength)
             .IsRequired();
 
-        builder.HasNotBlankCheck(company => company.Name);
+        builder.Property(company => company.TimeZoneId)
+            .HasMaxLength(CompanyValidationConstants.TimeZoneIdMaxLength)
+            .IsRequired();
+
+        builder.HasNotBlankCheck(company => company.Name)
+            .HasNotBlankCheck(company => company.TimeZoneId)
+            .HasLengthCheck(
+                company => company.TimeZoneId, minLength: 1, CompanyValidationConstants.TimeZoneIdMaxLength);
     }
 }

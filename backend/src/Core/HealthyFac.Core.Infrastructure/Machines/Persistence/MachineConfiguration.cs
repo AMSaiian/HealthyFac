@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Domain.Entities;
@@ -13,8 +12,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace HealthyFac.Core.Infrastructure.Machines.Persistence;
 
 /// <summary>
-/// Configures entity framework mapping for the machine entity. The department reference includes the company,
-/// so the database rejects a machine whose department belongs to another company.
+/// Configures entity framework mapping for the machine entity.
 /// </summary>
 public class MachineConfiguration : IEntityTypeConfiguration<Machine>
 {
@@ -50,17 +48,10 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .HasForeignKey(machine => machine.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Department>()
-            .WithMany()
-            .HasForeignKey(machine => new { machine.DepartmentId, machine.CompanyId })
-            .HasPrincipalKey(department => new { department.Id, department.CompanyId })
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasNotBlankCheck(machine => machine.Name)
             .HasNotBlankCheck(machine => machine.SerialNumber)
             .HasLengthCheck(machine => machine.GatewayId, GatewayIds.Length, GatewayIds.Length)
             .HasLengthCheck(machine => machine.Description, minLength: 0, RichTextConstants.HtmlMaxLength)
-            .HasNotEmptyGuidCheck(machine => machine.CompanyId)
-            .HasNotEmptyGuidCheck(machine => machine.DepartmentId);
+            .HasNotEmptyGuidCheck(machine => machine.CompanyId);
     }
 }

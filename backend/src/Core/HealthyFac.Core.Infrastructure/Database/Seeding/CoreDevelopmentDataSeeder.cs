@@ -2,12 +2,10 @@ using System.Globalization;
 using Bogus;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Companies.Seeding;
-using HealthyFac.Core.Infrastructure.Departments.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
 using HealthyFac.Core.Messaging.Machines;
@@ -20,7 +18,7 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 
 /// <summary>
-/// Generates development data from the feature fakers: companies, departments, machines, employees, and open
+/// Generates development data from the feature fakers: companies, machines, employees, and open
 /// invites. <see cref="DevelopmentDataOptions"/> sets the amounts and the shapes. Each faker gets the next seed
 /// from the configured base, so every run produces the same data, and screenshots and bug reports stay
 /// comparable. Seeded employees are active with a random identity ID. No Keycloak user exists for them, so nobody
@@ -66,7 +64,7 @@ public sealed class CoreDevelopmentDataSeeder(
         if (_options.IsRecreationForced)
         {
             _logger.LogWarning(
-                "Forced recreation of development data: deleting all companies, departments, machines, error "
+                "Forced recreation of development data: deleting all companies, machines, error "
                 + "codes and machine state histories (also the deleted ones), employees, invites, outbox messages, "
                 + "and inbox messages.");
 
@@ -94,52 +92,33 @@ public sealed class CoreDevelopmentDataSeeder(
         var inviteLifetime = TimeSpan.FromDays(_options.InviteLifetimeDays);
         var identityRandomizer = new Randomizer(_options.RandomSeed);
 
-        var companies = new CompanyFaker(NextSeed()).Generate(_options.CompanyCount);
+        var companies = new CompanyFaker(_options.GetTimeZoneIds(), NextSeed()).Generate(_options.CompanyCount);
         _dbContext.Companies.AddRange(companies);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        var departments = companies
-            .SelectMany(company => new DepartmentFaker(
-                    company.Id,
-                    _options.GetDepartmentNames(),
-                    _options.GetTimeZoneIds(),
-                    NextSeed())
-                .Generate(_options.DepartmentsPerCompany))
-            .ToList();
-        _dbContext.Departments.AddRange(departments);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        foreach (var department in departments)
+        foreach (var company in companies)
         {
-            AddMachines(department, now);
+            AddMachines(company.Id, now);
 
             AddEmployees(
                 EmployeeInviteFaker.WithProfile(
-                    department,
+                    company.Id,
                     roleIds[RoleCode.Supervisor],
                     now,
                     inviteLifetime,
                     NextSeed()),
-                _options.SupervisorsPerDepartment,
+                _options.SupervisorsPerCompany,
                 now,
                 identityRandomizer);
 
             AddEmployees(
-                EmployeeInviteFaker.WithProfile(department, roleIds[RoleCode.Worker], now, inviteLifetime, NextSeed()),
-                _options.WorkersPerDepartment,
+                EmployeeInviteFaker.WithProfile(company.Id, roleIds[RoleCode.Worker], now, inviteLifetime, NextSeed()),
+                _options.WorkersPerCompany,
                 now,
                 identityRandomizer);
-        }
 
-        foreach (var companyDepartments in departments.GroupBy(department => department.CompanyId))
-        {
             _dbContext.EmployeeInvites.AddRange(
-                EmployeeInviteFaker.Open(
-                        companyDepartments.First(),
-                        roleIds[RoleCode.Worker],
-                        now,
-                        inviteLifetime,
-                        NextSeed())
+                EmployeeInviteFaker.Open(company.Id, roleIds[RoleCode.Worker], now, inviteLifetime, NextSeed())
                     .Generate(_options.OpenInvitesPerCompany));
         }
 
@@ -162,39 +141,17 @@ public sealed class CoreDevelopmentDataSeeder(
             .SingleAsync(cancellationToken);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
-        var company = new Company { Name = tenant.CompanyName };
+        var company = new Company { Name = tenant.CompanyName, TimeZoneId = tenant.TimeZoneId };
         _dbContext.Entry(company).Property(entity => entity.Id).CurrentValue = tenant.CompanyId;
         _dbContext.Companies.Add(company);
 
-        var departments = _options.GetDepartmentNames()
-            .Take(SeedingValidationConstants.Counts.TestTenantDepartments)
-            .Select((name, index) =>
-            {
-                var department = new Department
-                {
-                    CompanyId = tenant.CompanyId,
-                    Name = name,
-                    TimeZoneId = _options.GetTimeZoneIds()[index % _options.GetTimeZoneIds().Count],
-                };
-                _dbContext.Entry(department).Property(entity => entity.Id).CurrentValue = tenant.DepartmentIds[index];
-
-                return department;
-            })
-            .ToList();
-        _dbContext.Departments.AddRange(departments);
-
-        foreach (var department in departments)
-        {
-            AddMachines(department, now);
-        }
-
-        AddSeedMachines(tenant, departments, now);
+        AddMachines(tenant.CompanyId, now);
+        AddSeedMachines(tenant, now);
 
         var invite = new EmployeeInvite(
             tenant.CompanyId,
             tenant.SupervisorEmail,
             supervisorRoleId,
-            departments,
             _inviteTokenService.CreateSalt(),
             now.AddDays(_options.InviteLifetimeDays));
         invite.UpdateProfile(tenant.SupervisorFirstName, tenant.SupervisorLastName);
@@ -221,26 +178,24 @@ public sealed class CoreDevelopmentDataSeeder(
             .ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Machines.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Departments.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Companies.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .ExecuteDeleteAsync(cancellationToken);
     }
 
-    private void AddMachines(Department department, DateTime now)
+    private void AddMachines(Guid companyId, DateTime now)
     {
         var machines = new MachineFaker(
-                department,
+                companyId,
                 _options.GetMachineTypes(),
                 _options.SerialNumberPattern,
                 now,
                 NextSeed())
-            .Generate(_options.MachinesPerDepartment);
+            .Generate(_options.MachinesPerCompany);
         _dbContext.Machines.AddRange(machines);
         machines.ForEach(AddMachineCreated);
     }
 
-    private void AddSeedMachines(TestTenantOptions tenant, List<Department> departments, DateTime now)
+    private void AddSeedMachines(TestTenantOptions tenant, DateTime now)
     {
         var seeds = _options.GetSeedMachines();
 
@@ -250,7 +205,6 @@ public sealed class CoreDevelopmentDataSeeder(
             var machine = new Machine(
                 seed.MachineId,
                 tenant.CompanyId,
-                departments[seed.DepartmentIndex].Id,
                 seed.GatewayId,
                 string.Format(
                     CultureInfo.InvariantCulture,
@@ -274,7 +228,6 @@ public sealed class CoreDevelopmentDataSeeder(
                 MachineId = machine.Id,
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
-                DepartmentId = machine.DepartmentId,
             });
 
     private void AddEmployees(

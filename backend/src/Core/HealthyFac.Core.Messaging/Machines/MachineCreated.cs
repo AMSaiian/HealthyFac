@@ -7,8 +7,8 @@ using HealthyFac.Shared.Domain.Gateways;
 namespace HealthyFac.Core.Messaging.Machines;
 
 /// <summary>
-/// Tells the Telemetry service that a machine exists. The machine, its gateway ID, and its department never change,
-/// so one message is enough.
+/// Tells the Telemetry service that a machine exists. The machine and its gateway ID never change, so one message is
+/// enough.
 /// </summary>
 public sealed record MachineCreated : IIntegrationMessage, IRequest
 {
@@ -19,8 +19,6 @@ public sealed record MachineCreated : IIntegrationMessage, IRequest
     public required string GatewayId { get; init; }
 
     public required Guid CompanyId { get; init; }
-
-    public required Guid DepartmentId { get; init; }
 }
 
 public class MachineCreatedValidator : AbstractValidator<MachineCreated>
@@ -39,9 +37,5 @@ public class MachineCreatedValidator : AbstractValidator<MachineCreated>
         RuleFor(message => message.CompanyId)
             .NotEmpty()
             .WithMessage(MachineMessageErrors.Validation.CompanyIdRequired);
-
-        RuleFor(message => message.DepartmentId)
-            .NotEmpty()
-            .WithMessage(MachineMessageErrors.Validation.DepartmentIdRequired);
     }
 }

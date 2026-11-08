@@ -14,8 +14,6 @@ public sealed record MachineGridFilter : IFilter<Machine>
 
     public TextFilter? SerialNumber { get; init; }
 
-    public IdSetFilter? DepartmentIds { get; init; }
-
     public SetFilter<MachineState>? States { get; init; }
 
     public DateRangeFilter? CreatedAt { get; init; }
@@ -25,7 +23,6 @@ public sealed record MachineGridFilter : IFilter<Machine>
     public Expression<Func<Machine, bool>>? ToPredicate() =>
         Predicates.From(Name?.ToPredicate<Machine>(machine => machine.Name))
             .And(SerialNumber?.ToPredicate<Machine>(machine => machine.SerialNumber))
-            .And(DepartmentIds?.ToPredicate<Machine>(machine => machine.DepartmentId))
             .And(States?.ToPredicate(MachineCurrentState.Selector))
             .And(CreatedAt?.ToPredicate<Machine>(machine => machine.CreatedAt))
             .And(UpdatedAt?.ToPredicate<Machine>(machine => machine.UpdatedAt));
@@ -50,10 +47,6 @@ public sealed class MachineGridFilterValidator : AbstractValidator<MachineGridFi
         RuleFor(filter => filter.SerialNumber!.Value)
             .MaximumLength(MachineValidationConstants.SerialNumberMaxLength)
             .When(filter => filter.SerialNumber?.Value is not null);
-
-        RuleFor(filter => filter.DepartmentIds!)
-            .SetValidator(new IdSetFilterValidator())
-            .When(filter => filter.DepartmentIds is not null);
 
         RuleFor(filter => filter.States!)
             .SetValidator(new SetFilterValidator<MachineState>())

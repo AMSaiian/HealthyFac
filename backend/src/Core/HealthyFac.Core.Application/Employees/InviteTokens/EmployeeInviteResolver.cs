@@ -20,7 +20,7 @@ public class EmployeeInviteResolver(
     /// </summary>
     /// <param name="token">The token from the invite link.</param>
     /// <param name="cancellationToken">Cancels the database queries.</param>
-    /// <returns>The tracked invite with its <see cref="EmployeeInvite.Departments"/> loaded.</returns>
+    /// <returns>The tracked invite.</returns>
     /// <exception cref="NotFoundException">
     /// Thrown with <see cref="EmployeeInviteErrors.Rejections.InviteLinkInvalid"/> when the token is malformed, the
     /// invite does not exist, the signature does not match the salt of the invite, or the invite is accepted or
@@ -34,7 +34,6 @@ public class EmployeeInviteResolver(
         }
 
         var invite = await _dbContext.EmployeeInvites
-            .Include(invite => invite.Departments)
             .SingleOrDefaultAsync(invite => invite.Id == inviteId, cancellationToken);
 
         if (invite is null

@@ -47,14 +47,22 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
     }
 
     [Fact]
-    public async Task UserToken_ForTestSupervisor_CarriesDepartmentIds()
+    public async Task UserToken_ForTestSupervisor_CarriesOrganizationAndEmployeeIdOnly()
     {
         var claims = await _fixture.GetSupervisorAccessTokenClaimsAsync();
+        var claimNames = claims.Select(claim => claim.Key).ToList();
 
-        claims[RealmTestData.DepartmentIdsClaim]!.AsArray()
-            .Select(value => Guid.Parse(value!.GetValue<string>()))
-            .Should()
-            .BeEquivalentTo([RealmTestData.DepartmentAId, RealmTestData.DepartmentBId]);
+        claimNames.Should().Contain(["organization", RealmTestData.EmployeeIdAttribute]);
+        claimNames.Should().NotContain(name => name.EndsWith(RealmTestData.IdListClaimSuffix));
+    }
+
+    [Fact]
+    public async Task UserProfile_Always_DeclaresNoIdListAttribute()
+    {
+        var names = await _fixture.ListUserProfileAttributeNamesAsync();
+
+        names.Should().Contain(RealmTestData.EmployeeIdAttribute);
+        names.Should().NotContain(name => name.EndsWith(RealmTestData.IdListClaimSuffix));
     }
 
     [Fact]
@@ -66,7 +74,6 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
             .Select(value => value!.GetValue<string>())
             .Should()
             .Contain(RealmTestData.MachinePermissions);
-        claims.Select(claim => claim.Key).Should().NotContain(RealmTestData.DepartmentIdsClaim);
     }
 
     [Fact]

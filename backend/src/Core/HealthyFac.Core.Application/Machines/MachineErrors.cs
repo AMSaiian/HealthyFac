@@ -11,8 +11,6 @@ public static class MachineErrors
     public const string SerialNumberRequired = "Serial number is required.";
     public const string CompanyIdRequired = "CompanyId is required.";
     public const string MachineIdRequired = "MachineId is required.";
-    public const string DepartmentIdRequired = "DepartmentId is required.";
-    public const string DepartmentNotFound = "The department does not exist in the company.";
     public const string MachineNotFound = "The machine does not exist.";
     public const string SerialNumberTaken = "A machine with this serial number already exists.";
     public const string DescriptionNotAllowed = "The description contains formatting that is not allowed.";

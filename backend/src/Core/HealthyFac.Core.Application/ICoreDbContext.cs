@@ -1,5 +1,4 @@
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
@@ -16,8 +15,6 @@ namespace HealthyFac.Core.Application;
 public interface ICoreDbContext : ITransactionalDbContext
 {
     DbSet<Company> Companies { get; }
-
-    DbSet<Department> Departments { get; }
 
     DbSet<Role> Roles { get; }
 

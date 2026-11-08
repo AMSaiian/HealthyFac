@@ -20,7 +20,6 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
 
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code,
             StatusDefinitionTestData.Description);
@@ -43,7 +42,6 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
 
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code,
             StatusDefinitionTestData.FormattedDescriptionAtVisibleLimit);
@@ -61,13 +59,11 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
 
         var act = () => _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
 
@@ -81,13 +77,11 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
 
         var act = () => _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.CodeOtherCase);
 
@@ -102,13 +96,11 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var secondMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             firstMachineId,
             StatusDefinitionTestData.Code);
 
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             secondMachineId,
             StatusDefinitionTestData.Code);
 
@@ -124,14 +116,12 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var firstId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
         await _fixture.RemoveStatusDefinitionRowAsync(tenant, firstId);
 
         var secondId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.CodeOtherCase);
 
@@ -139,21 +129,6 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
 
         rows.Select(row => row.Id).Should().BeEquivalentTo([firstId, secondId]);
         rows.Count(row => row.DeletedAt is null).Should().Be(expected: 1);
-    }
-
-    [Fact]
-    public async Task CreateStatusDefinition_InForeignDepartment_ThrowsNotFound()
-    {
-        var tenant = _fixture.ArrangeMachineTenant();
-        var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
-
-        var act = () => _fixture.CreateStatusDefinitionAsync(
-            tenant.CompanyId,
-            [tenant.SecondDepartmentId],
-            machineId,
-            StatusDefinitionTestData.Code);
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineRegistrationErrors.MachineNotFound);
     }
 
     [Fact]
@@ -165,7 +140,6 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
 
         var act = () => _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
 
@@ -177,11 +151,10 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var act = () => _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
 

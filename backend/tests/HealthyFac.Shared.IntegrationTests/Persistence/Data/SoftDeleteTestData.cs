@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using HealthyFac.Shared.Application.CurrentUser;
 
 namespace HealthyFac.Shared.IntegrationTests.Persistence.Data;
@@ -16,6 +15,5 @@ public static class SoftDeleteTestData
     {
         Kind = ActorKind.User,
         UserId = ActorId,
-        DepartmentIds = FrozenSet<Guid>.Empty,
     };
 }

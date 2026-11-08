@@ -22,12 +22,6 @@ public sealed record TestTokenClaims
     /// <summary>The <c>permissions</c> claim, one text value for each permission.</summary>
     public IReadOnlyList<string> Permissions { get; init; } = TestTokenFactory.SupervisorPermissions;
 
-    /// <summary>
-    /// The <c>department_ids</c> claim, one text value for each department. The default is empty, and the factory then
-    /// leaves the claim out. A test that works inside a department sets it.
-    /// </summary>
-    public IReadOnlyList<string> DepartmentIds { get; init; } = [];
-
     public string Issuer { get; init; } = TestTokenFactory.Issuer;
 
     public string Audience { get; init; } = TestTokenFactory.Audience;

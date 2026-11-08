@@ -8,7 +8,6 @@ public record CreateEmployeeInviteRequest
 {
     public required string Email { get; init; }
     public required RoleCode RoleCode { get; init; }
-    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
 }
 
 public static class CreateEmployeeInviteRequestExtensions
@@ -21,7 +20,6 @@ public static class CreateEmployeeInviteRequestExtensions
                 CompanyId = companyId,
                 Email = request.Email,
                 RoleCode = request.RoleCode,
-                DepartmentIds = request.DepartmentIds,
             };
     }
 }

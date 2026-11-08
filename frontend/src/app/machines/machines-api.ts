@@ -7,7 +7,6 @@ import type {
   Machine,
   MachineBody,
   MachinesPage,
-  MachineUpdateBody,
   SearchMachinesBody,
 } from '@machines/machine';
 
@@ -39,7 +38,7 @@ export class MachinesApi {
     return this._http.post<CreateMachineResponse>(MACHINES_URL, body, options);
   }
 
-  update(id: string, body: MachineUpdateBody, options?: WriteOptions): Observable<void> {
+  update(id: string, body: MachineBody, options?: WriteOptions): Observable<void> {
     return this._http.put<void>(machineUrl(id), body, options);
   }
 

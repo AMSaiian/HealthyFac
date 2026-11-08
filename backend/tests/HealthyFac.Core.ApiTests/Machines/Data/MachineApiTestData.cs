@@ -32,16 +32,12 @@ public static class MachineApiTestData
     public const string SearchNullStatesBody =
         "{\"offset\":0,\"limit\":25,\"filter\":{\"states\":{\"values\":null}}}";
 
-    public const string SearchNullDepartmentIdsBody =
-        "{\"offset\":0,\"limit\":25,\"filter\":{\"departmentIds\":{\"ids\":null}}}";
-
     public static TheoryData<string> BadFilterBodies => new()
     {
         SearchOffsetDateBoundBody,
         SearchUnspecifiedDateBoundBody,
         SearchNullTextValueBody,
         SearchNullStatesBody,
-        SearchNullDepartmentIdsBody,
     };
 
     public const string SearchEmptyBody = "{\"offset\":0,\"limit\":25,\"filter\":{}}";

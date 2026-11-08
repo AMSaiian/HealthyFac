@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
 
 /// <summary>
-/// Runs the metric definition use cases as a user with a company and a set of departments and reads what is stored.
+/// Runs the metric definition use cases as a user with a company and reads what is stored.
 /// Every method opens its own DI scope, so it reads what is stored, not tracked objects.
 /// </summary>
 public static class MetricDefinitionFixtureExtensions
@@ -28,7 +28,6 @@ public static class MetricDefinitionFixtureExtensions
         ) =>
             await fixture.ApplyMetricChangesAsync(
                 tenant.CompanyId,
-                tenant.BothDepartmentIds,
                 new ApplyMetricDefinitionChangesRequest
                 {
                     CompanyId = tenant.CompanyId,
@@ -41,11 +40,10 @@ public static class MetricDefinitionFixtureExtensions
 
         public async Task<ApplyMetricDefinitionChangesResponse> ApplyMetricChangesAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             ApplyMetricDefinitionChangesRequest request
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<
                     ApplyMetricDefinitionChangesRequest,

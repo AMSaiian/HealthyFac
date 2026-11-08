@@ -10,7 +10,4 @@ public sealed class SeedMachineOptions
     public required Guid MachineId { get; init; }
 
     public required string GatewayId { get; init; }
-
-    /// <summary>The index of the department in <see cref="TestTenantOptions.DepartmentIds"/>.</summary>
-    public required int DepartmentIndex { get; init; }
 }

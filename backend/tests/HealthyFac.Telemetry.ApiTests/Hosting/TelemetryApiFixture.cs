@@ -15,8 +15,8 @@ namespace HealthyFac.Telemetry.ApiTests.Hosting;
 /// <summary>
 /// Starts PostgreSQL, RabbitMQ, and the Telemetry host once for all tests of the <c>TelemetryApi</c> collection. The
 /// fixture migrates the schema before the host starts, because the host migrates only in the Development environment.
-/// The host seeds the unit catalog at start. Telemetry owns no company data, so the fixture only names a company and a
-/// department, which the tokens of the tests carry and the registrations of the tests use. <see cref="ResetAsync"/>
+/// The host seeds the unit catalog at start. Telemetry owns no company data, so the fixture only names a company, which
+/// the tokens of the tests carry and the registrations of the tests use. <see cref="ResetAsync"/>
 /// runs before each test, deletes the rows that tests create, and seeds the unit catalog again.
 /// </summary>
 public sealed class TelemetryApiFixture : IAsyncLifetime, IResetBeforeEachTest
@@ -30,8 +30,6 @@ public sealed class TelemetryApiFixture : IAsyncLifetime, IResetBeforeEachTest
     public TestTokenFactory Tokens { get; } = new();
 
     public Guid CompanyId { get; } = Guid.CreateVersion7();
-
-    public Guid DepartmentId { get; } = Guid.CreateVersion7();
 
     public IServiceScopeFactory ScopeFactory => _factory.Services.GetRequiredService<IServiceScopeFactory>();
 

@@ -1,4 +1,6 @@
-import { InjectionToken } from '@angular/core';
+import { inject, InjectionToken } from '@angular/core';
+
+import { CompanyStore } from '@shared/company/company.store';
 
 import { Temporal } from './temporal';
 
@@ -7,7 +9,20 @@ export interface Clock {
   timeZoneId(): string;
 }
 
+/** The clock of the app. The zone is the company zone, and `companyGuard` loads it before any protected route. */
 export const CLOCK = new InjectionToken<Clock>('CLOCK', {
   providedIn: 'root',
-  factory: () => ({ now: () => Temporal.Now.instant(), timeZoneId: () => Temporal.Now.timeZoneId() }),
+  factory: () => {
+    const company = inject(CompanyStore);
+    return {
+      now: () => Temporal.Now.instant(),
+      timeZoneId: () => {
+        const timeZoneId = company.timeZoneId();
+        if (timeZoneId === null) {
+          throw new Error('The company time zone is not loaded.');
+        }
+        return timeZoneId;
+      },
+    };
+  },
 });

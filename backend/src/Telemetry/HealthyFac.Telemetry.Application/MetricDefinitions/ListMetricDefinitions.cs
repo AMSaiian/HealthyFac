@@ -75,11 +75,11 @@ public class ListMetricDefinitionsRequestValidator : AbstractValidator<ListMetri
 }
 
 /// <summary>
-/// Checks the company, then the machine scope: a machine outside the company or the departments of the actor, a
+/// Checks the company, then the machine scope: a machine outside the company, a
 /// deleted machine, and an unknown machine are "not found" (404).
 /// </summary>
 /// <param name="dbContext">Reads the machine registration.</param>
-/// <param name="currentUser">Provides the company and the departments of the actor.</param>
+/// <param name="currentUser">Provides the company of the actor.</param>
 public sealed class ListMetricDefinitionsPreHandlerCheck(
     ITelemetryDbContext dbContext,
     ICurrentUserProvider currentUser
@@ -96,7 +96,6 @@ public sealed class ListMetricDefinitionsPreHandlerCheck(
 
         await _dbContext.EnsureMachineInScopeAsync(
             request.CompanyId,
-            actor.DepartmentIds.ToList(),
             request.MachineId,
             cancellationToken);
     }

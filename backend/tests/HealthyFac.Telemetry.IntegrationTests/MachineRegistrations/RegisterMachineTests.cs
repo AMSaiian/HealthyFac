@@ -23,7 +23,6 @@ public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
         registration.Should().NotBeNull();
         registration!.GatewayId.Should().Be(message.GatewayId);
         registration.CompanyId.Should().Be(message.CompanyId);
-        registration.DepartmentId.Should().Be(message.DepartmentId);
         registration.MetricSchemaRevision.Should().Be(expected: 0);
         registration.DeletedAt.Should().BeNull();
     }
@@ -56,7 +55,6 @@ public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
         {
             GatewayId = GatewayIds.Create(),
             CompanyId = MachineRegistrationTestData.OtherCompanyId,
-            DepartmentId = MachineRegistrationTestData.OtherDepartmentId,
         };
 
         await _fixture.RegisterMachineAsync(changed);
@@ -65,7 +63,6 @@ public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
 
         registration!.GatewayId.Should().Be(message.GatewayId);
         registration.CompanyId.Should().Be(message.CompanyId);
-        registration.DepartmentId.Should().Be(message.DepartmentId);
     }
 
     [Fact]

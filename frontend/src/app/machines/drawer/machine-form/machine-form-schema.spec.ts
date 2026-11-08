@@ -8,7 +8,6 @@ import { machineFormSchema, type MachineFormValue } from './machine-form-schema'
 const VALID: MachineFormValue = {
   name: 'Lathe 01',
   serialNumber: 'ABC-1',
-  departmentId: 'department-1',
   description: '<p>text</p>',
 };
 

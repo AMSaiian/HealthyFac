@@ -36,7 +36,6 @@ public static class DevelopmentSeedFixtureExtensions
                 {
                     Id = registration.Id,
                     GatewayId = registration.GatewayId,
-                    DepartmentId = registration.DepartmentId,
                     StatusDefinitionCount =
                         dbContext.StatusDefinitions.Count(status => status.MachineRegistrationId == registration.Id),
                 })
@@ -49,6 +48,5 @@ public sealed record SeededRegistration
 {
     public required Guid Id { get; init; }
     public required string GatewayId { get; init; }
-    public required Guid DepartmentId { get; init; }
     public required int StatusDefinitionCount { get; init; }
 }

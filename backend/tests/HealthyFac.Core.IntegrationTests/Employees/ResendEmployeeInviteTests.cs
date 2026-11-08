@@ -124,8 +124,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             email,
-            expiresAt,
-            InviteTestData.FirstDepartmentName);
+            expiresAt);
 
         return (arranged.CompanyId, arranged.InviteId, arranged.Token);
     }
@@ -139,7 +138,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
 
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
-        using var scope = _fixture.CreateUserScope(companyId, []);
+        using var scope = _fixture.CreateUserScope(companyId);
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>();
 

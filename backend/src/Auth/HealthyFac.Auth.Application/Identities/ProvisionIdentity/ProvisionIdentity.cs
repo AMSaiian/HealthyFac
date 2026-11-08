@@ -118,7 +118,6 @@ public sealed class ProvisionIdentityRequestHandler(
                 new NewIdentity
                 {
                     EmployeeId = request.EmployeeId,
-                    DepartmentIds = request.DepartmentIds,
                     Email = request.Email,
                     FirstName = request.FirstName,
                     LastName = request.LastName,

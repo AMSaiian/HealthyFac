@@ -14,16 +14,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HealthyFac.Core.IntegrationTests.Machines.Data;
 
 /// <summary>
-/// Arranges machine data and runs the machine use cases as a user with a company and a set of departments. Every
-/// method opens its own DI scope, so it reads what is stored, not tracked objects.
+/// Arranges machine data and runs the machine use cases as a user with a company. Every method
+/// opens its own DI scope, so it reads what is stored, not tracked objects.
 /// </summary>
 public static class MachineFixtureExtensions
 {
-    private static Machine CreateMachine(Guid companyId, Guid departmentId, MachineSeed seed)
+    private static Machine CreateMachine(Guid companyId, MachineSeed seed)
     {
         var machine = new Machine(
             companyId,
-            departmentId,
             GatewayIds.Create(),
             seed.Name,
             seed.SerialNumber,
@@ -43,24 +42,18 @@ public static class MachineFixtureExtensions
         public async Task<MachineTenant> ArrangeMachineTenantAsync(string companyName = MachineTestData.CompanyName)
         {
             var companyId = await fixture.CreateCompanyAsync(companyName);
-            var departmentIds = await fixture.CreateDepartmentsAsync(
-                companyId,
-                MachineTestData.FirstDepartmentName,
-                MachineTestData.SecondDepartmentName);
 
-            return new MachineTenant(companyId, departmentIds[index: 0], departmentIds[index: 1]);
+            return new MachineTenant(companyId);
         }
 
         public async Task<Guid> CreateMachineAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
-            Guid departmentId,
             string name,
             string serialNumber,
             string? description = null
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<CreateMachineRequest, CreateMachineResponse>>();
 
@@ -68,7 +61,6 @@ public static class MachineFixtureExtensions
                 new CreateMachineRequest
                 {
                     CompanyId = companyId,
-                    DepartmentId = departmentId,
                     Name = name,
                     SerialNumber = serialNumber,
                     Description = description,
@@ -79,14 +71,13 @@ public static class MachineFixtureExtensions
 
         public async Task UpdateMachineAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             Guid machineId,
             string name,
             string serialNumber,
             string? description = null
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<UpdateMachineRequest>>();
 
             await handler.HandleAsync(
@@ -100,9 +91,9 @@ public static class MachineFixtureExtensions
                 });
         }
 
-        public async Task DeleteMachineAsync(Guid companyId, IEnumerable<Guid> actorDepartmentIds, Guid machineId)
+        public async Task DeleteMachineAsync(Guid companyId, Guid machineId)
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<DeleteMachineRequest>>();
 
             await handler.HandleAsync(new DeleteMachineRequest { CompanyId = companyId, Id = machineId });
@@ -110,11 +101,10 @@ public static class MachineFixtureExtensions
 
         public async Task<MachineResponse> GetMachineAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             Guid machineId
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetMachineRequest, MachineResponse>>();
 
@@ -123,11 +113,10 @@ public static class MachineFixtureExtensions
 
         public async Task<GridResponse<MachineResponse>> SearchMachinesAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             SearchMachinesRequest request
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<SearchMachinesRequest, GridResponse<MachineResponse>>>();
 
@@ -136,13 +125,12 @@ public static class MachineFixtureExtensions
 
         public async Task<IReadOnlyList<Guid>> SeedMachinesAsync(
             Guid companyId,
-            Guid departmentId,
             IReadOnlyList<MachineSeed> seeds
         )
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var machines = seeds.Select(seed => CreateMachine(companyId, departmentId, seed)).ToList();
+            var machines = seeds.Select(seed => CreateMachine(companyId, seed)).ToList();
 
             dbContext.Machines.AddRange(machines);
             await dbContext.SaveChangesAsync();
@@ -159,7 +147,6 @@ public static class MachineFixtureExtensions
 
         public async Task AddMachineWithGatewayIdAsync(
             Guid companyId,
-            Guid departmentId,
             string gatewayId,
             string serialNumber
         )
@@ -170,7 +157,6 @@ public static class MachineFixtureExtensions
             dbContext.Machines.Add(
                 new Machine(
                     companyId,
-                    departmentId,
                     gatewayId,
                     MachineTestData.MachineName,
                     serialNumber,
@@ -237,7 +223,4 @@ public static class MachineFixtureExtensions
     }
 }
 
-public sealed record MachineTenant(Guid CompanyId, Guid FirstDepartmentId, Guid SecondDepartmentId)
-{
-    public IReadOnlyList<Guid> BothDepartmentIds => [FirstDepartmentId, SecondDepartmentId];
-}
+public sealed record MachineTenant(Guid CompanyId);

@@ -28,7 +28,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
     }
 
     [Fact]
-    public async Task ProvisionIdentity_WithDepartments_WritesDepartmentAttribute()
+    public async Task ProvisionIdentity_Always_WritesOnlyTheEmployeeIdAttribute()
     {
         var message = ProvisioningTestData.CreateAccepted();
 
@@ -37,11 +37,10 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         var userId = await _fixture.Keycloak.Admin.FindUserIdByEmployeeIdAsync(
             message.EmployeeId,
             CancellationToken.None);
-        var departmentIds = await _fixture.Keycloak.LoadUserAttributeValuesAsync(
-            userId!.Value,
-            ProvisioningTestData.DepartmentIdsAttribute);
+        var attributes = await _fixture.Keycloak.LoadUserAttributesAsync(userId!.Value);
 
-        departmentIds.Select(Guid.Parse).Should().BeEquivalentTo(message.DepartmentIds);
+        attributes.Keys.Should().BeEquivalentTo(ProvisioningTestData.EmployeeIdAttribute);
+        attributes[ProvisioningTestData.EmployeeIdAttribute].Should().Equal(message.EmployeeId.ToString());
     }
 
     [Fact]

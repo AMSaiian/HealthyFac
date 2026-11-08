@@ -84,8 +84,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteEmailTestData.ExpiredInviteEmail,
-            DateTime.UtcNow.AddHours(value: -1),
-            InviteTestData.FirstDepartmentName);
+            DateTime.UtcNow.AddHours(value: -1));
         var logger = new CapturingLogger<SendEmployeeInviteEmailRequestHandler>();
         using var scope = _fixture.ScopeFactory.CreateScope();
         var handler = _fixture.CreateInviteEmailHandler(scope, logger: logger);
@@ -139,8 +138,7 @@ public sealed class SendEmployeeInviteEmailTests(CoreDatabaseFixture fixture)
 
     private Task<ArrangedInvite> ArrangeOpenInviteAsync(string email) => _fixture.ArrangeInviteAsync(
         email,
-        DateTime.UtcNow.AddHours(value: 1),
-        InviteTestData.FirstDepartmentName);
+        DateTime.UtcNow.AddHours(value: 1));
 
     private static EmployeeInvited ToMessage(ArrangedInvite arranged, string email) =>
         arranged.InviteId.ToInvitedMessage(arranged.CompanyId, email);

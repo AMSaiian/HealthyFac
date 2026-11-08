@@ -39,37 +39,28 @@ public sealed class SearchMachinesPreHandlerCheck(ICurrentUserProvider currentUs
         var actor = _currentUser.GetActor();
         actor.EnsureCompany(request.CompanyId);
 
-        if (request.Filter.DepartmentIds is not null)
-        {
-            actor.EnsureDepartments(request.Filter.DepartmentIds.Ids);
-        }
-
         return Task.CompletedTask;
     }
 }
 
 /// <summary>
-/// Reads one page of the machines of the actor. The query always holds the company and the departments of the actor,
-/// whatever the filter says. A filter on departments can only narrow the result.
+/// Reads one page of the machines of the actor. The query always holds the company of the actor,
+/// whatever the filter says.
 /// </summary>
 /// <param name="dbContext">Reads the machines.</param>
-/// <param name="currentUser">Provides the departments of the actor.</param>
-public sealed class SearchMachinesRequestHandler(ICoreDbContext dbContext, ICurrentUserProvider currentUser)
+public sealed class SearchMachinesRequestHandler(ICoreDbContext dbContext)
     : IRequestHandler<SearchMachinesRequest, GridResponse<MachineResponse>>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
-    private readonly ICurrentUserProvider _currentUser = currentUser;
 
     public async Task<GridResponse<MachineResponse>> HandleAsync(
         SearchMachinesRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var departmentIds = _currentUser.GetActor().DepartmentIds.ToList();
-
         var response = await _dbContext.Machines
             .AsNoTracking()
-            .Where(machine => machine.CompanyId == request.CompanyId && departmentIds.Contains(machine.DepartmentId))
+            .Where(machine => machine.CompanyId == request.CompanyId)
             .ApplyFilter(request.Filter)
             .ApplySort(request.Sort, MachineSortMap.Instance)
             .ToGridResponseAsync(request.Offset, request.Limit, MachineResponse.Projection, cancellationToken);

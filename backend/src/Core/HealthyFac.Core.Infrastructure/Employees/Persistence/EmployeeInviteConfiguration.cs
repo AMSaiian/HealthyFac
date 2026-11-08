@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Domain.Entities;
@@ -13,9 +12,7 @@ namespace HealthyFac.Core.Infrastructure.Employees.Persistence;
 
 /// <summary>
 /// Configures entity framework mapping for the employee invite entity. A company holds at most one open invite
-/// for an email, so a resend renews the existing invite instead of adding a second one. The department links
-/// carry the company and reference both sides together with it, so the database rejects a link to a
-/// department of another company.
+/// for an email, so a resend renews the existing invite instead of adding a second one.
 /// </summary>
 public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvite>
 {
@@ -50,26 +47,6 @@ public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvi
             .WithMany()
             .HasForeignKey(invite => invite.RoleId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasAlternateKey(invite => new { invite.Id, invite.CompanyId });
-
-        builder.HasMany(invite => invite.Departments)
-            .WithMany()
-            .UsingEntity(
-                joinEntityName: "employee_invite_departments",
-                department => department.HasOne(typeof(Department))
-                    .WithMany()
-                    .HasForeignKey(nameof(Department) + nameof(Department.Id), nameof(Department.CompanyId))
-                    .HasPrincipalKey(nameof(Department.Id), nameof(Department.CompanyId))
-                    .OnDelete(DeleteBehavior.Restrict),
-                invite => invite.HasOne(typeof(EmployeeInvite))
-                    .WithMany()
-                    .HasForeignKey(nameof(EmployeeInvite) + nameof(EmployeeInvite.Id), nameof(EmployeeInvite.CompanyId))
-                    .HasPrincipalKey(nameof(EmployeeInvite.Id), nameof(EmployeeInvite.CompanyId))
-                    .OnDelete(DeleteBehavior.Cascade),
-                join => join.HasKey(
-                    nameof(EmployeeInvite) + nameof(EmployeeInvite.Id),
-                    nameof(Department) + nameof(Department.Id)));
 
         builder.HasIndex(invite => new { invite.CompanyId, invite.Email })
             .IsUnique()

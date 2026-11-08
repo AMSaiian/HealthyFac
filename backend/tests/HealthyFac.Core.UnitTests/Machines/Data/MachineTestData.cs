@@ -11,7 +11,6 @@ public static class MachineTestData
     private static readonly Faker Faker = new() { Random = new Randomizer(RandomSeed) };
 
     public static readonly Guid CompanyId = Faker.Random.Guid();
-    public static readonly Guid DepartmentId = Faker.Random.Guid();
     public static readonly string Name = Faker.Commerce.ProductName();
     public static readonly string SerialNumber = Faker.Random.AlphaNumeric(length: 12);
 
@@ -28,5 +27,5 @@ public static class MachineTestData
     ];
 
     public static Machine CreateMachine() =>
-        new(CompanyId, DepartmentId, GatewayIds.Create(), Name, SerialNumber, description: null, StartedAt);
+        new(CompanyId, GatewayIds.Create(), Name, SerialNumber, description: null, StartedAt);
 }

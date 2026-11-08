@@ -1,5 +1,5 @@
 using FluentValidation;
-using HealthyFac.Core.Application.Departments;
+using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Shared.Domain.Gateways;
 using Microsoft.Extensions.Hosting;
@@ -16,9 +16,6 @@ public sealed class DevelopmentDataOptions
 {
     public const string SectionName = "DevelopmentData";
 
-    private static readonly IReadOnlyList<string> DefaultDepartmentNames =
-        ["Assembly", "Machining", "Packaging", "Welding", "Paint shop", "Quality control"];
-
     private static readonly IReadOnlyList<string> DefaultTimeZoneIds =
         ["Europe/Kyiv", "Europe/Berlin", "America/Chicago"];
 
@@ -26,7 +23,7 @@ public sealed class DevelopmentDataOptions
         ["CNC lathe", "Milling machine", "Hydraulic press", "Laser cutter", "Injection molder", "Conveyor"];
 
     /// <summary>
-    /// Set to true to delete all companies, departments, machines, employees, and invites on start and generate
+    /// Set to true to delete all companies, machines, employees, and invites on start and generate
     /// them again. Roles stay, because they are required data. Validation allows it only in the Development
     /// environment. Every start recreates the data while it is true, so turn it off after use.
     /// </summary>
@@ -37,14 +34,11 @@ public sealed class DevelopmentDataOptions
 
     public int CompanyCount { get; init; } = 2;
 
-    /// <summary>The departments per company. Each takes the next name, so it cannot exceed the name count.</summary>
-    public int DepartmentsPerCompany { get; init; } = 3;
+    public int MachinesPerCompany { get; init; } = 12;
 
-    public int MachinesPerDepartment { get; init; } = 4;
+    public int SupervisorsPerCompany { get; init; } = 3;
 
-    public int SupervisorsPerDepartment { get; init; } = 1;
-
-    public int WorkersPerDepartment { get; init; } = 3;
+    public int WorkersPerCompany { get; init; } = 9;
 
     public int OpenInvitesPerCompany { get; init; } = 2;
 
@@ -68,16 +62,12 @@ public sealed class DevelopmentDataOptions
     /// </summary>
     public IReadOnlyList<SeedMachineOptions>? SeedMachines { get; init; }
 
-    public IReadOnlyList<string>? DepartmentNames { get; init; }
-
-    /// <summary>The IANA time zone IDs that departments take.</summary>
+    /// <summary>The IANA time zone IDs that generated companies take.</summary>
     public IReadOnlyList<string>? TimeZoneIds { get; init; }
 
     public IReadOnlyList<string>? MachineTypes { get; init; }
 
     public IReadOnlyList<SeedMachineOptions> GetSeedMachines() => SeedMachines ?? [];
-
-    public IReadOnlyList<string> GetDepartmentNames() => DepartmentNames ?? DefaultDepartmentNames;
 
     public IReadOnlyList<string> GetTimeZoneIds() => TimeZoneIds ?? DefaultTimeZoneIds;
 
@@ -111,9 +101,6 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineIdEmpty)
             .Must(machine => GatewayIds.IsValid(machine.GatewayId))
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineGatewayIdInvalid)
-            .Must((options, machine) => machine.DepartmentIndex >= 0
-                && machine.DepartmentIndex < (options.TestTenant?.DepartmentIds.Count ?? 0))
-            .WithMessage(SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange)
             .WithName(nameof(DevelopmentDataOptions.SeedMachines));
 
         RuleFor(options => options.GetSeedMachines())
@@ -126,18 +113,14 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
         RuleFor(options => options.CompanyCount)
             .InclusiveBetween(from: 1, SeedingValidationConstants.Counts.MaxCompanies);
 
-        RuleFor(options => options.DepartmentsPerCompany)
-            .GreaterThanOrEqualTo(valueToCompare: 1)
-            .LessThanOrEqualTo(options => options.GetDepartmentNames().Count);
+        RuleFor(options => options.MachinesPerCompany)
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerCompany);
 
-        RuleFor(options => options.MachinesPerDepartment)
-            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerDepartment);
+        RuleFor(options => options.SupervisorsPerCompany)
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxSupervisorsPerCompany);
 
-        RuleFor(options => options.SupervisorsPerDepartment)
-            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxSupervisorsPerDepartment);
-
-        RuleFor(options => options.WorkersPerDepartment)
-            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerDepartment);
+        RuleFor(options => options.WorkersPerCompany)
+            .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxPerCompany);
 
         RuleFor(options => options.OpenInvitesPerCompany)
             .InclusiveBetween(from: 0, SeedingValidationConstants.Counts.MaxOpenInvitesPerCompany);
@@ -151,24 +134,14 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .NotEmpty()
             .MaximumLength(MachineValidationConstants.SerialNumberMaxLength);
 
-        RuleFor(options => options.GetDepartmentNames())
-            .NotEmpty()
-            .Must(names => names.Distinct(StringComparer.Ordinal).Count() == names.Count)
-            .WithName(nameof(DevelopmentDataOptions.DepartmentNames));
-
-        RuleForEach(options => options.GetDepartmentNames())
-            .NotEmpty()
-            .MaximumLength(DepartmentValidationConstants.NameMaxLength)
-            .WithName(nameof(DevelopmentDataOptions.DepartmentNames));
-
         RuleFor(options => options.GetTimeZoneIds())
             .NotEmpty()
             .WithName(nameof(DevelopmentDataOptions.TimeZoneIds));
 
         RuleForEach(options => options.GetTimeZoneIds())
             .NotEmpty()
-            .MaximumLength(DepartmentValidationConstants.TimeZoneIdMaxLength)
-            .Must(timeZoneId => TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _))
+            .MaximumLength(CompanyValidationConstants.TimeZoneIdMaxLength)
+            .IanaTimeZoneId()
             .WithName(nameof(DevelopmentDataOptions.TimeZoneIds));
 
         RuleFor(options => options.GetMachineTypes())

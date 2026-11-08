@@ -63,15 +63,4 @@ public sealed class DevelopmentDataOptionsValidatorTests
 
         result.Errors.Should().ContainSingle(error => error.ErrorMessage == message);
     }
-
-    [Fact]
-    public void Validate_WithSeedMachinesAndNoTestTenant_ReportsDepartmentIndex()
-    {
-        var result = _validator.Validate(
-            new DevelopmentDataOptions { SeedMachines = [SeedMachinesValidatorTestData.SingleSeedMachine] });
-
-        result.Errors.Should()
-            .ContainSingle(error =>
-                error.ErrorMessage == SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange);
-    }
 }

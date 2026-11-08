@@ -3,7 +3,7 @@ using HealthyFac.Shared.Domain.Entities;
 namespace HealthyFac.Telemetry.Domain.MachineRegistrations;
 
 /// <summary>
-/// The Telemetry copy of a Core machine: the machine ID, the gateway ID, the company, and the department. The values
+/// The Telemetry copy of a Core machine: the machine ID, the gateway ID, and the company. The values
 /// never change, so one registration per machine is enough. A removal keeps the row (soft delete).
 /// </summary>
 public class MachineRegistration : IEntity, ISoftDeletable
@@ -14,19 +14,16 @@ public class MachineRegistration : IEntity, ISoftDeletable
     /// <param name="id">The ID of the machine in Core. It is the ID of the registration.</param>
     /// <param name="gatewayId">The public identifier of the machine in MQTT messages.</param>
     /// <param name="companyId">The company of the machine.</param>
-    /// <param name="departmentId">The department of the machine.</param>
-    public MachineRegistration(Guid id, string gatewayId, Guid companyId, Guid departmentId)
+    public MachineRegistration(Guid id, string gatewayId, Guid companyId)
     {
         Id = id;
         GatewayId = gatewayId;
         CompanyId = companyId;
-        DepartmentId = departmentId;
     }
 
     public Guid Id { get; private set; }
     public string GatewayId { get; private set; }
     public Guid CompanyId { get; private set; }
-    public Guid DepartmentId { get; private set; }
 
     /// <summary>The number of the last applied set of metric definition changes. It starts at 0.</summary>
     public int MetricSchemaRevision { get; private set; }

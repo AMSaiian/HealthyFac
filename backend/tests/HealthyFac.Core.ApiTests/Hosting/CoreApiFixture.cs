@@ -1,5 +1,4 @@
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -17,7 +16,7 @@ namespace HealthyFac.Core.ApiTests.Hosting;
 /// <summary>
 /// Starts PostgreSQL, RabbitMQ, and the Core host once for all tests of the <c>CoreApi</c> collection. The fixture
 /// migrates the schema before the host starts, because the host migrates only in the Development environment. It then
-/// seeds one company with one department, which the tokens of the tests name in their <c>organization</c> claim.
+/// seeds one company, which the tokens of the tests name in their <c>organization</c> claim.
 /// <see cref="ResetAsync"/> runs before each test and deletes the rows that tests create.
 /// </summary>
 public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
@@ -31,8 +30,6 @@ public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
     public TestTokenFactory Tokens { get; } = new();
 
     public Guid CompanyId { get; private set; }
-
-    public Guid DepartmentId { get; private set; }
 
     public IServiceScopeFactory ScopeFactory => _factory.Services.GetRequiredService<IServiceScopeFactory>();
 
@@ -57,12 +54,11 @@ public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
             _database.ConnectionString,
             scope.ServiceProvider.GetRequiredService<CoreDbContext>(),
             typeof(Company),
-            typeof(Department),
             typeof(Role));
     }
 
     /// <summary>
-    /// Deletes the rows that tests create. The company, its department, and the roles stay, because the tokens of the
+    /// Deletes the rows that tests create. The company and the roles stay, because the tokens of the
     /// tests name their IDs and no test writes them.
     /// </summary>
     public async ValueTask ResetAsync() => await _resetter.ResetAsync();
@@ -89,18 +85,11 @@ public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
         using var scope = ScopeFactory.CreateActorScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core));
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
-        var company = new Company { Name = CoreApiTestData.CompanyName };
-        var department = new Department
-        {
-            CompanyId = company.Id,
-            Name = CoreApiTestData.DepartmentName,
-            TimeZoneId = CoreApiTestData.DepartmentTimeZoneId,
-        };
+        var company = new Company
+            { Name = CoreApiTestData.CompanyName, TimeZoneId = CoreApiTestData.CompanyTimeZoneId };
         dbContext.Companies.Add(company);
-        dbContext.Departments.Add(department);
         await dbContext.SaveChangesAsync();
 
         CompanyId = company.Id;
-        DepartmentId = department.Id;
     }
 }

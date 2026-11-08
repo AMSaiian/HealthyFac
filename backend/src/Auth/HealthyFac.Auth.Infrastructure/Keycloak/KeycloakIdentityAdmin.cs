@@ -56,8 +56,6 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             Attributes = new Dictionary<string, string[]>
             {
                 [KeycloakAdminConstants.EmployeeIdAttribute] = [identity.EmployeeId.ToString()],
-                [KeycloakAdminConstants.DepartmentIdsAttribute] =
-                    identity.DepartmentIds.Select(departmentId => departmentId.ToString()).ToArray(),
             },
         };
 

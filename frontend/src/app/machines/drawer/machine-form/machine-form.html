@@ -30,25 +30,6 @@
     [formField]="machineForm.serialNumber"
   />
 </div>
-<div class="flex flex-col gap-1">
-  <label for="machine-department">{{ 'MACHINES.FORM.DEPARTMENT' | translate }}</label>
-  @for (error of machineForm.departmentId().errors(); track $index) {
-    @if (isShown(machineForm.departmentId)) {
-      <small class="text-red-500">{{ error.message | translate }}</small>
-    }
-  }
-  <p-select
-    inputId="machine-department"
-    optionLabel="name"
-    optionValue="id"
-    appendTo="body"
-    [options]="departmentOptions()"
-    [loading]="isDepartmentsLoading()"
-    [placeholder]="'MACHINES.FORM.DEPARTMENT_PLACEHOLDER' | translate"
-    [attr.data-hf-calm]="isShown(machineForm.departmentId) ? null : ''"
-    [formField]="machineForm.departmentId"
-  />
-</div>
 @if (isUpdate() && gatewayId(); as id) {
   <div class="flex flex-col gap-1">
     <label for="machine-gateway-id">{{ 'MACHINES.FORM.GATEWAY_ID' | translate }}</label>

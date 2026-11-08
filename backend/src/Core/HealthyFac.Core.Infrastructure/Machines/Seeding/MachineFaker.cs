@@ -1,5 +1,4 @@
 using Bogus;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Shared.Domain.Gateways;
@@ -7,9 +6,8 @@ using HealthyFac.Shared.Domain.Gateways;
 namespace HealthyFac.Core.Infrastructure.Machines.Seeding;
 
 /// <summary>
-/// Generates development machines of one department. The machine takes the company of the department, as the
-/// composite department key requires. Every machine starts <c>operational</c> and then follows a history that
-/// depends on its index in the department, so a department shows every current state.
+/// Generates development machines of one company. Every machine starts <c>operational</c> and then follows a
+/// history that depends on its index in the company, so a company shows every current state.
 /// </summary>
 internal sealed class MachineFaker : Faker<Machine>
 {
@@ -23,7 +21,7 @@ internal sealed class MachineFaker : Faker<Machine>
     /// <summary>
     /// Declares the machine shape.
     /// </summary>
-    /// <param name="department">The saved department that owns the machines.</param>
+    /// <param name="companyId">The saved company that owns the machines.</param>
     /// <param name="machineTypes">The machine types to pick from. The name appends a two-digit number.</param>
     /// <param name="serialNumberPattern">
     /// The Bogus replacement pattern of serial numbers: <c>#</c> becomes a digit and <c>?</c> becomes a letter.
@@ -33,7 +31,7 @@ internal sealed class MachineFaker : Faker<Machine>
     /// </param>
     /// <param name="seed">The random seed, so every run produces the same machines.</param>
     public MachineFaker(
-        Department department,
+        Guid companyId,
         IReadOnlyList<string> machineTypes,
         string serialNumberPattern,
         DateTime now,
@@ -49,8 +47,7 @@ internal sealed class MachineFaker : Faker<Machine>
                         SeedingValidationConstants.StateHistory.MinStartDaysBeforeNow,
                         SeedingValidationConstants.StateHistory.MaxStartDaysBeforeNow));
             var machine = new Machine(
-                department.CompanyId,
-                department.Id,
+                companyId,
                 GatewayIds.Create(),
                 $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}",
                 faker.Random.Replace(serialNumberPattern),

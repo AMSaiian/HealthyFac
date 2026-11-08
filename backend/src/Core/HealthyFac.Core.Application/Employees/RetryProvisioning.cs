@@ -71,7 +71,7 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var employee = await _dbContext.Employees.Include(employee => employee.Departments)
+        var employee = await _dbContext.Employees
                 .SingleOrDefaultAsync(
                     employee => employee.Id == request.EmployeeId && employee.CompanyId == request.CompanyId,
                     cancellationToken)
@@ -98,7 +98,6 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
                 FirstName = employee.FirstName,
                 LastName = employee.LastName,
                 RoleCode = roleCode.Value,
-                DepartmentIds = employee.Departments.Select(department => department.Id).ToList(),
             });
 
         try

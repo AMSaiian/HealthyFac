@@ -16,7 +16,6 @@ public static class TelemetryApiClientExtensions
             {
                 Subject = Guid.NewGuid(),
                 Organizations = [fixture.CompanyId.ToString()],
-                DepartmentIds = [fixture.DepartmentId.ToString()],
                 Permissions = permissions,
             };
 

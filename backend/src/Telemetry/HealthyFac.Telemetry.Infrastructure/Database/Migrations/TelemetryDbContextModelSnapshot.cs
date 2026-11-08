@@ -305,10 +305,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
 
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("department_id");
-
                     b.Property<string>("GatewayId")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -335,8 +331,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.ToTable("machine_registrations", null, t =>
                         {
                             t.HasCheckConstraint("ck_machine_registration_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
-
-                            t.HasCheckConstraint("ck_machine_registration_department_id_not_empty", "\"department_id\" <> '00000000-0000-0000-0000-000000000000'");
 
                             t.HasCheckConstraint("ck_machine_registration_gateway_id_length", "char_length(\"gateway_id\") BETWEEN 16 AND 16");
                         });

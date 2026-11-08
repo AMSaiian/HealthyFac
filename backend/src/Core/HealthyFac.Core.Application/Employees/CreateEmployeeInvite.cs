@@ -26,7 +26,6 @@ public record CreateEmployeeInviteRequest : IRequest<CreateEmployeeInviteRespons
     }
 
     public required RoleCode RoleCode { get; init; }
-    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
 }
 
 public record CreateEmployeeInviteResponse
@@ -53,14 +52,6 @@ public class CreateEmployeeInviteRequestValidator : AbstractValidator<CreateEmpl
         RuleFor(x => x.RoleCode)
             .NotNull()
             .WithMessage(EmployeeInviteErrors.Validation.RoleCodeRequired);
-
-        RuleFor(x => x.DepartmentIds)
-            .NotEmpty()
-            .WithMessage(EmployeeInviteErrors.Validation.DepartmentIdsRequired);
-
-        RuleForEach(x => x.DepartmentIds)
-            .NotEmpty()
-            .WithMessage(EmployeeInviteErrors.Validation.DepartmentIdRequired);
     }
 }
 
@@ -73,7 +64,6 @@ public sealed class CreateEmployeeInvitePreHandlerCheck(ICurrentUserProvider cur
     {
         var actor = _currentUser.GetActor();
         actor.EnsureCompany(request.CompanyId);
-        actor.EnsureDepartments(request.DepartmentIds);
 
         return Task.CompletedTask;
     }
@@ -96,8 +86,6 @@ public class CreateEmployeeInviteRequestHandler(
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var departmentIds = request.DepartmentIds.Distinct().ToList();
-
         var isEmailEmployed = await _dbContext.Employees.AnyAsync(
             employee => employee.Email == request.Email, cancellationToken);
         if (isEmailEmployed)
@@ -121,19 +109,10 @@ public class CreateEmployeeInviteRequestHandler(
                 .SingleOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(EmployeeInviteErrors.Rejections.RoleNotFound);
 
-        var departments = await _dbContext.Departments
-            .Where(department => department.CompanyId == request.CompanyId && departmentIds.Contains(department.Id))
-            .ToListAsync(cancellationToken);
-        if (departments.Count != departmentIds.Count)
-        {
-            throw new NotFoundException(EmployeeInviteErrors.Rejections.DepartmentsNotFound);
-        }
-
         var invite = new EmployeeInvite(
             request.CompanyId,
             request.Email,
             roleId,
-            departments,
             _tokenService.CreateSalt(),
             _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));
         _dbContext.EmployeeInvites.Add(invite);

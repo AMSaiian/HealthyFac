@@ -23,10 +23,6 @@ public sealed class SeedDataFileTests
                 {
                     [$"{TestTenantPath}:CompanyId"] =
                         testTenant.CompanyId.ToString(),
-                    [$"{TestTenantPath}:DepartmentIds:0"] =
-                        testTenant.DepartmentIds[index: 0].ToString(),
-                    [$"{TestTenantPath}:DepartmentIds:1"] =
-                        testTenant.DepartmentIds[index: 1].ToString(),
                     [$"{TestTenantPath}:SupervisorIdentityId"] =
                         testTenant.SupervisorIdentityId.ToString(),
                     [$"{TestTenantPath}:SupervisorEmployeeId"] =

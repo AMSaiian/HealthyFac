@@ -20,8 +20,6 @@ public sealed class SeedDataFileTests
                 new Dictionary<string, string?>
                 {
                     [$"{TestTenantPath}:CompanyId"] = testTenant.CompanyId.ToString(),
-                    [$"{TestTenantPath}:DepartmentIds:0"] = testTenant.DepartmentIds[index: 0].ToString(),
-                    [$"{TestTenantPath}:DepartmentIds:1"] = testTenant.DepartmentIds[index: 1].ToString(),
                 })
             .Build();
         var options = configuration.GetSection(SeedingOptions.SectionName).Get<SeedingOptions>()!;

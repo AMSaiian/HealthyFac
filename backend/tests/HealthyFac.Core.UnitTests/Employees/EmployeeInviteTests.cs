@@ -5,34 +5,6 @@ namespace HealthyFac.Core.UnitTests.Employees;
 
 public sealed class EmployeeInviteTests
 {
-    [Fact]
-    public void Constructor_WithoutDepartments_ThrowsInvalidOperationException()
-    {
-        var act = () => new EmployeeInvite(
-            EmployeeTestData.CompanyId,
-            EmployeeTestData.Email,
-            EmployeeTestData.RoleId,
-            [],
-            EmployeeTestData.TokenSalt,
-            EmployeeTestData.ExpiresAt);
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Fact]
-    public void Constructor_WithDepartmentOfOtherCompany_ThrowsInvalidOperationException()
-    {
-        var act = () => new EmployeeInvite(
-            EmployeeTestData.CompanyId,
-            EmployeeTestData.Email,
-            EmployeeTestData.RoleId,
-            [EmployeeTestData.CreateDepartment(), EmployeeTestData.CreateDepartmentOfOtherCompany()],
-            EmployeeTestData.TokenSalt,
-            EmployeeTestData.ExpiresAt);
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
     [Theory]
     [MemberData(nameof(EmployeeTestData.EmailsToNormalize), MemberType = typeof(EmployeeTestData))]
     public void Constructor_WithUntrimmedOrMixedCaseEmail_StoresTrimmedLowerCaseEmail(string email)
@@ -55,7 +27,6 @@ public sealed class EmployeeInviteTests
         employee.FirstName.Should().Be(EmployeeTestData.FirstName);
         employee.LastName.Should().Be(EmployeeTestData.LastName);
         employee.RoleId.Should().Be(EmployeeTestData.RoleId);
-        employee.Departments.Should().BeEquivalentTo(invite.Departments);
         employee.Status.Should().Be(EmployeeStatus.Provisioning);
         employee.IdentityUserId.Should().BeNull();
     }

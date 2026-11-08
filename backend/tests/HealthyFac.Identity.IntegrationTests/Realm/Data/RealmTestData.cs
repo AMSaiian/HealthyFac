@@ -24,13 +24,11 @@ public static class RealmTestData
     public const int AccessTokenLifespanSeconds = 300;
     public const string EmployeeIdAttribute = "employee_id";
     public const string AdminRole = "admin";
-    public const string DepartmentIdsClaim = KeycloakClaimTypes.DepartmentIds;
+    public const string IdListClaimSuffix = "_ids";
     public const string WorkerRoleName = "worker";
 
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
     public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
-    public static readonly Guid DepartmentAId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000a1");
-    public static readonly Guid DepartmentBId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000b1");
     public static readonly Guid SupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
 
     public static IReadOnlyDictionary<string, string> Environment { get; } = new Dictionary<string, string>
@@ -39,8 +37,6 @@ public static class RealmTestData
         [key: "HEALTHYFAC_TEST_COMPANY_ID"] = CompanyId.ToString(),
         [key: "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = SupervisorIdentityId.ToString(),
         [key: "HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = SupervisorEmployeeId.ToString(),
-        [key: "HEALTHYFAC_TEST_DEPARTMENT_A_ID"] = DepartmentAId.ToString(),
-        [key: "HEALTHYFAC_TEST_DEPARTMENT_B_ID"] = DepartmentBId.ToString(),
         [key: "HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
         [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
         [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
@@ -68,7 +64,6 @@ public static class RealmTestData
     [
         "organization",
         EmployeeIdAttribute,
-        DepartmentIdsClaim,
     ];
 
     public static IReadOnlyList<string> CorePermissions { get; } =

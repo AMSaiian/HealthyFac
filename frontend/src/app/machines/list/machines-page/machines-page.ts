@@ -2,8 +2,6 @@ import { Component, computed, inject } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 
-import { EmployeeStore } from '@shared/employee/employee.store';
-
 import type { MachinesPage as MachinesResult } from '@machines/machine';
 
 import { MachineGrid } from '@machines/list/machine-grid/machine-grid';
@@ -19,7 +17,6 @@ const EMPTY_PAGE: MachinesResult = { items: [], totalCount: 0 };
 })
 export class MachinesPage {
   protected readonly store = inject(MachinesGridStore);
-  protected readonly employee = inject(EmployeeStore);
 
   protected readonly page = computed(() => (this.store.machines.hasValue() ? this.store.machines.value() : EMPTY_PAGE));
 }

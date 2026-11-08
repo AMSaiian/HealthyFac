@@ -20,8 +20,7 @@ import {
   type TablePageEvent,
 } from 'primeng/table';
 
-import type { DepartmentOption } from '@shared/employee/employee-api';
-import { EMPTY_CELL, skeletonRows } from '@shared/grid/table/grid-display';
+import { skeletonRows } from '@shared/grid/table/grid-display';
 import { toggleColumn } from '@shared/grid/table/grid-columns';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
@@ -76,7 +75,6 @@ export class MachineGrid {
   readonly limit = input.required<number>();
   readonly sort = input.required<MachineSort | null>();
   readonly filter = input.required<MachineFilter>();
-  readonly departments = input.required<readonly DepartmentOption[]>();
   readonly canWrite = input(false);
   readonly canDelete = input(false);
   readonly canReadStatuses = input(false);
@@ -116,9 +114,6 @@ export class MachineGrid {
     })),
   );
   protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
-  protected readonly departmentNames = computed(
-    () => new Map(this.departments().map((department) => [department.id, department.name])),
-  );
   protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
   protected readonly emptyRange = EMPTY_RANGE;
   protected readonly tableFilters = computed(() => toTableFilters(this.allColumns, FILTER_WRITERS, this.filter()));
@@ -127,7 +122,6 @@ export class MachineGrid {
     'min-width': '64rem',
     ...(this.isLoading() || this.rows().length > 0 ? {} : { height: '100%' }),
   }));
-  protected readonly tableDepartments = computed(() => [...this.departments()]);
   protected readonly tableColumns = computed(() => [...this.columns()]);
   protected readonly hasRowActions = computed(
     () => this.canWrite() || this.canDelete() || this.canReadStatuses() || this.canReadMetrics(),
@@ -180,10 +174,6 @@ export class MachineGrid {
 
   protected isSortable(column: MachineColumn): boolean {
     return SORTABLE_COLUMNS.includes(column);
-  }
-
-  protected departmentName(id: string): string {
-    return this.departmentNames().get(id) ?? EMPTY_CELL;
   }
 
   protected stateLabel(state: MachineState): string {

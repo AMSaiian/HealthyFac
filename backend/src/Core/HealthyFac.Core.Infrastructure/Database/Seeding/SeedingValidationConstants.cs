@@ -8,12 +8,9 @@ public static class SeedingValidationConstants
     public static class Counts
     {
         public const int MaxCompanies = 50;
-        public const int MaxPerDepartment = 100;
-        public const int MaxSupervisorsPerDepartment = 10;
+        public const int MaxPerCompany = 100;
+        public const int MaxSupervisorsPerCompany = 10;
         public const int MaxOpenInvitesPerCompany = 50;
-
-        /// <summary>The number of departments of the test tenant. Keycloak lists the same number of IDs.</summary>
-        public const int TestTenantDepartments = 2;
     }
 
     /// <summary>
@@ -60,12 +57,7 @@ public static class SeedingValidationConstants
             "Forced recreation of development data deletes business data, so it is allowed only in the Development "
             + "environment.";
 
-        public static readonly string TestTenantDepartmentCount =
-            $"The test tenant needs exactly {Counts.TestTenantDepartments} department IDs.";
-
-        public const string TestTenantDepartmentIdEmpty = "A test tenant department ID must not be empty.";
-
-        public const string TestTenantDepartmentIdDuplicated = "The test tenant department IDs must be distinct.";
+        public const string TimeZoneIdUnknown = "The time zone ID must be an IANA time zone ID.";
 
         public const string SeedMachineIdEmpty = "A seed machine ID must not be empty.";
 
@@ -75,8 +67,5 @@ public static class SeedingValidationConstants
             "A seed machine gateway ID must have the gateway ID format.";
 
         public const string SeedMachineGatewayIdDuplicated = "The seed machine gateway IDs must be distinct.";
-
-        public const string SeedMachineDepartmentIndexOutOfRange =
-            "A seed machine department index must point into the test tenant department IDs.";
     }
 }

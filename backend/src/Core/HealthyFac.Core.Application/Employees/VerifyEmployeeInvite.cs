@@ -21,16 +21,9 @@ public record VerifyEmployeeInviteResponse
     public required string Email { get; init; }
     public required string CompanyName { get; init; }
     public required RoleCode RoleCode { get; init; }
-    public required IReadOnlyList<VerifiedInviteDepartment> Departments { get; init; }
     public string? FirstName { get; init; }
     public string? LastName { get; init; }
     public required DateTime ExpiresAt { get; init; }
-}
-
-public record VerifiedInviteDepartment
-{
-    public required Guid Id { get; init; }
-    public required string Name { get; init; }
 }
 
 public class VerifyEmployeeInviteRequestValidator : AbstractValidator<VerifyEmployeeInviteRequest>
@@ -75,9 +68,6 @@ public class VerifyEmployeeInviteRequestHandler(ICoreDbContext dbContext, Employ
             Email = invite.Email,
             CompanyName = companyName,
             RoleCode = roleCode,
-            Departments = invite.Departments
-                .Select(department => new VerifiedInviteDepartment { Id = department.Id, Name = department.Name })
-                .ToList(),
             FirstName = invite.FirstName,
             LastName = invite.LastName,
             ExpiresAt = invite.ExpiresAt,

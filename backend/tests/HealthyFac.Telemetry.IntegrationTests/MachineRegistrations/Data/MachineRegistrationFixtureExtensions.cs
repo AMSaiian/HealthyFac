@@ -19,14 +19,13 @@ public static class MachineRegistrationFixtureExtensions
     extension(TelemetryDatabaseFixture fixture)
     {
         public MachineTenant ArrangeMachineTenant() =>
-            new(Guid.CreateVersion7(), Guid.CreateVersion7(), Guid.CreateVersion7());
+            new(Guid.CreateVersion7());
 
-        public async Task<Guid> RegisterMachineInDepartmentAsync(Guid companyId, Guid departmentId)
+        public async Task<Guid> RegisterTenantMachineAsync(Guid companyId)
         {
             var message = MachineRegistrationTestData.CreateMessage() with
             {
                 CompanyId = companyId,
-                DepartmentId = departmentId,
             };
 
             await fixture.RegisterMachineAsync(message);
@@ -34,7 +33,7 @@ public static class MachineRegistrationFixtureExtensions
             return message.MachineId;
         }
 
-        public Task DeleteMachineAsync(Guid companyId, IEnumerable<Guid> actorDepartmentIds, Guid machineId) =>
+        public Task DeleteMachineAsync(Guid companyId, Guid machineId) =>
             fixture.UnregisterMachineAsync(new MachineDeleted { MachineId = machineId, CompanyId = companyId });
 
         public async Task RegisterMachineAsync(MachineCreated message)
@@ -124,7 +123,4 @@ public static class MachineRegistrationFixtureExtensions
     }
 }
 
-public sealed record MachineTenant(Guid CompanyId, Guid FirstDepartmentId, Guid SecondDepartmentId)
-{
-    public IReadOnlyList<Guid> BothDepartmentIds => [FirstDepartmentId, SecondDepartmentId];
-}
+public sealed record MachineTenant(Guid CompanyId);

@@ -9,8 +9,7 @@ public static class CoreApiTestData
     public const string IdEncryptionKey = "dGVzdC1pZC1lbmNyeXB0aW9uLWtleS0zMmJ5dGVzISE=";
     public const string InviteTokenSecret = "dGVzdC1pbnZpdGUtdG9rZW4ta2V5LTAxMjM0NTY3ODk=";
     public const string CompanyName = "Api Test Company";
-    public const string DepartmentName = "Api Test Department";
-    public const string DepartmentTimeZoneId = "Europe/Kyiv";
+    public const string CompanyTimeZoneId = "Europe/Kyiv";
 
     public static IReadOnlyDictionary<string, string?> CreateSettings(
         string databaseConnection,

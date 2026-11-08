@@ -23,14 +23,8 @@ public static class CurrentUserErrors
     public static ErrorHandling.UnauthorizedAccessException EmployeeIdInvalid() =>
         new(message: "The token employee ID must be a GUID.");
 
-    public static ErrorHandling.UnauthorizedAccessException DepartmentIdsInvalid() =>
-        new(message: "The token department IDs must be GUIDs.");
-
     public static ErrorHandling.ForbiddenAccessException CompanyOutOfScope() =>
         new(message: "The request names a company outside the company of the actor.");
-
-    public static ErrorHandling.ForbiddenAccessException DepartmentsOutOfScope() =>
-        new(message: "The request names a department outside the departments of the actor.");
 
     public static ErrorHandling.UnauthorizedAccessException ServiceActorMissing() =>
         new(

@@ -79,20 +79,6 @@
                       (keydown.enter)="columnFilter.applyFilter()"
                     />
                   }
-                  @case (MachineColumn.Department) {
-                    <p-select
-                      class="w-full"
-                      optionLabel="name"
-                      optionValue="id"
-                      appendTo="self"
-                      [options]="tableDepartments()"
-                      [placeholder]="'MACHINES.FILTERS.DEPARTMENT_PLACEHOLDER' | translate"
-                      [ngModel]="value ?? []"
-                      [multiple]="true"
-                      [checkmark]="true"
-                      (ngModelChange)="filterConstraint.value = $event"
-                    />
-                  }
                   @case (MachineColumn.State) {
                     <p-select
                       class="w-full"
@@ -162,9 +148,6 @@
               }
               @case (MachineColumn.SerialNumber) {
                 {{ machine.serialNumber }}
-              }
-              @case (MachineColumn.Department) {
-                {{ departmentName(machine.departmentId) }}
               }
               @case (MachineColumn.State) {
                 {{ stateLabel(machine.state) }}

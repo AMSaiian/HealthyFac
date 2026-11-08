@@ -32,21 +32,15 @@ public sealed class DeleteMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// <summary>
 /// Removes a machine and its state history, and queues the <see cref="MachineDeleted"/> message in the same save.
 /// The save interceptor turns each removal into a soft delete, so the rows stay and the query filter hides them.
-/// One save stores all removals together. A machine outside the company or the departments of the actor, and a
+/// One save stores all removals together. A machine outside the company and a
 /// machine that is already deleted, are "not found".
 /// </summary>
 /// <param name="dbContext">Loads the machine and saves the removal.</param>
-/// <param name="currentUser">Provides the departments of the actor.</param>
 /// <param name="outbox">Queues the message for the Telemetry service.</param>
-public sealed class DeleteMachineRequestHandler(
-    ICoreDbContext dbContext,
-    ICurrentUserProvider currentUser,
-    IOutbox outbox
-)
+public sealed class DeleteMachineRequestHandler(ICoreDbContext dbContext, IOutbox outbox)
     : RequestHandler<DeleteMachineRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
-    private readonly ICurrentUserProvider _currentUser = currentUser;
     private readonly IOutbox _outbox = outbox;
 
     protected override async Task HandleInternalAsync(
@@ -54,12 +48,8 @@ public sealed class DeleteMachineRequestHandler(
         CancellationToken cancellationToken
     )
     {
-        var departmentIds = _currentUser.GetActor().DepartmentIds.ToList();
-
         var machine = await _dbContext.Machines.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id
-                    && candidate.CompanyId == request.CompanyId
-                    && departmentIds.Contains(candidate.DepartmentId),
+                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
                 cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 

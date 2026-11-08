@@ -17,10 +17,10 @@ public sealed class StatusDefinitionSchemaRevisionTests(TelemetryDatabaseFixture
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
 
         var statusId = await _fixture.CreateStatusDefinitionAsync(
-            tenant.CompanyId, tenant.BothDepartmentIds, machineId, StatusDefinitionTestData.Code);
+            tenant.CompanyId, machineId, StatusDefinitionTestData.Code);
         await _fixture.UpdateStatusDefinitionAsync(
-            tenant.CompanyId, tenant.BothDepartmentIds, machineId, statusId, StatusDefinitionTestData.UpdatedCode);
-        await _fixture.DeleteStatusDefinitionAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId, statusId);
+            tenant.CompanyId, machineId, statusId, StatusDefinitionTestData.UpdatedCode);
+        await _fixture.DeleteStatusDefinitionAsync(tenant.CompanyId, machineId, statusId);
 
         var revision = await _fixture.LoadMetricSchemaRevisionAsync(machineId);
         var revisions = await _fixture.LoadSchemaRevisionsAsync(machineId);

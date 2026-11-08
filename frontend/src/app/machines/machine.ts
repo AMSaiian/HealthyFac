@@ -1,4 +1,4 @@
-import type { DateRangeBody, IdSetBody, SetFilterBody, TextFilterBody } from '@shared/grid/requests/grid-filters';
+import type { DateRangeBody, SetFilterBody, TextFilterBody } from '@shared/grid/requests/grid-filters';
 import type { GridPage, GridQueryState, GridRequestBody, GridSort } from '@shared/grid/requests/grid-request';
 import type { PlainDateRange } from '@shared/time/plain-date-range';
 
@@ -11,13 +11,12 @@ export enum MachineState {
 export enum MachineColumn {
   Name = 'name',
   SerialNumber = 'serialNumber',
-  Department = 'department',
   State = 'state',
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
 }
 
-/** The columns that the backend sorts by. The state and department columns never sort. */
+/** The columns that the backend sorts by. The state column never sorts. */
 export enum MachineSortColumn {
   Name = 'name',
   SerialNumber = 'serialNumber',
@@ -30,7 +29,6 @@ export interface Machine {
   readonly name: string;
   readonly serialNumber: string;
   readonly gatewayId: string;
-  readonly departmentId: string;
   readonly state: MachineState;
   readonly description: string | null;
   readonly createdAt: string;
@@ -40,12 +38,8 @@ export interface Machine {
 export interface MachineBody {
   readonly name: string;
   readonly serialNumber: string;
-  readonly departmentId: string;
   readonly description: string | null;
 }
-
-/** The department of a machine is fixed after the create, so the update body has none. */
-export type MachineUpdateBody = Omit<MachineBody, 'departmentId'>;
 
 export interface CreateMachineResponse {
   readonly id: string;
@@ -58,7 +52,6 @@ export type MachineSort = GridSort<MachineSortColumn>;
 export interface MachineFilter {
   readonly name: string;
   readonly serialNumber: string;
-  readonly departmentIds: readonly string[];
   readonly states: readonly MachineState[];
   readonly createdAt: PlainDateRange;
   readonly updatedAt: PlainDateRange;
@@ -69,7 +62,6 @@ export type MachineGridState = GridQueryState<MachineFilter, MachineSortColumn>;
 export interface MachineFilterBody {
   readonly name?: TextFilterBody;
   readonly serialNumber?: TextFilterBody;
-  readonly departmentIds?: IdSetBody;
   readonly states?: SetFilterBody<MachineState>;
   readonly createdAt?: DateRangeBody;
   readonly updatedAt?: DateRangeBody;
