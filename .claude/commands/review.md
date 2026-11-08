@@ -16,8 +16,23 @@ When this command is first run, do not read files or start work. Reply only:
 "Reviewer for $ARGUMENTS ready - waiting for handoff." and end your turn.
 Start a review only when a message from the session `$ARGUMENTS-executor` asks you to,
 or when I tell you to. Any other message: answer it, but do not start a review.
-At the start of every review, re-read spec.md, plan.md and review.md (if present), then
-the diff in the repo (`git diff`, and `git diff --staged`).
+At the start of every review, read the parts of **Reading** below, then the diff in the
+repo (`git diff`, and `git diff --staged`).
+
+## Reading
+Read by section, with Grep (line numbers) and Read (`offset`, `limit`).
+- plan.md header: the first 20 lines.
+- The open cycle: Grep `^### Cycle N$` and the next `^##` heading, then Read that range.
+  A plan without `### Cycle` headings is one cycle: read it whole.
+- The Deviations of the cycle: Grep `^\*   Steps? ` in plan.md and Read the entries whose
+  number (`Step N:`) or range (`Steps A-B:`) holds a step of the cycle. The `Red:` and
+  `Proof:` lines are under their steps in the cycle section, not there.
+- The ACs of the cycle: Grep `^\*   \*\*AC(<numbers of the Spec: line>)` in spec.md, and the
+  rows of the cycle steps under `## Acceptance Criteria Map` in plan.md.
+- The spec sections of the `Spec:` line of the cycle: Grep each heading in spec.md, and
+  Read up to the next heading of the same level.
+- review.md (if present): read it whole.
+Read a full file only for a reference that points outside these parts.
 
 ## Check
 - Every acceptance criterion is met, with a test where possible.
@@ -29,8 +44,20 @@ the diff in the repo (`git diff`, and `git diff --staged`).
   not left half-applied.
 - If the repo has agent-workflow rules, the changes follow them.
 - Correctness, error handling, concurrency, security, and project conventions.
-- Run the build and tests. Use the shell only for: build, test, git diff/log,
-  `pwsh scripts/verify-stack.ps1 up|down`, and `pwsh .claude/check-review-routing.ps1`.
+- Full run: run `pwsh .claude/tree-id.ps1 -Repo <repo path>`. When the tree ID equals the
+  one on the last `Full run:` line of the cycle, the code is the code that the executor
+  tested: do not run the full suite or the build again, and run only the tests that you
+  doubt. Otherwise run the build and the full suite. Use the shell only for: build, test,
+  git diff/log, `pwsh scripts/verify-stack.ps1 up|down`, `pwsh .claude/tree-id.ps1`, and
+  `pwsh .claude/check-review-routing.ps1`.
+- Checkpoint review: on a message "checkpoint <x> ready" with two tree IDs, review
+  `git diff <base tree> <checkpoint tree>` for the design, the rules, and the plan. Run no
+  tests. Write the findings under `## Checkpoint <x>` in review.md with the usual IDs, all
+  [CODE] or [SPEC], and no verdict. Send [CODE] findings to `$ARGUMENTS-executor` and
+  [SPEC] findings to `$ARGUMENTS-spec`. Do not run `check-review-routing.ps1` for a
+  checkpoint.
+- Final review: when the cycle had checkpoints, also review `git diff <last checkpoint
+  tree>` for the steps after the last checkpoint. The checks of the whole cycle stay.
 - A test that fails in `baseline.md` is known. Report it only when a step should fix it.
 - Every test of a guard or a behavior has a `Red:` or `Proof:` line with an assertion
   message under its step. A missing line is a MINOR [CODE] finding; its fix is the proof

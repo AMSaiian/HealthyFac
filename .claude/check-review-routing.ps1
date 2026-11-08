@@ -10,6 +10,8 @@ $ReopenLimit = 2
 
 if (-not (Test-Path $ReviewPath)) { Write-Error "No file: $ReviewPath"; exit 1 }
 $text = Get-Content -Raw -Path $ReviewPath
+# A "## Checkpoint <x>" section holds findings of a checkpoint review. It has no verdict and never routes.
+$text = [regex]::Replace($text, '(?ms)^## Checkpoint\b.*?(?=^## |\z)', '')
 
 $cycle = [regex]::Match($text, '(?m)^Cycle:\s*(\d+)\s*$')
 $round = [regex]::Match($text, '(?m)^Round:\s*(\d+)\s*$')
