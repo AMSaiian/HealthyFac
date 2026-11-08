@@ -75,7 +75,6 @@
     "COLUMNS": {
       "NAME": "Назва",
       "SERIAL_NUMBER": "Серійний номер",
-      "DEPARTMENT": "Відділ",
       "STATE": "Стан",
       "CREATED_AT": "Створено",
       "UPDATED_AT": "Змінено"
@@ -88,7 +87,6 @@
     "FILTERS": {
       "NAME_PLACEHOLDER": "Фільтр за назвою",
       "SERIAL_NUMBER_PLACEHOLDER": "Фільтр за серійним номером",
-      "DEPARTMENT_PLACEHOLDER": "Оберіть відділи",
       "STATE_PLACEHOLDER": "Оберіть стани",
       "CREATED_AT_PLACEHOLDER": "Оберіть дати створення",
       "UPDATED_AT_PLACEHOLDER": "Оберіть дати оновлення"
@@ -104,7 +102,6 @@
       "UPDATE_TITLE": "Редагування обладнання",
       "NAME": "Назва",
       "SERIAL_NUMBER": "Серійний номер",
-      "DEPARTMENT": "Відділ",
       "GATEWAY_ID": "Ідентифікатор шлюзу",
       "COPY_GATEWAY_ID": "Копіювати ідентифікатор шлюзу",
       "DESCRIPTION": "Опис",
@@ -115,7 +112,6 @@
       },
       "NAME_PLACEHOLDER": "Введіть назву",
       "SERIAL_NUMBER_PLACEHOLDER": "Введіть серійний номер",
-      "DEPARTMENT_PLACEHOLDER": "Оберіть відділ",
       "DESCRIPTION_PLACEHOLDER": "Опишіть верстат",
       "INVALID": "Форма містить помилки"
     },

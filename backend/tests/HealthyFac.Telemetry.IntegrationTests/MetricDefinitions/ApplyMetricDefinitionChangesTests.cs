@@ -315,29 +315,10 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     }
 
     [Fact]
-    public async Task Apply_InForeignDepartment_ThrowsNotFound()
-    {
-        var (tenant, machineId) = await ArrangeAsync();
-
-        var act = () => _fixture.ApplyMetricChangesAsync(
-            tenant.CompanyId,
-            [tenant.SecondDepartmentId],
-            new ApplyMetricDefinitionChangesRequest
-            {
-                CompanyId = tenant.CompanyId,
-                MachineId = machineId,
-                ExpectedRevision = 0,
-                Created = [MetricDefinitionTestData.NewNumeric()],
-            });
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineRegistrationErrors.MachineNotFound);
-    }
-
-    [Fact]
     public async Task Apply_ForDeletedMachine_ThrowsNotFound()
     {
         var (tenant, machineId) = await ArrangeAsync();
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var act = () => _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewNumeric()]);
@@ -359,7 +340,7 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     private async Task<(MachineTenant Tenant, Guid MachineId)> ArrangeAsync()
     {
         var tenant = _fixture.ArrangeMachineTenant();
-        var machineId = await _fixture.RegisterMachineInDepartmentAsync(tenant.CompanyId, tenant.FirstDepartmentId);
+        var machineId = await _fixture.RegisterTenantMachineAsync(tenant.CompanyId);
 
         return (tenant, machineId);
     }

@@ -31,7 +31,6 @@ public class MachineRegistrationConfiguration : IEntityTypeConfiguration<Machine
             .IsUnique();
 
         builder.HasNotEmptyGuidCheck(registration => registration.CompanyId)
-            .HasNotEmptyGuidCheck(registration => registration.DepartmentId)
             .HasLengthCheck(registration => registration.GatewayId, GatewayIds.Length, GatewayIds.Length);
     }
 }

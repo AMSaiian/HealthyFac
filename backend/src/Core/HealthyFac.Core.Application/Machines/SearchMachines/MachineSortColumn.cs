@@ -3,8 +3,8 @@ using HealthyFac.Shared.Domain.Enumerations;
 namespace HealthyFac.Core.Application.Machines.SearchMachines;
 
 /// <summary>
-/// The sortable columns of the machine grid. The columns that hold an enumeration (state) or a name that the grid
-/// resolves in the browser (department) have no member, so the type blocks sorting on them.
+/// The sortable columns of the machine grid. The column that holds an enumeration (state) has no member, so the
+/// type blocks sorting on it.
 /// </summary>
 public sealed class MachineSortColumn : Enumeration<MachineSortColumn>
 {

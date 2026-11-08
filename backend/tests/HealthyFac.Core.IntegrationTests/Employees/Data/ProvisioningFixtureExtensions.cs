@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using HealthyFac.Auth.Messaging.Identities;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees;
@@ -24,8 +23,7 @@ public static class ProvisioningFixtureExtensions
         {
             var invite = await fixture.ArrangeInviteAsync(
                 email,
-                DateTime.UtcNow.AddHours(value: 1),
-                InviteTestData.FirstDepartmentName);
+                DateTime.UtcNow.AddHours(value: 1));
             var employeeId = await fixture.AcceptInviteAsync(invite.Token);
 
             return new ProvisioningEmployee { CompanyId = invite.CompanyId, EmployeeId = employeeId };
@@ -63,7 +61,7 @@ public static class ProvisioningFixtureExtensions
 
         public async Task<RetryProvisioningResponse> RetryProvisioningAsync(Guid companyId, Guid employeeId)
         {
-            using var scope = fixture.CreateUserScope(companyId, []);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<RetryProvisioningRequest, RetryProvisioningResponse>>();
 
@@ -80,7 +78,6 @@ public static class ProvisioningFixtureExtensions
                     Kind = ActorKind.User,
                     UserId = actorUserId,
                     CompanyId = companyId,
-                    DepartmentIds = FrozenSet<Guid>.Empty,
                 });
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<DeactivateEmployeeRequest>>();
 

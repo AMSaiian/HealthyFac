@@ -115,8 +115,6 @@ services:
       IMPORT_USERS_MERGEROLES: "true"
       HEALTHYFAC_SPA_URL: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
       HEALTHYFAC_TEST_COMPANY_ID: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      HEALTHYFAC_TEST_DEPARTMENT_A_ID: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
-      HEALTHYFAC_TEST_DEPARTMENT_B_ID: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
@@ -277,8 +275,6 @@ services:
       # true deletes the Core business data, outbox, and inbox, and seeds again on every start.
       Seeding__DevelopmentData__IsRecreationForced: ${HEALTHYFAC_SEED_RECREATE:-false}
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      Seeding__DevelopmentData__TestTenant__DepartmentIds__0: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
-      Seeding__DevelopmentData__TestTenant__DepartmentIds__1: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
@@ -410,10 +406,8 @@ services:
       MqttIntake__Password: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
       MqttIntake__ClientId: telemetry
       MqttIntake__ConsumerCount: "2"
-      # The test tenant IDs of Core. The seed machines of the seed data file belong to its departments.
+      # The test company ID of Core. The seed machines of the seed data file belong to this company.
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      Seeding__DevelopmentData__TestTenant__DepartmentIds__0: ${HEALTHYFAC_TEST_DEPARTMENT_A_ID:?set HEALTHYFAC_TEST_DEPARTMENT_A_ID in .env}
-      Seeding__DevelopmentData__TestTenant__DepartmentIds__1: ${HEALTHYFAC_TEST_DEPARTMENT_B_ID:?set HEALTHYFAC_TEST_DEPARTMENT_B_ID in .env}
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
       Metrics__Endpoint: http://lgtm:4317

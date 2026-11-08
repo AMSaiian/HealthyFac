@@ -63,11 +63,6 @@ public sealed class TestTokenFactory
             tokenClaims[KeycloakClaimTypes.EmployeeId] = claims.EmployeeId;
         }
 
-        if (claims.DepartmentIds.Count > 0)
-        {
-            tokenClaims[KeycloakClaimTypes.DepartmentIds] = claims.DepartmentIds.ToArray();
-        }
-
         return Sign(tokenClaims, claims.Issuer, claims.Audience, claims.IssuedAt, claims.Lifetime);
     }
 

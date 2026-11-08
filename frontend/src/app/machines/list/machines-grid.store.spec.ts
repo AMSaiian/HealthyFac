@@ -21,7 +21,6 @@ const MACHINE: Machine = {
   name: 'Lathe 01',
   serialNumber: 'ABC-1',
   gatewayId: 'abcdefghijklmnop',
-  departmentId: 'department-1',
   state: MachineState.Operational,
   description: null,
   createdAt: '2026-03-01T08:00:00Z',

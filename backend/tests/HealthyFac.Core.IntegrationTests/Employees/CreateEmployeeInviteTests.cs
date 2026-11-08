@@ -17,9 +17,9 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     [Fact]
     public async Task CreateAsync_WithValidRequest_StoresOpenInviteWithNormalizedEmail()
     {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
+        var companyId = await ArrangeCompanyAsync();
 
-        var inviteId = await CreateAsync(companyId, InviteTestData.RawEmail, departmentIds);
+        var inviteId = await CreateAsync(companyId, InviteTestData.RawEmail);
 
         var invite = await _fixture.LoadInviteAsync(inviteId);
 
@@ -30,15 +30,14 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
             .BeCloseTo(
                 DateTime.UtcNow.AddHours(InviteTestData.ExpectedLifetimeHours),
                 TimeSpan.FromMinutes(minutes: 1));
-        invite.Departments.Select(department => department.Id).Should().BeEquivalentTo(departmentIds);
     }
 
     [Fact]
     public async Task CreateAsync_WithValidRequest_AddsEmployeeInvitedOutboxRow()
     {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
+        var companyId = await ArrangeCompanyAsync();
 
-        var inviteId = await CreateAsync(companyId, InviteTestData.OutboxEmail, departmentIds);
+        var inviteId = await CreateAsync(companyId, InviteTestData.OutboxEmail);
 
         var messages = await ReadInvitedMessagesAsync(inviteId);
 
@@ -50,10 +49,10 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     [Fact]
     public async Task CreateAsync_WithSameEmailInOtherCase_ThrowsConflict()
     {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
-        await CreateAsync(companyId, InviteTestData.ConflictEmail, departmentIds);
+        var companyId = await ArrangeCompanyAsync();
+        await CreateAsync(companyId, InviteTestData.ConflictEmail);
 
-        var act = () => CreateAsync(companyId, InviteTestData.ConflictEmailOtherCase, departmentIds);
+        var act = () => CreateAsync(companyId, InviteTestData.ConflictEmailOtherCase);
 
         await act.Should()
             .ThrowAsync<ConflictException>()
@@ -63,10 +62,10 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     [Fact]
     public async Task CreateAsync_WithEmailOfExistingEmployee_ThrowsConflict()
     {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
-        await ArrangeEmployeeAsync(companyId, departmentIds, InviteTestData.EmployedEmail);
+        var companyId = await ArrangeCompanyAsync();
+        await ArrangeEmployeeAsync(companyId, InviteTestData.EmployedEmail);
 
-        var act = () => CreateAsync(companyId, InviteTestData.EmployedEmail, departmentIds);
+        var act = () => CreateAsync(companyId, InviteTestData.EmployedEmail);
 
         await act.Should()
             .ThrowAsync<ConflictException>()
@@ -74,63 +73,14 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task CreateAsync_WithDepartmentOfOtherCompany_ThrowsNotFound()
-    {
-        var (companyId, _) = await ArrangeCompanyAsync();
-        var (_, foreignDepartmentIds) = await ArrangeCompanyAsync();
-
-        var act = () => CreateAsync(
-            companyId,
-            InviteTestData.ForeignDepartmentEmail,
-            foreignDepartmentIds,
-            foreignDepartmentIds);
-
-        await act.Should()
-            .ThrowAsync<NotFoundException>()
-            .WithMessage(EmployeeInviteErrors.Rejections.DepartmentsNotFound);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithDepartmentOutsideActor_ThrowsForbidden()
-    {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
-
-        var act = () => CreateAsync(
-            companyId,
-            InviteTestData.OutsideActorEmail,
-            departmentIds,
-            [departmentIds[index: 0]]);
-
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
-        var inviteCount = await _fixture.CountInvitesAsync(companyId, InviteTestData.OutsideActorEmail);
-
-        inviteCount.Should().Be(expected: 0);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithDuplicateDepartmentIds_StoresEachDepartmentOnce()
-    {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
-
-        var inviteId = await CreateAsync(
-            companyId,
-            InviteTestData.DuplicateDepartmentEmail,
-            [departmentIds[index: 0], departmentIds[index: 0]]);
-
-        var invite = await _fixture.LoadInviteAsync(inviteId);
-
-        invite.Departments.Should().ContainSingle().Which.Id.Should().Be(departmentIds[index: 0]);
-    }
-
-    [Fact]
     public async Task CreateAsync_TwiceInParallelForSameEmail_CreatesOneInviteAndOneConflict()
     {
-        var (companyId, departmentIds) = await ArrangeCompanyAsync();
+        var companyId = await ArrangeCompanyAsync();
         using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
-            race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds)),
-            race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail, departmentIds)));
+            race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail)),
+            race.RunAsync(() => CreateAsync(companyId, InviteTestData.CreateParallelEmail)));
 
         var inviteCount = await _fixture.CountInvitesAsync(
             companyId,
@@ -147,22 +97,12 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
         inviteCount.Should().Be(expected: 1);
     }
 
-    private async Task<(Guid CompanyId, IReadOnlyList<Guid> DepartmentIds)> ArrangeCompanyAsync()
-    {
-        var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
-        var departmentIds = await _fixture.CreateDepartmentsAsync(
-            companyId,
-            InviteTestData.FirstDepartmentName,
-            InviteTestData.SecondDepartmentName);
+    private Task<Guid> ArrangeCompanyAsync() => _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
 
-        return (companyId, departmentIds);
-    }
-
-    private async Task ArrangeEmployeeAsync(Guid companyId, IReadOnlyList<Guid> departmentIds, string email)
+    private async Task ArrangeEmployeeAsync(Guid companyId, string email)
     {
         var (_, token) = await _fixture.CreateInviteAsync(
             companyId,
-            departmentIds,
             email,
             DateTime.UtcNow.AddHours(value: 1));
 
@@ -176,14 +116,9 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
         return messages.Where(message => message.InviteId == inviteId).ToList();
     }
 
-    private async Task<Guid> CreateAsync(
-        Guid companyId,
-        string email,
-        IReadOnlyList<Guid> departmentIds,
-        IEnumerable<Guid>? actorDepartmentIds = null
-    )
+    private async Task<Guid> CreateAsync(Guid companyId, string email)
     {
-        using var scope = _fixture.CreateUserScope(companyId, actorDepartmentIds ?? departmentIds);
+        using var scope = _fixture.CreateUserScope(companyId);
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<CreateEmployeeInviteRequest, CreateEmployeeInviteResponse>>();
 
@@ -193,7 +128,6 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
                 CompanyId = companyId,
                 Email = email,
                 RoleCode = RoleCode.Worker,
-                DepartmentIds = departmentIds,
             });
 
         return response.Id;

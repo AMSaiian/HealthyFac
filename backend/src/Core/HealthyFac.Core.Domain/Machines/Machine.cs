@@ -14,7 +14,6 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     /// Creates a machine in the operational state.
     /// </summary>
     /// <param name="companyId">The company of the machine. It never changes.</param>
-    /// <param name="departmentId">The department of the machine. It never changes.</param>
     /// <param name="gatewayId">The public identifier of the machine in MQTT messages. It never changes.</param>
     /// <param name="name">The name of the machine.</param>
     /// <param name="serialNumber">The serial number as the user typed it.</param>
@@ -22,14 +21,13 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     /// <param name="startedAt">The moment the machine starts in the operational state, as a UTC instant.</param>
     public Machine(
         Guid companyId,
-        Guid departmentId,
         string gatewayId,
         string name,
         string serialNumber,
         string? description,
         DateTime startedAt
     )
-        : this(companyId, departmentId, gatewayId, name, serialNumber, description)
+        : this(companyId, gatewayId, name, serialNumber, description)
     {
         _stateHistory.Add(new MachineStateHistory(Id, MachineState.Operational, startedAt));
     }
@@ -40,7 +38,6 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     /// </summary>
     /// <param name="id">The fixed ID of the machine.</param>
     /// <param name="companyId">The company of the machine. It never changes.</param>
-    /// <param name="departmentId">The department of the machine. It never changes.</param>
     /// <param name="gatewayId">The public identifier of the machine in MQTT messages. It never changes.</param>
     /// <param name="name">The name of the machine.</param>
     /// <param name="serialNumber">The serial number as the user typed it.</param>
@@ -49,14 +46,13 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     public Machine(
         Guid id,
         Guid companyId,
-        Guid departmentId,
         string gatewayId,
         string name,
         string serialNumber,
         string? description,
         DateTime startedAt
     )
-        : this(companyId, departmentId, gatewayId, name, serialNumber, description)
+        : this(companyId, gatewayId, name, serialNumber, description)
     {
         Id = id;
         _stateHistory.Add(new MachineStateHistory(Id, MachineState.Operational, startedAt));
@@ -64,7 +60,6 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
 
     private Machine(
         Guid companyId,
-        Guid departmentId,
         string gatewayId,
         string name,
         string serialNumber,
@@ -72,14 +67,12 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     )
     {
         CompanyId = companyId;
-        DepartmentId = departmentId;
         GatewayId = gatewayId;
         Update(name, serialNumber, description);
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
     public Guid CompanyId { get; private set; }
-    public Guid DepartmentId { get; private set; }
     public string GatewayId { get; private set; }
     public string Name { get; private set; }
     public string SerialNumber { get; private set; }
@@ -97,7 +90,7 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     public Guid? DeletedBy { get; private set; }
 
     /// <summary>
-    /// Changes the data that a user edits. The company, the department, and the gateway ID never change, and the
+    /// Changes the data that a user edits. The company and the gateway ID never change, and the
     /// state changes only through <see cref="ChangeState"/>.
     /// </summary>
     /// <param name="name">The name of the machine.</param>

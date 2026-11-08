@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Mime;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -76,7 +75,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture)
     }
 
     [Fact]
-    public async Task Endpoint_WithServiceTokenWithPermission_PassesPolicyAndFailsDepartmentScope()
+    public async Task Endpoint_WithServiceTokenWithPermission_PassesPolicy()
     {
         var claims = new TestServiceTokenClaims { Permissions = ["employees:invite"] };
 
@@ -85,8 +84,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture)
             EmployeeInviteApiTestData.ServiceCallerUserId,
             _fixture.CompanyId);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        response.Content.Headers.ContentType?.MediaType.Should().Be(MediaTypeNames.Application.Json);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]

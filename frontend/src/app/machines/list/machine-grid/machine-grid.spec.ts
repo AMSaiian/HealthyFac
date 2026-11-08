@@ -10,7 +10,6 @@ import { MachineGrid } from './machine-grid';
 const EMPTY_FILTER: MachineFilter = {
   name: '',
   serialNumber: '',
-  departmentIds: [],
   states: [],
   createdAt: { from: null, to: null },
   updatedAt: { from: null, to: null },
@@ -45,7 +44,6 @@ function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadStatuses?
   fixture.componentRef.setInput('limit', 25);
   fixture.componentRef.setInput('sort', null);
   fixture.componentRef.setInput('filter', filter);
-  fixture.componentRef.setInput('departments', []);
   fixture.componentRef.setInput('canReadStatuses', options.canReadStatuses ?? false);
   fixture.detectChanges();
   const emitted: Partial<MachineFilter>[] = [];
@@ -76,7 +74,6 @@ describe('MachineGrid', () => {
       {
         name: 'ab',
         serialNumber: '',
-        departmentIds: [],
         states: [MachineState.Operational],
         createdAt: { from: null, to: null },
         updatedAt: { from: null, to: null },

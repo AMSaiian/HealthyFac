@@ -15,7 +15,7 @@ import { httpErrorMessageKey } from '@shared/http/http-error-message';
 import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
 
-import { EMPTY_VALUE, overlay, payloadOf, toFormValue, toUpdateBody } from './machine-drawer.store.utils';
+import { EMPTY_VALUE, overlay, payloadOf, toBody, toFormValue } from './machine-drawer.store.utils';
 import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 
 const SUCCESS_SUMMARY_KEY = 'MACHINES.TOASTS.SUCCESS';
@@ -55,7 +55,7 @@ export const MachineDrawerStore = signalStore(
   withComputed((store) => ({
     prefilledValue: computed((): MachineFormValue | null => {
       const initial = store.initialValue();
-      return initial === null ? null : overlay(initial, payloadOf(store.action()), store.isUpdate());
+      return initial === null ? null : overlay(initial, payloadOf(store.action()));
     }),
   })),
   withComputed((store) => ({
@@ -71,11 +71,11 @@ export const MachineDrawerStore = signalStore(
     };
 
     const request$ = (value: MachineFormValue): Observable<unknown> => {
-      const body = toUpdateBody(value);
+      const body = toBody(value);
       const options = { context: new HttpContext().set(SKIP_ERROR_TOAST, true) };
       return store.isUpdate()
         ? store._api.update(store.machineId() ?? '', body, options)
-        : store._api.create({ ...body, departmentId: value.departmentId }, options);
+        : store._api.create(body, options);
     };
 
     return {

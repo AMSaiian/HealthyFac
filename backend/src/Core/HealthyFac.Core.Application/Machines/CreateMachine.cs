@@ -18,7 +18,6 @@ public record CreateMachineRequest : IRequest<CreateMachineResponse>
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
     public required Guid CompanyId { get; init; }
-    public required Guid DepartmentId { get; init; }
 
     public string? Description { get; init; }
 }
@@ -41,10 +40,6 @@ public class CreateMachineRequestValidator : AbstractValidator<CreateMachineRequ
         RuleFor(x => x.CompanyId)
             .NotEmpty()
             .WithMessage(MachineErrors.CompanyIdRequired);
-
-        RuleFor(x => x.DepartmentId)
-            .NotEmpty()
-            .WithMessage(MachineErrors.DepartmentIdRequired);
     }
 }
 
@@ -57,21 +52,20 @@ public sealed class CreateMachinePreHandlerCheck(ICurrentUserProvider currentUse
     {
         var actor = _currentUser.GetActor();
         actor.EnsureCompany(request.CompanyId);
-        actor.EnsureDepartments([request.DepartmentId]);
 
         return Task.CompletedTask;
     }
 }
 
 /// <summary>
-/// Creates a machine in a department of the company. The serial number must be unique among the machines of the
+/// Creates a machine in the company. The serial number must be unique among the machines of the
 /// company that are not deleted, ignoring case.
 /// </summary>
 /// <remarks>
 /// The handler checks the serial number first, so the common conflict costs no failed insert. The unique index
 /// catches a parallel create of the same serial number, and the handler maps that failure to the same conflict.
 /// </remarks>
-/// <param name="dbContext">Reads the department and the serial numbers and saves the machine.</param>
+/// <param name="dbContext">Reads the serial numbers and saves the machine.</param>
 /// <param name="timeProvider">Provides the start of the first state of the machine.</param>
 /// <param name="outbox">Queues the <see cref="MachineCreated"/> message in the save of the machine.</param>
 public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider timeProvider, IOutbox outbox)
@@ -86,18 +80,8 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider 
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var isDepartmentInCompany = await _dbContext.Departments.AnyAsync(
-            department => department.Id == request.DepartmentId && department.CompanyId == request.CompanyId,
-            cancellationToken);
-
-        if (!isDepartmentInCompany)
-        {
-            throw new NotFoundException(MachineErrors.DepartmentNotFound);
-        }
-
         var machine = new Machine(
             request.CompanyId,
-            request.DepartmentId,
             GatewayIds.Create(),
             request.Name,
             request.SerialNumber,
@@ -121,7 +105,6 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider 
                 MachineId = machine.Id,
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
-                DepartmentId = machine.DepartmentId,
             });
 
         try

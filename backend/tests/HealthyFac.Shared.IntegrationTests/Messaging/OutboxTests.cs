@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -23,7 +22,6 @@ public sealed class OutboxTests(PostgreSqlFixture fixture)
                 Kind = ActorKind.User,
                 UserId = OutboxTestData.UserId,
                 CompanyId = OutboxTestData.CompanyId,
-                DepartmentIds = FrozenSet<Guid>.Empty,
             });
         scope.ServiceProvider.GetRequiredService<IOutbox>()
             .Add(new TestActorStamped { Text = OutboxTestData.ActorStampedText });

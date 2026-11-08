@@ -8,6 +8,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { CompanyStore } from '@shared/company/company.store';
 import { AuthStore } from '@shared/security/auth.store';
 import { MachineState } from '@machines/machine';
 import { MACHINES_ROUTES } from '@machines/machines.routes';
@@ -26,7 +27,6 @@ const MACHINE = {
   name: 'Lathe',
   serialNumber: 'S1',
   gatewayId: 'abcdefghijklmnop',
-  departmentId: 'd1',
   state: MachineState.Operational,
   description: null,
   createdAt: '2026-01-01T00:00:00Z',
@@ -69,6 +69,7 @@ function setup(isConfirmed: boolean): { http: HttpTestingController; confirm: Re
       provideHttpClientTesting(),
       provideTranslateService(),
       { provide: AuthStore, useValue: { hasPermission: () => true } },
+      { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
       { provide: ConfirmationService, useValue: { confirm } },
     ],

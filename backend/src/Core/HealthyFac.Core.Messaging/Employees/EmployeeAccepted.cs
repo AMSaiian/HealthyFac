@@ -29,8 +29,6 @@ public sealed record EmployeeAccepted : IIntegrationMessage, IRequest
     public required string LastName { get; init; }
 
     public required string RoleCode { get; init; }
-
-    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
 }
 
 public class EmployeeAcceptedValidator : AbstractValidator<EmployeeAccepted>
@@ -65,14 +63,6 @@ public class EmployeeAcceptedValidator : AbstractValidator<EmployeeAccepted>
             .WithMessage(EmployeeMessageErrors.Validation.LastNameRequired)
             .MaximumLength(EmployeeMessageLimits.NameMaxLength)
             .SingleLineText();
-
-        RuleFor(message => message.DepartmentIds)
-            .NotEmpty()
-            .WithMessage(EmployeeMessageErrors.Validation.DepartmentIdsRequired);
-
-        RuleForEach(message => message.DepartmentIds)
-            .NotEmpty()
-            .WithMessage(EmployeeMessageErrors.Validation.DepartmentIdEmpty);
 
         RuleFor(message => message.RoleCode)
             .NotEmpty()

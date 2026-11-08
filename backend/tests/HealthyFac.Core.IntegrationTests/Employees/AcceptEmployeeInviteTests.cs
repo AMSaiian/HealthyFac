@@ -28,7 +28,6 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
         employee.FirstName.Should().Be(InviteTestData.EmployeeFirstName);
         employee.LastName.Should().Be(InviteTestData.EmployeeLastName);
         employee.RoleId.Should().Be(invite.RoleId);
-        employee.Departments.Select(department => department.Id).Should().BeEquivalentTo(arranged.DepartmentIds);
 
         invite.AcceptedAt.Should().NotBeNull();
     }
@@ -48,18 +47,6 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
         messages[index: 0].FirstName.Should().Be(InviteTestData.EmployeeFirstName);
         messages[index: 0].LastName.Should().Be(InviteTestData.EmployeeLastName);
         messages[index: 0].RoleCode.Should().Be(RoleCode.Worker.Value);
-    }
-
-    [Fact]
-    public async Task AcceptEmployeeInvite_Always_SendsInviteDepartments()
-    {
-        var arranged = await ArrangeAsync(InviteTestData.AcceptDepartmentsEmail);
-
-        var employeeId = await _fixture.AcceptInviteAsync(arranged.Token);
-
-        var messages = await ReadAcceptedMessagesAsync(employeeId);
-
-        messages.Should().ContainSingle().Which.DepartmentIds.Should().BeEquivalentTo(arranged.DepartmentIds);
     }
 
     [Fact]
@@ -153,9 +140,7 @@ public sealed class AcceptEmployeeInviteTests(CoreDatabaseFixture fixture)
     private Task<ArrangedInvite> ArrangeAsync(string email, DateTime? expiresAt = null) =>
         _fixture.ArrangeInviteAsync(
             email,
-            expiresAt ?? DateTime.UtcNow.AddHours(value: 1),
-            InviteTestData.FirstDepartmentName,
-            InviteTestData.SecondDepartmentName);
+            expiresAt ?? DateTime.UtcNow.AddHours(value: 1));
 
     private async Task<IReadOnlyList<EmployeeAccepted>> ReadAcceptedMessagesAsync(Guid employeeId)
     {

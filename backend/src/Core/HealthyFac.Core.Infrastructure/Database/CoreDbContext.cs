@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
@@ -23,8 +22,6 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
     : DbContext(options), ICoreDbContext, IOutboxDbContext, IInboxDbContext
 {
     public DbSet<Company> Companies => Set<Company>();
-
-    public DbSet<Department> Departments => Set<Department>();
 
     public DbSet<Role> Roles => Set<Role>();
 

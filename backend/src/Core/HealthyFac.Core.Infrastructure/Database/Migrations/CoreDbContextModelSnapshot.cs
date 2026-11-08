@@ -52,55 +52,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("name")
                         .UseCollation("case_insensitive");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("companies", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_company_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
-                        });
-                });
-
-            modelBuilder.Entity("HealthyFac.Core.Domain.Departments.Department", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("company_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name")
-                        .UseCollation("case_insensitive");
-
                     b.Property<string>("TimeZoneId")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -118,17 +69,13 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId", "Name")
-                        .IsUnique()
-                        .HasFilter("deleted_at IS NULL");
-
-                    b.ToTable("departments", null, t =>
+                    b.ToTable("companies", null, t =>
                         {
-                            t.HasCheckConstraint("ck_department_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+                            t.HasCheckConstraint("ck_company_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_department_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_company_time_zone_id_length", "char_length(\"time_zone_id\") BETWEEN 1 AND 100");
 
-                            t.HasCheckConstraint("ck_department_time_zone_id_not_blank", "\"time_zone_id\" COLLATE \"default\" ~ '\\S'");
+                            t.HasCheckConstraint("ck_company_time_zone_id_not_blank", "\"time_zone_id\" COLLATE \"default\" ~ '\\S'");
                         });
                 });
 
@@ -365,10 +312,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
 
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("department_id");
-
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description")
@@ -414,13 +357,9 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasDatabaseName("ix_machines_company_id_serial_number")
                         .HasFilter("deleted_at IS NULL");
 
-                    b.HasIndex("DepartmentId", "CompanyId");
-
                     b.ToTable("machines", null, t =>
                         {
                             t.HasCheckConstraint("ck_machine_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
-
-                            t.HasCheckConstraint("ck_machine_department_id_not_empty", "\"department_id\" <> '00000000-0000-0000-0000-000000000000'");
 
                             t.HasCheckConstraint("ck_machine_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
 
@@ -677,61 +616,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("employee_departments", b =>
-                {
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("employee_id");
-
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("department_id");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("company_id");
-
-                    b.HasKey("EmployeeId", "DepartmentId");
-
-                    b.HasIndex("DepartmentId", "CompanyId");
-
-                    b.HasIndex("EmployeeId", "CompanyId");
-
-                    b.ToTable("employee_departments", (string)null);
-                });
-
-            modelBuilder.Entity("employee_invite_departments", b =>
-                {
-                    b.Property<Guid>("EmployeeInviteId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("employee_invite_id");
-
-                    b.Property<Guid>("DepartmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("department_id");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("company_id");
-
-                    b.HasKey("EmployeeInviteId", "DepartmentId");
-
-                    b.HasIndex("DepartmentId", "CompanyId");
-
-                    b.HasIndex("EmployeeInviteId", "CompanyId");
-
-                    b.ToTable("employee_invite_departments", (string)null);
-                });
-
-            modelBuilder.Entity("HealthyFac.Core.Domain.Departments.Department", b =>
-                {
-                    b.HasOne("HealthyFac.Core.Domain.Companies.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.Employee", b =>
                 {
                     b.HasOne("HealthyFac.Core.Domain.Companies.Company", null)
@@ -769,13 +653,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("HealthyFac.Core.Domain.Departments.Department", null)
-                        .WithMany()
-                        .HasForeignKey("DepartmentId", "CompanyId")
-                        .HasPrincipalKey("Id", "CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("HealthyFac.Core.Domain.Machines.MachineStateHistory", b =>
@@ -784,40 +661,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .WithMany("StateHistory")
                         .HasForeignKey("MachineId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("employee_departments", b =>
-                {
-                    b.HasOne("HealthyFac.Core.Domain.Departments.Department", null)
-                        .WithMany()
-                        .HasForeignKey("DepartmentId", "CompanyId")
-                        .HasPrincipalKey("Id", "CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HealthyFac.Core.Domain.Employees.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId", "CompanyId")
-                        .HasPrincipalKey("Id", "CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("employee_invite_departments", b =>
-                {
-                    b.HasOne("HealthyFac.Core.Domain.Departments.Department", null)
-                        .WithMany()
-                        .HasForeignKey("DepartmentId", "CompanyId")
-                        .HasPrincipalKey("Id", "CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("HealthyFac.Core.Domain.Employees.EmployeeInvite", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeInviteId", "CompanyId")
-                        .HasPrincipalKey("Id", "CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -12,12 +12,11 @@ public static class SeedMachinesValidatorTestData
 
     public static TheoryData<IReadOnlyList<SeedMachineOptions>> ValidSeedMachines => new()
     {
-        { [Create(FirstMachineId, FirstGatewayId, departmentIndex: 0)] },
-        { [Create(FirstMachineId, FirstGatewayId, departmentIndex: 1)] },
+        { [Create(FirstMachineId, FirstGatewayId)] },
         {
             [
-                Create(FirstMachineId, FirstGatewayId, departmentIndex: 0),
-                Create(SecondMachineId, SecondGatewayId, departmentIndex: 1),
+                Create(FirstMachineId, FirstGatewayId),
+                Create(SecondMachineId, SecondGatewayId),
             ]
         },
     };
@@ -25,48 +24,37 @@ public static class SeedMachinesValidatorTestData
     public static TheoryData<IReadOnlyList<SeedMachineOptions>, string> InvalidSeedMachines => new()
     {
         {
-            [Create(Guid.Empty, FirstGatewayId, departmentIndex: 0)],
+            [Create(Guid.Empty, FirstGatewayId)],
             SeedingValidationConstants.Messages.SeedMachineIdEmpty
         },
         {
-            [Create(FirstMachineId, gatewayId: "tooshort", departmentIndex: 0)],
+            [Create(FirstMachineId, gatewayId: "tooshort")],
             SeedingValidationConstants.Messages.SeedMachineGatewayIdInvalid
         },
         {
-            [Create(FirstMachineId, gatewayId: "SEEDMACHINEONE22", departmentIndex: 0)],
+            [Create(FirstMachineId, gatewayId: "SEEDMACHINEONE22")],
             SeedingValidationConstants.Messages.SeedMachineGatewayIdInvalid
         },
         {
-            [Create(FirstMachineId, gatewayId: "seedmachineone18", departmentIndex: 0)],
+            [Create(FirstMachineId, gatewayId: "seedmachineone18")],
             SeedingValidationConstants.Messages.SeedMachineGatewayIdInvalid
-        },
-        {
-            [Create(FirstMachineId, FirstGatewayId, departmentIndex: -1)],
-            SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange
-        },
-        {
-            [Create(FirstMachineId, FirstGatewayId, departmentIndex: 2)],
-            SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange
         },
         {
             [
-                Create(FirstMachineId, FirstGatewayId, departmentIndex: 0),
-                Create(FirstMachineId, SecondGatewayId, departmentIndex: 0),
+                Create(FirstMachineId, FirstGatewayId),
+                Create(FirstMachineId, SecondGatewayId),
             ],
             SeedingValidationConstants.Messages.SeedMachineIdDuplicated
         },
         {
             [
-                Create(FirstMachineId, FirstGatewayId, departmentIndex: 0),
-                Create(SecondMachineId, FirstGatewayId, departmentIndex: 0),
+                Create(FirstMachineId, FirstGatewayId),
+                Create(SecondMachineId, FirstGatewayId),
             ],
             SeedingValidationConstants.Messages.SeedMachineGatewayIdDuplicated
         },
     };
 
-    public static SeedMachineOptions SingleSeedMachine =>
-        Create(FirstMachineId, FirstGatewayId, departmentIndex: 0);
-
-    private static SeedMachineOptions Create(Guid machineId, string gatewayId, int departmentIndex) =>
-        new() { MachineId = machineId, GatewayId = gatewayId, DepartmentIndex = departmentIndex };
+    private static SeedMachineOptions Create(Guid machineId, string gatewayId) =>
+        new() { MachineId = machineId, GatewayId = gatewayId };
 }

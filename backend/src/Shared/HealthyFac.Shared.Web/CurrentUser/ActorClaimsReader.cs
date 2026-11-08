@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using System.Security.Claims;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
@@ -32,9 +31,8 @@ internal static class ActorClaimsReader
     /// <returns>The actor of the request.</returns>
     /// <exception cref="UnauthorizedAccessException">
     /// Thrown when a user token has no valid <c>sub</c>, <c>organization</c>, or <c>employee_id</c>, or holds more
-    /// than one organization, or has a <c>department_ids</c> value that is not a GUID. A missing
-    /// <c>department_ids</c> claim gives an actor with no departments. Also thrown when a service token comes from a
-    /// client outside <see cref="ServiceActorOptions.AllowedClients"/>, or has no valid actor header.
+    /// than one organization. Also thrown when a service token comes from a client
+    /// outside <see cref="ServiceActorOptions.AllowedClients"/>, or has no valid actor header.
     /// </exception>
     public static ActorContext Read(ClaimsPrincipal user, IHeaderDictionary headers, ServiceActorOptions options) =>
         IsServiceToken(user) ? ReadServiceActor(user, headers, options) : ReadUser(user);
@@ -95,16 +93,8 @@ internal static class ActorClaimsReader
             UserId = userId,
             CompanyId = ReadCompanyId(user),
             EmployeeId = employeeId,
-            DepartmentIds = ReadDepartmentIds(user),
         };
     }
-
-    private static FrozenSet<Guid> ReadDepartmentIds(ClaimsPrincipal user) =>
-        user.FindAll(KeycloakClaimTypes.DepartmentIds)
-            .Select(claim => Guid.TryParse(claim.Value, out var departmentId)
-                ? departmentId
-                : throw CurrentUserErrors.DepartmentIdsInvalid())
-            .ToFrozenSet();
 
     private static Guid ReadCompanyId(ClaimsPrincipal user)
     {

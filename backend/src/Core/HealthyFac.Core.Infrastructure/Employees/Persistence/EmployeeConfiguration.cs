@@ -1,6 +1,5 @@
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Domain.Entities;
@@ -13,9 +12,7 @@ namespace HealthyFac.Core.Infrastructure.Employees.Persistence;
 
 /// <summary>
 /// Configures entity framework mapping for the employee entity. The email is unique across all companies,
-/// because Keycloak rejects a second user with the same email in one realm. The department links carry the
-/// company and reference both sides together with it, so the database rejects a link to a department of
-/// another company.
+/// because Keycloak rejects a second user with the same email in one realm.
 /// </summary>
 public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 {
@@ -52,25 +49,6 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .WithMany()
             .HasForeignKey(employee => employee.RoleId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasAlternateKey(employee => new { employee.Id, employee.CompanyId });
-
-        builder.HasMany(employee => employee.Departments)
-            .WithMany()
-            .UsingEntity(
-                joinEntityName: "employee_departments",
-                department => department.HasOne(typeof(Department))
-                    .WithMany()
-                    .HasForeignKey(nameof(Department) + nameof(Department.Id), nameof(Department.CompanyId))
-                    .HasPrincipalKey(nameof(Department.Id), nameof(Department.CompanyId))
-                    .OnDelete(DeleteBehavior.Restrict),
-                employee => employee.HasOne(typeof(Employee))
-                    .WithMany()
-                    .HasForeignKey(nameof(Employee) + nameof(Employee.Id), nameof(Employee.CompanyId))
-                    .HasPrincipalKey(nameof(Employee.Id), nameof(Employee.CompanyId))
-                    .OnDelete(DeleteBehavior.Cascade),
-                join => join.HasKey(
-                    nameof(Employee) + nameof(Employee.Id), nameof(Department) + nameof(Department.Id)));
 
         builder.HasIndex(employee => employee.Email)
             .IsUnique()

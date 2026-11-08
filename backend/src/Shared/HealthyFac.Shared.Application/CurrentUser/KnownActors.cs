@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using UUIDNext;
 
 namespace HealthyFac.Shared.Application.CurrentUser;
@@ -23,7 +22,6 @@ public static class KnownActors
     {
         Kind = ActorKind.Anonymous,
         UserId = IdOf(ActorKind.Anonymous.Value),
-        DepartmentIds = FrozenSet<Guid>.Empty,
     };
 
     /// <summary>
@@ -68,7 +66,6 @@ public static class KnownActors
             Name = $"{service.Value}:{flow}",
             UserId = IdOf($"{ActorKind.Service.Value}:{service.Value}:{flow}"),
             CompanyId = companyId,
-            DepartmentIds = FrozenSet<Guid>.Empty,
         };
 
     /// <summary>
@@ -84,6 +81,5 @@ public static class KnownActors
             Kind = KindOf(actorId),
             UserId = actorId,
             CompanyId = companyId,
-            DepartmentIds = FrozenSet<Guid>.Empty,
         };
 }

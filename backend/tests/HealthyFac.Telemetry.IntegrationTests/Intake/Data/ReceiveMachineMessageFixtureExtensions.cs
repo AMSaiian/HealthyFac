@@ -23,7 +23,7 @@ public static class ReceiveMachineMessageFixtureExtensions
         public async Task<ArrangedIntakeMachine> ArrangeIntakeMachineAsync(bool isWithDefinitions = true)
         {
             var tenant = fixture.ArrangeMachineTenant();
-            var machineId = await fixture.RegisterMachineInDepartmentAsync(tenant.CompanyId, tenant.FirstDepartmentId);
+            var machineId = await fixture.RegisterTenantMachineAsync(tenant.CompanyId);
             var registration = await fixture.LoadRegistrationAsync(machineId);
 
             if (isWithDefinitions)
@@ -39,13 +39,11 @@ public static class ReceiveMachineMessageFixtureExtensions
                     ]);
                 await fixture.CreateStatusDefinitionAsync(
                     tenant.CompanyId,
-                    tenant.BothDepartmentIds,
                     machineId,
                     ReceiveMachineMessageTestData.ErrorStatus,
                     severity: StatusSeverity.Error);
                 await fixture.CreateStatusDefinitionAsync(
                     tenant.CompanyId,
-                    tenant.BothDepartmentIds,
                     machineId,
                     ReceiveMachineMessageTestData.WarningStatus,
                     severity: StatusSeverity.Warning);

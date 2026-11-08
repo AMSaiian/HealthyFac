@@ -11,14 +11,15 @@ namespace HealthyFac.Shared.UnitTests.CurrentUser.Data;
 public static class ActorClaimsTestData
 {
     public const string OtherServiceClientId = "healthyfac-gateway";
-    public const string InvalidDepartmentId = "not-a-guid";
+    public const string LegacyClaimType = "legacy_scope_ids";
+    public const string LegacyClaimValue = "not-a-guid";
 
     public static ClaimsPrincipal CreatePrincipal(
         string? subject,
         IEnumerable<string> organizations,
         string? employeeId,
         string? clientId = null,
-        IEnumerable<string>? departmentIds = null
+        string? legacyClaimValue = null
     )
     {
         var claims = organizations
@@ -40,8 +41,10 @@ public static class ActorClaimsTestData
             claims.Add(new Claim(KeycloakClaimTypes.ClientId, clientId));
         }
 
-        claims.AddRange(
-            (departmentIds ?? []).Select(departmentId => new Claim(KeycloakClaimTypes.DepartmentIds, departmentId)));
+        if (legacyClaimValue is not null)
+        {
+            claims.Add(new Claim(LegacyClaimType, legacyClaimValue));
+        }
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "test"));
     }

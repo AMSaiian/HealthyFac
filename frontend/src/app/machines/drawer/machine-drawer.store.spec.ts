@@ -18,7 +18,6 @@ const MACHINE: Machine = {
   name: 'Lathe 01',
   serialNumber: 'ABC-1',
   gatewayId: 'abcdefghijklmnop',
-  departmentId: 'department-1',
   state: MachineState.Operational,
   description: '<p>old</p>',
   createdAt: '2026-03-01T08:00:00Z',
@@ -28,7 +27,6 @@ const MACHINE: Machine = {
 const VALUE: MachineFormValue = {
   name: ' Lathe 02 ',
   serialNumber: 'XYZ-2 ',
-  departmentId: 'department-2',
   description: '<p>new</p>',
 };
 
@@ -37,7 +35,6 @@ const UPDATE_BODY = { name: 'Lathe 02', serialNumber: 'XYZ-2', description: '<p>
 const TRIMMED_BODY = {
   name: 'Lathe 02',
   serialNumber: 'XYZ-2',
-  departmentId: 'department-2',
   description: '<p>new</p>',
 };
 
@@ -139,24 +136,21 @@ describe('MachineDrawerStore', () => {
     expect(store.initialValue()).toEqual({
       name: MACHINE.name,
       serialNumber: MACHINE.serialNumber,
-      departmentId: MACHINE.departmentId,
       description: MACHINE.description,
     });
     expect(store.prefilledValue()).toEqual({
       name: 'Prefilled',
       serialNumber: MACHINE.serialNumber,
-      departmentId: MACHINE.departmentId,
       description: MACHINE.description,
     });
   });
 
-  it('load_ForUpdate_IgnoresPayloadDepartmentAndExposesGatewayId', async () => {
+  it('load_ForUpdate_ExposesGatewayId', async () => {
     const { store } = setup();
-    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id, departmentId: 'department-9' } });
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
 
-    expect(store.prefilledValue()?.departmentId).toBe(MACHINE.departmentId);
     expect(store.gatewayId()).toBe(MACHINE.gatewayId);
   });
 
@@ -168,7 +162,6 @@ describe('MachineDrawerStore', () => {
     expect(store.prefilledValue()).toEqual({
       name: 'Agent name',
       serialNumber: '',
-      departmentId: '',
       description: null,
     });
   });

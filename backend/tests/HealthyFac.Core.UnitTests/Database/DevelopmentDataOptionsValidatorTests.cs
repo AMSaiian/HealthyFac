@@ -65,14 +65,16 @@ public sealed class DevelopmentDataOptionsValidatorTests
     }
 
     [Fact]
-    public void Validate_WithSeedMachinesAndNoTestTenant_ReportsDepartmentIndex()
+    public void Validate_WithUnknownTestTenantTimeZone_ReportsTimeZoneIdUnknown()
     {
         var result = _validator.Validate(
-            new DevelopmentDataOptions { SeedMachines = [SeedMachinesValidatorTestData.SingleSeedMachine] });
+            new DevelopmentDataOptions
+            {
+                TestTenant = DevelopmentDataOptionsValidatorTestData.TestTenantWithUnknownTimeZone,
+            });
 
         result.Errors.Should()
-            .ContainSingle(error =>
-                error.ErrorMessage == SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange);
+            .ContainSingle(error => error.ErrorMessage == SeedingValidationConstants.Messages.TimeZoneIdUnknown);
     }
 
     [Theory]

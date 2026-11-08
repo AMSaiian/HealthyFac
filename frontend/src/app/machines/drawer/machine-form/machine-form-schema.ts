@@ -28,7 +28,6 @@ const requiredText = (limit: number): ZodMiniString =>
 export const machineFormSchema = object({
   name: requiredText(NAME_MAX_LENGTH),
   serialNumber: requiredText(SERIAL_NUMBER_MAX_LENGTH),
-  departmentId: string().check(minLength(1, REQUIRED_ERROR_KEY)),
   description: richTextSchema(DESCRIPTION_MAX_LENGTH, TOO_LONG_ERROR_KEY),
 });
 

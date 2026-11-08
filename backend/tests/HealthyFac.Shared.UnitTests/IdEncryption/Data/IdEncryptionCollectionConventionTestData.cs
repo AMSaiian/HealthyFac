@@ -8,21 +8,21 @@ public static class IdEncryptionCollectionConventionTestData
     public static readonly Guid SecondId = Guid.Parse(input: "22222222-2222-2222-2222-222222222222");
     public static readonly Guid ThirdId = Guid.Parse(input: "33333333-3333-3333-3333-333333333333");
 
-    public const string DepartmentIdsPropertyName = "departmentIds";
+    public const string TagIdsPropertyName = "tagIds";
     public const string MachineIdsPropertyName = "machineIds";
     public const string StepIdsPropertyName = "stepIds";
     public const string OptionalIdsPropertyName = "optionalIds";
     public const string IgnoredIdsPropertyName = "ignoredIds";
     public const string CorrelationTokensPropertyName = "correlationTokens";
 
-    public const string NonArrayIdsJson = """{"departmentIds":"v1.not-an-array"}""";
-    public const string InvalidElementJson = """{"departmentIds":["not-an-encrypted-id"]}""";
+    public const string NonArrayIdsJson = """{"tagIds":"v1.not-an-array"}""";
+    public const string InvalidElementJson = """{"tagIds":["not-an-encrypted-id"]}""";
 
     public static TheoryData<CollectionConventionTestModel> Models =>
     [
         new CollectionConventionTestModel
         {
-            DepartmentIds = [FirstId, SecondId],
+            TagIds = [FirstId, SecondId],
             MachineIds = [ThirdId, FirstId],
             StepIds = [SecondId],
             OptionalIds = null,

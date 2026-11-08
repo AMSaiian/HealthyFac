@@ -2,7 +2,6 @@ using System.Text.Json;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Domain.Companies;
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
@@ -24,22 +23,20 @@ public static class EmployeeInviteFixtureExtensions
     {
         public async Task<ArrangedInvite> ArrangeInviteAsync(
             string email,
-            DateTime expiresAt,
-            params string[] departmentNames
+            DateTime expiresAt
         )
         {
             var companyId = await fixture.CreateCompanyAsync(InviteTestData.CompanyName);
-            var departmentIds = await fixture.CreateDepartmentsAsync(companyId, departmentNames);
-            var (inviteId, token) = await fixture.CreateInviteAsync(companyId, departmentIds, email, expiresAt);
+            var (inviteId, token) = await fixture.CreateInviteAsync(companyId, email, expiresAt);
 
-            return new ArrangedInvite(companyId, departmentIds, inviteId, token);
+            return new ArrangedInvite(companyId, inviteId, token);
         }
 
         public async Task<Guid> CreateCompanyAsync(string name)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var company = new Company { Name = name };
+            var company = new Company { Name = name, TimeZoneId = InviteTestData.CompanyTimeZoneId };
 
             dbContext.Companies.Add(company);
             await dbContext.SaveChangesAsync();
@@ -47,28 +44,8 @@ public static class EmployeeInviteFixtureExtensions
             return company.Id;
         }
 
-        public async Task<IReadOnlyList<Guid>> CreateDepartmentsAsync(Guid companyId, params string[] names)
-        {
-            using var scope = fixture.ScopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var departments = names
-                .Select(name => new Department
-                {
-                    CompanyId = companyId,
-                    Name = name,
-                    TimeZoneId = InviteTestData.DepartmentTimeZoneId,
-                })
-                .ToList();
-
-            dbContext.Departments.AddRange(departments);
-            await dbContext.SaveChangesAsync();
-
-            return departments.Select(department => department.Id).ToList();
-        }
-
         public async Task<(Guid InviteId, string Token)> CreateInviteAsync(
             Guid companyId,
-            IReadOnlyList<Guid> departmentIds,
             string email,
             DateTime expiresAt
         )
@@ -79,11 +56,8 @@ public static class EmployeeInviteFixtureExtensions
                 .Where(role => role.Code == RoleCode.Worker)
                 .Select(role => role.Id)
                 .SingleAsync();
-            var departments = await dbContext.Departments
-                .Where(department => departmentIds.Contains(department.Id))
-                .ToListAsync();
             var salt = fixture.InviteTokenService.CreateSalt();
-            var invite = new EmployeeInvite(companyId, email, roleId, departments, salt, expiresAt);
+            var invite = new EmployeeInvite(companyId, email, roleId, salt, expiresAt);
 
             dbContext.EmployeeInvites.Add(invite);
             await dbContext.SaveChangesAsync();
@@ -114,7 +88,6 @@ public static class EmployeeInviteFixtureExtensions
             return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .EmployeeInvites
                 .AsNoTracking()
-                .Include(invite => invite.Departments)
                 .SingleAsync(invite => invite.Id == inviteId);
         }
 
@@ -125,7 +98,6 @@ public static class EmployeeInviteFixtureExtensions
             return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .Employees
                 .AsNoTracking()
-                .Include(employee => employee.Departments)
                 .SingleAsync(employee => employee.Id == employeeId);
         }
 

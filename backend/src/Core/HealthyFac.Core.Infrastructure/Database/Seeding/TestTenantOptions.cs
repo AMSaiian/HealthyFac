@@ -16,7 +16,8 @@ public sealed class TestTenantOptions
 
     public required string CompanyName { get; init; }
 
-    public required IReadOnlyList<Guid> DepartmentIds { get; init; }
+    /// <summary>The IANA time zone ID of the test company, for example <c>Europe/Kyiv</c>.</summary>
+    public required string TimeZoneId { get; init; }
 
     public required Guid SupervisorIdentityId { get; init; }
 
@@ -37,14 +38,10 @@ public sealed class TestTenantOptionsValidator : AbstractValidator<TestTenantOpt
         RuleFor(options => options.SupervisorIdentityId).NotEmpty();
         RuleFor(options => options.SupervisorEmployeeId).NotEmpty();
 
-        RuleFor(options => options.DepartmentIds)
-            .Cascade(CascadeMode.Stop)
-            .Must(departmentIds => departmentIds.Count == SeedingValidationConstants.Counts.TestTenantDepartments)
-            .WithMessage(SeedingValidationConstants.Messages.TestTenantDepartmentCount)
-            .Must(departmentIds => departmentIds.All(departmentId => departmentId != Guid.Empty))
-            .WithMessage(SeedingValidationConstants.Messages.TestTenantDepartmentIdEmpty)
-            .Must(departmentIds => departmentIds.Distinct().Count() == departmentIds.Count)
-            .WithMessage(SeedingValidationConstants.Messages.TestTenantDepartmentIdDuplicated);
+        RuleFor(options => options.TimeZoneId)
+            .NotEmpty()
+            .MaximumLength(CompanyValidationConstants.TimeZoneIdMaxLength)
+            .IanaTimeZoneId();
 
         RuleFor(options => options.CompanyName)
             .NotEmpty()

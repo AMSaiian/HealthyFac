@@ -44,7 +44,7 @@ public sealed class RegisterMachineRequestHandler(
         }
 
         var registration = new MachineRegistration(
-            request.MachineId, request.GatewayId, request.CompanyId, request.DepartmentId);
+            request.MachineId, request.GatewayId, request.CompanyId);
         _dbContext.MachineRegistrations.Add(registration);
         _dbContext.MetricSchemaRevisions.Add(
             new MetricSchemaRevision(

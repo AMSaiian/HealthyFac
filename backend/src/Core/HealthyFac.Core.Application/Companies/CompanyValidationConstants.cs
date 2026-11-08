@@ -6,4 +6,5 @@ namespace HealthyFac.Core.Application.Companies;
 public static class CompanyValidationConstants
 {
     public const int NameMaxLength = 200;
+    public const int TimeZoneIdMaxLength = 100;
 }

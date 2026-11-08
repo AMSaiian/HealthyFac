@@ -10,6 +10,5 @@ public static class MachineMessageErrors
         public const string MachineIdRequired = "MachineId is required.";
         public const string GatewayIdInvalid = "GatewayId must have the gateway ID format.";
         public const string CompanyIdRequired = "CompanyId is required.";
-        public const string DepartmentIdRequired = "DepartmentId is required.";
     }
 }

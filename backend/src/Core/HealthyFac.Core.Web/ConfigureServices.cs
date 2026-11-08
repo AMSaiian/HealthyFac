@@ -1,7 +1,7 @@
 using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Web.Authorization;
-using HealthyFac.Core.Web.Departments;
+using HealthyFac.Core.Web.Companies;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
@@ -146,8 +146,8 @@ public static class ConfigureServices
             app.MapApiDiagnostics();
 
             var versionedGroup = app.MapVersionedGroup();
+            versionedGroup.MapCompanyEndpoints();
             versionedGroup.MapMachineEndpoints();
-            versionedGroup.MapDepartmentEndpoints();
             versionedGroup.MapEmployeeInviteEndpoints();
             versionedGroup.MapEmployeeEndpoints();
 

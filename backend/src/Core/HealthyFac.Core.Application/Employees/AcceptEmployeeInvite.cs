@@ -95,7 +95,6 @@ public class AcceptEmployeeInviteRequestHandler(
                 FirstName = employee.FirstName,
                 LastName = employee.LastName,
                 RoleCode = roleCode.Value,
-                DepartmentIds = employee.Departments.Select(department => department.Id).ToList(),
             });
 
         try

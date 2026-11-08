@@ -1,4 +1,3 @@
-using HealthyFac.Core.Domain.Departments;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Domain.Employees;
@@ -10,22 +9,7 @@ namespace HealthyFac.Core.Domain.Employees;
 /// </summary>
 public class Employee : IEntity, IAuditable, ISoftDeletable
 {
-    private readonly List<Department> _departments = [];
-
-    internal Employee(
-        Guid companyId,
-        string email,
-        string firstName,
-        string lastName,
-        Guid roleId,
-        IEnumerable<Department> departments
-    )
-        : this(companyId, email, firstName, lastName, roleId)
-    {
-        _departments.AddRange(departments);
-    }
-
-    private Employee(Guid companyId, string email, string firstName, string lastName, Guid roleId)
+    internal Employee(Guid companyId, string email, string firstName, string lastName, Guid roleId)
     {
         CompanyId = companyId;
         Email = email;
@@ -65,64 +49,12 @@ public class Employee : IEntity, IAuditable, ISoftDeletable
 
     public bool CanDeactivate => Status != EmployeeStatus.Deactivated;
 
-    public IReadOnlyCollection<Department> Departments => _departments;
-
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
     public Guid? UpdatedBy { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
-
-    /// <summary>
-    /// Adds the employee to <paramref name="department"/>. Assigning a department again changes nothing. Load
-    /// <see cref="Departments"/> before the call, or the duplicate check sees an empty list.
-    /// Throws <see cref="InvalidOperationException"/> when the department belongs to another company.
-    /// </summary>
-    /// <param name="department">The department of the same company.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when <paramref name="department"/> belongs to a company other than the company of the employee.
-    /// </exception>
-    public void AssignDepartment(Department department)
-    {
-        if (department.CompanyId != CompanyId)
-        {
-            throw EmployeeErrors.DepartmentOfOtherCompany(Id, department.Id);
-        }
-
-        if (FindDepartment(department) is not null)
-        {
-            return;
-        }
-
-        _departments.Add(department);
-    }
-
-    /// <summary>
-    /// Removes the employee from <paramref name="department"/>. Removing an unassigned department changes nothing.
-    /// Load <see cref="Departments"/> before the call, or the last-department check sees an empty list.
-    /// Throws <see cref="InvalidOperationException"/> when it is the last department of the employee.
-    /// </summary>
-    /// <param name="department">The department to leave.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when <paramref name="department"/> is the only department, because an employee without a
-    /// department gets no tasks.
-    /// </exception>
-    public void UnassignDepartment(Department department)
-    {
-        var assignedDepartment = FindDepartment(department);
-        if (assignedDepartment is null)
-        {
-            return;
-        }
-
-        if (_departments.Count == 1)
-        {
-            throw EmployeeErrors.LastDepartment(Id);
-        }
-
-        _departments.Remove(assignedDepartment);
-    }
 
     /// <summary>
     /// Tells whether the employee is linked to <paramref name="identityUserId"/>. An employee without an identity
@@ -218,15 +150,6 @@ public class Employee : IEntity, IAuditable, ISoftDeletable
 
         Status = EmployeeStatus.Deactivated;
     }
-
-    /// <summary>
-    /// Finds the assigned department that matches <paramref name="department"/> by identifier, because a second
-    /// query can load another instance of the same row.
-    /// </summary>
-    /// <param name="department">The department to find.</param>
-    /// <returns>The assigned instance, or <see langword="null"/> when the department is not assigned.</returns>
-    private Department? FindDepartment(Department department)
-        => _departments.FirstOrDefault(assigned => assigned.Id == department.Id);
 
     private void EnsureStatus(EmployeeStatus requiredStatus, EmployeeStatus targetStatus)
     {

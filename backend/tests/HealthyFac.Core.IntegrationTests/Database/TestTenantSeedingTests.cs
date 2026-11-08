@@ -21,26 +21,15 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
 
         var supervisor = await _fixture.LoadSeededEmployeeAsync(DatabaseTestData.TestSupervisorEmployeeId);
         var companyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
-        var departmentCount = await _fixture.CountDepartmentsAsync(DatabaseTestData.TestTenantCompanyId);
+        var timeZoneId = await _fixture.LoadCompanyTimeZoneIdAsync(DatabaseTestData.TestTenantCompanyId);
 
         companyCount.Should().Be(expected: 1);
-        departmentCount.Should().Be(DatabaseTestData.TestTenantDepartmentCount);
+        timeZoneId.Should().Be(DatabaseTestData.TestTenantTimeZoneId);
         supervisor.CompanyId.Should().Be(DatabaseTestData.TestTenantCompanyId);
         supervisor.IdentityUserId.Should().Be(DatabaseTestData.TestSupervisorIdentityId);
         supervisor.Email.Should().Be(DatabaseTestData.TestSupervisorEmail);
         supervisor.Status.Should().Be(EmployeeStatus.Active);
         supervisor.RoleCode.Should().Be(RoleCode.Supervisor);
-        supervisor.DepartmentCount.Should().Be(DatabaseTestData.TestTenantDepartmentCount);
-    }
-
-    [Fact]
-    public async Task SeedTestTenant_Always_UsesConfiguredDepartmentIds()
-    {
-        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
-
-        var departmentIds = await _fixture.LoadDepartmentIdsAsync(DatabaseTestData.TestTenantCompanyId);
-
-        departmentIds.Should().BeEquivalentTo(DatabaseTestData.TestTenant.DepartmentIds);
     }
 
     [Fact]
@@ -72,10 +61,8 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
         var second = await _fixture.LoadMachineRowAsync(DatabaseTestData.SecondSeedMachineId);
 
         first.GatewayId.Should().Be(DatabaseTestData.FirstSeedGatewayId);
-        first.DepartmentId.Should().Be(DatabaseTestData.FirstTestDepartmentId);
         first.CompanyId.Should().Be(DatabaseTestData.TestTenantCompanyId);
         second.GatewayId.Should().Be(DatabaseTestData.SecondSeedGatewayId);
-        second.DepartmentId.Should().Be(DatabaseTestData.SecondTestDepartmentId);
     }
 
     [Fact]
@@ -88,28 +75,22 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
         messages.Should()
             .HaveCount(
                 DatabaseTestData.SeededMachineCount
-                + DatabaseTestData.TestTenantDepartmentCount * DatabaseTestData.MachinesPerDepartment
+                + DatabaseTestData.MachinesPerCompany
                 + DatabaseTestData.SeedMachines.Count);
         messages.Should()
             .Contain(message => message.MachineId == DatabaseTestData.FirstSeedMachineId
-                && message.GatewayId == DatabaseTestData.FirstSeedGatewayId
-                && message.DepartmentId == DatabaseTestData.FirstTestDepartmentId);
+                && message.GatewayId == DatabaseTestData.FirstSeedGatewayId);
         messages.Select(message => message.MachineId).Should().OnlyHaveUniqueItems();
     }
 
     [Fact]
-    public async Task SeedOptionalData_WithTestTenant_CreatesMachinesInEachDepartment()
+    public async Task SeedOptionalData_WithTestTenant_CreatesMachinesOfTheCompany()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
 
         var machines = await _fixture.LoadTenantMachineAsync(DatabaseTestData.TestTenantCompanyId);
 
-        machines.Should()
-            .HaveCount(DatabaseTestData.TestTenantDepartmentCount * DatabaseTestData.MachinesPerDepartment);
-        machines.GroupBy(machine => machine.DepartmentId)
-            .Select(group => group.Key)
-            .Should()
-            .BeEquivalentTo(DatabaseTestData.TestTenant.DepartmentIds);
+        machines.Should().HaveCount(DatabaseTestData.MachinesPerCompany);
     }
 
     [Fact]

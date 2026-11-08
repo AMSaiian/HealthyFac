@@ -26,12 +26,8 @@ public sealed class DevelopmentSeedTests(TelemetryDatabaseFixture fixture)
                 new
                 {
                     GatewayId = DevelopmentSeedTestData.FirstGatewayId,
-                    DepartmentId = DevelopmentSeedTestData.FirstDepartmentId,
                     StatusDefinitionCount = DevelopmentSeedTestData.StatusDefinitionsPerMachine,
                 });
-        registrations.Single(registration => registration.Id == DevelopmentSeedTestData.SecondMachineId)
-            .DepartmentId.Should()
-            .Be(DevelopmentSeedTestData.SecondDepartmentId);
     }
 
     [Fact]

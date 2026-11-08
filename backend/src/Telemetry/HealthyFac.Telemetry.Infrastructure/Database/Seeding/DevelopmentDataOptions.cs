@@ -19,7 +19,7 @@ public sealed class DevelopmentDataOptions
     public int StatusDefinitionsPerMachine { get; init; } = 4;
 
     /// <summary>
-    /// The company and the departments of the test tenant, or <see langword="null"/> to seed nothing.
+    /// The company of the test tenant, or <see langword="null"/> to seed nothing.
     /// </summary>
     public TestTenantOptions? TestTenant { get; init; }
 
@@ -49,9 +49,6 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineIdEmpty)
             .Must(machine => GatewayIds.IsValid(machine.GatewayId))
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineGatewayIdInvalid)
-            .Must((options, machine) => machine.DepartmentIndex >= 0
-                && machine.DepartmentIndex < (options.TestTenant?.DepartmentIds.Count ?? 0))
-            .WithMessage(SeedingValidationConstants.Messages.SeedMachineDepartmentIndexOutOfRange)
             .WithName(nameof(DevelopmentDataOptions.SeedMachines));
 
         RuleFor(options => options.GetSeedMachines())

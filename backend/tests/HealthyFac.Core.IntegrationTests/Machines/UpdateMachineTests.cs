@@ -18,7 +18,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         await _fixture.UpdateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             MachineTestData.OtherMachineName,
             MachineTestData.OtherSerialNumber,
@@ -32,24 +31,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task UpdateMachine_WithValidRequest_KeepsDepartment()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
-
-        await _fixture.UpdateMachineAsync(
-            tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            machineId,
-            MachineTestData.OtherMachineName,
-            MachineTestData.OtherSerialNumber);
-
-        var machine = await _fixture.LoadMachineRowAsync(machineId);
-
-        machine.DepartmentId.Should().Be(tenant.FirstDepartmentId);
-    }
-
-    [Fact]
     public async Task UpdateMachine_ToTakenSerialNumber_ThrowsConflict()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
@@ -58,7 +39,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         var act = () => _fixture.UpdateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumberOtherCase);
@@ -74,7 +54,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         var act = () => _fixture.UpdateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             MachineTestData.OtherMachineName,
             MachineTestData.SerialNumberOtherCase);
@@ -83,14 +62,14 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task UpdateMachine_InForeignDepartment_ThrowsNotFound()
+    public async Task UpdateMachine_InOtherCompany_ThrowsNotFound()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+        var machineId = await ArrangeMachineAsync(otherTenant, MachineTestData.SerialNumber);
 
         var act = () => _fixture.UpdateMachineAsync(
             tenant.CompanyId,
-            [tenant.SecondDepartmentId],
             machineId,
             MachineTestData.OtherMachineName,
             MachineTestData.OtherSerialNumber);
@@ -106,13 +85,12 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
 
         await _fixture.UpdateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.BulletListDescription);
 
-        var machine = await _fixture.GetMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        var machine = await _fixture.GetMachineAsync(tenant.CompanyId, machineId);
 
         machine.Description.Should().Be(MachineTestData.BulletListDescription);
     }
@@ -120,8 +98,6 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, string serialNumber) =>
         _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             serialNumber);
 }

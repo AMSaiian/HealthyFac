@@ -4,7 +4,7 @@ namespace HealthyFac.Shared.UnitTests.IdEncryption.Data;
 
 public sealed class CollectionConventionTestModel
 {
-    public required List<Guid> DepartmentIds { get; init; }
+    public required List<Guid> TagIds { get; init; }
 
     public required IReadOnlyList<Guid> MachineIds { get; init; }
 

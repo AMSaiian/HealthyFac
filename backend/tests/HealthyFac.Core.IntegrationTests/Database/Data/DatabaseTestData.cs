@@ -13,11 +13,12 @@ public static class DatabaseTestData
     public const string ApplicationName = "HealthyFac.Core.IntegrationTests";
 
     public const int SeededCompanyCount = 2;
-    public const int SeededDepartmentCount = 6;
     public const int SeededMachineCount = 24;
-    public const int SeededStateHistoryCount = 42;
+    public const int SeededStateHistoryCount = 48;
     public const int MachineNameNumberLength = 2;
-    public const int MachinesPerDepartment = 4;
+    public const int MachinesPerCompany = 12;
+    public const int SupervisorsPerCompany = 3;
+    public const int WorkersPerCompany = 9;
     public const int SeededEmployeeCount = 24;
     public const int SeededInviteCount = 28;
 
@@ -29,16 +30,17 @@ public static class DatabaseTestData
     public static readonly Guid TestTenantCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
     public static readonly Guid TestSupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
     public static readonly Guid TestSupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
-    public static readonly Guid FirstTestDepartmentId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000a1");
-    public static readonly Guid SecondTestDepartmentId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000b1");
     public const string TestSupervisorEmail = "supervisor@healthyfac.local";
-    public const int TestTenantDepartmentCount = 2;
+    public const string TestTenantTimeZoneId = "Europe/Kyiv";
+
+    public static readonly IReadOnlyList<string> SeededTimeZoneIds =
+        ["Europe/Kyiv", "Europe/Berlin", "America/Chicago"];
 
     public static readonly TestTenantOptions TestTenant = new()
     {
         CompanyId = TestTenantCompanyId,
         CompanyName = "Test Company",
-        DepartmentIds = [FirstTestDepartmentId, SecondTestDepartmentId],
+        TimeZoneId = TestTenantTimeZoneId,
         SupervisorIdentityId = TestSupervisorIdentityId,
         SupervisorEmployeeId = TestSupervisorEmployeeId,
         SupervisorEmail = TestSupervisorEmail,
@@ -53,8 +55,8 @@ public static class DatabaseTestData
 
     public static readonly IReadOnlyList<SeedMachineOptions> SeedMachines =
     [
-        new() { MachineId = FirstSeedMachineId, GatewayId = FirstSeedGatewayId, DepartmentIndex = 0 },
-        new() { MachineId = SecondSeedMachineId, GatewayId = SecondSeedGatewayId, DepartmentIndex = 1 },
+        new() { MachineId = FirstSeedMachineId, GatewayId = FirstSeedGatewayId },
+        new() { MachineId = SecondSeedMachineId, GatewayId = SecondSeedGatewayId },
     ];
 
     public static readonly SeedingOptions ForcedRecreationWithSeedMachinesOptions = new()

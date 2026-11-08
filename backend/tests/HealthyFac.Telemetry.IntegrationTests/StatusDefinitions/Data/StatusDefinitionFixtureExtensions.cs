@@ -13,26 +13,25 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
 
 /// <summary>
-/// Arranges status definition data and runs the status definition use cases as a user with a company and a set of
-/// departments. Every method opens its own DI scope, so it reads what is stored, not tracked objects.
+/// Arranges status definition data and runs the status definition use cases as a user with a company. Every method
+/// opens its own DI scope, so it reads what is stored, not tracked objects.
 /// </summary>
 public static class StatusDefinitionFixtureExtensions
 {
     extension(TelemetryDatabaseFixture fixture)
     {
         public Task<Guid> CreateStatusDefinitionMachineAsync(MachineTenant tenant) =>
-            fixture.RegisterMachineInDepartmentAsync(tenant.CompanyId, tenant.FirstDepartmentId);
+            fixture.RegisterTenantMachineAsync(tenant.CompanyId);
 
         public async Task<Guid> CreateStatusDefinitionAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             Guid machineId,
             string code,
             string? description = null,
             StatusSeverity? severity = null
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<CreateStatusDefinitionRequest, CreateStatusDefinitionResponse>>();
 
@@ -51,12 +50,11 @@ public static class StatusDefinitionFixtureExtensions
 
         public async Task<StatusDefinitionResponse> GetStatusDefinitionAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             Guid machineId,
             Guid statusId
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetStatusDefinitionRequest, StatusDefinitionResponse>>();
 
@@ -66,7 +64,6 @@ public static class StatusDefinitionFixtureExtensions
 
         public async Task UpdateStatusDefinitionAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             Guid machineId,
             Guid statusId,
             string code,
@@ -74,7 +71,7 @@ public static class StatusDefinitionFixtureExtensions
             StatusSeverity? severity = null
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<UpdateStatusDefinitionRequest>>();
 
@@ -92,12 +89,11 @@ public static class StatusDefinitionFixtureExtensions
 
         public async Task DeleteStatusDefinitionAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             Guid machineId,
             Guid statusId
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<DeleteStatusDefinitionRequest>>();
 
@@ -107,11 +103,10 @@ public static class StatusDefinitionFixtureExtensions
 
         public async Task<GridResponse<StatusDefinitionResponse>> SearchStatusDefinitionsAsync(
             Guid companyId,
-            IEnumerable<Guid> actorDepartmentIds,
             SearchStatusDefinitionsRequest request
         )
         {
-            using var scope = fixture.CreateUserScope(companyId, actorDepartmentIds);
+            using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<SearchStatusDefinitionsRequest,
                     GridResponse<StatusDefinitionResponse>>>();
@@ -170,7 +165,7 @@ public static class StatusDefinitionFixtureExtensions
 
         public async Task RemoveStatusDefinitionRowAsync(MachineTenant tenant, Guid statusId)
         {
-            using var scope = fixture.CreateUserScope(tenant.CompanyId, tenant.BothDepartmentIds);
+            using var scope = fixture.CreateUserScope(tenant.CompanyId);
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
             var status = await dbContext.StatusDefinitions.SingleAsync(candidate => candidate.Id == statusId);
 

@@ -22,8 +22,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.BulletListDescription);
@@ -42,8 +40,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 
@@ -58,10 +54,10 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var gatewayId = GatewayIds.Create();
         await _fixture.AddMachineWithGatewayIdAsync(
-            tenant.CompanyId, tenant.FirstDepartmentId, gatewayId, MachineTestData.SerialNumber);
+            tenant.CompanyId, gatewayId, MachineTestData.SerialNumber);
 
         var act = () => _fixture.AddMachineWithGatewayIdAsync(
-            tenant.CompanyId, tenant.FirstDepartmentId, gatewayId, MachineTestData.OtherSerialNumber);
+            tenant.CompanyId, gatewayId, MachineTestData.OtherSerialNumber);
 
         await act.Should().ThrowAsync<UniqueConstraintException>();
     }
@@ -73,8 +69,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 
@@ -85,7 +79,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         message.Should().ContainSingle();
         message[index: 0].GatewayId.Should().Be(machine.GatewayId);
         message[index: 0].CompanyId.Should().Be(tenant.CompanyId);
-        message[index: 0].DepartmentId.Should().Be(tenant.FirstDepartmentId);
     }
 
     [Fact]
@@ -94,16 +87,12 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
         var before = await _fixture.ReadOutboxMessagesAsync<MachineCreated>();
 
         var act = () => _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.OtherMachineName,
             MachineTestData.SerialNumber);
 
@@ -121,8 +110,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 
@@ -141,15 +128,11 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 
         var act = () => _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.SecondDepartmentId,
             MachineTestData.OtherMachineName,
             MachineTestData.SerialNumberOtherCase);
 
@@ -162,16 +145,12 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var firstId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, firstId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, firstId);
 
         var secondId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumberOtherCase);
 
@@ -188,15 +167,11 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
         await _fixture.CreateMachineAsync(
             otherTenant.CompanyId,
-            otherTenant.BothDepartmentIds,
-            otherTenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 
@@ -212,8 +187,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var act = () => _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.TooLongDescription);
@@ -228,8 +201,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.FormattedDescriptionAtVisibleLimit);
@@ -247,8 +218,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         var act = () => _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.HostileDescription);
@@ -280,29 +249,9 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         rows.Should().ContainSingle();
     }
 
-    [Fact]
-    public async Task CreateMachine_WithDepartmentOutsideActor_ThrowsForbidden()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-
-        var act = () => _fixture.CreateMachineAsync(
-            tenant.CompanyId,
-            [tenant.FirstDepartmentId],
-            tenant.SecondDepartmentId,
-            MachineTestData.MachineName,
-            MachineTestData.SerialNumber);
-
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
-        var rows = await _fixture.LoadMachineRowsAsync(tenant.CompanyId, MachineTestData.SerialNumberOtherCase);
-
-        rows.Should().BeEmpty();
-    }
-
     private Task<Guid> CreateRaceMachineAsync(MachineTenant tenant) =>
         _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 }

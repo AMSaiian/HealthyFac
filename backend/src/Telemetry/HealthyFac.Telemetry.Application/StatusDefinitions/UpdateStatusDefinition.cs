@@ -51,11 +51,11 @@ public class UpdateStatusDefinitionRequestValidator : AbstractValidator<UpdateSt
 }
 
 /// <summary>
-/// Checks the company, then the machine scope: a machine outside the company or the departments of the actor, and a
+/// Checks the company, then the machine scope: a machine outside the company, and a
 /// deleted machine, are "not found" (404).
 /// </summary>
 /// <param name="dbContext">Reads the machine.</param>
-/// <param name="currentUser">Provides the company and the departments of the actor.</param>
+/// <param name="currentUser">Provides the company of the actor.</param>
 public sealed class UpdateStatusDefinitionPreHandlerCheck(
     ITelemetryDbContext dbContext,
     ICurrentUserProvider currentUser
@@ -72,7 +72,6 @@ public sealed class UpdateStatusDefinitionPreHandlerCheck(
 
         await _dbContext.EnsureMachineInScopeAsync(
             request.CompanyId,
-            actor.DepartmentIds.ToList(),
             request.MachineId,
             cancellationToken);
     }

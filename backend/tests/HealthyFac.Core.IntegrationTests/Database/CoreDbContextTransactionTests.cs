@@ -23,7 +23,10 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
         var companyId = await dbContext.RunInTransactionAsync(
             async cancellationToken =>
             {
-                var company = new Company { Name = TransactionTestData.CommittedCompanyName };
+                var company = new Company
+                {
+                    Name = TransactionTestData.CommittedCompanyName, TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                };
                 dbContext.Companies.Add(company);
                 await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -44,7 +47,12 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
 
         var act = () => dbContext.RunInTransactionAsync(async cancellationToken =>
         {
-            dbContext.Companies.Add(new Company { Name = TransactionTestData.RolledBackCompanyName });
+            dbContext.Companies.Add(
+                new Company
+                {
+                    Name = TransactionTestData.RolledBackCompanyName,
+                    TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                });
             await dbContext.SaveChangesAsync(cancellationToken);
 
             throw new TransactionTestException();
@@ -62,7 +70,11 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
     {
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-        dbContext.Companies.Add(new Company { Name = TransactionTestData.UnsavedCompanyName });
+        dbContext.Companies.Add(
+            new Company
+            {
+                Name = TransactionTestData.UnsavedCompanyName, TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+            });
         var isOperationRun = false;
 
         var act = () => dbContext.RunInTransactionAsync(_ =>
@@ -86,7 +98,12 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
 
         var act = () => dbContext.RunInTransactionAsync(_ =>
         {
-            dbContext.Companies.Add(new Company { Name = TransactionTestData.UnsavedAfterOperationCompanyName });
+            dbContext.Companies.Add(
+                new Company
+                {
+                    Name = TransactionTestData.UnsavedAfterOperationCompanyName,
+                    TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                });
 
             return Task.CompletedTask;
         });
@@ -108,7 +125,12 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
 
         var act = () => dbContext.RunInTransactionAsync(async cancellationToken =>
         {
-            dbContext.Companies.Add(new Company { Name = TransactionTestData.EndedTransactionCompanyName });
+            dbContext.Companies.Add(
+                new Company
+                {
+                    Name = TransactionTestData.EndedTransactionCompanyName,
+                    TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                });
             await dbContext.Database.CommitTransactionAsync(cancellationToken);
         });
 

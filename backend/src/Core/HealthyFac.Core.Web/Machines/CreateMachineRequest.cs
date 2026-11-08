@@ -6,7 +6,6 @@ public record CreateMachineRequest
 {
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
-    public required Guid DepartmentId { get; init; }
     public string? Description { get; init; }
 }
 
@@ -20,7 +19,6 @@ public static class CreateMachineRequestExtensions
                 Name = request.Name,
                 SerialNumber = request.SerialNumber,
                 CompanyId = companyId,
-                DepartmentId = request.DepartmentId,
                 Description = request.Description,
             };
     }

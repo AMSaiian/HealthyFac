@@ -39,20 +39,6 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    [Fact]
-    public async Task Search_WithDepartmentFilter_DecryptsIds()
-    {
-        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
-
-        var response = await _fixture.SendMachineRequestAsync(
-            HttpMethod.Post,
-            MachineApiTestData.SearchPath,
-            claims,
-            _fixture.CreateSearchBodyWithDepartment(_fixture.DepartmentId));
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
-
     [Theory]
     [MemberData(nameof(MachineApiTestData.BadFilterBodies), MemberType = typeof(MachineApiTestData))]
     public async Task Search_WithBadFilterValue_Returns400(string body)

@@ -31,6 +31,15 @@ public static class KeycloakRealmFixtureExtensions
             return members.Select(member => member.Id).ToList();
         }
 
+        public async Task<IReadOnlyList<string>> ListUserProfileAttributeNamesAsync()
+        {
+            var profile = await fixture.GetAdminJsonAsync<JsonObject>($"{RealmAdminPath}/users/profile");
+
+            return profile[propertyName: "attributes"]!.AsArray()
+                .Select(attribute => attribute![propertyName: "name"]!.GetValue<string>())
+                .ToList();
+        }
+
         public async Task<IReadOnlyList<string>> ListEditRolesOfUserAttributeAsync(string attributeName)
         {
             var profile = await fixture.GetAdminJsonAsync<JsonObject>($"{RealmAdminPath}/users/profile");

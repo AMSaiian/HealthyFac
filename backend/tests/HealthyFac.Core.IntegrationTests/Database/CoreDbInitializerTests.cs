@@ -96,7 +96,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
 
         var secondRun = await ReadSnapshotAsync();
         firstRun.Companies.Should().NotBeEmpty();
-        firstRun.Employees.Should().NotBeEmpty().And.OnlyContain(employee => employee.Departments.Count > 0);
+        firstRun.Employees.Should().NotBeEmpty();
         secondRun.Should().BeEquivalentTo(firstRun, options => options.IgnoringCyclicReferences());
     }
 
@@ -145,14 +145,33 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task SeedOptionalDataAsync_OnEmptyDatabase_StoresStateRowsForEveryDepartment()
+    public async Task SeedOptionalDataAsync_OnEmptyDatabase_StoresStateRowsForEveryCompany()
     {
         await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
 
         var rows = await _fixture.LoadSeededStateRowsAsync();
 
         rows.Should().HaveCount(DatabaseTestData.SeededStateHistoryCount);
-        rows.GroupBy(row => row.DepartmentId).Should().HaveCount(DatabaseTestData.SeededDepartmentCount);
+    }
+
+    [Fact]
+    public async Task SeedOptionalDataAsync_OnEmptyDatabase_GivesEveryCompanyAZoneAndItsHeadcount()
+    {
+        await SeedAsync(initializer => initializer.SeedOptionalDataAsync());
+
+        var companies = await _fixture.LoadSeededCompaniesAsync();
+
+        companies.Should().HaveCount(DatabaseTestData.SeededCompanyCount);
+        companies.Select(company => company.TimeZoneId)
+            .Should()
+            .OnlyContain(zone => DatabaseTestData.SeededTimeZoneIds.Contains(zone));
+        companies.Select(company => company.MachineCount)
+            .Should()
+            .AllBeEquivalentTo(DatabaseTestData.MachinesPerCompany);
+        companies.Select(company => company.SupervisorCount)
+            .Should()
+            .AllBeEquivalentTo(DatabaseTestData.SupervisorsPerCompany);
+        companies.Select(company => company.WorkerCount).Should().AllBeEquivalentTo(DatabaseTestData.WorkersPerCompany);
     }
 
     [Fact]
@@ -192,7 +211,6 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
         var stateRowIdsAfter = await _fixture.LoadAllStateRowIdsAsync();
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
-        var departmentCount = await dbContext.Departments.CountAsync(TestContext.Current.CancellationToken);
         var machineCount = await dbContext.Machines.CountAsync(TestContext.Current.CancellationToken);
         var inviteCount = await dbContext.EmployeeInvites.CountAsync(TestContext.Current.CancellationToken);
         var employeeCount = await dbContext.Employees.CountAsync(TestContext.Current.CancellationToken);
@@ -203,7 +221,6 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
         stateRowIdsAfter.Should()
             .HaveCount(DatabaseTestData.SeededStateHistoryCount)
             .And.NotIntersectWith(stateRowIdsBefore);
-        departmentCount.Should().Be(DatabaseTestData.SeededDepartmentCount);
         machineCount.Should().Be(DatabaseTestData.SeededMachineCount);
         inviteCount.Should().Be(DatabaseTestData.SeededInviteCount);
         employeeCount.Should().Be(DatabaseTestData.SeededEmployeeCount);

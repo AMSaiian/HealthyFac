@@ -19,9 +19,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
         var expiresAt = NextHour();
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyValidEmail,
-            expiresAt,
-            InviteTestData.FirstDepartmentName,
-            InviteTestData.SecondDepartmentName);
+            expiresAt);
 
         var response = await VerifyAsync(arranged.Token);
 
@@ -29,10 +27,6 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
         response.CompanyName.Should().Be(InviteTestData.CompanyName);
         response.RoleCode.Should().Be(RoleCode.Worker);
         response.ExpiresAt.Should().Be(expiresAt);
-        response.Departments.Select(department => department.Name)
-            .Should()
-            .BeEquivalentTo([InviteTestData.FirstDepartmentName, InviteTestData.SecondDepartmentName]);
-        response.Departments.Select(department => department.Id).Should().BeEquivalentTo(arranged.DepartmentIds);
     }
 
     [Fact]
@@ -40,8 +34,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyExpiredEmail,
-            DateTime.UtcNow.AddHours(value: -1),
-            InviteTestData.FirstDepartmentName);
+            DateTime.UtcNow.AddHours(value: -1));
 
         var act = () => VerifyAsync(arranged.Token);
 
@@ -55,8 +48,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyAcceptedEmail,
-            NextHour(),
-            InviteTestData.FirstDepartmentName);
+            NextHour());
         await _fixture.AcceptInviteAsync(arranged.Token);
 
         var act = () => VerifyAsync(arranged.Token);
@@ -71,8 +63,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyTamperedEmail,
-            NextHour(),
-            InviteTestData.FirstDepartmentName);
+            NextHour());
         var tamperedToken = arranged.Token[..^1] + (arranged.Token[^1] == 'A' ? 'B' : 'A');
 
         var act = () => VerifyAsync(tamperedToken);
@@ -99,8 +90,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyResendEmail,
-            NextHour(),
-            InviteTestData.FirstDepartmentName);
+            NextHour());
 
         await ResendAsync(arranged.CompanyId, arranged.InviteId);
 
@@ -122,7 +112,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
 
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
-        using var scope = _fixture.CreateUserScope(companyId, []);
+        using var scope = _fixture.CreateUserScope(companyId);
 
         await scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>()

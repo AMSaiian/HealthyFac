@@ -19,10 +19,10 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeMachineAsync(tenant);
 
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var machine = await _fixture.LoadMachineRowAsync(machineId);
-        var get = () => _fixture.GetMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        var get = () => _fixture.GetMachineAsync(tenant.CompanyId, machineId);
 
         machine.DeletedAt.Should().NotBeNull();
         machine.DeletedBy.Should().NotBeNull();
@@ -35,7 +35,7 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeMachineAsync(tenant);
 
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var messages = await _fixture.ReadOutboxMessagesAsync<MachineDeleted>();
         var message = messages.Where(candidate => candidate.MachineId == machineId).ToList();
@@ -45,12 +45,13 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task DeleteMachine_InForeignDepartment_StoresNoOutboxRow()
+    public async Task DeleteMachine_InOtherCompany_StoresNoOutboxRow()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant);
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+        var machineId = await ArrangeMachineAsync(otherTenant);
 
-        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, [tenant.SecondDepartmentId], machineId);
+        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         await act.Should().ThrowAsync<NotFoundException>();
         var messages = await _fixture.ReadOutboxMessagesAsync<MachineDeleted>();
@@ -63,20 +64,21 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeMachineAsync(tenant);
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
-        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineErrors.MachineNotFound);
     }
 
     [Fact]
-    public async Task DeleteMachine_InForeignDepartment_ThrowsNotFound()
+    public async Task DeleteMachine_InOtherCompany_ThrowsNotFound()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await ArrangeMachineAsync(tenant);
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+        var machineId = await ArrangeMachineAsync(otherTenant);
 
-        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, [tenant.SecondDepartmentId], machineId);
+        var act = () => _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineErrors.MachineNotFound);
         var machine = await _fixture.LoadMachineRowAsync(machineId);
@@ -91,8 +93,6 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         var machineId = await ArrangeMachineAsync(tenant);
         var otherMachineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.OtherMachineName,
             MachineTestData.OtherSerialNumber);
         var firstHistory = await _fixture.LoadStateHistoryAsync(machineId);
@@ -101,7 +101,7 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
             MachineState.InMaintenance,
             firstHistory[index: 0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
 
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var history = await _fixture.LoadStateHistoryAsync(machineId);
         var otherHistory = await _fixture.LoadStateHistoryAsync(otherMachineId);
@@ -113,8 +113,6 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant) =>
         _fixture.CreateMachineAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
-            tenant.FirstDepartmentId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
 }

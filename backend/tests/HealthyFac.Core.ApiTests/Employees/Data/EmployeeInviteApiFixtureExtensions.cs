@@ -23,7 +23,6 @@ public static class EmployeeInviteApiFixtureExtensions
             {
                 Subject = Guid.NewGuid(),
                 Organizations = [fixture.CompanyId.ToString()],
-                DepartmentIds = [fixture.DepartmentId.ToString()],
             };
 
         public async Task<HttpResponseMessage> PostCreateInviteAsync(
@@ -77,7 +76,6 @@ public static class EmployeeInviteApiFixtureExtensions
             {
                 [propertyName: "email"] = $"{Guid.NewGuid():N}@healthyfac.test",
                 [propertyName: "roleCode"] = EmployeeInviteApiTestData.WorkerRoleCode,
-                [propertyName: "departmentIds"] = new JsonArray(fixture.IdEncryptor.Encrypt(fixture.DepartmentId)),
             };
 
             foreach (var (name, value) in extraFields ?? new Dictionary<string, object?>())

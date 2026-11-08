@@ -23,24 +23,20 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var activeId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.Code);
         var deletedId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             machineId,
             StatusDefinitionTestData.OtherCode);
         await _fixture.RemoveStatusDefinitionRowAsync(tenant, deletedId);
         await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             otherMachineId,
             StatusDefinitionTestData.ThirdCode);
 
         var response = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId));
 
         response.Items.Select(item => item.Id).Should().Equal(activeId);
@@ -65,7 +61,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var response = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter, sort));
 
         response.Items.Select(item => item.Id).Should().Equal(ids[index: 0], ids[index: 1]);
@@ -93,7 +88,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var response = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter, sort));
 
         response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 2]);
@@ -112,7 +106,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var response = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter));
 
         response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 1], ids[index: 2], ids[index: 3]]);
@@ -132,7 +125,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var response = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, sort: sort));
 
         response.Items.Select(item => item.Severity)
@@ -155,7 +147,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var response = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, sort: sort));
 
         response.Items.Select(item => item.Id).Should().Equal(expectedOrder.Select(index => ids[index]));
@@ -175,7 +166,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var firstPage = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(
                 tenant.CompanyId,
                 machineId,
@@ -183,7 +173,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
                 limit: StatusDefinitionSearchTestData.PageSize));
         var secondPage = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(
                 tenant.CompanyId,
                 machineId,
@@ -196,20 +185,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
     }
 
     [Fact]
-    public async Task SearchStatusDefinitions_InForeignDepartment_ThrowsNotFound()
-    {
-        var tenant = _fixture.ArrangeMachineTenant();
-        var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
-
-        var act = () => _fixture.SearchStatusDefinitionsAsync(
-            tenant.CompanyId,
-            [tenant.SecondDepartmentId],
-            StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId));
-
-        await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineRegistrationErrors.MachineNotFound);
-    }
-
-    [Fact]
     public async Task SearchStatusDefinitions_ForMachineOfOtherCompany_ThrowsNotFound()
     {
         var tenant = _fixture.ArrangeMachineTenant();
@@ -218,7 +193,6 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
 
         var act = () => _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId));
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineRegistrationErrors.MachineNotFound);
@@ -229,11 +203,10 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
-        await _fixture.DeleteMachineAsync(tenant.CompanyId, tenant.BothDepartmentIds, machineId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var act = () => _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
-            tenant.BothDepartmentIds,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId));
 
         await act.Should().ThrowAsync<NotFoundException>().WithMessage(MachineRegistrationErrors.MachineNotFound);

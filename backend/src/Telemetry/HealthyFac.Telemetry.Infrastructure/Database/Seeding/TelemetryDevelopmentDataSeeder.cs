@@ -70,8 +70,7 @@ public sealed class TelemetryDevelopmentDataSeeder(
             var registration = new MachineRegistration(
                 seed.MachineId,
                 seed.GatewayId,
-                tenant.CompanyId,
-                tenant.DepartmentIds[seed.DepartmentIndex]);
+                tenant.CompanyId);
             _dbContext.MachineRegistrations.Add(registration);
             _dbContext.MetricSchemaRevisions.Add(
                 new MetricSchemaRevision(

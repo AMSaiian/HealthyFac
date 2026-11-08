@@ -8,8 +8,6 @@ public static class MachineTestData
 {
     public const string CompanyName = "Plant Co";
     public const string OtherCompanyName = "Other Plant Co";
-    public const string FirstDepartmentName = "Assembly";
-    public const string SecondDepartmentName = "Packaging";
 
     public const string MachineName = "Lathe 01";
     public const string OtherMachineName = "Press 02";

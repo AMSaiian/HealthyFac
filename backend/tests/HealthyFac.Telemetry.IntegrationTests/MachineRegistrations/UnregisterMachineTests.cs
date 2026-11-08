@@ -34,9 +34,9 @@ public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture)
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var statusId = await _fixture.CreateStatusDefinitionAsync(
-            tenant.CompanyId, tenant.BothDepartmentIds, machineId, StatusDefinitionTestData.Code);
+            tenant.CompanyId, machineId, StatusDefinitionTestData.Code);
         var otherStatusId = await _fixture.CreateStatusDefinitionAsync(
-            tenant.CompanyId, tenant.BothDepartmentIds, otherMachineId, StatusDefinitionTestData.Code);
+            tenant.CompanyId, otherMachineId, StatusDefinitionTestData.Code);
 
         await _fixture.UnregisterMachineAsync(
             new MachineDeleted { MachineId = machineId, CompanyId = tenant.CompanyId });

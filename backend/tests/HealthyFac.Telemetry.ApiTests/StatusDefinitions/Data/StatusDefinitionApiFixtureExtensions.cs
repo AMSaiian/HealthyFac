@@ -28,7 +28,7 @@ public static class StatusDefinitionApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
             var registration = new MachineRegistration(
-                Guid.CreateVersion7(), GatewayIds.Create(), fixture.CompanyId, fixture.DepartmentId);
+                Guid.CreateVersion7(), GatewayIds.Create(), fixture.CompanyId);
 
             dbContext.MachineRegistrations.Add(registration);
             await dbContext.SaveChangesAsync();

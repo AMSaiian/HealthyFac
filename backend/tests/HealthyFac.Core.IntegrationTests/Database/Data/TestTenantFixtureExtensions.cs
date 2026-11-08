@@ -50,7 +50,6 @@ public static class TestTenantFixtureExtensions
                         .Where(role => role.Id == employee.RoleId)
                         .Select(role => role.Code)
                         .Single(),
-                    DepartmentCount = employee.Departments.Count,
                 })
                 .SingleAsync();
         }
@@ -64,23 +63,35 @@ public static class TestTenantFixtureExtensions
                 .CountAsync(company => companyId == null || company.Id == companyId);
         }
 
-        public async Task<int> CountDepartmentsAsync(Guid companyId)
+        public async Task<string> LoadCompanyTimeZoneIdAsync(Guid companyId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
 
             return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
-                .Departments
-                .CountAsync(department => department.CompanyId == companyId);
+                .Companies
+                .Where(company => company.Id == companyId)
+                .Select(company => company.TimeZoneId)
+                .SingleAsync();
         }
 
-        public async Task<IReadOnlyList<Guid>> LoadDepartmentIdsAsync(Guid companyId)
+        public async Task<IReadOnlyList<SeededCompany>> LoadSeededCompaniesAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
-            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
-                .Departments
-                .Where(department => department.CompanyId == companyId)
-                .Select(department => department.Id)
+            return await dbContext.Companies
+                .AsNoTracking()
+                .Select(company => new SeededCompany
+                {
+                    TimeZoneId = company.TimeZoneId,
+                    MachineCount = dbContext.Machines.Count(machine => machine.CompanyId == company.Id),
+                    SupervisorCount = dbContext.Employees.Count(employee =>
+                        employee.CompanyId == company.Id
+                        && dbContext.Roles.Any(role => role.Id == employee.RoleId && role.Code == RoleCode.Supervisor)),
+                    WorkerCount = dbContext.Employees.Count(employee =>
+                        employee.CompanyId == company.Id
+                        && dbContext.Roles.Any(role => role.Id == employee.RoleId && role.Code == RoleCode.Worker)),
+                })
                 .ToListAsync();
         }
 
@@ -95,7 +106,6 @@ public static class TestTenantFixtureExtensions
                 .Select(machine => new TenantMachine
                 {
                     MachineId = machine.Id,
-                    DepartmentId = machine.DepartmentId,
                 })
                 .ToListAsync();
         }
@@ -126,7 +136,6 @@ public static class TestTenantFixtureExtensions
                     (row, machine) => new SeededStateRow
                     {
                         MachineId = machine.Id,
-                        DepartmentId = machine.DepartmentId,
                         MachineName = machine.Name,
                         State = row.State,
                         StartedAt = row.StartedAt,
@@ -177,16 +186,22 @@ public static class TestTenantFixtureExtensions
 public sealed record SeededStateRow
 {
     public required Guid MachineId { get; init; }
-    public required Guid DepartmentId { get; init; }
     public required string MachineName { get; init; }
     public required MachineState State { get; init; }
     public required DateTime StartedAt { get; init; }
 }
 
+public sealed record SeededCompany
+{
+    public required string TimeZoneId { get; init; }
+    public required int MachineCount { get; init; }
+    public required int SupervisorCount { get; init; }
+    public required int WorkerCount { get; init; }
+}
+
 public sealed record TenantMachine
 {
     public required Guid MachineId { get; init; }
-    public required Guid DepartmentId { get; init; }
 }
 
 public sealed record SeededEmployee
@@ -197,5 +212,4 @@ public sealed record SeededEmployee
     public required string Email { get; init; }
     public required EmployeeStatus Status { get; init; }
     public required RoleCode RoleCode { get; init; }
-    public required int DepartmentCount { get; init; }
 }

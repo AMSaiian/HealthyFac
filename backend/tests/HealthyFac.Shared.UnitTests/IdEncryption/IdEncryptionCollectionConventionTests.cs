@@ -42,9 +42,9 @@ public sealed class IdEncryptionCollectionConventionTests
         var parsed = JsonNode.Parse(JsonSerializer.Serialize(model, _jsonOptions));
 
         parsed.Should().NotBeNull();
-        DecryptElements(parsed[IdEncryptionCollectionConventionTestData.DepartmentIdsPropertyName])
+        DecryptElements(parsed[IdEncryptionCollectionConventionTestData.TagIdsPropertyName])
             .Should()
-            .Equal(model.DepartmentIds);
+            .Equal(model.TagIds);
         DecryptElements(parsed[IdEncryptionCollectionConventionTestData.MachineIdsPropertyName])
             .Should()
             .Equal(model.MachineIds);

@@ -9,7 +9,6 @@ const EMPTY_RANGE = { from: null, to: null };
 const EMPTY_FILTER: MachineFilter = {
   name: '',
   serialNumber: '',
-  departmentIds: [],
   states: [],
   createdAt: EMPTY_RANGE,
   updatedAt: EMPTY_RANGE,
@@ -35,7 +34,6 @@ describe('toSearchBody', () => {
         ...EMPTY_FILTER,
         name: 'lat',
         serialNumber: 'ab',
-        departmentIds: ['d1'],
         states: [MachineState.Operational],
       },
     };
@@ -49,7 +47,6 @@ describe('toSearchBody', () => {
       filter: {
         name: { value: 'lat' },
         serialNumber: { value: 'ab' },
-        departmentIds: { ids: ['d1'] },
         states: { values: ['operational'] },
       },
     });

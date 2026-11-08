@@ -57,8 +57,8 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 }
 
 /// <summary>
-/// Changes the name, serial number, and description of a machine. The department never changes. A machine outside
-/// the company or the departments of the actor is "not found". The serial number must stay unique among the
+/// Changes the name, serial number, and description of a machine. A machine outside
+/// the company is "not found". The serial number must stay unique among the
 /// machines of the company that are not deleted, ignoring case.
 /// </summary>
 /// <remarks>
@@ -66,24 +66,18 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// change, and the handler maps that failure to the same conflict.
 /// </remarks>
 /// <param name="dbContext">Loads and saves the machine.</param>
-/// <param name="currentUser">Provides the departments of the actor.</param>
-public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext, ICurrentUserProvider currentUser)
+public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext)
     : RequestHandler<UpdateMachineRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
-    private readonly ICurrentUserProvider _currentUser = currentUser;
 
     protected override async Task HandleInternalAsync(
         UpdateMachineRequest request,
         CancellationToken cancellationToken
     )
     {
-        var departmentIds = _currentUser.GetActor().DepartmentIds.ToList();
-
         var machine = await _dbContext.Machines.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id
-                    && candidate.CompanyId == request.CompanyId
-                    && departmentIds.Contains(candidate.DepartmentId),
+                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
                 cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 

@@ -22,7 +22,6 @@ public static class MachineApiFixtureExtensions
             {
                 Subject = Guid.NewGuid(),
                 Organizations = [fixture.CompanyId.ToString()],
-                DepartmentIds = [fixture.DepartmentId.ToString()],
                 Permissions = permissions,
             };
 
@@ -47,18 +46,6 @@ public static class MachineApiFixtureExtensions
             return await client.SendAsync(request);
         }
 
-        public string CreateSearchBodyWithDepartment(Guid departmentId) =>
-            new JsonObject
-            {
-                [propertyName: "offset"] = 0,
-                [propertyName: "limit"] = 25,
-                [propertyName: "filter"] = new JsonObject
-                {
-                    [propertyName: "departmentIds"] = new JsonObject
-                        { [propertyName: "ids"] = new JsonArray(fixture.IdEncryptor.Encrypt(departmentId)) },
-                },
-            }.ToJsonString();
-
         public string CreateUpdateBody(string serialNumber) =>
             new JsonObject
             {
@@ -72,7 +59,6 @@ public static class MachineApiFixtureExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var machine = new Machine(
                 fixture.CompanyId,
-                fixture.DepartmentId,
                 GatewayIds.Create(),
                 MachineApiTestData.MachineName,
                 serialNumber,
