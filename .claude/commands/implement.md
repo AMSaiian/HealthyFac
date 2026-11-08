@@ -17,9 +17,26 @@ When this command is first run, do not read files or start work. Reply only:
 Start a run only when a message from the session `$ARGUMENTS-spec` or `$ARGUMENTS-reviewer`
 asks you to start, or when I tell you to start. Each such message starts one run of
 "What to do on each run" below. Any other message: answer it, but do not start a run.
-At the start of every run, re-read spec.md, plan.md and review.md (if present); they
-change between runs. If a start message arrives while a run is in progress, finish the
-current step, re-read plan.md, and continue the same run with any newly unblocked steps.
+At the start of every run, read the parts of **Reading** below; they change between runs.
+If a start message arrives while a run is in progress, finish the current step, read the
+open cycle of plan.md again, and continue the same run with any newly unblocked steps.
+
+## Reading
+The plan is your only input. Read by section, with Grep (line numbers) and Read (`offset`,
+`limit`). Never read spec.md, except its AC lines.
+- plan.md header: the first 20 lines (cycle line, status, goal).
+- The open cycle: Grep `^### Cycle N$` and the next `^##` heading, then Read that range.
+  A plan without `### Cycle` headings is one cycle: read it whole.
+- The Deviations of the cycle: Grep `^\*   Steps? ` in plan.md and Read the entries whose
+  number (`Step N:`) or range (`Steps A-B:`) holds a step of the cycle. A `Red:` or `Proof:`
+  line is not there: write it under its step in the cycle section.
+- The ACs of the cycle: Grep `^\*   \*\*AC(<numbers of the Spec: line>)` in spec.md. They
+  define done; the steps define how. Before the handoff, check each AC against the tests
+  that cover it.
+- review.md (if present): read it whole.
+Read a full file only for a reference that points outside these parts.
+A step that needs a fact it does not hold is blocked (`BLOCKED: step not self-contained`).
+A step that as written cannot meet its AC is blocked (`BLOCKED: step does not meet AC<n>`).
 
 ## What to do on each run
 1. Implement every unticked step in plan.md, in order. Skip steps marked `[~]` (cancelled);
@@ -35,7 +52,19 @@ removals. If it has none, still: stay in scope, log every out-of-plan change und
 is unneeded.
 
 ## Execution
-- After each step, run its verification, then tick it off in plan.md.
+- After each step, run its verification, then tick it off in plan.md. Run only the `Verify`
+  of the step (its filtered tests). The last step before a checkpoint, and the last step
+  of the cycle, run the changed test projects.
+- At the end of the run, run the full solution once (the build and test commands of
+  AGENTS.md). Then run `pwsh .claude/tree-id.ps1 -Repo <repo path>` and write this line
+  under the cycle in plan.md:
+  `Full run: tree <tree-id>; <command> -> <passed> passed, 0 failed`.
+  A change after that run means a new full run and a new line.
+- Checkpoint: a cycle with a `Checkpoints: after Step <x>.` line has one at each named
+  step. After that step, write `Checkpoint <x>: tree <tree-id>, base <tree-id>` under the
+  cycle (the base is the tree ID of the previous checkpoint, or of the run start). Send
+  "checkpoint <x> ready" with both tree IDs to `$ARGUMENTS-reviewer`, and continue. Before
+  the next step, read review.md again and fix each open checkpoint finding.
 - Never delete, skip, or weaken a test to make it pass.
 - Do not commit or push unless I say so.
 - Known failures: a test that fails in `baseline.md` and that no step fixes is not a
@@ -98,8 +127,11 @@ If any step is still `[!]` at the end of the run: do not hand off to the reviewe
 Send one message to `$ARGUMENTS-spec` listing the steps done this run and the steps still
 blocked or waiting, then end your turn and wait for the next handoff.
 
-When no `[!]` steps remain and builds and tests pass, remove the `STATUS: BLOCKED` line
-from plan.md and send a message to the session named `$ARGUMENTS-reviewer`:
+When no `[!]` steps remain and builds and tests pass, run
+`pwsh .claude/check-handoff.ps1 <feature folder> -Repo <repo path> -Base <base ref>`. Fix
+each line it prints; hand off only when it passes (a fix after the full run means a new
+full run). Then remove the `STATUS: BLOCKED` line from plan.md and send a message to the
+session named `$ARGUMENTS-reviewer`:
 "Feature $ARGUMENTS: implementation ready - start review. Browser check: <passed>/<total>
 flows. (If you don't have the reviewer instructions in context, follow
 .claude/commands/review.md for feature $ARGUMENTS.) Feature folder: <absolute feature

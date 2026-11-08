@@ -52,6 +52,19 @@ are we building?" and wait for me to describe the task.
 - If the spec introduces a new convention, add a step for a deterministic check that
   enforces it (analyzer, architecture test, hook).
 - Start with `Cycle: 1` as the first line.
+- Start each cycle section (`### Cycle N`) with a line `Spec: **<spec section>**,
+  **<spec section>**, AC<a>-AC<b>.` (the exact spec headings and the AC range), so the
+  sessions read only those parts. For a cycle with more than 6 steps, add the line
+  `Checkpoints: after Step <x>.`. Start each Deviations entry with its step number
+  (`*   Step 87: ...` or `*   Steps 89-91: ...`). Each `Red:` or `Proof:` line goes under
+  its step in the cycle section, never in Deviations.
+- The executor reads the plan only. Copy into each step every fact from the spec that it
+  needs (names, tags, values, cases); never write "as in the spec". Each `Files:` line
+  names every file by its repo path, a new file too; never by prose or by folder. Each
+  step's `Verify` names a test filter, never a whole project, unless the step changes
+  shared fixtures.
+- Run `pwsh .claude/check-plan.ps1 <feature folder>` before the handoff and fix each line
+  it prints. Hand off only when it passes.
 - Add a `## Review Focus` table: one row for each question below that the feature
   touches, with the answer and the test that proves it, then one line "Other questions:
   not affected".
