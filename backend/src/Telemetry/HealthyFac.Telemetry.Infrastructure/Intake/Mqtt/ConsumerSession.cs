@@ -23,11 +23,13 @@ internal sealed class ConsumerSession : IAsyncDisposable
     public ConsumerSession(
         IMqttClient client,
         TimeProvider timeProvider,
+        int index,
         Func<MqttApplicationMessageReceivedEventArgs, ConsumerSession, Task> onMessage
     )
     {
         _client = client;
         _timeProvider = timeProvider;
+        Index = index;
         InFlight = new InFlightTracker(timeProvider);
         _processingToken = _processing.Token;
 
@@ -45,6 +47,9 @@ internal sealed class ConsumerSession : IAsyncDisposable
     }
 
     public IMqttClient Client => _client;
+
+    /// <summary>The index of the consumer, or of the orphan session, that owns the connection.</summary>
+    public int Index { get; }
 
     public InFlightTracker InFlight { get; }
 

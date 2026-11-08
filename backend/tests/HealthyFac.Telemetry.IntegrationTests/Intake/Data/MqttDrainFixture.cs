@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Testing.Containers;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,7 @@ public sealed class MqttDrainFixture : MqttIntakeFixture
             Database.GetSingleton<IServiceScopeFactory>(),
             Database.GetSingleton<TimeProvider>(),
             state,
+            new IntakeMetrics(MeterFactory, state),
             Database.GetSingleton<ILogger<MqttIntakeService>>());
 
         return new StartedIntake { Service = service, State = state };

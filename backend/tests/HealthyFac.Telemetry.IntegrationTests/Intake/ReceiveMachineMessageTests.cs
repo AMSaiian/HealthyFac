@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using HealthyFac.Telemetry.Application.Intake;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
@@ -16,7 +17,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
 
-        await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
+        var response = await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
 
         var messages = await _fixture.LoadReceivedMessagesAsync(machine.MachineId);
         var readings = await _fixture.LoadReadingsAsync(machine.MachineId);
@@ -35,6 +36,9 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         readings.Discrete.Select(reading => reading.Value).Should().BeEquivalentTo("true", "auto");
         readings.Discrete.Should().OnlyContain(reading => !reading.IsOutOfRange);
         readings.Statuses.Should().HaveCount(expected: 2);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Stored);
+        response.SampledAt.Should().Be(ReceiveMachineMessageTestData.SampledAt);
     }
 
     [Theory]
@@ -46,7 +50,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var message = ReceiveMachineMessageTestData.CreateMessage(temperature: temperature);
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -54,6 +58,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         stored.Errors.Should().BeEmpty();
         readings.Numeric.Single().IsOutOfRange.Should().BeTrue();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Stored);
     }
 
     [Theory]
@@ -65,12 +71,14 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var message = ReceiveMachineMessageTestData.CreateMessage(temperature: temperature);
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var readings = await _fixture.LoadReadingsAsync(machine.MachineId);
 
         readings.Numeric.Single().IsOutOfRange.Should().BeFalse();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Stored);
     }
 
     [Fact]
@@ -79,7 +87,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var message = ReceiveMachineMessageTestData.CreateMessage(mode: "unknown");
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -88,6 +96,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         stored.Errors.Should().BeEmpty();
         readings.Discrete.Single(reading => reading.Value == "unknown").IsOutOfRange.Should().BeTrue();
         readings.Discrete.Single(reading => reading.Value == "true").IsOutOfRange.Should().BeFalse();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Stored);
     }
 
     [Fact]
@@ -96,7 +106,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var message = ReceiveMachineMessageTestData.CreateMessage(temperature: "hot");
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -110,6 +120,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         readings.Numeric.Should().BeEmpty();
         readings.Discrete.Should().HaveCount(expected: 2);
         readings.Statuses.Should().HaveCount(expected: 2);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
     }
 
     [Fact]
@@ -119,7 +131,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var message = ReceiveMachineMessageTestData.CreateMessage();
         message[propertyName: "metrics"]![propertyName: "extra.key"] = 1;
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -128,6 +140,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnknownMetric);
         readings.Numeric.Should().ContainSingle();
         readings.Discrete.Should().HaveCount(expected: 2);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
     }
 
     [Fact]
@@ -137,7 +151,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var message = ReceiveMachineMessageTestData.CreateMessage();
         message[propertyName: "metrics"]!.AsObject().Remove(ReceiveMachineMessageTestData.DoorKey);
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -150,6 +164,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
                 new { Path = "metrics.door.open", Code = IntakeErrorCodes.MissingMetric });
         readings.Numeric.Should().ContainSingle();
         readings.Discrete.Should().ContainSingle();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
     }
 
     [Fact]
@@ -159,7 +175,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var message = ReceiveMachineMessageTestData.CreateMessage(
             statuses: [ReceiveMachineMessageTestData.ErrorStatus, ReceiveMachineMessageTestData.UnknownStatus]);
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -167,6 +183,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnknownStatus);
         readings.Statuses.Should().ContainSingle();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
     }
 
     [Fact]
@@ -176,7 +194,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var message = ReceiveMachineMessageTestData.CreateMessage(
             statuses: [ReceiveMachineMessageTestData.ErrorStatus, ReceiveMachineMessageTestData.ErrorStatus]);
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -184,6 +202,8 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.DuplicateStatus);
         readings.Statuses.Should().ContainSingle();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
     }
 
     [Theory]
@@ -193,7 +213,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(json));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -201,6 +221,9 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         stored.Errors.Select(error => error.Code).Should().Contain(expectedCode);
         readings.Total.Should().Be(expected: 0);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(expectedCode);
     }
 
     [Fact]
@@ -210,12 +233,14 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var message = ReceiveMachineMessageTestData.CreateMessage(
             ReceiveMachineMessageTestData.ReceivedAt.AddMinutes(value: 1));
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
 
         stored.Errors.Should().BeEmpty();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Stored);
     }
 
     [Fact]
@@ -225,7 +250,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var message = ReceiveMachineMessageTestData.CreateMessage(
             ReceiveMachineMessageTestData.ReceivedAt.AddMinutes(value: 1).AddTicks(value: 1));
 
-        await _fixture.ReceiveAsync(
+        var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
@@ -233,6 +258,9 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.FutureSampledAt);
         readings.Total.Should().Be(expected: 0);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.FutureSampledAt);
     }
 
     [Fact]
@@ -241,13 +269,16 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(text: "not json at all");
 
-        await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
+        var response = await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.MalformedJson);
         stored.Payload.Should().BeNull();
         stored.RawPayload.Should().Equal(payload);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.MalformedJson);
     }
 
     [Fact]
@@ -255,11 +286,15 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
 
-        await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), [0xFF, 0xFE, 0x7B]);
+        var response = await _fixture.ReceiveAsync(
+            ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), [0xFF, 0xFE, 0x7B]);
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.MalformedJson);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.MalformedJson);
     }
 
     [Fact]
@@ -268,13 +303,16 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(text: """{"a":"x\u0000y"}""");
 
-        await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
+        var response = await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnstorableJson);
         stored.Payload.Should().BeNull();
         stored.RawPayload.Should().Equal(payload);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.UnstorableJson);
     }
 
     [Fact]
@@ -283,7 +321,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.DuplicateMetricKeyMessage);
 
-        await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
+        var response = await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
         var readings = await _fixture.LoadReadingsAsync(machine.MachineId);
@@ -292,6 +330,9 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         stored.Payload.Should().BeNull();
         stored.RawPayload.Should().Equal(payload);
         readings.Numeric.Should().BeEmpty();
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.MalformedJson);
     }
 
     [Theory]
@@ -303,13 +344,16 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var payload = ReceiveMachineMessageTestData.Bytes(json);
 
-        await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
+        var response = await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);
 
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
 
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnstorableJson);
         stored.Payload.Should().BeNull();
         stored.RawPayload.Should().Equal(payload);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.UnstorableJson);
     }
 
     [Theory]
@@ -319,12 +363,15 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     {
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
 
-        await _fixture.ReceiveAsync(topic, payload);
+        var response = await _fixture.ReceiveAsync(topic, payload);
 
         var stored = (await _fixture.LoadReceivedMessagesByTopicAsync(topic)).First();
 
         stored.MachineRegistrationId.Should().BeNull();
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.MalformedGatewayId);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.MalformedGatewayId);
     }
 
     [Fact]
@@ -333,12 +380,15 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var topic = ReceiveMachineMessageTestData.TopicFor(ReceiveMachineMessageTestData.UnknownGatewayId);
         var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
 
-        await _fixture.ReceiveAsync(topic, payload);
+        var response = await _fixture.ReceiveAsync(topic, payload);
 
         var stored = (await _fixture.LoadReceivedMessagesByTopicAsync(topic)).First();
 
         stored.MachineRegistrationId.Should().BeNull();
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnknownGateway);
+
+        response.Result.Should().Be(ReceiveMachineMessageResult.Rejected);
+        response.ErrorCode.Should().Be(IntakeErrorCodes.UnknownGateway);
     }
 
     [Fact]
@@ -357,6 +407,21 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         messages.Should().ContainSingle();
         readings.Total.Should().Be(expected: 5);
+    }
+
+    [Fact]
+    public async Task Receive_SameMessageTwice_ReturnsDuplicateTheSecondTime()
+    {
+        var machine = await _fixture.ArrangeIntakeMachineAsync();
+        var payload = ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage());
+        var topic = ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
+        var first = await _fixture.ReceiveAsync(topic, payload);
+
+        var second = await _fixture.ReceiveAsync(topic, payload);
+
+        first.Result.Should().Be(ReceiveMachineMessageResult.Stored);
+        second.Result.Should().Be(ReceiveMachineMessageResult.Duplicate);
+        second.SampledAt.Should().Be(ReceiveMachineMessageTestData.SampledAt);
     }
 
     [Fact]

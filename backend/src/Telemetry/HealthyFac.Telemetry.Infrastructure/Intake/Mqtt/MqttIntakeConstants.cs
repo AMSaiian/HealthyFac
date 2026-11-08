@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Application.Observability;
+
 namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 /// </summary>
 public static class MqttIntakeConstants
 {
-    public const string SharedSubscriptionFormat = "$share/{0}/healthyfac/gateways/+/messages";
+    public const string SharedSubscriptionFormat = "$share/{0}/" + ObservabilityConstants.Intake.DestinationPattern;
     public const string HealthCheckName = "mqtt-intake";
     public const string ConsumerClientIdFormat = "{0}-{1}";
     public const int DrainPollMilliseconds = 100;

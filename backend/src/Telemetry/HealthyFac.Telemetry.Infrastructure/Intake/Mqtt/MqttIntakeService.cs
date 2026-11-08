@@ -1,5 +1,6 @@
 using System.Buffers;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Telemetry.Application;
@@ -66,13 +67,15 @@ namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 /// <param name="options">The consumer settings.</param>
 /// <param name="scopeFactory">Creates the scope of the <c>telemetry:intake</c> actor for each message.</param>
 /// <param name="timeProvider">Provides the moment of receipt.</param>
-/// <param name="state">Receives the connection state for the health check.</param>
+/// <param name="state">Receives the connection state for the health check and the gauges.</param>
+/// <param name="metrics">Records the results, the durations, and the lag of the messages.</param>
 /// <param name="logger">Logs the connection and the failures, never a payload.</param>
 public sealed class MqttIntakeService(
     IOptions<MqttIntakeOptions> options,
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     MqttIntakeState state,
+    IntakeMetrics metrics,
     ILogger<MqttIntakeService> logger
 ) : BackgroundService
 {
@@ -80,6 +83,7 @@ public sealed class MqttIntakeService(
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly MqttIntakeState _state = state;
+    private readonly IntakeMetrics _metrics = metrics;
     private readonly ILogger<MqttIntakeService> _logger = logger;
     private readonly MqttClientFactory _clientFactory = new();
     private readonly TaskCompletionSource _orphanCheckCompleted =
@@ -123,7 +127,7 @@ public sealed class MqttIntakeService(
 
     private async Task RunSessionAsync(int index, CancellationToken cancellationToken)
     {
-        await using var session = CreateSession();
+        await using var session = CreateSession(index);
 
         await session.ConnectAsync(BuildClientOptions(index), cancellationToken);
         await session.Client.SubscribeAsync(
@@ -149,8 +153,8 @@ public sealed class MqttIntakeService(
         }
     }
 
-    private ConsumerSession CreateSession() =>
-        new(_clientFactory.CreateMqttClient(), _timeProvider, HandleAsync);
+    private ConsumerSession CreateSession(int index) =>
+        new(_clientFactory.CreateMqttClient(), _timeProvider, index, HandleAsync);
 
     private async Task HandleAsync(MqttApplicationMessageReceivedEventArgs arguments, ConsumerSession session)
     {
@@ -163,19 +167,40 @@ public sealed class MqttIntakeService(
 
         try
         {
-            var isSettled = await TrySettleAsync(arguments, session);
+            _state.MarkMessageStarted();
 
-            if (isSettled)
+            var startedAt = _timeProvider.GetTimestamp();
+            var receivedAt = _timeProvider.GetUtcNow().UtcDateTime;
+            using var activity = IntakeActivity.Start(
+                arguments.ApplicationMessage, _options.SharedGroup, session.Index);
+
+            var outcome = await TrySettleAsync(arguments, receivedAt, session);
+
+            if (outcome.IsSettled)
             {
                 await AcknowledgeAsync(arguments, session);
             }
+
+            IntakeActivity.Complete(activity, outcome);
+            RecordOutcome(outcome, receivedAt, _timeProvider.GetElapsedTime(startedAt));
         }
         catch (OperationCanceledException) when (session.ProcessingToken.IsCancellationRequested)
         {
         }
         finally
         {
+            _state.MarkMessageEnded();
             session.InFlight.End();
+        }
+    }
+
+    private void RecordOutcome(IntakeOutcome outcome, DateTime receivedAt, TimeSpan elapsed)
+    {
+        _metrics.RecordMessage(outcome, elapsed);
+
+        if (outcome.IsStored && outcome.SampledAt is { } sampledAt)
+        {
+            _metrics.RecordLag(receivedAt - sampledAt);
         }
     }
 
@@ -198,6 +223,7 @@ public sealed class MqttIntakeService(
         }
         catch (OperationCanceledException) when (timeout.IsTimedOut)
         {
+            _metrics.RecordDrainTimeout();
             _logger.LogWarning(
                 message: "The MQTT consumer {ConsumerIndex} did not finish its messages in time. The session stays.",
                 index);
@@ -253,7 +279,7 @@ public sealed class MqttIntakeService(
     /// </summary>
     private async Task EmptyOrphanAsync(int index, CancellationToken cancellationToken)
     {
-        await using var session = CreateSession();
+        await using var session = CreateSession(index);
 
         var connectResult = await session.ConnectAsync(BuildClientOptions(index), cancellationToken);
 
@@ -268,6 +294,7 @@ public sealed class MqttIntakeService(
 
         if (connectResult.IsSessionPresent)
         {
+            _metrics.RecordOrphanEmptied(session.MessageCount);
             _logger.LogInformation(
                 message: "The MQTT intake emptied the orphan session {ConsumerIndex} ({MessageCount} messages).",
                 index,
@@ -292,7 +319,7 @@ public sealed class MqttIntakeService(
 
     private async Task DeleteSessionAsync(int index, CancellationToken cancellationToken)
     {
-        await using var cleaning = CreateSession();
+        await using var cleaning = CreateSession(index);
 
         await cleaning.ConnectAsync(
             BuildClientOptions(index, isCleanStart: true, sessionExpirySeconds: 0),
@@ -317,15 +344,19 @@ public sealed class MqttIntakeService(
     /// Runs the use case and classifies only its failures. The acknowledge is not part of it, so a broken connection
     /// at the acknowledge is never stored as a processing failure.
     /// </summary>
-    /// <returns><see langword="true"/> when the message is stored or dropped for good and the caller may
-    /// acknowledge it; <see langword="false"/> when the session ended and the broker must deliver it again.</returns>
-    private async Task<bool> TrySettleAsync(MqttApplicationMessageReceivedEventArgs arguments, ConsumerSession session)
+    /// <returns>The result of the message. The caller may acknowledge it unless the result is
+    /// <c>redelivery</c>: then the session ended and the broker must deliver it again.</returns>
+    private async Task<IntakeOutcome> TrySettleAsync(
+        MqttApplicationMessageReceivedEventArgs arguments,
+        DateTime receivedAt,
+        ConsumerSession session
+    )
     {
         try
         {
-            await ReceiveAsync(arguments, session.ProcessingToken);
+            var response = await ReceiveAsync(arguments, receivedAt, session.ProcessingToken);
 
-            return true;
+            return IntakeOutcome.From(response);
         }
         catch (AppValidationException exception)
         {
@@ -333,7 +364,7 @@ public sealed class MqttIntakeService(
                 message: "The MQTT intake dropped a message that failed validation ({ErrorCount} errors).",
                 exception.Errors.Count());
 
-            return true;
+            return new IntakeOutcome { Result = ObservabilityConstants.Intake.Results.Invalid };
         }
         catch (Exception exception) when (!session.ProcessingToken.IsCancellationRequested)
         {
@@ -341,7 +372,7 @@ public sealed class MqttIntakeService(
         }
     }
 
-    private async Task<bool> TryStoreFailureAsync(
+    private async Task<IntakeOutcome> TryStoreFailureAsync(
         MqttApplicationMessageReceivedEventArgs arguments,
         Exception exception,
         ConsumerSession session
@@ -354,7 +385,7 @@ public sealed class MqttIntakeService(
                 message: "The MQTT intake hit a transient failure. The message stays unacknowledged for redelivery.");
             session.End();
 
-            return false;
+            return new IntakeOutcome { Result = ObservabilityConstants.Intake.Results.Redelivery };
         }
 
         try
@@ -368,14 +399,14 @@ public sealed class MqttIntakeService(
                 message: "The MQTT intake could not store a failed message. It stays unacknowledged for redelivery.");
             session.End();
 
-            return false;
+            return new IntakeOutcome { Result = ObservabilityConstants.Intake.Results.Redelivery };
         }
 
         _logger.LogError(
             exception,
             message: "The MQTT intake could not process a message. It stored it as processingFailed.");
 
-        return true;
+        return new IntakeOutcome { Result = ObservabilityConstants.Intake.Results.Failed };
     }
 
     private async Task AcknowledgeAsync(MqttApplicationMessageReceivedEventArgs arguments, ConsumerSession session)
@@ -412,20 +443,22 @@ public sealed class MqttIntakeService(
             cancellationToken);
     }
 
-    private async Task ReceiveAsync(
+    private async Task<ReceiveMachineMessageResponse> ReceiveAsync(
         MqttApplicationMessageReceivedEventArgs arguments,
+        DateTime receivedAt,
         CancellationToken cancellationToken
     )
     {
         using var scope = _scopeFactory.CreateActorScope(TelemetryServiceActors.Intake);
-        var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<ReceiveMachineMessageRequest>>();
+        var handler = scope.ServiceProvider
+            .GetRequiredService<IRequestHandler<ReceiveMachineMessageRequest, ReceiveMachineMessageResponse>>();
 
-        await handler.HandleAsync(
+        return await handler.HandleAsync(
             new ReceiveMachineMessageRequest
             {
                 Topic = arguments.ApplicationMessage.Topic,
                 Payload = arguments.ApplicationMessage.Payload.ToArray(),
-                ReceivedAt = _timeProvider.GetUtcNow().UtcDateTime,
+                ReceivedAt = receivedAt,
             },
             cancellationToken);
     }

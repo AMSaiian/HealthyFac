@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Testing.Containers;
@@ -33,6 +34,9 @@ public class MqttIntakeFixture : IAsyncLifetime
     public MqttIntakeState State => Database.GetSingleton<MqttIntakeState>();
 
     public MosquittoTestBroker Broker => _broker;
+
+    /// <summary>The meter factory of the test host. A <c>MetricCollector</c> on it reads the intake meter.</summary>
+    public IMeterFactory MeterFactory => Database.GetSingleton<IMeterFactory>();
 
     protected virtual int ConsumerCount => 1;
 
