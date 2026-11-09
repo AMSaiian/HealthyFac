@@ -13,10 +13,12 @@ public static class RealmTestData
     public const string AuthClientSecret = "test-auth-client-secret";
     public const string CoreClientSecret = "test-core-client-secret";
     public const string TelemetryClientSecret = "test-telemetry-client-secret";
+    public const string DocumentClientSecret = "test-document-client-secret";
     public const string PublicAuthUrl = "https://auth.healthyfac.test";
     public const string InternalHost = "keycloak:8080";
     public const string CoreClientId = "healthyfac-core";
     public const string TelemetryClientId = "healthyfac-telemetry";
+    public const string DocumentClientId = "healthyfac-document";
     public const string AuthClientId = "healthyfac-auth";
     public const string PermissionsClaim = KeycloakClaimTypes.Permissions;
     public const string SupervisorRoleName = "supervisor";
@@ -42,6 +44,7 @@ public static class RealmTestData
         [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
         [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = CoreClientSecret,
         [key: "KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = TelemetryClientSecret,
+        [key: "KEYCLOAK_DOCUMENT_CLIENT_SECRET"] = DocumentClientSecret,
         [key: "KC_HOSTNAME"] = PublicAuthUrl,
         [key: "KC_HOSTNAME_BACKCHANNEL_DYNAMIC"] = "true",
     };
@@ -84,11 +87,21 @@ public static class RealmTestData
         "status-definitions:delete",
     ];
 
-    /// <summary>The permissions of a token that the web app gets: the permissions of both APIs.</summary>
+    public static IReadOnlyList<string> DocumentPermissions { get; } =
+    [
+        "files:read",
+        "files:write",
+        "files:delete",
+        "company-files:write",
+        "company-files:delete",
+    ];
+
+    /// <summary>The permissions of a token that the web app gets: the permissions of every API.</summary>
     public static IReadOnlyList<string> ExpectedPermissions { get; } =
     [
         .. CorePermissions,
         .. TelemetryPermissions,
+        .. DocumentPermissions,
     ];
 
     public static IReadOnlyList<string> MachinePermissions { get; } =

@@ -16,7 +16,8 @@ public sealed class IndexDocumentTests
         policy.Should()
             .Be(
                 "default-src 'self'; script-src 'self' 'nonce-abc123'; style-src-elem 'self' 'nonce-abc123'; "
-                + "style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
+                + "style-src-attr 'unsafe-inline'; img-src 'self' data: https://api.healthyfac.test; "
+                + "font-src 'self'; "
                 + "connect-src 'self' https://api.healthyfac.test https://auth.healthyfac.test; "
                 + "frame-src 'self' https://auth.healthyfac.test; base-uri 'self'; form-action 'self'; "
                 + "frame-ancestors 'none'; object-src 'none'");
@@ -33,6 +34,14 @@ public sealed class IndexDocumentTests
         policy.Should().Contain($"connect-src 'self' {ApiBaseUrl} {AuthOrigin};");
         policy.Should().Contain($"frame-src 'self' {AuthOrigin};");
         policy.Should().Contain(expected: "frame-ancestors 'none'");
+    }
+
+    [Fact]
+    public void Build_WithApiUrl_AllowsTheApiOriginForImagesAndKeepsSelfAndData()
+    {
+        var policy = ContentSecurityPolicy.Build(Nonce, new Uri($"{ApiBaseUrl}/v1/"), new Uri(AuthOrigin));
+
+        policy.Should().Contain($"img-src 'self' data: {ApiBaseUrl};");
     }
 
     [Fact]

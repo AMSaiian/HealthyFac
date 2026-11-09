@@ -12,4 +12,7 @@ public sealed class EchoedRequest
     public required string Query { get; init; }
 
     public required IReadOnlyDictionary<string, string> Headers { get; init; }
+
+    /// <summary>The number of body bytes that the server read.</summary>
+    public required long BodyLength { get; init; }
 }

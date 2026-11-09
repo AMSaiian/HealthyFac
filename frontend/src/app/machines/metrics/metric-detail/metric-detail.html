@@ -85,9 +85,15 @@
   }
   <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
     <dt class="text-muted-color">{{ 'METRICS.DETAIL.DESCRIPTION' | translate }}</dt>
-    <dd
-      class="min-w-0 break-words"
-      [innerHTML]="item().value.description ?? emptyCell"
-    ></dd>
+    <dd class="min-w-0 break-words">
+      @if (item().value.description; as description) {
+        <hf-rich-text-view
+          [html]="description"
+          [links]="links()"
+        />
+      } @else {
+        {{ emptyCell }}
+      }
+    </dd>
   </div>
 </dl>

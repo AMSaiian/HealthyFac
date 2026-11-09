@@ -15,7 +15,7 @@ const RESTRICTED_IMPORT_PATTERNS = [
   { group: ['zone.js', 'zone.js/*'], message: ZONELESS_MESSAGE },
   { group: ['@angular/material'], message: 'Use PrimeNG.' },
   { group: ['../*'], message: ALIAS_MESSAGE },
-  { group: ['@app/shared/*', '@app/home/*', '@app/fallback/*', '@app/machines/*'], message: FEATURE_ALIAS_MESSAGE },
+  { group: ['@app/shared/*', '@app/home/*', '@app/fallback/*', '@app/machines/*', '@app/files/*'], message: FEATURE_ALIAS_MESSAGE },
   {
     group: ['**/services/*', '**/models/*', '**/components/*', '**/utils/*', '**/helpers/*', '**/stores/*'],
     message: LAYOUT_MESSAGE,

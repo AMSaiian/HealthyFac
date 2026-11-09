@@ -1,0 +1,33 @@
+<div class="flex flex-col gap-1">
+  <label for="file-edit-name">{{ 'FILES.EDIT_DIALOG.NAME' | translate }}</label>
+  @for (error of editForm.fileName().errors(); track $index) {
+    @if (isShown(editForm.fileName)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <input
+    pInputText
+    id="file-edit-name"
+    autocomplete="off"
+    [attr.data-hf-calm]="isShown(editForm.fileName) ? null : ''"
+    [formField]="editForm.fileName"
+  />
+  <small class="text-surface-500">{{
+    'FILES.EDIT_DIALOG.EXTENSION_HINT' | translate: { extension: extension() }
+  }}</small>
+</div>
+<div class="flex flex-col gap-1">
+  <label for="file-edit-description">{{ 'FILES.EDIT_DIALOG.DESCRIPTION' | translate }}</label>
+  @for (error of editForm.description().errors(); track $index) {
+    @if (isShown(editForm.description)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <textarea
+    pTextarea
+    id="file-edit-description"
+    rows="4"
+    [attr.data-hf-calm]="isShown(editForm.description) ? null : ''"
+    [formField]="editForm.description"
+  ></textarea>
+</div>

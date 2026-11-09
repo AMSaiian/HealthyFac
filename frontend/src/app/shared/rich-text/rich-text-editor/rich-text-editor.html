@@ -1,11 +1,13 @@
 <p-editor
   [pt]="{ content: { class: 'h-64' } }"
+  [modules]="modules"
   [ngModel]="value()"
   [readonly]="readonly() || disabled()"
   [placeholder]="placeholder()"
   [invalid]="isInvalidShown()"
   (ngModelChange)="onEditorChange($event)"
   (onBlur)="touch.emit()"
+  (onInit)="onInit($event)"
 >
   <ng-template #header>
     <span class="ql-formats">
@@ -49,6 +51,11 @@
         type="button"
         class="ql-link"
         [attr.aria-label]="'RICH_TEXT.LINK' | translate"
+      ></button>
+      <button
+        type="button"
+        class="ql-image"
+        [attr.aria-label]="'RICH_TEXT.IMAGE' | translate"
       ></button>
       <button
         type="button"

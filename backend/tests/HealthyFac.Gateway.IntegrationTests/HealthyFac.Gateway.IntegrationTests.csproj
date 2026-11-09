@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />

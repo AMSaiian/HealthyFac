@@ -11,7 +11,17 @@ internal static class RichTextAttributes
     public const string Class = "class";
     public const string DataList = "data-list";
     public const string ContentEditable = "contenteditable";
+    public const string DataFileId = "data-file-id";
+    public const string Alt = "alt";
 
     /// <summary>The class of the list marker element that Quill 2 adds inside each list item.</summary>
     public const string QuillUiClass = "ql-ui";
+
+    /// <summary>The maximum length of the <c>alt</c> text of an image.</summary>
+    public const int AltMaxLength = 255;
+
+    /// <summary>
+    /// The format of an encrypted file ID: the version prefix, then 24 ciphertext bytes in Base64Url (32 characters).
+    /// </summary>
+    public const string FileIdPattern = "^v[0-9]+\\.[A-Za-z0-9_-]{32}\\z";
 }

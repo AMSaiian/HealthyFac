@@ -9,7 +9,8 @@ namespace HealthyFac.Gateway.Web.Proxy;
 /// </summary>
 /// <remarks>
 /// A timeout gives <c>504</c>. No available destination gives <c>503</c>. A client cancellation gives no body.
-/// Every other forwarder error gives <c>502</c>. A body is written only while the response has not started.
+/// A request body above the limit of the route gives <c>413</c>. Every other forwarder error gives <c>502</c>.
+/// A body is written only while the response has not started.
 /// The middleware implements <see cref="IMiddleware"/>, so the container creates it. Register it with
 /// <c>AddSingleton</c>.
 /// </remarks>
@@ -34,12 +35,19 @@ internal sealed class ProxyErrorMiddleware(ILogger<ProxyErrorMiddleware> logger)
             return;
         }
 
-        await WriteProblemAsync(context, forwarderError.Error);
+        await WriteProblemAsync(context, forwarderError);
     }
 
-    private static Task WriteProblemAsync(HttpContext context, ForwarderError error) =>
-        error switch
+    private static Task WriteProblemAsync(HttpContext context, IForwarderErrorFeature forwarderError) =>
+        forwarderError.Error switch
         {
+            ForwarderError.RequestBodyClient or ForwarderError.RequestBodyDestination
+                when IsBodyTooLarge(forwarderError.Exception) => context.Response.WriteGatewayProblemAsync(
+                    StatusCodes.Status413PayloadTooLarge,
+                    GatewayProblemDetailsConstants.PayloadTooLarge.Title,
+                    GatewayProblemDetailsConstants.PayloadTooLarge.TypeUrl,
+                    GatewayProblemDetailsConstants.PayloadTooLarge.Detail,
+                    context.RequestAborted),
             ForwarderError.RequestTimedOut => context.Response.WriteGatewayProblemAsync(
                 StatusCodes.Status504GatewayTimeout,
                 GatewayProblemDetailsConstants.GatewayTimeout.Title,
@@ -58,6 +66,15 @@ internal sealed class ProxyErrorMiddleware(ILogger<ProxyErrorMiddleware> logger)
                 GatewayProblemDetailsConstants.BadGateway.TypeUrl,
                 GatewayProblemDetailsConstants.BadGateway.Detail,
                 context.RequestAborted),
+        };
+
+    private static bool IsBodyTooLarge(Exception? exception) =>
+        exception switch
+        {
+            null => false,
+            BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge } => true,
+            AggregateException aggregate => aggregate.InnerExceptions.Any(IsBodyTooLarge),
+            _ => IsBodyTooLarge(exception.InnerException),
         };
 
     private void LogFailure(HttpContext context, ForwarderError error)

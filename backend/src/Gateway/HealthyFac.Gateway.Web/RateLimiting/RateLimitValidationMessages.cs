@@ -11,6 +11,12 @@ public static class RateLimitValidationMessages
         public const string WindowTooSmall = "The strict rate limit window must be at least 1 second.";
     }
 
+    public static class BlobDownload
+    {
+        public const string PermitLimitTooSmall = "The blob download rate limit must allow at least 1 request.";
+        public const string WindowTooSmall = "The blob download rate limit window must be at least 1 second.";
+    }
+
     public static class Default
     {
         public const string PermitLimitTooSmall = "The default rate limit must allow at least 1 request.";

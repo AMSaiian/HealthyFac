@@ -7,7 +7,9 @@
     "NOT_FOUND": "Сторінку не знайдено",
     "MACHINES": "Обладнання",
     "STATUS_DEFINITIONS": "Статуси",
-    "METRICS": "Метрики"
+    "METRICS": "Метрики",
+    "FILES": "Файли",
+    "MACHINE_FILES": "Файли обладнання"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -58,7 +60,11 @@
     "CLEAN": "Очистити форматування",
     "ERRORS": {
       "TOO_MUCH_FORMATTING": "Форматування завелике. Приберіть частину форматування або скоротіть текст."
-    }
+    },
+    "IMAGE": "Зображення",
+    "IMAGE_MISSING": "Зображення недоступне.",
+    "IMAGE_UPLOAD_FAILED": "Не вдалося завантажити зображення.",
+    "IMAGE_NOT_ALLOWED": "Дозволені лише зображення PNG, JPG, GIF і WebP до 5 МБ."
   },
   "MACHINES": {
     "TITLE": "Обладнання",
@@ -115,7 +121,8 @@
       "DESCRIPTION_PLACEHOLDER": "Опишіть верстат",
       "INVALID": "Форма містить помилки"
     },
-    "COLUMNS_CHOOSER": "Стовпці"
+    "COLUMNS_CHOOSER": "Стовпці",
+    "FILES": "Файли"
   },
   "STATUS_DEFINITIONS": {
     "TITLE": "Статуси:",
@@ -323,5 +330,66 @@
     "nextMinute": "Наступна хвилина",
     "am": "дп",
     "pm": "пп"
+  },
+  "FILES": {
+    "TITLE": "Файли",
+    "MACHINE_TITLE": "Файли обладнання",
+    "BACK": "Назад до обладнання",
+    "UPLOAD": "Завантажити",
+    "ROW_ACTIONS": "Дії рядка",
+    "COLUMNS_CHOOSER": "Стовпці",
+    "EMPTY": "Файлів не знайдено.",
+    "DELETE_HEADER": "Видалити файл",
+    "DELETE_MESSAGE": "Видалити файл {{name}}?",
+    "ACTIONS_MENU": {
+      "DOWNLOAD": "Завантажити",
+      "EDIT": "Редагувати",
+      "DELETE": "Видалити"
+    },
+    "COLUMNS": {
+      "FILE_NAME": "Назва",
+      "TYPE": "Тип",
+      "SIZE": "Розмір",
+      "UPLOADED_AT": "Завантажено",
+      "DESCRIPTION": "Опис"
+    },
+    "FILTERS": {
+      "FILE_NAME_PLACEHOLDER": "Фільтр за назвою",
+      "TYPE_PLACEHOLDER": "Оберіть типи"
+    },
+    "TOASTS": {
+      "SUCCESS": "Готово",
+      "UPLOADED": "Файл завантажено.",
+      "UPDATED": "Файл оновлено.",
+      "DELETED": "Файл видалено."
+    },
+    "ERRORS": {
+      "TYPE_NOT_ALLOWED": "Цей тип файлу не дозволений.",
+      "TOO_LARGE": "Файл завеликий.",
+      "EMPTY": "Файл порожній.",
+      "BUSY": "Сервіс зайнятий. Спробуйте за мить.",
+      "NOT_FOUND": "Файл більше не існує.",
+      "CONFLICT": "Файл змінив хтось інший. Список оновлено."
+    },
+    "UPLOAD_DIALOG": {
+      "TITLE": "Завантаження файлів",
+      "DROP": "Перетягніть файли сюди або",
+      "CHOOSE": "Оберіть файли",
+      "DESCRIPTION_PLACEHOLDER": "Опис (необов’язково)",
+      "REMOVE": "Прибрати",
+      "DONE": "Завантажено",
+      "NOTHING_TO_SEND": "Додайте файл для завантаження",
+      "WAIT": "Дочекайтеся завантаження"
+    },
+    "EDIT_DIALOG": {
+      "TITLE": "Редагування файлу",
+      "NAME": "Назва",
+      "EXTENSION_HINT": "Тип файлу залишається {{extension}}.",
+      "DESCRIPTION": "Опис",
+      "NO_CHANGES": "Змін немає",
+      "INVALID": "Форма недійсна",
+      "REQUIRED": "Це поле обов’язкове.",
+      "TOO_LONG": "Значення задовге."
+    }
   }
 }

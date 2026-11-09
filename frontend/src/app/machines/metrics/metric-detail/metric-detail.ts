@@ -5,13 +5,14 @@ import { Message } from 'primeng/message';
 import { Tag } from 'primeng/tag';
 
 import { EMPTY_CELL } from '@shared/grid/table/grid-display';
+import { RichTextView } from '@shared/rich-text/rich-text-view/rich-text-view';
 
 import { MetricValueKind } from '@machines/metrics/metric-definition';
 import { type MetricItem } from '@machines/metrics/metrics-page.store.utils';
 import { findUnitOption, KIND_LABEL_KEYS, type UnitGroup } from '@machines/metrics/metric-form/metric-form.utils';
 
 @Component({
-  imports: [ButtonDirective, Message, Tag, TranslatePipe],
+  imports: [ButtonDirective, Message, RichTextView, Tag, TranslatePipe],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto' },
   selector: 'hf-metric-detail',
   templateUrl: './metric-detail.html',
@@ -21,6 +22,7 @@ export class MetricDetail {
   readonly errors = input<readonly string[]>([]);
   readonly canWrite = input(false);
   readonly unitGroups = input<readonly UnitGroup[]>([]);
+  readonly links = input<ReadonlyMap<string, string>>(new Map());
   readonly editRequested = output<void>();
   readonly removeRequested = output<void>();
   readonly restoreRequested = output<void>();

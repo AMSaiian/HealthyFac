@@ -37,6 +37,7 @@ import {
   FILTER_READERS,
   FILTER_WRITERS,
   MENU_DELETE_KEY,
+  MENU_FILES_KEY,
   MENU_METRICS_KEY,
   MENU_STATUSES_KEY,
   MENU_UPDATE_KEY,
@@ -78,6 +79,7 @@ export class MachineGrid {
   readonly canWrite = input(false);
   readonly canDelete = input(false);
   readonly canReadStatuses = input(false);
+  readonly canReadFiles = input(false);
   readonly canReadMetrics = input(false);
 
   readonly filterChange = output<Partial<MachineFilter>>();
@@ -88,6 +90,7 @@ export class MachineGrid {
   readonly updateRequested = output<string>();
   readonly deleteRequested = output<Machine>();
   readonly statusesRequested = output<string>();
+  readonly filesRequested = output<string>();
   readonly metricsRequested = output<string>();
 
   protected readonly table = viewChild.required(Table);
@@ -101,6 +104,7 @@ export class MachineGrid {
       ...Object.values(STATE_LABEL_KEYS),
       MENU_METRICS_KEY,
       MENU_STATUSES_KEY,
+      MENU_FILES_KEY,
       MENU_UPDATE_KEY,
       MENU_DELETE_KEY,
     ]),
@@ -124,7 +128,7 @@ export class MachineGrid {
   }));
   protected readonly tableColumns = computed(() => [...this.columns()]);
   protected readonly hasRowActions = computed(
-    () => this.canWrite() || this.canDelete() || this.canReadStatuses() || this.canReadMetrics(),
+    () => this.canWrite() || this.canDelete() || this.canReadStatuses() || this.canReadFiles() || this.canReadMetrics(),
   );
 
   protected activeMachine: Machine | null = null;
@@ -145,6 +149,15 @@ export class MachineGrid {
             label: this._labels()[MENU_STATUSES_KEY] ?? MENU_STATUSES_KEY,
             icon: 'pi pi-list',
             command: (): void => this._emitStatuses(),
+          },
+        ]
+      : []),
+    ...(this.canReadFiles()
+      ? [
+          {
+            label: this._labels()[MENU_FILES_KEY] ?? MENU_FILES_KEY,
+            icon: 'pi pi-folder',
+            command: (): void => this._emitFiles(),
           },
         ]
       : []),
@@ -231,6 +244,12 @@ export class MachineGrid {
   private _emitStatuses(): void {
     if (this.activeMachine !== null) {
       this.statusesRequested.emit(this.activeMachine.id);
+    }
+  }
+
+  private _emitFiles(): void {
+    if (this.activeMachine !== null) {
+      this.filesRequested.emit(this.activeMachine.id);
     }
   }
 

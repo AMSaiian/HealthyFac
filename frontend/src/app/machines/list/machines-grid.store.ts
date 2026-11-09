@@ -24,6 +24,7 @@ import { MachinesApi } from '@machines/machines-api';
 const MACHINES_PATH = '/machines';
 const STATUSES_PATH = 'statuses';
 const METRICS_PATH = 'metrics';
+const FILES_PATH = 'files';
 
 export const MachinesGridStore = signalStore(
   withGridState<MachineFilter, MachineSortColumn, MachineColumn>(INITIAL_GRID),
@@ -41,6 +42,7 @@ export const MachinesGridStore = signalStore(
     canWrite: computed(() => store._auth.hasPermission(Permission.MachinesWrite)),
     canDelete: computed(() => store._auth.hasPermission(Permission.MachinesDelete)),
     canReadStatuses: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsRead)),
+    canReadFiles: computed(() => store._auth.hasPermission(Permission.FilesRead)),
     canReadMetrics: computed(() => store._auth.hasPermission(Permission.MetricDefinitionsRead)),
   })),
   withProps((store) => ({
@@ -81,6 +83,9 @@ export const MachinesGridStore = signalStore(
       },
       openMetrics(id: string): void {
         void store._router.navigate([MACHINES_PATH, id, METRICS_PATH]);
+      },
+      openFiles(id: string): void {
+        void store._router.navigate([MACHINES_PATH, id, FILES_PATH]);
       },
       openStatuses(id: string): void {
         void store._router.navigate([MACHINES_PATH, id, STATUSES_PATH]);

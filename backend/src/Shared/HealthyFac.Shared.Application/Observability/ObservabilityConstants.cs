@@ -140,6 +140,40 @@ public static class ObservabilityConstants
     }
 
     /// <summary>
+    /// The names of the Document file handling. The source is named after the .NET namespace of the file code and is
+    /// registered by the Document service itself.
+    /// </summary>
+    public static class Files
+    {
+        public const string Source = "HealthyFac.Document.Files";
+
+        public static class Spans
+        {
+            public const string Inspect = "File.Inspect";
+            public const string BlobUpload = "Blob.Upload";
+        }
+
+        public static class Tags
+        {
+            /// <summary>The stored extension of the detected type, or <see cref="Values.UnknownType"/>.</summary>
+            public const string DetectedType = "healthyfac.file.detected_type";
+
+            /// <summary>The purpose of the upload (<c>attachment</c> or <c>embedded</c>).</summary>
+            public const string Purpose = "healthyfac.file.purpose";
+
+            /// <summary>The result of the inspection, from <see cref="Values"/>.</summary>
+            public const string Result = "healthyfac.file.result";
+        }
+
+        public static class Values
+        {
+            public const string UnknownType = "unknown";
+            public const string Accepted = "accepted";
+            public const string Rejected = "rejected";
+        }
+    }
+
+    /// <summary>
     /// The names of the Telemetry MQTT intake. The source and the meter are named after the .NET namespace of the
     /// intake and are registered by the Telemetry service itself.
     /// </summary>

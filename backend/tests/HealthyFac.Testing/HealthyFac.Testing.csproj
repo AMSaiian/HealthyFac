@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Respawn" />
     <PackageReference Include="Testcontainers" />
+    <PackageReference Include="Testcontainers.Azurite" />
     <PackageReference Include="Testcontainers.Keycloak" />
     <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Testcontainers.RabbitMq" />

@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using AngleSharp.Css.Dom;
+using AngleSharp.Dom;
 using Ganss.Xss;
 using HealthyFac.Shared.Application.RichText;
 
@@ -6,9 +8,9 @@ namespace HealthyFac.Shared.Infrastructure.RichText;
 
 /// <summary>
 /// Inspects rich text with HtmlSanitizer. The allow-list holds the formats of the editor toolbar (bold, italic,
-/// underline, strikethrough, lists, links) and the markup that Quill 2 adds for lists. The policy never compares the
-/// sanitized text with the original: it reports every removal that the sanitizer announces through its events, so a
-/// difference in white space or entity encoding is never a finding.
+/// underline, strikethrough, lists, links, file images) and the markup that Quill 2 adds for lists. The policy never
+/// compares the sanitized text with the original: it reports every removal that the sanitizer announces through its
+/// events, so a difference in white space or entity encoding is never a finding.
 /// </summary>
 /// <remarks>
 /// A sanitizer with event handlers keeps the state of one call, so each call builds its own sanitizer. One
@@ -16,14 +18,24 @@ namespace HealthyFac.Shared.Infrastructure.RichText;
 /// </remarks>
 public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
 {
-    private static readonly string[] AllowedTags = ["p", "br", "strong", "em", "u", "s", "ol", "ul", "li", "a", "span"];
+    private static readonly string[] AllowedTags =
+        ["p", "br", "strong", "em", "u", "s", "ol", "ul", "li", "a", "span", "img"];
+
+    private static readonly Regex FileIdRegex = new(
+        RichTextAttributes.FileIdPattern,
+        RegexOptions.CultureInvariant | RegexOptions.Compiled,
+        TimeSpan.FromSeconds(value: 1));
+
+    private static readonly string OtherElementsWithImageAttributes =
+        $"[{RichTextAttributes.DataFileId}]:not(img), [{RichTextAttributes.Alt}]:not(img)";
 
     private static readonly string[] AllowedSchemes = ["http", "https", "mailto"];
 
     private static readonly string[] AllowedAttributes =
     [
         RichTextAttributes.Href, RichTextAttributes.Target, RichTextAttributes.Rel, RichTextAttributes.Class,
-        RichTextAttributes.DataList, RichTextAttributes.ContentEditable,
+        RichTextAttributes.DataList, RichTextAttributes.ContentEditable, RichTextAttributes.DataFileId,
+        RichTextAttributes.Alt,
     ];
 
     public RichTextInspection Inspect(string html)
@@ -47,10 +59,17 @@ public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
 
         return new RichTextInspection
         {
-            IsAllowed = isAllowed,
+            IsAllowed = isAllowed
+                && document.QuerySelectorAll(selectors: "img").All(IsValidFileImage)
+                && document.QuerySelectorAll(OtherElementsWithImageAttributes).Length == 0,
             VisibleLength = document.Body?.TextContent.Normalize().Length ?? 0,
         };
     }
+
+    private static bool IsValidFileImage(IElement image) =>
+        image.GetAttribute(RichTextAttributes.DataFileId) is { } fileId
+        && FileIdRegex.IsMatch(fileId)
+        && (image.GetAttribute(RichTextAttributes.Alt)?.Length ?? 0) <= RichTextAttributes.AltMaxLength;
 
     private static HtmlSanitizer CreateSanitizer() =>
         new(

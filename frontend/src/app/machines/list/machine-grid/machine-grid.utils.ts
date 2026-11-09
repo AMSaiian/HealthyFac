@@ -19,6 +19,7 @@ export const STATE_LABEL_KEYS: Readonly<Record<MachineState, string>> = {
 
 export const MENU_METRICS_KEY = 'MACHINES.METRICS';
 export const MENU_STATUSES_KEY = 'MACHINES.STATUSES';
+export const MENU_FILES_KEY = 'MACHINES.FILES';
 export const MENU_UPDATE_KEY = 'MACHINES.UPDATE';
 export const MENU_DELETE_KEY = 'MACHINES.DELETE';
 

@@ -26,6 +26,24 @@ public sealed class HtmlSanitizerRichTextPolicyTests
     }
 
     [Theory]
+    [MemberData(nameof(RichTextTestData.FileImageSamples), MemberType = typeof(RichTextTestData))]
+    public void Inspect_WithFileImage_IsAllowed(string html)
+    {
+        var inspection = _policy.Inspect(html);
+
+        inspection.IsAllowed.Should().BeTrue();
+    }
+
+    [Theory]
+    [MemberData(nameof(RichTextTestData.RejectedFileImages), MemberType = typeof(RichTextTestData))]
+    public void Inspect_WithInvalidImage_IsNotAllowed(string html)
+    {
+        var inspection = _policy.Inspect(html);
+
+        inspection.IsAllowed.Should().BeFalse();
+    }
+
+    [Theory]
     [MemberData(nameof(RichTextTestData.VisibleLengthCases), MemberType = typeof(RichTextTestData))]
     public void Inspect_WithAllowedHtml_CountsVisibleCharacters(string html, int expectedLength)
     {

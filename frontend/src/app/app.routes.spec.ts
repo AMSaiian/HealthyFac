@@ -10,12 +10,14 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { CompanyStore } from '@shared/company/company.store';
 import { AuthStore } from '@shared/security/auth.store';
 
+import { CompanyFilesPage } from '@files/list/company-files-page/company-files-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
 
 import { routes } from './app.routes';
 
 const COMPANY_URL = '/api/core/v1/company';
 const MACHINES_SEARCH_URL = '/api/core/v1/machines/search';
+const FILES_SEARCH_URL = '/api/document/v1/files/search';
 const COMPANY = { name: 'Test Company', timeZoneId: 'Europe/Kyiv' };
 const SERVER_ERROR = { status: 500, statusText: 'Server Error' };
 
@@ -122,6 +124,30 @@ describe('app routes', () => {
 
     expect(harness.routeDebugElement?.componentInstance instanceof MachinesPage).toBe(true);
     expect(TestBed.inject(CompanyStore).timeZoneId()).toBe('Europe/Kyiv');
+    http.verify();
+  });
+
+  it('filesRoute_AfterCompanyLoaded_ActivatesThePageAndSearchesWithTheCompanyZone', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+
+    const navigation = harness.navigateByUrl('/files');
+    await vi.waitFor(() => {
+      http.expectOne(COMPANY_URL).flush(COMPANY);
+    });
+    await navigation;
+    TestBed.tick();
+    await vi.waitFor(() => {
+      TestBed.tick();
+      const requests = http.match((request) => request.url === FILES_SEARCH_URL);
+      expect(requests.length).toBeGreaterThan(0);
+      requests
+        .filter((request) => !request.cancelled)
+        .forEach((request) => request.flush({ items: [], totalCount: 0 }));
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(harness.routeDebugElement?.componentInstance instanceof CompanyFilesPage).toBe(true);
     http.verify();
   });
 });

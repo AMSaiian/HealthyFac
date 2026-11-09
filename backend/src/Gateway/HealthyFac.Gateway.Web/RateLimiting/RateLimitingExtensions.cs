@@ -51,6 +51,14 @@ public static class RateLimitingExtensions
                         ClientAddress));
 
                 options.AddPolicy(
+                    RateLimitPolicyNames.BlobDownload,
+                    context => PartitionByClient(
+                        context,
+                        RateLimitPolicyNames.BlobDownload,
+                        limits => limits.BlobDownload,
+                        ClientAddress));
+
+                options.AddPolicy(
                     RateLimitPolicyNames.Default,
                     context => PartitionByClient(
                         context,

@@ -9,6 +9,11 @@ public static class MachineApiTestData
     public const string DeletePermission = "machines:delete";
     public const string InvalidEncryptedId = "not-an-encrypted-id";
     public const string MachineName = "Lathe 01";
+
+    public const string FileImageDescription =
+        "<p><img data-file-id=\"v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" alt=\"pump\"></p>";
+
+    public const string SrcImageDescription = "<p><img src=\"https://example.com/a.png\"></p>";
     public const string SerialNumber = "API-001";
     public const string NewSerialNumber = "API-002";
     public const string StackTraceMarker = "   at ";

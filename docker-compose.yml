@@ -122,6 +122,7 @@ services:
       KEYCLOAK_AUTH_CLIENT_SECRET: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
       KEYCLOAK_CORE_CLIENT_SECRET: ${KEYCLOAK_CORE_CLIENT_SECRET:?set KEYCLOAK_CORE_CLIENT_SECRET in .env}
       KEYCLOAK_TELEMETRY_CLIENT_SECRET: ${KEYCLOAK_TELEMETRY_CLIENT_SECRET:?set KEYCLOAK_TELEMETRY_CLIENT_SECRET in .env}
+      KEYCLOAK_DOCUMENT_CLIENT_SECRET: ${KEYCLOAK_DOCUMENT_CLIENT_SECRET:?set KEYCLOAK_DOCUMENT_CLIENT_SECRET in .env}
     depends_on:
       keycloak:
         condition: service_healthy
@@ -428,6 +429,100 @@ services:
       lgtm:
         condition: service_healthy
 
+  azurite:
+    container_name: healthyfac-azurite
+    image: mcr.microsoft.com/azure-storage/azurite:3.37.0
+    restart: unless-stopped
+    # The image runs as root, and a non-root user fails on the root-owned /data volume (EACCES on the blob database
+    # file). The other least-privilege settings work, so they stay.
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    # The SDK default service version (2026-10-06 in Azure.Storage.Blobs 12.30.0) is newer than the newest API version
+    # of Azurite 3.37.0 (2026-06-06), so Azurite would answer 400 InvalidHeaderValue. The flag turns that check off.
+    command: ["azurite-blob", "--blobHost", "0.0.0.0", "--location", "/data", "--skipApiVersionCheck"]
+    volumes:
+      - azurite-data:/data
+    ports:
+      - "127.0.0.1:${AZURITE_BLOB_PORT:-10000}:10000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').connect(10000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  document:
+    container_name: healthyfac-document
+    build:
+      context: ./backend
+      dockerfile: src/Document/HealthyFac.Document.Web/Dockerfile
+    image: healthyfac/document:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - document-logs:/app/logs
+      # The seed data file (seed machines). Document reads it in Development only.
+      - ./backend/seed:/app/seed:ro
+    # Uploads above 64 KiB buffer to ASPNETCORE_TEMP. The size holds one attachment of 100 MiB with room for the
+    # parallel uploads that the concurrency limit allows.
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=512m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_TEMP: /tmp
+      ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_document;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      # The SPA sends the encrypted file ID, so the keys equal the keys of Core.
+      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
+      IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      IdEncryption__Keys__0__IsDefault: "true"
+      ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Messaging__QueueName: document
+      Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
+      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
+      Jwt__IsHttpsMetadataRequired: "false"
+      # The well-known development account of Azurite and its published key. They are public by design, and Azurite
+      # accepts no other account. A real storage account gets its own connection string from the deployment.
+      FileStorage__ConnectionString: >-
+        DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      FileStorage__ContainerName: files
+      # The test tenant ID of Core. The seed machines of the seed data file belong to its company.
+      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      FileStorage__PublicBlobBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}/api/document/blobs
+      Proxy__KnownNetworks__0: 172.16.0.0/12
+      Tracing__Endpoint: http://lgtm:4317
+      Metrics__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
+    ports:
+      - "${DOCUMENT_PORT:-8085}:8080"
+      - "127.0.0.1:${DOCUMENT_HEALTH_PORT:-8096}:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+
   auth:
     container_name: healthyfac-auth
     build:
@@ -551,6 +646,11 @@ services:
       ReverseProxy__Clusters__core__Destinations__main__Health: http://core:8090/
       ReverseProxy__Clusters__telemetry__Destinations__main__Address: http://telemetry:8080/
       ReverseProxy__Clusters__telemetry__Destinations__main__Health: http://telemetry:8090/
+      ReverseProxy__Clusters__document__Destinations__main__Address: http://document:8080/
+      ReverseProxy__Clusters__document__Destinations__main__Health: http://document:8090/
+      ReverseProxy__Clusters__document-storage__Destinations__main__Address: http://azurite:10000/
+      # The account path of Azurite. Azure Storage has no account path.
+      ReverseProxy__Routes__document-blobs__Transforms__1__PathPrefix: /devstoreaccount1
       ReverseProxy__Clusters__keycloak__Destinations__main__Address: http://keycloak:8080/
       ReverseProxy__Clusters__spa__Destinations__main__Address: http://spa:8080/
       ReverseProxy__Clusters__spa__Destinations__main__Health: http://spa:8090/
@@ -562,6 +662,8 @@ services:
       ReverseProxy__Routes__core__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__core-invite-public__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__telemetry__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__document__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__document-blobs__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-realm__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-resources__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
@@ -587,6 +689,10 @@ services:
       core:
         condition: service_started
       telemetry:
+        condition: service_started
+      document:
+        condition: service_started
+      azurite:
         condition: service_started
       spa:
         condition: service_started
@@ -625,5 +731,7 @@ volumes:
   core-logs:
   mosquitto-data:
   telemetry-logs:
+  document-logs:
+  azurite-data:
   auth-logs:
   mailpit-data:

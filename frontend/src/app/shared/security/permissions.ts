@@ -7,6 +7,11 @@ export const Permission = {
   StatusDefinitionsRead: 'status-definitions:read',
   StatusDefinitionsWrite: 'status-definitions:write',
   StatusDefinitionsDelete: 'status-definitions:delete',
+  FilesRead: 'files:read',
+  FilesWrite: 'files:write',
+  FilesDelete: 'files:delete',
+  CompanyFilesWrite: 'company-files:write',
+  CompanyFilesDelete: 'company-files:delete',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

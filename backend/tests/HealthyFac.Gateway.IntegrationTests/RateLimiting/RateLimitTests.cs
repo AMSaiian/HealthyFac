@@ -38,6 +38,24 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
     }
 
     [Fact]
+    public async Task BlobDownload_AboveThePermitLimit_Returns429()
+    {
+        await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.BlobLimitOfThree);
+        using var client = gateway.CreateClient();
+        var statusCodes = new List<HttpStatusCode>();
+
+        for (var attempt = 0; attempt <= RateLimitTestData.BlobPermitLimit; attempt++)
+        {
+            using var response = await client.GetAsync(
+                RateLimitTestData.BlobRoute, TestContext.Current.CancellationToken);
+            statusCodes.Add(response.StatusCode);
+        }
+
+        statusCodes.Take(RateLimitTestData.BlobPermitLimit).Should().NotContain(HttpStatusCode.TooManyRequests);
+        statusCodes.Last().Should().Be(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
     public async Task StrictPolicy_OverLimit_ReturnsProblemDetails()
     {
         await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);

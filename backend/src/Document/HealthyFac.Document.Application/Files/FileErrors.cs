@@ -1,0 +1,43 @@
+namespace HealthyFac.Document.Application.Files;
+
+/// <summary>
+/// Defines the error messages of the file use cases.
+/// </summary>
+public static class FileErrors
+{
+    /// <summary>
+    /// The stable key that the web app maps to a translated text. The upload returns it under the key <c>file</c> when
+    /// the content, the extension, and the declared type do not agree on an accepted type.
+    /// </summary>
+    public const string TypeNotAllowed = "fileTypeNotAllowed";
+
+    public const string FileRequired = "A file is required.";
+    public const string InvalidText = "The text is not valid Unicode.";
+    public const string ExactlyOneFile = "The request must hold exactly one file.";
+    public const string FileEmpty = "The file must have at least 1 byte.";
+    public const string NameRequired = "The file name must not be empty after the extension is removed.";
+    public const string DeclaredTypeTooLong = "The declared content type is too long.";
+    public const string FileNotFound = "The file does not exist.";
+    public const string FileChanged = "The file changed since you read it. Reload it and try again.";
+    public const string FileIdRequired = "The file is required.";
+    public const string LinkIdsRequired = "The list of file IDs is required.";
+
+    public static readonly string LinkIdsTooMany =
+        $"The request must hold at most {FileValidationConstants.LinkIdsMaxCount} file IDs.";
+
+    public const string DescriptionTooLong = "The description is too long.";
+    public const string CompanyIdRequired = "The company is required.";
+    public const string MachineIdRequired = "The machine is required.";
+
+    public static readonly string NameTooLong =
+        $"The file name must have at most {FileValidationConstants.Text.FileNameMaxLength} characters.";
+
+    public static readonly string AttachmentTooLarge =
+        $"The file must have at most {FileValidationConstants.Size.AttachmentMaxBytes} bytes.";
+
+    public static readonly string EmbeddedTooLarge =
+        $"The image must have at most {FileValidationConstants.Size.EmbeddedMaxBytes} bytes.";
+
+    public static readonly string DescriptionLength =
+        $"The description must have at most {FileValidationConstants.Text.DescriptionMaxLength} characters.";
+}

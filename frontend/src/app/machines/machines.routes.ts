@@ -1,5 +1,9 @@
 import type { Routes } from '@angular/router';
 
+import { FilesApi } from '@files/files-api';
+import { FilesGridStore } from '@files/list/files-grid.store';
+import { MachineFilesPage } from './files/machine-files-page/machine-files-page';
+import { machineFilesResolver } from './files/machine-files.resolver';
 import { StatusDefinitionsGridStore } from './statuses/list/status-definitions-grid.store';
 import { statusDefinitionsResolver } from './statuses/list/status-definitions.resolver';
 import { StatusDefinitionsPage } from './statuses/list/status-definitions-page/status-definitions-page';
@@ -22,6 +26,13 @@ export const MACHINES_ROUTES: Routes = [
     component: StatusDefinitionsPage,
     providers: [MachinesApi, StatusDefinitionsApi, StatusDefinitionsGridStore],
     resolve: { machine: statusDefinitionsResolver },
+  },
+  {
+    path: ':machineId/files',
+    title: 'TITLES.MACHINE_FILES',
+    component: MachineFilesPage,
+    providers: [MachinesApi, FilesApi, FilesGridStore],
+    resolve: { machine: machineFilesResolver },
   },
   {
     path: ':machineId/metrics',

@@ -22,6 +22,7 @@ public sealed class EchoServer : IAsyncDisposable
     private const string LoopbackUrl = "http://127.0.0.1:0";
     private const string LoopbackNetwork = "127.0.0.0/8";
     private const string ReadinessPath = "/health/ready";
+    private const int DrainBufferBytes = 81920;
 
     private readonly bool _useForwardedHeaders;
     private readonly TimeSpan _responseDelay;
@@ -57,6 +58,7 @@ public sealed class EchoServer : IAsyncDisposable
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseUrls(LoopbackUrl);
+        builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = null);
 
         if (_useForwardedHeaders)
         {
@@ -69,7 +71,7 @@ public sealed class EchoServer : IAsyncDisposable
         }
 
         _app = builder.Build();
-        _app.Use((context, next) =>
+        _app.Use(async (context, next) =>
         {
             if (context.Request.Path == ReadinessPath)
             {
@@ -77,12 +79,15 @@ public sealed class EchoServer : IAsyncDisposable
                     ? StatusCodes.Status200OK
                     : StatusCodes.Status503ServiceUnavailable;
 
-                return Task.CompletedTask;
+                return;
             }
+
+            var bodyLength = await DrainBodyAsync(context);
 
             _requests.Enqueue(
                 new EchoedRequest
                 {
+                    BodyLength = bodyLength,
                     Method = context.Request.Method,
                     Path = context.Request.Path,
                     Query = context.Request.QueryString.Value ?? string.Empty,
@@ -92,7 +97,7 @@ public sealed class EchoServer : IAsyncDisposable
                         StringComparer.OrdinalIgnoreCase),
                 });
 
-            return next();
+            await next();
         });
 
         if (_useForwardedHeaders)
@@ -122,5 +127,19 @@ public sealed class EchoServer : IAsyncDisposable
         {
             await _app.DisposeAsync();
         }
+    }
+
+    private static async Task<long> DrainBodyAsync(HttpContext context)
+    {
+        var buffer = new byte[DrainBufferBytes];
+        long total = 0;
+        var read = await context.Request.Body.ReadAsync(buffer, context.RequestAborted);
+        while (read > 0)
+        {
+            total += read;
+            read = await context.Request.Body.ReadAsync(buffer, context.RequestAborted);
+        }
+
+        return total;
     }
 }

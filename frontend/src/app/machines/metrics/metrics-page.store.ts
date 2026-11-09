@@ -20,6 +20,8 @@ import { hasFormChanges } from '@shared/forms/form-changes';
 import { httpErrorMessageKey } from '@shared/http/http-error-message';
 import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
 import { AuthStore } from '@shared/security/auth.store';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
+import { collectFileIds } from '@shared/rich-text/file-image/rich-text-images';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 
@@ -79,6 +81,7 @@ export const MetricsPageStore = signalStore(
     _messages: inject(MessageService),
     _translate: inject(TranslateService),
     _clock: inject(CLOCK),
+    _imageLinks: inject(RichTextImageLinks),
   })),
   withProps((store) => ({
     definitions: rxResource({
@@ -122,6 +125,20 @@ export const MetricsPageStore = signalStore(
       const error = store.definitions.error();
       return error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound;
     }),
+  })),
+  withProps((store) => ({
+    imageLinks: rxResource({
+      params: () => {
+        const ids = collectFileIds(store.selected()?.value.description ?? null);
+        return ids.length === 0 ? undefined : ids;
+      },
+      stream: ({ params }) => store._imageLinks.resolve(params),
+    }),
+  })),
+  withComputed((store) => ({
+    descriptionLinks: computed((): ReadonlyMap<string, string> =>
+      store.imageLinks.hasValue() ? store.imageLinks.value() : new Map<string, string>(),
+    ),
   })),
   withComputed((store) => ({
     editInitial: computed((): MetricFormValue | null => {

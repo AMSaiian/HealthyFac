@@ -28,6 +28,7 @@ public class ApplicationExceptionHandler : IExceptionHandler
             [typeof(ForbiddenAccessException)] = CreateForbidden,
             [typeof(ConflictException)] = CreateConflict,
             [typeof(UnprocessableException)] = CreateUnprocessable,
+            [typeof(ServiceUnavailableException)] = CreateServiceUnavailable,
         }.ToFrozenDictionary();
 
     public async ValueTask<bool> TryHandleAsync(
@@ -200,6 +201,32 @@ public class ApplicationExceptionHandler : IExceptionHandler
             Title = ProblemDetailsConstants.Unprocessable.Title,
             Type = ProblemDetailsConstants.Unprocessable.TypeUrl,
             Detail = unprocessableException.Message,
+        };
+    }
+
+    /// <summary>
+    /// Builds the response for a request that fails because a dependency is down.
+    /// </summary>
+    /// <param name="exception">The service-unavailable exception to report.</param>
+    /// <returns>The problem details to write.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when <paramref name="exception"/> is not a <see cref="ServiceUnavailableException"/>.
+    /// </exception>
+    private static ProblemDetails CreateServiceUnavailable(Exception exception)
+    {
+        if (exception is not ServiceUnavailableException unavailableException)
+        {
+            throw ErrorHandlingErrors.UnsupportedExceptionType(
+                typeof(ServiceUnavailableException),
+                exception.GetType());
+        }
+
+        return new ProblemDetails
+        {
+            Status = StatusCodes.Status503ServiceUnavailable,
+            Title = ProblemDetailsConstants.ServiceUnavailable.Title,
+            Type = ProblemDetailsConstants.ServiceUnavailable.TypeUrl,
+            Detail = unavailableException.Message,
         };
     }
 

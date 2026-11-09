@@ -7,7 +7,9 @@
     "NOT_FOUND": "Page not found",
     "MACHINES": "Machines",
     "STATUS_DEFINITIONS": "Statuses",
-    "METRICS": "Metrics"
+    "METRICS": "Metrics",
+    "FILES": "Files",
+    "MACHINE_FILES": "Machine files"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -58,7 +60,11 @@
     "CLEAN": "Clear formatting",
     "ERRORS": {
       "TOO_MUCH_FORMATTING": "The formatting is too large. Remove some formatting or shorten the text."
-    }
+    },
+    "IMAGE": "Image",
+    "IMAGE_MISSING": "The image is not available.",
+    "IMAGE_UPLOAD_FAILED": "The image could not be uploaded.",
+    "IMAGE_NOT_ALLOWED": "Only PNG, JPG, GIF, and WebP images up to 5 MB are allowed."
   },
   "MACHINES": {
     "TITLE": "Machines",
@@ -115,7 +121,8 @@
       "DESCRIPTION_PLACEHOLDER": "Describe the machine",
       "INVALID": "Form is not valid"
     },
-    "COLUMNS_CHOOSER": "Columns"
+    "COLUMNS_CHOOSER": "Columns",
+    "FILES": "Files"
   },
   "STATUS_DEFINITIONS": {
     "TITLE": "Statuses of",
@@ -323,5 +330,66 @@
     "nextMinute": "Next Minute",
     "am": "AM",
     "pm": "PM"
+  },
+  "FILES": {
+    "TITLE": "Files",
+    "MACHINE_TITLE": "Files of",
+    "BACK": "Back to machines",
+    "UPLOAD": "Upload",
+    "ROW_ACTIONS": "Row actions",
+    "COLUMNS_CHOOSER": "Columns",
+    "EMPTY": "No files found.",
+    "DELETE_HEADER": "Delete file",
+    "DELETE_MESSAGE": "Delete the file {{name}}?",
+    "ACTIONS_MENU": {
+      "DOWNLOAD": "Download",
+      "EDIT": "Edit",
+      "DELETE": "Delete"
+    },
+    "COLUMNS": {
+      "FILE_NAME": "Name",
+      "TYPE": "Type",
+      "SIZE": "Size",
+      "UPLOADED_AT": "Uploaded",
+      "DESCRIPTION": "Description"
+    },
+    "FILTERS": {
+      "FILE_NAME_PLACEHOLDER": "Filter by name",
+      "TYPE_PLACEHOLDER": "Select types"
+    },
+    "TOASTS": {
+      "SUCCESS": "Done",
+      "UPLOADED": "The file is uploaded.",
+      "UPDATED": "The file is updated.",
+      "DELETED": "The file is deleted."
+    },
+    "ERRORS": {
+      "TYPE_NOT_ALLOWED": "This file type is not allowed.",
+      "TOO_LARGE": "The file is too large.",
+      "EMPTY": "The file is empty.",
+      "BUSY": "The service is busy. Try again in a moment.",
+      "NOT_FOUND": "The file does not exist any more.",
+      "CONFLICT": "The file was changed by someone else. The list is reloaded."
+    },
+    "UPLOAD_DIALOG": {
+      "TITLE": "Upload files",
+      "DROP": "Drop files here or",
+      "CHOOSE": "Choose files",
+      "DESCRIPTION_PLACEHOLDER": "Description (optional)",
+      "REMOVE": "Remove",
+      "DONE": "Uploaded",
+      "NOTHING_TO_SEND": "Add a file to upload",
+      "WAIT": "Wait for the upload"
+    },
+    "EDIT_DIALOG": {
+      "TITLE": "Edit file",
+      "NAME": "Name",
+      "EXTENSION_HINT": "The type of the file stays {{extension}}.",
+      "DESCRIPTION": "Description",
+      "NO_CHANGES": "No changes provided",
+      "INVALID": "Form is not valid",
+      "REQUIRED": "This field is required.",
+      "TOO_LONG": "The value is too long."
+    }
   }
 }
