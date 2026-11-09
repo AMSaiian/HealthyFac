@@ -11,6 +11,14 @@ public sealed class AllowedFileType
     /// <summary>The media type that the service stores and serves.</summary>
     public required string MediaType { get; init; }
 
+    /// <summary>
+    /// The exact FileSignatures format types that prove this type. Empty for a text type, which has no signature.
+    /// </summary>
+    public IReadOnlyList<Type> Formats { get; init; } = [];
+
+    /// <summary>Whether strict UTF-8 text decides this type, because it has no binary signature.</summary>
+    public bool IsText => Formats.Count == 0;
+
     /// <summary>The other extensions that map to this type.</summary>
     public IReadOnlyList<string> AlternateExtensions { get; init; } = [];
 

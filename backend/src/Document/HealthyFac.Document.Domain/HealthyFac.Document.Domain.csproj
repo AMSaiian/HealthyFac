@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <PackageReference Include="FileSignatures"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Domain\HealthyFac.Shared.Domain.csproj"/>
     </ItemGroup>
 

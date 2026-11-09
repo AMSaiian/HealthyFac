@@ -10,7 +10,6 @@
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Bogus" />
     <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" />
-    <PackageReference Include="FileSignatures" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>

@@ -1,33 +1,26 @@
-using FileSignatures;
 using HealthyFac.Document.ArchitectureTests.Conventions.Data;
 using HealthyFac.Document.Domain.Files;
-using HealthyFac.Document.Infrastructure.Files.Inspection;
 
 namespace HealthyFac.Document.ArchitectureTests.Conventions;
 
 public sealed class FileTypeConventionTests
 {
     [Fact]
-    public void FileFormatMap_ForEachBinaryFileType_MapsAtLeastOneFormat()
+    public void AllowedFileTypes_ForEachBinaryFileType_HoldsAtLeastOneFormat()
     {
-        var mappedExtensions = FileFormatMap.FormatTypes
-            .Select(type => (FileFormat)Activator.CreateInstance(type)!)
-            .Select(FileFormatMap.Find)
-            .Select(type => type?.Extension)
-            .ToHashSet();
+        var typesWithoutFormat = AllowedFileTypes.All
+            .Where(type => !FileTypeConventionTestData.TextExtensions.Contains(type.Extension))
+            .Where(type => type.Formats.Count == 0)
+            .Select(type => type.Extension);
 
-        var unmapped = AllowedFileTypes.All
-            .Select(type => type.Extension)
-            .Where(extension => !FileTypeConventionTestData.TextExtensions.Contains(extension))
-            .Where(extension => !mappedExtensions.Contains(extension));
-
-        unmapped.Should().BeEmpty();
+        typesWithoutFormat.Should().BeEmpty();
     }
 
     [Fact]
-    public void FileFormatMap_Always_HoldsNoMacroFormat()
+    public void AllowedFileTypes_Always_HoldsNoMacroFormat()
     {
-        var macroFormats = FileFormatMap.FormatTypes
+        var macroFormats = AllowedFileTypes.All
+            .SelectMany(type => type.Formats)
             .Where(type => type.Name.Contains(FileTypeConventionTestData.MacroMarker, StringComparison.Ordinal))
             .Select(type => type.FullName);
 

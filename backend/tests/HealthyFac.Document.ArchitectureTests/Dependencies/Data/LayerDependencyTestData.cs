@@ -57,7 +57,6 @@ public static class LayerDependencyTestData
         { SharedApplication, LinqToDB },
         { SharedWeb, LinqToDB },
         { DocumentDomain, OpenTelemetry },
-        { DocumentDomain, FileSignatures },
         { DocumentDomain, AzureStorage },
         { DocumentApplication, FileSignatures },
         { DocumentApplication, AzureStorage },

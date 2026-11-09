@@ -26,8 +26,6 @@ public sealed class FileSignaturesFileInspector : IFileInspector
     private const int ChunkBytes = 81920;
     private const string OctetStream = "application/octet-stream";
 
-    private static readonly string[] TextExtensions = ["txt", "csv", "md"];
-
     private readonly FileFormatInspector _formatInspector = new();
 
     public async Task<FileInspection> InspectAsync(
@@ -83,7 +81,7 @@ public sealed class FileSignaturesFileInspector : IFileInspector
 
     private static bool IsDeclaredTypeAgreeing(AllowedFileType type, string declaredContentType)
     {
-        var isTextType = TextExtensions.Contains(type.Extension);
+        var isTextType = type.IsText;
         var isTypeless = string.IsNullOrWhiteSpace(declaredContentType)
             || declaredContentType.StartsWith(OctetStream, StringComparison.OrdinalIgnoreCase);
 
@@ -116,10 +114,12 @@ public sealed class FileSignaturesFileInspector : IFileInspector
 
         if (format is not null)
         {
-            return FileFormatMap.Find(format);
+            return AllowedFileTypes.FindByFormat(format);
         }
 
-        if (clientExtension is null || !TextExtensions.Contains(clientExtension, StringComparer.OrdinalIgnoreCase))
+        var textType = AllowedFileTypes.FindByExtension(clientExtension);
+
+        if (textType is null || !textType.IsText)
         {
             return null;
         }
@@ -127,6 +127,6 @@ public sealed class FileSignaturesFileInspector : IFileInspector
         content.Position = 0;
         var isText = await Utf8TextCheck.IsTextAsync(content, cancellationToken);
 
-        return isText ? AllowedFileTypes.FindByExtension(clientExtension) : null;
+        return isText ? textType : null;
     }
 }
