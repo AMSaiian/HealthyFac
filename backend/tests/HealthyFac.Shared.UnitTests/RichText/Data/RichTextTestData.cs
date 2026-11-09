@@ -2,6 +2,30 @@ namespace HealthyFac.Shared.UnitTests.RichText.Data;
 
 public static class RichTextTestData
 {
+    public const string FileId = "v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+    public static TheoryData<string> FileImageSamples => new()
+    {
+        $"<p><img data-file-id=\"{FileId}\" alt=\"pump\"></p>",
+        $"<p><img data-file-id=\"{FileId}\"></p>",
+        $"<p><img data-file-id=\"{FileId}\" alt=\"{new string(c: 'a', count: 255)}\"></p>",
+    };
+
+    public static TheoryData<string> RejectedFileImages => new()
+    {
+        "<p><img src=\"https://x/y.png\"></p>",
+        "<p><img src=\"data:image/png;base64,AA==\"></p>",
+        "<p><img data-file-id=\"abc\"></p>",
+        $"<p><img data-file-id=\"{FileId}\" style=\"width:1px\"></p>",
+        $"<p><img data-file-id=\"{FileId}\" width=\"1\"></p>",
+        $"<p><img data-file-id=\"{FileId}\" src=\"https://x/y.png\"></p>",
+        "<p><img alt=\"x\"></p>",
+        $"<p><img data-file-id=\"{FileId}&#10;\"></p>",
+        "<p alt=\"x\">a</p>",
+        $"<p><span data-file-id=\"{FileId}\">a</span></p>",
+        $"<p><img data-file-id=\"{FileId}\" alt=\"{new string(c: 'a', count: 256)}\"></p>",
+    };
+
     public static TheoryData<string> ToolbarSamples => new()
     {
         "<p><strong>a</strong></p>",
@@ -45,5 +69,6 @@ public static class RichTextTestData
         { "<p>e&#x301;</p>", 1 },
         { "<p>" + (char)0x0958 + "</p>", 2 },
         { "<p><strong>ab</strong> <em>c</em></p>", 4 },
+        { $"<p>ab<img data-file-id=\"{FileId}\"></p>", 2 },
     };
 }

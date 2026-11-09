@@ -48,6 +48,12 @@ public static class ProblemDetailsConstants
         public const string TypeUrl = "https://www.rfc-editor.org/rfc/rfc4918#section-11.2";
     }
 
+    public static class ServiceUnavailable
+    {
+        public const string Title = "Service Unavailable";
+        public const string TypeUrl = "https://tools.ietf.org/html/rfc7231#section-6.6.4";
+    }
+
     public static class InternalServerError
     {
         public const string Title = "Unhandled exception occurred";

@@ -1,0 +1,15 @@
+<hf-action-dialog
+  title="FILES.UPLOAD_DIALOG.TITLE"
+  [isSaveDisabled]="store.readyCount() === 0"
+  [saveDisabledReason]="nothingToSendKey"
+  [isSaving]="store.isUploading()"
+  (save)="store.upload()"
+  (cancelled)="store.close()"
+>
+  <hf-file-upload-list
+    [items]="store.items()"
+    (filesAdded)="store.addFiles($event)"
+    (removed)="store.remove($event)"
+    (descriptionChanged)="store.setDescription($event.key, $event.description)"
+  />
+</hf-action-dialog>

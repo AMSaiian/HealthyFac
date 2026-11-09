@@ -10,4 +10,5 @@ export interface ShellNavItem {
 export const SHELL_NAV_ITEMS: readonly ShellNavItem[] = [
   { labelKey: 'TITLES.HOME', icon: 'pi pi-home', path: '/' },
   { labelKey: 'TITLES.MACHINES', icon: 'pi pi-cog', path: '/machines', permission: Permission.MachinesRead },
+  { labelKey: 'TITLES.FILES', icon: 'pi pi-folder', path: '/files', permission: Permission.FilesRead },
 ];

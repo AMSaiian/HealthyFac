@@ -118,6 +118,7 @@
         [errors]="selectedErrors()"
         [canWrite]="store.canWrite()"
         [unitGroups]="unitGroups()"
+        [links]="store.descriptionLinks()"
         (editRequested)="store.startEdit()"
         (removeRequested)="store.remove(item.localId)"
         (restoreRequested)="store.restore(item.localId)"

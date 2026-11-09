@@ -1,0 +1,21 @@
+<hf-action-dialog
+  title="FILES.EDIT_DIALOG.TITLE"
+  [isSaveDisabled]="saveDisabledReason() !== null"
+  [saveDisabledReason]="saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="onSave()"
+  (cancelled)="store.cancel()"
+>
+  @if (store.initialValue(); as initial) {
+    <hf-file-edit-form
+      [initialValue]="initial"
+      [extension]="store.extension()"
+      (valueChange)="onValueChange($event)"
+      (validityChange)="onValidityChange($event)"
+    />
+  } @else {
+    <div class="flex min-h-32">
+      <hf-loading-spinner />
+    </div>
+  }
+</hf-action-dialog>

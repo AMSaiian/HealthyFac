@@ -13,6 +13,13 @@ public static class GatewayProblemDetailsConstants
         public const string Detail = "The request limit is reached. Retry after the time in the Retry-After header.";
     }
 
+    public static class PayloadTooLarge
+    {
+        public const string Title = "Payload Too Large";
+        public const string TypeUrl = "https://tools.ietf.org/html/rfc7231#section-6.5.11";
+        public const string Detail = "The request body is larger than the limit of the route.";
+    }
+
     public static class Unauthorized
     {
         public const string Title = "Unauthorized";

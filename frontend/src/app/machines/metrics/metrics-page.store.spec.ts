@@ -5,6 +5,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { AuthStore } from '@shared/security/auth.store';
 import { MachineState } from '@machines/machine';
 import { MachinesApi } from '@machines/machines-api';
@@ -62,11 +63,14 @@ const NEW_VALUE: MetricFormValue = {
   states: [],
 };
 
+const IMAGE_ID = 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
 type Spy = ReturnType<typeof vi.fn>;
 
 interface Setup {
   store: InstanceType<typeof MetricsPageStore>;
   api: { getDefinitions: Spy; apply: Spy; getSchema: Spy };
+  resolveLinks: Spy;
   messages: { add: Spy };
   confirmation: { confirm: Spy };
 }
@@ -74,6 +78,7 @@ interface Setup {
 async function setup(definitions: MetricDefinitionsResponse = LOADED, apply?: Spy): Promise<Setup> {
   const messages = { add: vi.fn() };
   const confirmation = { confirm: vi.fn((options: { accept: () => void }) => options.accept()) };
+  const resolveLinks = vi.fn(() => of(new Map([[IMAGE_ID, 'https://api/blob?sig=x']])));
   const api = {
     getDefinitions: vi.fn(() => of(definitions)),
     apply: apply ?? vi.fn(() => of({ revision: 4 })),
@@ -85,6 +90,7 @@ async function setup(definitions: MetricDefinitionsResponse = LOADED, apply?: Sp
       { provide: MetricDefinitionsApi, useValue: api },
       { provide: MetricUnitsApi, useValue: { getUnits: () => of({ kinds: [] }) } },
       { provide: MachinesApi, useValue: { get: () => of(MACHINE) } },
+      { provide: RichTextImageLinks, useValue: { resolve: resolveLinks } },
       { provide: MessageService, useValue: messages },
       { provide: ConfirmationService, useValue: confirmation },
       { provide: AuthStore, useValue: { hasPermission: () => true } },
@@ -95,7 +101,7 @@ async function setup(definitions: MetricDefinitionsResponse = LOADED, apply?: Sp
   store.openMachine(MACHINE.id).subscribe();
   TestBed.tick();
   await TestBed.inject(ApplicationRef).whenStable();
-  return { store, api, messages, confirmation };
+  return { store, api, messages, confirmation, resolveLinks };
 }
 
 function stageNew(store: Setup['store']): void {
@@ -106,6 +112,29 @@ function stageNew(store: Setup['store']): void {
 }
 
 describe('MetricsPageStore', () => {
+  it('descriptionLinks_WithImageInTheSelectedDescription_ResolvesLinksOnceForThatDefinition', async () => {
+    const withImage: MetricDefinitionsResponse = {
+      revision: 3,
+      definitions: [
+        { ...definition('a', 'one.key'), description: `<p><img data-file-id="${IMAGE_ID}" alt="x"></p>` },
+        definition('b', 'two.key'),
+      ],
+    };
+
+    const { store, resolveLinks } = await setup(withImage);
+
+    expect(resolveLinks).toHaveBeenCalledTimes(1);
+    expect(resolveLinks).toHaveBeenCalledWith([IMAGE_ID]);
+    expect(store.descriptionLinks().get(IMAGE_ID)).toBe('https://api/blob?sig=x');
+  });
+
+  it('descriptionLinks_WithoutImages_AsksForNoLinks', async () => {
+    const { store, resolveLinks } = await setup();
+
+    expect(resolveLinks).not.toHaveBeenCalled();
+    expect(store.descriptionLinks().size).toBe(0);
+  });
+
   it('load_WithDefinitions_SelectsTheFirstItem', async () => {
     const { store } = await setup();
 

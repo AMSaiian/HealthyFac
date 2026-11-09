@@ -1,0 +1,77 @@
+<div
+  class="flex flex-none flex-col items-center gap-2 rounded-border border border-dashed border-surface-300 p-6 dark:border-surface-600"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)"
+>
+  <i class="pi pi-cloud-upload text-3xl text-surface-500"></i>
+  <span>{{ 'FILES.UPLOAD_DIALOG.DROP' | translate }}</span>
+  <button
+    pButton
+    type="button"
+    severity="secondary"
+    (click)="openPicker()"
+  >
+    {{ 'FILES.UPLOAD_DIALOG.CHOOSE' | translate }}
+  </button>
+  <input
+    #picker
+    class="hidden"
+    type="file"
+    multiple
+    [accept]="accept"
+    (change)="onPicked($event)"
+  />
+</div>
+<ul class="flex min-h-0 flex-col gap-2 overflow-auto">
+  @for (item of items(); track item.key) {
+    <li class="flex min-w-0 flex-col gap-1 rounded-border border border-surface-200 p-2 dark:border-surface-700">
+      <div class="flex min-w-0 items-center justify-between gap-2">
+        <span
+          class="min-w-0 truncate font-medium"
+          [title]="item.file.name"
+          >{{ item.file.name }}</span
+        >
+        <span class="flex flex-none items-center gap-2">
+          <span class="text-sm text-surface-500">{{ formatFileSize(item.file.size) }}</span>
+          @if (canRemove(item)) {
+            <button
+              pButton
+              type="button"
+              iconOnly
+              severity="secondary"
+              [text]="true"
+              [rounded]="true"
+              [attr.aria-label]="'FILES.UPLOAD_DIALOG.REMOVE' | translate"
+              (click)="removed.emit(item.key)"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          }
+        </span>
+      </div>
+      @if (item.status === UploadStatus.Uploading) {
+        <p-progressbar
+          [value]="item.progress"
+          [showValue]="false"
+        />
+      }
+      @if (item.status === UploadStatus.Done) {
+        <span class="text-sm text-green-600">{{ 'FILES.UPLOAD_DIALOG.DONE' | translate }}</span>
+      }
+      @if (item.errorKey) {
+        <span class="text-sm text-red-600">{{ item.errorKey | translate }}</span>
+      }
+      @if (canDescribe(item)) {
+        <input
+          pInputText
+          class="w-full"
+          [attr.maxlength]="descriptionMaxLength"
+          [attr.aria-label]="'FILES.UPLOAD_DIALOG.DESCRIPTION_PLACEHOLDER' | translate"
+          [placeholder]="'FILES.UPLOAD_DIALOG.DESCRIPTION_PLACEHOLDER' | translate"
+          [value]="item.description"
+          (input)="onDescription(item, $any($event.target).value)"
+        />
+      }
+    </li>
+  }
+</ul>

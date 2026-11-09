@@ -19,6 +19,7 @@
       "@home/*": ["./src/app/home/*"],
       "@fallback/*": ["./src/app/fallback/*"],
       "@machines/*": ["./src/app/machines/*"],
+      "@files/*": ["./src/app/files/*"],
       "@public/*": ["./public/*"]
     }
   },

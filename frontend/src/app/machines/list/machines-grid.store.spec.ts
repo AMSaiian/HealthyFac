@@ -1,5 +1,6 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
@@ -91,6 +92,21 @@ describe('MachinesGridStore', () => {
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(search.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('openFiles_WithMachineId_NavigatesToTheFilesRoute', async () => {
+    const { store } = await setup();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    store.openFiles(MACHINE.id);
+
+    expect(navigate).toHaveBeenCalledWith(['/machines', MACHINE.id, 'files']);
+  });
+
+  it('canReadFiles_WithoutPermission_IsFalse', async () => {
+    const { store } = await setup({ hasPermission: false });
+
+    expect(store.canReadFiles()).toBe(false);
   });
 
   it('requestDelete_WhenRejected_SendsNoRequest', async () => {

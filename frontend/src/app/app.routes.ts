@@ -17,6 +17,12 @@ export const routes: Routes = [
     loadChildren: () => import('@machines/machines.routes').then((m) => m.MACHINES_ROUTES),
   },
   {
+    path: 'files',
+    title: 'TITLES.FILES',
+    canActivate: [authGuard, companyGuard],
+    loadChildren: () => import('@files/files.routes').then((m) => m.FILES_ROUTES),
+  },
+  {
     path: '',
     loadChildren: () => import('@fallback/fallback.routes').then((m) => m.FALLBACK_ROUTES),
   },

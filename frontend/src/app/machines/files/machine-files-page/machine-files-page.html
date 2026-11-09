@@ -1,0 +1,48 @@
+<header class="flex flex-none items-center justify-between">
+  <div class="flex min-w-0 items-center gap-2">
+    <a
+      pButton
+      routerLink="/machines"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [rounded]="true"
+      [attr.aria-label]="'FILES.BACK' | translate"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h1 class="min-w-0 truncate text-2xl font-bold">{{ 'FILES.MACHINE_TITLE' | translate }} {{ machine().name }}</h1>
+  </div>
+  <div class="flex items-center gap-2">
+    @if (store.canUpload()) {
+      <button
+        pButton
+        type="button"
+        (click)="store.requestUpload()"
+      >
+        <i class="pi pi-upload"></i>
+        {{ 'FILES.UPLOAD' | translate }}
+      </button>
+    }
+  </div>
+</header>
+<hf-file-grid
+  [rows]="page().items"
+  [totalCount]="page().totalCount"
+  [isLoading]="store.files.isLoading()"
+  [columns]="store.visibleColumns()"
+  [offset]="store.offset()"
+  [limit]="store.limit()"
+  [sort]="store.sort()"
+  [filter]="store.filter()"
+  [canEdit]="store.canEdit()"
+  [canDelete]="store.canDelete()"
+  (filterChange)="store.setFilter($event)"
+  (sortChange)="store.setSort($event)"
+  (pageChange)="store.setPage($event.offset, $event.limit)"
+  (columnsChange)="store.setColumns($event)"
+  (columnsReorder)="store.reorderColumns($event)"
+  (downloadRequested)="store.download($event)"
+  (editRequested)="store.requestEdit($event)"
+  (deleteRequested)="store.requestDelete($event)"
+/>

@@ -23,6 +23,14 @@ public static class StatusDefinitionApiFixtureExtensions
                 [propertyName: "severity"] = StatusDefinitionApiTestData.Severity,
             }.ToJsonString();
 
+        public string CreateStatusDefinitionBody(string code, string description) =>
+            new JsonObject
+            {
+                [propertyName: "code"] = code,
+                [propertyName: "severity"] = StatusDefinitionApiTestData.Severity,
+                [propertyName: "description"] = description,
+            }.ToJsonString();
+
         public async Task<string> ArrangeMachineAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();

@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Application.Persistence;
+
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
 /// <summary>
@@ -10,5 +12,5 @@ public static class PersistenceConstants
     /// property with this name maps to it, so two writers that save the same row cannot both succeed. The
     /// name is already snake case, so the naming convention keeps it.
     /// </summary>
-    public const string ConcurrencyToken = "xmin";
+    public const string ConcurrencyToken = RowVersions.PropertyName;
 }

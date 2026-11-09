@@ -67,4 +67,32 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task CreateMachine_WithImageSrcInDescription_Returns400()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.WritePermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.MachinesPath,
+            claims,
+            _fixture.CreateCreateBody(MachineApiTestData.SrcImageDescription));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateMachine_WithFileImageInDescription_Returns201()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.WritePermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.MachinesPath,
+            claims,
+            _fixture.CreateCreateBody(MachineApiTestData.FileImageDescription));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
 }

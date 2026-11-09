@@ -13,6 +13,7 @@ public static class TestImages
     public const string RabbitMq = "rabbitmq:4.3.5-management-alpine";
     public const string Mosquitto = "eclipse-mosquitto:2.1.2-alpine";
     public const string Mailpit = "axllent/mailpit:v1.31.5";
+    public const string Azurite = "mcr.microsoft.com/azure-storage/azurite:3.37.0";
     public const string Keycloak = "quay.io/keycloak/keycloak:26.8.0";
     public const string KeycloakConfigCli = "adorsys/keycloak-config-cli:6.5.1-26";
 }

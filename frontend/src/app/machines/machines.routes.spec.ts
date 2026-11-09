@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -16,10 +16,14 @@ import { MetricsPage } from '@machines/metrics/metrics-page/metrics-page';
 import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
 import { MetricValueKind } from '@machines/metrics/metric-definition';
 import { StatusDefinitionsPage } from '@machines/statuses/list/status-definitions-page/status-definitions-page';
+import { MachineFilesPage } from '@machines/files/machine-files-page/machine-files-page';
+import { MachinesPage } from '@machines/list/machines-page/machines-page';
 
 const MACHINE_URL = '/api/core/v1/machines/m1';
 const DEFINITIONS_URL = '/api/telemetry/v1/machines/m1/metric-definitions';
 const UNITS_URL = '/api/telemetry/v1/metric-units';
+const FILES_SEARCH_URL = '/api/document/v1/machines/m1/files/search';
+const COMPANY_FILES_SEARCH_URL = '/api/document/v1/files/search';
 const STATUS_SEARCH_URL = '/api/telemetry/v1/machines/m1/status-definitions/search';
 
 const MACHINE = {
@@ -55,16 +59,23 @@ const DEFINITIONS = {
 @Component({ template: '', selector: 'hf-elsewhere', host: { class: 'contents' } })
 class Elsewhere {}
 
+@Component({ template: '', selector: 'hf-not-found-stub', host: { class: 'contents' } })
+class NotFoundStub {}
+
 function setup(isConfirmed: boolean): { http: HttpTestingController; confirm: ReturnType<typeof vi.fn> } {
   const confirm = vi.fn((options: { accept: () => void; reject?: () => void }) =>
     isConfirmed ? options.accept() : options.reject?.(),
   );
   TestBed.configureTestingModule({
     providers: [
-      provideRouter([
-        { path: 'machines', children: MACHINES_ROUTES },
-        { path: 'elsewhere', component: Elsewhere },
-      ]),
+      provideRouter(
+        [
+          { path: 'machines', children: MACHINES_ROUTES },
+          { path: 'elsewhere', component: Elsewhere },
+          { path: 'not-found', component: NotFoundStub },
+        ],
+        withComponentInputBinding(),
+      ),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
@@ -164,5 +175,52 @@ describe('machines routes', () => {
     });
 
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(StatusDefinitionsPage);
+  });
+
+  it('filesRoute_OnOpen_LoadsTheMachineSearchesItsFilesAndActivatesThePage', async () => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+    const { http } = setup(true);
+    const harness = await RouterTestingHarness.create();
+
+    const navigation = harness.navigateByUrl('/machines/m1/files');
+    await flushWhenRequested(http, MACHINE_URL, MACHINE);
+    await navigation;
+    TestBed.tick();
+    await vi.waitFor(() => {
+      expect(http.match(FILES_SEARCH_URL).length).toBe(1);
+    });
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(MachineFilesPage);
+    http.expectNone(COMPANY_FILES_SEARCH_URL);
+  });
+
+  it('filesRoute_WithUnknownMachine_ActivatesTheNotFoundPage', async () => {
+    const { http } = setup(true);
+    const harness = await RouterTestingHarness.create();
+
+    const navigation = harness.navigateByUrl('/machines/m1/files');
+    await vi.waitFor(() => {
+      http.expectOne(MACHINE_URL).flush(null, { status: 404, statusText: 'Not Found' });
+    });
+    await navigation;
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(NotFoundStub);
+    http.expectNone(FILES_SEARCH_URL);
+  });
+
+  it('filesRoute_NavigatingBackToMachines_ActivatesTheMachinesPage', async () => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+    const { http } = setup(true);
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/machines/m1/files');
+    await flushWhenRequested(http, MACHINE_URL, MACHINE);
+    await navigation;
+    TestBed.tick();
+
+    const back = harness.navigateByUrl('/machines');
+    TestBed.tick();
+    await back;
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(MachinesPage);
   });
 });

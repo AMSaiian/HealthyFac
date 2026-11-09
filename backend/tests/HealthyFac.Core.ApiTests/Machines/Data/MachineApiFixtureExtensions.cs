@@ -46,6 +46,14 @@ public static class MachineApiFixtureExtensions
             return await client.SendAsync(request);
         }
 
+        public string CreateCreateBody(string description) =>
+            new JsonObject
+            {
+                [propertyName: "name"] = MachineApiTestData.MachineName,
+                [propertyName: "serialNumber"] = $"IMG-{Guid.NewGuid():N}",
+                [propertyName: "description"] = description,
+            }.ToJsonString();
+
         public string CreateUpdateBody(string serialNumber) =>
             new JsonObject
             {

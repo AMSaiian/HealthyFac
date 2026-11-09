@@ -53,6 +53,15 @@ services:
     image: healthyfac-verify/telemetry:local
     ports: !reset []
 
+  azurite:
+    container_name: healthyfac-verify-azurite
+    ports: !reset []
+
+  document:
+    container_name: healthyfac-verify-document
+    image: healthyfac-verify/document:local
+    ports: !reset []
+
   auth:
     container_name: healthyfac-verify-auth
     image: healthyfac-verify/auth:local

@@ -34,6 +34,8 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean }): S
   return { store: TestBed.inject(ShellStore), events };
 }
 
+const FILES_PATH = '/files';
+
 describe('ShellStore', () => {
   it('navItems_WithoutMachinesRead_HidesMachines', () => {
     const { store } = setup({ isAuthenticated: true, hasPermission: false });
@@ -48,7 +50,7 @@ describe('ShellStore', () => {
 
     const paths = store.navItems().map((item) => item.path);
 
-    expect(paths).toEqual([HOME_PATH, MACHINES_PATH]);
+    expect(paths).toEqual([HOME_PATH, MACHINES_PATH, FILES_PATH]);
     expect(store.navItems()).toEqual(SHELL_NAV_ITEMS);
   });
 

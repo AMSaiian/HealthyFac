@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="NetArchTest.eNhancedEdition" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Domain\HealthyFac.Document.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Application\HealthyFac.Document.Application.csproj" />
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Infrastructure\HealthyFac.Document.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Web\HealthyFac.Document.Web.csproj" />
+    <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj" />
+    <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

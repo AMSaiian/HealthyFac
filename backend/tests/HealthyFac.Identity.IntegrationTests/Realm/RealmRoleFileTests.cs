@@ -21,4 +21,13 @@ public sealed class RealmRoleFileTests
 
         permissions.Should().BeEquivalentTo(RealmTestData.TelemetryPermissions);
     }
+
+    [Theory]
+    [MemberData(nameof(RealmRoleFileTestData.RolesWithMachinePermissions), MemberType = typeof(RealmRoleFileTestData))]
+    public void RealmRole_InRealmFile_HasDocumentPermissions(string roleName)
+    {
+        var permissions = RealmRoleFileTestData.ReadRolePermissions(roleName, RealmTestData.DocumentClientId);
+
+        permissions.Should().BeEquivalentTo(RealmTestData.DocumentPermissions);
+    }
 }

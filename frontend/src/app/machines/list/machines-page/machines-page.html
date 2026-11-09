@@ -25,6 +25,7 @@
   [canWrite]="store.canWrite()"
   [canDelete]="store.canDelete()"
   [canReadStatuses]="store.canReadStatuses()"
+  [canReadFiles]="store.canReadFiles()"
   [canReadMetrics]="store.canReadMetrics()"
   (filterChange)="store.setFilter($event)"
   (sortChange)="store.setSort($event)"
@@ -34,5 +35,6 @@
   (updateRequested)="store.requestUpdate($event)"
   (deleteRequested)="store.requestDelete($event)"
   (statusesRequested)="store.openStatuses($event)"
+  (filesRequested)="store.openFiles($event)"
   (metricsRequested)="store.openMetrics($event)"
 />

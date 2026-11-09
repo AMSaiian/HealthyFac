@@ -1,0 +1,219 @@
+<p-table
+  dataKey="id"
+  sortMode="single"
+  scrollHeight="flex"
+  [value]="tableRows()"
+  [columns]="tableColumns()"
+  [lazy]="true"
+  [lazyLoadOnInit]="false"
+  [paginator]="true"
+  [rows]="limit()"
+  [first]="offset()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="{first} - {last} / {totalRecords}"
+  [scrollable]="true"
+  [reorderableColumns]="true"
+  [sortField]="sort()?.column"
+  [sortOrder]="sortOrder()"
+  [tableStyle]="tableStyle()"
+  [filters]="tableFilters()"
+  (onPage)="onPage($event)"
+  (onSort)="onSort($event)"
+  (onFilter)="onFilterApplied($event)"
+  (onColReorder)="onColumnReorder($event)"
+>
+  <ng-template
+    #header
+    let-columns
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <th
+          pReorderableColumn
+          [pSortableColumn]="column"
+          [pSortableColumnDisabled]="!isSortable(column)"
+        >
+          <div class="flex items-center gap-1">
+            <span>{{ columnLabelKey(column) | translate }}</span>
+            @if (isSortable(column)) {
+              <p-sort-icon [field]="column" />
+            }
+            @if (isFilterable(column)) {
+              <p-column-filter
+                #columnFilter
+                display="menu"
+                [field]="column"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+                [showApplyButton]="true"
+                [showClearButton]="true"
+                (onHide)="onFilterHidden(column)"
+              >
+                <ng-template
+                  #filter
+                  let-value
+                  let-filterConstraint="filterConstraint"
+                >
+                  @switch (column) {
+                    @case (FileColumn.FileName) {
+                      <input
+                        pInputText
+                        class="w-full"
+                        [attr.aria-label]="columnLabelKey(column) | translate"
+                        [placeholder]="'FILES.FILTERS.FILE_NAME_PLACEHOLDER' | translate"
+                        [value]="value ?? ''"
+                        (input)="filterConstraint.value = $any($event.target).value"
+                        (keydown.enter)="columnFilter.applyFilter()"
+                      />
+                    }
+                    @case (FileColumn.Extension) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="extensionOptions"
+                        [placeholder]="'FILES.FILTERS.TYPE_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                    @case (FileColumn.UploadedAt) {
+                      <hf-plain-date-range-picker
+                        [value]="value ?? emptyRange"
+                        (valueChange)="filterConstraint.value = $event"
+                      />
+                    }
+                  }
+                </ng-template>
+              </p-column-filter>
+            }
+          </div>
+        </th>
+      }
+      <th
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        <button
+          pButton
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [rounded]="true"
+          [attr.aria-label]="'FILES.COLUMNS_CHOOSER' | translate"
+          (click)="chooser.toggle($event)"
+        >
+          <i class="pi pi-table"></i>
+        </button>
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-file
+    let-columns="columns"
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <td>
+          @if (isLoading()) {
+            <p-skeleton />
+          } @else {
+            @switch (column) {
+              @case (FileColumn.FileName) {
+                <span
+                  class="block max-w-md truncate"
+                  [title]="file.fileName"
+                  >{{ file.fileName }}</span
+                >
+              }
+              @case (FileColumn.Extension) {
+                {{ file.extension.toUpperCase() }}
+              }
+              @case (FileColumn.SizeBytes) {
+                {{ formatFileSize(file.sizeBytes) }}
+              }
+              @case (FileColumn.UploadedAt) {
+                {{ file.uploadedAt | localDateTime }}
+              }
+              @case (FileColumn.Description) {
+                <span
+                  class="block max-w-md truncate"
+                  [title]="file.description ?? ''"
+                  >{{ file.description }}</span
+                >
+              }
+            }
+          }
+        </td>
+      }
+      <td
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        @if (isLoading()) {
+          <p-skeleton />
+        } @else {
+          <button
+            pButton
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-label]="'FILES.ROW_ACTIONS' | translate"
+            (click)="openMenu($event, file, menu)"
+          >
+            <i class="pi pi-ellipsis-v"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr class="h-full">
+      <td
+        class="h-full"
+        [attr.colspan]="columns().length + 1"
+      >
+        <hf-empty-state
+          icon="pi pi-inbox"
+          messageKey="FILES.EMPTY"
+        />
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-menu
+  #menu
+  appendTo="body"
+  [popup]="true"
+  [model]="menuItems()"
+/>
+<p-popover
+  #chooser
+  appendTo="body"
+>
+  <div class="flex flex-col gap-2">
+    @for (column of allColumns; track column) {
+      <div class="flex items-center gap-2">
+        <p-checkbox
+          [binary]="true"
+          [inputId]="'file-column-' + column"
+          [ngModel]="isColumnVisible(column)"
+          (ngModelChange)="onColumnToggle(column, $event)"
+        />
+        <label [for]="'file-column-' + column">{{ columnLabelKey(column) | translate }}</label>
+      </div>
+    }
+  </div>
+</p-popover>

@@ -11,6 +11,7 @@ import { providePrimeNG } from 'primeng/config';
 
 import { routes } from '@app/app.routes';
 import { APP_CONFIG, type AppConfig } from '@shared/config/app-config';
+import { FileActionType } from '@files/file-actions';
 import { MachineActionType } from '@machines/machine-actions';
 import { provideActionHosts } from '@shared/actions/action-registry';
 import { AppErrorHandler } from '@shared/errors/app-error-handler';
@@ -52,8 +53,8 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
           },
         },
       }),
-      provideActionHosts(
-        [MachineActionType.Create, MachineActionType.Update].map((type) => ({
+      provideActionHosts([
+        ...[MachineActionType.Create, MachineActionType.Update].map((type) => ({
           type,
           load: async () => {
             const [host, form] = await Promise.all([
@@ -63,7 +64,27 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
             return { component: host.MachineDrawerHost, schema: form.machineActionPayloadSchema };
           },
         })),
-      ),
+        {
+          type: FileActionType.Edit,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@files/edit/file-edit-host/file-edit-host'),
+              import('@files/file-action-payloads'),
+            ]);
+            return { component: host.FileEditHost, schema: payloads.fileEditActionPayloadSchema };
+          },
+        },
+        {
+          type: FileActionType.Upload,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@files/upload/file-upload-host/file-upload-host'),
+              import('@files/file-action-payloads'),
+            ]);
+            return { component: host.FileUploadHost, schema: payloads.fileUploadActionPayloadSchema };
+          },
+        },
+      ]),
       MessageService,
       ConfirmationService,
       { provide: ErrorHandler, useClass: AppErrorHandler },

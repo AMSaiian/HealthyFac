@@ -680,6 +680,18 @@
           }
         },
         {
+          "name": "healthyfac-document-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-document",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
           "name": "employee-id",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
@@ -725,6 +737,22 @@
             "userinfo.token.claim": "false",
             "introspection.token.claim": "true"
           }
+        },
+        {
+          "name": "healthyfac-document-permissions",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "usermodel.clientRoleMapping.clientId": "healthyfac-document",
+            "claim.name": "permissions",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
         }
       ]
     }
@@ -750,6 +778,13 @@
               "status-definitions:read",
               "status-definitions:write",
               "status-definitions:delete"
+            ],
+            "healthyfac-document": [
+              "files:read",
+              "files:write",
+              "files:delete",
+              "company-files:write",
+              "company-files:delete"
             ]
           }
         }
@@ -771,6 +806,13 @@
               "status-definitions:read",
               "status-definitions:write",
               "status-definitions:delete"
+            ],
+            "healthyfac-document": [
+              "files:read",
+              "files:write",
+              "files:delete",
+              "company-files:write",
+              "company-files:delete"
             ]
           }
         }
@@ -820,6 +862,28 @@
           "name": "status-definitions:delete",
           "description": "Delete status definitions"
         }
+      ],
+      "healthyfac-document": [
+        {
+          "name": "files:read",
+          "description": "View and search the files of machines and of the company, and get file links"
+        },
+        {
+          "name": "files:write",
+          "description": "Upload, rename, and change the description of machine files, and upload embedded images"
+        },
+        {
+          "name": "files:delete",
+          "description": "Delete machine files"
+        },
+        {
+          "name": "company-files:write",
+          "description": "Upload, rename, and change the description of company files"
+        },
+        {
+          "name": "company-files:delete",
+          "description": "Delete company files"
+        }
       ]
     }
   },
@@ -860,6 +924,25 @@
       "attributes": {
         "standard.token.exchange.enabled": "true"
       },
+      "defaultClientScopes": [
+        "basic",
+        "healthyfac-claims"
+      ],
+      "optionalClientScopes": [
+        "organization"
+      ]
+    },
+    {
+      "clientId": "healthyfac-document",
+      "name": "HealthyFac Document API",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${KEYCLOAK_DOCUMENT_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
       "defaultClientScopes": [
         "basic",
         "healthyfac-claims"

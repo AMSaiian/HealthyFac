@@ -14,18 +14,23 @@ public static class ContentSecurityPolicy
     /// <c>style-src-attr 'unsafe-inline'</c> is a written exception: PrimeNG and Angular set inline
     /// <c>style</c> attributes, and an attribute style cannot run script. <c>frame-src</c> allows the hidden
     /// iframe of the silent SSO check: it loads the identity provider, which then redirects back to the app.
+    /// <c>img-src</c> allows the API origin, because the images of a rich text load from the file links of the
+    /// gateway (<c>/api/document/blobs</c>) on that origin.
     /// </remarks>
     /// <param name="nonce">The nonce of the response. Angular applies it to its own style elements.</param>
-    /// <param name="apiBaseUrl">The public URL of the API gateway. The policy allows only its origin.</param>
+    /// <param name="apiBaseUrl">The public URL of the API gateway. The policy allows only its origin for requests and
+    /// for images.</param>
     /// <param name="authUrl">The public URL of the identity provider. The policy allows only its origin.</param>
     /// <returns>The header value.</returns>
     public static string Build(string nonce, Uri apiBaseUrl, Uri authUrl)
     {
         var authOrigin = authUrl.GetLeftPart(UriPartial.Authority);
+        var apiOrigin = apiBaseUrl.GetLeftPart(UriPartial.Authority);
 
         return $"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src-elem 'self' 'nonce-{nonce}'; "
-            + "style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; "
-            + $"connect-src 'self' {apiBaseUrl.GetLeftPart(UriPartial.Authority)} {authOrigin}; "
+            + "style-src-attr 'unsafe-inline'; "
+            + $"img-src 'self' data: {apiOrigin}; font-src 'self'; "
+            + $"connect-src 'self' {apiOrigin} {authOrigin}; "
             + $"frame-src 'self' {authOrigin}; base-uri 'self'; form-action 'self'; "
             + "frame-ancestors 'none'; object-src 'none'";
     }

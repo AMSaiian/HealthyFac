@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <ProjectReference Include="..\HealthyFac.Document.Domain\HealthyFac.Document.Domain.csproj"/>
+        <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj"/>
+        <ProjectReference Include="..\..\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="EntityFrameworkCore.Exceptions.Common" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="HealthyFac.Document.UnitTests" />
+        <InternalsVisibleTo Include="HealthyFac.Document.IntegrationTests" />
+    </ItemGroup>
+
+</Project>
