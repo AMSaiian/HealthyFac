@@ -13,6 +13,7 @@ public static class FileRoutes
     public const string Embedded = "/embedded";
     public const string Search = "/search";
     public const string Links = "/links";
+    public const string Lookup = "/lookup";
     public const string ById = "/{" + IdParameter + "}";
     public const string MachineOfFile = ById + "/machine";
 }

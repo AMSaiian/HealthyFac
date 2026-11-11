@@ -1,13 +1,20 @@
 using HealthyFac.Core.Application.Employees;
+using HealthyFac.Core.Application.Employees.SearchEmployeeInvites;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
+using Microsoft.AspNetCore.Http.HttpResults;
 using ApplicationCreateEmployeeInviteRequest =
     HealthyFac.Core.Application.Employees.CreateEmployeeInviteRequest;
 using ApplicationResendEmployeeInviteRequest =
     HealthyFac.Core.Application.Employees.ResendEmployeeInviteRequest;
+using ApplicationRevokeEmployeeInviteRequest =
+    HealthyFac.Core.Application.Employees.RevokeEmployeeInviteRequest;
+using ApplicationSearchEmployeeInvitesRequest =
+    HealthyFac.Core.Application.Employees.SearchEmployeeInvites.SearchEmployeeInvitesRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 
@@ -29,6 +36,10 @@ public static class EmployeeInviteEndpoints
                 .RequireAuthorization(CorePermissions.Employees.Invite);
             group.MapPost(EmployeeInviteRoutes.Resend, ResendAsync)
                 .RequireAuthorization(CorePermissions.Employees.Invite);
+            group.MapPost(EmployeeInviteRoutes.Search, SearchAsync)
+                .RequireAuthorization(CorePermissions.Employees.Invite);
+            group.MapDelete(EmployeeInviteRoutes.ById, RevokeAsync)
+                .RequireAuthorization(CorePermissions.Employees.Invite);
             group.MapPost(EmployeeInviteRoutes.Verify, VerifyAsync)
                 .AllowAnonymous();
             group.MapPost(EmployeeInviteRoutes.Accept, AcceptAsync)
@@ -36,6 +47,20 @@ public static class EmployeeInviteEndpoints
 
             return app;
         }
+    }
+
+    private static async Task<IResult> SearchAsync(
+        SearchEmployeeInvitesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationSearchEmployeeInvitesRequest, GridResponse<EmployeeInviteRowResponse>> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> CreateAsync(
@@ -71,6 +96,21 @@ public static class EmployeeInviteEndpoints
             cancellationToken);
 
         return Results.Ok(response);
+    }
+
+    private static async Task<NoContent> RevokeAsync(
+        [AsParameters] RevokeEmployeeInviteRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationRevokeEmployeeInviteRequest> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.NoContent();
     }
 
     private static async Task<IResult> VerifyAsync(

@@ -1,0 +1,64 @@
+<p-dialog
+  [closeButtonProps]="squareCloseButtonProps"
+  styleClass="w-[64rem] max-w-[95vw]"
+  appendTo="body"
+  [modal]="true"
+  [draggable]="false"
+  [header]="'WORK_ORDERS.PICKER.TITLE' | translate"
+  [(visible)]="isVisible"
+  (onHide)="closed.emit()"
+>
+  <p-tabs
+    [lazy]="true"
+    [(value)]="tab"
+  >
+    <p-tablist>
+      <p-tab [value]="COMPANY_TAB">{{ 'WORK_ORDERS.PICKER.COMPANY_FILES' | translate }}</p-tab>
+      @if (machineId()) {
+        <p-tab [value]="MACHINE_TAB">{{ 'WORK_ORDERS.PICKER.MACHINE_FILES' | translate }}</p-tab>
+      }
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel [value]="COMPANY_TAB">
+        <ng-template #content>
+          <hf-file-picker-grid-host
+            [scope]="companyScope"
+            [selectedIds]="selected()"
+            [lockedIds]="attachedIds()"
+            (selectionToggled)="toggle($event)"
+          />
+        </ng-template>
+      </p-tabpanel>
+      @if (machineScope(); as scope) {
+        <p-tabpanel [value]="MACHINE_TAB">
+          <ng-template #content>
+            <hf-file-picker-grid-host
+              [scope]="scope"
+              [selectedIds]="selected()"
+              [lockedIds]="attachedIds()"
+              (selectionToggled)="toggle($event)"
+            />
+          </ng-template>
+        </p-tabpanel>
+      }
+    </p-tabpanels>
+  </p-tabs>
+  <ng-template #footer>
+    <button
+      pButton
+      type="button"
+      [disabled]="selected().length === 0"
+      (click)="attach()"
+    >
+      {{ 'WORK_ORDERS.PICKER.ATTACH' | translate }}
+    </button>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      (click)="closed.emit()"
+    >
+      {{ 'ACTIONS.CANCEL' | translate }}
+    </button>
+  </ng-template>
+</p-dialog>

@@ -8,7 +8,8 @@ namespace HealthyFac.Shared.Infrastructure.RichText;
 
 /// <summary>
 /// Inspects rich text with HtmlSanitizer. The allow-list holds the formats of the editor toolbar (bold, italic,
-/// underline, strikethrough, lists, links, file images) and the markup that Quill 2 adds for lists. The policy never
+/// underline, strikethrough, lists, checklists, links, file images) and the markup that Quill 2 adds for lists. A
+/// <c>data-list</c> value must be <c>bullet</c>, <c>ordered</c>, <c>checked</c>, or <c>unchecked</c>. The policy never
 /// compares the sanitized text with the original: it reports every removal that the sanitizer announces through its
 /// events, so a difference in white space or entity encoding is never a finding.
 /// </summary>
@@ -28,6 +29,14 @@ public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
 
     private static readonly string OtherElementsWithImageAttributes =
         $"[{RichTextAttributes.DataFileId}]:not(img), [{RichTextAttributes.Alt}]:not(img)";
+
+    private static readonly string DataListElements = $"[{RichTextAttributes.DataList}]";
+
+    private static readonly string[] AllowedDataListValues =
+    [
+        RichTextAttributes.DataListBullet, RichTextAttributes.DataListOrdered, RichTextAttributes.DataListChecked,
+        RichTextAttributes.DataListUnchecked,
+    ];
 
     private static readonly string[] AllowedSchemes = ["http", "https", "mailto"];
 
@@ -61,10 +70,14 @@ public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
         {
             IsAllowed = isAllowed
                 && document.QuerySelectorAll(selectors: "img").All(IsValidFileImage)
-                && document.QuerySelectorAll(OtherElementsWithImageAttributes).Length == 0,
+                && document.QuerySelectorAll(OtherElementsWithImageAttributes).Length == 0
+                && document.QuerySelectorAll(DataListElements).All(HasAllowedDataList),
             VisibleLength = document.Body?.TextContent.Normalize().Length ?? 0,
         };
     }
+
+    private static bool HasAllowedDataList(IElement element) =>
+        AllowedDataListValues.Contains(element.GetAttribute(RichTextAttributes.DataList));
 
     private static bool IsValidFileImage(IElement image) =>
         image.GetAttribute(RichTextAttributes.DataFileId) is { } fileId

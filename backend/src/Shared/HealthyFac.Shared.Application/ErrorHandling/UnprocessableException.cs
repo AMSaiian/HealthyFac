@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.Application.ErrorHandling;
@@ -20,4 +21,9 @@ public class UnprocessableException : Exception, IRejection
     }
 
     public LogLevel? Level { get; init; } = LogLevel.Information;
+
+    /// <summary>
+    /// Extra members that the response adds to the problem details (e.g., the list of affected work orders).
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> Extensions { get; init; } = FrozenDictionary<string, object?>.Empty;
 }

@@ -1,6 +1,8 @@
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
@@ -74,7 +76,7 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
         var second = await _fixture.LoadMachineRowAsync(DatabaseTestData.SecondSeedMachineId);
 
         first.Name.Should().Be(DatabaseTestData.NamedSeedMachineName);
-        second.Name.Should().Be("Seed machine 02");
+        second.Name.Should().Be(expected: "Seed machine 02");
     }
 
     [Fact]
@@ -122,5 +124,80 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
         companyCount.Should().Be(companyCountAfterFirstRun);
 
         machinesAfterSecondRun.Should().BeEquivalentTo(machinesAfterFirstRun);
+    }
+
+    [Fact]
+    public async Task SeedOptionalData_WithWorker_CreatesActiveWorkerWithFixedIds()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        var worker = await _fixture.LoadSeededEmployeeAsync(DatabaseTestData.TestWorkerEmployeeId);
+
+        worker.CompanyId.Should().Be(DatabaseTestData.TestTenantCompanyId);
+        worker.IdentityUserId.Should().Be(DatabaseTestData.TestWorkerIdentityId);
+        worker.Email.Should().Be(DatabaseTestData.TestWorkerEmail);
+        worker.Status.Should().Be(EmployeeStatus.Active);
+        worker.RoleCode.Should().Be(RoleCode.Worker);
+    }
+
+    [Fact]
+    public async Task SeedOptionalData_WithTestTenant_CreatesWorkOrdersInEveryStatus()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        var orders = await _fixture.LoadSeededWorkOrdersAsync(DatabaseTestData.TestTenantCompanyId);
+
+        orders.Select(order => order.Status)
+            .Should()
+            .BeEquivalentTo(
+            [
+                WorkOrderStatus.Backlog,
+                WorkOrderStatus.Staged,
+                WorkOrderStatus.Staged,
+                WorkOrderStatus.InProgress,
+                WorkOrderStatus.Blocked,
+                WorkOrderStatus.Completed,
+            ]);
+        orders.Where(order => order.Status == WorkOrderStatus.Backlog)
+            .Should()
+            .ContainSingle()
+            .Which.AssigneeId.Should()
+            .BeNull();
+    }
+
+    [Fact]
+    public async Task SeedOptionalData_WithTestTenant_PlacesEveryScheduledOrderInsideABlockOfItsAssignee()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+        var orders = await _fixture.LoadSeededWorkOrdersAsync(DatabaseTestData.TestTenantCompanyId);
+        var blocks = await _fixture.LoadSeededShiftBlocksAsync(DatabaseTestData.TestTenantCompanyId);
+
+        var scheduled = orders.Where(order => order.AssigneeId is not null).ToList();
+        var fittingCount = scheduled.Count(order => blocks.Any(block =>
+            block.EmployeeId == order.AssigneeId
+            && block.Weekday == Weekday.From(order.PlannedStartLocal!.Value.DayOfWeek)
+            && block.Start <= TimeOnly.FromDateTime(order.PlannedStartLocal.Value)
+            && TimeOnly.FromDateTime(order.PlannedStartLocal.Value + order.Estimate) <= block.End));
+
+        scheduled.Should().HaveCount(DatabaseTestData.SeededWorkOrderCount - 1);
+        fittingCount.Should().Be(scheduled.Count);
+        blocks.GroupBy(block => block.EmployeeId)
+            .Should()
+            .HaveCount(expected: 2)
+            .And.OnlyContain(group => group.Count() == DatabaseTestData.SeededShiftBlocksPerEmployee);
+    }
+
+    [Fact]
+    public async Task SeedOptionalData_ForcedTwice_ReplacesWorkOrdersAndShiftBlocks()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
+
+        var orders = await _fixture.LoadSeededWorkOrdersAsync(DatabaseTestData.TestTenantCompanyId);
+        var blocks = await _fixture.LoadSeededShiftBlocksAsync(DatabaseTestData.TestTenantCompanyId);
+
+        orders.Should().HaveCount(DatabaseTestData.SeededWorkOrderCount);
+        blocks.Should().HaveCount(2 * DatabaseTestData.SeededShiftBlocksPerEmployee);
     }
 }

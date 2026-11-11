@@ -8,7 +8,7 @@ public static class RateLimitTestData
     public const string BlobRoute = "/api/document/blobs/files/00000000-0000-0000-0000-000000000001?sp=r";
     public const int DefaultRequestsDuringOutage = 20;
     public const int StaticRequestCount = 150;
-    public const int DefaultApiPermitLimit = 100;
+    public const int DefaultApiPermitLimit = 300;
     public const string SpaRoute = "http://app.healthyfac.test/machines";
     public const string VerifyInviteRoute = "/api/core/v1/employee-invites/verify";
     public const string MachinesRoute = "/api/core/v1/machines";

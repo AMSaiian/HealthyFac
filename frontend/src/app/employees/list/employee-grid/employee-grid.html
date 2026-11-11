@@ -1,0 +1,191 @@
+<p-table
+  dataKey="id"
+  sortMode="single"
+  scrollHeight="flex"
+  [value]="tableRows()"
+  [columns]="columns"
+  [lazy]="true"
+  [lazyLoadOnInit]="false"
+  [paginator]="true"
+  [rows]="limit()"
+  [first]="offset()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="{first} - {last} / {totalRecords}"
+  [scrollable]="true"
+  [sortField]="sort()?.column"
+  [sortOrder]="sortOrder()"
+  [tableStyle]="tableStyle()"
+  [filters]="tableFilters()"
+  (onPage)="onPage($event)"
+  (onSort)="onSort($event)"
+  (onFilter)="onFilterApplied($event)"
+>
+  <ng-template
+    #header
+    let-columns
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <th
+          [pSortableColumn]="column"
+          [pSortableColumnDisabled]="!isSortable(column)"
+        >
+          <div class="flex items-center gap-1">
+            <span>{{ columnLabelKey(column) | translate }}</span>
+            @if (isSortable(column)) {
+              <p-sort-icon [field]="column" />
+            }
+            @if (isFilterable(column)) {
+              <p-column-filter [filterButtonProps]="squareFilterButtonProps"
+                #columnFilter
+                display="menu"
+                [field]="column"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+                [showApplyButton]="true"
+                [showClearButton]="true"
+                (onHide)="onFilterHidden(column)"
+              >
+                <ng-template
+                  #filter
+                  let-value
+                  let-filterConstraint="filterConstraint"
+                >
+                  @switch (column) {
+                    @case (EmployeeColumn.Name) {
+                      <input
+                        pInputText
+                        class="w-full"
+                        [attr.aria-label]="columnLabelKey(column) | translate"
+                        [value]="value ?? ''"
+                        (input)="filterConstraint.value = $any($event.target).value"
+                        (keydown.enter)="columnFilter.applyFilter()"
+                      />
+                    }
+                    @case (EmployeeColumn.Email) {
+                      <input
+                        pInputText
+                        class="w-full"
+                        [attr.aria-label]="columnLabelKey(column) | translate"
+                        [value]="value ?? ''"
+                        (input)="filterConstraint.value = $any($event.target).value"
+                        (keydown.enter)="columnFilter.applyFilter()"
+                      />
+                    }
+                    @case (EmployeeColumn.Role) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="roleOptions()"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                    @case (EmployeeColumn.Status) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="statusOptions()"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                  }
+                </ng-template>
+              </p-column-filter>
+            }
+          </div>
+        </th>
+      }
+      <th
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      ></th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-row
+    let-columns="columns"
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <td>
+          @if (showSkeleton()) {
+            <p-skeleton />
+          } @else {
+            @switch (column) {
+              @case (EmployeeColumn.Name) {
+                {{ row.firstName }} {{ row.lastName }}
+              }
+              @case (EmployeeColumn.Email) {
+                {{ row.email }}
+              }
+              @case (EmployeeColumn.Role) {
+                {{ roleLabel(row.roleCode) }}
+              }
+              @case (EmployeeColumn.Status) {
+                {{ statusLabel(row.status) }}
+              }
+              @case (EmployeeColumn.CreatedAt) {
+                {{ row.createdAt | localDateTime }}
+              }
+            }
+          }
+        </td>
+      }
+      <td
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        @if (showSkeleton()) {
+          <p-skeleton />
+        } @else if (hasMenu(row)) {
+          <button
+            pButton
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [attr.aria-label]="'EMPLOYEES.ACTIONS' | translate"
+            (click)="openMenu($event, row, menu)"
+          >
+            <i class="pi pi-ellipsis-v"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr class="h-full">
+      <td
+        class="h-full"
+        [attr.colspan]="columns.length + 1"
+      >
+        <hf-empty-state
+          icon="pi pi-inbox"
+          messageKey="EMPLOYEES.EMPTY"
+        />
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-menu
+  #menu
+  appendTo="body"
+  [popup]="true"
+  [model]="menuItems()"
+/>

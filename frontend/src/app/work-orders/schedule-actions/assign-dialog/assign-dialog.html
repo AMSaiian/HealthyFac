@@ -1,0 +1,54 @@
+<div class="flex flex-col gap-1">
+  <label for="assign-employee">{{ 'WORK_ORDERS.SCHEDULE.ASSIGNEE' | translate }}</label>
+  @for (error of assignForm.assigneeId().errors(); track $index) {
+    @if (isShown(assignForm.assigneeId)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <p-select
+    inputId="assign-employee"
+    optionLabel="displayName"
+    optionValue="id"
+    appendTo="body"
+    [filter]="true"
+    [loading]="isEmployeesLoading()"
+    [options]="employeeOptions()"
+    (onShow)="employeeLookupRequested.emit({ text: '', isImmediate: true })"
+    (onFilter)="employeeLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
+    [placeholder]="'WORK_ORDERS.SCHEDULE.ASSIGNEE_PLACEHOLDER' | translate"
+    [attr.data-hf-calm]="isShown(assignForm.assigneeId) ? null : ''"
+    [formField]="assignForm.assigneeId"
+  />
+</div>
+<div class="flex flex-col gap-1">
+  <label for="assign-start">{{ 'WORK_ORDERS.SCHEDULE.START' | translate }}</label>
+  @for (error of assignForm.start().errors(); track $index) {
+    @if (isShown(assignForm.start)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <hf-plain-date-time-picker
+    [stepMinute]="stepMinute"
+    [formField]="assignForm.start"
+  />
+  @if (hasNoFreeStart()) {
+    <small class="text-muted-color">{{ 'WORK_ORDERS.SCHEDULE.NO_FREE_START' | translate }}</small>
+  } @else if (suggestion(); as suggested) {
+    <div class="flex items-center gap-2">
+      <small class="text-muted-color">
+        {{ 'WORK_ORDERS.SCHEDULE.SUGGESTED' | translate }}:
+        {{ suggested.toString({ smallestUnit: 'minute' }).replace('T', ' ') }}
+      </small>
+      <button
+        pButton
+        type="button"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        (click)="useSuggestion()"
+      >
+        {{ 'WORK_ORDERS.SCHEDULE.USE_SUGGESTION' | translate }}
+      </button>
+    </div>
+  }
+</div>

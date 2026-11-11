@@ -1,3 +1,4 @@
+using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Domain.Emails;
 using HealthyFac.Shared.Domain.Entities;
 
@@ -35,6 +36,10 @@ public class EmployeeInvite : IEntity, IAuditable, ISoftDeletable, IVersioned
     public Guid CompanyId { get; private set; }
     public string Email { get; private set; }
     public Guid RoleId { get; private set; }
+
+    /// <summary>The role of the invite. Entity Framework Core fills it only when a query loads it.</summary>
+    public Role Role { get; private set; } = null!;
+
     public string? FirstName { get; private set; }
     public string? LastName { get; private set; }
     public byte[] TokenSalt { get; private set; }

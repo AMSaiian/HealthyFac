@@ -54,6 +54,21 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
             .Equal(GatewayFactory.DefaultCorsOrigin);
     }
 
+    [Theory]
+    [MemberData(nameof(GatewayCorsTestData.AuthenticatedInviteRoutes), MemberType = typeof(GatewayCorsTestData))]
+    public async Task InvitePreflight_ForRouteBesideThePublicOnes_Returns204(string route)
+    {
+        await using var gateway = _environment.CreateGateway(_core);
+        using var client = gateway.CreateClient();
+
+        using var response = await client.SendPreflightAsync(route);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        response.Headers.GetValues(GatewayCorsTestData.AllowOriginHeader)
+            .Should()
+            .Equal(GatewayFactory.DefaultCorsOrigin);
+    }
+
     [Fact]
     public async Task CoreRequest_FromAllowedOrigin_HasOneAllowOrigin()
     {

@@ -8,7 +8,7 @@ public static class TokenExchangeTestData
     public const string TargetRoleName = "test-target:read";
     public const string TargetScopeName = "test-target";
     public const string ExchangeScopes = "test-target organization healthyfac-claims";
-    public const string NotAllowedAudience = "healthyfac-auth";
+    public const string NotAllowedAudience = "healthyfac-spa";
     public const string OrganizationClaim = "organization";
     public const string IssuerClaim = "iss";
     public const string SubjectClaim = "sub";

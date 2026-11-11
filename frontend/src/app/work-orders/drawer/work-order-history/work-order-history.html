@@ -1,0 +1,27 @@
+@if (showSkeleton()) {
+  <p-skeleton height="3rem" />
+} @else if (newestFirst().length === 0) {
+  @if (!isLoading()) {
+    <small class="text-muted-color">{{ 'WORK_ORDERS.HISTORY.EMPTY' | translate }}</small>
+  }
+} @else {
+  <ol class="flex flex-col gap-2">
+    @for (row of newestFirst(); track row.revision) {
+      <li class="hf-list-item flex flex-col gap-1">
+        <div class="flex items-center justify-between gap-2">
+          <p-tag
+            [class]="'hf-status-' + row.status"
+            [value]="statusKey(row.status) | translate"
+          />
+          <small class="text-muted-color">{{ row.createdAt | localDateTime }}</small>
+        </div>
+        <small>
+          {{ 'WORK_ORDERS.HISTORY.ASSIGNEE' | translate }}: {{ row.assigneeName ?? '—' }}
+          @if (row.plannedStartUtc) {
+            · {{ 'WORK_ORDERS.HISTORY.PLANNED_START' | translate }}: {{ row.plannedStartUtc | localDateTime }}
+          }
+        </small>
+      </li>
+    }
+  </ol>
+}

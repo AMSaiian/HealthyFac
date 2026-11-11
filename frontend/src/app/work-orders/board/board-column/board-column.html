@@ -1,0 +1,69 @@
+<div
+  cdkDropList
+  cdkDropListSortingDisabled
+  class="border-surface bg-surface-50 dark:bg-surface-950 h-full min-h-0 w-full min-w-0 flex-1 rounded border [&.cdk-drop-list-dragging]:ring-primary [&.cdk-drop-list-dragging]:ring-2 [&.cdk-drop-list-dragging]:ring-inset"
+  [id]="status()"
+  [cdkDropListDisabled]="isDisabled()"
+  [cdkDropListEnterPredicate]="canEnter"
+  (cdkDropListDropped)="onDrop($event)"
+>
+  @if (isEmpty()) {
+    <hf-empty-state
+      icon="pi pi-inbox"
+      messageKey="WORK_ORDERS.BOARD.EMPTY_COLUMN"
+    />
+  } @else {
+    <p-scroller
+      scrollHeight="100%"
+      styleClass="hf-board-scroller h-full w-full min-w-0"
+      [items]="slots()"
+      [itemSize]="cardHeight"
+      [lazy]="true"
+      [delay]="150"
+      (onLazyLoad)="onLazyLoad($event)"
+    >
+      <ng-template
+        #item
+        let-slot
+      >
+        <div
+          class="min-w-0 p-1"
+          [style.height.px]="cardHeight"
+        >
+          @if (slot && !showSkeleton()) {
+            <hf-work-order-card
+              cdkDrag
+              [cdkDragData]="slot"
+              [row]="slot"
+              [canManage]="canManage()"
+              [canWrite]="canWrite()"
+              (opened)="opened.emit($event)"
+              (statusChosen)="statusChosen.emit($event)"
+            >
+              <ng-template
+                cdkDragPreview
+                matchSize
+              >
+                <hf-work-order-card
+                  class="pointer-events-none block h-full"
+                  [row]="slot"
+                  [canManage]="canManage()"
+                  [canWrite]="canWrite()"
+                />
+              </ng-template>
+              <div
+                *cdkDragPlaceholder
+                class="hidden"
+              ></div>
+            </hf-work-order-card>
+          } @else {
+            <p-skeleton
+              height="100%"
+              borderRadius="0.25rem"
+            />
+          }
+        </div>
+      </ng-template>
+    </p-scroller>
+  }
+</div>

@@ -4,6 +4,8 @@ import { ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { Tooltip } from 'primeng/tooltip';
 
+import { SQUARE_CLOSE_BUTTON_PROPS } from '@shared/theme/square-button-props';
+
 @Component({
   imports: [ButtonDirective, Dialog, Tooltip, TranslatePipe],
   host: { class: 'contents' },
@@ -11,9 +13,11 @@ import { Tooltip } from 'primeng/tooltip';
   templateUrl: './action-dialog.html',
 })
 export class ActionDialog {
+  protected readonly squareCloseButtonProps = SQUARE_CLOSE_BUTTON_PROPS;
   readonly title = input.required<string>();
   readonly isSaveDisabled = input(false);
   readonly saveDisabledReason = input<string | null>(null);
+  readonly saveDisabledReasonParams = input<Record<string, unknown> | undefined>(undefined);
   readonly isSaving = input(false);
   /** A read-only dialog hides the save button and shows a close button. */
   readonly isSaveShown = input(true);

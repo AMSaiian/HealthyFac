@@ -1,5 +1,6 @@
 using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Application.Files.Links;
+using HealthyFac.Document.Application.Files.Lookup;
 using HealthyFac.Document.Application.Files.Searching;
 using HealthyFac.Document.Application.Files.Uploading;
 using HealthyFac.Document.Web.Authorization;
@@ -16,6 +17,7 @@ using ApplicationUntieFileFromMachineRequest =
     HealthyFac.Document.Application.Files.Machines.UntieFileFromMachineRequest;
 using ApplicationUpdateFileRequest = HealthyFac.Document.Application.Files.UpdateFileRequest;
 using ApplicationGetFileLinksRequest = HealthyFac.Document.Application.Files.Links.GetFileLinksRequest;
+using ApplicationLookupFilesRequest = HealthyFac.Document.Application.Files.Lookup.LookupFilesRequest;
 using ApplicationSearchFilesRequest = HealthyFac.Document.Application.Files.Searching.SearchFilesRequest;
 using ApplicationUploadEmbeddedImageRequest =
     HealthyFac.Document.Application.Files.Uploading.UploadEmbeddedImageRequest;
@@ -68,6 +70,8 @@ public static class FileEndpoints
             companyGroup.MapDelete(FileRoutes.MachineOfFile, UntieFileFromMachineAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
             companyGroup.MapPost(FileRoutes.Links, GetFileLinksAsync)
+                .RequireAuthorization(DocumentPermissions.Files.Read);
+            companyGroup.MapPost(FileRoutes.Lookup, LookupFilesAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
             companyGroup.MapPost(FileRoutes.Search, SearchCompanyFilesAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
@@ -197,6 +201,20 @@ public static class FileEndpoints
         GetFileLinksRequest request,
         ICurrentUserProvider currentUser,
         IRequestHandler<ApplicationGetFileLinksRequest, GetFileLinksResponse> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<LookupFilesResponse>> LookupFilesAsync(
+        LookupFilesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationLookupFilesRequest, LookupFilesResponse> handler,
         CancellationToken cancellationToken
     )
     {

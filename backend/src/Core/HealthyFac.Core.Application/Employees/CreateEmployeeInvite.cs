@@ -26,6 +26,10 @@ public record CreateEmployeeInviteRequest : IRequest<CreateEmployeeInviteRespons
     }
 
     public required RoleCode RoleCode { get; init; }
+
+    public string? FirstName { get; init; }
+
+    public string? LastName { get; init; }
 }
 
 public record CreateEmployeeInviteResponse
@@ -52,6 +56,16 @@ public class CreateEmployeeInviteRequestValidator : AbstractValidator<CreateEmpl
         RuleFor(x => x.RoleCode)
             .NotNull()
             .WithMessage(EmployeeInviteErrors.Validation.RoleCodeRequired);
+
+        RuleFor(x => x.FirstName)
+            .MaximumLength(EmployeeValidationConstants.NameMaxLength)
+            .SingleLineText()
+            .When(x => x.FirstName is not null);
+
+        RuleFor(x => x.LastName)
+            .MaximumLength(EmployeeValidationConstants.NameMaxLength)
+            .SingleLineText()
+            .When(x => x.LastName is not null);
     }
 }
 
@@ -115,6 +129,7 @@ public class CreateEmployeeInviteRequestHandler(
             roleId,
             _tokenService.CreateSalt(),
             _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));
+        invite.UpdateProfile(request.FirstName, request.LastName);
         _dbContext.EmployeeInvites.Add(invite);
         _outbox.Add(
             new EmployeeInvited

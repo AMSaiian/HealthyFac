@@ -1,0 +1,74 @@
+<header class="flex flex-none items-center justify-between">
+  <h1 class="text-2xl font-bold">{{ 'EMPLOYEES.TITLE' | translate }}</h1>
+  @if (store.canInvite()) {
+    <button
+      pButton
+      type="button"
+      (click)="store.requestInvite()"
+    >
+      <i class="pi pi-user-plus"></i>
+      {{ 'EMPLOYEES.INVITE_BUTTON' | translate }}
+    </button>
+  }
+</header>
+<p-tabs
+  class="flex min-h-0 flex-1 flex-col"
+  [lazy]="true"
+  [(value)]="tab"
+>
+  <p-tablist>
+    <p-tab [value]="EMPLOYEES_TAB">{{ 'EMPLOYEES.TABS.EMPLOYEES' | translate }}</p-tab>
+    @if (store.canInvite()) {
+      <p-tab [value]="INVITES_TAB">{{ 'EMPLOYEES.TABS.INVITES' | translate }}</p-tab>
+    }
+  </p-tablist>
+  <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+    <p-tabpanel
+      class="flex min-h-0 flex-1 flex-col"
+      [value]="EMPLOYEES_TAB"
+    >
+      <ng-template #content>
+        <hf-employee-grid
+          [rows]="page().items"
+          [totalCount]="page().totalCount"
+          [isLoading]="store.employees.isLoading()"
+          [offset]="store.offset()"
+          [limit]="store.limit()"
+          [sort]="store.sort()"
+          [filter]="store.filter()"
+          [canManage]="store.canManage()"
+          [canReadShifts]="store.canReadShifts()"
+          (filterChange)="store.setFilter($event)"
+          (sortChange)="store.setSort($event)"
+          (pageChange)="store.setPage($event.offset, $event.limit)"
+          (shiftsRequested)="store.openShifts($event)"
+          (scheduleRequested)="store.openSchedule($event)"
+          (retryRequested)="store.requestRetry($event)"
+        />
+      </ng-template>
+    </p-tabpanel>
+    @if (store.canInvite()) {
+      <p-tabpanel
+        class="flex min-h-0 flex-1 flex-col"
+        [value]="INVITES_TAB"
+      >
+        <ng-template #content>
+          <hf-invite-grid
+            [rows]="invites().items"
+            [totalCount]="invites().totalCount"
+            [isLoading]="invitesStore.invites.isLoading()"
+            [offset]="invitesStore.offset()"
+            [limit]="invitesStore.limit()"
+            [sort]="invitesStore.sort()"
+            [filter]="invitesStore.filter()"
+            (filterChange)="invitesStore.setFilter($event)"
+            (sortChange)="invitesStore.setSort($event)"
+            (pageChange)="invitesStore.setPage($event.offset, $event.limit)"
+            (resendRequested)="invitesStore.requestResend($event)"
+            (revokeRequested)="invitesStore.requestRevoke($event)"
+          />
+        </ng-template>
+      </p-tabpanel>
+    }
+  </p-tabpanels>
+</p-tabs>

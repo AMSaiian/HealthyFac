@@ -4,10 +4,22 @@ import Lara from '@primeuix/themes/lara';
 export const HealthyFacPreset = definePreset(Lara, {
   components: {
     tag: {
+      root: { fontSize: '{text.size.xs}', padding: '0.125rem 0.5rem' },
       colorScheme: {
         light: { secondary: { background: '{surface.200}', color: '{surface.600}' } },
         dark: { secondary: { background: '{surface.700}', color: '{surface.300}' } },
       },
+    },
+    tabs: {
+      tablist: { borderWidth: '0 0 1px 0', background: '{content.background}' },
+      tab: {
+        borderWidth: '0 0 2px 0',
+        margin: '0 0 -1px 0',
+        background: '{content.background}',
+        hoverBackground: '{content.background}',
+        activeBackground: '{content.background}',
+      },
+      tabpanel: { padding: '0.75rem 0 0 0' },
     },
     datepicker: {
       panel: { padding: '0.5rem' },
@@ -18,6 +30,28 @@ export const HealthyFacPreset = definePreset(Lara, {
       dayView: { margin: '0.375rem 0 0 0' },
       weekDay: { padding: '0.25rem', fontSize: '0.75rem' },
       date: { width: '1.75rem', height: '1.75rem', padding: '0.25rem', fontSize: '0.875rem' },
+    },
+  },
+  extend: {
+    textSize: { xs: '0.6875rem' },
+    scheduleBoard: {
+      headerBackground: 'light-dark({surface.50}, {surface.800})',
+      headerFontWeight: '700',
+      borderColor: 'light-dark({content.border.color}, {surface.800})',
+    },
+    workOrderPriority: {
+      low: '{sky.500}',
+      medium: '{amber.500}',
+      high: '{orange.600}',
+      critical: '{rose.700}',
+    },
+    workOrderStatus: {
+      backlog: '{slate.500}',
+      staged: '{blue.500}',
+      inProgress: '{primary.500}',
+      blocked: '{red.500}',
+      completed: '{green.500}',
+      rejected: '{zinc.400}',
     },
   },
   semantic: {

@@ -9,6 +9,7 @@ const STATUS_KEYS: ReadonlyMap<number, string> = new Map([
   [HttpStatusCode.Forbidden, 'ERRORS.HTTP.FORBIDDEN'],
   [HttpStatusCode.NotFound, 'ERRORS.HTTP.NOT_FOUND'],
   [HttpStatusCode.Conflict, 'ERRORS.HTTP.CONFLICT'],
+  [HttpStatusCode.UnprocessableEntity, 'ERRORS.HTTP.UNPROCESSABLE'],
   [HttpStatusCode.TooManyRequests, 'ERRORS.HTTP.TOO_MANY_REQUESTS'],
 ]);
 

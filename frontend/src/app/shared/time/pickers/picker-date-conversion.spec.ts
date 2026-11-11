@@ -1,11 +1,15 @@
 import {
+  areSameDates,
+  isSameDate,
   pickerDatesToPlainDateRange,
   pickerDateToPlainDate,
   pickerDateToPlainDateTime,
+  pickerDateToPlainTime,
   pickerDateToZonedDateTime,
   plainDateRangeToPickerDates,
   plainDateTimeToPickerDate,
   plainDateToPickerDate,
+  plainTimeToPickerDate,
   zonedDateTimeToPickerDate,
 } from './picker-date-conversion';
 import { Temporal } from '@shared/time/temporal';
@@ -106,5 +110,44 @@ describe('picker date conversion', () => {
     ];
 
     expect(results).toEqual([null, null, null, null, null, null]);
+  });
+});
+
+describe('picker time conversion', () => {
+  it('plainTimeToPickerDate_AndBack_KeepsHourAndMinute', () => {
+    const time = pickerDateToPlainTime(plainTimeToPickerDate(Temporal.PlainTime.from('23:55')));
+
+    expect(time?.toString()).toBe('23:55:00');
+  });
+
+  it('pickerDateToPlainTime_WithSeconds_DropsThem', () => {
+    const time = pickerDateToPlainTime(new Date(2026, 10, 3, 8, 5, 42));
+
+    expect(time?.toString()).toBe('08:05:00');
+  });
+
+  it('plainTimeToPickerDate_WithNull_GivesNull', () => {
+    expect(plainTimeToPickerDate(null)).toBeNull();
+    expect(pickerDateToPlainTime(null)).toBeNull();
+  });
+});
+
+describe('picker date equality', () => {
+  it('isSameDate_WithTwoDatesOfOneMoment_IsTrue', () => {
+    expect(isSameDate(new Date(2026, 10, 3, 8, 5), new Date(2026, 10, 3, 8, 5))).toBe(true);
+  });
+
+  it('isSameDate_WithDifferentMinutesOrNull_IsFalse', () => {
+    expect(isSameDate(new Date(2026, 10, 3, 8, 5), new Date(2026, 10, 3, 8, 10))).toBe(false);
+    expect(isSameDate(new Date(2026, 10, 3), null)).toBe(false);
+    expect(isSameDate(null, null)).toBe(true);
+  });
+
+  it('areSameDates_WithEqualAndDifferentRanges_ComparesEachDay', () => {
+    const range = [new Date(2026, 10, 3), new Date(2026, 10, 9)];
+
+    expect(areSameDates(range, [new Date(2026, 10, 3), new Date(2026, 10, 9)])).toBe(true);
+    expect(areSameDates(range, [new Date(2026, 10, 3), null])).toBe(false);
+    expect(areSameDates(range, null)).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, defer, from, type Observable, of, switchMap, throwError } from 'rxjs';
 
 import { APP_CONFIG } from '@shared/config/app-config';
+import { ANONYMOUS_REQUEST } from '@shared/http/anonymous-request';
 
 import { AuthStore } from './auth.store';
 import { SessionEndedError } from './session-errors';
@@ -13,7 +14,7 @@ const isUnauthorized = (error: unknown): boolean =>
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const config = inject(APP_CONFIG);
-  if (!request.url.startsWith(`${config.apiBaseUrl}/`)) {
+  if (request.context.get(ANONYMOUS_REQUEST) || !request.url.startsWith(`${config.apiBaseUrl}/`)) {
     return next(request);
   }
   const store = inject(AuthStore);

@@ -1,0 +1,54 @@
+<span class="font-bold">{{ label() }}</span>
+@for (row of rows(); track $index) {
+  <div class="flex items-center gap-2">
+    <hf-plain-time-picker
+      class="w-28 flex-none"
+      [attr.aria-label]="label() + ' ' + ('SHIFTS.DIALOG.START' | translate)"
+      [value]="row.start"
+      [stepMinute]="stepMinute"
+      [disabled]="isReadOnly()"
+      (valueChange)="change($index, 'start', $event)"
+    />
+    <span>-</span>
+    <hf-plain-time-picker
+      class="w-28 flex-none"
+      [attr.aria-label]="label() + ' ' + ('SHIFTS.DIALOG.END' | translate)"
+      [value]="row.end"
+      [stepMinute]="stepMinute"
+      [max]="latestEnd"
+      [disabled]="isReadOnly()"
+      (valueChange)="change($index, 'end', $event)"
+    />
+    @if (!isReadOnly()) {
+      <button
+        pButton
+        type="button"
+        iconOnly
+        size="small"
+        severity="secondary"
+        [text]="true"
+        [attr.aria-label]="'SHIFTS.DIALOG.REMOVE_BLOCK' | translate"
+        (click)="remove($index)"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    }
+  </div>
+} @empty {
+  <span class="text-muted-color text-sm">{{ 'SHIFTS.DIALOG.DAY_OFF' | translate }}</span>
+}
+@if (!isReadOnly()) {
+  <button
+    pButton
+    type="button"
+    size="small"
+    severity="secondary"
+    class="self-start"
+    [outlined]="true"
+    [disabled]="!canAdd()"
+    (click)="add()"
+  >
+    <i class="pi pi-plus"></i>
+    {{ 'SHIFTS.DIALOG.ADD_BLOCK' | translate }}
+  </button>
+}

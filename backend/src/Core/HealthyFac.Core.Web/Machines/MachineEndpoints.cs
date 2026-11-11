@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachineRequest;
 using ApplicationDeleteMachineRequest = HealthyFac.Core.Application.Machines.DeleteMachineRequest;
 using ApplicationGetMachineRequest = HealthyFac.Core.Application.Machines.GetMachineRequest;
+using ApplicationLookupMachinesRequest = HealthyFac.Core.Application.Machines.LookupMachinesRequest;
 using ApplicationSearchMachinesRequest = HealthyFac.Core.Application.Machines.SearchMachines.SearchMachinesRequest;
 using ApplicationUpdateMachineRequest = HealthyFac.Core.Application.Machines.UpdateMachineRequest;
 
@@ -32,6 +34,8 @@ public static class MachineEndpoints
             group.MapPost(MachineRoutes.Root, CreateAsync)
                 .RequireAuthorization(CorePermissions.Machines.Write);
             group.MapPost(MachineRoutes.Search, SearchAsync)
+                .RequireAuthorization(CorePermissions.Machines.Read);
+            group.MapPost(MachineRoutes.Lookup, LookupAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
             group.MapGet(MachineRoutes.ById, GetAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
@@ -69,6 +73,20 @@ public static class MachineEndpoints
         SearchMachinesRequest request,
         ICurrentUserProvider currentUser,
         IRequestHandler<ApplicationSearchMachinesRequest, GridResponse<MachineResponse>> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<LookupResponse>> LookupAsync(
+        LookupMachinesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationLookupMachinesRequest, LookupResponse> handler,
         CancellationToken cancellationToken
     )
     {

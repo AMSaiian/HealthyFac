@@ -32,6 +32,9 @@ public static class KeycloakAdminTestData
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
     public static readonly Guid UnknownCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-0000000000ff");
     public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
+    public const string UkrainianLocale = "uk";
+    public const string LocaleAttribute = "locale";
+
     public static readonly Guid SupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
 
     public static IReadOnlyDictionary<string, string> RealmEnvironment { get; } = new Dictionary<string, string>

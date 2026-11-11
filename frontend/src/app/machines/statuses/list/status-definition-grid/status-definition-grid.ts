@@ -21,7 +21,8 @@ import {
 } from 'primeng/table';
 
 import { toggleColumn } from '@shared/grid/table/grid-columns';
-import { skeletonRows } from '@shared/grid/table/grid-display';
+import { keepWhileLoading, skeletonRows } from '@shared/grid/table/grid-display';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
 import { readTableFilters, toConstraint, toTableFilters } from '@shared/grid/table/table-filters';
@@ -29,6 +30,7 @@ import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
 import { EMPTY_RANGE } from '@shared/time/plain-date-range';
+import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
 
 import {
   type StatusDefinition,
@@ -71,6 +73,7 @@ import {
   templateUrl: './status-definition-grid.html',
 })
 export class StatusDefinitionGrid {
+  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   readonly rows = input.required<readonly StatusDefinition[]>();
   readonly totalCount = input.required<number>();
   readonly isLoading = input(false);
@@ -110,13 +113,17 @@ export class StatusDefinitionGrid {
     })),
   );
   protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
+  protected readonly showSkeleton = delayedLoading(this.isLoading);
+  protected readonly keptRows = keepWhileLoading(this.rows, this.isLoading);
   protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
   protected readonly emptyRange = EMPTY_RANGE;
   protected readonly tableFilters = computed(() => toTableFilters(this.allColumns, FILTER_WRITERS, this.filter()));
-  protected readonly tableRows = computed((): unknown[] => (this.isLoading() ? this.skeletonRows() : [...this.rows()]));
+  protected readonly tableRows = computed((): unknown[] =>
+    this.showSkeleton() ? this.skeletonRows() : [...this.keptRows()],
+  );
   protected readonly tableStyle = computed(() => ({
     'min-width': '40rem',
-    ...(this.isLoading() || this.rows().length > 0 ? {} : { height: '100%' }),
+    ...(this.showSkeleton() || this.keptRows().length > 0 ? {} : { height: '100%' }),
   }));
   protected readonly tableColumns = computed(() => [...this.columns()]);
   protected readonly hasRowActions = computed(() => this.canWrite() || this.canDelete());

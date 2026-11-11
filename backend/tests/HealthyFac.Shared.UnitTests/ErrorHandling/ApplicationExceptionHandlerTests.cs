@@ -7,6 +7,8 @@ namespace HealthyFac.Shared.UnitTests.ErrorHandling;
 public sealed class ApplicationExceptionHandlerTests
 {
     private const string Message = "The storage is down.";
+    private const string ExtensionKey = "workOrders";
+    private const string ExtensionValue = "work-order-1";
 
     [Fact]
     public async Task TryHandleAsync_WithServiceUnavailableException_Writes503()
@@ -23,5 +25,25 @@ public sealed class ApplicationExceptionHandlerTests
         isHandled.Should().BeTrue();
         context.Response.StatusCode.Should().Be(StatusCodes.Status503ServiceUnavailable);
         body.Should().Contain(Message);
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_UnprocessableWithExtensions_WritesExtensions()
+    {
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+        var handler = new ApplicationExceptionHandler();
+        var exception = new UnprocessableException(Message)
+        {
+            Extensions = new Dictionary<string, object?> { [ExtensionKey] = new[] { ExtensionValue } },
+        };
+
+        var isHandled = await handler.TryHandleAsync(context, exception, TestContext.Current.CancellationToken);
+
+        context.Response.Body.Position = 0;
+        var body = await new StreamReader(context.Response.Body).ReadToEndAsync(TestContext.Current.CancellationToken);
+
+        isHandled.Should().BeTrue();
+        context.Response.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+        body.Should().Contain(ExtensionKey).And.Contain(ExtensionValue);
     }
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
+using HealthyFac.Auth.Application.Locales;
 using HealthyFac.Auth.Infrastructure.Keycloak.Representations;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
@@ -150,6 +151,18 @@ public sealed class KeycloakIdentityAdmin(HttpClient client, IOptions<KeycloakAd
             KeycloakAdminRoutes.UserLogout(_options.Realm, userId),
             content: null,
             cancellationToken);
+        await response.EnsureSuccessAsync(cancellationToken);
+    }
+
+    public async Task SetUserLocaleAsync(Guid userId, Locale locale, CancellationToken cancellationToken)
+    {
+        var userPath = KeycloakAdminRoutes.User(_options.Realm, userId);
+        var user = await GetRequiredAsync<JsonObject>(userPath, cancellationToken);
+        var attributes = user[KeycloakAdminConstants.AttributesProperty] as JsonObject ?? new JsonObject();
+        attributes[KeycloakAdminConstants.LocaleAttribute] = new JsonArray(JsonValue.Create(locale.Value));
+        user[KeycloakAdminConstants.AttributesProperty] = attributes;
+
+        using var response = await _client.PutAsJsonAsync(userPath, user, cancellationToken);
         await response.EnsureSuccessAsync(cancellationToken);
     }
 

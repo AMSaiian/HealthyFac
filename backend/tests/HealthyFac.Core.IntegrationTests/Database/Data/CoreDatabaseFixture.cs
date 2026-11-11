@@ -30,6 +30,10 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 
     public ConcurrentSaveGate SaveGate { get; } = new();
 
+    public ControllableTimeProvider Clock { get; } = new();
+
+    public TransactionCounter Transactions { get; } = new();
+
     public IServiceScopeFactory ScopeFactory =>
         new InitializationActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
 
@@ -65,10 +69,11 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IHostEnvironment>(environment);
+        services.AddSingleton<TimeProvider>(Clock);
         services.AddActorContext();
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
-        services.ConfigureDbContext<CoreDbContext>(options => options.AddInterceptors(SaveGate));
+        services.ConfigureDbContext<CoreDbContext>(options => options.AddInterceptors(SaveGate, Transactions));
         services.AddSingleton<IEmailSender>(EmailSender);
         services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
 
@@ -88,6 +93,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
     /// </summary>
     public async ValueTask ResetAsync()
     {
+        Clock.Release();
         await _resetter.ResetAsync();
         EmailSender.Reset();
 

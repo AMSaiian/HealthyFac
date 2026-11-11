@@ -1,0 +1,72 @@
+<article
+  class="hf-list-item bg-surface-0 dark:bg-surface-900 flex h-full min-w-0 flex-col gap-1 shadow-sm"
+  [class.border-red-500]="row().isDelayed"
+>
+  <div class="flex min-w-0 items-center gap-2">
+    <p-tag
+      class="flex-none"
+      [class]="'hf-priority-' + row().priority"
+      [value]="priorityLabel()"
+    />
+    @if (row().machineName) {
+      <span
+        class="text-muted-color min-w-0 truncate text-xs"
+        [attr.title]="row().machineName"
+        >{{ row().machineName }}</span
+      >
+    }
+    @if (row().isDelayed) {
+      <i
+        class="pi pi-exclamation-circle flex-none text-red-500"
+        [attr.aria-label]="'WORK_ORDERS.DELAYED' | translate"
+        [pTooltip]="'WORK_ORDERS.DELAYED' | translate"
+      ></i>
+    }
+    @if (canChangeStatus()) {
+      <button
+        pButton
+        type="button"
+        iconOnly
+        size="small"
+        severity="secondary"
+        class="ml-auto flex-none"
+        [text]="true"
+        [attr.aria-label]="'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate"
+        (click)="menu.toggle($event)"
+      >
+        <i class="pi pi-flag"></i>
+      </button>
+      <p-menu
+        #menu
+        class="contents"
+        appendTo="body"
+        [popup]="true"
+        [model]="menuItems()"
+      >
+        <ng-template
+          #item
+          let-item
+        >
+          <div class="p-menu-item-link flex items-center px-3 py-2">
+            <p-tag
+              [class]="'hf-status-' + item.id"
+              [value]="item.label"
+            />
+          </div>
+        </ng-template>
+      </p-menu>
+    }
+  </div>
+  <button
+    type="button"
+    class="text-primary min-w-0 flex-none cursor-pointer truncate text-left font-bold hover:underline"
+    [attr.title]="row().title"
+    (click)="opened.emit(row().id)"
+  >
+    {{ row().title }}
+  </button>
+  <div class="text-muted-color flex items-center justify-between gap-2 text-xs">
+    <span class="min-w-0 truncate">{{ canManage() && row().assigneeName ? row().assigneeName : '' }}</span>
+    <span class="flex-none">{{ row().plannedStartUtc ? (row().plannedStartUtc | localDateTime) : '' }}</span>
+  </div>
+</article>

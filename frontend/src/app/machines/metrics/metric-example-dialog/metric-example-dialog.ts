@@ -4,6 +4,7 @@ import { ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
+import { SQUARE_CLOSE_BUTTON_PROPS } from '@shared/theme/square-button-props';
 
 @Component({
   imports: [ButtonDirective, Dialog, EmptyState, TranslatePipe],
@@ -12,6 +13,7 @@ import { EmptyState } from '@shared/loading/empty-state/empty-state';
   templateUrl: './metric-example-dialog.html',
 })
 export class MetricExampleDialog {
+  protected readonly squareCloseButtonProps = SQUARE_CLOSE_BUTTON_PROPS;
   readonly revision = input.required<number>();
   readonly text = input.required<string | null>();
   /** Tells that the text holds changes of the user that the server does not have yet. */

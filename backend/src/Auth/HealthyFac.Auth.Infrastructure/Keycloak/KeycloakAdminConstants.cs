@@ -16,6 +16,11 @@ public static class KeycloakAdminConstants
     /// <summary>The user attribute that holds the employee ID. The user profile of the realm declares it.</summary>
     public const string EmployeeIdAttribute = "employee_id";
 
+    /// <summary>The user attribute that holds the locale. The user profile of the realm declares it.</summary>
+    public const string LocaleAttribute = "locale";
+
+    public const string AttributesProperty = "attributes";
+
     public const string EnabledProperty = "enabled";
 
     /// <summary>The credential type of a password.</summary>

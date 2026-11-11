@@ -1,0 +1,91 @@
+<hf-action-dialog
+  [title]="store.isUpdate() ? 'WORK_ORDERS.FORM.UPDATE_TITLE' : 'WORK_ORDERS.FORM.CREATE_TITLE'"
+  [isSaveDisabled]="saveDisabledReason() !== null"
+  [saveDisabledReason]="saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="onSave()"
+  (cancelled)="store.cancel()"
+>
+  @if (store.prefilledValue(); as initial) {
+    @if (store.isUpdate() && store.workOrder.hasValue()) {
+      <div class="mb-2 flex items-center justify-between gap-2">
+        <p-tag
+          [class]="'hf-status-' + store.workOrder.value().status"
+          [value]="statusLabelKeys[store.workOrder.value().status] | translate"
+        />
+        @if (store.canChangeStatus()) {
+          <button
+            pButton
+            type="button"
+            size="small"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="!hasNoChanges()"
+            [pTooltip]="hasNoChanges() ? '' : ('WORK_ORDERS.BOARD.CHANGE_STATUS_UNSAVED' | translate)"
+            (click)="store.requestChangeStatus()"
+          >
+            <i class="pi pi-flag"></i>
+            {{ 'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate }}
+          </button>
+        }
+      </div>
+    }
+    <p-tabs
+      [lazy]="true"
+      [(value)]="tab"
+    >
+      @if (store.isUpdate()) {
+        <p-tablist>
+          <p-tab [value]="DETAILS_TAB">{{ 'WORK_ORDERS.TABS.DETAILS' | translate }}</p-tab>
+          <p-tab [value]="HISTORY_TAB">{{ 'WORK_ORDERS.TABS.HISTORY' | translate }}</p-tab>
+        </p-tablist>
+      }
+      <p-tabpanels>
+        <p-tabpanel [value]="DETAILS_TAB">
+          <ng-template #content>
+            <hf-work-order-form
+              [initialValue]="initial"
+              [machines]="store.machineOptions()"
+              [isMachinesLoading]="store.machineLookup.isLoading()"
+              [fileEntries]="store.fileEntries()"
+              [isFilesLoading]="store.lookup.isLoading()"
+              [isEstimateReadOnly]="isEstimateReadOnly()"
+              (valueChange)="onValueChange($event)"
+              (validityChange)="onValidityChange($event)"
+              (uploadChosen)="onUpload($event)"
+              (pickRequested)="store.openPicker()"
+              (machineLookupRequested)="store.machineLookup.request($event)"
+            />
+          </ng-template>
+        </p-tabpanel>
+        @if (store.isUpdate()) {
+          <p-tabpanel [value]="HISTORY_TAB">
+            <ng-template #content>
+              <hf-work-order-history
+                [rows]="history()"
+                [isLoading]="store.history.isLoading()"
+              />
+            </ng-template>
+          </p-tabpanel>
+        }
+      </p-tabpanels>
+    </p-tabs>
+  } @else {
+    <div class="flex min-h-48">
+      <hf-loading-spinner />
+    </div>
+  }
+  @if (store.isSaving()) {
+    <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+      <hf-loading-spinner />
+    </div>
+  }
+</hf-action-dialog>
+@if (store.isPickerOpen()) {
+  <hf-file-picker-dialog
+    [machineId]="store.machineId()"
+    [attachedIds]="store.fileIds()"
+    (picked)="onPicked($event)"
+    (closed)="store.closePicker()"
+  />
+}

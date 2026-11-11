@@ -41,6 +41,7 @@
               <p-sort-icon [field]="column" />
             }
             <p-column-filter
+              [filterButtonProps]="squareFilterButtonProps"
               #columnFilter
               display="menu"
               [field]="column"
@@ -95,12 +96,14 @@
                   }
                   @case (MachineColumn.CreatedAt) {
                     <hf-plain-date-range-picker
+                      appendTo="self"
                       [value]="value ?? emptyRange"
                       (valueChange)="filterConstraint.value = $event"
                     />
                   }
                   @case (MachineColumn.UpdatedAt) {
                     <hf-plain-date-range-picker
+                      appendTo="self"
                       [value]="value ?? emptyRange"
                       (valueChange)="filterConstraint.value = $event"
                     />
@@ -134,8 +137,7 @@
           type="button"
           iconOnly
           severity="secondary"
-          [outlined]="true"
-          [rounded]="true"
+          [text]="true"
           [attr.aria-label]="'MACHINES.COLUMNS_CHOOSER' | translate"
           (click)="chooser.toggle($event)"
         >
@@ -152,7 +154,7 @@
     <tr>
       @for (column of columns; track column) {
         <td>
-          @if (isLoading()) {
+          @if (showSkeleton()) {
             <p-skeleton />
           } @else {
             @switch (column) {
@@ -185,7 +187,7 @@
         alignFrozen="right"
         [frozen]="true"
       >
-        @if (isLoading()) {
+        @if (showSkeleton()) {
           <p-skeleton />
         } @else if (hasRowActions()) {
           <button
@@ -193,8 +195,7 @@
             type="button"
             iconOnly
             severity="secondary"
-            [outlined]="true"
-            [rounded]="true"
+            [text]="true"
             [attr.aria-label]="'MACHINES.ACTIONS' | translate"
             (click)="openMenu($event, machine, menu)"
           >

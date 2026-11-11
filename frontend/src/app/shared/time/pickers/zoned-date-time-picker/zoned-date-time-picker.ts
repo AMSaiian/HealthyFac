@@ -3,7 +3,11 @@ import { FormsModule } from '@angular/forms';
 import type { FormValueControl } from '@angular/forms/signals';
 import { DatePicker } from 'primeng/datepicker';
 
-import { pickerDateToZonedDateTime, zonedDateTimeToPickerDate } from '@shared/time/pickers/picker-date-conversion';
+import {
+  isSameDate,
+  pickerDateToZonedDateTime,
+  zonedDateTimeToPickerDate,
+} from '@shared/time/pickers/picker-date-conversion';
 import type { Temporal } from '@shared/time/temporal';
 
 @Component({
@@ -18,15 +22,19 @@ export class ZonedDateTimePicker implements FormValueControl<Temporal.ZonedDateT
   readonly disabled = input(false);
   readonly readonly = input(false);
   readonly invalid = input(false);
+  readonly appendTo = input<'body' | 'self'>('body');
   readonly min = input<Temporal.ZonedDateTime | undefined>(undefined);
   readonly max = input<Temporal.ZonedDateTime | undefined>(undefined);
   readonly touch = output<void>();
 
-  protected readonly pickerValue = computed(() => zonedDateTimeToPickerDate(this.value()));
-  protected readonly minDate = computed(() => zonedDateTimeToPickerDate(this.min() ?? null));
-  protected readonly maxDate = computed(() => zonedDateTimeToPickerDate(this.max() ?? null));
+  protected readonly pickerValue = computed(() => zonedDateTimeToPickerDate(this.value()), { equal: isSameDate });
+  protected readonly minDate = computed(() => zonedDateTimeToPickerDate(this.min() ?? null), { equal: isSameDate });
+  protected readonly maxDate = computed(() => zonedDateTimeToPickerDate(this.max() ?? null), { equal: isSameDate });
 
   protected onPickerChange(date: Date | Date[] | null | undefined): void {
-    this.value.set(pickerDateToZonedDateTime(date instanceof Date ? date : null, this.timeZone()));
+    const next = pickerDateToZonedDateTime(date instanceof Date ? date : null, this.timeZone());
+    if (!isSameDate(zonedDateTimeToPickerDate(next), this.pickerValue())) {
+      this.value.set(next);
+    }
   }
 }

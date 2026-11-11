@@ -22,7 +22,8 @@ import {
 import { Tag } from 'primeng/tag';
 
 import { toggleColumn } from '@shared/grid/table/grid-columns';
-import { skeletonRows } from '@shared/grid/table/grid-display';
+import { keepWhileLoading, skeletonRows } from '@shared/grid/table/grid-display';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
 import { readTableFilters, toConstraint, toTableFilters } from '@shared/grid/table/table-filters';
@@ -30,6 +31,7 @@ import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
 import { EMPTY_RANGE } from '@shared/time/plain-date-range';
+import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
 
 import { FileColumn, type FileFilter, type FileGridItem, type FileSort, type FileSortColumn } from '@files/file';
 import { formatFileSize } from '@files/file.utils';
@@ -85,7 +87,11 @@ import {
   templateUrl: './file-grid.html',
 })
 export class FileGrid {
+  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   readonly rows = input.required<readonly FileGridItem[]>();
+  readonly isSelectable = input(false);
+  readonly selectedIds = input<readonly string[]>([]);
+  readonly lockedIds = input<readonly string[]>([]);
   readonly totalCount = input.required<number>();
   readonly isLoading = input(false);
   readonly columns = input.required<readonly FileColumn[]>();
@@ -105,6 +111,7 @@ export class FileGrid {
   readonly pageChange = output<{ offset: number; limit: number }>();
   readonly columnsChange = output<readonly FileColumn[]>();
   readonly columnsReorder = output<readonly FileColumn[]>();
+  readonly selectionToggled = output<{ id: string; isSelected: boolean }>();
   readonly downloadRequested = output<FileGridItem>();
   readonly editRequested = output<FileGridItem>();
   readonly deleteRequested = output<FileGridItem>();
@@ -149,13 +156,17 @@ export class FileGrid {
   ]);
 
   protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
+  protected readonly showSkeleton = delayedLoading(this.isLoading);
+  protected readonly keptRows = keepWhileLoading(this.rows, this.isLoading);
   protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
   protected readonly emptyRange = EMPTY_RANGE;
   protected readonly tableFilters = computed(() => toTableFilters(this.allColumns(), FILTER_WRITERS, this.filter()));
-  protected readonly tableRows = computed((): unknown[] => (this.isLoading() ? this.skeletonRows() : [...this.rows()]));
+  protected readonly tableRows = computed((): unknown[] =>
+    this.showSkeleton() ? this.skeletonRows() : [...this.keptRows()],
+  );
   protected readonly tableStyle = computed(() => ({
     'min-width': '48rem',
-    ...(this.isLoading() || this.rows().length > 0 ? {} : { height: '100%' }),
+    ...(this.showSkeleton() || this.keptRows().length > 0 ? {} : { height: '100%' }),
   }));
   protected readonly tableColumns = computed(() =>
     this.columns().filter((column) => this.allColumns().includes(column)),
@@ -205,6 +216,10 @@ export class FileGrid {
 
   protected isFilterable(column: FileColumn): boolean {
     return FILTERABLE_COLUMNS.includes(column);
+  }
+
+  protected isChecked(id: string): boolean {
+    return this.selectedIds().includes(id) || this.lockedIds().includes(id);
   }
 
   protected isColumnVisible(column: FileColumn): boolean {

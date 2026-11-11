@@ -1,0 +1,17 @@
+@if (store.isInviteDialog()) {
+  <hf-action-dialog
+    title="EMPLOYEES.INVITE.TITLE"
+    [isSaveDisabled]="saveReason() !== null"
+    [saveDisabledReason]="saveReason()?.key ?? null"
+    [saveDisabledReasonParams]="saveReason()?.params"
+    [isSaving]="store.isSaving()"
+    (save)="onSave()"
+    (cancelled)="store.cancel()"
+  >
+    <hf-invite-dialog
+      [initialValue]="initialInvite"
+      (valueChange)="onValue($event)"
+      (validityChange)="onValidity($event)"
+    />
+  </hf-action-dialog>
+}

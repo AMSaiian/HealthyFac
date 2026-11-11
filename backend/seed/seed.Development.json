@@ -5,7 +5,14 @@
         "CompanyName": "Test Company",
         "TimeZoneId": "Europe/Kyiv",
         "SupervisorFirstName": "Test",
-        "SupervisorLastName": "Supervisor"
+        "SupervisorLastName": "Supervisor",
+        "Worker": {
+          "IdentityId": "0190f3a0-0000-7000-8000-000000000201",
+          "EmployeeId": "0190f3a0-0000-7000-8000-000000000202",
+          "Email": "worker@healthyfac.local",
+          "FirstName": "Test",
+          "LastName": "Worker"
+        }
       },
       "SeedMachines": [
         {

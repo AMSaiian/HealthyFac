@@ -1,0 +1,21 @@
+<div class="flex flex-col gap-1">
+  <label for="version-effective-from">{{ 'SHIFTS.DIALOG.EFFECTIVE_FROM' | translate }}</label>
+  <hf-plain-date-picker
+    [value]="model().effectiveFrom"
+    [min]="minDate()"
+    [disabled]="isEdit()"
+    (valueChange)="setDate($event)"
+  />
+</div>
+<div class="flex flex-col gap-2">
+  @for (day of model().days; track day.weekday) {
+    <hf-block-list-editor
+      [label]="weekdayKey(day.weekday) | translate"
+      [blocks]="day.blocks"
+      (blocksChange)="setBlocks(day.weekday, $event)"
+    />
+  }
+</div>
+@for (message of messages(); track message) {
+  <small class="text-red-500">{{ message | translate }}</small>
+}

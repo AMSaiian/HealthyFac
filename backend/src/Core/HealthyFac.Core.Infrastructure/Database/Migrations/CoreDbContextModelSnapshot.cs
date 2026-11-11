@@ -132,6 +132,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("queued_at");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -155,12 +161,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -256,6 +256,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("quantity_kind_name")
                         .UseCollation("case_insensitive");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("SourceLocation")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -299,12 +305,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("value_kind")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -384,6 +384,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("file_id");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("Severity")
                         .HasMaxLength(7)
                         .HasColumnType("character varying(7)")
@@ -417,12 +423,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -512,6 +512,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("role_id");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(18)
@@ -525,12 +531,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -619,6 +619,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("role_id");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<byte[]>("TokenSalt")
                         .IsRequired()
                         .HasColumnType("bytea")
@@ -631,12 +637,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -705,6 +705,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("name")
                         .UseCollation("case_insensitive");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("SerialNumber")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -719,12 +725,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -850,6 +850,465 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "Date")
+                        .IsUnique()
+                        .HasDatabaseName("ix_shift_overrides_employee_id_date")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("shift_overrides", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_shift_override_employee_id_not_empty", "\"employee_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftOverrideBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<TimeOnly>("End")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("end");
+
+                    b.Property<Guid>("ShiftOverrideId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shift_override_id");
+
+                    b.Property<TimeOnly>("Start")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShiftOverrideId");
+
+                    b.ToTable("shift_override_blocks", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_shift_override_block_shift_override_id_not_empty", "\"shift_override_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_shift_override_blocks_end_after_start", "\"end\" > start");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftTemplateBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<TimeOnly>("End")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("end");
+
+                    b.Property<Guid>("ShiftTemplateVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shift_template_version_id");
+
+                    b.Property<TimeOnly>("Start")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("Weekday")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("weekday");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShiftTemplateVersionId");
+
+                    b.ToTable("shift_template_blocks", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_shift_template_block_shift_template_version_id_not_empty", "\"shift_template_version_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_shift_template_block_weekday_allowed", "\"weekday\" IN ('friday', 'monday', 'saturday', 'sunday', 'thursday', 'tuesday', 'wednesday')");
+
+                            t.HasCheckConstraint("ck_shift_template_blocks_end_after_start", "\"end\" > start");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftTemplateVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "EffectiveFrom")
+                        .IsUnique()
+                        .HasDatabaseName("ix_shift_template_versions_employee_id_effective_from")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("shift_template_versions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_shift_template_version_employee_id_not_empty", "\"employee_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("category");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("CurrentRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_revision");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<TimeSpan>("Estimate")
+                        .HasColumnType("interval")
+                        .HasColumnName("estimate");
+
+                    b.Property<Guid?>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("priority");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("MachineId");
+
+                    b.ToTable("work_orders", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_work_order_category_allowed", "\"category\" IN ('inspection', 'other', 'preventive', 'repair')");
+
+                            t.HasCheckConstraint("ck_work_order_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_work_order_current_revision_range", "\"current_revision\" BETWEEN 1 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_work_order_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
+
+                            t.HasCheckConstraint("ck_work_order_priority_allowed", "\"priority\" IN ('critical', 'high', 'low', 'medium')");
+
+                            t.HasCheckConstraint("ck_work_order_title_length", "char_length(\"title\") BETWEEN 1 AND 200");
+
+                            t.HasCheckConstraint("ck_work_order_title_not_blank", "\"title\" COLLATE \"default\" ~ '\\S'");
+
+                            t.HasCheckConstraint("ck_work_orders_estimate_range", "estimate >= interval '5 minutes' AND estimate <= interval '720 minutes'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrderFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<Guid>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkOrderId", "FileId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_order_files_work_order_id_file_id")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("work_order_files", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_work_order_file_file_id_not_empty", "\"file_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_work_order_file_work_order_id_not_empty", "\"work_order_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrderHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AssigneeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assignee_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<DateTime?>("PlannedStartLocal")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("planned_start_local");
+
+                    b.Property<DateTime?>("PlannedStartUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("planned_start_utc");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<Guid>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("WorkOrderId", "Revision")
+                        .HasName("ak_work_order_histories_work_order_id_revision");
+
+                    b.HasIndex("AssigneeId", "PlannedStartUtc")
+                        .HasDatabaseName("ix_work_order_histories_assignee_id_planned_start_utc");
+
+                    b.ToTable("work_order_histories", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_work_order_history_revision_range", "\"revision\" BETWEEN 1 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_work_order_history_status_allowed", "\"status\" IN ('backlog', 'blocked', 'completed', 'inProgress', 'rejected', 'staged')");
+
+                            t.HasCheckConstraint("ck_work_order_history_work_order_id_not_empty", "\"work_order_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
+                });
+
             modelBuilder.Entity("HealthyFac.Shared.Infrastructure.Messaging.Receiving.InboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -895,6 +1354,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("received_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -906,12 +1371,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -967,6 +1426,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -978,12 +1443,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1043,11 +1502,13 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HealthyFac.Core.Domain.Roles.Role", null)
+                    b.HasOne("HealthyFac.Core.Domain.Roles.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.EmployeeInvite", b =>
@@ -1058,11 +1519,13 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("HealthyFac.Core.Domain.Roles.Role", null)
+                    b.HasOne("HealthyFac.Core.Domain.Roles.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("HealthyFac.Core.Domain.Machines.Machine", b =>
@@ -1083,9 +1546,99 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftOverride", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftOverrideBlock", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Shifts.ShiftOverride", null)
+                        .WithMany("Blocks")
+                        .HasForeignKey("ShiftOverrideId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftTemplateBlock", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Shifts.ShiftTemplateVersion", null)
+                        .WithMany("Blocks")
+                        .HasForeignKey("ShiftTemplateVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftTemplateVersion", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrder", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Companies.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
+                        .WithMany()
+                        .HasForeignKey("MachineId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrderFile", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.WorkOrders.WorkOrder", null)
+                        .WithMany("Files")
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrderHistory", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthyFac.Core.Domain.WorkOrders.WorkOrder", null)
+                        .WithMany("History")
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HealthyFac.Core.Domain.Machines.Machine", b =>
                 {
                     b.Navigation("StateHistory");
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftOverride", b =>
+                {
+                    b.Navigation("Blocks");
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Shifts.ShiftTemplateVersion", b =>
+                {
+                    b.Navigation("Blocks");
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrder", b =>
+                {
+                    b.Navigation("Files");
+
+                    b.Navigation("History");
                 });
 #pragma warning restore 612, 618
         }

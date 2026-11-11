@@ -9,6 +9,7 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
@@ -20,6 +21,11 @@
       "@fallback/*": ["./src/app/fallback/*"],
       "@machines/*": ["./src/app/machines/*"],
       "@files/*": ["./src/app/files/*"],
+      "@work-orders/*": ["./src/app/work-orders/*"],
+      "@employees/*": ["./src/app/employees/*"],
+      "@schedule/*": ["./src/app/schedule/*"],
+      "@invite/*": ["./src/app/invite/*"],
+      "@testdata/*": ["../testdata/*"],
       "@public/*": ["./public/*"]
     }
   },

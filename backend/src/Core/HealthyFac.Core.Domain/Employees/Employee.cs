@@ -1,3 +1,4 @@
+using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Domain.Employees;
@@ -32,6 +33,10 @@ public class Employee : IEntity, IAuditable, ISoftDeletable, IVersioned
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
     public Guid RoleId { get; private set; }
+
+    /// <summary>The role of the employee. Entity Framework Core fills it only when a query loads it.</summary>
+    public Role Role { get; private set; } = null!;
+
     public EmployeeStatus Status { get; private set; } = EmployeeStatus.Provisioning;
 
     /// <summary>

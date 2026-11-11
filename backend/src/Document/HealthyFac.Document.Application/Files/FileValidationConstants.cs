@@ -12,6 +12,9 @@ public static class FileValidationConstants
     /// </summary>
     public const int LinkIdsMaxCount = 1000;
 
+    /// <summary>The most file IDs that one lookup request may hold: a work order holds at most 20 files.</summary>
+    public const int LookupIdsMaxCount = 100;
+
     public static class Text
     {
         public const int FileNameMaxLength = 255;

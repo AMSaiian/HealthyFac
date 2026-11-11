@@ -104,6 +104,53 @@ describe('AuthStore', () => {
     expect(store.isAuthenticated()).toBe(false);
   });
 
+  it('login_WithUiLocale_PassesTheLocaleToKeycloak', async () => {
+    const store = createStore();
+    store.setUiLocale('uk');
+
+    await store.login('/path');
+
+    expect(keycloak.login).toHaveBeenCalledWith({ redirectUri: `${location.origin}/path`, locale: 'uk' });
+  });
+
+  describe('sign-in locale', () => {
+    afterEach(() => {
+      history.replaceState(null, '', '/');
+    });
+
+    it('init_AfterLoginRedirectWithLocaleClaim_ExposesTheLocale', async () => {
+      history.replaceState(null, '', '/#state=abc&session_state=def&code=ghi');
+      keycloak.init.mockResolvedValue(true);
+      keycloak.idTokenParsed = { locale: 'uk' };
+      const store = createStore();
+
+      await store.init();
+
+      expect(store.signInLocale()).toBe('uk');
+    });
+
+    it('init_WithSilentSsoWithoutRedirectReturn_ExposesNoLocale', async () => {
+      keycloak.init.mockResolvedValue(true);
+      keycloak.idTokenParsed = { locale: 'uk' };
+      const store = createStore();
+
+      await store.init();
+
+      expect(store.signInLocale()).toBeNull();
+    });
+
+    it('onAuthRefreshSuccess_WithNewLocaleClaim_KeepsTheSignInLocale', async () => {
+      keycloak.init.mockResolvedValue(true);
+      const store = createStore();
+      await store.init();
+      keycloak.idTokenParsed = { locale: 'uk' };
+
+      keycloak.onAuthRefreshSuccess?.();
+
+      expect(store.signInLocale()).toBeNull();
+    });
+  });
+
   it('forceRefresh_CalledThreeTimesAtOnce_CallsUpdateTokenOnce', async () => {
     const running = deferred();
     keycloak.updateToken.mockReturnValue(running.promise);

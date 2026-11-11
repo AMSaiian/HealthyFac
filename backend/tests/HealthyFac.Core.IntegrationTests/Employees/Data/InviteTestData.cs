@@ -8,6 +8,10 @@ public static class InviteTestData
     public const string RawEmail = " Ann@Plant.COM ";
     public const string NormalizedEmail = "ann@plant.com";
     public const string OutboxEmail = "outbox@plant.com";
+    public const string NamedEmail = "named@plant.com";
+    public const string UnnamedEmail = "unnamed@plant.com";
+    public const string InvitedFirstName = "Olena";
+    public const string InvitedLastName = "Koval";
     public const string ConflictEmail = "ann2@plant.com";
     public const string ConflictEmailOtherCase = "ANN2@plant.com";
     public const string EmployedEmail = "employed@plant.com";
@@ -30,6 +34,11 @@ public static class InviteTestData
     public const string AcceptSharedParallelEmail = "accept-shared-parallel@plant.com";
     public const string CreateParallelEmail = "create-parallel@plant.com";
     public const string ResendParallelEmail = "resend-parallel@plant.com";
+    public const string RevokeOpenEmail = "revoke-open@plant.com";
+    public const string RevokeAgainEmail = "revoke-again@plant.com";
+    public const string RevokeAcceptedEmail = "revoke-accepted@plant.com";
+    public const string RevokeStaleEmail = "revoke-stale@plant.com";
+    public const string RevokeOtherCompanyEmail = "revoke-other@plant.com";
     public const string ValidEmail = "valid@plant.com";
 
     public const string EmployeeFirstName = "Eva";

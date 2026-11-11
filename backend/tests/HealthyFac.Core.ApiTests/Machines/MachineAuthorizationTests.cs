@@ -38,6 +38,24 @@ public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task Lookup_WithoutReadPermissionReturns403AndWithItReturns200()
+    {
+        var forbidden = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.LookupPath,
+            _fixture.CreateMachineClaims(MachineApiTestData.WritePermission),
+            MachineApiTestData.LookupEmptyBody);
+        var allowed = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.LookupPath,
+            _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission),
+            MachineApiTestData.LookupEmptyBody);
+
+        forbidden.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        allowed.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Delete_WithoutDeletePermission_Returns403()
     {
         var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-del-denied");

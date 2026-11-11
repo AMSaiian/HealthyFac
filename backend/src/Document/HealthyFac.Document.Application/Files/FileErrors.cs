@@ -26,6 +26,10 @@ public static class FileErrors
         $"The request must hold at most {FileValidationConstants.LinkIdsMaxCount} file IDs.";
 
     public const string LinkAudienceInvalid = "The link audience is not valid.";
+
+    public static readonly string LookupIdsTooMany =
+        $"The request must hold at most {FileValidationConstants.LookupIdsMaxCount} file IDs.";
+
     public const string DescriptionTooLong = "The description is too long.";
     public const string CompanyIdRequired = "The company is required.";
     public const string MachineIdRequired = "The machine is required.";

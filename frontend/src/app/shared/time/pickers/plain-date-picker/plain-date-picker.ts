@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import type { FormValueControl } from '@angular/forms/signals';
 import { DatePicker } from 'primeng/datepicker';
 
-import { pickerDateToPlainDate, plainDateToPickerDate } from '@shared/time/pickers/picker-date-conversion';
+import { isSameDate, pickerDateToPlainDate, plainDateToPickerDate } from '@shared/time/pickers/picker-date-conversion';
 import type { Temporal } from '@shared/time/temporal';
 
 @Component({
@@ -17,15 +17,19 @@ export class PlainDatePicker implements FormValueControl<Temporal.PlainDate | nu
   readonly disabled = input(false);
   readonly readonly = input(false);
   readonly invalid = input(false);
+  readonly appendTo = input<'body' | 'self'>('body');
   readonly min = input<Temporal.PlainDate | undefined>(undefined);
   readonly max = input<Temporal.PlainDate | undefined>(undefined);
   readonly touch = output<void>();
 
-  protected readonly pickerValue = computed(() => plainDateToPickerDate(this.value()));
-  protected readonly minDate = computed(() => plainDateToPickerDate(this.min() ?? null));
-  protected readonly maxDate = computed(() => plainDateToPickerDate(this.max() ?? null));
+  protected readonly pickerValue = computed(() => plainDateToPickerDate(this.value()), { equal: isSameDate });
+  protected readonly minDate = computed(() => plainDateToPickerDate(this.min() ?? null), { equal: isSameDate });
+  protected readonly maxDate = computed(() => plainDateToPickerDate(this.max() ?? null), { equal: isSameDate });
 
   protected onPickerChange(date: Date | Date[] | null | undefined): void {
-    this.value.set(pickerDateToPlainDate(date instanceof Date ? date : null));
+    const next = pickerDateToPlainDate(date instanceof Date ? date : null);
+    if (!isSameDate(plainDateToPickerDate(next), this.pickerValue())) {
+      this.value.set(next);
+    }
   }
 }

@@ -1,0 +1,68 @@
+@if (store.isScheduleDialog() || store.isStatusDialog()) {
+  <hf-action-dialog
+    [title]="title()"
+    [isSaveDisabled]="saveDisabledReason() !== null"
+    [saveDisabledReason]="saveDisabledReason()"
+    [isSaving]="store.isSaving()"
+    (save)="onSave()"
+    (cancelled)="store.cancel()"
+  >
+    @if (store.isScheduleDialog()) {
+      @if (store.initialAssignValue(); as initial) {
+        <hf-assign-dialog
+          [initialValue]="initial"
+          [employees]="store.employeeOptions()"
+          [isEmployeesLoading]="store.employeeLookup.isLoading()"
+          [suggestion]="store.suggestion()"
+          [hasNoFreeStart]="store.hasNoFreeStart()"
+          (valueChange)="onValue($event)"
+          (validityChange)="onValidity($event)"
+          (selectionChange)="onSelection($event)"
+          (employeeLookupRequested)="store.employeeLookup.request($event)"
+        />
+      } @else {
+        <div class="flex min-h-32">
+          <hf-loading-spinner />
+        </div>
+      }
+    } @else {
+      <div class="flex flex-col gap-1">
+        <label for="status-choice">{{ 'WORK_ORDERS.SCHEDULE.STATUS' | translate }}</label>
+        <p-select
+          inputId="status-choice"
+          optionValue="value"
+          optionLabel="labelKey"
+          appendTo="body"
+          [options]="statusOptionList()"
+          [ngModel]="statusChoice()"
+          [placeholder]="'WORK_ORDERS.SCHEDULE.PICK_STATUS' | translate"
+          (ngModelChange)="statusChoice.set($event)"
+        >
+          <ng-template
+            #selectedItem
+            let-option
+          >
+            <p-tag
+              [class]="'hf-status-' + option.value"
+              [value]="option.labelKey | translate"
+            />
+          </ng-template>
+          <ng-template
+            #item
+            let-option
+          >
+            <p-tag
+              [class]="'hf-status-' + option.value"
+              [value]="option.labelKey | translate"
+            />
+          </ng-template>
+        </p-select>
+      </div>
+    }
+    @if (store.isSaving()) {
+      <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+        <hf-loading-spinner />
+      </div>
+    }
+  </hf-action-dialog>
+}

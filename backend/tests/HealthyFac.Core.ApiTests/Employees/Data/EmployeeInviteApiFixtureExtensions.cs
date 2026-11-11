@@ -86,6 +86,37 @@ public static class EmployeeInviteApiFixtureExtensions
             return body;
         }
 
+        public async Task<HttpResponseMessage> DeleteInviteAsync(
+            TestTokenClaims? claims,
+            string encryptedId,
+            uint rowVersion
+        )
+        {
+            using var client = fixture.CreateClient();
+
+            if (claims is not null)
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                    BearerScheme,
+                    fixture.Tokens.CreateToken(claims));
+            }
+
+            return await client.DeleteAsync(
+                string.Format(EmployeeInviteApiTestData.RevokeInvitePathFormat, encryptedId, rowVersion));
+        }
+
+        public async Task<uint> LoadInviteRowVersionAsync(Guid inviteId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.EmployeeInvites
+                .AsNoTracking()
+                .Where(invite => invite.Id == inviteId)
+                .Select(invite => invite.RowVersion)
+                .SingleAsync();
+        }
+
         public async Task<HttpResponseMessage> PostVerifyInviteAnonymouslyAsync()
         {
             using var client = fixture.CreateClient();

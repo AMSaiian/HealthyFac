@@ -73,7 +73,7 @@ public class ResendEmployeeInviteRequestHandler(
 
         if (invite.AcceptedAt is not null)
         {
-            throw new ConflictException(EmployeeInviteErrors.Rejections.InviteAlreadyAccepted);
+            throw new UnprocessableException(EmployeeInviteErrors.Rejections.InviteAlreadyAccepted);
         }
 
         invite.Renew(_tokenService.CreateSalt(), _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));

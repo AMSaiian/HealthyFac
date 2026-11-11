@@ -5,6 +5,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 
 import { skeletonRows } from '@shared/grid/table/grid-display';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 
 import type { MetricMarker } from '@machines/metrics/metrics-page.store.utils';
 import { markerOf, type MetricItem } from '@machines/metrics/metrics-page.store.utils';
@@ -24,6 +25,7 @@ export class MetricList {
   readonly itemErrors = input<Readonly<Record<string, readonly string[]>>>({});
   readonly canWrite = input(false);
   readonly isLoading = input(false);
+  protected readonly showSkeleton = delayedLoading(this.isLoading);
   readonly selected = output<string>();
   readonly addRequested = output<void>();
 

@@ -30,6 +30,8 @@ RUN dotnet restore src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.cspro
 # ---------- publish ----------
 FROM restore AS publish
 COPY src/ src/
+# The Web project links the seed data files as content (never published), so the build needs them.
+COPY seed/ seed/
 
 # The restore layer already warmed the package cache, so this resolves offline and stays fast.
 # UseAppHost=false drops the native launcher, because the entry point calls "dotnet" directly.

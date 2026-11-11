@@ -28,4 +28,8 @@
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../../../testdata/dst-europe-kyiv-2027.json" Link="Time\Data\dst-europe-kyiv-2027.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

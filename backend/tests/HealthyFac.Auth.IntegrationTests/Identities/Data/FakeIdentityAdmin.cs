@@ -1,4 +1,5 @@
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
+using HealthyFac.Auth.Application.Locales;
 
 namespace HealthyFac.Auth.IntegrationTests.Identities.Data;
 
@@ -11,6 +12,7 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
     private readonly Dictionary<Guid, Guid> _userIdsByEmployee = new();
     private readonly HashSet<Guid> _userIdsWithPassword = new();
     private readonly List<Guid> _passwordEmailUserIds = new();
+    private readonly Dictionary<Guid, string> _localesByUser = new();
 
     private bool _isCreateFailurePending;
     private bool _isCreateRacePending;
@@ -135,6 +137,16 @@ public sealed class FakeIdentityAdmin : IIdentityAdmin
 
         return Task.CompletedTask;
     }
+
+    public Task SetUserLocaleAsync(Guid userId, Locale locale, CancellationToken cancellationToken)
+    {
+        ThrowWhenUnavailable();
+        _localesByUser[userId] = locale.Value;
+
+        return Task.CompletedTask;
+    }
+
+    public string? LocaleOf(Guid userId) => _localesByUser.GetValueOrDefault(userId);
 
     public Task LogoutUserAsync(Guid userId, CancellationToken cancellationToken)
     {

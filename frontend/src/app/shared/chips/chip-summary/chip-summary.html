@@ -1,0 +1,36 @@
+<div
+  #measureRow
+  aria-hidden="true"
+  class="pointer-events-none invisible absolute flex gap-1 whitespace-nowrap"
+>
+  @for (chip of chips(); track $index) {
+    <p-tag
+      #measuredChip
+      [class]="chip.styleClass"
+      [value]="chip.label"
+    />
+  }
+  <p-tag
+    #measuredMore
+    severity="secondary"
+    [value]="'+' + chips().length"
+  />
+</div>
+@for (chip of summary().shown; track $index) {
+  <p-tag
+    class="min-w-0"
+    [class]="chip.styleClass"
+    [value]="chip.label"
+  />
+}
+@if (summary().hiddenCount > 0) {
+  <p-tag
+    class="flex-none"
+    severity="secondary"
+    [pTooltip]="summary().tooltip"
+    [value]="'+' + summary().hiddenCount"
+  />
+}
+@if (chips().length === 0) {
+  <span class="text-muted-color">{{ placeholder() }}</span>
+}

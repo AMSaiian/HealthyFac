@@ -1,4 +1,5 @@
 <p-dialog
+  [closeButtonProps]="squareCloseButtonProps"
   [styleClass]="widthClass()"
   [contentStyle]="{ 'max-height': '70vh', 'overflow-y': 'auto' }"
   appendTo="body"
@@ -16,7 +17,7 @@
     <ng-content select="[hfDialogFooter]" />
     @if (isSaveShown()) {
       <span
-        [pTooltip]="saveDisabledReason() ? (saveDisabledReason()! | translate) : ''"
+        [pTooltip]="saveDisabledReason() ? (saveDisabledReason()! | translate: saveDisabledReasonParams()) : ''"
         [tooltipDisabled]="!isSaveDisabled() || saveDisabledReason() === null"
       >
         <button

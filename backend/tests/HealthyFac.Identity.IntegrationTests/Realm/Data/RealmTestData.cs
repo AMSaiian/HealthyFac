@@ -18,6 +18,7 @@ public static class RealmTestData
     public const string PublicAuthUrl = "https://auth.healthyfac.test";
     public const string InternalHost = "keycloak:8080";
     public const string CoreClientId = "healthyfac-core";
+    public const string SpaClientId = "healthyfac-spa";
     public const string TelemetryClientId = "healthyfac-telemetry";
     public const string DocumentClientId = "healthyfac-document";
     public const string InsightsClientId = "healthyfac-insights";
@@ -34,6 +35,7 @@ public static class RealmTestData
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
     public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
     public static readonly Guid SupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
+    public static readonly Guid WorkerIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000201");
 
     public static IReadOnlyDictionary<string, string> Environment { get; } = new Dictionary<string, string>
     {
@@ -74,6 +76,7 @@ public static class RealmTestData
 
     public static IReadOnlyList<string> CorePermissions { get; } =
     [
+        "employees:read",
         "employees:invite",
         "employees:manage",
         "machines:read",
@@ -81,6 +84,11 @@ public static class RealmTestData
         "machines:delete",
         "drafts:read",
         "drafts:write",
+        "work-orders:read",
+        "work-orders:write",
+        "work-orders:manage",
+        "shifts:read",
+        "shifts:manage",
     ];
 
     public static IReadOnlyList<string> TelemetryPermissions { get; } =

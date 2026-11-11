@@ -1,5 +1,6 @@
 import {
   HttpClient,
+  HttpContext,
   HttpErrorResponse,
   HttpStatusCode,
   provideHttpClient,
@@ -11,6 +12,7 @@ import { provideRouter, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { APP_CONFIG } from '@shared/config/app-config';
+import { ANONYMOUS_REQUEST } from '@shared/http/anonymous-request';
 
 import { authInterceptor } from './auth.interceptor';
 import { AuthStore } from './auth.store';
@@ -65,6 +67,18 @@ describe('authInterceptor', () => {
 
   afterEach(() => {
     controller.verify();
+  });
+
+  it('authInterceptor_ForAnonymousApiRequestWithoutSession_SendsItWithoutTokenAndStartsNoLogin', async () => {
+    store.accessToken.mockRejectedValue(new SessionEndedError('The session has ended.'));
+    const result = firstValueFrom(http.get(API_URL, { context: new HttpContext().set(ANONYMOUS_REQUEST, true) }));
+
+    const request = controller.expectOne(API_URL);
+    request.flush({});
+    await result;
+
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    expect(store.login).not.toHaveBeenCalled();
   });
 
   it('authInterceptor_ForApiUrl_AddsBearerHeader', async () => {

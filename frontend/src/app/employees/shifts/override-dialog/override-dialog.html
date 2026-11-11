@@ -1,0 +1,17 @@
+<div class="flex flex-col gap-1">
+  <label for="override-date">{{ 'SHIFTS.DIALOG.DATE' | translate }}</label>
+  <hf-plain-date-picker
+    [value]="model().date"
+    [min]="minDate()"
+    [disabled]="isEdit()"
+    (valueChange)="setDate($event)"
+  />
+</div>
+<hf-block-list-editor
+  [label]="'SHIFTS.DIALOG.BLOCKS' | translate"
+  [blocks]="model().blocks"
+  (blocksChange)="setBlocks($event)"
+/>
+@for (message of messages(); track message) {
+  <small class="text-red-500">{{ message | translate }}</small>
+}

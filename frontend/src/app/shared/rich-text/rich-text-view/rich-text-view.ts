@@ -8,7 +8,7 @@ const EMPTY_LINKS: ReadonlyMap<string, string> = new Map();
 
 /** Shows the stored HTML of a rich text. An image gets its link from `links`; one without a link shows its alt text. */
 @Component({
-  host: { class: 'block min-w-0 break-words' },
+  host: { class: 'hf-rich-text block min-w-0 break-words' },
   selector: 'hf-rich-text-view',
   templateUrl: './rich-text-view.html',
 })

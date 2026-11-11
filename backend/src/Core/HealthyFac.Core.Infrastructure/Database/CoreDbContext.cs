@@ -1,9 +1,12 @@
+using System.Data;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
@@ -40,12 +43,39 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     public DbSet<StatusDefinitionDraft> StatusDefinitionDrafts => Set<StatusDefinitionDraft>();
 
+    public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+
+    public DbSet<WorkOrderHistory> WorkOrderHistories => Set<WorkOrderHistory>();
+
+    public DbSet<WorkOrderFile> WorkOrderFiles => Set<WorkOrderFile>();
+
+    public DbSet<ShiftTemplateVersion> ShiftTemplateVersions => Set<ShiftTemplateVersion>();
+
+    public DbSet<ShiftTemplateBlock> ShiftTemplateBlocks => Set<ShiftTemplateBlock>();
+
+    public DbSet<ShiftOverride> ShiftOverrides => Set<ShiftOverride>();
+
+    public DbSet<ShiftOverrideBlock> ShiftOverrideBlocks => Set<ShiftOverrideBlock>();
+
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
     public Task RunInTransactionAsync(
         Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => RunInTransactionAsync(operation, IsolationLevel.ReadCommitted, cancellationToken);
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => RunInTransactionAsync(operation, IsolationLevel.ReadCommitted, cancellationToken);
+
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     )
         => RunInTransactionAsync(
@@ -55,10 +85,12 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
                 return true;
             },
+            isolationLevel,
             cancellationToken);
 
     public async Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
@@ -69,7 +101,9 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
         return await Database
             .CreateExecutionStrategy()
-            .ExecuteAsync(token => RunTransactionAttemptAsync(operation, token), cancellationToken);
+            .ExecuteAsync(
+                token => RunTransactionAttemptAsync(operation, isolationLevel, token),
+                cancellationToken);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -78,6 +112,10 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
         configurationBuilder.HaveEnumerationConversion<EmployeeStatus>();
         configurationBuilder.HaveEnumerationConversion<RoleCode>();
         configurationBuilder.HaveEnumerationConversion<DraftState>();
+        configurationBuilder.HaveEnumerationConversion<WorkOrderStatus>();
+        configurationBuilder.HaveEnumerationConversion<WorkOrderPriority>();
+        configurationBuilder.HaveEnumerationConversion<WorkOrderCategory>();
+        configurationBuilder.HaveEnumerationConversion<Weekday>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -92,11 +130,12 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     private async Task<TResult> RunTransactionAttemptAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken
     )
     {
         ChangeTracker.Clear();
-        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await Database.BeginTransactionAsync(isolationLevel, cancellationToken);
 
         var result = await operation(cancellationToken);
         if (Database.CurrentTransaction != transaction)

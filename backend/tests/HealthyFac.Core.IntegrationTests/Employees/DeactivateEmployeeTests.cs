@@ -53,7 +53,7 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture)
         var act = () => _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, identityUserId);
 
         await act.Should()
-            .ThrowAsync<ConflictException>()
+            .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeIsSelf);
         var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
         var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
@@ -88,7 +88,7 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture)
             arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
 
         await act.Should()
-            .ThrowAsync<ConflictException>()
+            .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeAlreadyDeactivated);
         var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 

@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { patchState, signalStore, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { filter } from 'rxjs';
 
 import { ACTION_HOSTS } from './action-registry';
 import type { ActionResult, AppAction } from './app-action';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /** The dialog to open again, the page it was open on, and the pages that the review flow itself may visit. */
 export interface ReturnPath {
@@ -44,9 +44,13 @@ export const ActionStore = signalStore(
     }
 
     return {
-      async dispatch(action: AppAction): Promise<void> {
+      /**
+       * Opens an action. With `returnTo`, the action that opened it comes back when this one completes or is cancelled,
+       * so a drawer that starts a dialog returns with fresh data.
+       */
+      async dispatch(action: AppAction, returnTo: AppAction | null = null): Promise<void> {
         if (await isValid(action)) {
-          patchState(store, { active: action, parent: null });
+          patchState(store, { active: action, parent: returnTo });
         }
       },
       /** Opens an action on top of the open one. When the child ends, the open action opens again. */
@@ -56,9 +60,13 @@ export const ActionStore = signalStore(
           patchState(store, { active: action, parent });
         }
       },
-      complete(resultType: string): void {
+      complete(resultType: string, detail?: unknown): void {
         const sequence = (store.lastResult()?.sequence ?? 0) + 1;
-        patchState(store, { active: store.parent(), parent: null, lastResult: { type: resultType, sequence } });
+        patchState(store, {
+          active: store.parent(),
+          parent: null,
+          lastResult: { type: resultType, sequence, detail },
+        });
       },
       cancel(): void {
         patchState(store, { active: store.parent(), parent: null });
@@ -71,10 +79,12 @@ export const ActionStore = signalStore(
   }),
   withHooks({
     onInit(store) {
-      store._router.events.pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntilDestroyed()
-      ).subscribe((event) => {
+      store._router.events
+        .pipe(
+          filter((event) => event instanceof NavigationEnd),
+          takeUntilDestroyed(),
+        )
+        .subscribe((event) => {
           const returnPath = store.returnPath();
           if (returnPath === null) {
             return;
@@ -84,7 +94,7 @@ export const ActionStore = signalStore(
           } else if (!event.urlAfterRedirects.startsWith(returnPath.targetPrefix)) {
             patchState(store, { returnPath: null });
           }
-      });
+        });
     },
   }),
 );
