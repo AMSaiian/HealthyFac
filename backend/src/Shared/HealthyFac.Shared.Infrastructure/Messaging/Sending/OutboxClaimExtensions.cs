@@ -7,8 +7,8 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Sending;
 /// <summary>
 /// Claims the next pending outbox row with a row lock. EF Core cannot express <c>FOR UPDATE SKIP LOCKED</c>, so
 /// the claim goes through linq2db on the connection and the transaction of the EF Core context. linq2db returns
-/// only the row ID, because it does not read the <c>xmin</c> shadow property that EF Core uses as the concurrency
-/// token. EF Core then loads the locked row, so every write stays in EF Core.
+/// only the row ID, and EF Core then loads the locked row tracked with its row version, so every write stays in
+/// EF Core with the concurrency check.
 /// </summary>
 internal static class OutboxClaimExtensions
 {

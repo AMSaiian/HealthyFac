@@ -12,10 +12,12 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
 import { httpErrorMessageKey } from '@shared/http/http-error-message';
+import { draftConflictKey } from '@machines/drafts/draft-conflict';
+import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
 
-import { EMPTY_VALUE, overlay, payloadOf, toBody, toFormValue } from './machine-drawer.store.utils';
+import { EMPTY_VALUE, fromDraftValue, overlay, payloadOf, toBody, toFormValue } from './machine-drawer.store.utils';
 import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 
 const SUCCESS_SUMMARY_KEY = 'MACHINES.TOASTS.SUCCESS';
@@ -30,6 +32,7 @@ export const MachineDrawerStore = signalStore(
   withState<DrawerState>({ action: null, isSaving: false }),
   withProps(() => ({
     _api: inject(MachinesApi),
+    _draftsApi: inject(DraftsApi),
     _actions: inject(ActionStore),
     _messages: inject(MessageService),
     _translate: inject(TranslateService),
@@ -37,16 +40,25 @@ export const MachineDrawerStore = signalStore(
   withComputed((store) => ({
     isUpdate: computed(() => store.action()?.type === MachineActionType.Update),
     machineId: computed(() => payloadOf(store.action()).machineId),
+    draftId: computed(() => payloadOf(store.action()).draftId),
   })),
   withProps((store) => ({
     machine: rxResource({
       params: () => (store.isUpdate() ? store.machineId() : undefined),
       stream: ({ params }) => store._api.get(params),
     }),
+    /** The create draft that the drawer applies. A drawer without a draft never loads it. */
+    draft: rxResource({
+      params: () => (store.isUpdate() ? undefined : store.draftId()),
+      stream: ({ params }) => store._draftsApi.getMachineDraft(params),
+    }),
   })),
   withComputed((store) => ({
     initialValue: computed((): MachineFormValue | null => {
       if (!store.isUpdate()) {
+        if (store.draftId() !== undefined) {
+          return store.draft.hasValue() ? fromDraftValue(store.draft.value().draft) : null;
+        }
         return store.action() === null ? null : EMPTY_VALUE;
       }
       return store.machine.hasValue() ? toFormValue(store.machine.value()) : null;
@@ -73,6 +85,10 @@ export const MachineDrawerStore = signalStore(
     const request$ = (value: MachineFormValue): Observable<unknown> => {
       const body = toBody(value);
       const options = { context: new HttpContext().set(SKIP_ERROR_TOAST, true) };
+      const draftId = store.draftId();
+      if (draftId !== undefined && !store.isUpdate()) {
+        return store._draftsApi.applyMachineDraft(draftId, body, options);
+      }
       return store.isUpdate()
         ? store._api.update(store.machineId() ?? '', body, options)
         : store._api.create(body, options);
@@ -100,9 +116,10 @@ export const MachineDrawerStore = signalStore(
               catchError((error: unknown) => {
                 const status = error instanceof HttpErrorResponse ? error.status : 0;
                 showError(
-                  status === HttpStatusCode.Conflict
-                    ? 'MACHINES.TOASTS.SERIAL_NUMBER_TAKEN'
-                    : httpErrorMessageKey(status),
+                  draftConflictKey(error) ??
+                    (status === HttpStatusCode.Conflict
+                      ? 'MACHINES.TOASTS.SERIAL_NUMBER_TAKEN'
+                      : httpErrorMessageKey(status)),
                 );
                 return EMPTY;
               }),

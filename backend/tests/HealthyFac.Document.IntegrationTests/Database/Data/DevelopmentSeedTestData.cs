@@ -8,6 +8,7 @@ public static class DevelopmentSeedTestData
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000e01");
     public static readonly Guid FirstMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000e11");
     public static readonly Guid SecondMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000e12");
+    public const string FirstMachineName = "Seed machine 01";
 
     public static IOptions<SeedingOptions> CreateOptions() =>
         Options.Create(
@@ -16,10 +17,14 @@ public static class DevelopmentSeedTestData
                 IsOptionalDataSeeded = true,
                 DevelopmentData = new DevelopmentDataOptions
                 {
-                    TestTenant = new TestTenantOptions { CompanyId = CompanyId },
+                    TestTenant = new TestTenantOptions
+                    {
+                        CompanyId = CompanyId,
+                        SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000e21"),
+                    },
                     SeedMachines =
                     [
-                        new SeedMachineOptions { MachineId = FirstMachineId },
+                        new SeedMachineOptions { MachineId = FirstMachineId, Name = FirstMachineName },
                         new SeedMachineOptions { MachineId = SecondMachineId },
                     ],
                 },

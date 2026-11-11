@@ -37,8 +37,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(employee => employee.Status)
             .IsRequired();
 
-        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
-            .IsRowVersion();
+        builder.ConfigureVersioned();
 
         builder.HasOne<Company>()
             .WithMany()

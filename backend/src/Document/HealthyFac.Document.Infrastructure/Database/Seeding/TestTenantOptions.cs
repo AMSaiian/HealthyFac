@@ -10,6 +10,9 @@ namespace HealthyFac.Document.Infrastructure.Database.Seeding;
 public sealed class TestTenantOptions
 {
     public required Guid CompanyId { get; init; }
+
+    /// <summary>The Keycloak user ID of the test supervisor. The demo files are created as this user.</summary>
+    public required Guid SupervisorIdentityId { get; init; }
 }
 
 public sealed class TestTenantOptionsValidator : AbstractValidator<TestTenantOptions>
@@ -17,5 +20,6 @@ public sealed class TestTenantOptionsValidator : AbstractValidator<TestTenantOpt
     public TestTenantOptionsValidator()
     {
         RuleFor(options => options.CompanyId).NotEmpty();
+        RuleFor(options => options.SupervisorIdentityId).NotEmpty();
     }
 }

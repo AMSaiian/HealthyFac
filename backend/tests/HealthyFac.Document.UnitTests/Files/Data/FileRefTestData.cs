@@ -25,4 +25,31 @@ public static class FileRefTestData
             sizeBytes,
             sha256 ?? ValidHash,
             description: null);
+
+    public static readonly DateTime QueuedAt =
+        new(year: 2026, month: 11, day: 9, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
+
+    public static TheoryData<FileRef, bool> AutomaticTieCases
+    {
+        get
+        {
+            var tied = Create(FilePurpose.Attachment);
+            tied.TieTo(MachineId, QueuedAt.AddHours(value: -1));
+
+            var untiedAfterQueue = Create(FilePurpose.Attachment);
+            untiedAfterQueue.Untie(QueuedAt.AddMinutes(value: 1));
+
+            var untiedBeforeQueue = Create(FilePurpose.Attachment);
+            untiedBeforeQueue.Untie(QueuedAt.AddMinutes(value: -1));
+
+            return new TheoryData<FileRef, bool>
+            {
+                { Create(FilePurpose.Attachment), true },
+                { untiedBeforeQueue, true },
+                { tied, false },
+                { untiedAfterQueue, false },
+                { Create(FilePurpose.Embedded), false },
+            };
+        }
+    }
 }

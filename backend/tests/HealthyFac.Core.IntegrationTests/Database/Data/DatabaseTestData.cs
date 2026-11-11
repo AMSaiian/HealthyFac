@@ -48,6 +48,8 @@ public static class DatabaseTestData
         SupervisorLastName = "Supervisor",
     };
 
+    public const string NamedSeedMachineName = "Press line 01";
+
     public static readonly Guid FirstSeedMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
     public static readonly Guid SecondSeedMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000102");
     public const string FirstSeedGatewayId = "seedmachineone22";
@@ -55,7 +57,7 @@ public static class DatabaseTestData
 
     public static readonly IReadOnlyList<SeedMachineOptions> SeedMachines =
     [
-        new() { MachineId = FirstSeedMachineId, GatewayId = FirstSeedGatewayId },
+        new() { MachineId = FirstSeedMachineId, GatewayId = FirstSeedGatewayId, Name = NamedSeedMachineName },
         new() { MachineId = SecondSeedMachineId, GatewayId = SecondSeedGatewayId },
     ];
 

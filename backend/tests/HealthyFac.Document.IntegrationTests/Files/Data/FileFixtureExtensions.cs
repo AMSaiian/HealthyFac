@@ -5,7 +5,6 @@ using HealthyFac.Document.Application.Files.Uploading;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.Grids;
-using HealthyFac.Shared.Application.Persistence;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -169,7 +168,7 @@ public static class FileFixtureExtensions
                 .FileRefs
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .Where(file => file.Id == id)
-                .Select(file => EF.Property<uint>(file, RowVersions.PropertyName))
+                .Select(file => file.RowVersion)
                 .SingleAsync();
         }
 

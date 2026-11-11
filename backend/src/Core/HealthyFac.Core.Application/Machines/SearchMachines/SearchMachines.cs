@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
@@ -62,9 +63,23 @@ public sealed class SearchMachinesRequestHandler(ICoreDbContext dbContext)
             .AsNoTracking()
             .Where(machine => machine.CompanyId == request.CompanyId)
             .ApplyFilter(request.Filter)
+            .ApplyPendingDraftsFilter(_dbContext, request.Filter.HasPendingDrafts)
             .ApplySort(request.Sort, MachineSortMap.Instance)
-            .ToGridResponseAsync(request.Offset, request.Limit, MachineResponse.Projection, cancellationToken);
+            .ToGridResponseAsync(
+                request.Offset,
+                request.Limit,
+                MachineResponse.CreateProjection(_dbContext),
+                cancellationToken);
 
         return response;
+    }
+}
+
+internal static class MachineGridQueryExtensions
+{
+    extension(IQueryable<Machine> query)
+    {
+        public IQueryable<Machine> ApplyPendingDraftsFilter(ICoreDbContext dbContext, bool? hasPendingDrafts) =>
+            hasPendingDrafts is { } flag ? query.Where(MachinePendingDrafts.Predicate(dbContext, flag)) : query;
     }
 }

@@ -1,0 +1,50 @@
+{
+  "referenceTime": "2026-11-10T13:44:48.132126+00:00",
+  "fileRefs": [
+    {
+      "id": "01a1c5b1-557a-7039-9339-06a308f1f579",
+      "machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "purpose": "attachment",
+      "file_name": "morvane-mtc-420-manual",
+      "extension": "pdf",
+      "content_type": "application/pdf",
+      "size_bytes": 495307,
+      "sha256": "f403ffd0331085fdb3b3420d2815e48f7a5b95cbef1aaa7e9cf6545e1e67f7c7",
+      "description": null,
+      "ingest_failed_count": 0,
+      "ingest_state": "completed",
+      "ingest_state_changed_at": "2026-11-10T13:43:57.428455+00:00",
+      "machine_changed_at": "2026-11-10T13:42:29.758557+00:00"
+    },
+    {
+      "id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79",
+      "machine_id": null,
+      "purpose": "attachment",
+      "file_name": "halvik-ep-80-200-iom",
+      "extension": "docx",
+      "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "size_bytes": 46521,
+      "sha256": "cdb1f7304d3248f2144a843119f36ea0d6e978fc082dbc75c792c643db2ff134",
+      "description": null,
+      "ingest_failed_count": 0,
+      "ingest_state": "completed",
+      "ingest_state_changed_at": "2026-11-10T13:44:22.252391+00:00",
+      "machine_changed_at": null
+    },
+    {
+      "id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054",
+      "machine_id": null,
+      "purpose": "attachment",
+      "file_name": "norrlund-rsv-37-service-data",
+      "extension": "xlsx",
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "size_bytes": 20770,
+      "sha256": "a58b1d65f2248ae32443c97a2e454115768a259378a0b0b7c510b828256c3996",
+      "description": null,
+      "ingest_failed_count": 0,
+      "ingest_state": "completed",
+      "ingest_state_changed_at": "2026-11-10T13:44:48.132126+00:00",
+      "machine_changed_at": null
+    }
+  ]
+}

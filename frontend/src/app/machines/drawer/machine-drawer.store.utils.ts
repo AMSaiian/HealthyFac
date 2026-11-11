@@ -1,5 +1,6 @@
 import type { AppAction } from '@shared/actions/app-action';
 
+import type { MachineDraftDetail } from '@machines/drafts/draft';
 import type { Machine, MachineBody } from '@machines/machine';
 
 import type { MachineActionPayload, MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
@@ -11,6 +12,15 @@ export function toFormValue(machine: Machine): MachineFormValue {
     name: machine.name,
     serialNumber: machine.serialNumber,
     description: machine.description,
+  };
+}
+
+/** The form value of a create draft: a missing (`null`) field starts empty. */
+export function fromDraftValue(draft: MachineDraftDetail): MachineFormValue {
+  return {
+    name: draft.name ?? '',
+    serialNumber: draft.serialNumber ?? '',
+    description: draft.description,
   };
 }
 

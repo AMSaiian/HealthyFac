@@ -146,7 +146,7 @@ public sealed class UpdateFileTests(DocumentDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task UpdateCompanyFile_WithMachineFile_Throws404()
+    public async Task UpdateCompanyFile_WithMachineFile_Renames()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
         var ids = await _fixture.SeedFilesAsync(
@@ -157,11 +157,14 @@ public sealed class UpdateFileTests(DocumentDatabaseFixture fixture)
             ]);
         var rowVersion = await _fixture.LoadRowVersionAsync(ids[index: 0]);
 
-        var act = () => _fixture.UpdateCompanyFileAsync(
+        await _fixture.UpdateCompanyFileAsync(
             UpdateFileTestData.CompanyId,
             UpdateFileTestData.CompanyUpdate(ids[index: 0], rowVersion));
 
-        await act.Should().ThrowAsync<NotFoundException>();
+        var file = await _fixture.LoadFileRowAsync(ids[index: 0]);
+
+        file.MachineId.Should().Be(machineId);
+        file.FileName.Should().Be(expected: "new");
     }
 
     [Fact]

@@ -10,5 +10,10 @@ public static class MachineMessageErrors
         public const string MachineIdRequired = "MachineId is required.";
         public const string GatewayIdInvalid = "GatewayId must have the gateway ID format.";
         public const string CompanyIdRequired = "CompanyId is required.";
+        public const string NameRequired = "Name is required.";
+        public const string RenamedAtRequired = "RenamedAt is required.";
+
+        public static readonly string NameTooLong =
+            $"Name must have at most {MachineMessageLimits.NameMaxLength} characters.";
     }
 }

@@ -97,7 +97,12 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
         claims.Audiences()
             .Should()
             .Contain(
-                [RealmTestData.CoreClientId, RealmTestData.TelemetryClientId, RealmTestData.DocumentClientId]);
+            [
+                RealmTestData.CoreClientId,
+                RealmTestData.TelemetryClientId,
+                RealmTestData.DocumentClientId,
+                RealmTestData.InsightsClientId,
+            ]);
     }
 
     [Fact]

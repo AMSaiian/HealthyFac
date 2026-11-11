@@ -34,7 +34,7 @@ public sealed class RegisterMachineRequestHandler(IDocumentDbContext dbContext) 
         }
 
         _dbContext.MachineRegistrations.Add(
-            new MachineRegistration(request.MachineId, request.CompanyId));
+            new MachineRegistration(request.MachineId, request.CompanyId, request.Name));
 
         try
         {

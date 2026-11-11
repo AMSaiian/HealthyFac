@@ -17,6 +17,7 @@ import { CLOCK } from '@shared/time/clock';
 import type { MachineColumn, MachineSortColumn } from '@machines/machine';
 import { type Machine, type MachineFilter } from '@machines/machine';
 import { MachineActionType } from '@machines/machine-actions';
+import { DraftActionType } from '@machines/drafts/draft-actions';
 import { toSearchBody } from '@machines/list/machine-query';
 import { INITIAL_GRID } from '@machines/list/machines-grid.store.utils';
 import { MachinesApi } from '@machines/machines-api';
@@ -44,6 +45,7 @@ export const MachinesGridStore = signalStore(
     canReadStatuses: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsRead)),
     canReadFiles: computed(() => store._auth.hasPermission(Permission.FilesRead)),
     canReadMetrics: computed(() => store._auth.hasPermission(Permission.MetricDefinitionsRead)),
+    canReadDrafts: computed(() => store._auth.hasPermission(Permission.DraftsRead)),
   })),
   withProps((store) => ({
     machines: rxResource({
@@ -81,6 +83,9 @@ export const MachinesGridStore = signalStore(
       requestUpdate(id: string): void {
         void store._actions.dispatch({ type: MachineActionType.Update, payload: { machineId: id } });
       },
+      requestDrafts(id: string): void {
+        void store._actions.dispatch({ type: MachineActionType.Drafts, payload: { machineId: id } });
+      },
       openMetrics(id: string): void {
         void store._router.navigate([MACHINES_PATH, id, METRICS_PATH]);
       },
@@ -111,7 +116,8 @@ export const MachinesGridStore = signalStore(
       let seen = store._actions.lastResult()?.sequence ?? 0;
       effect(() => {
         const result = store._actions.lastResult();
-        if (result !== null && result.type === MachineActionType.Saved && result.sequence > seen) {
+        const isChange = result?.type === MachineActionType.Saved || result?.type === DraftActionType.Changed;
+        if (result !== null && isChange && result.sequence > seen) {
           seen = result.sequence;
           untracked(() => store.machines.reload());
         }

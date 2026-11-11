@@ -81,6 +81,20 @@ public sealed class BlobFileStorage(
     }
 
     /// <summary>
+    /// Tells whether a blob with the ID exists.
+    /// </summary>
+    /// <param name="id">The ID of the file ref.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
+    /// requests.</param>
+    /// <returns><see langword="true"/> when the blob exists.</returns>
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        var response = await _container.GetBlobClient(id.ToString()).ExistsAsync(cancellationToken);
+
+        return response.Value;
+    }
+
+    /// <summary>
     /// Creates the container when it is missing, with no public access. It is safe to run again and in parallel.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation

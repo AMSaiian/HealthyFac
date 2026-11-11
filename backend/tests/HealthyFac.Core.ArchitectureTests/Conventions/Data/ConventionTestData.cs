@@ -48,6 +48,9 @@ public static class ConventionTestData
         LayerDependencyTestData.CoreInfrastructure,
         LayerDependencyTestData.CoreWeb,
         LayerDependencyTestData.CoreMessaging,
+        LayerDependencyTestData.InsightsMessaging,
+        LayerDependencyTestData.DocumentMessaging,
+        LayerDependencyTestData.TelemetryMessaging,
         LayerDependencyTestData.AuthMessaging,
     ];
 }

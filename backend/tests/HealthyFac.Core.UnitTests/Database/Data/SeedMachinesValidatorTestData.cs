@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
 
 namespace HealthyFac.Core.UnitTests.Database.Data;
@@ -19,6 +20,8 @@ public static class SeedMachinesValidatorTestData
                 Create(SecondMachineId, SecondGatewayId),
             ]
         },
+        { [Create(FirstMachineId, FirstGatewayId, name: "Seed machine 01")] },
+        { [Create(FirstMachineId, FirstGatewayId, new string(c: 'n', MachineValidationConstants.NameMaxLength))] },
     };
 
     public static TheoryData<IReadOnlyList<SeedMachineOptions>, string> InvalidSeedMachines => new()
@@ -26,6 +29,14 @@ public static class SeedMachinesValidatorTestData
         {
             [Create(Guid.Empty, FirstGatewayId)],
             SeedingValidationConstants.Messages.SeedMachineIdEmpty
+        },
+        {
+            [Create(FirstMachineId, FirstGatewayId, name: "   ")],
+            SeedingValidationConstants.Messages.SeedMachineNameInvalid
+        },
+        {
+            [Create(FirstMachineId, FirstGatewayId, new string(c: 'n', MachineValidationConstants.NameMaxLength + 1))],
+            SeedingValidationConstants.Messages.SeedMachineNameInvalid
         },
         {
             [Create(FirstMachineId, gatewayId: "tooshort")],
@@ -55,6 +66,6 @@ public static class SeedMachinesValidatorTestData
         },
     };
 
-    private static SeedMachineOptions Create(Guid machineId, string gatewayId) =>
-        new() { MachineId = machineId, GatewayId = gatewayId };
+    private static SeedMachineOptions Create(Guid machineId, string gatewayId, string? name = null) =>
+        new() { MachineId = machineId, GatewayId = gatewayId, Name = name };
 }

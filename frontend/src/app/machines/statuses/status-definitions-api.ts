@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
 import type {
+  ApplyStatusDefinitionsBody,
   CreateStatusDefinitionResponse,
   SearchStatusDefinitionsBody,
   StatusDefinition,
@@ -13,6 +14,7 @@ import type {
 const MACHINES_URL = '/api/telemetry/v1/machines';
 const STATUS_DEFINITIONS_SEGMENT = 'status-definitions';
 const SEARCH_SEGMENT = 'search';
+const APPLY_SEGMENT = 'apply';
 
 interface WriteOptions {
   readonly context?: HttpContext;
@@ -31,8 +33,17 @@ function statusDefinitionUrl(machineId: string, id: string): string {
 export class StatusDefinitionsApi {
   private readonly _http = inject(HttpClient);
 
-  search(machineId: string, body: SearchStatusDefinitionsBody): Observable<StatusDefinitionsPage> {
-    return this._http.post<StatusDefinitionsPage>(`${statusesUrl(machineId)}/${SEARCH_SEGMENT}`, body);
+  search(
+    machineId: string,
+    body: SearchStatusDefinitionsBody,
+    options?: WriteOptions,
+  ): Observable<StatusDefinitionsPage> {
+    return this._http.post<StatusDefinitionsPage>(`${statusesUrl(machineId)}/${SEARCH_SEGMENT}`, body, options);
+  }
+
+  /** Creates or changes up to 200 statuses by code in one transaction. */
+  apply(machineId: string, body: ApplyStatusDefinitionsBody, options?: WriteOptions): Observable<void> {
+    return this._http.post<void>(`${statusesUrl(machineId)}/${APPLY_SEGMENT}`, body, options);
   }
 
   get(machineId: string, id: string): Observable<StatusDefinition> {

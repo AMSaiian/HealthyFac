@@ -1,8 +1,10 @@
 using FluentValidation;
 using HealthyFac.Document.Application.MachineRegistrations;
 using HealthyFac.Document.Domain.Files;
+using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -60,13 +62,16 @@ public sealed class DeleteFilePreHandlerCheck(IDocumentDbContext dbContext, ICur
 /// <summary>
 /// Removes a company file or a file of a machine. The save interceptor turns the removal into a soft delete, so the
 /// row stays and the query filter hides it. The blob stays too: the service has no blob cleanup yet. A second delete
-/// is "not found".
+/// is "not found". The same save stores a <see cref="FileDeleted"/> message for the services that hold data of the
+/// file.
 /// </summary>
 /// <param name="dbContext">Loads the file ref and saves the removal.</param>
-public sealed class DeleteFileRequestHandler(IDocumentDbContext dbContext)
+/// <param name="outbox">Stores the message with the removal.</param>
+public sealed class DeleteFileRequestHandler(IDocumentDbContext dbContext, IOutbox outbox)
     : RequestHandler<DeleteFileRequest>
 {
     private readonly IDocumentDbContext _dbContext = dbContext;
+    private readonly IOutbox _outbox = outbox;
 
     protected override async Task HandleInternalAsync(
         DeleteFileRequest request,
@@ -78,11 +83,12 @@ public sealed class DeleteFileRequestHandler(IDocumentDbContext dbContext)
                     candidate => candidate.Id == request.Id
                         && candidate.CompanyId == request.CompanyId
                         && candidate.Purpose == FilePurpose.Attachment
-                        && candidate.MachineId == request.MachineId,
+                        && (request.MachineId == null || candidate.MachineId == request.MachineId),
                     cancellationToken)
             ?? throw new NotFoundException(FileErrors.FileNotFound);
 
         _dbContext.FileRefs.Remove(file);
+        _outbox.Add(new FileDeleted { FileId = file.Id, CompanyId = file.CompanyId });
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

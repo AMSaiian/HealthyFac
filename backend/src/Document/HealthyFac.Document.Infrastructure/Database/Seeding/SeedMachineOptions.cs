@@ -9,4 +9,7 @@ namespace HealthyFac.Document.Infrastructure.Database.Seeding;
 public sealed class SeedMachineOptions
 {
     public required Guid MachineId { get; init; }
+
+    /// <summary>The name of the registration, or <see langword="null"/> to use the machine ID as the name.</summary>
+    public string? Name { get; init; }
 }

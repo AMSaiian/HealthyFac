@@ -101,6 +101,8 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineIdEmpty)
             .Must(machine => GatewayIds.IsValid(machine.GatewayId))
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineGatewayIdInvalid)
+            .Must(machine => machine.Name is null || IsValidMachineName(machine.Name))
+            .WithMessage(SeedingValidationConstants.Messages.SeedMachineNameInvalid)
             .WithName(nameof(DevelopmentDataOptions.SeedMachines));
 
         RuleFor(options => options.GetSeedMachines())
@@ -154,4 +156,7 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
                 MachineValidationConstants.NameMaxLength - SeedingValidationConstants.MachineNameSuffixLength)
             .WithName(nameof(DevelopmentDataOptions.MachineTypes));
     }
+
+    private static bool IsValidMachineName(string name) =>
+        !string.IsNullOrWhiteSpace(name) && name.Length <= MachineValidationConstants.NameMaxLength;
 }

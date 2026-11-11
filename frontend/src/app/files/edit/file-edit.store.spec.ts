@@ -21,6 +21,10 @@ const ITEM: FileGridItem = {
   sizeBytes: 10,
   description: null,
   uploadedAt: '2026-03-01T08:00:00Z',
+  machineId: null,
+  machineName: null,
+  ingestState: null,
+  canIngest: true,
   rowVersion: 42,
 };
 

@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\HealthyFac.Document.Application\HealthyFac.Document.Application.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Document.Contracts\HealthyFac.Document.Contracts.csproj"/>
         <ProjectReference Include="..\HealthyFac.Document.Infrastructure\HealthyFac.Document.Infrastructure.csproj"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj"/>
     </ItemGroup>
@@ -14,6 +15,8 @@
 
     <ItemGroup>
         <Content Include="..\..\..\seed\seed.Development.json" Link="seed\seed.Development.json"
+                 CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
+        <Content Include="..\..\..\seed\demo-ingest\**" LinkBase="seed\demo-ingest"
                  CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
     </ItemGroup>
 

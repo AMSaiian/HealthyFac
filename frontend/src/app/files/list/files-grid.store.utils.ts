@@ -5,7 +5,13 @@ import { EMPTY_RANGE } from '@shared/time/plain-date-range';
 
 import { FileColumn, type FileFilter, FileSortColumn } from '@files/file';
 
-export const INITIAL_FILTER: FileFilter = { fileName: '', extensions: [], uploadedAt: EMPTY_RANGE };
+export const INITIAL_FILTER: FileFilter = {
+  fileName: '',
+  extensions: [],
+  uploadedAt: EMPTY_RANGE,
+  machine: { machineIds: [], isUntiedIncluded: false },
+  ingest: { states: [], isNeverIncluded: false },
+};
 
 export const COLUMN_ORDER: readonly FileColumn[] = [
   FileColumn.FileName,
@@ -13,6 +19,8 @@ export const COLUMN_ORDER: readonly FileColumn[] = [
   FileColumn.SizeBytes,
   FileColumn.UploadedAt,
   FileColumn.Description,
+  FileColumn.Machine,
+  FileColumn.Ingest,
 ];
 
 /** The newest upload comes first, as the backend orders a request without a sort. */

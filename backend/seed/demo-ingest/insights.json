@@ -1,0 +1,806 @@
+{
+  "referenceTime": "2026-11-10T13:44:48.132126+00:00",
+  "ingestAttempts": [
+    {
+      "id": "01a1c5b2-59ec-7c4f-88b4-84a649d1f67a",
+      "file_id": "01a1c5b1-557a-7039-9339-06a308f1f579",
+      "machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "machine_changed_at": "2026-11-10T13:42:29.758557+00:00",
+      "file_name": "morvane-mtc-420-manual",
+      "extension": "pdf",
+      "size_bytes": 495307,
+      "state": "completed",
+      "error_code": null,
+      "interrupt_reason": null,
+      "warning": null,
+      "queued_at": "2026-11-10T13:42:42.412491+00:00",
+      "started_at": "2026-11-10T13:42:44.367015+00:00",
+      "finished_at": "2026-11-10T13:43:57.428455+00:00",
+      "lease_until": null,
+      "trace_parent": null,
+      "page_count": 23,
+      "chunk_count": 61,
+      "proposed_draft_count": 52
+    },
+    {
+      "id": "01a1c5b2-7d0e-73ff-a99b-7ea7b401f2fc",
+      "file_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79",
+      "machine_id": null,
+      "machine_changed_at": "2026-11-10T13:41:35.818989+00:00",
+      "file_name": "halvik-ep-80-200-iom",
+      "extension": "docx",
+      "size_bytes": 46521,
+      "state": "completed",
+      "error_code": null,
+      "interrupt_reason": null,
+      "warning": null,
+      "queued_at": "2026-11-10T13:42:51.40657+00:00",
+      "started_at": "2026-11-10T13:43:57.507116+00:00",
+      "finished_at": "2026-11-10T13:44:22.252391+00:00",
+      "lease_until": null,
+      "trace_parent": null,
+      "page_count": 1,
+      "chunk_count": 29,
+      "proposed_draft_count": 31
+    },
+    {
+      "id": "01a1c5b2-a4da-7101-8cc6-3f5d4800dba1",
+      "file_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054",
+      "machine_id": null,
+      "machine_changed_at": "2026-11-10T13:41:35.818989+00:00",
+      "file_name": "norrlund-rsv-37-service-data",
+      "extension": "xlsx",
+      "size_bytes": 20770,
+      "state": "completed",
+      "error_code": null,
+      "interrupt_reason": null,
+      "warning": null,
+      "queued_at": "2026-11-10T13:43:01.594539+00:00",
+      "started_at": "2026-11-10T13:44:22.308937+00:00",
+      "finished_at": "2026-11-10T13:44:48.132126+00:00",
+      "lease_until": null,
+      "trace_parent": null,
+      "page_count": 11,
+      "chunk_count": 11,
+      "proposed_draft_count": 44
+    }
+  ],
+  "ingestedDocuments": [
+    {
+      "id": "01a1c5b1-557a-7039-9339-06a308f1f579",
+      "machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "machine_changed_at": "2026-11-10T13:42:29.758557+00:00",
+      "attempt_id": "01a1c5b2-59ec-7c4f-88b4-84a649d1f67a",
+      "extension": "pdf",
+      "page_count": 23,
+      "chunk_count": 61
+    },
+    {
+      "id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79",
+      "machine_id": null,
+      "machine_changed_at": "2026-11-10T13:41:35.818989+00:00",
+      "attempt_id": "01a1c5b2-7d0e-73ff-a99b-7ea7b401f2fc",
+      "extension": "docx",
+      "page_count": 1,
+      "chunk_count": 29
+    },
+    {
+      "id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054",
+      "machine_id": null,
+      "machine_changed_at": "2026-11-10T13:41:35.818989+00:00",
+      "attempt_id": "01a1c5b2-a4da-7101-8cc6-3f5d4800dba1",
+      "extension": "xlsx",
+      "page_count": 11,
+      "chunk_count": 11
+    }
+  ],
+  "documentChunks": [
+    {
+      "id": "01a1c5b3-7ef4-72d9-9eef-de897bbff45f",
+      "text": "Operation and Maintenance Manual\nTwo-axis slant-bed CNC lathe with 12-station turret and MC-8T control\nDocument numberMTC420-OM-EN\nRevision\nValid for C (2025-03)\nMTC-420 from serial number MTC420-23-0100\nLanguage English (translation of the original instructions)\nDemo document. Morvane Werkzeugmaschinen and the MTC-420 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 0,
+      "location": "page 1: Operation and Maintenance Manual",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-765d-92f1-42563d566499",
+      "text": "Contents\n1 About This Manual 2 Safety 3 Transport and Installation 4 Commissioning 5 Machine Description 6 Technical Data 7 Operation 8 Monitored Signals and Operating Limits 9 Alarms and Messages 10 Maintenance 11 Troubleshooting 12 Electrical Data 13 Spare Parts 14 Decommissioning and Disposal",
+      "ordinal": 1,
+      "location": "page 2: Contents",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7f1b-9e2a-f1bf1ecd22e2",
+      "text": "1 About This Manual\nThis manual describes the transport, installation, commissioning, operation, monitoring, maintenance, and decommissioning of the MTC-420 CNC turning center. It is the translation of the original instructions in German. If the two texts differ, the German text applies.\nThe manual is written for three target groups. Operators load workpieces, start programs, and do the daily checks. Maintenance technicians do the periodic maintenance and simple repairs; they need a mechanical or electrical qualification. Morvane service does the tasks that are marked as such, for example the spindle bearing replacement and the geometry check.\nKeep this manual at the machine for its full service life. Give it to the next owner if you sell the machine.",
+      "ordinal": 2,
+      "location": "page 3: 1 About This Manual",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7dcc-9aa2-1afceda15b34",
+      "text": "Symbols and Signal Words\nDANGER, Meaning = A hazard that causes death or severe injury if you do not avoid it.. WARNING, Meaning = A hazard that can cause death or severe injury.. CAUTION, Meaning = A hazard that can cause a minor injury.. NOTICE, Meaning = A risk of damage to the machine or the workpiece.",
+      "ordinal": 3,
+      "location": "page 3: Symbols and Signal Words",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7fc1-b7dd-9b29d68f50b6",
+      "text": "Related Documents\nProgramming manual MC-8T, Number = MC8T-PRG-EN. Programming manual MC-8T, Content = G codes, cycles, tool data, program management. Alarm manual MC-8T, Number = MC8T-ALM-EN. Alarm manual MC-8T, Content = Control alarms 10000 to 39999 (NC kernel, drives, PLC system). Circuit diagram, Number = MTC420-EP-24-0187. Circuit diagram, Content = Wiring of this machine (in the electrical cabinet). Hydraulic diagram, Number = MTC420-HY-C. Hydraulic diagram, Content = Hydraulic unit, chuck and tailstock circuits. Chip conveyor manual, Number = CC2-OM-EN. Chip conveyor manual, Content = Hinged belt conveyor CC-2",
+      "ordinal": 4,
+      "location": "page 3: Related Documents",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-76c2-b7e7-600355193537",
+      "text": "Revision History\nA, Date = 2023-02. A, Change = First edition.. B, Date = 2023-10. B, Change = New vibration limits after field tests; alarm A111 added.. C, Date = 2025-03. C, Change = Coolant concentration target changed to 6 to 8 %; maintenance interval of the hydraulic oil changed to 2,000 h.",
+      "ordinal": 5,
+      "location": "page 3: Revision History",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-77ab-93cc-fefcd91c45e6",
+      "text": "Intended Use\nThe MTC-420 is intended for the turning, drilling, and threading of metal workpieces (steel, cast iron, aluminium, brass) in industrial use. The workpiece must fit within the working range of chapter 6 and must be clamped in the chuck, and supported by the tailstock when it is longer than 3 times its diameter.\nAny other use is not intended. Foreseeable misuse includes: machining magnesium without a fire protection system, machining wood or plastics that produce fine dust, running with the guard door bridged, and using chucks that are not approved for the spindle speed.\nDANGER - Rotating chuck. Never open the guard door or reach into the work area while the spindle turns. The door interlock stops the spindle, but a spindle that coasts down can still cause severe injury.\nWARNING - Hydraulic clamping. The chuck clamps the workpiece with hydraulic pressure. If the hydraulic pressure falls below 25 bar, the clamping force is no longer guaranteed and the workpiece can be thrown out of the chuck.\nWARNING - Chuck speed limit. Each chuck has a maximum speed that is engraved on it. The control limits the spindle speed to the value in the chuck data (parameter P2210). Enter the correct value after each chuck change.",
+      "ordinal": 6,
+      "location": "page 4: Intended Use",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-77c5-b0d6-b9fb20adfb67",
+      "text": "Residual Risks\nWorkpiece or jaw thrown out, Where = Work area. Workpiece or jaw thrown out, Protective measure = Guard door with polycarbonate window, rated for the maximum chuck energy; hydraulic pressure monitoring (A201).. Cuts from chips and tools, Where = Work area, chip conveyor. Cuts from chips and tools, Protective measure = Chip hook, gloves only when the spindle is off.. Skin irritation from coolant, Where = Work area, coolant tank. Skin irritation from coolant, Protective measure = Correct concentration, skin protection plan, regular coolant change.. Electric shock, Where = Electrical cabinet. Electric shock, Protective measure = Cabinet lock, work only by qualified electricians with the main switch locked out. The DC link of the drives holds a voltage for 5 minutes after switch-off.. Hot surfaces, Where = Spindle housing, hydraulic unit. Hot surfaces, Protective measure = Temperature up to 60 °C during operation. Let the parts cool down before maintenance.. Noise, Where = Operator position. Noise, Protective measure = Emission sound pressure level 78 dB(A). Wear hearing protection for long shifts near open machines.",
+      "ordinal": 7,
+      "location": "page 4: Residual Risks",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7d96-822a-d7f25d46b54c",
+      "text": "Safety Devices and Test Intervals\nEmergency stop buttons (2), Function = Stop all motion (stop category 1). Emergency stop buttons (2), Test = Press each button during a slow spindle run. Emergency stop buttons (2), Interval = Weekly\nGuard door interlock, Function = Locks the door while the spindle turns; stops the spindle when opened in manual mode. Guard door interlock, Test = Try to open the door at 50 rpm; the door must stay locked. Guard door interlock, Interval = Weekly. Enabling switch (handwheel), Function = Allows motion in manual mode with the door open. Enabling switch (handwheel), Test = Release the switch during an axis motion. Enabling switch (handwheel), Interval = Monthly. Hydraulic pressure switch, Function = Prevents the spindle start below 25 bar. Hydraulic pressure switch, Test = Lower the pressure at the reducing valve during maintenance. Hydraulic pressure switch, Interval = Every 2,000 h. Polycarbonate window, Function = Retains parts. Polycarbonate window, Test = Visual check for cracks, cloudiness, coolant damage. Replace after 5 years or after a hit.. Polycarbonate window, Interval = Weekly / 5 years",
+      "ordinal": 8,
+      "location": "pages 4-5: Safety Devices and Test Intervals",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-750b-bd8e-58bb73351ee5",
+      "text": "Lockout Procedure\n1. Stop the program and set the mode to off.\n2. Switch off the main switch Q1 and lock it with your personal padlock.\n3. Wait 5 minutes. Check with a voltmeter that the DC link of the drives is below 50 V.\n4. Release the hydraulic pressure: open the chuck once with the foot pedal, then switch off the hydraulic unit.\n5. Put a tag with your name and the date on the main switch.",
+      "ordinal": 9,
+      "location": "page 5: Lockout Procedure",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7771-95c8-ab3180cc1e32",
+      "text": "Transport\nThe machine is delivered on a wooden skid with the X and Z axes locked by red transport brackets. Lift the machine only at the four lifting eyes with a lifting beam and four slings of at least 2 m length. Do not lift it at the turret or the spindle housing. The center of gravity is marked on the machine with a yellow label.\nTransport weight (with skid), Value = 4,650 kg. Transport dimensions (L x W x H), Value = 3,150 x 1,900 x 2,050 mm. Lifting points, Value = 4 lifting eyes M30, on the machine base. Storage temperature, Value = -10 to 50 °C, dry, protected from frost if coolant was filled",
+      "ordinal": 10,
+      "location": "page 6: Transport",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7b8e-b186-7a1a767c6e34",
+      "text": "Foundation and Space\nThe machine needs a flat industrial concrete floor of at least 200 mm thickness without joints under the machine. The floor load is 2,100 kg/m² over the footprint. Keep a free space of 800 mm at the back for the electrical cabinet door and of 1,000 mm at the chip conveyor outlet.",
+      "ordinal": 11,
+      "location": "page 6: Foundation and Space",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7a72-95fe-3341ab664cd8",
+      "text": "Levelling\n1. Remove the transport brackets of the X and Z axes (keep them for a later transport).\n2. Place the 6 levelling pads under the levelling screws.\n3. Put a precision level (0.02 mm/m) on the bed guideways, first along Z, then across.\n4. Adjust the levelling screws until both directions are within 0.02 mm/m.\n5. Tighten the lock nuts and check the level again after 1 week of operation.",
+      "ordinal": 12,
+      "location": "page 6: Levelling",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-799e-bccc-ceb55a4fb6e4",
+      "text": "Connections\nElectrical supply, Requirement = 400 V ±10 %, 3 phases + PE, 50 Hz, fuse 35 A gL, cable 5 x 10 mm². Earth leakage protection type B, 300 mA, if required by local rules.. Compressed air, Requirement = 6 bar, dry and oil-free, connection G 1/2. Used for the chuck air blow and the window cleaning.. Network (option MC8T-IOT), Requirement = Ethernet RJ45 at the cabinet roof; OPC UA port 4840, MQTT client to a plant broker.. Coolant, Requirement = Fill 180 L of water-mixed coolant at 6 to 8 % concentration before the first start.. Hydraulic oil, Requirement = Delivered filled (12 L). Check the level at the sight glass before the first start.",
+      "ordinal": 13,
+      "location": "page 6: Connections",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-74e5-8095-113fc6effc95",
+      "text": "4 Commissioning\nMorvane service or a person trained by Morvane does the first commissioning. Record the results in the commissioning report that is delivered with the machine.",
+      "ordinal": 14,
+      "location": "page 7: 4 Commissioning",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7b9e-8ea1-01322a19f38c",
+      "text": "Checklist Before the First Start\nTransport brackets removed, Expected result = All 4 red brackets removed and stored. Machine level, Expected result = Within 0.02 mm/m in both directions. Phase sequence, Expected result = Correct (the hydraulic pump turns in the arrow direction). Hydraulic oil level, Expected result = Between min and max at the sight glass. Central lubrication, Expected result = Grease reservoir full; 3 manual cycles run without alarm A401. Coolant, Expected result = Tank filled, concentration 6 to 8 %. Emergency stop and door interlock, Expected result = Tested as in chapter 2. Chuck data, Expected result = Maximum chuck speed entered in parameter P2210",
+      "ordinal": 15,
+      "location": "page 7: Checklist Before the First Start",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-761b-9e91-3da8ed4bb1c9",
+      "text": "First Start\n1. Switch on the main switch Q1. The control starts in about 60 seconds.\n2. Acknowledge the power-on message and start the hydraulic unit. The pressure must reach 35 bar within 10 seconds.\n3. Reference the axes: mode manual, key REF, first X, then Z.\n4. Run the warm-up program O9000 (10 minutes).\n5. Machine the test workpiece of drawing MTC-TW-01 and measure it. Roundness must be within 0.003 mm and cylindricity within 0.008 mm over 150 mm.\n6. Write the spindle temperature, the spindle vibration, and the hydraulic pressure after the warm-up into the commissioning report. These are the reference values for later comparisons.\nReference values of this unit (commissioning 2024-09-16): spindle temperature 36 °C after O9000, spindle vibration 1.1 mm/s at 3,000 rpm, hydraulic pressure 35.5 bar, coolant concentration 7 %.",
+      "ordinal": 16,
+      "location": "page 7: First Start",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7158-9cc4-6f083c277ae3",
+      "text": "5 Machine Description\nThe MTC-420 is a two-axis CNC turning center with a 45-degree slant bed of cast iron. The slant bed lets the chips fall into the chip conveyor and gives the operator good access to the chuck.\nMachine bed, Description = Cast iron EN-GJL-300, ribbed, with roller linear guides size 35 for the X and Z axes.. Main spindle, Description = Spindle nose A2-6, bore 66 mm, front and rear angular contact bearings with grease lubrication for life (re-greasing only during a bearing overhaul). Temperature sensor PT100 and vibration sensor at the front bearing.. Spindle drive, Description = AC spindle motor 15 kW, poly-V belt 8PK1200, ratio 1:1.2.. Feed axes, Description = Servo motors with absolute encoders, ball screws 32 x 10 mm, X stroke 230 mm, Z stroke 620 mm.. Turret, Description = Servo turret with 12 stations, VDI 30, Hirth coupling with hydraulic clamping, bidirectional indexing.. Tailstock, Description = Hydraulic quill, MT4, quill stroke 100 mm, thrust 3 to 12 kN, positioned by the Z slide.. Hydraulic unit, Description = Gear pump 8 L/min, 12 L tank, pressure 35 bar, return filter 10 µm, pressure transmitter.. Central lubrication, Description = Piston pump with 2 L grease reservoir, interval 30 min, pressure switch.. Coolant system, Description = 180 L tank, immersion pump 2 bar / 40 L/min, level sensor, temperature sensor, filter basket.. Chip conveyor, Description = Hinged belt conveyor CC-2, outlet height 1,050 mm, runs with the coolant pump or on demand.. Electrical cabinet, Description = Cooling by a filter fan (cabinet temperature monitored), main switch Q1, drives, PLC, power supply 24 V DC.. Control, Description = Morvane MC-8T with 15-inch touch panel, handwheel, signal export option MC8T- IOT.",
+      "ordinal": 17,
+      "location": "page 8: 5 Machine Description",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-74bd-8a5a-dcf9e4297345",
+      "text": "Unit Identification\nThe rating plate is on the left side of the electrical cabinet. This copy of the manual was delivered with the unit below.\nModel, Value = MTC-420. Serial number, Value = MTC420-24-0187. Year of manufacture, Value = 2024. Control, Value = Morvane MC-8T, software version 4.2. Commissioning date, Value = 2024-09-16. Options, Value = MC8T-IOT (signal export), chip conveyor CC-2",
+      "ordinal": 18,
+      "location": "page 9: Unit Identification",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7647-867a-f758aecb83b9",
+      "text": "Working Range and Axes\nSwing over bed, Value = 560 mm. Maximum turning diameter, Value = 420 mm. Maximum turning length, Value = 600 mm. Bar capacity, Value = 52 mm. Stroke X / Z, Value = 230 / 620 mm. Rapid traverse X / Z, Value = 24 / 30 m/min. Feed force X / Z, Value = 6 / 8 kN. Positioning accuracy (ISO 230-2), Value = 0.005 mm. Repeatability, Value = 0.002 mm",
+      "ordinal": 19,
+      "location": "page 9: Working Range and Axes",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-728a-9cf1-2d6aedc6bbee",
+      "text": "Spindle and Turret\nSpindle speed range, Value = 30 to 4,500 rpm. Spindle motor power, Value = 15 kW (30 min), 11 kW (continuous). Spindle torque, Value = 286 Nm (30 min). Chuck size, Value = 8 inch (210 mm), hydraulic three-jaw. Turret stations, Value = 12, VDI 30. Indexing time, adjacent station, Value = 0.2 s",
+      "ordinal": 20,
+      "location": "page 9: Spindle and Turret",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7a04-a9c1-45231760dddb",
+      "text": "Supply and Environment\nSupply voltage, Value = 400 V, 3 phases, 50 Hz, 35 A fuse. Connected load, Value = 28 kVA. Hydraulic system pressure, Value = 35 bar nominal. Coolant tank, Value = 180 L. Compressed air, Value = 6 bar, 150 L/min. Machine weight, Value = 4,300 kg. Footprint (L x W), Value = 2,950 x 1,750 mm. Permitted ambient temperature, Value = 10 to 35 °C. Relative humidity, Value = up to 75 %, no condensation. Emission sound pressure level, Value = 78 dB(A)",
+      "ordinal": 21,
+      "location": "page 10: Supply and Environment",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7d82-8ba0-86212f486611",
+      "text": "Operator Panel\nCycle Start, Function = Starts or continues the active program.. Feed Hold, Function = Stops the axis feed; the spindle keeps turning (message S003).. Mode switch, Function = Selects auto, manual, or off (see 7.2).. Spindle override, Function = 50 to 120 % of the programmed speed.. Feed override, Function = 0 to 150 % of the programmed feed.. Door key, Function = Unlocks the guard door when the spindle is stopped.. Coolant key, Function = Switches the coolant pump on and off in manual mode.. Emergency stop, Function = Stops all motion; release by turning the button.",
+      "ordinal": 22,
+      "location": "page 11: Operator Panel",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7717-8f24-a1ab81937219",
+      "text": "Operating Modes\nThe mode switch sets the spindle mode. The control reports the active mode as the signal spindle.mode.\nauto, Meaning = The control runs the active program. The guard door must be closed and locked.. manual, Meaning = Set-up mode. The operator moves the axes with the handwheel. With the door open, the spindle speed is limited to 50 rpm and the axis speed to 2 m/min.. off, Meaning = The spindle drive is disabled. The control, the coolant pump, and the hydraulic unit can stay on.",
+      "ordinal": 23,
+      "location": "page 11: Operating Modes",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-78c3-9fbc-04240aff6f70",
+      "text": "Start of a Shift\n1. Check the coolant level and the hydraulic oil level (sight glasses).\n2. Switch on the machine and start the hydraulic unit.\n3. Reference the axes if the control asks for it (after a power failure).\n4. Run the warm-up program O9000. It runs the spindle for 10 minutes in steps from 500 to 3,500 rpm.\n5. Check the spindle temperature on the diagnosis screen. After the warm-up, 30 to 45 °C is typical.\nNOTICE. A cold spindle that runs at full speed at once wears its bearings faster and can show a short temperature alarm.",
+      "ordinal": 24,
+      "location": "page 11: Start of a Shift",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7766-9ed9-edcdabfae3b4",
+      "text": "End of a Shift\n1. Finish the program and move the turret to the home position.\n2. Remove chips from the work area and the turret with a brush.\n3. Close the coolant nozzles' valves so that the coolant does not drain into the work area.\n4. Set the mode to off. Leave the main switch on if the machine is used in the next shift.",
+      "ordinal": 25,
+      "location": "page 11: End of a Shift",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7aaf-8e06-ccaa1c27d5ab",
+      "text": "8 Monitored Signals and Operating Limits\nThe table lists every signal that the MC-8T control reports. The normal range is the range for continuous operation. A value in the warning range is allowed for a short time but needs attention. A value at the alarm limit stops the machine.",
+      "ordinal": 26,
+      "location": "page 12: 8 Monitored Signals and Operating Limits",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7ec2-9c01-a13f4afb8514",
+      "text": "8 Monitored Signals and Operating Limits\nSpindle bearing temperature, Signal key = spindle.temperature. Spindle bearing temperature, Unit = °C. Spindle bearing temperature, Normal range = 15 to 60. Spindle bearing temperature, Warning = above 65. Spindle bearing temperature, Alarm (stop) = above 70 (A101). Spindle speed, Signal key = spindle.speed. Spindle speed, Unit = rpm. Spindle speed, Normal range = 0 to 4,500. Spindle speed, Warning = -. Spindle speed, Alarm (stop) = -. Spindle load, Signal key = spindle.load. Spindle load, Unit = %. Spindle load, Normal range = 0 to 100. Spindle load, Warning = 100 to 120 (max. 30 min). Spindle load, Alarm (stop) = above 120 for 10 s (A102). Spindle vibration (RMS velocity), Signal key = spindle.vibration. Spindle vibration (RMS velocity), Unit = mm/s. Spindle vibration (RMS velocity), Normal range = 0 to 2.8. Spindle vibration (RMS velocity), Warning = above 4.5 (A110). Spindle vibration (RMS velocity), Alarm (stop) = above 7.1 (A111). Hydraulic pressure, Signal key = hydraulic.pressure. Hydraulic pressure, Unit = bar. Hydraulic pressure, Normal range = 30 to 40. Hydraulic pressure, Warning = below 28. Hydraulic pressure, Alarm (stop) = below 25 (A201). Hydraulic oil temperature, Signal key = hydraulic.oil_temperature. Hydraulic oil temperature, Unit = °C. Hydraulic oil temperature, Normal range = 20 to 50. Hydraulic oil temperature, Warning = above 55 (A203). Hydraulic oil temperature, Alarm (stop) = above 65 (A204). Coolant level, Signal key = coolant.level. Coolant level, Unit = %. Coolant level, Normal range = 30 to 100. Coolant level, Warning = below 25 (A305). Coolant level, Alarm (stop) = below 10 (A306). Coolant temperature, Signal key = coolant.temperature. Coolant temperature, Unit = °C. Coolant temperature, Normal range = 10 to 35. Coolant temperature, Warning = above 35 (A307). Coolant temperature, Alarm (stop) = -. Lubrication pressure, Signal key = lubrication.pressure. Lubrication pressure, Unit = bar. Lubrication pressure, Normal range = 15 to 25 (during a cycle). Lubrication pressure, Warning = -. Lubrication pressure, Alarm (stop) = no pressure in 3 cycles (A401). Cabinet temperature, Signal key = cabinet.temperature. Cabinet temperature, Unit = °C. Cabinet temperature, Normal range = 15 to 40. Cabinet temperature, Warning = above 45 (A801). Cabinet temperature, Alarm (stop) = above 50 (A802). Guard door open, Signal key = door.open. Guard door open, Unit = true / false. Guard door open, Normal range = -. Guard door open, Warning = -. Guard door open, Alarm (stop) = open in auto mode (A501). Spindle mode, Signal key = spindle.mode. Spindle mode, Unit = auto, manual, off. Spindle mode, Normal range = -. Spindle mode, Warning = -. Spindle mode, Alarm (stop) = -. Operating hours, Signal key = machine.operating_hours. Operating hours, Unit = h. Operating hours, Normal range = -. Operating hours, Warning = -. Operating hours, Alarm (stop) = -",
+      "ordinal": 27,
+      "location": "page 12: 8 Monitored Signals and Operating Limits",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-78e7-90e6-541ab2d49af0",
+      "text": "8 Monitored Signals and Operating Limits\nSpindle temperature. The sensor sits at the front spindle bearing. A rise of more than 5 °C within 15 minutes at a constant speed is an early sign of a bearing or lubrication problem, also when the value is still in the normal range. Compare the value after the warm-up with the reference value of the commissioning report.\nVibration. The vibration limits follow ISO 10816-3 for machines of group 2 on a rigid foundation. Measure on the spindle housing in the radial direction. A new machine shows 0.8 to 1.5 mm/s. An unbalanced chuck",
+      "ordinal": 28,
+      "location": "page 12: 8 Monitored Signals and Operating Limits",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7189-97e1-d8e6decc9cb6",
+      "text": "Signal Export (Option MC8T-IOT)\nThe control publishes the signals every 5 seconds to an MQTT broker or offers them as OPC UA variables. The MQTT payload is a JSON object with the sample time and one property per signal key. Status codes are sent as a list of active codes. Example:\n```\n{ \"sampledAt\": \"2025-04-02T08:15:05Z\", \"metrics\": { \"spindle.temperature\": 41.2, \"spindle.speed\": 2800, \"spindle.load\": 64, \"spindle.vibration\": 1.3, \"door.open\": false, \"spindle.mode\": \"auto\", \"coolant.level\": 71 }, \"statuses\": [\"S002\"] }\n```",
+      "ordinal": 29,
+      "location": "page 13: Signal Export (Option MC8T-IOT)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7b4f-895b-ce3352ddcd06",
+      "text": "9 Alarms and Messages\nThe control shows each alarm with its code on the screen and stores it in the alarm history (last 1,000 entries). An error stops the program and the spindle. A warning lets the current program finish. An info message needs no action. Control alarms with five digits (for example 21612) are described in the alarm manual MC8T-ALM-EN.",
+      "ordinal": 30,
+      "location": "page 14: 9 Alarms and Messages",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-722f-b9ac-fad66d5ab880",
+      "text": "Spindle (100)\nA101, Type = Error. A101, Text = Spindle overtemperature. A101, Cause and action = The spindle bearing temperature is above 70 °C. Let the spindle cool down to below 45 °C. Check the belt tension and the spindle cooling fins. If the alarm comes back within 1 week, have the spindle bearings inspected by Morvane service.. A102, Type = Error. A102, Text = Spindle overload. A102, Cause and action = The spindle load was above 120 % for more than 10 s. Reduce the depth of cut or the feed rate. Check the insert for wear; a blunt insert raises the load by 20 to 40 %.. A103, Type = Error. A103, Text = Spindle speed deviation. A103, Cause and action = The actual speed differs by more than 10 % from the set speed for 2 s. Check the belt for slip and the spindle encoder cable.. A104, Type = Error. A104, Text = Spindle drive fault. A104, Cause and action = The spindle drive reported a fault. Read the drive code on the diagnosis screen (alarm manual MC8T-ALM-EN).. A110, Type = Warning. A110, Text = Spindle vibration high. A110, Cause and action = The vibration is above 4.5 mm/s. Check the balance of the chuck and the workpiece and the clamping of long workpieces. Plan a vibration analysis if the value stays high.. A111, Type = Error. A111, Text = Spindle vibration too high. A111, Cause and action = The vibration is above 7.1 mm/s. The spindle stops. Do not restart before the cause is found: loose chuck, damaged bearing, loose belt pulley.. A112, Type = Warning. A112, Text = Spindle temperature rising fast. A112, Cause and action = The temperature rose by more than 5 °C within 15 minutes at a constant speed. Reduce the speed and watch the trend. Check the lubrication state of the bearings at the next stop.",
+      "ordinal": 31,
+      "location": "page 14: Spindle (100)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-751a-9cab-ffc5b6b597a6",
+      "text": "Hydraulics (200)\nA201, Type = Error. A201, Text = Hydraulic pressure low. A201, Cause and action = The hydraulic pressure is below 25 bar. The chuck clamping is not safe; the spindle cannot start. Check the oil level, the pressure setting (35 bar), and the hoses for leaks.. A202, Type = Warning. A202, Text = Hydraulic return filter clogged. A202, Cause and action = The filter indicator switched. Replace the return filter element MV-420-2210 within 1 week.. A203, Type = Warning. A203, Text = Hydraulic oil temperature high. A203, Cause and action = The oil temperature is above 55 °C. Check the oil level and the cooler fins of the hydraulic unit. A hot ambient raises the oil temperature.\nA204, Type = Error. A204, Text = Hydraulic oil overtemperature. A204, Cause and action = The oil temperature is above 65 °C. The hydraulic unit stops; the chuck stays clamped by the check valve. Let the oil cool down and find the cause before the restart.. A205, Type = Warning. A205, Text = Hydraulic oil level low. A205, Cause and action = The level switch reports a low level. Add oil ISO VG 32 and look for leaks.",
+      "ordinal": 32,
+      "location": "pages 14-15: Hydraulics (200)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-78e3-847e-8588274d416a",
+      "text": "Coolant and chips (300)\nA301, Type = Error. A301, Text = Coolant pump motor overload. A301, Cause and action = The motor protection of the coolant pump tripped. Check the pump for chips and the filter basket.. A302, Type = Error. A302, Text = Chip conveyor overload. A302, Cause and action = The conveyor stopped because of a jam. Run the conveyor backwards for 5 s, remove the jam, and restart.. A305, Type = Warning. A305, Text = Coolant level low. A305, Cause and action = The coolant level is below 25 %. Add coolant at a concentration of 6 to 8 % before the end of the shift.. A306, Type = Error. A306, Text = Coolant level critical. A306, Cause and action = The coolant level is below 10 %. The coolant pump stops to protect itself from dry running. Fill the tank and acknowledge the alarm.. A307, Type = Warning. A307, Text = Coolant temperature high. A307, Cause and action = The coolant is above 35 °C. Thermal growth of the workpiece can affect the size. Check the tank level; consider a coolant chiller in summer.",
+      "ordinal": 33,
+      "location": "page 15: Coolant and chips (300)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7ddb-a838-53bf664f8dd4",
+      "text": "Lubrication (400)\nA401, Type = Error. A401, Text = Lubrication fault. A401, Cause and action = The central lubrication pump built no pressure in 3 cycles in a row. Check the grease reservoir and the pump. Do not run the axes without lubrication for more than 1 hour.. A402, Type = Warning. A402, Text = Grease reservoir low. A402, Cause and action = The grease reservoir is below 20 %. Refill grease NLGI class 00.",
+      "ordinal": 34,
+      "location": "page 15: Lubrication (400)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-77bf-a43a-ba46781e3533",
+      "text": "Safety (500)\nA501, Type = Error. A501, Text = Door open in automatic mode. A501, Cause and action = The guard door was opened while a program ran in auto mode. Close the door and restart the program from the last block.. A502, Type = Error. A502, Text = Door lock fault. A502, Cause and action = The door lock did not reach its position. Check the lock and the door alignment.. A503, Type = Error. A503, Text = Emergency stop active. A503, Cause and action = An emergency stop button is pressed. Release it and acknowledge.. A504, Type = Error. A504, Text = Chuck not clamped. A504, Cause and action = The clamp sensor reports no clamped state at the program start. Check the jaw stroke and the sensor position.",
+      "ordinal": 35,
+      "location": "page 15: Safety (500)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7169-a401-7420058291fb",
+      "text": "Axes and turret (600 and 700)\nA601, Type = Error. A601, Text = X axis following error. A601, Cause and action = The X axis deviates more than allowed from its path. Check for a collision and for chips on the guide covers.. A602, Type = Error. A602, Text = Z axis following error. A602, Cause and action = As A601 for the Z axis.. A603, Type = Error. A603, Text = Software limit switch. A603, Cause and action = The program moves an axis outside its stroke. Correct the program or the work offset.. A604, Type = Warning. A604, Text = Axis reference lost. A604, Cause and action = The absolute position was lost (encoder battery). Replace the encoder battery and reference the axis.. A701, Type = Error. A701, Text = Turret not clamped. A701, Cause and action = The turret did not reach its clamped position after indexing. Check the hydraulic pressure and the turret for chips.. A702, Type = Error. A702, Text = Turret indexing timeout. A702, Cause and action = The indexing took longer than 2 s. Check the turret motor and the clamping.",
+      "ordinal": 36,
+      "location": "page 16: Axes and turret (600 and 700)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7aba-9420-3bb7fbcd965c",
+      "text": "Electrical cabinet (800)\nA801, Type = Warning. A801, Text = Cabinet temperature high. A801, Cause and action = The cabinet temperature is above 45 °C. Clean or replace the filter mat. Check the cabinet fan.. A802, Type = Error. A802, Text = Cabinet overtemperature. A802, Cause and action = The cabinet temperature is above 50 °C. The drives stop to protect the electronics. Find the cause before the restart.. A803, Type = Warning. A803, Text = 24 V supply low. A803, Cause and action = The 24 V DC supply is below 22 V. Check the power supply and the load.",
+      "ordinal": 37,
+      "location": "page 16: Electrical cabinet (800)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7b70-b948-fdb39e0daa7a",
+      "text": "Maintenance and states (900 and S)\nM900, Type = Warning. M900, Text = Maintenance due. M900, Cause and action = The operating hours reached the next maintenance interval of chapter 10. Do the listed tasks and reset the counter on the maintenance screen.. M901, Type = Info. M901, Text = Encoder battery due. M901, Cause and action = Replace the encoder batteries within 4 weeks (every 2 years).. S001, Type = Info. S001, Text = Ready. S001, Cause and action = The machine is ready for a program start.. S002, Type = Info. S002, Text = Cycle running. S002, Cause and action = A program runs in auto mode.. S003, Type = Info. S003, Text = Feed hold. S003, Cause and action = The operator stopped the axis feed. Press Cycle Start to continue.. S004, Type = Info. S004, Text = Warm-up running. S004, Cause and action = The warm-up program O9000 runs.",
+      "ordinal": 38,
+      "location": "page 16: Maintenance and states (900 and S)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-721e-b5f0-b350718204a9",
+      "text": "10 Maintenance\nThe intervals count operating hours (signal machine.operating_hours) or calendar time, whichever comes first. The control shows message M900 when a 500-hour interval is reached. Record each task in the maintenance log (section 10.4). Lock out the machine (chapter 2) before every task inside the work area or the cabinet.",
+      "ordinal": 39,
+      "location": "page 17: 10 Maintenance",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7872-8a93-0f9313c84597",
+      "text": "Maintenance Schedule\nEach shift, Task = Check the coolant level and the hydraulic oil level. Remove chips from the work area and the turret. Run the warm-up program O9000.. Each shift, Time = 10 min. Each shift, Who = Operator. Weekly, Task = Measure the coolant concentration with a refractometer (target 6 to 8 %). Clean the chip conveyor filter basket. Check the guard door window for cracks. Check the grease level of the central lubrication. Test the emergency stop buttons and the door interlock.. Weekly, Time = 30 min. Weekly, Who = Operator. 500 h or 3 months, Task = Clean the coolant tank and change the coolant. Check the poly- V belt tension. Clean the electrical cabinet filter mat. Check the chuck jaws for wear and grease the chuck. Check the wipers of the guide covers.. 500 h or 3 months, Time = 2 h. 500 h or 3 months, Who = Maintenance technician. 2,000 h or 1 year, Task = Change the hydraulic oil (12 L, ISO VG 32) and the return filter. Check the backlash of the X and Z axes (limit 0.008 mm). Check the turret clamping and the coolant nozzles. Replace the cabinet filter mat. Test the hydraulic pressure switch.. 2,000 h or 1 year, Time = 4 h. 2,000 h or 1 year, Who = Maintenance technician. 2 years, Task = Replace the encoder batteries of the X and Z axes (with the control switched on).. 2 years, Time = 20 min. 2 years, Who = Maintenance technician. 8,000 h or 4 years, Task = Inspect the spindle bearings (vibration analysis and run-out check, limit 0.003 mm). Replace the poly-V belt. Check the ball screws and the linear guides. Check the geometry with a test workpiece.. 8,000 h or 4 years, Time = 1 day. 8,000 h or 4 years, Who = Morvane service. 5 years, Task = Replace the polycarbonate window of the guard door.. 5 years, Time = 1 h. 5 years, Who = Maintenance technician",
+      "ordinal": 40,
+      "location": "page 17: Maintenance Schedule",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7a89-9731-48635e5923b7",
+      "text": "Check the Poly-V Belt Tension\n1. Lock out the machine and remove the rear cover of the spindle drive.\n2. Press the belt in the middle between the pulleys with a spring scale at 50 N.\n3. The deflection must be 4 to 5 mm. Adjust the motor plate with the two tension screws if needed.\n4. A belt with cracks, shiny flanks, or missing ribs must be replaced (MV-420-1150).",
+      "ordinal": 41,
+      "location": "page 17: Check the Poly-V Belt Tension",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-746d-97f2-5c826c13d284",
+      "text": "Change the Hydraulic Oil\n1. Run the machine for 15 minutes so that the oil is warm and the dirt is in suspension.\n2. Lock out the machine. Place a 15 L container under the drain valve of the hydraulic tank.\n3. Drain the oil and replace the return filter element (MV-420-2210).\n4. Fill 12 L of fresh oil ISO VG 32 through the filler filter.\n5. Start the hydraulic unit, clamp and unclamp the chuck 10 times, and check the level again.",
+      "ordinal": 42,
+      "location": "pages 17-18: Change the Hydraulic Oil",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7968-83aa-36b67a244a9d",
+      "text": "Change the Coolant\n1. Pump the old coolant out with a coolant vacuum unit. Dispose of it as hazardous waste (code 12 01 09*).\n2. Remove the chips and the sludge from the tank and clean it with a system cleaner.\n3. Rinse the tank and the pipes with water.\n4. Fill 180 L of new coolant. Mix the concentrate into the water (never water into the concentrate) to 7 %.",
+      "ordinal": 43,
+      "location": "page 18: Change the Coolant",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-78f0-b162-fa44f4b1a9ef",
+      "text": "Grease the Chuck\nOpen the jaws completely. Press 2 strokes of chuck grease into each grease nipple. Clamp and unclamp 5 times without a workpiece. A chuck without grease loses up to 50 % of its clamping force.",
+      "ordinal": 44,
+      "location": "page 18: Grease the Chuck",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-746d-b572-5043e02612e3",
+      "text": "Lubricants and Fluids\nHydraulic unit, Lubricant = Hydraulic oil HLP, ISO VG 32. Hydraulic unit, Quantity = 12 L. Central lubrication, Lubricant = Grease NLGI class 00. Central lubrication, Quantity = 2 L reservoir. Chuck, Lubricant = Chuck grease (high pressure). Chuck, Quantity = 2 strokes per nipple. Spindle bearings, Lubricant = Lubricated for life. Spindle bearings, Quantity = -. Coolant, Lubricant = Water-mixed cutting fluid, mineral oil free, 6 to 8 %. Coolant, Quantity = 180 L",
+      "ordinal": 45,
+      "location": "page 18: Lubricants and Fluids",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7d2f-93af-a3420199cf0e",
+      "text": "Maintenance Log\nCopy this page or use the maintenance screen of the control. The last entries of this unit are listed as an example.\n2024-09-16, Hours = 0. 2024-09-16, Task = Commissioning. 2024-09-16, Remarks = Reference values recorded. 2024-09-16, Name = Morvane service. 2024-12-12, Hours = 512. 2024-12-12, Task = 500 h maintenance. 2024-12-12, Remarks = Belt tension corrected (6 mm before). 2024-12-12, Name = J. Weber. 2025-03-20, Hours = 1,040. 2025-03-20, Task = 500 h maintenance. 2025-03-20, Remarks = Coolant changed early: smell. 2025-03-20, Name = J. Weber. 2025-06-30, Hours = 1,580. 2025-06-30, Task = 500 h maintenance. 2025-06-30, Remarks = Chuck jaws replaced (MV-420-4012). 2025-06-30, Name = A. Novak",
+      "ordinal": 46,
+      "location": "page 18: Maintenance Log",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7002-ac30-edde4def4eb9",
+      "text": "11 Troubleshooting\nFind the symptom in the table and work through the causes in the given order. If the problem stays, call Morvane service with the alarm history and the serial number.\nSpindle temperature rises slowly over several days, Possible cause = Bearing preload changed, belt too tight, cooling fins dirty. Spindle temperature rises slowly over several days, Action = Check the belt tension. Clean the fins. Compare the vibration with the reference value. Call Morvane service for a bearing inspection.. Spindle temperature high only in the afternoon, Possible cause = Hot ambient, coolant temperature high. Spindle temperature high only in the afternoon, Action = Check the hall temperature and the coolant temperature (A307).. Rough surface on all workpieces, Possible cause = Worn insert, high spindle vibration, loose turret. Rough surface on all workpieces, Action = Change the insert. Read the spindle vibration. Check the turret clamping.. Chatter marks on long workpieces, Possible cause = No tailstock support, wrong cutting data. Chatter marks on long workpieces, Action = Use the tailstock above a length of 3 times the diameter. Reduce the depth of cut or change the speed by 10 %.. Diameter changes during the shift, Possible cause = Thermal growth of the spindle, coolant temperature changes. Diameter changes during the shift, Action = Run the warm-up program. Keep the coolant temperature stable.. Hydraulic pressure drops during the shift, Possible cause = Low oil level, internal leak in a valve, hot oil. Hydraulic pressure drops during the shift, Action = Check the oil level and the oil temperature (max. 55 °C). Check the valves for leaks.. Chuck clamps slowly, Possible cause = Low pressure, dirty chuck, missing grease. Chuck clamps slowly, Action = Check the pressure. Clean and grease the chuck.. Coolant smells or foams, Possible cause = Bacterial growth, wrong concentration, oil in the coolant. Coolant smells or foams, Action = Measure the concentration. Skim off tramp oil. Change the coolant if the smell stays.. Alarm A401 after a long stop, Possible cause = Air in the lubrication lines. Alarm A401 after a long stop, Action = Run 5 manual lubrication cycles from the maintenance screen.. Turret does not index (A702), Possible cause = Chips in the Hirth coupling, low hydraulic pressure. Turret does not index (A702), Action = Clean the turret. Check the pressure.. Axis position wrong after power-on (A604), Possible cause = Encoder battery empty. Axis position wrong after power-on (A604), Action = Replace the battery and reference the axis.. Cabinet alarm A801 in summer, Possible cause = Dirty filter mat, fan fault. Cabinet alarm A801 in summer, Action = Replace the filter mat. Check the fan. Keep the cabinet door closed.. Chip conveyor stops (A302), Possible cause = Long chips wrap around the belt. Chip conveyor stops (A302), Action = Use a chip breaker geometry. Run the conveyor backwards and remove the chips.",
+      "ordinal": 47,
+      "location": "page 19: 11 Troubleshooting",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7501-8220-b72722d52ee3",
+      "text": "12 Electrical Data\nThe circuit diagram of this machine is in the pocket of the electrical cabinet door. Only qualified electricians may work in the cabinet.",
+      "ordinal": 48,
+      "location": "page 20: 12 Electrical Data",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7671-9b15-b06fae9cc359",
+      "text": "Main Components\nQ1, Component = Main switch. Q1, Data = 63 A, lockable. F1, Component = Main fuses of the drives. F1, Data = 3 x 35 A gL. T1, Component = Control transformer. T1, Data = 400 / 230 V, 1 kVA. G1, Component = Power supply 24 V DC. G1, Data = 20 A. U1, Component = Spindle drive. U1, Data = 18.5 kW converter. U2, U3, Component = Servo drives X and Z. U2, U3, Data = 4.5 kW each. U4, Component = Turret drive. U4, Data = 1.5 kW. M5, Component = Hydraulic pump motor. M5, Data = 1.5 kW, 400 V. M6, Component = Coolant pump motor. M6, Data = 0.75 kW, 400 V. M7, Component = Chip conveyor motor. M7, Data = 0.25 kW, 400 V. E1, Component = Cabinet filter fan. E1, Data = 230 V, 160 m³/h",
+      "ordinal": 49,
+      "location": "page 20: Main Components",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7668-9e4c-9ac4200e7d0c",
+      "text": "Terminal Strip X20 (Signal Interface)\nX20.1, Signal = Machine ready. X20.1, Type = Output 24 V DC. X20.2, Signal = Alarm active. X20.2, Type = Output 24 V DC. X20.3, Signal = Cycle running. X20.3, Type = Output 24 V DC. X20.4, Signal = Maintenance due. X20.4, Type = Output 24 V DC. X20.5, Signal = External stop. X20.5, Type = Input, normally closed. X20.6, Signal = Bar feeder ready. X20.6, Type = Input 24 V DC. X20.7 / X20.8, Signal = 0 V / 24 V DC. X20.7 / X20.8, Type = Supply",
+      "ordinal": 50,
+      "location": "page 20: Terminal Strip X20 (Signal Interface)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7124-866e-93f7e2a68720",
+      "text": "13 Spare Parts\nOrder spare parts from Morvane service. State the serial number of the machine and the part number.",
+      "ordinal": 51,
+      "location": "page 21: 13 Spare Parts",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7101-a530-ffe20e2ee711",
+      "text": "Spindle\nMV-420-1100, Description = Spindle unit, complete (exchange part). MV-420-1100, Quantity = 1. MV-420-1110, Description = Spindle bearing set, front and rear. MV-420-1110, Quantity = 1. MV-420-1120, Description = PT100 temperature sensor, spindle. MV-420-1120, Quantity = 1. MV-420-1130, Description = Spindle encoder. MV-420-1130, Quantity = 1. MV-420-1150, Description = Poly-V belt 8PK1200. MV-420-1150, Quantity = 1. MV-420-1160, Description = Belt pulley, motor side. MV-420-1160, Quantity = 1. MV-420-6005, Description = Vibration sensor, spindle housing. MV-420-6005, Quantity = 1",
+      "ordinal": 52,
+      "location": "page 21: Spindle",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7c8f-a0bc-8b88f15ed6bc",
+      "text": "Chuck and tailstock\nMV-420-4010, Description = Hydraulic chuck 8 inch, complete. MV-420-4010, Quantity = 1. MV-420-4012, Description = Chuck jaw set, hard, 3 pieces. MV-420-4012, Quantity = 1. MV-420-4014, Description = Chuck jaw set, soft, 3 pieces. MV-420-4014, Quantity = 1. MV-420-4020, Description = Clamping cylinder seal kit. MV-420-4020, Quantity = 1. MV-420-4030, Description = Live centre MT4. MV-420-4030, Quantity = 1. MV-420-4040, Description = Tailstock quill seal kit. MV-420-4040, Quantity = 1",
+      "ordinal": 53,
+      "location": "page 21: Chuck and tailstock",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7ddc-a642-d06b7fe8051c",
+      "text": "Hydraulics\nMV-420-2200, Description = Gear pump 8 L/min. MV-420-2200, Quantity = 1. MV-420-2210, Description = Return filter element 10 µm. MV-420-2210, Quantity = 1. MV-420-2220, Description = Pressure transmitter 0-100 bar. MV-420-2220, Quantity = 1. MV-420-2230, Description = Pressure reducing valve. MV-420-2230, Quantity = 1. MV-420-2240, Description = Level switch, hydraulic tank. MV-420-2240, Quantity = 1. MV-420-2250, Description = Hose set, chuck circuit. MV-420-2250, Quantity = 1",
+      "ordinal": 54,
+      "location": "page 21: Hydraulics",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7e58-b250-693b56c172e5",
+      "text": "Coolant, chips, and lubrication\nMV-420-3010, Description = Coolant pump 2 bar / 40 L/min. MV-420-3010, Quantity = 1\nMV-420-3020, Description = Level sensor, coolant tank. MV-420-3020, Quantity = 1. MV-420-3025, Description = Filter basket, coolant tank. MV-420-3025, Quantity = 1. MV-420-3030, Description = Filter mat, electrical cabinet. MV-420-3030, Quantity = 1. MV-420-3110, Description = Lubrication pump, complete. MV-420-3110, Quantity = 1. MV-420-3120, Description = Metering valve set (12 pieces). MV-420-3120, Quantity = 1. CC2-0410, Description = Hinged belt, chip conveyor. CC2-0410, Quantity = 1",
+      "ordinal": 55,
+      "location": "pages 21-22: Coolant, chips, and lubrication",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-76dc-8cb8-8b5b8f93ed8b",
+      "text": "Axes and turret\nMV-420-5010, Description = Ball screw X, 32 x 10. MV-420-5010, Quantity = 1. MV-420-5020, Description = Ball screw Z, 32 x 10. MV-420-5020, Quantity = 1. MV-420-5030, Description = Wiper set, guide covers. MV-420-5030, Quantity = 1. MV-420-5040, Description = Encoder battery pack. MV-420-5040, Quantity = 2. MV-420-7010, Description = Turret clamping seal kit. MV-420-7010, Quantity = 1. MV-420-7020, Description = Coolant nozzle set, turret. MV-420-7020, Quantity = 1",
+      "ordinal": 56,
+      "location": "page 22: Axes and turret",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7119-b634-34025bd898b9",
+      "text": "Safety and cabinet\nMV-420-8010, Description = Polycarbonate window, guard door. MV-420-8010, Quantity = 1. MV-420-8020, Description = Door lock with interlock switch. MV-420-8020, Quantity = 1. MV-420-8030, Description = Emergency stop button. MV-420-8030, Quantity = 1. MV-420-8040, Description = Cabinet filter fan. MV-420-8040, Quantity = 1. MV-420-8050, Description = Power supply 24 V DC, 20 A. MV-420-8050, Quantity = 1\nMorvane Service: service@morvane.example, phone +49 000 000000.",
+      "ordinal": 57,
+      "location": "page 22: Safety and cabinet",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7f5b-bb39-09fef04af090",
+      "text": "14 Decommissioning and Disposal\nFor a stop of more than 3 months, clean the machine, drain the coolant, oil the bare surfaces, and move the axes to the middle of their strokes. Run the warm-up program and 5 lubrication cycles before the restart.\nFor the final decommissioning, drain all fluids and dispose of them by type: hydraulic oil as waste oil, coolant as hazardous waste, grease with the oil waste. Remove the encoder batteries and dispose of them separately. The machine body is cast iron and steel and can be recycled as scrap metal. The electrical components are electronic waste.",
+      "ordinal": 58,
+      "location": "page 23: 14 Decommissioning and Disposal",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7798-ad95-79aca8c9c39b",
+      "text": "Tightening Torques\nM6, Strength class 8.8 = 10 Nm. M6, Strength class 10.9 = 14 Nm. M8, Strength class 8.8 = 25 Nm. M8, Strength class 10.9 = 35 Nm. M10, Strength class 8.8 = 49 Nm. M10, Strength class 10.9 = 69 Nm. M12, Strength class 8.8 = 86 Nm. M12, Strength class 10.9 = 120 Nm. M16, Strength class 8.8 = 210 Nm. M16, Strength class 10.9 = 295 Nm",
+      "ordinal": 59,
+      "location": "page 23: Tightening Torques",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-7ef4-7ffe-a71a-103d93cbed02",
+      "text": "EC Declaration of Conformity (Extract)\nThe manufacturer declares that the machine MTC-420 CNC turning center, serial number MTC420-24-0187, complies with the Machinery Directive 2006/42/EC and the EMC Directive 2014/30/EU. Applied standards include EN ISO 23125 (safety of turning machines), EN 60204-1, and EN ISO 12100. The full declaration is delivered as a separate document.",
+      "ordinal": 60,
+      "location": "page 23: EC Declaration of Conformity (Extract)",
+      "document_id": "01a1c5b1-557a-7039-9339-06a308f1f579"
+    },
+    {
+      "id": "01a1c5b3-dfec-71cd-a1a6-e43d044f9e6d",
+      "text": "**HALVIK PUMPS**",
+      "ordinal": 0,
+      "location": null,
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-714e-92d2-28a6edba900b",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\nInstallation, Operation and Maintenance Instructions\nDocument IOM-EP80-200-EN, edition 07/2023. Translation of the original instructions.\nPump set with 18.5 kW motor for clean water and process water.\n*Demo document. Halvik Pumps and the EP 80-200 are fictional and were created for the HealthyFac demo data.*",
+      "ordinal": 1,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7036-b9b3-dc3fddc2e8c7",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\nContents\n1 General\n2 Safety\n3 Transport and Storage\n4 Description\n5 Installation\n6 Commissioning\n7 Operation and Monitoring\n8 Alarm Codes of the HPC-2 Controller\n9 Maintenance\n10 Troubleshooting\n11 Spare Parts and Tightening Torques\n12 Decommissioning and Disposal",
+      "ordinal": 2,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > Contents",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7b0f-9261-0f6fff86d63f",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n1 General\nThese instructions apply to the pump set described in chapter 4. Read them before installation and commissioning. Keep them near the pump, available to the operating and maintenance staff.\nThe warranty applies only when the pump set is installed, operated, and maintained as described here, and when only original Halvik spare parts are used. Damage from dry running, cavitation, or pumped liquids outside the order data is not covered.\nMotor operating instructions, **Number** = supplied by the motor manufacturer. HPC-2 pump controller manual, **Number** = HPC2-OM-EN. Factory test report of this pump set, **Number** = TR-2023-04412. Mechanical seal data sheet, **Number** = MS-28-SIC-EN",
+      "ordinal": 3,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 1 General",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7aa5-ba00-eb3a5415e80d",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n2 Safety\n2.1 Intended Use\nThe pump set is intended for pumping clean or slightly contaminated water without solids larger than 2 mm, at 5 to 60 °C, in the flow range of chapter 4. It is designed for continuous operation in industrial cooling and process water systems.\nDo not pump flammable, explosive, or toxic liquids. Do not run the pump outside the allowed flow range, against a closed valve for more than 1 minute, or without liquid.",
+      "ordinal": 4,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 2 Safety > 2.1 Intended Use",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-75ea-908c-9ce5d349f2af",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n2 Safety\n2.2 Warnings\n**DANGER - Hot liquid.**\nBefore you open the pump, close the suction and discharge valves, drain the casing, and let the pump cool down to below 40 °C. The liquid in the casing can be under pressure.\n**DANGER - Rotating parts.**\nNever run the pump without the coupling guard. Loose clothing can be caught by the coupling.\n**WARNING - Dry running.**\nNever run the pump without liquid. The mechanical seal is destroyed within seconds when it runs dry.\n**WARNING - Automatic start.**\nIn standby, the controller can start the pump at any time. Lock out the motor before any work.",
+      "ordinal": 5,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 2 Safety > 2.2 Warnings",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7450-b1fa-30f275c4565c",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n2 Safety\n2.3 Lockout\n1. Stop the pump at the controller and switch it to manual off.\n2. Switch off the isolator of the motor and lock it with your padlock.\n3. Close the suction and the discharge valve and secure them against opening.\n4. Release the pressure through the drain plug and drain the casing into a container.",
+      "ordinal": 6,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 2 Safety > 2.3 Lockout",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7ea5-b06e-231a9094509b",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n3 Transport and Storage\nLift the pump set only with slings around the pump casing and the motor, or at the lifting points of the base plate. Never lift it at the motor eyebolt: this eyebolt is designed for the motor only.\nWeight of the pump set with base plate, **Value** = 385 kg. Weight of the pump without motor, **Value** = 142 kg. Dimensions of the base plate (L x W), **Value** = 1,450 x 520 mm\nStorage: store the pump in a dry, frost-free room. Keep the flange covers in place. For a storage of more than 3 months, turn the shaft by hand every month (5 turns) so that the bearings and the seal faces do not stick. After more than 2 years of storage, replace the bearing grease before the commissioning.",
+      "ordinal": 7,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 3 Transport and Storage",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-72eb-9d1a-59d5a49a20b7",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n4 Description\n4.1 Pump Set Data\nThe data come from the order confirmation and the factory test report of this pump set.\nPump type, **Value** = EP 80-200, end-suction, single stage, back pull-out design (EN 733). Serial number, **Value** = HV-EP80-2023-04412. Year of manufacture, **Value** = 2023. Pumped liquid, **Value** = Process cooling water, 5 to 60 °C, pH 6.5 to 9. Duty point, **Value** = 110 m³/h at 46 m head (best efficiency point). Allowed flow range, **Value** = 35 to 140 m³/h. Efficiency at the duty point, **Value** = 78 %. NPSH required at the duty point, **Value** = 3.2 m. Impeller diameter, **Value** = 209 mm (trimmed), closed impeller, cast iron EN-GJL-250. Shaft seal, **Value** = Mechanical seal, single, SiC/carbon/EPDM, shaft diameter 28 mm. Bearings, **Value** = Drive end 6309-C3, non-drive end 6308-C3, grease lubricated. Motor, **Value** = 18.5 kW, 2 poles, 2,950 rpm, 400 V, rated current 33.5 A, IE3, IP55. Maximum casing pressure, **Value** = 16 bar at 20 °C. Flanges, **Value** = Suction DN 100, discharge DN 80, PN 16",
+      "ordinal": 8,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 4 Description > 4.1 Pump Set Data",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-71a9-a0a4-e4696fe81366",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n4 Description\n4.2 Performance\nMeasured on the test stand at 2,950 rpm with water at 20 °C (test report TR-2023-04412).\n35, **Head (m)** = 54.5. 35, **Power input (kW)** = 10.8. 35, **Efficiency (%)** = 48. 35, **NPSH required (m)** = 1.9. 60, **Head (m)** = 52.8. 60, **Power input (kW)** = 13.4. 60, **Efficiency (%)** = 64. 60, **NPSH required (m)** = 2.2. 90, **Head (m)** = 49.6. 90, **Power input (kW)** = 15.9. 90, **Efficiency (%)** = 76. 90, **NPSH required (m)** = 2.7. 110, **Head (m)** = 46.0. 110, **Power input (kW)** = 17.6. 110, **Efficiency (%)** = 78. 110, **NPSH required (m)** = 3.2. 125, **Head (m)** = 42.7. 125, **Power input (kW)** = 18.4. 125, **Efficiency (%)** = 77. 125, **NPSH required (m)** = 3.8. 140, **Head (m)** = 38.5. 140, **Power input (kW)** = 18.9. 140, **Efficiency (%)** = 74. 140, **NPSH required (m)** = 4.6",
+      "ordinal": 9,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 4 Description > 4.2 Performance",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-77f0-9e2b-32363e21d10e",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n4 Description\n4.3 Design\nThe volute casing has an axial suction nozzle and a radial discharge nozzle pointing upwards. The back pull-out design lets you remove the bearing frame with the impeller and the seal without removing the casing from the pipes and without moving the motor, if a spacer coupling is fitted.\nThe shaft runs in two deep groove ball bearings in a grease-lubricated bearing frame. The drive-end bearing takes the axial thrust. Both bearing housings have a grease nipple, a drain plug, and an M8 hole for a temperature and vibration sensor.\n102, **Part** = Volute casing. 102, **Material** = Cast iron EN-GJL-250. 161, **Part** = Casing cover. 161, **Material** = Cast iron EN-GJL-250. 210, **Part** = Shaft. 210, **Material** = Stainless steel 1.4021. 230, **Part** = Impeller. 230, **Material** = Cast iron EN-GJL-250. 321, **Part** = Bearing, drive end. 321, **Material** = 6309-C3. 322, **Part** = Bearing, non-drive end. 322, **Material** = 6308-C3. 330, **Part** = Bearing frame. 330, **Material** = Cast iron EN-GJL-250. 433, **Part** = Mechanical seal. 433, **Material** = SiC / carbon / EPDM. 502, **Part** = Wear ring, casing. 502, **Material** = Bronze CC491K. 503, **Part** = Wear ring, casing cover. 503, **Material** = Bronze CC491K. 840, **Part** = Coupling. 840, **Material** = Flexible spacer coupling",
+      "ordinal": 10,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 4 Description > 4.3 Design",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-72bb-8711-84983077bb29",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n5 Installation\n5. Foundation. Place the base plate on a concrete foundation with a mass of at least 1.5 times the mass of the pump set. Level the base plate to 0.2 mm/m and grout it after the alignment.\n6. Suction pipe. Install a straight suction pipe with a length of at least 5 times its diameter before the suction flange. The pipe must rise continuously to the pump (no air pockets). Use an eccentric reducer with the flat side on top.\n7. Discharge pipe. Install a check valve and a shut-off valve after the pump. Install a minimum flow bypass if the plant can close all consumers.\n8. Pipe forces. Support the pipes so that they put no load on the pump flanges. Check: the flange bolts must slide into the holes without force.\n9. Alignment. Align the motor to the pump with a dial gauge or a laser tool. Allowed misalignment: 0.05 mm radial and 0.05 mm per 100 mm axial. Check the alignment again after the pipes are connected and after the first 24 hours of operation.\n10. Instruments. Fit pressure transmitters on the suction and on the discharge side, a flow meter in the discharge pipe, and temperature and vibration sensors on both bearing housings. Connect the leakage sensor in the seal chamber port (G 1/4).\n11. Electrical connection. A qualified electrician connects the motor as shown in the terminal box (star-delta or converter). Set the motor protection to the rated current of 33.5 A.",
+      "ordinal": 11,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 5 Installation",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7660-a07a-df8a4a2f4706",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n6 Commissioning\nAlignment, **Expected result** = Within 0.05 mm radial and 0.05 mm per 100 mm axial. Bearings, **Expected result** = Greased at the factory; no action for a new pump. Pump filled and vented, **Expected result** = Liquid comes out of the vent plug without air. Direction of rotation, **Expected result** = Clockwise seen from the motor fan (arrow on the casing). Check with a short start of 1 second.. Valves, **Expected result** = Suction valve fully open, discharge valve closed. Controller HPC-2, **Expected result** = Limits of chapter 7 entered, sensors show plausible values. Coupling guard, **Expected result** = Fitted\n12. Start the pump against the closed discharge valve.\n13. Open the discharge valve slowly within 30 seconds until the duty flow is reached.\n14. Check the discharge pressure, the motor current, and the flow. Compare them with the performance table.\n15. Watch the bearing temperatures during the first 2 hours. A new pump runs warmer during the first 50 hours, while the grease settles.\n16. Check the mechanical seal. A few drops per hour are normal during the first hours.\n17. Write the values after 2 hours into the commissioning record as the reference values.\nReference values of this pump set (commissioning 2023-10-04): flow 108 m³/h, discharge pressure 4.6 bar, suction pressure 1.1 bar, motor current 31.2 A, bearing temperatures 54 °C (drive end) and 49 °C (non-drive end), vibration 1.6 mm/s.",
+      "ordinal": 12,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 6 Commissioning",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7ee7-9f73-bba744d0a5d2",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n7 Operation and Monitoring\nThe HPC-2 controller reports the pump state as one of: running, stopped, standby, fault. In standby, the pump is ready and starts automatically on demand. Do not start the pump more than 6 times per hour; a frequent start overheats the motor.",
+      "ordinal": 13,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 7 Operation and Monitoring",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-72bf-b85a-75498fbd0cb5",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n7 Operation and Monitoring\n7.1 Monitoring and Limits\nMonitor the values below during operation. The controller must stop the pump at the trip values.",
+      "ordinal": 14,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 7 Operation and Monitoring > 7.1 Monitoring and Limits",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-771f-ab19-04736cb16aa5",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n7 Operation and Monitoring\n7.1 Monitoring and Limits\n| - |\n| Discharge pressure, **Signal key** = discharge.pressure. Discharge pressure, **Unit** = bar. Discharge pressure, **Normal** = 4.0 to 5.0. Discharge pressure, **Alarm** = above 6.5. Discharge pressure, **Trip** = above 8.0. Suction pressure, **Signal key** = suction.pressure. Suction pressure, **Unit** = bar. Suction pressure, **Normal** = 0.5 to 2.0. Suction pressure, **Alarm** = below 0.4. Suction pressure, **Trip** = below 0.3. Flow rate, **Signal key** = flow.rate. Flow rate, **Unit** = m³/h. Flow rate, **Normal** = 60 to 140. Flow rate, **Alarm** = below 45. Flow rate, **Trip** = below 35 for 30 s. Bearing temperature, drive end, **Signal key** = bearing_de.temperature. Bearing temperature, drive end, **Unit** = °C. Bearing temperature, drive end, **Normal** = up to 80. Bearing temperature, drive end, **Alarm** = above 90. Bearing temperature, drive end, **Trip** = above 100. Bearing temperature, non-drive end, **Signal key** = bearing_nde.temperature. Bearing temperature, non-drive end, **Unit** = °C. Bearing temperature, non-drive end, **Normal** = up to 80. Bearing temperature, non-drive end, **Alarm** = above 90. Bearing temperature, non-drive end, **Trip** = above 100. Vibration velocity (RMS), bearing housing, **Signal key** = pump.vibration. Vibration velocity (RMS), bearing housing, **Unit** = mm/s. Vibration velocity (RMS), bearing housing, **Normal** = up to 2.8. Vibration velocity (RMS), bearing housing, **Alarm** = above 4.5. Vibration velocity (RMS), bearing housing, **Trip** = above 7.1. Motor current, **Signal key** = motor.current. Motor current, **Unit** = A. Motor current, **Normal** = 25 to 33.5. Motor current, **Alarm** = above 35. Motor current, **Trip** = above 37 (motor protection). Motor speed, **Signal key** = motor.speed. Motor speed, **Unit** = rpm. Motor speed, **Normal** = 2,900 to 2,970. Motor speed, **Alarm** = -. Motor speed, **Trip** = -. Liquid temperature, **Signal key** = liquid.temperature. Liquid temperature, **Unit** = °C. Liquid temperature, **Normal** = 5 to 60. Liquid temperature, **Alarm** = above 60. Liquid temperature, **Trip** = above 70. Seal leakage detected, **Signal key** = seal.leakage. Seal leakage detected, **Unit** = yes / no. Seal leakage detected, **Normal** = no. Seal leakage detected, **Alarm** = yes. Seal leakage detected, **Trip** = -. Pump state, **Signal key** = pump.state. Pump state, **Unit** =",
+      "ordinal": 15,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 7 Operation and Monitoring > 7.1 Monitoring and Limits",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7d32-9d9d-853936894cc3",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n7 Operation and Monitoring\n7.1 Monitoring and Limits\n| - |\n running, stopped, standby, fault. Pump state, **Normal** = -. Pump state, **Alarm** = -. Pump state, **Trip** = -. Operating hours, **Signal key** = pump.operating_hours. Operating hours, **Unit** = h. Operating hours, **Normal** = -. Operating hours, **Alarm** = -. Operating hours, **Trip** = - |\n\nThe bearing temperature can be up to 40 °C above the ambient temperature in continuous operation. A slow rise of the bearing temperature by more than 10 °C compared with the reference value shows a grease or alignment problem.\nVibration zones of ISO 10816-7, category II: zone A up to 2.8 mm/s (new pump), zone B up to 4.5 mm/s (unlimited operation), zone C up to 7.1 mm/s (limited operation, plan a repair), zone D above 7.1 mm/s (damage is likely, stop the pump).\nCavitation: if the suction pressure falls, the liquid starts to boil in the impeller eye. The pump then sounds like gravel, the head drops, and the impeller erodes. Keep the available NPSH at least 1 m above the required NPSH of chapter 4.2.",
+      "ordinal": 16,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 7 Operation and Monitoring > 7.1 Monitoring and Limits",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7130-bcdb-5665bbbd8d95",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n8 Alarm Codes of the HPC-2 Controller\nThe HPC-2 controller shows the codes below on its display and sends them to the plant control system. A fault stops the pump and needs an acknowledgement. A warning keeps the pump running.",
+      "ordinal": 17,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 8 Alarm Codes of the HPC-2 Controller",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7b73-8e6c-0b0bd9b85561",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n8 Alarm Codes of the HPC-2 Controller\n| - |\n| P-01, **Severity** = Fault. P-01, **Meaning** = Dry running: no flow and low motor current. P-01, **Action** = The pump stops. Check that the suction valve is open and that the suction tank has liquid. Vent the casing before the restart.. P-02, **Severity** = Warning. P-02, **Meaning** = Suction pressure low. P-02, **Action** = Risk of cavitation. Check the suction strainer and the suction tank level. Do not throttle the suction valve.. P-03, **Severity** = Warning. P-03, **Meaning** = Flow below the minimum continuous flow. P-03, **Action** = Open the discharge valve or the bypass. Long operation below 35 m³/h overheats the pump.. P-04, **Severity** = Warning. P-04, **Meaning** = Bearing temperature high. P-04, **Action** = Check the grease quantity (too much grease also causes heat) and the alignment. Plan a bearing check.. P-05, **Severity** = Fault. P-05, **Meaning** = Bearing temperature trip. P-05, **Action** = The pump stops. Let it cool down. Inspect the bearing before the restart.. P-06, **Severity** = Warning. P-06, **Meaning** = Vibration high (zone C). P-06, **Action** = Check the alignment, the foundation bolts, and the impeller for blockage or wear. Plan a repair.. P-07, **Severity** = Fault. P-07, **Meaning** = Vibration trip (zone D). P-07, **Action** = The pump stops. Do not restart before the cause is found.. P-08, **Severity** = Warning. P-08, **Meaning** = Seal leakage. P-08, **Action** = A steady leak means the mechanical seal is worn: replace it at the next stop.. P-09, **Severity** = Fault. P-09, **Meaning** = Motor overload. P-09, **Action** = The motor protection tripped. Check the flow (a flow far above 140 m³/h overloads the motor) and the impeller for blockage.. P-10, **Severity** = Info. P-10, **Meaning** = Standby. P-10, **Action** = The pump is ready and starts on demand. No action.. P-11, **Severity** = Warning. P-11, **Meaning** = Discharge pressure high. P-11, **Action** = A valve in the discharge pipe is closed or the system is blocked. Check the valves.. P-12, **Severity** = Fault. P-12, **Meaning** = Discharge pressure trip. P-12, **Action** = The pump stops above 8.0 bar to protect the pipes. Find the closed valve before the restart.. P-13, **Severity** = Warning. P-13, **Meaning** = Liquid temperature high. P-13, **Action** = The liquid is above 60 °C. Check the cooling circuit. EPDM seal parts age fast above 70 °C.. P-14,",
+      "ordinal": 18,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 8 Alarm Codes of the HPC-2 Controller",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-751d-bc24-ed12f12e2e32",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n8 Alarm Codes of the HPC-2 Controller\n| - |\n **Severity** = Warning. P-14, **Meaning** = Too many starts. P-14, **Action** = More than 6 starts in 1 hour. Check the pressure switch settings and the demand.. P-15, **Severity** = Info. P-15, **Meaning** = Maintenance due. P-15, **Action** = The operating hours reached a maintenance interval of chapter 9.. P-20, **Severity** = Warning. P-20, **Meaning** = Sensor fault. P-20, **Action** = A sensor signal is outside 4 to 20 mA. Check the cable and the sensor. The related protection is not active.. P-21, **Severity** = Fault. P-21, **Meaning** = Phase failure. P-21, **Action** = One motor phase is missing. Check the fuses and the supply.. P-22, **Severity** = Info. P-22, **Meaning** = Running. P-22, **Action** = The pump runs normally. |\n",
+      "ordinal": 19,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 8 Alarm Codes of the HPC-2 Controller",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-776f-b8cc-73967c2c02b6",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n9 Maintenance\n9.1 Schedule\nDaily, **Task** = Read the controller for warnings. Check the seal for visible leakage.. Daily, **Notes** = Operator round.. Weekly, **Task** = Check the bearing temperatures, the vibration, and the motor current against the reference values. Listen for unusual noise.. Weekly, **Notes** = Write the values into the maintenance log.. Monthly, **Task** = Clean the suction strainer if the suction pressure dropped by more than 0.2 bar.. Monthly, **Notes** = . Every 4,000 h, **Task** = Re-grease both bearings with lithium complex grease NLGI 3: 15 g at the drive end, 10 g at the non-drive end.. Every 4,000 h, **Notes** = Run the pump during re-greasing. Remove old grease at the drain plug.. Every 8,000 h or yearly, **Task** = Check the alignment. Inspect the mechanical seal faces. Check the impeller and the wear rings (maximum gap 0.6 mm).. Every 8,000 h or yearly, **Notes** = Replace the wear rings when the gap is above 0.6 mm; the efficiency drops by about 5 % at 1 mm.. Every 16,000 h, **Task** = Replace both bearings and the mechanical seal.. Every 16,000 h, **Notes** = Use the service kit EP80-SK1.",
+      "ordinal": 20,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 9 Maintenance > 9.1 Schedule",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7d3e-ac90-03a08254db7d",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n9 Maintenance\n9.2 Re-Greasing the Bearings\n18. Clean the grease nipples.\n19. Open the drain plugs at the bottom of the bearing housings.\n20. With the pump running, press 15 g of grease into the drive-end nipple and 10 g into the non-drive-end nipple (about 10 and 7 strokes of a standard grease gun).\n21. Let the pump run for 30 minutes so that the old grease comes out, then close the drain plugs.\n22. The bearing temperature can rise by 10 °C for some hours after re-greasing. This is normal.\n**NOTICE.**\nToo much grease is as harmful as too little: it causes heat and early bearing failure. Use the quantities given.",
+      "ordinal": 21,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 9 Maintenance > 9.2 Re-Greasing the Bearings",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-74ae-97aa-dc4449805f88",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n9 Maintenance\n9.3 Checking the Wear Ring Gap\nRemove the bearing frame with the impeller (back pull-out). Measure the outer diameter of the impeller neck and the inner diameter of the wear ring at 3 positions. The gap is half the difference. New: 0.25 to 0.35 mm. Replace both wear rings at a gap above 0.6 mm.",
+      "ordinal": 22,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 9 Maintenance > 9.3 Checking the Wear Ring Gap",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7b71-8c13-c18b3a369de8",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n9 Maintenance\n9.4 Replacing the Mechanical Seal\n23. Lock out the motor, close both valves, and drain the casing.\n24. Remove the coupling guard and the coupling spacer (back pull-out: the motor stays in place).\n25. Remove the bearing frame with the impeller from the casing.\n26. Remove the impeller nut and the impeller, then pull off the rotating seal part.\n27. Clean the shaft and fit the new seal with seal lubricant (no oil or grease on the seal faces).\n28. Assemble in the reverse order. Tighten the impeller nut to 90 Nm and the casing bolts to 60 Nm crosswise.\n29. Fill and vent the pump. Check for leaks during the first hour of operation.",
+      "ordinal": 23,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 9 Maintenance > 9.4 Replacing the Mechanical Seal",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7fe2-929e-4c10194a7364",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n9 Maintenance\n9.5 Replacing the Bearings\n30. Remove the bearing frame as for the seal replacement.\n31. Remove the coupling hub with a puller and the bearing covers.\n32. Press the shaft out of the bearing frame towards the pump side.\n33. Pull the bearings from the shaft. Never reuse a removed bearing.\n34. Heat the new bearings to 100 °C with an induction heater and slide them onto the shaft. Do not heat with a flame.\n35. Fill each bearing one third with grease. Assemble the bearing frame and check that the shaft turns freely.",
+      "ordinal": 24,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 9 Maintenance > 9.5 Replacing the Bearings",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7f94-afef-0edef1f7b6a6",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n9 Maintenance\n9.6 Maintenance Log of This Pump Set\n2023-10-04, **Hours** = 0. 2023-10-04, **Task** = Commissioning. 2023-10-04, **Findings** = Reference values recorded. 2024-04-22, **Hours** = 4,010. 2024-04-22, **Task** = Re-greasing. 2024-04-22, **Findings** = No findings. 2024-10-08, **Hours** = 8,050. 2024-10-08, **Task** = Yearly inspection. 2024-10-08, **Findings** = Wear ring gap 0.38 mm; alignment corrected (0.09 mm radial). 2025-01-17, **Hours** = 10,120. 2025-01-17, **Task** = Seal leakage P-08. 2025-01-17, **Findings** = Mechanical seal replaced early: scale on the seal faces from hard water. 2025-04-10, **Hours** = 12,030. 2025-04-10, **Task** = Re-greasing. 2025-04-10, **Findings** = Drive-end bearing 6 °C warmer than the reference value, watch the trend",
+      "ordinal": 25,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 9 Maintenance > 9.6 Maintenance Log of This Pump Set",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7efe-a7fa-5c37059b6d53",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n10 Troubleshooting\nPump delivers no liquid, **Possible cause** = Pump not filled, suction valve closed, wrong direction of rotation. Pump delivers no liquid, **Remedy** = Fill and vent the pump. Open the suction valve. Check the direction of rotation.. Flow too low, **Possible cause** = Air in the suction pipe, worn impeller or wear rings, valve partly closed, system resistance higher than designed. Flow too low, **Remedy** = Vent the pump. Check the wear ring gap. Open the valves fully. Compare the head with the performance table.. Flow too high, motor overload, **Possible cause** = System resistance lower than designed, pipe burst. Flow too high, motor overload, **Remedy** = Throttle the discharge valve to the duty point. Check the pipes.. Noise like gravel in the pump, **Possible cause** = Cavitation: suction pressure too low. Noise like gravel in the pump, **Remedy** = Raise the suction tank level, clean the strainer, reduce the flow.. Bearings run hot, **Possible cause** = Too much or too little grease, misalignment, axial thrust too high. Bearings run hot, **Remedy** = Correct the grease quantity, check the alignment, check the wear rings.. High vibration, **Possible cause** = Misalignment, impeller not balanced or blocked, loose foundation bolts, bearing damage, cavitation. High vibration, **Remedy** = Check the alignment and the bolts. Clean the impeller. Balance it (grade G 6.3). Check the bearings.. High vibration after a repair, **Possible cause** = Impeller not balanced, misalignment. High vibration after a repair, **Remedy** = Balance the impeller, align the shaft.. Seal leaks soon after a replacement, **Possible cause** = Seal faces damaged or dirty during assembly. Seal leaks soon after a replacement, **Remedy** = Replace the seal again and keep the faces clean.. Seal leaks after long operation, **Possible cause** = Wear, deposits from hard water, dry running. Seal leaks after long operation, **Remedy** = Replace the seal. With hard water, consider a seal with SiC/SiC faces.. Motor trips at the start, **Possible cause** = Start against an open valve on an empty system, wrong motor protection setting. Motor trips at the start, **Remedy** = Start against a closed valve. Check the protection setting (33.5 A).. Pump starts and stops often (P-14), **Possible cause** = Pressure switch hysteresis too small, no pressure vessel. Pump starts and stops often (P-14), **Remedy** = Set a larger hysteresis or install a pressure vessel.. Pressure reading jumps, **Possible cause** = Air in the sensor line, sensor fault (P-20). Pressure reading jumps, **Remedy** = Vent the sensor line. Check the sensor.",
+      "ordinal": 26,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 10 Troubleshooting",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-79ca-ba92-1cd1351de9d6",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n11 Spare Parts and Tightening Torques\nOrder spare parts with the serial number of the pump, the part number, and the position number.\nEP80-SK1, **Position** = 321, 322, 433, 412. EP80-SK1, **Description** = Service kit: bearings 6309-C3 and 6308-C3, mechanical seal, O-rings. EP80-102, **Position** = 102. EP80-102, **Description** = Volute casing. EP80-161, **Position** = 161. EP80-161, **Description** = Casing cover. EP80-210, **Position** = 230. EP80-210, **Description** = Impeller, 209 mm, cast iron. EP80-215, **Position** = 210. EP80-215, **Description** = Shaft with key. EP80-310, **Position** = 502, 503. EP80-310, **Description** = Wear ring set, casing and casing cover. EP80-321, **Position** = 321. EP80-321, **Description** = Bearing 6309-C3. EP80-322, **Position** = 322. EP80-322, **Description** = Bearing 6308-C3. EP80-410, **Position** = 840. EP80-410, **Description** = Coupling element, elastic. EP80-411, **Position** = 840. EP80-411, **Description** = Coupling spacer. EP80-412, **Position** = 412. EP80-412, **Description** = O-ring set. EP80-433, **Position** = 433. EP80-433, **Description** = Mechanical seal, SiC/carbon/EPDM, 28 mm. EP80-434, **Position** = 433. EP80-434, **Description** = Mechanical seal, SiC/SiC/EPDM, 28 mm (for hard water). EP80-520, **Position** = -. EP80-520, **Description** = Grease nipple set. EP80-610, **Position** = -. EP80-610, **Description** = Coupling guard. HPC2-S01, **Position** = -. HPC2-S01, **Description** = Vibration and temperature sensor, M8. HPC2-S02, **Position** = -. HPC2-S02, **Description** = Pressure transmitter 0-10 bar, 4-20 mA. HPC2-S03, **Position** = -. HPC2-S03, **Description** = Leakage sensor, seal chamber\nImpeller nut, **Torque** = 90 Nm. Casing bolts M16, **Torque** = 60 Nm, crosswise. Bearing cover bolts M8, **Torque** = 20 Nm. Foundation bolts M16, **Torque** = 120 Nm. Flange bolts M16 (PN 16), **Torque** = 100 Nm",
+      "ordinal": 27,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 11 Spare Parts and Tightening Torques",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b3-dfec-7182-804f-d541ce9ad0c8",
+      "text": "Halvik EP 80-200 End-Suction Centrifugal Pump\n12 Decommissioning and Disposal\nFor a stop of more than 1 month, drain the pump completely in frost or fill it with a preservation liquid. Turn the shaft by hand every month. Before the restart, check that the shaft turns freely and do the commissioning steps of chapter 6.\nFor disposal, drain the pump, remove the grease, and dispose of it as oil waste. The casing and the impeller are cast iron, the shaft is stainless steel, and the wear rings are bronze; recycle them as metal scrap. The seal parts and the O-rings are residual waste.\nEC declaration of conformity (extract): Halvik Pumps declares that the pump set EP 80-200, serial number HV-EP80-2023-04412, complies with the Machinery Directive 2006/42/EC. Applied standards: EN 809, EN 733, EN ISO 12100.\nHalvik Pumps service: service@halvik-pumps.example. State the serial number of the pump.",
+      "ordinal": 28,
+      "location": "Halvik EP 80-200 End-Suction Centrifugal Pump > 12 Decommissioning and Disposal",
+      "document_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79"
+    },
+    {
+      "id": "01a1c5b4-4504-7512-8294-5d4f2a74e6b2",
+      "text": "Demo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.\nModel, Value = RSV-37 (variable speed drive). Serial number, Value = NRS37-22-1093. Year of manufacture, Value = 2022. Workbook, Value = SDW-RSV37-EN, revision 4 (2025-02). Controller, Value = Norrlund AirLogic 5, firmware 5.3. Installed at, Value = Compressor room, hall B. Commissioning date, Value = 2022-06-14. Purpose, Value = Supplies compressed air at 7 bar to the production hall: pneumatic tools, actuators, and blow-off nozzles.. Main parts, Value = Twin-screw air end with oil injection, 37 kW permanent magnet motor with frequency converter, oil separator vessel, air-cooled oil cooler and aftercooler, electronic condensate drain, AirLogic 5 controller.. How it works, Value = The motor drives the air end directly. Air enters through the air filter and the inlet valve and is compressed between the two rotors. Injected oil seals, cools, and lubricates the rotors. The separator vessel removes the oil from the air; the oil returns through the oil cooler and the oil filter. The minimum pressure valve keeps at least 4 bar in the vessel for the oil circulation. The VSD changes the motor speed to hold the setpoint pressure.. Sheets of this workbook, Value = Unit, Technical data, Performance, Monitored parameters, Alarms, Service plan, Service log, Oil analysis, Parts, Installation, Revision\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.\nRated motor power, Value = 37. Rated motor power, Unit = kW. Free air delivery at 7 bar, Value = 1.6 to 6.3. Free air delivery at 7 bar, Unit = m³/min. Maximum working pressure, Value = 8. Maximum working pressure, Unit = bar. Minimum working pressure, Value = 5.5. Minimum working pressure, Unit = bar. Pressure setpoint (factory), Value = 7. Pressure setpoint (factory), Unit = bar. Motor speed range, Value = 1,000 to 3,600. Motor speed range, Unit = rpm. Oil capacity, Value = 20. Oil capacity, Unit = L. Oil type, Value = Norrlund Roto-Fluid S (synthetic, ISO VG 46). Oil type, Unit = . Residual oil content of the air, Value = below 3. Residual oil content of the air, Unit = mg/m³. Air outlet temperature above ambient, Value = 8. Air outlet temperature above ambient, Unit = °C. Cooling air flow, Value = 5800. Cooling air flow, Unit = m³/h. Heat recovery potential, Value = 30. Heat recovery potential, Unit = kW. Ambient temperature range, Value = 0 to 46. Ambient temperature range, Unit = °C. Sound pressure level at 1 m, Value = 68. Sound pressure level at 1 m, Unit = dB(A). Supply, Value = 400 V, 3 phases, 50 Hz, 80 A fuse. Supply, Unit = . Air outlet connection, Value = G 1 1/2. Air outlet connection, Unit = . Dimensions (L x W x H), Value = 1,650 x 900 x 1,600. Dimensions (L x W x H), Unit = mm. Weight, Value = 690. Weight, Unit = kg\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 0,
+      "location": "sheets 1-3",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7320-a3f3-a940645ba6b5",
+      "text": "1000, Free air delivery (m³/min) = 1.6. 1000, Shaft power (kW) = 10.9. 1000, Specific power (kW per m³/min) = 6.8. 1500, Free air delivery (m³/min) = 2.7. 1500, Shaft power (kW) = 15.3. 1500, Specific power (kW per m³/min) = 5.7. 2000, Free air delivery (m³/min) = 3.6. 2000, Shaft power (kW) = 19.8. 2000, Specific power (kW per m³/min) = 5.5. 2500, Free air delivery (m³/min) = 4.6. 2500, Shaft power (kW) = 24.6. 2500, Specific power (kW per m³/min) = 5.3. 3000, Free air delivery (m³/min) = 5.5. 3000, Shaft power (kW) = 29.9. 3000, Specific power (kW per m³/min) = 5.4. 3600, Free air delivery (m³/min) = 6.3. 3600, Shaft power (kW) = 36.6. 3600, Specific power (kW per m³/min) = 5.8\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 1,
+      "location": "sheets 3-4",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7a06-80c8-c6948248055c",
+      "text": "| - |\n| discharge.pressure, Parameter = Net discharge pressure. discharge.pressure, Unit = bar. discharge.pressure, Value type = numeric. discharge.pressure, Normal min = 6.5. discharge.pressure, Normal max = 7.5. discharge.pressure, Warning = above 7.8. discharge.pressure, Shutdown = above 8.3. discharge.pressure, Notes = The VSD holds the setpoint within ±0.1 bar.. vessel.pressure, Parameter = Oil separator vessel pressure. vessel.pressure, Unit = bar. vessel.pressure, Value type = numeric. vessel.pressure, Normal min = 4. vessel.pressure, Normal max = 8. vessel.pressure, Warning = . vessel.pressure, Shutdown = above 8.5. vessel.pressure, Notes = At least 4 bar in loaded state (minimum pressure valve).. element.outlet_temperature, Parameter = Air end outlet temperature. element.outlet_temperature, Unit = °C. element.outlet_temperature, Value type = numeric. element.outlet_temperature, Normal min = 75. element.outlet_temperature, Normal max = 100. element.outlet_temperature, Warning = above 110. element.outlet_temperature, Shutdown = above 115. element.outlet_temperature, Notes = Below 70 °C for long periods causes water in the oil.. oil_separator.pressure_drop, Parameter = Oil separator pressure drop. oil_separator.pressure_drop, Unit = bar. oil_separator.pressure_drop, Value type = numeric. oil_separator.pressure_drop, Normal min = 0. oil_separator.pressure_drop, Normal max = 0.6. oil_separator.pressure_drop, Warning = above 0.8. oil_separator.pressure_drop, Shutdown = . oil_separator.pressure_drop, Notes = Replace the separator element at 1.0 bar at the latest.. oil_filter.pressure_drop, Parameter = Oil filter pressure drop. oil_filter.pressure_drop, Unit = bar. oil_filter.pressure_drop, Value type = numeric. oil_filter.pressure_drop, Normal min = 0. oil_filter.pressure_drop, Normal max = 1. oil_filter.pressure_drop, Warning = above 1.5. oil_filter.pressure_drop, Shutdown = . oil_filter.pressure_drop, Notes = . air_filter.pressure_drop, Parameter = Air filter pressure drop. air_filter.pressure_drop, Unit = mbar. air_filter.pressure_drop, Value type = numeric. air_filter.pressure_drop, Normal min = 0. air_filter.pressure_drop, Normal max = 30. air_filter.pressure_drop, Warning = above 50. air_filter.pressure_drop, Shutdown = . air_filter.pressure_drop, Notes = Replace the filter at the warning or at service A.. motor.speed, Parameter = Motor speed. motor.speed, Unit = rpm. motor.speed, Value type = numeric. motor.speed, Normal min = 1000. motor.speed, Normal max = 3600. motor.speed, Warning = . motor.speed, Shutdown = . motor.speed, Notes = . motor.power, Parameter = Motor input power. motor.power, Unit = kW. motor.power, Value type = numeric. motor.power, Normal min = 0. motor.power, Normal max = 41. motor.power, Warning = . motor.power, Shutdown = . motor.power, Notes = Includes the converter losses.. motor.current, Parameter = Motor current.",
+      "ordinal": 2,
+      "location": "sheet 4",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-798d-906c-72870d07bcc5",
+      "text": "| - |\n motor.current, Unit = A. motor.current, Value type = numeric. motor.current, Normal min = 0. motor.current, Normal max = 68. motor.current, Warning = above 72. motor.current, Shutdown = above 78. motor.current, Notes = . converter.temperature, Parameter = Converter heat sink temperature. converter.temperature, Unit = °C. converter.temperature, Value type = numeric. converter.temperature, Normal min = 20. converter.temperature, Normal max = 70. converter.temperature, Warning = above 80. converter.temperature, Shutdown = above 90. converter.temperature, Notes = . ambient.temperature, Parameter = Ambient air temperature. ambient.temperature, Unit = °C. ambient.temperature, Value type = numeric. ambient.temperature, Normal min = 0. ambient.temperature, Normal max = 46. ambient.temperature, Warning = above 46. ambient.temperature, Shutdown = . ambient.temperature, Notes = Above 46 °C the controller reduces the speed.. compressor.state, Parameter = Compressor state. compressor.state, Unit = . compressor.state, Value type = stateSet: stopped, loaded, unloaded, standby, fault. compressor.state, Normal min = . compressor.state, Normal max = . compressor.state, Warning = . compressor.state, Shutdown = . compressor.state, Notes = In standby the compressor restarts when the pressure falls below 6.8 bar.. drain.fault, Parameter = Condensate drain fault. drain.fault, Unit = . drain.fault, Value type = boolean. drain.fault, Normal min = . drain.fault, Normal max = . drain.fault, Warning = true. drain.fault, Shutdown = . drain.fault, Notes = The drain did not open or the level stays high.. running.hours, Parameter = Running hours. running.hours, Unit = h. running.hours, Value type = numeric. running.hours, Normal min = . running.hours, Normal max = . running.hours, Warning = . running.hours, Shutdown = . running.hours, Notes = Counts the service intervals.. loaded.hours, Parameter = Loaded hours. loaded.hours, Unit = h. loaded.hours, Value type = numeric. loaded.hours, Normal min = . loaded.hours, Normal max = . loaded.hours, Warning = . loaded.hours, Shutdown = . loaded.hours, Notes = |\n\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 3,
+      "location": "sheets 4-5",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7260-839d-2a9503a97cc6",
+      "text": "| - |\n| I0001, Severity = Info. I0001, Message = Standby. I0001, Cause = Pressure above the setpoint, compressor stopped by the VSD logic.. I0001, Action = No action. The compressor restarts on demand.. I0002, Severity = Info. I0002, Message = Loaded. I0002, Cause = The compressor delivers air.. I0002, Action = No action.. I0003, Severity = Info. I0003, Message = Remote stop. I0003, Cause = Stopped by the master controller or a remote input.. I0003, Action = No action.. W1010, Severity = Warning. W1010, Message = Ambient temperature high. W1010, Cause = The room is above 46 °C; the speed is reduced.. W1010, Action = Check the room ventilation and the cooling air outlet duct.. W1020, Severity = Warning. W1020, Message = Ambient temperature low. W1020, Cause = The room is below 2 °C; condensate can freeze.. W1020, Action = Heat the room. Do not start below 0 °C.. W2010, Severity = Warning. W2010, Message = Element outlet temperature high. W2010, Cause = Dirty oil cooler, low oil level, high ambient temperature.. W2010, Action = Clean the cooler with compressed air from the fan side. Check the oil level.. S2011, Severity = Shutdown. S2011, Message = Element outlet temperature too high. S2011, Cause = As W2010, or a faulty thermostatic valve.. S2011, Action = Let the compressor cool down. Check the oil level and the thermostatic valve before the restart.. W2020, Severity = Warning. W2020, Message = Element outlet temperature low. W2020, Cause = Below 70 °C for more than 2 hours (low load, cold room, thermostatic valve stuck open).. W2020, Action = Check the thermostatic valve. Water in the oil shortens the oil life.. S2030, Severity = Shutdown. S2030, Message = Temperature sensor fault. S2030, Cause = The element outlet sensor is open or short.. S2030, Action = Check the sensor and the cable.. W3050, Severity = Warning. W3050, Message = Oil separator pressure drop high. W3050, Cause = The separator element is clogged.. W3050, Action = Replace the separator element at the next stop.. W3060, Severity = Warning. W3060, Message = Air filter pressure drop high. W3060, Cause = The air filter is dirty.. W3060, Action = Replace the air filter element.. W3070, Severity = Warning. W3070, Message = Oil filter pressure drop high. W3070, Cause = The oil filter is clogged.. W3070, Action = Replace the oil filter.. S3080, Severity = Shutdown. S3080, Message = Vessel pressure too high. S3080, Cause = Blocked separator element or minimum pressure valve.. S3080, Action = Replace the separator element. Check the minimum pressure valve.. S4010, Severity = Shutdown. S4010, Message = Motor overload. S4010, Cause = Mechanical blockage, high discharge pressure, voltage drop.. S4010, Action = Check the supply voltage and turn the air end by hand. Call Norrlund service if it is stiff.. S4020, Severity = Shutdown.",
+      "ordinal": 4,
+      "location": "sheet 5",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7951-955b-a97b2f9eb465",
+      "text": "| - |\n S4020, Message = Converter fault. S4020, Cause = Converter overtemperature or internal fault.. S4020, Action = Check the cabinet fan and the filter mat. Read the converter fault code.. W4030, Severity = Warning. W4030, Message = Converter temperature high. W4030, Cause = Heat sink above 80 °C.. W4030, Action = Clean the cabinet filter mat. Check the room temperature.. S4040, Severity = Shutdown. S4040, Message = Phase failure. S4040, Cause = One supply phase is missing.. S4040, Action = Check the fuses and the supply.. S4050, Severity = Shutdown. S4050, Message = Undervoltage. S4050, Cause = Supply voltage below 340 V.. S4050, Action = Check the supply. The compressor restarts automatically when the voltage returns (if auto restart is on).. S6010, Severity = Shutdown. S6010, Message = Discharge pressure too high. S6010, Cause = Faulty pressure sensor, blocked outlet valve.. S6010, Action = Check the outlet valve and the pressure sensor.. W6020, Severity = Warning. W6020, Message = Discharge pressure low. W6020, Cause = Air demand higher than the delivery, leak in the network.. W6020, Action = Check the network for leaks. Consider a second compressor.. S6030, Severity = Shutdown. S6030, Message = Pressure sensor fault. S6030, Cause = The pressure sensor signal is outside 4 to 20 mA.. S6030, Action = Check the sensor and the cable.. W7010, Severity = Warning. W7010, Message = Condensate drain fault. W7010, Cause = The drain valve is blocked or has no power.. W7010, Action = Clean the drain strainer and test the drain with the test button. Water in the air network damages tools.. S8010, Severity = Shutdown. S8010, Message = Emergency stop. S8010, Cause = The emergency stop button is pressed.. S8010, Action = Release the button and reset the controller.. S8020, Severity = Shutdown. S8020, Message = Wrong direction of rotation. S8020, Cause = Detected at the first start after a supply change (fixed speed fan).. S8020, Action = Swap two supply phases.. W5010, Severity = Warning. W5010, Message = Service A due. W5010, Cause = Running hours reached 2,000 h since the last service A.. W5010, Action = Do service A (sheet Service plan) and reset the counter.. W5020, Severity = Warning. W5020, Message = Service B due. W5020, Cause = Running hours reached 4,000 h since the last service B.. W5020, Action = Do service B and reset the counter.. W5030, Severity = Warning. W5030, Message = Service C due. W5030, Cause = Running hours reached 8,000 h since the last service C.. W5030, Action = Do service C and reset the counter.. W5040, Severity = Warning. W5040, Message = Oil life reached. W5040, Cause = 2 years since the last oil change, also when the hours are not reached.. W5040, Action = Change the oil. |\n\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 5,
+      "location": "sheets 5-6",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-784c-80a0-c5d4297902d2",
+      "text": "Daily, Service level = Check. Daily, Task = Read the controller for warnings. Check the oil level in the sight glass (between min and max). Check that the condensate drain works.. Daily, Parts = . Daily, Quantity = . Daily, Time (min) = 5. Weekly, Service level = Check. Weekly, Task = Check the cooler fins for dirt. Check for oil leaks on the floor.. Weekly, Parts = . Weekly, Quantity = . Weekly, Time (min) = 10. Monthly, Service level = Check. Monthly, Task = Clean the oil cooler and the aftercooler with compressed air from the fan side. Clean the cabinet filter mat. Test the condensate drain with the test button.. Monthly, Parts = . Monthly, Quantity = . Monthly, Time (min) = 20. 2000, Service level = Service A. 2000, Task = Replace the air filter element and the oil filter. Check for oil and air leaks. Check the cooler.. 2000, Parts = NR37-AF01 air filter, NR37-OF01 oil filter. 2000, Quantity = 1 each. 2000, Time (min) = 45. 4000, Service level = Service B. 4000, Task = Service A, plus: replace the oil separator element and change the oil. Take an oil sample before the change.. 4000, Parts = NR37-SE01 separator element, Roto-Fluid S oil. 4000, Quantity = 1, 20 L. 4000, Time (min) = 120. 8000, Service level = Service C. 8000, Task = Service B, plus: replace the minimum pressure valve kit, the thermostatic valve kit, and the inlet valve kit. Check the motor bearings (noise, temperature). Replace the cabinet filter mat.. 8000, Parts = NR37-MPV1, NR37-TV01, NR37-IV01 kits. 8000, Quantity = 1 each. 8000, Time (min) = 240. 24000, Service level = Service D. 24000, Task = Overhaul of the air end bearings and seals by Norrlund service.. 24000, Parts = Air end overhaul kit. 24000, Quantity = 1. 24000, Time (min) = 960. 2 years, Service level = Oil. 2 years, Task = Change the oil if service B was not due within 2 years.. 2 years, Parts = Roto-Fluid S oil. 2 years, Quantity = 20 L. 2 years, Time (min) = 60\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 6,
+      "location": "sheets 6-7",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7d0e-a792-228b1fa97f3a",
+      "text": "2022-06-14, Running hours = 0. 2022-06-14, Loaded hours = 0. 2022-06-14, Work = Commissioning. 2022-06-14, Findings and remarks = Setpoint 7.0 bar; element outlet temperature 86 °C at full load.. 2022-06-14, Technician = Norrlund service. 2022-11-03, Running hours = 2010. 2022-11-03, Loaded hours = 1720. 2022-11-03, Work = Service A. 2022-11-03, Findings and remarks = No findings.. 2022-11-03, Technician = M. Lind. 2023-03-28, Running hours = 4020. 2023-03-28, Loaded hours = 3390. 2023-03-28, Work = Service B. 2023-03-28, Findings and remarks = Oil sample normal. Separator pressure drop was 0.42 bar.. 2023-03-28, Technician = M. Lind. 2023-07-19, Running hours = 5460. 2023-07-19, Loaded hours = 4610. 2023-07-19, Work = Repair. 2023-07-19, Findings and remarks = W2010 several times in July: oil cooler blocked by dust from the hall. Cooler cleaned; cooling air duct filter added.. 2023-07-19, Technician = M. Lind. 2023-08-30, Running hours = 6010. 2023-08-30, Loaded hours = 5080. 2023-08-30, Work = Service A. 2023-08-30, Findings and remarks = No findings.. 2023-08-30, Technician = M. Lind. 2024-01-22, Running hours = 8040. 2024-01-22, Loaded hours = 6790. 2024-01-22, Work = Service C. 2024-01-22, Findings and remarks = Minimum pressure valve kit, thermostatic valve kit, inlet valve kit replaced. Motor bearings quiet.. 2024-01-22, Technician = Norrlund service. 2024-05-14, Running hours = 10000. 2024-05-14, Loaded hours = 8460. 2024-05-14, Work = Service A. 2024-05-14, Findings and remarks = Air filter very dirty: construction work in hall B.. 2024-05-14, Technician = K. Berg. 2024-07-02, Running hours = 10820. 2024-07-02, Loaded hours = 9150. 2024-07-02, Work = Repair. 2024-07-02, Findings and remarks = W7010: condensate drain strainer blocked with rust. Cleaned. Water found in the network.. 2024-07-02, Technician = K. Berg. 2024-09-24, Running hours = 12030. 2024-09-24, Loaded hours = 10190. 2024-09-24, Work = Service B. 2024-09-24, Findings and remarks = Oil sample: water 0.18 % (limit 0.2 %). Separator pressure drop 0.58 bar.. 2024-09-24, Technician = K. Berg. 2025-02-11, Running hours = 14010. 2025-02-11, Loaded hours = 11860. 2025-02-11, Work = Service A. 2025-02-11, Findings and remarks = W2020 seen several times in January: low load at night. Setpoint unchanged.. 2025-02-11, Technician = K. Berg",
+      "ordinal": 7,
+      "location": "sheet 7",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7f12-a954-1f9e42d5a293",
+      "text": "Demo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.\n2023-03-28, Running hours = 4020. 2023-03-28, Viscosity at 40 °C (mm²/s) = 45.1. 2023-03-28, Water (%) = 0.05. 2023-03-28, Total acid number (mg KOH/g) = 0.18. 2023-03-28, Iron (ppm) = 4. 2023-03-28, Result = Normal. 2024-09-24, Running hours = 12030. 2024-09-24, Viscosity at 40 °C (mm²/s) = 44.2. 2024-09-24, Water (%) = 0.18. 2024-09-24, Total acid number (mg KOH/g) = 0.31. 2024-09-24, Iron (ppm) = 9. 2024-09-24, Result = Watch: water close to the limit; check the thermostatic valve and the load profile. Limits, Running hours = . Limits, Viscosity at 40 °C (mm²/s) = 41.4 to 50.6. Limits, Water (%) = below 0.2. Limits, Total acid number (mg KOH/g) = below 0.5. Limits, Iron (ppm) = below 20. Limits, Result = \nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 8,
+      "location": "sheets 8-9",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-75a4-bd04-35aa2b06d1fa",
+      "text": "NR37-AF01, Description = Air filter element. NR37-AF01, Used in = Service A. NR37-OF01, Description = Oil filter. NR37-OF01, Used in = Service A. NR37-SE01, Description = Oil separator element. NR37-SE01, Used in = Service B. NR37-OIL20, Description = Roto-Fluid S oil, 20 L. NR37-OIL20, Used in = Service B. NR37-MPV1, Description = Minimum pressure valve kit. NR37-MPV1, Used in = Service C. NR37-TV01, Description = Thermostatic valve kit. NR37-TV01, Used in = Service C. NR37-IV01, Description = Inlet valve kit. NR37-IV01, Used in = Service C. NR37-CF01, Description = Cabinet filter mat. NR37-CF01, Used in = Service C, monthly cleaning. NR37-DR01, Description = Condensate drain service kit. NR37-DR01, Used in = Repair. NR37-DR02, Description = Condensate drain, complete. NR37-DR02, Used in = Repair. NR37-PS01, Description = Pressure sensor 0-16 bar. NR37-PS01, Used in = Repair. NR37-TS01, Description = Temperature sensor PT1000, element outlet. NR37-TS01, Used in = Repair. NR37-SV01, Description = Safety valve 10 bar. NR37-SV01, Used in = Repair, test yearly. NR37-FB01, Description = Cooling fan motor. NR37-FB01, Used in = Repair. NR37-OC01, Description = Oil cooler and aftercooler, combined. NR37-OC01, Used in = Repair. NR37-AE01, Description = Air end overhaul kit. NR37-AE01, Used in = Service D. NR37-AE00, Description = Air end, exchange unit. NR37-AE00, Used in = Repair. NR37-VSD1, Description = Frequency converter 45 kW. NR37-VSD1, Used in = Repair. NR37-HO01, Description = Oil hose set. NR37-HO01, Used in = Repair\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.\nRoom, Requirement = Dry, frost-free, 0 to 46 °C, no dust from grinding or welding near the air inlet. Room, Checked at commissioning = Yes. Floor, Requirement = Flat, able to carry 690 kg; no foundation needed. Floor, Checked at commissioning = Yes. Clearance, Requirement = 1 m at the front and at the sides for service; 0.5 m at the back. Clearance, Checked at commissioning = Yes. Cooling air, Requirement = 5,800 m³/h; warm air duct to the outside or to heat recovery, maximum pressure loss 30 Pa. Cooling air, Checked at commissioning = Yes, duct with filter added 2023-07. Electrical, Requirement = 400 V, 3 phases, 80 A fuse, cable 4 x 25 mm² + PE. Electrical, Checked at commissioning = Yes. Air network, Requirement = Air receiver at least 500 L after the compressor; condensate drain at the lowest point of the network. Air network, Checked at commissioning = Receiver 900 L. Condensate, Requirement = Oil-water separator before the drain into the sewer, as required by local rules. Condensate, Checked at commissioning = Yes\nDemo document. Norrlund Air Systems and the RSV-37 are fictional and were created for the HealthyFac demo data.",
+      "ordinal": 9,
+      "location": "sheets 9-11",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    },
+    {
+      "id": "01a1c5b4-4504-7a75-9b32-9e302ba67b9e",
+      "text": "1, Date = 2022-05. 1, Change = First edition.. 2, Date = 2023-08. 2, Change = New limits for the oil separator pressure drop.. 3, Date = 2024-11. 3, Change = Added the condensate drain fault and the service D interval.. 4, Date = 2025-02. 4, Change = Added the oil analysis sheet and the low element outlet temperature warning W2020.",
+      "ordinal": 10,
+      "location": "sheet 11",
+      "document_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054"
+    }
+  ]
+}

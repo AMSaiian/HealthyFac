@@ -41,7 +41,10 @@ public sealed class DocumentDevelopmentDataSeeder(DocumentDbContext dbContext, I
 
         _dbContext.MachineRegistrations.AddRange(
             seeds.Where(seed => !registeredIds.Contains(seed.MachineId))
-                .Select(seed => new MachineRegistration(seed.MachineId, tenant.CompanyId)));
+                .Select(seed => new MachineRegistration(
+                    seed.MachineId,
+                    tenant.CompanyId,
+                    seed.Name ?? seed.MachineId.ToString())));
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }

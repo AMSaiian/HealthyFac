@@ -648,7 +648,7 @@
     },
     {
       "name": "healthyfac-claims",
-      "description": "Audiences of the Core and Telemetry APIs, the employee ID of the user, and the permissions of the user for both APIs",
+      "description": "Audiences of the Core, Telemetry, Document, and Insights APIs, the employee ID of the user, and the permissions of the user for the APIs",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "false",
@@ -753,6 +753,80 @@
             "userinfo.token.claim": "false",
             "introspection.token.claim": "true"
           }
+        },
+        {
+          "name": "healthyfac-insights-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-insights",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "healthyfac-insights-permissions",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "usermodel.clientRoleMapping.clientId": "healthyfac-insights",
+            "claim.name": "permissions",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "insights-files",
+      "description": "Downstream scope of Insights: read the files of Document. The permissions come from the healthyfac-claims mappers, limited by the role scope mapping.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "healthyfac-document-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-document",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "insights-telemetry",
+      "description": "Downstream scope of Insights: read the units, metric definitions, and status definitions of Telemetry. The permissions come from the healthyfac-claims mappers, limited by the role scope mapping.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "healthyfac-telemetry-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-telemetry",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
         }
       ]
     }
@@ -770,7 +844,9 @@
               "employees:manage",
               "machines:read",
               "machines:write",
-              "machines:delete"
+              "machines:delete",
+              "drafts:read",
+              "drafts:write"
             ],
             "healthyfac-telemetry": [
               "metric-definitions:read",
@@ -785,6 +861,10 @@
               "files:delete",
               "company-files:write",
               "company-files:delete"
+            ],
+            "healthyfac-insights": [
+              "ingest:read",
+              "ingest:write"
             ]
           }
         }
@@ -798,7 +878,9 @@
             "healthyfac-core": [
               "machines:read",
               "machines:write",
-              "machines:delete"
+              "machines:delete",
+              "drafts:read",
+              "drafts:write"
             ],
             "healthyfac-telemetry": [
               "metric-definitions:read",
@@ -813,6 +895,26 @@
               "files:delete",
               "company-files:write",
               "company-files:delete"
+            ],
+            "healthyfac-insights": [
+              "ingest:read",
+              "ingest:write"
+            ]
+          }
+        }
+      },
+      {
+        "name": "insights-service",
+        "description": "Permissions of the service account of Insights, for the calls of its own flows. Never give it to a person",
+        "composite": true,
+        "composites": {
+          "client": {
+            "healthyfac-document": [
+              "files:read"
+            ],
+            "healthyfac-telemetry": [
+              "metric-definitions:read",
+              "status-definitions:read"
             ]
           }
         }
@@ -839,6 +941,14 @@
         {
           "name": "machines:delete",
           "description": "Delete machines"
+        },
+        {
+          "name": "drafts:read",
+          "description": "View the drafts that the file ingest proposed"
+        },
+        {
+          "name": "drafts:write",
+          "description": "Dismiss drafts and mark them as applied, and apply machine drafts"
         }
       ],
       "healthyfac-telemetry": [
@@ -883,6 +993,16 @@
         {
           "name": "company-files:delete",
           "description": "Delete company files"
+        }
+      ],
+      "healthyfac-insights": [
+        {
+          "name": "ingest:read",
+          "description": "View the ingest attempts of files"
+        },
+        {
+          "name": "ingest:write",
+          "description": "Start and cancel the ingest of files"
         }
       ]
     }
@@ -952,6 +1072,31 @@
       ]
     },
     {
+      "clientId": "healthyfac-insights",
+      "name": "HealthyFac Insights API",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${KEYCLOAK_INSIGHTS_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "healthyfac-claims",
+        "service_account"
+      ],
+      "optionalClientScopes": [
+        "organization",
+        "insights-files",
+        "insights-telemetry"
+      ]
+    },
+    {
       "clientId": "healthyfac-auth",
       "name": "HealthyFac Auth Service",
       "enabled": true,
@@ -1016,8 +1161,35 @@
           "view-users"
         ]
       }
+    },
+    {
+      "username": "service-account-healthyfac-insights",
+      "enabled": true,
+      "serviceAccountClientId": "healthyfac-insights",
+      "realmRoles": [
+        "insights-service"
+      ]
     }
   ],
+  "clientScopeMappings": {
+    "healthyfac-document": [
+      {
+        "clientScope": "insights-files",
+        "roles": [
+          "files:read"
+        ]
+      }
+    ],
+    "healthyfac-telemetry": [
+      {
+        "clientScope": "insights-telemetry",
+        "roles": [
+          "metric-definitions:read",
+          "status-definitions:read"
+        ]
+      }
+    ]
+  },
   "defaultDefaultClientScopes": [
     "role_list",
     "saml_organization",

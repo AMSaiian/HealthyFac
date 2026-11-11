@@ -48,6 +48,26 @@ public static class StatusDefinitionFixtureExtensions
             return response.Id;
         }
 
+        public async Task<ApplyStatusDefinitionChangesResponse> ApplyStatusChangesAsync(
+            Guid companyId,
+            Guid machineId,
+            IReadOnlyList<StatusDefinitionChange> items
+        )
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<IRequestHandler<ApplyStatusDefinitionChangesRequest,
+                    ApplyStatusDefinitionChangesResponse>>();
+
+            return await handler.HandleAsync(
+                new ApplyStatusDefinitionChangesRequest
+                {
+                    CompanyId = companyId,
+                    MachineId = machineId,
+                    Items = items,
+                });
+        }
+
         public async Task<StatusDefinitionResponse> GetStatusDefinitionAsync(
             Guid companyId,
             Guid machineId,

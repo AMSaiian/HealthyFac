@@ -8,6 +8,7 @@ import { of, throwError } from 'rxjs';
 import { ActionStore } from '@shared/actions/action.store';
 import { type Machine, MachineState } from '@machines/machine';
 import { MachineActionType } from '@machines/machine-actions';
+import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachinesApi } from '@machines/machines-api';
 
 import { MachineDrawerStore } from './machine-drawer.store';
@@ -22,6 +23,7 @@ const MACHINE: Machine = {
   description: '<p>old</p>',
   createdAt: '2026-03-01T08:00:00Z',
   updatedAt: null,
+  pendingDraftCount: 0,
 };
 
 const VALUE: MachineFormValue = {
@@ -43,6 +45,7 @@ type Spy = ReturnType<typeof vi.fn>;
 interface Setup {
   store: InstanceType<typeof MachineDrawerStore>;
   api: { get: Spy; create: Spy; update: Spy };
+  draftsApi: { getMachineDraft: Spy; applyMachineDraft: Spy };
   complete: ReturnType<typeof vi.spyOn>;
   messages: { add: Spy };
 }
@@ -59,19 +62,63 @@ function setup(overrides: Partial<Setup['api']> = {}): Setup {
     update: vi.fn(() => of(undefined)),
     ...overrides,
   };
+  const draftsApi = {
+    getMachineDraft: vi.fn(() =>
+      of({
+        draft: {
+          id: 'draft-id',
+          isCreate: true,
+          name: 'Pump',
+          serialNumber: null,
+          description: null,
+        },
+        current: null,
+      }),
+    ),
+    applyMachineDraft: vi.fn(() => of({ machineId: 'new-id' })),
+  };
   TestBed.configureTestingModule({
     providers: [
       MachineDrawerStore,
       { provide: MachinesApi, useValue: api },
+      { provide: DraftsApi, useValue: draftsApi },
       { provide: MessageService, useValue: messages },
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });
   const complete = vi.spyOn(TestBed.inject(ActionStore), 'complete');
-  return { store: TestBed.inject(MachineDrawerStore), api, complete, messages };
+  return { store: TestBed.inject(MachineDrawerStore), api, draftsApi, complete, messages };
 }
 
 describe('MachineDrawerStore', () => {
+  it('load_ForCreateDraft_PrefillsTheDraftValuesAndEmptiesMissingOnes', async () => {
+    const { store, draftsApi } = setup();
+    store.start({ type: MachineActionType.Create, payload: { draftId: 'draft-id' } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(draftsApi.getMachineDraft).toHaveBeenCalledWith('draft-id');
+    expect(store.initialValue()).toEqual({ name: 'Pump', serialNumber: '', description: null });
+  });
+
+  it('save_ForCreateDraft_AppliesTheDraftAndCompletesChangedAndSaved', async () => {
+    const { store, api, draftsApi, complete } = setup();
+    store.start({ type: MachineActionType.Create, payload: { draftId: 'draft-id' } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    store.save(VALUE);
+
+    expect(draftsApi.applyMachineDraft).toHaveBeenCalledWith(
+      'draft-id',
+      TRIMMED_BODY,
+      expect.objectContaining({ context: expect.anything() }),
+    );
+    expect(api.create).not.toHaveBeenCalled();
+    expect(complete).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledWith(MachineActionType.Saved);
+  });
+
   it('save_WithSuccess_CompletesAction', () => {
     const { store, api, complete, messages } = setup();
     store.start({ type: MachineActionType.Create, payload: {} });

@@ -11,6 +11,19 @@ public static class CorsClientExtensions
 
     extension(IHost host)
     {
+        /// <summary>Sends a browser request with an <c>Origin</c> header and no token.</summary>
+        /// <param name="path">The request path.</param>
+        /// <param name="origin">The value of the <c>Origin</c> header.</param>
+        /// <returns>The response to the request.</returns>
+        public async Task<HttpResponseMessage> SendCrossOriginPostAsync(string path, string origin)
+        {
+            using var client = host.GetTestClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, path);
+            request.Headers.Add(OriginHeader, origin);
+
+            return await client.SendAsync(request);
+        }
+
         /// <summary>Sends a browser preflight: an <c>OPTIONS</c> request without a token.</summary>
         /// <param name="path">The request path.</param>
         /// <param name="origin">The value of the <c>Origin</c> header.</param>

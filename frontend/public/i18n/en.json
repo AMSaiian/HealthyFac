@@ -16,7 +16,12 @@
     "MENU": "Menu",
     "LANGUAGE": "Language",
     "THEME_TOGGLE": "Switch theme",
-    "SIGN_OUT": "Sign out"
+    "SIGN_OUT": "Sign out",
+    "SIGN_OUT_CONFIRM": {
+      "HEADER": "Sign out?",
+      "MESSAGE": "You will leave HealthyFac. Unsaved changes are lost.",
+      "ACCEPT": "Sign out"
+    }
   },
   "LANGUAGE": {
     "EN": "English",
@@ -47,7 +52,8 @@
   },
   "ACTIONS": {
     "SAVE": "Save",
-    "CANCEL": "Cancel"
+    "CANCEL": "Cancel",
+    "CLOSE": "Close"
   },
   "RICH_TEXT": {
     "BOLD": "Bold",
@@ -83,7 +89,8 @@
       "SERIAL_NUMBER": "Serial number",
       "STATE": "State",
       "CREATED_AT": "Created",
-      "UPDATED_AT": "Updated"
+      "UPDATED_AT": "Updated",
+      "DRAFTS": "Drafts"
     },
     "STATES": {
       "OPERATIONAL": "Operational",
@@ -95,7 +102,10 @@
       "SERIAL_NUMBER_PLACEHOLDER": "Filter by serial number",
       "STATE_PLACEHOLDER": "Select states",
       "CREATED_AT_PLACEHOLDER": "Select created dates",
-      "UPDATED_AT_PLACEHOLDER": "Select updated dates"
+      "UPDATED_AT_PLACEHOLDER": "Select updated dates",
+      "DRAFTS_PLACEHOLDER": "Has drafts",
+      "DRAFTS_YES": "Has drafts",
+      "DRAFTS_NO": "No drafts"
     },
     "TOASTS": {
       "SUCCESS": "Done",
@@ -122,7 +132,8 @@
       "INVALID": "Form is not valid"
     },
     "COLUMNS_CHOOSER": "Columns",
-    "FILES": "Files"
+    "FILES": "Files",
+    "DRAFTS": "Drafts"
   },
   "STATUS_DEFINITIONS": {
     "TITLE": "Statuses of",
@@ -195,7 +206,8 @@
       "NEW": "New",
       "EDITED": "Edited",
       "DELETED": "Deleted",
-      "INVALID": "Rejected"
+      "INVALID": "Rejected",
+      "PROPOSED": "Proposed"
     },
     "KINDS": {
       "NUMERIC": "Number",
@@ -243,6 +255,7 @@
     "EXAMPLE": {
       "TITLE": "Example payload",
       "REVISION": "Revision {{revision}}",
+      "PREVIEW": "Preview with unapplied changes",
       "COPY": "Copy",
       "CLOSE": "Close",
       "EMPTY": "This machine has no metrics, so there is no example."
@@ -283,9 +296,33 @@
     "SELECT_HINT": "Select a metric to see its details."
   },
   "PRIMENG": {
-    "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    "dayNamesShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    "dayNamesMin": ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+    "dayNames": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ],
+    "dayNamesShort": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "dayNamesMin": [
+      "Su",
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa"
+    ],
     "monthNames": [
       "January",
       "February",
@@ -300,7 +337,20 @@
       "November",
       "December"
     ],
-    "monthNamesShort": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "monthNamesShort": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ],
     "dateFormat": "mm/dd/yy",
     "firstDayOfWeek": "0",
     "today": "Today",
@@ -344,24 +394,36 @@
     "ACTIONS_MENU": {
       "DOWNLOAD": "Download",
       "EDIT": "Edit",
-      "DELETE": "Delete"
+      "DELETE": "Delete",
+      "INGEST": "Ingest",
+      "CANCEL_INGEST": "Cancel ingest",
+      "HISTORY": "History",
+      "TIE": "Tie to machine",
+      "UNTIE": "Untie"
     },
     "COLUMNS": {
       "FILE_NAME": "Name",
       "TYPE": "Type",
       "SIZE": "Size",
       "UPLOADED_AT": "Uploaded",
-      "DESCRIPTION": "Description"
+      "DESCRIPTION": "Description",
+      "MACHINE": "Machine",
+      "INGEST": "Ingest"
     },
     "FILTERS": {
       "FILE_NAME_PLACEHOLDER": "Filter by name",
-      "TYPE_PLACEHOLDER": "Select types"
+      "TYPE_PLACEHOLDER": "Select types",
+      "MACHINE_PLACEHOLDER": "Select machines",
+      "INGEST_PLACEHOLDER": "Select states",
+      "NOT_TIED": "Not tied to a machine"
     },
     "TOASTS": {
       "SUCCESS": "Done",
       "UPLOADED": "The file is uploaded.",
       "UPDATED": "The file is updated.",
-      "DELETED": "The file is deleted."
+      "DELETED": "The file is deleted.",
+      "TIED": "The file is tied to the machine.",
+      "UNTIED": "The file is untied."
     },
     "ERRORS": {
       "TYPE_NOT_ALLOWED": "This file type is not allowed.",
@@ -390,6 +452,184 @@
       "INVALID": "Form is not valid",
       "REQUIRED": "This field is required.",
       "TOO_LONG": "The value is too long."
+    },
+    "UNTIE_HEADER": "Untie file",
+    "UNTIE_MESSAGE": "Untie \"{{name}}\" from its machine?",
+    "TIE_DIALOG": {
+      "TITLE": "Tie file to machine",
+      "MACHINE": "Machine",
+      "PLACEHOLDER": "Select a machine",
+      "NO_MACHINE": "Pick a machine"
+    }
+  },
+  "INGEST": {
+    "STATES": {
+      "NEVER": "Never",
+      "QUEUED": "Queued",
+      "IN_PROCESS": "In process",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "INTERRUPTED": "Interrupted"
+    },
+    "CANCEL_HEADER": "Cancel ingest",
+    "CANCEL_MESSAGE": "Cancel the processing of \"{{name}}\"?",
+    "TOASTS": {
+      "STARTED": "The file is queued for processing.",
+      "CANCELLED": "The processing is cancelled."
+    },
+    "CONFLICTS": {
+      "INGEST_ACTIVE": "The file is already in processing.",
+      "INGEST_COMPLETED": "The processing of this file is already completed.",
+      "INGEST_FAILED_LIMIT": "The processing of this file failed too many times.",
+      "INGEST_FINAL": "The processing of this file is final.",
+      "NOT_ACTIVE": "The processing is not active any more. The list is reloaded."
+    },
+    "HISTORY": {
+      "TITLE": "Ingest history",
+      "QUEUED_AT": "Queued",
+      "FINISHED_AT": "Finished",
+      "DRAFTS": "Drafts",
+      "EMPTY": "This file was never processed.",
+      "OPEN": "Open summary"
+    },
+    "SUMMARY": {
+      "TITLE": "Ingest summary",
+      "NOT_FOUND": "The ingest attempt does not exist any more.",
+      "NO_DRAFTS": "The attempt proposed no drafts.",
+      "FILE": "File",
+      "PAGES": "Pages",
+      "CHUNKS": "Text parts"
+    },
+    "ERRORS": {
+      "FILE_NOT_FOUND": "The file does not exist any more.",
+      "NO_TEXT": "The file has no text that the service can read.",
+      "TOO_MANY_PAGES": "The file has too many pages.",
+      "CONVERSION_FAILED": "The service could not read the file.",
+      "CONVERSION_TIMEOUT": "The reading of the file took too long.",
+      "INVALID_EXTRACTION": "The model gave an answer that the service could not use.",
+      "PROVIDER_UNAVAILABLE": "An external service is not available. Try again later."
+    },
+    "INTERRUPTED": {
+      "CANCELLED": "The processing was cancelled.",
+      "LEASE_EXPIRED": "The processing was interrupted. You can try again.",
+      "SERVICE_STOPPED": "The service stopped during the processing. You can try again.",
+      "FILE_DELETED": "The file was deleted."
+    },
+    "WARNINGS": {
+      "TRUNCATED": "The file held {{found}} {{kind}}. Only {{cap}} were kept.",
+      "KINDS": {
+        "MACHINES": "machines",
+        "METRICS": "metrics",
+        "STATUSES": "statuses"
+      }
+    }
+  },
+  "DRAFTS": {
+    "GROUP": {
+      "MACHINE": "{{name}}",
+      "NEW_MACHINE": "New machine: {{name}}",
+      "NEW_MACHINE_UNNAMED": "New machine: unnamed",
+      "UNKNOWN": "Unknown machine"
+    },
+    "KINDS": {
+      "MACHINE": "Machine",
+      "METRIC": "Metric",
+      "STATUS": "Status"
+    },
+    "STATES": {
+      "PENDING": "Pending",
+      "APPLIED": "Applied",
+      "DISMISSED": "Dismissed"
+    },
+    "CREATE": "Create",
+    "UPDATE": "Update",
+    "REVIEW": "Review",
+    "APPLY": "Apply",
+    "APPLY_ALL": "Apply all",
+    "DISMISS": "Dismiss",
+    "ROW_ACTIONS": "Row actions",
+    "DISMISS_ALL": "Dismiss all",
+    "DISMISS_ALL_HEADER": "Dismiss all drafts",
+    "DISMISS_ALL_MESSAGE": "Dismiss all {{count}} pending drafts of this machine? It cannot be undone.",
+    "REVIEW_AFTER_MACHINE": "Review the machine draft first.",
+    "DISMISS_HEADER": "Dismiss draft",
+    "DISMISS_MESSAGE": "Dismiss the draft \"{{name}}\"? It cannot be undone.",
+    "UNNAMED": "Unnamed",
+    "TOASTS": {
+      "DISMISSED": "The draft is dismissed.",
+      "DISMISSED_ALL": "{{count}} drafts are dismissed."
+    },
+    "LIST": {
+      "TITLE": "Pending drafts",
+      "EMPTY": "The machine has no pending drafts.",
+      "LOAD_FAILED": "The drafts could not be loaded.",
+      "RETRY": "Try again",
+      "COLUMNS": {
+        "KIND": "Kind",
+        "LABEL": "Draft",
+        "SOURCE_LOCATION": "Source",
+        "PROPOSED_AT": "Proposed"
+      },
+      "FILTERS": {
+        "KIND_PLACEHOLDER": "Select kinds"
+      }
+    },
+    "NO_CHANGE": "No change",
+    "COMPARE": {
+      "TITLE": "Review machine draft",
+      "CURRENT": "Current",
+      "PROPOSED": "Proposed",
+      "TAKE": "Take the proposed value",
+      "NO_CHANGES": "Take at least one change",
+      "INVALID": "A value is not valid",
+      "APPLIED": "The machine is updated.",
+      "CONFLICT": "The machine changed. The values are loaded again.",
+      "FIELDS": {
+        "NAME": "Name",
+        "SERIAL_NUMBER": "Serial number",
+        "DESCRIPTION": "Description"
+      }
+    },
+    "STATUS": {
+      "CREATE_TITLE": "Create status from draft",
+      "UPDATE_TITLE": "Update status from draft",
+      "CODE": "Code",
+      "SEVERITY": "Severity",
+      "DESCRIPTION": "Description",
+      "NO_CHANGES": "Take at least one change",
+      "NOT_READY": "The draft is loading",
+      "MISSING": "The draft does not exist any more.",
+      "CREATED": "The status is created.",
+      "UPDATED": "The status is updated.",
+      "CODE_TAKEN": "A status with this code exists already.",
+      "MARK_FAILED": "The status is saved, but the draft stays pending. Review it again."
+    },
+    "METRICS": {
+      "MARK_FAILED": "The metrics are saved, but the drafts stay pending. Review them again."
+    },
+    "CONFLICTS": {
+      "DRAFT_NOT_PENDING": "The draft is not pending any more. The list is loaded again.",
+      "MACHINE_DRAFT_NOT_APPLIED": "Apply the machine draft first.",
+      "DRAFT_CHANGED": "The draft or the machine changed. Reload it and try again."
+    },
+    "QUICK": {
+      "APPLIED": "Applied drafts: {{count}}.",
+      "APPLIED_SKIPPED": "Applied drafts: {{count}}. Left for review: {{skipped}}.",
+      "FAILED": "Stopped after {{count}} applied drafts. {{reason}}",
+      "CONFLICT": "A draft or an item changed. Open the list again and try again.",
+      "INVALID": "A value is not valid. Use Review to correct it.",
+      "NEEDS_MACHINE_VALUES": "The machine draft needs a name and a serial number. Use Review.",
+      "NEEDS_METRIC_VALUES": "The metric draft needs a key and a name. Use Review.",
+      "UNKNOWN_UNIT": "The unit is not in the catalog. Use Review.",
+      "NEEDS_STATES": "The metric draft needs states. Use Review.",
+      "NEEDS_STATUS_VALUES": "The status draft needs a code. Use Review.",
+      "MACHINE_PENDING": "Apply the machine draft first, or use Apply all.",
+      "UNITS_LOADING": "The unit catalog is loading.",
+      "ALL_NEED_REVIEW": "Every pending draft of the group needs review.",
+      "MACHINE_NOT_READY": "The machine is not ready yet. Try again in a moment.",
+      "WAITING_TITLE": "Request limit",
+      "WAITING": "Waiting {{seconds}} s for the request limit.",
+      "RATE_LIMITED": "The request limit is still reached. Try again in a minute."
     }
   }
 }

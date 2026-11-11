@@ -30,4 +30,13 @@ public sealed class RealmRoleFileTests
 
         permissions.Should().BeEquivalentTo(RealmTestData.DocumentPermissions);
     }
+
+    [Theory]
+    [MemberData(nameof(RealmRoleFileTestData.RolesWithMachinePermissions), MemberType = typeof(RealmRoleFileTestData))]
+    public void RealmRole_InRealmFile_HasInsightsPermissions(string roleName)
+    {
+        var permissions = RealmRoleFileTestData.ReadRolePermissions(roleName, RealmTestData.InsightsClientId);
+
+        permissions.Should().BeEquivalentTo(RealmTestData.InsightsPermissions);
+    }
 }

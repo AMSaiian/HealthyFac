@@ -11,6 +11,9 @@ using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using ApplicationDeleteFileRequest = HealthyFac.Document.Application.Files.DeleteFileRequest;
+using ApplicationTieFileToMachineRequest = HealthyFac.Document.Application.Files.Machines.TieFileToMachineRequest;
+using ApplicationUntieFileFromMachineRequest =
+    HealthyFac.Document.Application.Files.Machines.UntieFileFromMachineRequest;
 using ApplicationUpdateFileRequest = HealthyFac.Document.Application.Files.UpdateFileRequest;
 using ApplicationGetFileLinksRequest = HealthyFac.Document.Application.Files.Links.GetFileLinksRequest;
 using ApplicationSearchFilesRequest = HealthyFac.Document.Application.Files.Searching.SearchFilesRequest;
@@ -60,6 +63,10 @@ public static class FileEndpoints
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
             companyGroup.MapDelete(FileRoutes.ById, DeleteCompanyFileAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Delete);
+            companyGroup.MapPut(FileRoutes.MachineOfFile, TieFileToMachineAsync)
+                .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
+            companyGroup.MapDelete(FileRoutes.MachineOfFile, UntieFileFromMachineAsync)
+                .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
             companyGroup.MapPost(FileRoutes.Links, GetFileLinksAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
             companyGroup.MapPost(FileRoutes.Search, SearchCompanyFilesAsync)
@@ -108,6 +115,38 @@ public static class FileEndpoints
     {
         await handler.HandleAsync(
             request.ToApplicationRequest(currentUser.GetCompanyId(), machineId: null, idEncryptor),
+            cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> TieFileToMachineAsync(
+        [FromRoute(Name = FileRoutes.IdParameter)] string id,
+        TieFileToMachineRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationTieFileToMachineRequest> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        await handler.HandleAsync(
+            request.ToApplicationRequest(id, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> UntieFileFromMachineAsync(
+        [FromRoute(Name = FileRoutes.IdParameter)] string id,
+        [FromBody] UntieFileFromMachineRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationUntieFileFromMachineRequest> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        await handler.HandleAsync(
+            request.ToApplicationRequest(id, currentUser.GetCompanyId(), idEncryptor),
             cancellationToken);
 
         return TypedResults.NoContent();

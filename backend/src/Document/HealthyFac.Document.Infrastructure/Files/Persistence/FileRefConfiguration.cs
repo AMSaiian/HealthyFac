@@ -1,6 +1,5 @@
 using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Domain.Files;
-using HealthyFac.Document.Domain.MachineRegistrations;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
@@ -45,10 +44,12 @@ public class FileRefConfiguration : IEntityTypeConfiguration<FileRef>
         builder.Property(file => file.Sha256)
             .IsRequired();
 
-        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
-            .IsRowVersion();
+        builder.Property(file => file.IngestFailedCount)
+            .HasDefaultValue(value: 0);
 
-        builder.HasOne<MachineRegistration>()
+        builder.ConfigureVersioned();
+
+        builder.HasOne(file => file.Machine)
             .WithMany()
             .HasForeignKey(file => file.MachineId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -58,6 +59,8 @@ public class FileRefConfiguration : IEntityTypeConfiguration<FileRef>
             .HasFilter(SoftDeleteConstants.NotDeletedFilter);
 
         builder.HasEnumerationCheck(file => file.Purpose)
+            .HasEnumerationCheck(file => file.IngestState)
+            .HasRangeCheck(file => file.IngestFailedCount, min: 0, int.MaxValue)
             .HasNotBlankCheck(file => file.FileName)
             .HasLengthCheck(file => file.FileName, minLength: 1, FileValidationConstants.Text.FileNameMaxLength)
             .HasNotBlankCheck(file => file.ContentType)

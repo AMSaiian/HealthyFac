@@ -1,0 +1,57 @@
+<hf-action-dialog
+  title="INGEST.HISTORY.TITLE"
+  widthClass="w-[56rem] max-w-[95vw]"
+  [isSaveShown]="false"
+  (cancelled)="store.close()"
+>
+  @if (store.attempts.isLoading()) {
+    <div class="flex min-h-32">
+      <hf-loading-spinner />
+    </div>
+  } @else if (store.rows().length === 0) {
+    <div class="flex min-h-32">
+      <hf-empty-state
+        icon="pi pi-history"
+        messageKey="INGEST.HISTORY.EMPTY"
+      />
+    </div>
+  } @else {
+    <ul class="flex flex-col gap-2">
+      @for (attempt of store.rows(); track attempt.id) {
+        <li class="flex items-center justify-between gap-4 rounded-border border border-surface p-3">
+          <div class="flex min-w-0 flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <p-tag
+                [severity]="ingestSeverity(attempt.state)"
+                [value]="ingestLabelKey(attempt.state) | translate"
+              />
+              @if (attempt.proposedDraftCount !== null) {
+                <span class="text-sm text-muted-color"
+                  >{{ 'INGEST.HISTORY.DRAFTS' | translate }}: {{ attempt.proposedDraftCount }}</span
+                >
+              }
+            </div>
+            <span class="text-sm text-muted-color">
+              {{ 'INGEST.HISTORY.QUEUED_AT' | translate }}: {{ attempt.queuedAt | localDateTime }}
+              @if (attempt.finishedAt !== null) {
+                · {{ 'INGEST.HISTORY.FINISHED_AT' | translate }}: {{ attempt.finishedAt | localDateTime }}
+              }
+            </span>
+            @if (attemptReasonKey(attempt); as reasonKey) {
+              <span class="text-sm">{{ reasonKey | translate }}</span>
+            }
+          </div>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            [outlined]="true"
+            (click)="store.openSummary(attempt.id)"
+          >
+            {{ 'INGEST.HISTORY.OPEN' | translate }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</hf-action-dialog>

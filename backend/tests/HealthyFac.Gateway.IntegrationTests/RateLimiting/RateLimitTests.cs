@@ -111,6 +111,46 @@ public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifet
     }
 
     [Fact]
+    public async Task StaticAssets_AboveTheDefaultLimit_ReturnsNo429()
+    {
+        var settings = new Dictionary<string, string>
+        {
+            [GatewaySettingKeys.SpaAddress] = _core.Address,
+            [GatewaySettingKeys.SpaHealthCheckEnabled] = bool.FalseString,
+        };
+        await using var gateway = _environment.CreateGateway(_core, settings: settings);
+        using var client = gateway.CreateClient();
+        var statusCodes = new List<HttpStatusCode>();
+
+        for (var attempt = 0; attempt < RateLimitTestData.StaticRequestCount; attempt++)
+        {
+            using var response = await client.GetAsync(
+                RateLimitTestData.SpaRoute, TestContext.Current.CancellationToken);
+            statusCodes.Add(response.StatusCode);
+        }
+
+        statusCodes.Should().NotContain(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
+    public async Task DefaultPolicy_AboveThePermitLimit_Returns429ForTheApiRoute()
+    {
+        await using var gateway = _environment.CreateGateway(_core);
+        using var client = gateway.CreateAuthenticatedClient();
+        var statusCodes = new List<HttpStatusCode>();
+
+        for (var attempt = 0; attempt <= RateLimitTestData.DefaultApiPermitLimit; attempt++)
+        {
+            using var response = await client.GetAsync(
+                RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+            statusCodes.Add(response.StatusCode);
+        }
+
+        statusCodes.Take(RateLimitTestData.DefaultApiPermitLimit).Should().NotContain(HttpStatusCode.TooManyRequests);
+        statusCodes.Last().Should().Be(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
     public async Task DefaultPolicy_UnderLimit_PassesOtherCoreRoutes()
     {
         await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.StrictLimitOfThree);

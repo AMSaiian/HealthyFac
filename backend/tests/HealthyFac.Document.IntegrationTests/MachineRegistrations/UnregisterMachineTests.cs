@@ -3,6 +3,7 @@ using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Document.IntegrationTests.MachineRegistrations;
@@ -50,6 +51,39 @@ public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
         race.SaveCounts.Should().Equal(1);
         first.DeletedAt.Should().NotBeNull();
         second.DeletedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UnregisterMachine_WithFiles_StoresOneFileDeletedMessageForEachFile()
+    {
+        var machineId = await _fixture.RegisterMachineAsync(MachineRegistrationTestData.CompanyId);
+        var ids = await _fixture.SeedFilesAsync(
+            MachineRegistrationTestData.CompanyId,
+            [
+                new FileSeed(
+                    FileName: "one", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
+                new FileSeed(
+                    FileName: "two", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
+            ]);
+
+        await _fixture.UnregisterMachineAsync(MachineRegistrationTestData.CreateDeletedMessage(machineId));
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
+
+        messages.Select(message => message.FileId).Should().BeEquivalentTo(ids);
+        messages.Should().OnlyContain(message => message.CompanyId == MachineRegistrationTestData.CompanyId);
+    }
+
+    [Fact]
+    public async Task UnregisterMachine_WithoutRegistration_StoresNoMessage()
+    {
+        var act = () => _fixture.UnregisterMachineAsync(
+            MachineRegistrationTestData.CreateDeletedMessage(Guid.CreateVersion7()));
+        await act.Should().ThrowAsync<NotFoundException>();
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
+
+        messages.Should().BeEmpty();
     }
 
     [Fact]

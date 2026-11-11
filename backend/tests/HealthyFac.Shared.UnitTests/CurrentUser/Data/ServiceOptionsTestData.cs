@@ -13,7 +13,7 @@ public static class ServiceOptionsTestData
     public static TheoryData<ServiceOptions> InvalidOptions =>
         new()
         {
-            new ServiceOptions { Name = "insights" },
+            new ServiceOptions { Name = "billing" },
             new ServiceOptions { Name = "Core" },
         };
 }

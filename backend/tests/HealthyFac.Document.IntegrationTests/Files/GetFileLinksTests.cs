@@ -52,8 +52,8 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
                 new FileSeed(FileName: "scheme", Extension: "png", SizeBytes: 10, GetFileLinksTestData.UploadedAt),
             ]);
         var issuer = _fixture.CreateIssuer(GetFileLinksTestData.FixedNow, Environments.Production);
-        var pdf = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 0]));
-        var png = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 1]));
+        var pdf = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 0]), FileLinkAudience.Public);
+        var png = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 1]), FileLinkAudience.Public);
         var query = pdf.Query;
 
         pdf.Url.Should()
@@ -85,7 +85,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
             [new FileSeed(FileName: "a", Extension: "pdf", SizeBytes: 10, GetFileLinksTestData.UploadedAt)]);
         var issuer = _fixture.CreateIssuer(GetFileLinksTestData.FixedNow, Environments.Development);
 
-        var link = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 0]));
+        var link = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 0]), FileLinkAudience.Public);
 
         link.Query[name: "spr"].Should().Be(expected: "https,http");
     }
@@ -99,7 +99,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
             UploadFileTestData.CreateUpload(UploadFileTestData.PdfName, content, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow, Environments.Development);
-        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id));
+        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Public);
         using var client = new HttpClient();
 
         using var read = await client.GetAsync(_fixture.RebaseOnStorage(link), TestContext.Current.CancellationToken);
@@ -120,7 +120,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
                 UploadFileTestData.PdfName, UploadFileTestData.Pdf, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow.AddHours(hours: -1), Environments.Development);
-        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id));
+        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Public);
         using var client = new HttpClient();
 
         using var read = await client.GetAsync(_fixture.RebaseOnStorage(link), TestContext.Current.CancellationToken);
@@ -137,13 +137,53 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
                 UploadFileTestData.PdfName, UploadFileTestData.Pdf, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow, Environments.Development);
-        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id));
+        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Public);
         var tampered = new Uri(_fixture.RebaseOnStorage(link).AbsoluteUri.Replace(oldValue: "sig=", newValue: "sig=A"));
         using var client = new HttpClient();
 
         using var read = await client.GetAsync(tampered, TestContext.Current.CancellationToken);
 
         read.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Issue_WithInternalAudience_PointsAtTheStorageEndpoint()
+    {
+        var content = UploadFileTestData.Pdf;
+        var response = await _fixture.UploadCompanyFileAsync(
+            GetFileLinksTestData.CompanyId,
+            UploadFileTestData.CreateUpload(UploadFileTestData.PdfName, content, UploadFileTestData.PdfType),
+            cancellationToken: TestContext.Current.CancellationToken);
+        var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow, Environments.Development);
+        var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Internal);
+        using var client = new HttpClient();
+
+        using var read = await client.GetAsync(link.Url, TestContext.Current.CancellationToken);
+        var bytes = await read.Content.ReadAsByteArrayAsync(TestContext.Current.CancellationToken);
+
+        link.Url.Should()
+            .StartWith(
+                $"{_fixture.BlobService.Uri.AbsoluteUri.TrimEnd(trimChar: '/')}/"
+                + $"{DatabaseTestData.ContainerName}/{response.Id}?");
+        read.StatusCode.Should().Be(HttpStatusCode.OK);
+        bytes.Should().Equal(content);
+    }
+
+    [Fact]
+    public async Task Issue_WithPublicAudience_PointsAtThePublicBaseUrlWithTheSameSignature()
+    {
+        var ids = await _fixture.SeedFilesAsync(
+            GetFileLinksTestData.CompanyId,
+            [new FileSeed(FileName: "a", Extension: "pdf", SizeBytes: 10, GetFileLinksTestData.UploadedAt)]);
+        var issuer = _fixture.CreateIssuer(GetFileLinksTestData.FixedNow, Environments.Production);
+        var file = await _fixture.LoadFileRowAsync(ids[index: 0]);
+
+        var publicLink = issuer.Issue(file, FileLinkAudience.Public);
+        var internalLink = issuer.Issue(file, FileLinkAudience.Internal);
+
+        publicLink.Url.Should().StartWith(GetFileLinksTestData.PublicBaseUrl);
+        internalLink.Url.Should().NotStartWith(GetFileLinksTestData.PublicBaseUrl);
+        internalLink.Query[name: "sig"].Should().Be(publicLink.Query[name: "sig"]);
     }
 
     [Fact]

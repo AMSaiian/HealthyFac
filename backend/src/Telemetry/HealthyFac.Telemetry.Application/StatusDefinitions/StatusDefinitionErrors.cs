@@ -16,6 +16,11 @@ public static class StatusDefinitionErrors
     public const string CodeTaken = "A status definition with this code already exists for this machine.";
     public const string DescriptionNotAllowed = "The description contains formatting that is not allowed.";
 
+    public const string CodeDuplicatedInRequest = "A code appears more than once in the batch.";
+
+    public static readonly string ApplyItemCountInvalid =
+        $"The batch must hold between 1 and {StatusDefinitionValidationConstants.ApplyMaxItems} items.";
+
     public static readonly string DescriptionTooLong =
         $"The description must have at most {StatusDefinitionValidationConstants.DescriptionMaxLength} characters.";
 

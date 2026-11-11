@@ -6,13 +6,16 @@ import { Observable } from 'rxjs';
 
 import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
 
-/** Asks before an in-app navigation leaves the page with staged changes or a changed open form. */
+/**
+ * Asks before an in-app navigation leaves the page with staged changes or a changed open form. It does not ask while
+ * the page leaves after an apply or a confirmed discard.
+ */
 export const metricsPageGuard: CanDeactivateFn<unknown> = () => {
   const store = inject(MetricsPageStore);
   const confirmation = inject(ConfirmationService);
   const translate = inject(TranslateService);
 
-  if (!store.hasPendingWork()) {
+  if (store.isLeaving() || !store.hasPendingWork()) {
     return true;
   }
   return new Observable<boolean>((subscriber) => {

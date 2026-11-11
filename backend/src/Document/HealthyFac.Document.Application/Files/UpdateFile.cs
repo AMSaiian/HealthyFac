@@ -4,7 +4,6 @@ using HealthyFac.Document.Application.MachineRegistrations;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Shared.Application.Persistence;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -93,7 +92,7 @@ public sealed class UpdateFileRequestHandler(IDocumentDbContext dbContext)
                     candidate => candidate.Id == request.Id
                         && candidate.CompanyId == request.CompanyId
                         && candidate.Purpose == FilePurpose.Attachment
-                        && candidate.MachineId == request.MachineId,
+                        && (request.MachineId == null || candidate.MachineId == request.MachineId),
                     cancellationToken)
             ?? throw new NotFoundException(FileErrors.FileNotFound);
 
@@ -103,7 +102,7 @@ public sealed class UpdateFileRequestHandler(IDocumentDbContext dbContext)
             throw new AppValidationException([new ValidationFailure(FileNameKey, FileErrors.NameRequired)]);
         }
 
-        _dbContext.Entry(file).Property<uint>(RowVersions.PropertyName).OriginalValue = request.RowVersion;
+        _dbContext.Entry(file).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
         file.Rename(fileName, request.Description);
 
         try

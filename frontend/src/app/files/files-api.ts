@@ -2,12 +2,21 @@ import { HttpClient, type HttpContext, type HttpEvent } from '@angular/common/ht
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
-import type { FilesPage, FilesScope, SearchFilesBody, UpdateFileBody, UploadFileResponse } from '@files/file';
+import type {
+  FilesPage,
+  FilesScope,
+  SearchFilesBody,
+  TieFileBody,
+  UntieFileBody,
+  UpdateFileBody,
+  UploadFileResponse,
+} from '@files/file';
 
 const FILES_URL = '/api/document/v1/files';
 const MACHINES_URL = '/api/document/v1/machines';
 const FILES_SEGMENT = 'files';
 const SEARCH_SEGMENT = 'search';
+const MACHINE_SEGMENT = 'machine';
 const FILE_FIELD = 'file';
 const DESCRIPTION_FIELD = 'description';
 
@@ -59,5 +68,18 @@ export class FilesApi {
 
   delete(scope: FilesScope, id: string, options?: WriteOptions): Observable<void> {
     return this._http.delete<void>(fileUrl(scope, id), options);
+  }
+
+  /** Ties a company file to a machine. Only the company route has it. */
+  tie(fileId: string, body: TieFileBody, options?: WriteOptions): Observable<void> {
+    return this._http.put<void>(`${FILES_URL}/${encodeURIComponent(fileId)}/${MACHINE_SEGMENT}`, body, options);
+  }
+
+  /** Removes the tie of a company file. The row version goes in the body of the DELETE. */
+  untie(fileId: string, body: UntieFileBody, options?: WriteOptions): Observable<void> {
+    return this._http.delete<void>(`${FILES_URL}/${encodeURIComponent(fileId)}/${MACHINE_SEGMENT}`, {
+      ...options,
+      body,
+    });
   }
 }

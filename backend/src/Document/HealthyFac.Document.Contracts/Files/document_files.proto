@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package healthyfac.document.v1;
+
+option csharp_namespace = "HealthyFac.Document.Contracts.Files";
+
+// Serves the file data to the services that read files (Insights). The caller sends the plain GUID as text, never the
+// encrypted ID of the public API.
+service DocumentFiles {
+  rpc GetFile(GetFileRequest) returns (FileInfo);
+  rpc GetFileLink(GetFileLinkRequest) returns (FileLinkReply);
+}
+
+message GetFileRequest {
+  string file_id = 1;
+}
+
+message GetFileLinkRequest {
+  string file_id = 1;
+}
+
+message FileInfo {
+  string file_id = 1;
+  string company_id = 2;
+  optional string machine_id = 3;
+  // The time of the last tie change, or the creation time of the file when it was never tied.
+  google.protobuf.Timestamp machine_changed_at = 4;
+  string purpose = 5;
+  string file_name = 6;
+  string extension = 7;
+  int64 size_bytes = 8;
+}
+
+message FileLinkReply {
+  FileInfo file = 1;
+  string url = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}

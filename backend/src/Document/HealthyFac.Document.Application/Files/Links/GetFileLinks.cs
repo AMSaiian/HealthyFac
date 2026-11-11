@@ -82,7 +82,10 @@ public sealed class GetFileLinksRequestHandler(
                     && registration.CompanyId == request.CompanyId)
             select file).ToListAsync(cancellationToken);
 
-        return new GetFileLinksResponse { Links = [.. files.Select(_linkIssuer.Issue)] };
+        return new GetFileLinksResponse
+        {
+            Links = [.. files.Select(file => _linkIssuer.Issue(file, FileLinkAudience.Public))],
+        };
     }
 
     private Guid? TryDecrypt(string encryptedId)

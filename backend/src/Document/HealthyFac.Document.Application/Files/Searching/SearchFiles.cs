@@ -63,9 +63,10 @@ public sealed class SearchFilesPreHandlerCheck(IDocumentDbContext dbContext, ICu
 }
 
 /// <summary>
-/// Reads one page of the attachments of the company that belong to no machine, or of one machine. Embedded images and
-/// deleted files stay out. The pre-handler check has already checked the machine scope, so a machine outside the scope
-/// is "not found" and never an empty page. The newest upload comes first unless the request names a sort.
+/// Reads one page of the attachments of the company, tied or not (a request without a machine), or of one machine.
+/// Embedded images and deleted files stay out. The pre-handler check has already checked the machine scope, so a
+/// machine outside the scope is "not found" and never an empty page. The newest upload comes first unless the
+/// request names a sort.
 /// </summary>
 /// <param name="dbContext">Reads the file refs.</param>
 public sealed class SearchFilesRequestHandler(IDocumentDbContext dbContext)
@@ -81,7 +82,7 @@ public sealed class SearchFilesRequestHandler(IDocumentDbContext dbContext)
         var response = await _dbContext.FileRefs
             .AsNoTracking()
             .Where(file => file.CompanyId == request.CompanyId
-                && file.MachineId == request.MachineId
+                && (request.MachineId == null || file.MachineId == request.MachineId)
                 && file.Purpose == FilePurpose.Attachment)
             .ApplyFilter(request.Filter)
             .ApplySort(request.Sort ?? FileSearchDefaults.Sort, FileSortMap.Instance)

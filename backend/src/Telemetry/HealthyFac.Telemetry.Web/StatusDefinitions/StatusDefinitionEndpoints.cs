@@ -7,6 +7,8 @@ using HealthyFac.Telemetry.Application.StatusDefinitions;
 using HealthyFac.Telemetry.Web.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using ApplicationApplyStatusDefinitionChangesRequest =
+    HealthyFac.Telemetry.Application.StatusDefinitions.ApplyStatusDefinitionChangesRequest;
 using ApplicationCreateStatusDefinitionRequest =
     HealthyFac.Telemetry.Application.StatusDefinitions.CreateStatusDefinitionRequest;
 using ApplicationDeleteStatusDefinitionRequest =
@@ -35,6 +37,8 @@ public static class StatusDefinitionEndpoints
         {
             var group = app.MapGroup(StatusDefinitionRoutes.BaseRoute);
             group.MapPost(StatusDefinitionRoutes.Root, CreateAsync)
+                .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Write);
+            group.MapPost(StatusDefinitionRoutes.Apply, ApplyAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Write);
             group.MapPost(StatusDefinitionRoutes.Search, SearchAsync)
                 .RequireAuthorization(TelemetryPermissions.StatusDefinitions.Read);
@@ -69,6 +73,22 @@ public static class StatusDefinitionEndpoints
             idEncryptor.Encrypt(response.Id));
 
         return Results.Created(location, response);
+    }
+
+    private static async Task<Ok<ApplyStatusDefinitionChangesResponse>> ApplyAsync(
+        [FromRoute(Name = StatusDefinitionRoutes.MachineIdParameter)] string machineId,
+        ApplyStatusDefinitionChangesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationApplyStatusDefinitionChangesRequest, ApplyStatusDefinitionChangesResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(machineId, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
     }
 
     private static async Task<Ok<GridResponse<StatusDefinitionResponse>>> SearchAsync(

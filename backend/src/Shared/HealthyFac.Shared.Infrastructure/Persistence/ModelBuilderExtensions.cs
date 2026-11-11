@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.Collations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
@@ -10,6 +11,7 @@ public static class ModelBuilderExtensions
     {
         /// <summary>
         /// Renames every table and column to snake case, using the same rule as the check constraint builders.
+        /// A column name that a configuration set stays (e.g., the row version on the system column <c>xmin</c>).
         /// Call it after the entity configurations, so it sees every entity.
         /// </summary>
         /// <returns>The <see cref="ModelBuilder"/> instance for chained configuration.</returns>
@@ -37,6 +39,7 @@ public static class ModelBuilderExtensions
 
                     entity
                         .GetProperties()
+                        .Where(property => property.FindAnnotation(RelationalAnnotationNames.ColumnName) is null)
                         .ToList()
                         .ForEach(property =>
                             modelBuilder.Entity(entity.Name)

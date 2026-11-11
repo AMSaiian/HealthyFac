@@ -10,6 +10,9 @@
 >
   @if (text(); as example) {
     <p class="mb-2 text-muted-color">{{ 'METRICS.EXAMPLE.REVISION' | translate: { revision: revision() } }}</p>
+    @if (isPreview()) {
+      <p class="mb-2 text-orange-500">{{ 'METRICS.EXAMPLE.PREVIEW' | translate }}</p>
+    }
     <pre class="max-h-[50dvh] overflow-auto rounded-border border border-surface p-3 text-sm">{{ example }}</pre>
   } @else {
     <div class="flex min-h-48">

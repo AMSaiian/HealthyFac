@@ -15,6 +15,11 @@ export class ActionDialog {
   readonly isSaveDisabled = input(false);
   readonly saveDisabledReason = input<string | null>(null);
   readonly isSaving = input(false);
+  /** A read-only dialog hides the save button and shows a close button. */
+  readonly isSaveShown = input(true);
+  readonly widthClass = input('w-[40rem] max-w-[95vw]');
+  /** Hides the footer close button and turns off Escape, so only the cross in the header closes the dialog. */
+  readonly isClosedByHeaderOnly = input(false);
   readonly save = output<void>();
   readonly cancelled = output<void>();
 

@@ -31,6 +31,17 @@
           }
         </span>
         <span class="min-w-0 truncate text-sm text-muted-color">{{ item.value.key }}</span>
+        @if (item.draftId !== null) {
+          <span class="flex items-center gap-2">
+            <p-tag
+              severity="secondary"
+              [value]="'METRICS.MARKERS.PROPOSED' | translate"
+            />
+            @if (item.sourceLocation !== null) {
+              <span class="min-w-0 truncate text-sm text-muted-color">{{ item.sourceLocation }}</span>
+            }
+          </span>
+        }
       </button>
     }
   }

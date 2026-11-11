@@ -19,6 +19,8 @@ public sealed record MachineCreated : IIntegrationMessage, IRequest
     public required string GatewayId { get; init; }
 
     public required Guid CompanyId { get; init; }
+
+    public required string Name { get; init; }
 }
 
 public class MachineCreatedValidator : AbstractValidator<MachineCreated>
@@ -37,5 +39,12 @@ public class MachineCreatedValidator : AbstractValidator<MachineCreated>
         RuleFor(message => message.CompanyId)
             .NotEmpty()
             .WithMessage(MachineMessageErrors.Validation.CompanyIdRequired);
+
+        RuleFor(message => message.Name)
+            .SingleLineText()
+            .NotEmpty()
+            .WithMessage(MachineMessageErrors.Validation.NameRequired)
+            .MaximumLength(MachineMessageLimits.NameMaxLength)
+            .WithMessage(MachineMessageErrors.Validation.NameTooLong);
     }
 }

@@ -1,5 +1,3 @@
-using HealthyFac.Shared.Application.Persistence;
-
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
 /// <summary>
@@ -8,9 +6,8 @@ namespace HealthyFac.Shared.Infrastructure.Persistence;
 public static class PersistenceConstants
 {
     /// <summary>
-    /// The PostgreSQL system column that changes on every row update. A <see langword="uint"/> row version
-    /// property with this name maps to it, so two writers that save the same row cannot both succeed. The
-    /// name is already snake case, so the naming convention keeps it.
+    /// The PostgreSQL system column that changes on every row update. Every table has it, so a row version
+    /// property that maps to it adds no column to the schema.
     /// </summary>
-    public const string ConcurrencyToken = RowVersions.PropertyName;
+    public const string RowVersionColumn = "xmin";
 }

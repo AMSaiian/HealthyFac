@@ -1,0 +1,157 @@
+<p-table
+  #table
+  dataKey="id"
+  sortMode="single"
+  [value]="tableRows()"
+  [lazy]="true"
+  [lazyLoadOnInit]="false"
+  [paginator]="true"
+  [rows]="limit()"
+  [first]="offset()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="{first} - {last} / {totalRecords}"
+  [sortField]="sort()?.column"
+  [sortOrder]="sortOrder()"
+  [tableStyle]="tableStyle()"
+  [filters]="tableFilters()"
+  (onPage)="onPage($event)"
+  (onSort)="onSort($event)"
+  (onFilter)="onFilterApplied($event)"
+>
+  <ng-template #header>
+    <tr>
+      @for (column of columns; track column) {
+        <th
+          [pSortableColumn]="column"
+          [pSortableColumnDisabled]="!isSortable(column)"
+        >
+          <div class="flex items-center gap-1">
+            <span>{{ columnLabelKey(column) | translate }}</span>
+            @if (isSortable(column)) {
+              <p-sort-icon [field]="column" />
+            }
+            @if (column === DraftColumn.Kind) {
+              <p-column-filter
+                display="menu"
+                [field]="column"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+                [showApplyButton]="true"
+                [showClearButton]="true"
+                (onHide)="onFilterHidden(table, column)"
+              >
+                <ng-template
+                  #filter
+                  let-value
+                  let-filterConstraint="filterConstraint"
+                >
+                  <p-select
+                    class="w-full"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="self"
+                    [options]="kindOptions()"
+                    [placeholder]="'DRAFTS.LIST.FILTERS.KIND_PLACEHOLDER' | translate"
+                    [ngModel]="value ?? []"
+                    [multiple]="true"
+                    [checkmark]="true"
+                    (ngModelChange)="filterConstraint.value = $event"
+                  />
+                </ng-template>
+              </p-column-filter>
+            }
+          </div>
+        </th>
+      }
+      <th></th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-draft
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <td>
+          @if (isLoading()) {
+            <p-skeleton />
+          } @else {
+            @switch (column) {
+              @case (DraftColumn.Kind) {
+                {{ kindKey(draft.kind) | translate }}
+              }
+              @case (DraftColumn.Label) {
+                <span
+                  class="block max-w-xs truncate"
+                  [title]="draft.label ?? ''"
+                  >{{ draft.label ?? ('DRAFTS.UNNAMED' | translate) }}</span
+                >
+              }
+              @case (DraftColumn.SourceLocation) {
+                {{ draft.sourceLocation }}
+              }
+              @case (DraftColumn.ProposedAt) {
+                {{ draft.proposedAt | localDateTime }}
+              }
+            }
+          }
+        </td>
+      }
+      <td>
+        @if (isLoading()) {
+          <p-skeleton />
+        } @else if (canWrite()) {
+          <button
+            pButton
+            type="button"
+            iconOnly
+            severity="secondary"
+            [outlined]="true"
+            [rounded]="true"
+            [loading]="applyingIds().includes(draft.id)"
+            [attr.aria-label]="'DRAFTS.ROW_ACTIONS' | translate"
+            (click)="openMenu($event, draft, menu)"
+          >
+            <i class="pi pi-ellipsis-v"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr>
+      <td [attr.colspan]="columns.length + 1">
+        <hf-empty-state
+          icon="pi pi-inbox"
+          messageKey="DRAFTS.LIST.EMPTY"
+        />
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-menu
+  #menu
+  appendTo="body"
+  [popup]="true"
+  [model]="menuItems()"
+>
+  <ng-template
+    #item
+    let-item
+  >
+    <a
+      class="p-menu-item-link"
+      [style.pointer-events]="'auto'"
+      [style.cursor]="item.disabled ? 'not-allowed' : null"
+    >
+      <span
+        class="p-menu-item-icon"
+        [class]="item.icon"
+      ></span>
+      <span class="p-menu-item-label">{{ item.label }}</span>
+    </a>
+  </ng-template>
+</p-menu>

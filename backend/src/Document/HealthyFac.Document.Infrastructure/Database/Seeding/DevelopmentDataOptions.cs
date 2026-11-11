@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Core.Messaging.Machines;
 
 namespace HealthyFac.Document.Infrastructure.Database.Seeding;
 
@@ -37,6 +38,8 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
         RuleForEach(options => options.GetSeedMachines())
             .Must(machine => machine.MachineId != Guid.Empty)
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineIdEmpty)
+            .Must(machine => machine.Name is null || IsValidMachineName(machine.Name))
+            .WithMessage(SeedingValidationConstants.Messages.SeedMachineNameInvalid)
             .WithName(nameof(DevelopmentDataOptions.SeedMachines));
 
         RuleFor(options => options.GetSeedMachines())
@@ -44,4 +47,7 @@ public sealed class DevelopmentDataOptionsValidator : AbstractValidator<Developm
             .WithMessage(SeedingValidationConstants.Messages.SeedMachineIdDuplicated)
             .WithName(nameof(DevelopmentDataOptions.SeedMachines));
     }
+
+    private static bool IsValidMachineName(string name) =>
+        !string.IsNullOrWhiteSpace(name) && name.Length <= MachineMessageLimits.NameMaxLength;
 }

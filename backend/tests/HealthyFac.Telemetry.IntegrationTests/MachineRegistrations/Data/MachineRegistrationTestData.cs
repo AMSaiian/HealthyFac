@@ -7,6 +7,8 @@ public static class MachineRegistrationTestData
 {
     public const int RaceParticipantCount = 2;
 
+    public const string MachineName = "Test Machine";
+
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000a01");
     public static readonly Guid OtherCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000a02");
 
@@ -16,6 +18,7 @@ public static class MachineRegistrationTestData
             MachineId = Guid.CreateVersion7(),
             GatewayId = GatewayIds.Create(),
             CompanyId = CompanyId,
+            Name = MachineName,
         };
 
     public static MachineDeleted CreateDeletedMessage(Guid machineId) =>

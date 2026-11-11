@@ -35,6 +35,8 @@ export type MachineFormValue = Infer<typeof machineFormSchema>;
 
 export const machineActionPayloadSchema = extend(partial(machineFormSchema), {
   machineId: optional(string()),
+  /** The create draft that the drawer applies. The drawer then loads the draft values. */
+  draftId: optional(string()),
 });
 
 export type MachineActionPayload = Infer<typeof machineActionPayloadSchema>;

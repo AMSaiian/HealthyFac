@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Shared.Infrastructure.Messaging.Sending;
 
@@ -7,7 +8,7 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Sending;
 /// A background processor publishes the pending rows, so a message leaves the service only when its business
 /// change commits.
 /// </summary>
-public sealed class OutboxMessage
+public sealed class OutboxMessage : IVersioned
 {
     /// <summary>
     /// Creates a pending message that the processor can publish at once.
@@ -44,6 +45,8 @@ public sealed class OutboxMessage
     /// can drop a duplicate delivery.
     /// </summary>
     public Guid Id { get; private set; } = Guid.CreateVersion7();
+
+    public uint RowVersion { get; private set; }
 
     public string Type { get; private set; }
 

@@ -47,5 +47,18 @@ public static class ConventionTestData
         LayerDependencyTestData.DocumentInfrastructure,
         LayerDependencyTestData.DocumentWeb,
         LayerDependencyTestData.CoreMessaging,
+        LayerDependencyTestData.InsightsMessaging,
+        LayerDependencyTestData.DocumentMessaging,
+        LayerDependencyTestData.TelemetryMessaging,
+    ];
+
+    public static readonly string[] ContractAssemblies =
+    [
+        LayerDependencyTestData.DocumentContracts,
+    ];
+
+    public static readonly string[] GrpcServiceAssemblies =
+    [
+        LayerDependencyTestData.DocumentWeb,
     ];
 }

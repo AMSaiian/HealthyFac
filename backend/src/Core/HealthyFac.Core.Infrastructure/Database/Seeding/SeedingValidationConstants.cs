@@ -1,3 +1,5 @@
+using HealthyFac.Core.Application.Machines;
+
 namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 
 /// <summary>
@@ -60,6 +62,10 @@ public static class SeedingValidationConstants
         public const string TimeZoneIdUnknown = "The time zone ID must be an IANA time zone ID.";
 
         public const string SeedMachineIdEmpty = "A seed machine ID must not be empty.";
+
+        public static readonly string SeedMachineNameInvalid =
+            "A seed machine name must not be blank and must have at most "
+            + $"{MachineValidationConstants.NameMaxLength} characters.";
 
         public const string SeedMachineIdDuplicated = "The seed machine IDs must be distinct.";
 

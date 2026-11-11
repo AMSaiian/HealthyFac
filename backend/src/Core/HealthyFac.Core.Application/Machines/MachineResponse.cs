@@ -25,36 +25,49 @@ public record MachineResponse
 
     public DateTime? UpdatedAt { get; init; }
 
+    /// <summary>The number of pending drafts that target the machine (<see cref="MachinePendingDrafts"/>).</summary>
+    public required int PendingDraftCount { get; init; }
+
     /// <summary>
     /// Maps a machine to its response inside a query, so the database reads only these columns. The get use case
     /// and the grid share it.
     /// </summary>
-    public static readonly Expression<Func<Machine, MachineResponse>> Projection = BuildProjection();
+    /// <param name="dbContext">Provides the draft sets for the pending draft count.</param>
+    /// <returns>The projection for a <c>Select</c> call.</returns>
+    public static Expression<Func<Machine, MachineResponse>> CreateProjection(ICoreDbContext dbContext) =>
+        BuildProjection(dbContext);
 
     /// <summary>
-    /// Builds <see cref="Projection"/> from a template lambda. It puts <see cref="MachineCurrentState.Selector"/> in
-    /// place of the state parameter of the template, so the projection and the grid filter share one definition of
+    /// Builds <see cref="CreateProjection"/> from a template lambda. It puts <see cref="MachineCurrentState.Selector"/>
+    /// in place of the state parameter of the template, so the projection and the grid filter share one definition of
     /// the current state, and EF Core translates the result without LINQKit.
     /// </summary>
+    /// <param name="dbContext">Provides the draft sets for the pending draft count.</param>
     /// <returns>The projection with the current state selector embedded.</returns>
-    private static Expression<Func<Machine, MachineResponse>> BuildProjection()
+    private static Expression<Func<Machine, MachineResponse>> BuildProjection(ICoreDbContext dbContext)
     {
-        Expression<Func<Machine, MachineState, MachineResponse>> template = (machine, state) => new MachineResponse
-        {
-            Id = machine.Id,
-            Name = machine.Name,
-            SerialNumber = machine.SerialNumber,
-            GatewayId = machine.GatewayId,
-            State = state,
-            Description = machine.Description,
-            CreatedAt = machine.CreatedAt,
-            UpdatedAt = machine.UpdatedAt,
-        };
+        Expression<Func<Machine, MachineState, int, MachineResponse>> template =
+            (machine, state, pendingCount) => new MachineResponse
+            {
+                Id = machine.Id,
+                Name = machine.Name,
+                SerialNumber = machine.SerialNumber,
+                GatewayId = machine.GatewayId,
+                State = state,
+                Description = machine.Description,
+                CreatedAt = machine.CreatedAt,
+                UpdatedAt = machine.UpdatedAt,
+                PendingDraftCount = pendingCount,
+            };
 
         var machineParameter = template.Parameters[index: 0];
         var selectorBody = new ParameterReplacer(MachineCurrentState.Selector.Parameters[index: 0], machineParameter)
             .Visit(MachineCurrentState.Selector.Body);
-        var body = new ParameterReplacer(template.Parameters[index: 1], selectorBody).Visit(template.Body);
+        var countSelector = MachinePendingDrafts.CountSelector(dbContext);
+        var countBody = new ParameterReplacer(countSelector.Parameters[index: 0], machineParameter)
+            .Visit(countSelector.Body);
+        var stateBody = new ParameterReplacer(template.Parameters[index: 1], selectorBody).Visit(template.Body);
+        var body = new ParameterReplacer(template.Parameters[index: 2], countBody).Visit(stateBody);
 
         return Expression.Lambda<Func<Machine, MachineResponse>>(body, machineParameter);
     }

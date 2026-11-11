@@ -1,5 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -21,7 +20,6 @@ import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
     MetricForm,
     MetricList,
     MetricExampleDialog,
-    RouterLink,
     Tooltip,
     TranslatePipe,
   ],
@@ -30,6 +28,9 @@ import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
   templateUrl: './metrics-page.html',
 })
 export class MetricsPage {
+  /** The query parameter `draftAttemptId` (router input binding): the attempt whose metric drafts the page stages. */
+  readonly draftAttemptId = input<string>();
+
   protected readonly store = inject(MetricsPageStore);
 
   protected readonly unitGroups = computed(() =>
@@ -47,9 +48,15 @@ export class MetricsPage {
     return this.store.hasChanges() ? null : 'METRICS.DISABLED.NO_CHANGES';
   });
   protected readonly doneDisabledReason = computed((): string | null => {
-    if (!this.store.isDraftValid()) {
+    if (!this.store.isFormValid()) {
       return 'METRICS.FORM.INVALID';
     }
-    return this.store.isDraftChanged() ? null : 'METRICS.FORM.NO_CHANGES';
+    return this.store.isFormChanged() ? null : 'METRICS.FORM.NO_CHANGES';
   });
+
+  constructor() {
+    effect(() => {
+      this.store.loadDrafts(this.draftAttemptId() ?? null);
+    });
+  }
 }

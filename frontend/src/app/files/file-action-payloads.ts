@@ -23,3 +23,20 @@ export const fileEditActionPayloadSchema = object({
 });
 
 export type FileEditActionPayload = Infer<typeof fileEditActionPayloadSchema>;
+
+/** The payload of the action `files.tie`: the grid row that the user ties to a machine. */
+export const fileTieActionPayloadSchema = object({
+  item: object({ id: string(), fileName: string(), rowVersion: number() }),
+});
+
+export type FileTieActionPayload = Infer<typeof fileTieActionPayloadSchema>;
+
+/** The payload of the action `files.ingestHistory`: the file whose attempts the dialog lists. */
+export const ingestHistoryActionPayloadSchema = object({ fileId: string() });
+
+export type IngestHistoryActionPayload = Infer<typeof ingestHistoryActionPayloadSchema>;
+
+/** The payload of the action `files.ingestSummary`: the attempt that the dialog shows. */
+export const ingestSummaryActionPayloadSchema = object({ attemptId: string() });
+
+export type IngestSummaryActionPayload = Infer<typeof ingestSummaryActionPayloadSchema>;

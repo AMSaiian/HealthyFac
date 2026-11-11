@@ -59,6 +59,14 @@ public static class RateLimitingExtensions
                         ClientAddress));
 
                 options.AddPolicy(
+                    RateLimitPolicyNames.StaticAssets,
+                    context => PartitionByClient(
+                        context,
+                        RateLimitPolicyNames.StaticAssets,
+                        limits => limits.StaticAssets,
+                        ClientAddress));
+
+                options.AddPolicy(
                     RateLimitPolicyNames.Default,
                     context => PartitionByClient(
                         context,

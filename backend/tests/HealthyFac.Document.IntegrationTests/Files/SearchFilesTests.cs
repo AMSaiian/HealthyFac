@@ -16,7 +16,7 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
     private readonly DocumentDatabaseFixture _fixture = fixture;
 
     [Fact]
-    public async Task SearchCompanyFiles_Always_ReturnsOnlyActiveCompanyAttachments()
+    public async Task SearchCompanyFiles_Always_ReturnsActiveCompanyAttachmentsTiedOrNot()
     {
         var machineId = await _fixture.RegisterMachineAsync(SearchFilesTestData.CompanyId);
         var ids = await _fixture.SeedFilesAsync(
@@ -43,8 +43,8 @@ public sealed class SearchFilesTests(DocumentDatabaseFixture fixture)
             SearchFilesTestData.CompanyId,
             SearchFilesTestData.CreateCompanySearch(SearchFilesTestData.CompanyId));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 0]);
-        response.TotalCount.Should().Be(expected: 1);
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 0], ids[index: 1]]);
+        response.TotalCount.Should().Be(expected: 2);
     }
 
     [Fact]

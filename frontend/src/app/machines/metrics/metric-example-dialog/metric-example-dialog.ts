@@ -14,6 +14,8 @@ import { EmptyState } from '@shared/loading/empty-state/empty-state';
 export class MetricExampleDialog {
   readonly revision = input.required<number>();
   readonly text = input.required<string | null>();
+  /** Tells that the text holds changes of the user that the server does not have yet. */
+  readonly isPreview = input(false);
   readonly closed = output<void>();
 
   protected readonly isVisible = signal(true);

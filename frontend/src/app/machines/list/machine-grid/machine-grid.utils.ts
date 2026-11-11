@@ -9,6 +9,7 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<MachineColumn, string>> = {
   [MachineColumn.State]: 'MACHINES.COLUMNS.STATE',
   [MachineColumn.CreatedAt]: 'MACHINES.COLUMNS.CREATED_AT',
   [MachineColumn.UpdatedAt]: 'MACHINES.COLUMNS.UPDATED_AT',
+  [MachineColumn.Drafts]: 'MACHINES.COLUMNS.DRAFTS',
 };
 
 export const STATE_LABEL_KEYS: Readonly<Record<MachineState, string>> = {
@@ -22,6 +23,9 @@ export const MENU_STATUSES_KEY = 'MACHINES.STATUSES';
 export const MENU_FILES_KEY = 'MACHINES.FILES';
 export const MENU_UPDATE_KEY = 'MACHINES.UPDATE';
 export const MENU_DELETE_KEY = 'MACHINES.DELETE';
+export const MENU_DRAFTS_KEY = 'MACHINES.DRAFTS';
+export const DRAFTS_YES_KEY = 'MACHINES.FILTERS.DRAFTS_YES';
+export const DRAFTS_NO_KEY = 'MACHINES.FILTERS.DRAFTS_NO';
 
 export const SORTABLE_COLUMNS: readonly string[] = Object.values(MachineSortColumn);
 
@@ -32,6 +36,7 @@ export const FILTER_READERS: Readonly<Record<MachineColumn, (value: unknown) => 
   [MachineColumn.State]: (value) => ({ states: asList<MachineState>(value) }),
   [MachineColumn.CreatedAt]: (value) => ({ createdAt: asRange(value) }),
   [MachineColumn.UpdatedAt]: (value) => ({ updatedAt: asRange(value) }),
+  [MachineColumn.Drafts]: (value) => ({ hasPendingDrafts: typeof value === 'boolean' ? value : null }),
 };
 
 /** Reads the applied store value of one column as a table filter value. `null` means "no filter". */
@@ -41,4 +46,5 @@ export const FILTER_WRITERS: Readonly<Record<MachineColumn, (filter: MachineFilt
   [MachineColumn.State]: (filter) => (filter.states.length > 0 ? [...filter.states] : null),
   [MachineColumn.CreatedAt]: (filter) => (isRangeEmpty(filter.createdAt) ? null : filter.createdAt),
   [MachineColumn.UpdatedAt]: (filter) => (isRangeEmpty(filter.updatedAt) ? null : filter.updatedAt),
+  [MachineColumn.Drafts]: (filter) => filter.hasPendingDrafts,
 };

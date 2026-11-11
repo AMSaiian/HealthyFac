@@ -1,0 +1,53 @@
+@for (row of rows(); track row.field) {
+  <section class="flex flex-col gap-2 rounded-border border border-surface p-3">
+    <h3 class="font-semibold">{{ labelKey(row.field) | translate }}</h3>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-muted-color">{{ 'DRAFTS.COMPARE.CURRENT' | translate }}</span>
+        @if (row.field === CompareField.Description) {
+          <hf-rich-text-view [html]="row.current ?? ''" />
+        } @else {
+          <span class="break-words">{{ row.current }}</span>
+        }
+      </div>
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-muted-color">{{ 'DRAFTS.COMPARE.PROPOSED' | translate }}</span>
+        @if (!row.canTake) {
+          <span class="text-muted-color">{{ 'DRAFTS.NO_CHANGE' | translate }}</span>
+        } @else if (row.field === CompareField.Description) {
+          <hf-rich-text-view [html]="row.proposed ?? ''" />
+        } @else {
+          <span class="break-words">{{ row.proposed }}</span>
+        }
+      </div>
+    </div>
+    @if (row.canTake) {
+      <div class="flex items-center gap-2">
+        <p-checkbox
+          [binary]="true"
+          [inputId]="'compare-' + row.field"
+          [ngModel]="row.isTaken"
+          (ngModelChange)="takeChange.emit({ field: row.field, isTaken: $event })"
+        />
+        <label [for]="'compare-' + row.field">{{ 'DRAFTS.COMPARE.TAKE' | translate }}</label>
+      </div>
+      @if (row.isTaken) {
+        @if (row.field === CompareField.Description) {
+          <hf-rich-text-editor
+            [value]="row.value"
+            [characterLimit]="descriptionMaxLength"
+            (valueChange)="editChange.emit({ field: row.field, value: $event })"
+          />
+        } @else {
+          <input
+            pInputText
+            class="w-full"
+            [attr.aria-label]="labelKey(row.field) | translate"
+            [value]="row.value ?? ''"
+            (input)="editChange.emit({ field: row.field, value: $any($event.target).value })"
+          />
+        }
+      }
+    }
+  </section>
+}

@@ -24,6 +24,8 @@
   [filter]="store.filter()"
   [canEdit]="store.canEdit()"
   [canDelete]="store.canDelete()"
+  [machineOptions]="store.machineOptions()"
+  [access]="store.rowAccess()"
   (filterChange)="store.setFilter($event)"
   (sortChange)="store.setSort($event)"
   (pageChange)="store.setPage($event.offset, $event.limit)"
@@ -32,4 +34,6 @@
   (downloadRequested)="store.download($event)"
   (editRequested)="store.requestEdit($event)"
   (deleteRequested)="store.requestDelete($event)"
+  (rowActionRequested)="store.requestRowAction($event)"
+  (machineSearch)="store.searchMachines($event)"
 />

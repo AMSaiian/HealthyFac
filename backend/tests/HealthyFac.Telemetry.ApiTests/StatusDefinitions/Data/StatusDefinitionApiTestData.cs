@@ -5,6 +5,7 @@ public static class StatusDefinitionApiTestData
     public const string MachinesPath = "v1/machines";
     public const string StatusDefinitionsSegment = "status-definitions";
     public const string SearchSegment = "search";
+    public const string ApplySegment = "apply";
     public const string ReadPermission = "status-definitions:read";
     public const string WritePermission = "status-definitions:write";
     public const string DeletePermission = "status-definitions:delete";

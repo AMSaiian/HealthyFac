@@ -1,6 +1,7 @@
 import type { Routes } from '@angular/router';
 
 import { FilesApi } from '@files/files-api';
+import { IngestApi } from '@files/ingest/ingest-api';
 import { FilesGridStore } from '@files/list/files-grid.store';
 import { MachineFilesPage } from './files/machine-files-page/machine-files-page';
 import { machineFilesResolver } from './files/machine-files.resolver';
@@ -8,6 +9,7 @@ import { StatusDefinitionsGridStore } from './statuses/list/status-definitions-g
 import { statusDefinitionsResolver } from './statuses/list/status-definitions.resolver';
 import { StatusDefinitionsPage } from './statuses/list/status-definitions-page/status-definitions-page';
 import { StatusDefinitionsApi } from './statuses/status-definitions-api';
+import { DraftsApi } from './drafts/drafts-api';
 import { MachinesGridStore } from './list/machines-grid.store';
 import { MachinesPage } from './list/machines-page/machines-page';
 import { MachinesApi } from './machines-api';
@@ -31,14 +33,14 @@ export const MACHINES_ROUTES: Routes = [
     path: ':machineId/files',
     title: 'TITLES.MACHINE_FILES',
     component: MachineFilesPage,
-    providers: [MachinesApi, FilesApi, FilesGridStore],
+    providers: [MachinesApi, FilesApi, IngestApi, FilesGridStore],
     resolve: { machine: machineFilesResolver },
   },
   {
     path: ':machineId/metrics',
     title: 'TITLES.METRICS',
     component: MetricsPage,
-    providers: [MachinesApi, MetricDefinitionsApi, MetricUnitsApi, MetricsPageStore],
+    providers: [MachinesApi, MetricDefinitionsApi, MetricUnitsApi, DraftsApi, MetricsPageStore],
     resolve: { machine: metricsResolver },
     canDeactivate: [metricsPageGuard],
   },

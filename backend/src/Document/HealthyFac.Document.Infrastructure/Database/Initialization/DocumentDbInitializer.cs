@@ -14,6 +14,7 @@ public class DocumentDbInitializer(
     DocumentDbContext dbContext,
     IHostEnvironment environment,
     DocumentDevelopmentDataSeeder developmentDataSeeder,
+    DemoFileSeeder demoFileSeeder,
     BlobFileStorage fileStorage
 ) : IDocumentDbInitializer
 {
@@ -21,6 +22,7 @@ public class DocumentDbInitializer(
     private readonly DocumentDbContext _dbContext = dbContext;
     private readonly IHostEnvironment _environment = environment;
     private readonly DocumentDevelopmentDataSeeder _developmentDataSeeder = developmentDataSeeder;
+    private readonly DemoFileSeeder _demoFileSeeder = demoFileSeeder;
     private readonly BlobFileStorage _fileStorage = fileStorage;
 
     /// <summary>
@@ -78,12 +80,18 @@ public class DocumentDbInitializer(
     }
 
     /// <summary>
-    /// Seeds the registrations of the seed machines. It adds nothing for a machine whose registration exists, so a
-    /// restart does not duplicate the data.
+    /// Seeds the registrations of the seed machines, then the demo files, only in the Development environment.
+    /// It adds nothing that exists, so a restart does not duplicate the data.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
-        => _developmentDataSeeder.SeedAsync(cancellationToken);
+    public async Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
+    {
+        await _developmentDataSeeder.SeedAsync(cancellationToken);
+        if (_environment.IsDevelopment())
+        {
+            await _demoFileSeeder.SeedAsync(cancellationToken);
+        }
+    }
 }

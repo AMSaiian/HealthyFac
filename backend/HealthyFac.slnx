@@ -15,12 +15,21 @@
   </Folder>
   <Folder Name="/src/Document/">
     <Project Path="src/Document/HealthyFac.Document.Application/HealthyFac.Document.Application.csproj" />
+    <Project Path="src/Document/HealthyFac.Document.Contracts/HealthyFac.Document.Contracts.csproj" />
     <Project Path="src/Document/HealthyFac.Document.Domain/HealthyFac.Document.Domain.csproj" />
     <Project Path="src/Document/HealthyFac.Document.Infrastructure/HealthyFac.Document.Infrastructure.csproj" />
+    <Project Path="src/Document/HealthyFac.Document.Messaging/HealthyFac.Document.Messaging.csproj" />
     <Project Path="src/Document/HealthyFac.Document.Web/HealthyFac.Document.Web.csproj" />
   </Folder>
   <Folder Name="/src/Gateway/">
     <Project Path="src/Gateway/HealthyFac.Gateway.Web/HealthyFac.Gateway.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Insights/">
+    <Project Path="src/Insights/HealthyFac.Insights.Application/HealthyFac.Insights.Application.csproj" />
+    <Project Path="src/Insights/HealthyFac.Insights.Domain/HealthyFac.Insights.Domain.csproj" />
+    <Project Path="src/Insights/HealthyFac.Insights.Infrastructure/HealthyFac.Insights.Infrastructure.csproj" />
+    <Project Path="src/Insights/HealthyFac.Insights.Messaging/HealthyFac.Insights.Messaging.csproj" />
+    <Project Path="src/Insights/HealthyFac.Insights.Web/HealthyFac.Insights.Web.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/HealthyFac.Shared.Application/HealthyFac.Shared.Application.csproj" />
@@ -35,6 +44,7 @@
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Application/HealthyFac.Telemetry.Application.csproj" />
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Domain/HealthyFac.Telemetry.Domain.csproj" />
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Infrastructure/HealthyFac.Telemetry.Infrastructure.csproj" />
+    <Project Path="src/Telemetry/HealthyFac.Telemetry.Messaging/HealthyFac.Telemetry.Messaging.csproj" />
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Web/HealthyFac.Telemetry.Web.csproj" />
   </Folder>
   <Folder Name="/src/Tools/">
@@ -54,6 +64,10 @@
     <Project Path="tests/HealthyFac.Core.UnitTests/HealthyFac.Core.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Identity.IntegrationTests/HealthyFac.Identity.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Shared.IntegrationTests/HealthyFac.Shared.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Insights.ArchitectureTests/HealthyFac.Insights.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.Insights.ApiTests/HealthyFac.Insights.ApiTests.csproj" />
+    <Project Path="tests/HealthyFac.Insights.IntegrationTests/HealthyFac.Insights.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Insights.UnitTests/HealthyFac.Insights.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Spa.IntegrationTests/HealthyFac.Spa.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Telemetry.ArchitectureTests/HealthyFac.Telemetry.ArchitectureTests.csproj" />
     <Project Path="tests/HealthyFac.Telemetry.ApiTests/HealthyFac.Telemetry.ApiTests.csproj" />

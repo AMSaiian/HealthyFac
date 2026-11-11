@@ -6,7 +6,7 @@ namespace HealthyFac.Telemetry.Domain.MachineRegistrations;
 /// The Telemetry copy of a Core machine: the machine ID, the gateway ID, and the company. The values
 /// never change, so one registration per machine is enough. A removal keeps the row (soft delete).
 /// </summary>
-public class MachineRegistration : IEntity, ISoftDeletable
+public class MachineRegistration : IEntity, ISoftDeletable, IVersioned
 {
     /// <summary>
     /// Creates the registration of a machine.
@@ -22,6 +22,7 @@ public class MachineRegistration : IEntity, ISoftDeletable
     }
 
     public Guid Id { get; private set; }
+    public uint RowVersion { get; private set; }
     public string GatewayId { get; private set; }
     public Guid CompanyId { get; private set; }
 

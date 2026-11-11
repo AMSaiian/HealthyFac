@@ -4,6 +4,8 @@ public static class MetricUnitTestData
 {
     public const int ParallelRunCount = 2;
     public const string CelsiusAbbreviation = "°C";
+    public const string CelsiusUnitName = "DegreeCelsius";
+    public const string WrongAbbreviation = "wrong";
 
     /// <summary>The initial catalog of the spec as <c>Kind.Unit</c> pairs.</summary>
     public static readonly IReadOnlyList<string> ExpectedPairs =

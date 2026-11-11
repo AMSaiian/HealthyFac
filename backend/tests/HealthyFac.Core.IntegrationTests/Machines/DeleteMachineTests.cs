@@ -1,6 +1,8 @@
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Machines;
@@ -108,6 +110,48 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
 
         history.Should().HaveCount(expected: 2).And.OnlyContain(row => row.DeletedAt != null);
         otherHistory.Should().ContainSingle().Which.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteMachine_WithPendingAndAppliedDrafts_DismissesOnlyThePendingOnes()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, machineId);
+
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+        var statuses = await _fixture.LoadStatusDraftsAsync();
+
+        machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
+        metrics.Single(draft => draft.Key == DraftTestData.PendingKey).State.Should().Be(DraftState.Dismissed);
+        metrics.Single(draft => draft.Key == DraftTestData.AppliedKey).State.Should().Be(DraftState.Applied);
+        statuses.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
+    }
+
+    [Fact]
+    public async Task DeleteMachine_WhenUpdateAndDeleteOverlap_OneSucceedsAndOneConflicts()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+        using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
+
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => _fixture.DeleteMachineAsync(tenant.CompanyId, machineId)),
+            race.RunAsync(() => _fixture.UpdateMachineAsync(
+                tenant.CompanyId, machineId, MachineTestData.MachineName, MachineTestData.SerialNumber,
+                description: "Second")));
+
+        race.SaveCounts.Should().Equal(1, 1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
+        failures.Single(failure => failure is not null)
+            .Should()
+            .BeOfType<ConflictException>()
+            .Which.Message.Should()
+            .Be(MachineErrors.MachineChanged);
     }
 
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant) =>

@@ -3,6 +3,7 @@ using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
@@ -31,6 +32,39 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
         file.DeletedAt.Should().NotBeNull();
         file.DeletedBy.Should().NotBeNull();
         blobs.Should().Equal(response.Id.ToString());
+    }
+
+    [Fact]
+    public async Task DeleteCompanyFile_WithFile_StoresOneFileDeletedMessage()
+    {
+        var ids = await _fixture.SeedFilesAsync(
+            UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
+
+        await _fixture.DeleteCompanyFileAsync(
+            UpdateFileTestData.CompanyId,
+            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
+
+        messages.Should()
+            .ContainSingle()
+            .Which.Should()
+            .Be(new FileDeleted { FileId = ids[index: 0], CompanyId = UpdateFileTestData.CompanyId });
+    }
+
+    [Fact]
+    public async Task DeleteCompanyFile_WithFileOfAnotherCompany_StoresNoMessage()
+    {
+        var ids = await _fixture.SeedFilesAsync(
+            UpdateFileTestData.OtherCompanyId, [UpdateFileTestData.CompanyFile()]);
+        var act = () => _fixture.DeleteCompanyFileAsync(
+            UpdateFileTestData.CompanyId,
+            new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
+        await act.Should().ThrowAsync<NotFoundException>();
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<FileDeleted>();
+
+        messages.Should().BeEmpty();
     }
 
     [Fact]
@@ -104,7 +138,7 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task DeleteCompanyFile_WithMachineFile_Throws404()
+    public async Task DeleteCompanyFile_WithMachineFile_SoftDeletes()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
         var ids = await _fixture.SeedFilesAsync(
@@ -114,11 +148,13 @@ public sealed class DeleteFileTests(DocumentDatabaseFixture fixture)
                     FileName: "machine", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
             ]);
 
-        var act = () => _fixture.DeleteCompanyFileAsync(
+        await _fixture.DeleteCompanyFileAsync(
             UpdateFileTestData.CompanyId,
             new DeleteFileRequest { CompanyId = UpdateFileTestData.CompanyId, Id = ids[index: 0] });
 
-        await act.Should().ThrowAsync<NotFoundException>();
+        var file = await _fixture.LoadFileRowAsync(ids[index: 0]);
+
+        file.DeletedAt.Should().NotBeNull();
     }
 
     [Fact]

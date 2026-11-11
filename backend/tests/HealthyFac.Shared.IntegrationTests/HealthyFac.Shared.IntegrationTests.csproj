@@ -13,9 +13,12 @@
     <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj" />
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Infrastructure\HealthyFac.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj" />
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 

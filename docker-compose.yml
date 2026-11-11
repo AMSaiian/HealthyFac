@@ -3,7 +3,7 @@ name: healthyfac
 services:
   postgres:
     container_name: healthyfac-postgres
-    image: postgres:18.6-alpine
+    image: pgvector/pgvector:0.8.6-pg18-trixie
     restart: unless-stopped
     user: postgres
     stop_signal: SIGINT
@@ -123,6 +123,7 @@ services:
       KEYCLOAK_CORE_CLIENT_SECRET: ${KEYCLOAK_CORE_CLIENT_SECRET:?set KEYCLOAK_CORE_CLIENT_SECRET in .env}
       KEYCLOAK_TELEMETRY_CLIENT_SECRET: ${KEYCLOAK_TELEMETRY_CLIENT_SECRET:?set KEYCLOAK_TELEMETRY_CLIENT_SECRET in .env}
       KEYCLOAK_DOCUMENT_CLIENT_SECRET: ${KEYCLOAK_DOCUMENT_CLIENT_SECRET:?set KEYCLOAK_DOCUMENT_CLIENT_SECRET in .env}
+      KEYCLOAK_INSIGHTS_CLIENT_SECRET: ${KEYCLOAK_INSIGHTS_CLIENT_SECRET:?set KEYCLOAK_INSIGHTS_CLIENT_SECRET in .env}
     depends_on:
       keycloak:
         condition: service_healthy
@@ -396,6 +397,7 @@ services:
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       Messaging__QueueName: telemetry
+      ServiceActors__AllowedClients__0: healthyfac-insights
       # The issuer is the public URL of the realm (the gateway). Telemetry reads the metadata and the signing keys
       # from the internal address of Keycloak.
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
@@ -492,6 +494,7 @@ services:
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       Messaging__QueueName: document
+      ServiceActors__AllowedClients__0: healthyfac-insights
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
       Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
       Jwt__IsHttpsMetadataRequired: "false"
@@ -502,6 +505,8 @@ services:
       FileStorage__ContainerName: files
       # The test tenant ID of Core. The seed machines of the seed data file belong to its company.
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      # The demo files are created as the test supervisor.
+      Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       FileStorage__PublicBlobBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}/api/document/blobs
       Proxy__KnownNetworks__0: 172.16.0.0/12
       Tracing__Endpoint: http://lgtm:4317
@@ -522,6 +527,132 @@ services:
         condition: service_healthy
       lgtm:
         condition: service_healthy
+
+  insights:
+    container_name: healthyfac-insights
+    build:
+      context: ./backend
+      dockerfile: src/Insights/HealthyFac.Insights.Web/Dockerfile
+    image: healthyfac/insights:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - insights-logs:/app/logs
+      # The seed data file and the demo ingest snapshot. Insights reads them in Development only.
+      - ./backend/seed:/app/seed:ro
+      # The Application Default Credentials file of the developer. Vertex AI reads it through
+      # GOOGLE_APPLICATION_CREDENTIALS. Mount it read-only. It never enters an image or the build context.
+      - ${GCLOUD_ADC_FILE:?set GCLOUD_ADC_FILE in .env}:/run/secrets/gcloud-adc.json:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_insights;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Messaging__QueueName: insights
+      Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
+      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
+      Jwt__IsHttpsMetadataRequired: "false"
+      ServiceTokens__TokenEndpoint: http://keycloak:8080/realms/healthyfac/protocol/openid-connect/token
+      ServiceTokens__ClientId: healthyfac-insights
+      ServiceTokens__ClientSecret: ${KEYCLOAK_INSIGHTS_CLIENT_SECRET:?set KEYCLOAK_INSIGHTS_CLIENT_SECRET in .env}
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcloud-adc.json
+      Gemini__ProjectId: ${GEMINI_PROJECT_ID:?set GEMINI_PROJECT_ID in .env}
+      Gemini__Location: ${GEMINI_LOCATION:?set GEMINI_LOCATION in .env}
+      Gemini__ChatModel: ${GEMINI_CHAT_MODEL:?set GEMINI_CHAT_MODEL in .env}
+      Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      Docling__BaseUrl: http://docling:5001
+      Docling__ApiKey: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
+      DocumentClient__GrpcAddress: http://document:8081
+      TelemetryClient__BaseAddress: http://telemetry:8080
+      # The test company and supervisor of Core. The demo ingest results belong to them.
+      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
+      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
+      IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      IdEncryption__Keys__0__IsDefault: "true"
+      Proxy__KnownNetworks__0: 172.16.0.0/12
+      Tracing__Endpoint: http://lgtm:4317
+      Metrics__Endpoint: http://lgtm:4317
+      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
+    # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
+    ports:
+      - "${INSIGHTS_PORT:-8087}:8080"
+      - "127.0.0.1:${INSIGHTS_HEALTH_PORT:-8097}:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak-config:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      document:
+        condition: service_healthy
+      telemetry:
+        condition: service_healthy
+      docling:
+        condition: service_healthy
+
+  docling:
+    container_name: healthyfac-docling
+    image: ghcr.io/docling-project/docling-serve-cu130:v1.38.2
+    restart: unless-stopped
+    stop_signal: SIGTERM
+    # The image has no SIGTERM handler. As PID 1 it ignored the signal and was killed after 30 s (exit 137). The init
+    # process forwards the signal, and the image then stops in about 1 s with exit 143 (stopped by SIGTERM). Exit 143 is
+    # accepted for this image: it keeps no state, and the stop is far below the grace period.
+    init: true
+    stop_grace_period: 30s
+    # Hardening, tested on the GPU image one setting after the other (Step 75): each setting below kept Docling healthy
+    # with `cuda:0` and converted the text PDF, the scanned PDF (EasyOCR), a DOCX, and an XLSX. The image already
+    # runs as the numeric user 1001; the setting makes it explicit. The root file system is read-only: Python needs
+    # /tmp, and EasyOCR creates /opt/app-root/src/.EasyOCR at run time (its models stay in the cache volume). No
+    # setting was left out.
+    user: "1001"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:uid=1001
+      - /opt/app-root/src/.EasyOCR:uid=1001
+    environment:
+      DOCLING_DEVICE: cuda
+      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: "1"
+      DOCLING_SERVE_ENABLE_UI: "false"
+      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
+      DOCLING_SERVE_MAX_FILE_SIZE: "104857600"
+    volumes:
+      - docling-models:/opt/app-root/src/.cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ports:
+      - "127.0.0.1:${DOCLING_PORT:-5001}:5001"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5001/health').status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
 
   auth:
     container_name: healthyfac-auth
@@ -648,6 +779,8 @@ services:
       ReverseProxy__Clusters__telemetry__Destinations__main__Health: http://telemetry:8090/
       ReverseProxy__Clusters__document__Destinations__main__Address: http://document:8080/
       ReverseProxy__Clusters__document__Destinations__main__Health: http://document:8090/
+      ReverseProxy__Clusters__insights__Destinations__main__Address: http://insights:8080/
+      ReverseProxy__Clusters__insights__Destinations__main__Health: http://insights:8090/
       ReverseProxy__Clusters__document-storage__Destinations__main__Address: http://azurite:10000/
       # The account path of Azurite. Azure Storage has no account path.
       ReverseProxy__Routes__document-blobs__Transforms__1__PathPrefix: /devstoreaccount1
@@ -663,6 +796,7 @@ services:
       ReverseProxy__Routes__core-invite-public__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__telemetry__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__insights__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document-blobs__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-realm__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
@@ -691,6 +825,8 @@ services:
       telemetry:
         condition: service_started
       document:
+        condition: service_started
+      insights:
         condition: service_started
       azurite:
         condition: service_started
@@ -732,6 +868,8 @@ volumes:
   mosquitto-data:
   telemetry-logs:
   document-logs:
+  insights-logs:
+  docling-models:
   azurite-data:
   auth-logs:
   mailpit-data:

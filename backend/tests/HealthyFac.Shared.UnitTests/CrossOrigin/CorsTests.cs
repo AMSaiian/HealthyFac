@@ -7,6 +7,7 @@ public sealed class CorsTests
 {
     private const string AllowOriginHeader = "Access-Control-Allow-Origin";
     private const string MaxAgeHeader = "Access-Control-Max-Age";
+    private const string ExposeHeadersHeader = "Access-Control-Expose-Headers";
 
     [Fact]
     public async Task Preflight_FromAllowedOrigin_Returns204WithAllowOrigin()
@@ -19,6 +20,18 @@ public sealed class CorsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         response.Headers.GetValues(AllowOriginHeader).Should().Equal(CorsHostFactory.AllowedOrigin);
+    }
+
+    [Fact]
+    public async Task Request_FromAllowedOrigin_ExposesRetryAfterToTheBrowser()
+    {
+        using var host = await CorsHostFactory.StartAsync();
+
+        using var response = await host.SendCrossOriginPostAsync(
+            CorsHostFactory.EndpointWithPolicy,
+            CorsHostFactory.AllowedOrigin);
+
+        response.Headers.GetValues(ExposeHeadersHeader).Should().Equal("Retry-After");
     }
 
     [Fact]

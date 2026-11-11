@@ -6,6 +6,7 @@ import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
+import { Badge } from 'primeng/badge';
 import { Menu } from 'primeng/menu';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
@@ -34,9 +35,12 @@ import type { MachineSortColumn } from '@machines/machine';
 import { type Machine, MachineColumn, type MachineFilter, type MachineSort, MachineState } from '@machines/machine';
 import {
   COLUMN_LABEL_KEYS,
+  DRAFTS_NO_KEY,
+  DRAFTS_YES_KEY,
   FILTER_READERS,
   FILTER_WRITERS,
   MENU_DELETE_KEY,
+  MENU_DRAFTS_KEY,
   MENU_FILES_KEY,
   MENU_METRICS_KEY,
   MENU_STATUSES_KEY,
@@ -47,6 +51,7 @@ import {
 
 @Component({
   imports: [
+    Badge,
     ButtonDirective,
     Checkbox,
     ColumnFilter,
@@ -81,6 +86,7 @@ export class MachineGrid {
   readonly canReadStatuses = input(false);
   readonly canReadFiles = input(false);
   readonly canReadMetrics = input(false);
+  readonly canReadDrafts = input(false);
 
   readonly filterChange = output<Partial<MachineFilter>>();
   readonly sortChange = output<MachineSort | null>();
@@ -92,6 +98,7 @@ export class MachineGrid {
   readonly statusesRequested = output<string>();
   readonly filesRequested = output<string>();
   readonly metricsRequested = output<string>();
+  readonly draftsRequested = output<string>();
 
   protected readonly table = viewChild.required(Table);
   protected readonly MachineColumn = MachineColumn;
@@ -103,6 +110,9 @@ export class MachineGrid {
     this._translate.stream([
       ...Object.values(STATE_LABEL_KEYS),
       MENU_METRICS_KEY,
+      MENU_DRAFTS_KEY,
+      DRAFTS_YES_KEY,
+      DRAFTS_NO_KEY,
       MENU_STATUSES_KEY,
       MENU_FILES_KEY,
       MENU_UPDATE_KEY,
@@ -117,6 +127,10 @@ export class MachineGrid {
       label: this._labels()[STATE_LABEL_KEYS[state]] ?? STATE_LABEL_KEYS[state],
     })),
   );
+  protected readonly draftsOptions = computed(() => [
+    { value: true, label: this._labels()[DRAFTS_YES_KEY] ?? DRAFTS_YES_KEY },
+    { value: false, label: this._labels()[DRAFTS_NO_KEY] ?? DRAFTS_NO_KEY },
+  ]);
   protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
   protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
   protected readonly emptyRange = EMPTY_RANGE;
@@ -128,7 +142,13 @@ export class MachineGrid {
   }));
   protected readonly tableColumns = computed(() => [...this.columns()]);
   protected readonly hasRowActions = computed(
-    () => this.canWrite() || this.canDelete() || this.canReadStatuses() || this.canReadFiles() || this.canReadMetrics(),
+    () =>
+      this.canWrite() ||
+      this.canDelete() ||
+      this.canReadStatuses() ||
+      this.canReadFiles() ||
+      this.canReadMetrics() ||
+      this.canReadDrafts(),
   );
 
   protected activeMachine: Machine | null = null;
@@ -149,6 +169,15 @@ export class MachineGrid {
             label: this._labels()[MENU_STATUSES_KEY] ?? MENU_STATUSES_KEY,
             icon: 'pi pi-list',
             command: (): void => this._emitStatuses(),
+          },
+        ]
+      : []),
+    ...(this.canReadDrafts()
+      ? [
+          {
+            label: this._labels()[MENU_DRAFTS_KEY] ?? MENU_DRAFTS_KEY,
+            icon: 'pi pi-inbox',
+            command: (): void => this._emitDrafts(),
           },
         ]
       : []),
@@ -238,6 +267,12 @@ export class MachineGrid {
   private _emitMetrics(): void {
     if (this.activeMachine !== null) {
       this.metricsRequested.emit(this.activeMachine.id);
+    }
+  }
+
+  private _emitDrafts(): void {
+    if (this.activeMachine !== null) {
+      this.draftsRequested.emit(this.activeMachine.id);
     }
   }
 

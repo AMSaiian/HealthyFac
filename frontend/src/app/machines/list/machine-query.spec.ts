@@ -12,6 +12,7 @@ const EMPTY_FILTER: MachineFilter = {
   states: [],
   createdAt: EMPTY_RANGE,
   updatedAt: EMPTY_RANGE,
+  hasPendingDrafts: null,
 };
 
 function stateWith(filter: Partial<MachineFilter>): MachineGridState {
@@ -50,5 +51,17 @@ describe('toSearchBody', () => {
         states: { values: ['operational'] },
       },
     });
+  });
+
+  it.each([true, false])('toSearchBody_WithHasPendingDrafts%s_SendsTheFlag', (hasPendingDrafts) => {
+    const body = toSearchBody(stateWith({ hasPendingDrafts }), ZONE);
+
+    expect(body.filter.hasPendingDrafts).toBe(hasPendingDrafts);
+  });
+
+  it('toSearchBody_WithoutHasPendingDrafts_SendsNoFlag', () => {
+    const body = toSearchBody(stateWith({}), ZONE);
+
+    expect(body.filter.hasPendingDrafts).toBeUndefined();
   });
 });

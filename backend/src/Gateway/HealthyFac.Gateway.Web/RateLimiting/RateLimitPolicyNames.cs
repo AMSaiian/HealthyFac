@@ -10,4 +10,5 @@ public static class RateLimitPolicyNames
     public const string AnonymousStrict = "anonymous-strict";
     public const string Default = "default-limit";
     public const string BlobDownload = "blob-download";
+    public const string StaticAssets = "static-assets";
 }

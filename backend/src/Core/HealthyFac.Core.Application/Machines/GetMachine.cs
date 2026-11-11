@@ -44,7 +44,7 @@ public sealed class GetMachineRequestHandler(ICoreDbContext dbContext)
         var machine = await _dbContext.Machines
             .AsNoTracking()
             .Where(candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId)
-            .Select(MachineResponse.Projection)
+            .Select(MachineResponse.CreateProjection(_dbContext))
             .SingleOrDefaultAsync(cancellationToken);
 
         return machine ?? throw new NotFoundException(MachineErrors.MachineNotFound);

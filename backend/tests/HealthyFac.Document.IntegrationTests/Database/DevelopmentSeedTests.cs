@@ -21,6 +21,19 @@ public sealed class DevelopmentSeedTests(DocumentDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task SeedOptionalDataAsync_WithASeedMachineName_NamesTheRegistrationAndElseUsesTheMachineId()
+    {
+        await _fixture.RunDevelopmentSeedAsync();
+
+        var registrations = await _fixture.LoadSeededRegistrationsAsync();
+
+        registrations.Single(registration => registration.Id == DevelopmentSeedTestData.FirstMachineId).Name
+            .Should().Be(DevelopmentSeedTestData.FirstMachineName);
+        registrations.Single(registration => registration.Id == DevelopmentSeedTestData.SecondMachineId).Name
+            .Should().Be(DevelopmentSeedTestData.SecondMachineId.ToString());
+    }
+
+    [Fact]
     public async Task SeedOptionalDataAsync_RunTwice_AddsNothing()
     {
         await _fixture.RunDevelopmentSeedAsync();

@@ -1,0 +1,43 @@
+<hf-action-dialog
+  title="INGEST.SUMMARY.TITLE"
+  widthClass="w-[56rem] max-w-[95vw]"
+  [isSaveShown]="false"
+  (cancelled)="store.close()"
+>
+  @if (store.isLoading()) {
+    <div class="flex min-h-32">
+      <hf-loading-spinner />
+    </div>
+  } @else if (store.isNotFound()) {
+    <div class="flex min-h-32">
+      <hf-empty-state
+        icon="pi pi-inbox"
+        messageKey="INGEST.SUMMARY.NOT_FOUND"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-col gap-4">
+      @if (store.reasonKey(); as reasonKey) {
+        <p class="text-red-500">{{ reasonKey | translate }}</p>
+      }
+      @if (store.warning(); as warning) {
+        <p class="text-orange-500">{{ warning.key | translate: warningValues() }}</p>
+      }
+      @if (store.groups().length === 0) {
+        <p class="text-muted-color">{{ 'INGEST.SUMMARY.NO_DRAFTS' | translate }}</p>
+      } @else {
+        <hf-draft-group-list
+          [groups]="store.groups()"
+          [canWrite]="store.canWrite()"
+          [reasons]="store.quickReasons()"
+          [groupReasons]="store.quickGroupReasons()"
+          [applyingIds]="store.applyingIds()"
+          (applyRequested)="store.requestApply($event)"
+          (applyAllRequested)="store.requestApplyAll($event)"
+          (reviewRequested)="store.requestReview($event)"
+          (dismissRequested)="store.requestDismiss($event)"
+        />
+      }
+    </div>
+  }
+</hf-action-dialog>

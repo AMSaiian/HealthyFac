@@ -194,4 +194,26 @@ public sealed class ConventionTests
 
         violations.Should().BeEmpty();
     }
+
+    [Fact]
+    public void ContractAssemblies_InServiceAssemblies_ReferenceNoServiceLayer()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindContractServiceDependencies(
+                ConventionTestData.ContractAssemblies.Select(LayerDependencyTestData.Resolve)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GrpcServices_InServiceAssemblies_UseThePortSetup()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindGrpcServicesWithoutPortSetup(
+                ConventionTestData.GrpcServiceAssemblies.Select(LayerDependencyTestData.Resolve)));
+
+        violations.Should().BeEmpty();
+    }
 }

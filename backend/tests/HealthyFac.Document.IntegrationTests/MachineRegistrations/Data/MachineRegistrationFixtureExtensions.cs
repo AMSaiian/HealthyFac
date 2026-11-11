@@ -34,6 +34,14 @@ public static class MachineRegistrationFixtureExtensions
             await handler.HandleAsync(message);
         }
 
+        public async Task RenameMachineAsync(MachineRenamed message)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<MachineRenamed>>();
+
+            await handler.HandleAsync(message);
+        }
+
         public async Task UnregisterMachineAsync(MachineDeleted message)
         {
             using var scope = fixture.ScopeFactory.CreateScope();

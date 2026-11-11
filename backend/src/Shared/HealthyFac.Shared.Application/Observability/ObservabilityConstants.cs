@@ -239,12 +239,88 @@ public static class ObservabilityConstants
         public const string Runtime = "System.Runtime";
     }
 
+    /// <summary>
+    /// The activity source, meter, spans, tags, and instruments of the Insights file ingest. No ID, file name, prompt,
+    /// or model output enters a span name, a tag, or a metric tag.
+    /// </summary>
+    public static class Ingest
+    {
+        /// <summary>The name of the activity source and of the meter of the ingest.</summary>
+        public const string Source = "HealthyFac.Insights.Ingest";
+
+        /// <summary>The name of the source and of the meter of the model calls (M.E.AI and the agent).</summary>
+        public const string Ai = "HealthyFac.Insights.Ai";
+
+        public static class Spans
+        {
+            public const string Process = "Ingest.Process";
+            public const string Convert = "Docling.Convert";
+            public const string Store = "Ingest.Store";
+        }
+
+        public static class Tags
+        {
+            /// <summary>The final state of the run, from <see cref="Results"/>.</summary>
+            public const string Result = "healthyfac.ingest.result";
+
+            public const string ErrorCode = "healthyfac.ingest.error_code";
+            public const string InterruptReason = "healthyfac.ingest.interrupt_reason";
+
+            /// <summary>The extension of the file, never the name.</summary>
+            public const string FileType = "healthyfac.ingest.file_type";
+
+            /// <summary>The stage of a duration, from <see cref="Stages"/>.</summary>
+            public const string Stage = "healthyfac.ingest.stage";
+
+            /// <summary>The kind of a draft, from <see cref="DraftKinds"/>.</summary>
+            public const string DraftKind = "healthyfac.ingest.draft_kind";
+        }
+
+        public static class Results
+        {
+            public const string Completed = "completed";
+            public const string Failed = "failed";
+            public const string Interrupted = "interrupted";
+        }
+
+        public static class Stages
+        {
+            public const string Convert = "convert";
+            public const string Embed = "embed";
+            public const string Extract = "extract";
+            public const string Store = "store";
+        }
+
+        public static class DraftKinds
+        {
+            public const string Machine = "machine";
+            public const string Metric = "metric";
+            public const string Status = "status";
+        }
+
+        /// <summary>The instrument names of the <see cref="Source"/> meter. The instrument declares the unit.</summary>
+        public static class Instruments
+        {
+            public const string Attempts = "healthyfac.ingest.attempts";
+            public const string Duration = "healthyfac.ingest.duration";
+            public const string Pages = "healthyfac.ingest.pages";
+            public const string Chunks = "healthyfac.ingest.chunks";
+            public const string Drafts = "healthyfac.ingest.drafts";
+            public const string Pending = "healthyfac.ingest.pending";
+            public const string OldestPendingAge = "healthyfac.ingest.oldest_pending.age";
+        }
+    }
+
     /// <summary>The UCUM units of the instruments.</summary>
     public static class Units
     {
         public const string Seconds = "s";
         public const string Messages = "{message}";
         public const string Sessions = "{session}";
+        public const string Attempts = "{attempt}";
+        public const string Pages = "{page}";
+        public const string Chunks = "{chunk}";
+        public const string Drafts = "{draft}";
     }
 
     public static class Outcomes
