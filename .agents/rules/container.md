@@ -11,7 +11,7 @@ description: "Rules for Dockerfiles and Compose files."
 *   **Least Privilege:** Set `cap_drop: [ALL]`, `security_opt: [no-new-privileges:true]`, `read_only: true`, and `tmpfs` for writable paths on every service that we build. Apply the same settings to a third-party image only when it works without errors. Add a capability back only with a written reason.
 *   **Graceful Stop:** The app process must receive the stop signal. Write `ENTRYPOINT` and `CMD` in exec form (a JSON array), never in shell form. A shell wrapper hides the signal from the app. Run no wrapper script unless it ends with `exec`.
 *   **Stop Settings:** Set `stop_signal` and `stop_grace_period` for every service. Use `SIGTERM` for .NET services. Use the signal that the database documents for stateful services (for example, `SIGINT` for PostgreSQL fast shutdown). Never rely on a forced kill after the grace period.
-*   **Stop Verification:** Run `docker compose stop` for a changed service. Confirm that the exit code is 0 and that the stop time is below the grace period.
+*   **Stop Verification:** Run `docker compose stop` for a changed service. Confirm that the exit code is 0, or 143 for a JVM service (128 + SIGTERM), and that the stop time is below the grace period. A 137 exit is a forced kill and fails.
 *   **Pinned Images:** Pin every image to an exact version tag. Never use `latest` or a floating major tag.
 *   **No Secrets in Images:** Never copy `.env` files or secrets into an image. List `.env*` (except `.env.example`) in `.dockerignore`. Pass secrets as runtime environment variables.
     *   **Build Secrets:** Pass a build-time value that must not stay in the image history as a BuildKit secret mount, never as `ARG` or `ENV`.

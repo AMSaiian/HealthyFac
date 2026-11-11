@@ -62,54 +62,55 @@ function Get-ContentHashes([string[]] $files) {
   $hashes
 }
 
-function Get-ChangedFrontendFiles([string] $repo) {
+function Get-ChangedFrontendFiles([string] $repo, [string] $project = 'frontend') {
   $patterns = '*.ts', '*.html', '*.css', '*.json', '*.webmanifest'
   $tracked = @(git diff --name-only HEAD -- $patterns 2>$null)
   $untracked = @(git ls-files -o --exclude-standard -- $patterns 2>$null)
 
   @($tracked + $untracked) |
-    Where-Object { $_ -like 'frontend/*' -and $_ -notlike '*/package-lock.json' } |
+    Where-Object { $_ -like "$project/*" -and $_ -notlike '*/package-lock.json' } |
     Sort-Object -Unique |
     Where-Object { Test-Path (Join-Path $repo $_) }
 }
 
-# Formats the frontend changed files with Prettier, then lints the frontend. The hash state works as in
-# Invoke-Verification, in its own file. A lint failure lists the ESLint output lines. The hook runs no build or test.
-function Invoke-FrontendVerification([string] $repo) {
+# Formats the changed files of a web project (frontend or keycloak-theme) with Prettier, then lints the project. The
+# hash state works as in Invoke-Verification, in its own file. A lint failure lists the ESLint output lines. The hook
+# runs no build or test.
+function Invoke-FrontendVerification([string] $repo, [string] $project = 'frontend') {
   $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
-  $frontend = Join-Path $repo 'frontend'
+  $frontend = Join-Path $repo $project
   if (-not (Test-Path (Join-Path $frontend 'node_modules'))) { return $result }
 
   Push-Location $repo
   try {
-    $statePath = [IO.Path]::GetFullPath((git rev-parse --git-path claude-verify-frontend-state.json), $repo)
+    $statePath = [IO.Path]::GetFullPath((git rev-parse --git-path "claude-verify-$project-state.json"), $repo)
     $saved = @{}
     if (Test-Path $statePath) {
       (Get-Content $statePath -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() |
         ForEach-Object { $saved[$_.Key] = $_.Value }
     }
 
-    $files = @(Get-ChangedFrontendFiles $repo)
+    $files = @(Get-ChangedFrontendFiles $repo $project)
     $current = Get-ContentHashes $files
     $touched = @($files | Where-Object { $saved[$_] -ne $current[$_] })
     if ($touched.Count -eq 0) { return $result }
 
     Push-Location $frontend
     try {
-      $relative = $touched | ForEach-Object { $_.Substring('frontend/'.Length) }
+      $relative = $touched | ForEach-Object { $_.Substring("$project/".Length) }
       & npx prettier --write --ignore-unknown @relative 2>&1 | Out-Null
       $output = & npm run lint 2>&1 | ForEach-Object { "$_" }
       $lintFailed = $LASTEXITCODE -ne 0
     }
     finally { Pop-Location }
 
-    $state = Get-ContentHashes @(Get-ChangedFrontendFiles $repo)
+    $state = Get-ContentHashes @(Get-ChangedFrontendFiles $repo $project)
     if ($lintFailed) { $state = @{} }
     New-Item -ItemType Directory -Force (Split-Path $statePath) | Out-Null
     $state | ConvertTo-Json -Compress | Set-Content $statePath -Encoding utf8NoBOM
 
     if ($lintFailed) {
-      $result.Problems = @('Frontend lint failed (npm run lint in frontend/):') +
+      $result.Problems = @("Lint failed (npm run lint in $project/):") +
         @($output | Where-Object { $_ -match '\S' -and $_ -notmatch '^> ' } | Select-Object -First 40)
     }
     return $result
@@ -250,7 +251,7 @@ if (-not $hasOuterLock) {
   exit 0
 }
 try {
-  $results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout; Invoke-FrontendVerification $checkout })
+  $results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout; Invoke-FrontendVerification $checkout 'frontend'; Invoke-FrontendVerification $checkout 'keycloak-theme' })
 }
 finally {
   $outerLock.ReleaseMutex()

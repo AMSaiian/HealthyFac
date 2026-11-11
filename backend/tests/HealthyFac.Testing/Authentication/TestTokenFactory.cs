@@ -24,11 +24,17 @@ public sealed class TestTokenFactory
 
     public static readonly IReadOnlyList<string> SupervisorPermissions =
     [
+        "employees:read",
         "employees:invite",
         "employees:manage",
         "machines:read",
         "machines:write",
         "machines:delete",
+        "work-orders:read",
+        "work-orders:write",
+        "work-orders:manage",
+        "shifts:read",
+        "shifts:manage",
     ];
 
     private const string KeyId = "test-key";
