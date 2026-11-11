@@ -13,4 +13,7 @@ public static class FileInvariantErrors
 
     public static InvalidOperationException InvalidHash(int expectedLength) =>
         new($"The SHA-256 hash must have {expectedLength} bytes.");
+
+    public static InvalidOperationException MachineOnNonAttachment() =>
+        new(message: "Only an attachment can be tied to a machine or untied from it.");
 }

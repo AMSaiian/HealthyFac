@@ -38,6 +38,18 @@ export interface StatusDefinitionBody {
   readonly description: string | null;
 }
 
+/** The batch of status definitions: each item creates the status with its code or changes the one that has it. */
+export interface ApplyStatusDefinitionsBody {
+  readonly items: readonly StatusDefinitionBatchItem[];
+}
+
+/** An item of the batch. A `null` severity or description keeps the stored value of a status that exists. */
+export interface StatusDefinitionBatchItem {
+  readonly code: string;
+  readonly severity: StatusSeverity | null;
+  readonly description: string | null;
+}
+
 export interface CreateStatusDefinitionResponse {
   readonly id: string;
 }

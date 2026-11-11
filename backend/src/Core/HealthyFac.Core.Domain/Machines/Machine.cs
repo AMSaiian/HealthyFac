@@ -6,7 +6,7 @@ namespace HealthyFac.Core.Domain.Machines;
 /// <summary>
 /// Represents a machine domain entity. A removal keeps the row (soft delete).
 /// </summary>
-public class Machine : IEntity, IAuditable, ISoftDeletable
+public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
 {
     private readonly List<MachineStateHistory> _stateHistory = [];
 
@@ -72,6 +72,7 @@ public class Machine : IEntity, IAuditable, ISoftDeletable
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
+    public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
     public string GatewayId { get; private set; }
     public string Name { get; private set; }

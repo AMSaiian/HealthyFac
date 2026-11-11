@@ -1,11 +1,15 @@
+import { safeParse } from 'zod/mini';
+
 import { hasFormChanges } from '@shared/forms/form-changes';
 import { toKeySlug } from '@shared/text/slugify';
 
+import type { MetricDraftDetail } from '@machines/drafts/draft';
 import {
   type ApplyMetricDefinitionsBody,
   type CreatedMetricDefinition,
   type MetricDefinition,
   type MetricUnitReference,
+  type MetricUnitsResponse,
   MetricValueKind,
   type UpdatedMetricDefinition,
 } from '@machines/metrics/metric-definition';
@@ -22,6 +26,9 @@ export interface MetricItem {
   readonly saved: MetricFormValue | null;
   readonly value: MetricFormValue;
   readonly isDeleted: boolean;
+  /** The metric draft that proposed this staged value, or `null` for a change of the user. */
+  readonly draftId: string | null;
+  readonly sourceLocation: string | null;
 }
 
 export interface MetricChanges {
@@ -66,7 +73,15 @@ export function toFormValue(definition: MetricDefinition): MetricFormValue {
 export function itemsFromDefinitions(definitions: readonly MetricDefinition[]): readonly MetricItem[] {
   return definitions.map((definition) => {
     const value = toFormValue(definition);
-    return { localId: definition.id, savedId: definition.id, saved: value, value, isDeleted: false };
+    return {
+      localId: definition.id,
+      savedId: definition.id,
+      saved: value,
+      value,
+      isDeleted: false,
+      draftId: null,
+      sourceLocation: null,
+    };
   });
 }
 
@@ -190,28 +205,127 @@ export function markerOf(item: MetricItem, hasError: boolean): MetricMarker | nu
   return item.saved !== null && hasFormChanges(metricFormSchema, item.saved, item.value) ? MetricMarker.Edited : null;
 }
 
-function placeholderOf(definition: MetricDefinition): number | boolean | string {
-  if (definition.valueKind === MetricValueKind.Boolean) {
+function placeholderOf(value: MetricFormValue): number | boolean | string {
+  if (value.valueKind === MetricValueKind.Boolean) {
     return false;
   }
-  if (definition.valueKind === MetricValueKind.StateSet) {
-    return definition.states?.[0] ?? '';
+  if (value.valueKind === MetricValueKind.StateSet) {
+    return value.states[0] ?? '';
   }
-  return definition.min ?? definition.max ?? 0;
+  return value.min ?? value.max ?? 0;
 }
 
 /**
- * Builds the sample message of a machine from its saved definitions: every key in key order with a placeholder
- * (numeric: the minimum, else the maximum, else 0; boolean: false; state set: the first state) and no statuses. A machine without metrics has no example: the result is `null`.
+ * Builds the sample message of a machine from the staged items of the page: every item that is not deleted, in key
+ * order, with a placeholder (numeric: the minimum, else the maximum, else 0; boolean: false; state set:
+ * the first state) and no statuses. A new item that the form schema rejects is left out. A list without an item has
+ * no example: the result is `null`.
  */
-export function buildExamplePayload(definitions: readonly MetricDefinition[], sampledAt: string): string | null {
-  if (definitions.length === 0) {
+export function buildExamplePayload(items: readonly MetricItem[], sampledAt: string): string | null {
+  const values = items
+    .filter((item) => !item.isDeleted && (!isNewItem(item) || safeParse(metricFormSchema, item.value).success))
+    .map((item) => item.value);
+  if (values.length === 0) {
     return null;
   }
   const metrics = Object.fromEntries(
-    [...definitions]
+    [...values]
       .sort((first, second) => (first.key < second.key ? -1 : first.key > second.key ? 1 : 0))
-      .map((definition) => [definition.key, placeholderOf(definition)]),
+      .map((value) => [value.key, placeholderOf(value)]),
   );
   return JSON.stringify({ sampledAt, metrics, statuses: [] }, null, 2);
+}
+
+function parseValueKind(value: string | null): MetricValueKind {
+  return (Object.values(MetricValueKind) as string[]).includes(value ?? '')
+    ? (value as MetricValueKind)
+    : MetricValueKind.Numeric;
+}
+
+/** Finds the unit of the catalog by the quantity kind name and the unit name (or abbreviation), ignoring the case. */
+export function unitFromCatalog(
+  quantityKindName: string | null,
+  unitName: string | null,
+  catalog: MetricUnitsResponse | undefined,
+): string {
+  if (quantityKindName === null || unitName === null || catalog === undefined) {
+    return '';
+  }
+  const kind = catalog.kinds.find((candidate) => candidate.name.toLowerCase() === quantityKindName.toLowerCase());
+  const wanted = unitName.toLowerCase();
+  const unit = kind?.units.find(
+    (candidate) => candidate.name.toLowerCase() === wanted || candidate.abbreviation.toLowerCase() === wanted,
+  );
+  return kind === undefined || unit === undefined ? '' : unitValue({ quantityKind: kind.name, name: unit.name });
+}
+
+export interface StagedDrafts {
+  readonly items: readonly MetricItem[];
+  readonly newCount: number;
+}
+
+/**
+ * Stages the metric drafts of one attempt on the list. A draft whose key equals the key of an item becomes a staged
+ * change of that item: only the name, the description, the limits, and the states change, and only where the draft
+ * proposes a value (the key, the value kind, and the unit never change). Another draft becomes a staged new item,
+ * with the unit from the catalog; a value that the draft lacks stays empty for the user.
+ */
+export function stageMetricDrafts(
+  items: readonly MetricItem[],
+  newCount: number,
+  drafts: readonly MetricDraftDetail[],
+  catalog: MetricUnitsResponse | undefined,
+): StagedDrafts {
+  let staged = [...items];
+  let count = newCount;
+  for (const draft of drafts) {
+    const index = draft.key === null ? -1 : staged.findIndex((item) => item.value.key === draft.key);
+    if (index >= 0) {
+      const item = staged[index];
+      staged[index] = {
+        ...item,
+        value: {
+          ...item.value,
+          name: draft.name ?? item.value.name,
+          description: draft.description ?? item.value.description,
+          min: draft.min ?? item.value.min,
+          max: draft.max ?? item.value.max,
+          states: draft.states === null ? item.value.states : [...draft.states],
+        },
+        draftId: draft.id,
+        sourceLocation: draft.sourceLocation,
+      };
+    } else {
+      staged = [
+        ...staged,
+        {
+          localId: newLocalId(count),
+          savedId: null,
+          saved: null,
+          value: {
+            key: draft.key ?? '',
+            name: draft.name ?? '',
+            description: draft.description,
+            valueKind: parseValueKind(draft.valueKind),
+            unit: unitFromCatalog(draft.quantityKindName, draft.unitName, catalog),
+            min: draft.min,
+            max: draft.max,
+            states: draft.states === null ? [] : [...draft.states],
+          },
+          isDeleted: false,
+          draftId: draft.id,
+          sourceLocation: draft.sourceLocation,
+        },
+      ];
+      count += 1;
+    }
+  }
+  return { items: staged, newCount: count };
+}
+
+/** The draft IDs of the staged items that an apply sends (new and changed items, not deleted ones). */
+export function appliedDraftIds(changes: MetricChanges): string[] {
+  return [...changes.created, ...changes.updated]
+    .map((item) => item.draftId)
+    .filter((draftId): draftId is string => draftId !== null);
 }

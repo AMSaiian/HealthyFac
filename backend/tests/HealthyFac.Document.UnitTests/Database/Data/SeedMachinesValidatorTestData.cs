@@ -1,3 +1,4 @@
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Document.Infrastructure.Database.Seeding;
 
 namespace HealthyFac.Document.UnitTests.Database.Data;
@@ -11,6 +12,8 @@ public static class SeedMachinesValidatorTestData
     {
         { [Create(FirstMachineId)] },
         { [Create(FirstMachineId), Create(SecondMachineId)] },
+        { [Create(FirstMachineId, name: "Seed machine 01")] },
+        { [Create(FirstMachineId, new string(c: 'n', MachineMessageLimits.NameMaxLength))] },
     };
 
     public static TheoryData<IReadOnlyList<SeedMachineOptions>, string> InvalidSeedMachines => new()
@@ -20,10 +23,19 @@ public static class SeedMachinesValidatorTestData
             SeedingValidationConstants.Messages.SeedMachineIdEmpty
         },
         {
+            [Create(FirstMachineId, name: "   ")],
+            SeedingValidationConstants.Messages.SeedMachineNameInvalid
+        },
+        {
+            [Create(FirstMachineId, new string(c: 'n', MachineMessageLimits.NameMaxLength + 1))],
+            SeedingValidationConstants.Messages.SeedMachineNameInvalid
+        },
+        {
             [Create(FirstMachineId), Create(FirstMachineId)],
             SeedingValidationConstants.Messages.SeedMachineIdDuplicated
         },
     };
 
-    private static SeedMachineOptions Create(Guid machineId) => new() { MachineId = machineId };
+    private static SeedMachineOptions Create(Guid machineId, string? name = null) =>
+        new() { MachineId = machineId, Name = name };
 }

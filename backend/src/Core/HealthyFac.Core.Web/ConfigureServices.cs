@@ -2,6 +2,7 @@ using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Core.Web.Companies;
+using HealthyFac.Core.Web.Drafts;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
@@ -49,7 +50,7 @@ public static class ConfigureServices
 
             services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
-            services.AddSharedGrpc(environment);
+            services.AddSharedGrpc(environment, configuration);
 
             services.AddRazorRendering();
             services.AddScoped<IEmployeeInviteEmailBuilder, RazorEmployeeInviteEmailBuilder>();
@@ -121,6 +122,7 @@ public static class ConfigureServices
         public WebApplication UseApiPipeline()
         {
             app.UseSharedHealthChecks();
+            app.UseSharedGrpcPort();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
             app.UseSerilogRequestLogging();
@@ -148,6 +150,7 @@ public static class ConfigureServices
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapCompanyEndpoints();
             versionedGroup.MapMachineEndpoints();
+            versionedGroup.MapDraftEndpoints();
             versionedGroup.MapEmployeeInviteEndpoints();
             versionedGroup.MapEmployeeEndpoints();
 

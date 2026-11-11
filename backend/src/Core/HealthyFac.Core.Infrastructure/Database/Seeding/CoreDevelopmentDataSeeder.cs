@@ -65,8 +65,8 @@ public sealed class CoreDevelopmentDataSeeder(
         {
             _logger.LogWarning(
                 "Forced recreation of development data: deleting all companies, machines, error "
-                + "codes and machine state histories (also the deleted ones), employees, invites, outbox messages, "
-                + "and inbox messages.");
+                + "codes and machine state histories (also the deleted ones), employees, invites, drafts, "
+                + "outbox messages, and inbox messages.");
 
             await DeleteBusinessDataAsync(cancellationToken);
         }
@@ -170,6 +170,12 @@ public sealed class CoreDevelopmentDataSeeder(
     {
         await _dbContext.OutboxMessages.ExecuteDeleteAsync(cancellationToken);
         await _dbContext.InboxMessages.ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.MetricDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.StatusDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
+        await _dbContext.MachineDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .ExecuteDeleteAsync(cancellationToken);
         await _dbContext.Employees.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .ExecuteDeleteAsync(cancellationToken);
         await _dbContext.EmployeeInvites.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
@@ -206,7 +212,8 @@ public sealed class CoreDevelopmentDataSeeder(
                 seed.MachineId,
                 tenant.CompanyId,
                 seed.GatewayId,
-                string.Format(
+                seed.Name
+                ?? string.Format(
                     CultureInfo.InvariantCulture,
                     SeedingValidationConstants.SeedMachineNaming.NameFormat,
                     index + 1),
@@ -228,6 +235,7 @@ public sealed class CoreDevelopmentDataSeeder(
                 MachineId = machine.Id,
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
+                Name = machine.Name,
             });
 
     private void AddEmployees(

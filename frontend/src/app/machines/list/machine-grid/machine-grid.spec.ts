@@ -13,6 +13,7 @@ const EMPTY_FILTER: MachineFilter = {
   states: [],
   createdAt: { from: null, to: null },
   updatedAt: { from: null, to: null },
+  hasPendingDrafts: null,
 };
 
 interface GridAccess {
@@ -77,8 +78,17 @@ describe('MachineGrid', () => {
         states: [MachineState.Operational],
         createdAt: { from: null, to: null },
         updatedAt: { from: null, to: null },
+        hasPendingDrafts: null,
       },
     ]);
+  });
+
+  it('onFilterApplied_WithHasDraftsNo_EmitsFalseAndNotNull', () => {
+    const { grid, emitted } = setup();
+
+    grid.onFilterApplied(appliedEvent({ [MachineColumn.Drafts]: [{ value: false }] }));
+
+    expect(emitted[0].hasPendingDrafts).toBe(false);
   });
 
   it('onFilterApplied_WithClearedColumn_EmitsEmptyValue', () => {

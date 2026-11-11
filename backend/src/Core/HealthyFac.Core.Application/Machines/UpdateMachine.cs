@@ -1,7 +1,9 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -57,7 +59,8 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 }
 
 /// <summary>
-/// Changes the name, serial number, and description of a machine. A machine outside
+/// Changes the name, serial number, and description of a machine, and queues <see cref="MachineRenamed"/> in the
+/// same save when the name changes. A machine outside
 /// the company is "not found". The serial number must stay unique among the
 /// machines of the company that are not deleted, ignoring case.
 /// </summary>
@@ -66,10 +69,14 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// change, and the handler maps that failure to the same conflict.
 /// </remarks>
 /// <param name="dbContext">Loads and saves the machine.</param>
-public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext)
+/// <param name="outbox">Stores the rename message with the change.</param>
+/// <param name="timeProvider">Provides the time of the rename.</param>
+public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext, IOutbox outbox, TimeProvider timeProvider)
     : RequestHandler<UpdateMachineRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IOutbox _outbox = outbox;
+    private readonly TimeProvider _timeProvider = timeProvider;
 
     protected override async Task HandleInternalAsync(
         UpdateMachineRequest request,
@@ -81,6 +88,7 @@ public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext)
                 cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 
+        var isRenamed = machine.Name != request.Name;
         machine.Update(request.Name, request.SerialNumber, request.Description);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(
@@ -94,6 +102,18 @@ public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext)
             throw new ConflictException(MachineErrors.SerialNumberTaken);
         }
 
+        if (isRenamed)
+        {
+            _outbox.Add(
+                new MachineRenamed
+                {
+                    MachineId = machine.Id,
+                    CompanyId = machine.CompanyId,
+                    Name = machine.Name,
+                    RenamedAt = _timeProvider.GetUtcNow().UtcDateTime,
+                });
+        }
+
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -101,6 +121,10 @@ public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext)
         catch (UniqueConstraintException exception)
         {
             throw new ConflictException(MachineErrors.SerialNumberTaken, exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException(MachineErrors.MachineChanged, exception);
         }
     }
 }

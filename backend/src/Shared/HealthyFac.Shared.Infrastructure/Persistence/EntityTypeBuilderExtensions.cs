@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HealthyFac.Shared.Infrastructure.Persistence;
@@ -60,6 +61,22 @@ public static class EntityTypeBuilderExtensions
             .IsRequired(required: false);
 
         builder.HasQueryFilter(SoftDeleteConstants.QueryFilterName, deletable => deletable.DeletedAt == null);
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Maps <see cref="IVersioned.RowVersion"/> to the PostgreSQL system column <c>xmin</c> as a concurrency token,
+    /// so a save of an old version throws <c>DbUpdateConcurrencyException</c>. To check the version that a client
+    /// sent, set the original value of the property (<c>Entry(entity).Property(...).OriginalValue</c>) before the
+    /// save: EF Core compares the original value, and the database writes the current one.
+    /// </summary>
+    public static EntityTypeBuilder<TEntity> ConfigureVersioned<TEntity>(this EntityTypeBuilder<TEntity> builder)
+        where TEntity : class, IVersioned
+    {
+        builder.Property(versioned => versioned.RowVersion)
+            .HasColumnName(PersistenceConstants.RowVersionColumn)
+            .IsRowVersion();
 
         return builder;
     }

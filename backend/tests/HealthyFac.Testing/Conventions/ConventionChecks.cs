@@ -274,6 +274,25 @@ public static class ConventionChecks
         [.. MessageContractInspection.FindDuplicates(assemblies)];
 
     /// <summary>
+    /// Finds the assemblies that serve a gRPC service (a type derived from a generated service base) without the
+    /// shared gRPC port setup: the assembly must reference <c>HealthyFac.Shared.Web</c>, and the
+    /// <c>appsettings.json</c> next to it must set <c>Grpc:Port</c>.
+    /// </summary>
+    /// <param name="assemblies">The Web assemblies to inspect.</param>
+    /// <returns>One line for each assembly without the setup.</returns>
+    public static IReadOnlyList<string> FindGrpcServicesWithoutPortSetup(IEnumerable<Assembly> assemblies) =>
+        [.. GrpcInspection.FindServicesWithoutPortSetup(assemblies)];
+
+    /// <summary>
+    /// Finds the <c>HealthyFac.&lt;Service&gt;.Contracts</c> assemblies that reference another <c>HealthyFac</c>
+    /// assembly. A contract holds the <c>.proto</c> and its generated code only, so a consumer never pulls a layer.
+    /// </summary>
+    /// <param name="assemblies">The assemblies to inspect. Only the Contracts ones among them are checked.</param>
+    /// <returns>One line for each disallowed reference.</returns>
+    public static IReadOnlyList<string> FindContractServiceDependencies(IEnumerable<Assembly> assemblies) =>
+        [.. GrpcInspection.FindContractReferences(assemblies)];
+
+    /// <summary>
     /// Finds the parts of a use case that are not in the namespace of their request: the handler, the input
     /// validator, and the pre-handler check. It is the closest reflection check to "one use-case file".
     /// </summary>

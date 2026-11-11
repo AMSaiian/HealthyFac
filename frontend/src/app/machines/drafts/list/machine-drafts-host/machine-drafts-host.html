@@ -1,0 +1,68 @@
+<hf-action-dialog
+  title="DRAFTS.LIST.TITLE"
+  widthClass="w-[64rem] max-w-[95vw]"
+  [isSaveShown]="false"
+  [isClosedByHeaderOnly]="true"
+  (cancelled)="store.close()"
+>
+  @if (store.hasLoadError()) {
+    <div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 py-8">
+      <p class="text-muted-color">{{ 'DRAFTS.LIST.LOAD_FAILED' | translate }}</p>
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        (click)="store.retryLoad()"
+      >
+        {{ 'DRAFTS.LIST.RETRY' | translate }}
+      </button>
+    </div>
+  } @else {
+    <hf-draft-grid
+      [rows]="page().items"
+      [totalCount]="page().totalCount"
+      [isLoading]="store.drafts.isLoading()"
+      [offset]="store.offset()"
+      [limit]="store.limit()"
+      [sort]="store.sort()"
+      [filter]="store.filter()"
+      [canWrite]="store.canWrite()"
+      [reasons]="store.quickReasons()"
+      [applyingIds]="store.applyingIds()"
+      (applyRequested)="store.requestApply($event)"
+      (filterChange)="store.setFilter($event)"
+      (sortChange)="store.setSort($event)"
+      (pageChange)="store.setPage($event.offset, $event.limit)"
+      (reviewRequested)="store.requestReview($event)"
+      (dismissRequested)="store.requestDismiss($event)"
+    />
+  }
+  @if (store.canWrite() && (page().items.length > 0 || store.filter().kinds.length > 0)) {
+    <div
+      hfDialogFooter
+      class="flex gap-2"
+    >
+      <button
+        pButton
+        type="button"
+        severity="danger"
+        [outlined]="true"
+        [disabled]="store.isQuickBusy() || store.isDismissing()"
+        [loading]="store.isDismissing()"
+        (click)="store.requestDismissAll()"
+      >
+        {{ 'DRAFTS.DISMISS_ALL' | translate }}
+      </button>
+      <button
+        pButton
+        type="button"
+        [outlined]="true"
+        [disabled]="store.isQuickBusy() || store.isDismissing()"
+        [loading]="store.isQuickBusy()"
+        (click)="store.requestApplyAll()"
+      >
+        {{ 'DRAFTS.APPLY_ALL' | translate }}
+      </button>
+    </div>
+  }
+</hf-action-dialog>

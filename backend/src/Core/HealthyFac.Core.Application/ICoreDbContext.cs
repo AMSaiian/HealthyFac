@@ -1,9 +1,11 @@
 using HealthyFac.Core.Domain.Companies;
+using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace HealthyFac.Core.Application;
 
@@ -25,6 +27,15 @@ public interface ICoreDbContext : ITransactionalDbContext
     DbSet<Machine> Machines { get; }
 
     DbSet<MachineStateHistory> MachineStateHistories { get; }
+
+    DbSet<MachineDraft> MachineDrafts { get; }
+
+    DbSet<MetricDefinitionDraft> MetricDefinitionDrafts { get; }
+
+    DbSet<StatusDefinitionDraft> StatusDefinitionDrafts { get; }
+
+    EntityEntry<TEntity> Entry<TEntity>(TEntity entity)
+        where TEntity : class;
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

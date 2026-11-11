@@ -1,0 +1,26 @@
+<hf-action-dialog
+  title="FILES.TIE_DIALOG.TITLE"
+  [isSaveDisabled]="store.saveDisabledReason() !== null"
+  [saveDisabledReason]="store.saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="onSave()"
+  (cancelled)="store.cancel()"
+>
+  <div class="flex flex-col gap-2">
+    <label for="file-tie-machine">{{ 'FILES.TIE_DIALOG.MACHINE' | translate }}</label>
+    <p-select
+      inputId="file-tie-machine"
+      class="w-full"
+      optionLabel="name"
+      optionValue="id"
+      appendTo="body"
+      [options]="store.machineOptions()"
+      [loading]="store.isLoading()"
+      [filter]="true"
+      (onFilter)="store.searchMachines($event.filter ?? '')"
+      [placeholder]="'FILES.TIE_DIALOG.PLACEHOLDER' | translate"
+      [ngModel]="store.machineId()"
+      (ngModelChange)="store.pick($event)"
+    />
+  </div>
+</hf-action-dialog>

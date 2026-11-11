@@ -11,5 +11,6 @@ public static class StatusDefinitionRoutes
     public const string Root = "/";
     public const string ById = "/{" + IdParameter + "}";
     public const string Search = "/search";
+    public const string Apply = "/apply";
     public const string ResourceLocationFormat = "{0}/{1}";
 }

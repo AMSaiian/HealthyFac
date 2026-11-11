@@ -7,7 +7,7 @@ namespace HealthyFac.Core.Domain.Employees;
 /// is the business mirror of the identity, so task lists and schedules can show and filter people without a
 /// call to Keycloak. Only <see cref="EmployeeInvite.Accept"/> creates an employee.
 /// </summary>
-public class Employee : IEntity, IAuditable, ISoftDeletable
+public class Employee : IEntity, IAuditable, ISoftDeletable, IVersioned
 {
     internal Employee(Guid companyId, string email, string firstName, string lastName, Guid roleId)
     {
@@ -19,6 +19,7 @@ public class Employee : IEntity, IAuditable, ISoftDeletable
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
+    public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
 
     /// <summary>

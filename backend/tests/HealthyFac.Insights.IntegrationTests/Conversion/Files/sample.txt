@@ -1,0 +1,3 @@
+Pump manual
+
+Maximum pressure is 6 bar. Alarm E12 means overheating.

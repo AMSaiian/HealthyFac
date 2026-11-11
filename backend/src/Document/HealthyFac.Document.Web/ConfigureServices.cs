@@ -4,6 +4,7 @@ using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Document.Infrastructure.Files.Storage;
 using HealthyFac.Document.Web.Authorization;
 using HealthyFac.Document.Web.Files;
+using HealthyFac.Document.Web.Files.Rpc;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.Authentication;
@@ -17,6 +18,7 @@ using HealthyFac.Shared.Web.Logging;
 using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.OpenApi;
 using HealthyFac.Shared.Web.Proxy;
+using HealthyFac.Shared.Web.Rpc;
 using HealthyFac.Shared.Web.Serialization;
 using HealthyFac.Shared.Web.Tracing;
 using HealthyFac.Shared.Web.Versioning;
@@ -51,6 +53,7 @@ public static class ConfigureServices
 
             services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
+            services.AddSharedGrpc(environment, configuration);
 
             return services;
         }
@@ -147,6 +150,7 @@ public static class ConfigureServices
         public WebApplication UseApiPipeline()
         {
             app.UseSharedHealthChecks();
+            app.UseSharedGrpcPort();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
             app.UseSerilogRequestLogging();
@@ -173,6 +177,8 @@ public static class ConfigureServices
             app.MapSharedOpenApi();
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapFileEndpoints();
+            app.MapGrpcService<DocumentFilesService>();
+            app.MapSharedGrpcReflection();
 
             return app;
         }

@@ -27,6 +27,7 @@
   [canReadStatuses]="store.canReadStatuses()"
   [canReadFiles]="store.canReadFiles()"
   [canReadMetrics]="store.canReadMetrics()"
+  [canReadDrafts]="store.canReadDrafts()"
   (filterChange)="store.setFilter($event)"
   (sortChange)="store.setSort($event)"
   (pageChange)="store.setPage($event.offset, $event.limit)"
@@ -37,4 +38,5 @@
   (statusesRequested)="store.openStatuses($event)"
   (filesRequested)="store.openFiles($event)"
   (metricsRequested)="store.openMetrics($event)"
+  (draftsRequested)="store.requestDrafts($event)"
 />

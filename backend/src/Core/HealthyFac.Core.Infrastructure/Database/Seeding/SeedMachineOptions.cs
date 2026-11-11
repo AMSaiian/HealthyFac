@@ -10,4 +10,7 @@ public sealed class SeedMachineOptions
     public required Guid MachineId { get; init; }
 
     public required string GatewayId { get; init; }
+
+    /// <summary>The name of the machine, or <see langword="null"/> to use the numbered default name.</summary>
+    public string? Name { get; init; }
 }

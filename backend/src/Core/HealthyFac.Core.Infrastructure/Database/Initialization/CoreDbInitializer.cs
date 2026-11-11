@@ -13,13 +13,15 @@ public class CoreDbInitializer(
     ILogger<CoreDbInitializer> logger,
     CoreDbContext dbContext,
     IHostEnvironment environment,
-    CoreDevelopmentDataSeeder developmentDataSeeder
+    CoreDevelopmentDataSeeder developmentDataSeeder,
+    DemoDraftSeeder demoDraftSeeder
 ) : ICoreDbInitializer
 {
     private readonly ILogger<CoreDbInitializer> _logger = logger;
     private readonly CoreDbContext _dbContext = dbContext;
     private readonly IHostEnvironment _environment = environment;
     private readonly CoreDevelopmentDataSeeder _developmentDataSeeder = developmentDataSeeder;
+    private readonly DemoDraftSeeder _demoDraftSeeder = demoDraftSeeder;
 
     /// <summary>
     /// Applies database migrations to the core database context, only in the Development
@@ -76,11 +78,17 @@ public class CoreDbInitializer(
 
     /// <summary>
     /// Seeds generated development data into the core database context. It adds nothing when a company already
-    /// exists, so a restart does not duplicate the data.
+    /// exists, so a restart does not duplicate the data. It seeds the demo drafts only in the Development environment.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
-        => _developmentDataSeeder.SeedAsync(cancellationToken);
+    public async Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
+    {
+        await _developmentDataSeeder.SeedAsync(cancellationToken);
+        if (_environment.IsDevelopment())
+        {
+            await _demoDraftSeeder.SeedAsync(cancellationToken);
+        }
+    }
 }

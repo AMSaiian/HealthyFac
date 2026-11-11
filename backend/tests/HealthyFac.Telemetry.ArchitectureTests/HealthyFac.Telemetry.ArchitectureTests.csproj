@@ -26,6 +26,9 @@
     <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Infrastructure\HealthyFac.Telemetry.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Web\HealthyFac.Telemetry.Web.csproj" />
     <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Insights\HealthyFac.Insights.Messaging\HealthyFac.Insights.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Messaging\HealthyFac.Document.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Messaging\HealthyFac.Telemetry.Messaging.csproj" />
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 

@@ -12,6 +12,10 @@ export const Permission = {
   FilesDelete: 'files:delete',
   CompanyFilesWrite: 'company-files:write',
   CompanyFilesDelete: 'company-files:delete',
+  IngestRead: 'ingest:read',
+  IngestWrite: 'ingest:write',
+  DraftsRead: 'drafts:read',
+  DraftsWrite: 'drafts:write',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

@@ -144,6 +144,7 @@ describe('app routes', () => {
       requests
         .filter((request) => !request.cancelled)
         .forEach((request) => request.flush({ items: [], totalCount: 0 }));
+      http.expectOne(MACHINES_SEARCH_URL).flush({ items: [], totalCount: 0 });
     });
     await TestBed.inject(ApplicationRef).whenStable();
 

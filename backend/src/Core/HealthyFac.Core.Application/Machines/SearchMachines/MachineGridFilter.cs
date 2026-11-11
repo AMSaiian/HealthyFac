@@ -20,6 +20,12 @@ public sealed record MachineGridFilter : IFilter<Machine>
 
     public DateRangeFilter? UpdatedAt { get; init; }
 
+    /// <summary>
+    /// <see langword="true"/> for machines with pending drafts, <see langword="false"/> for machines without. The
+    /// grid handler applies it, because it needs the draft tables (see <see cref="MachinePendingDrafts"/>).
+    /// </summary>
+    public bool? HasPendingDrafts { get; init; }
+
     public Expression<Func<Machine, bool>>? ToPredicate() =>
         Predicates.From(Name?.ToPredicate<Machine>(machine => machine.Name))
             .And(SerialNumber?.ToPredicate<Machine>(machine => machine.SerialNumber))

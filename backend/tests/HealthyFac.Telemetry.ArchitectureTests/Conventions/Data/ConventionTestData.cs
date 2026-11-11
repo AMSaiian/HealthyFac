@@ -47,5 +47,8 @@ public static class ConventionTestData
         LayerDependencyTestData.TelemetryInfrastructure,
         LayerDependencyTestData.TelemetryWeb,
         LayerDependencyTestData.CoreMessaging,
+        LayerDependencyTestData.InsightsMessaging,
+        LayerDependencyTestData.DocumentMessaging,
+        LayerDependencyTestData.TelemetryMessaging,
     ];
 }

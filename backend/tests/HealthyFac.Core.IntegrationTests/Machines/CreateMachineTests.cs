@@ -79,6 +79,7 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         message.Should().ContainSingle();
         message[index: 0].GatewayId.Should().Be(machine.GatewayId);
         message[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        message[index: 0].Name.Should().Be(MachineTestData.MachineName);
     }
 
     [Fact]

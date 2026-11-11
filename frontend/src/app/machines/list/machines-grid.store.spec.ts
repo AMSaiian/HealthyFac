@@ -10,6 +10,7 @@ import { AuthStore } from '@shared/security/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import { type Machine, MachineState } from '@machines/machine';
+import { DraftActionType } from '@machines/drafts/draft-actions';
 import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
 
@@ -26,6 +27,7 @@ const MACHINE: Machine = {
   description: null,
   createdAt: '2026-03-01T08:00:00Z',
   updatedAt: null,
+  pendingDraftCount: 0,
 };
 
 interface Setup {
@@ -77,6 +79,17 @@ describe('MachinesGridStore', () => {
     const callsBefore = search.mock.calls.length;
 
     actions.complete(MachineActionType.Saved);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(search.mock.calls.length - callsBefore).toBe(1);
+  });
+
+  it('lastResult_WithDraftsChanged_ReloadsMachines', async () => {
+    const { actions, search } = await setup();
+    const callsBefore = search.mock.calls.length;
+
+    actions.complete(DraftActionType.Changed);
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
 

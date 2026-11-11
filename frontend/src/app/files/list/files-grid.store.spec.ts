@@ -18,6 +18,10 @@ import { SortDirection } from '@shared/grid/requests/grid-request';
 import { type FileGridItem, FileSortColumn } from '@files/file';
 import { FileActionType } from '@files/file-actions';
 import { FilesApi } from '@files/files-api';
+import { IngestApi } from '@files/ingest/ingest-api';
+import { IngestState } from '@files/ingest/ingest-attempt';
+import { FileRowAction } from '@files/list/file-grid/file-grid.utils';
+import { MachinesApi } from '@machines/machines-api';
 
 import { FilesGridStore } from './files-grid.store';
 
@@ -32,12 +36,23 @@ const FILE: FileGridItem = {
   sizeBytes: 10,
   description: null,
   uploadedAt: '2026-03-01T08:00:00Z',
+  machineId: null,
+  machineName: null,
+  ingestState: null,
+  canIngest: true,
   rowVersion: 7,
 };
 
 interface Setup {
   store: InstanceType<typeof FilesGridStore>;
   search: ReturnType<typeof vi.fn>;
+  machinesSearch: ReturnType<typeof vi.fn>;
+  untie: ReturnType<typeof vi.fn>;
+  ingest: {
+    start: ReturnType<typeof vi.fn>;
+    cancel: ReturnType<typeof vi.fn>;
+    listForFile: ReturnType<typeof vi.fn>;
+  };
   remove: ReturnType<typeof vi.fn>;
   getLinks: ReturnType<typeof vi.fn>;
   assign: ReturnType<typeof vi.fn>;
@@ -51,10 +66,18 @@ describe('FilesGridStore', () => {
       permissions?: readonly string[];
       links?: readonly { id: string; url: string }[];
       isConfirmed?: boolean;
+      hasFile?: boolean;
     } = {},
   ): Promise<Setup> {
     const messages = { add: vi.fn() };
-    const search = vi.fn(() => of(EMPTY_PAGE));
+    const search = vi.fn(() => of(options.hasFile === true ? { items: [FILE], totalCount: 1 } : EMPTY_PAGE));
+    const untie = vi.fn(() => of(undefined));
+    const ingest = {
+      start: vi.fn(() => of({ id: 'attempt-id' })),
+      cancel: vi.fn(() => of(undefined)),
+      listForFile: vi.fn(() => of({ items: [{ id: 'attempt-id', state: IngestState.Queued }] })),
+    };
+    const machinesSearch = vi.fn(() => of({ items: [{ id: MACHINE_ID, name: 'Pump' }], totalCount: 1 }));
     const remove = vi.fn(() => of(undefined));
     const getLinks = vi.fn(() => of({ links: options.links ?? [] }));
     const assign = vi.fn();
@@ -62,7 +85,9 @@ describe('FilesGridStore', () => {
     TestBed.configureTestingModule({
       providers: [
         FilesGridStore,
-        { provide: FilesApi, useValue: { search, delete: remove } },
+        { provide: FilesApi, useValue: { search, delete: remove, untie } },
+        { provide: IngestApi, useValue: ingest },
+        { provide: MachinesApi, useValue: { search: machinesSearch } },
         { provide: FilesLinksApi, useValue: { getLinks } },
         { provide: FileDownloader, useValue: { start: assign } },
         { provide: MessageService, useValue: messages },
@@ -89,7 +114,7 @@ describe('FilesGridStore', () => {
     const store = TestBed.inject(FilesGridStore);
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
-    return { store, search, remove, getLinks, assign, messages, dispatch };
+    return { store, search, machinesSearch, untie, ingest, remove, getLinks, assign, messages, dispatch };
   }
 
   async function settle(): Promise<void> {
@@ -151,6 +176,123 @@ describe('FilesGridStore', () => {
 
     expect(store.canUpload()).toBe(false);
     expect(store.canDelete()).toBe(true);
+  });
+
+  it('rowAccess_ForCompanyAndMachineScope_GrantsIngestAndTieOnTheCompanyPageOnly', async () => {
+    const { store } = await setup({
+      permissions: [Permission.IngestWrite, Permission.IngestRead, Permission.CompanyFilesWrite],
+    });
+    store.setScope({ kind: 'company' });
+
+    expect(store.rowAccess()).toEqual({ canIngestWrite: true, canIngestRead: true, canTie: true });
+
+    store.setScope({ kind: 'machine', machineId: MACHINE_ID });
+
+    expect(store.rowAccess()).toEqual({ canIngestWrite: false, canIngestRead: false, canTie: false });
+  });
+
+  it('machineOptions_WithoutMachinesRead_LoadsNothingAndListsNoOptions', async () => {
+    const { store, machinesSearch } = await setup();
+    store.setScope({ kind: 'company' });
+    await settle();
+
+    expect(machinesSearch).not.toHaveBeenCalled();
+    expect(store.machineOptions()).toEqual([]);
+  });
+
+  it('machineOptions_ForCompanyScope_LoadsTheMachinesOfTheCompanyOnly', async () => {
+    const { store, machinesSearch } = await setup({ permissions: [Permission.MachinesRead] });
+    store.setScope({ kind: 'machine', machineId: MACHINE_ID });
+    await settle();
+
+    expect(machinesSearch).not.toHaveBeenCalled();
+
+    store.setScope({ kind: 'company' });
+    await settle();
+
+    expect(machinesSearch).toHaveBeenCalledTimes(1);
+    expect(store.machineOptions()).toEqual([{ id: MACHINE_ID, name: 'Pump' }]);
+  });
+
+  it('requestRowAction_Ingest_ShowsTheRowQueuedAtOnceWithoutAnotherSearch', async () => {
+    const { store, search, ingest } = await setup({ hasFile: true });
+    store.setScope({ kind: 'company' });
+    await settle();
+    const searches = search.mock.calls.length;
+
+    store.requestRowAction({ action: FileRowAction.Ingest, file: FILE });
+    await settle();
+
+    expect(ingest.start).toHaveBeenCalledWith(FILE.id, expect.anything());
+    expect(store.files.value()?.items[0]).toMatchObject({ ingestState: IngestState.Queued, canIngest: false });
+    expect(search.mock.calls.length).toBe(searches);
+  });
+
+  it('requestRowAction_IngestWithConflict_KeepsTheRowShowsTheReasonAndReloads', async () => {
+    const { store, search, ingest, messages } = await setup({ hasFile: true });
+    ingest.start.mockReturnValue(
+      throwError(
+        () => new HttpErrorResponse({ status: HttpStatusCode.Conflict, error: { detail: 'ingestCompleted' } }),
+      ),
+    );
+    store.setScope({ kind: 'company' });
+    await settle();
+    const searches = search.mock.calls.length;
+
+    store.requestRowAction({ action: FileRowAction.Ingest, file: FILE });
+    await settle();
+
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'INGEST.CONFLICTS.INGEST_COMPLETED' }));
+    expect(search.mock.calls.length).toBe(searches + 1);
+  });
+
+  it('requestRowAction_CancelIngestWhenConfirmed_CancelsTheActiveAttemptAndShowsInterrupted', async () => {
+    const { store, ingest } = await setup({ hasFile: true, isConfirmed: true });
+    store.setScope({ kind: 'company' });
+    await settle();
+
+    store.requestRowAction({ action: FileRowAction.CancelIngest, file: { ...FILE, ingestState: IngestState.Queued } });
+    await settle();
+
+    expect(ingest.listForFile).toHaveBeenCalledWith(FILE.id, expect.objectContaining({ context: expect.anything() }));
+    expect(ingest.cancel).toHaveBeenCalledWith('attempt-id', expect.anything());
+    expect(store.files.value()?.items[0]).toMatchObject({ ingestState: IngestState.Interrupted, canIngest: true });
+  });
+
+  it('requestRowAction_CancelIngestWhenNotConfirmed_CallsNothing', async () => {
+    const { store, ingest } = await setup({ hasFile: true });
+    store.setScope({ kind: 'company' });
+    await settle();
+
+    store.requestRowAction({ action: FileRowAction.CancelIngest, file: FILE });
+    await settle();
+
+    expect(ingest.listForFile).not.toHaveBeenCalled();
+    expect(ingest.cancel).not.toHaveBeenCalled();
+  });
+
+  it('requestRowAction_UntieWhenConfirmed_SendsTheRowVersionAndReloads', async () => {
+    const { store, untie, search } = await setup({ hasFile: true, isConfirmed: true });
+    store.setScope({ kind: 'company' });
+    await settle();
+    const searches = search.mock.calls.length;
+
+    store.requestRowAction({ action: FileRowAction.Untie, file: { ...FILE, machineId: MACHINE_ID } });
+    await settle();
+
+    expect(untie).toHaveBeenCalledWith(FILE.id, { rowVersion: FILE.rowVersion }, expect.anything());
+    expect(search.mock.calls.length).toBe(searches + 1);
+  });
+
+  it('requestRowAction_Tie_DispatchesTheTieActionWithTheRowVersion', async () => {
+    const { store, dispatch } = await setup();
+
+    store.requestRowAction({ action: FileRowAction.Tie, file: FILE });
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: FileActionType.Tie,
+      payload: { item: { id: FILE.id, fileName: FILE.fileName, rowVersion: FILE.rowVersion } },
+    });
   });
 
   it('download_WithLink_AsksOneLinkAndNavigatesToIt', async () => {

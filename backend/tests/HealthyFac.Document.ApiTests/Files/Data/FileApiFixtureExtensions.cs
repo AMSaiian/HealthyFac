@@ -2,7 +2,6 @@ using HealthyFac.Document.ApiTests.Hosting;
 using HealthyFac.Document.Application;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.Domain.MachineRegistrations;
-using HealthyFac.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +15,8 @@ public static class FileApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IDocumentDbContext>();
-            var registration = new MachineRegistration(Guid.CreateVersion7(), companyId ?? fixture.CompanyId);
+            var registration = new MachineRegistration(
+                Guid.CreateVersion7(), companyId ?? fixture.CompanyId, name: "Test Machine");
 
             dbContext.MachineRegistrations.Add(registration);
             await dbContext.SaveChangesAsync();
@@ -45,7 +45,7 @@ public static class FileApiFixtureExtensions
 
             var rowVersion = await dbContext.FileRefs
                 .Where(candidate => candidate.Id == file.Id)
-                .Select(candidate => EF.Property<uint>(candidate, RowVersions.PropertyName))
+                .Select(candidate => candidate.RowVersion)
                 .SingleAsync();
 
             return new ArrangedFile(fixture.IdEncryptor.Encrypt(file.Id), rowVersion);

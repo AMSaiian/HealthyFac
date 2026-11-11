@@ -58,6 +58,7 @@ public class DocumentDbContext(DbContextOptions<DocumentDbContext> options)
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.HaveEnumerationConversion<FilePurpose>();
+        configurationBuilder.HaveEnumerationConversion<FileIngestState>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

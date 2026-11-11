@@ -33,6 +33,15 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
     public IServiceScopeFactory ScopeFactory =>
         new InitializationActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
 
+    /// <summary>
+    /// Returns a singleton that a test reads or passes to a service that creates its own scopes.
+    /// </summary>
+    /// <typeparam name="TService">The type of the singleton.</typeparam>
+    /// <returns>The service.</returns>
+    public TService GetSingleton<TService>()
+        where TService : class
+        => _services.GetRequiredService<TService>();
+
     public IServiceScope CreateActorScope(ActorContext actor)
         => _services.GetRequiredService<IServiceScopeFactory>().CreateActorScope(actor);
 

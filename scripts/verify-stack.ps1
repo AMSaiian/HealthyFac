@@ -46,9 +46,9 @@ $ReadyTimeout = [TimeSpan]::FromMinutes(15)
 $AppTimeout = [TimeSpan]::FromMinutes(2)
 $PollInterval = [TimeSpan]::FromSeconds(5)
 $MinFreeMemoryGiB = 3
-$ReadyServices = @('core', 'telemetry', 'document', 'auth', 'spa', 'gateway')
+$ReadyServices = @('core', 'telemetry', 'document', 'insights', 'auth', 'spa', 'gateway')
 $RealmJob = 'keycloak-config'
-$BuiltServices = @('core', 'telemetry', 'document', 'auth', 'spa', 'gateway')
+$BuiltServices = @('core', 'telemetry', 'document', 'insights', 'auth', 'spa', 'gateway')
 $SlotNumbers = Get-VerifySlotNumbers
 $HostsFile = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
 

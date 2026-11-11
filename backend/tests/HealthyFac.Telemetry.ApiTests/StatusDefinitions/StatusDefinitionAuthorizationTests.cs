@@ -63,6 +63,60 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     }
 
     [Fact]
+    public async Task Apply_WithoutToken_Returns401()
+    {
+        var machineId = await _fixture.ArrangeMachineAsync();
+        using var client = _fixture.CreateClient();
+        using var content = new StringContent(
+            _fixture.ApplyStatusDefinitionsBody(StatusDefinitionApiTestData.Code),
+            System.Text.Encoding.UTF8,
+            System.Net.Mime.MediaTypeNames.Application.Json);
+
+        var response = await client.PostAsync(
+            $"{_fixture.StatusDefinitionsPath(machineId)}/{StatusDefinitionApiTestData.ApplySegment}",
+            content,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Apply_WithoutWritePermission_Returns403()
+    {
+        var machineId = await _fixture.ArrangeMachineAsync();
+        var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
+
+        var response = await _fixture.SendAsync(
+            HttpMethod.Post,
+            $"{_fixture.StatusDefinitionsPath(machineId)}/{StatusDefinitionApiTestData.ApplySegment}",
+            claims,
+            _fixture.ApplyStatusDefinitionsBody(StatusDefinitionApiTestData.Code));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Apply_WithWritePermission_Returns200WithOneResultForEachItemInOrder()
+    {
+        var machineId = await _fixture.ArrangeMachineAsync();
+        var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.WritePermission);
+
+        var response = await _fixture.SendAsync(
+            HttpMethod.Post,
+            $"{_fixture.StatusDefinitionsPath(machineId)}/{StatusDefinitionApiTestData.ApplySegment}",
+            claims,
+            _fixture.ApplyStatusDefinitionsBody(
+                StatusDefinitionApiTestData.Code,
+                StatusDefinitionApiTestData.UpdatedCode));
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.IndexOf(StatusDefinitionApiTestData.Code, StringComparison.Ordinal)
+            .Should().BeLessThan(body.IndexOf(StatusDefinitionApiTestData.UpdatedCode, StringComparison.Ordinal));
+        body.Should().Contain("\"isCreated\":true");
+    }
+
+    [Fact]
     public async Task Search_WithoutReadPermission_Returns403()
     {
         var machineId = await _fixture.ArrangeMachineAsync();

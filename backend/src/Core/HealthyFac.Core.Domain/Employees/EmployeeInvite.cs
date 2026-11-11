@@ -10,7 +10,7 @@ namespace HealthyFac.Core.Domain.Employees;
 /// signature over the invite ID and the salt with a key from configuration, so the database never holds a
 /// usable token.
 /// </summary>
-public class EmployeeInvite : IEntity, IAuditable, ISoftDeletable
+public class EmployeeInvite : IEntity, IAuditable, ISoftDeletable, IVersioned
 {
     /// <summary>
     /// Creates an open invite. The email is trimmed and converted to lower case, so uniqueness checks ignore
@@ -31,6 +31,7 @@ public class EmployeeInvite : IEntity, IAuditable, ISoftDeletable
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
+    public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
     public string Email { get; private set; }
     public Guid RoleId { get; private set; }

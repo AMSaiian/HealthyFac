@@ -15,5 +15,6 @@ public static class FileSortMap
             [FileSortColumn.FileName] = file => file.FileName,
             [FileSortColumn.SizeBytes] = file => file.SizeBytes,
             [FileSortColumn.UploadedAt] = file => file.CreatedAt,
+            [FileSortColumn.MachineName] = file => file.Machine!.Name,
         }.ToFrozenDictionary();
 }

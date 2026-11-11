@@ -1,3 +1,4 @@
+using HealthyFac.Document.Application.Files.Machines;
 using HealthyFac.Document.Application.Files.Uploading;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ public static class ConfigureServices
         {
             services.AddUseCases(DocumentApplicationAssembly.Instance);
             services.AddScoped<IFileUploader, FileUploader>();
+            services.AddScoped<AutomaticFileTie>();
 
             return services;
         }

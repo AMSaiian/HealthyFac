@@ -11,6 +11,7 @@ export const INITIAL_FILTER: MachineFilter = {
   states: [],
   createdAt: EMPTY_RANGE,
   updatedAt: EMPTY_RANGE,
+  hasPendingDrafts: null,
 };
 
 export const COLUMN_ORDER: readonly MachineColumn[] = [
@@ -19,6 +20,7 @@ export const COLUMN_ORDER: readonly MachineColumn[] = [
   MachineColumn.State,
   MachineColumn.CreatedAt,
   MachineColumn.UpdatedAt,
+  MachineColumn.Drafts,
 ];
 
 export const INITIAL_GRID: GridStateInit<MachineFilter, MachineSortColumn, MachineColumn> = {

@@ -1,3 +1,4 @@
+using HealthyFac.Document.Domain.MachineRegistrations;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Document.Domain.Files;
@@ -6,7 +7,7 @@ namespace HealthyFac.Document.Domain.Files;
 /// The record of a stored file: the owner, the name, the type, the size, and the hash. The bytes live in blob
 /// storage under the ID of the ref. A removal keeps the row (soft delete).
 /// </summary>
-public class FileRef : IEntity, IAuditable, ISoftDeletable
+public class FileRef : IEntity, IAuditable, ISoftDeletable, IVersioned
 {
     /// <summary>The length of a SHA-256 hash in bytes.</summary>
     public const int Sha256Length = 32;
@@ -66,8 +67,13 @@ public class FileRef : IEntity, IAuditable, ISoftDeletable
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
+    public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
     public Guid? MachineId { get; private set; }
+
+    /// <summary>The machine registration of the file. It is loaded only by a query that includes it.</summary>
+    public MachineRegistration? Machine { get; private set; }
+
     public FilePurpose Purpose { get; private set; }
     public string FileName { get; private set; }
     public string Extension { get; private set; }
@@ -75,6 +81,18 @@ public class FileRef : IEntity, IAuditable, ISoftDeletable
     public long SizeBytes { get; private set; }
     public byte[] Sha256 { get; private set; }
     public string? Description { get; private set; }
+
+    /// <summary>The time of the last tie or untie (UTC), or null when a user never changed it.</summary>
+    public DateTime? MachineChangedAt { get; private set; }
+
+    /// <summary>The ingest state that Insights reported, or null when the file was never ingested.</summary>
+    public FileIngestState? IngestState { get; private set; }
+
+    /// <summary>The number of ingest attempts of the file that failed.</summary>
+    public int IngestFailedCount { get; private set; }
+
+    /// <summary>The time (UTC) of the state in <see cref="IngestState"/>. An older report changes nothing.</summary>
+    public DateTime? IngestStateChangedAt { get; private set; }
 
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; private set; }
@@ -92,5 +110,73 @@ public class FileRef : IEntity, IAuditable, ISoftDeletable
     {
         FileName = fileName;
         Description = description;
+    }
+
+    /// <summary>
+    /// Ties the file to a machine.
+    /// </summary>
+    /// <param name="machineId">The machine to tie the file to.</param>
+    /// <param name="changedAt">The time of the change (UTC).</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown by <see cref="FileInvariantErrors"/> when the file is not an attachment.
+    /// </exception>
+    public void TieTo(Guid machineId, DateTime changedAt)
+    {
+        EnsureAttachment();
+        MachineId = machineId;
+        MachineChangedAt = changedAt;
+    }
+
+    /// <summary>
+    /// Removes the tie of the file to its machine.
+    /// </summary>
+    /// <param name="changedAt">The time of the change (UTC).</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown by <see cref="FileInvariantErrors"/> when the file is not an attachment.
+    /// </exception>
+    public void Untie(DateTime changedAt)
+    {
+        EnsureAttachment();
+        MachineId = null;
+        MachineChangedAt = changedAt;
+    }
+
+    /// <summary>
+    /// Stores the ingest state of Insights. A report that is not newer than the stored one changes nothing, because
+    /// messages can arrive in another order than Insights sent them.
+    /// </summary>
+    /// <param name="state">The reported state.</param>
+    /// <param name="failedCount">The number of failed attempts.</param>
+    /// <param name="changedAt">The time of the state in Insights (UTC).</param>
+    public void ApplyIngestState(FileIngestState state, int failedCount, DateTime changedAt)
+    {
+        if (IngestStateChangedAt is not null && changedAt <= IngestStateChangedAt)
+        {
+            return;
+        }
+
+        IngestState = state;
+        IngestFailedCount = failedCount;
+        IngestStateChangedAt = changedAt;
+    }
+
+    /// <summary>
+    /// Tells whether an automatic tie from an ingest may apply. A user decision after the ingest was queued wins.
+    /// </summary>
+    /// <param name="queuedAt">The time when the ingest was queued (UTC).</param>
+    /// <returns>
+    /// <see langword="true"/> for an untied attachment that no user tied or untied after <paramref name="queuedAt"/>.
+    /// </returns>
+    public bool CanTieAutomatically(DateTime queuedAt) =>
+        Purpose == FilePurpose.Attachment
+        && MachineId is null
+        && (MachineChangedAt is null || MachineChangedAt < queuedAt);
+
+    private void EnsureAttachment()
+    {
+        if (Purpose != FilePurpose.Attachment)
+        {
+            throw FileInvariantErrors.MachineOnNonAttachment();
+        }
     }
 }

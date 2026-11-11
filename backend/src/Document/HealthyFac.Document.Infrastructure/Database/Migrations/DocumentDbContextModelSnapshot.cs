@@ -75,6 +75,25 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnName("file_name")
                         .UseCollation("case_insensitive");
 
+                    b.Property<int>("IngestFailedCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("ingest_failed_count");
+
+                    b.Property<string>("IngestState")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("ingest_state");
+
+                    b.Property<DateTime?>("IngestStateChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ingest_state_changed_at");
+
+                    b.Property<DateTime?>("MachineChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("machine_changed_at");
+
                     b.Property<Guid?>("MachineId")
                         .HasColumnType("uuid")
                         .HasColumnName("machine_id");
@@ -130,6 +149,10 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("ck_file_ref_file_name_not_blank", "\"file_name\" COLLATE \"default\" ~ '\\S'");
 
+                            t.HasCheckConstraint("ck_file_ref_ingest_failed_count_range", "\"ingest_failed_count\" BETWEEN 0 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_file_ref_ingest_state_allowed", "\"ingest_state\" IN ('completed', 'failed', 'inProcess', 'interrupted', 'queued')");
+
                             t.HasCheckConstraint("ck_file_ref_machine_id_embedded_without_machine", "purpose <> 'embedded' OR machine_id IS NULL");
 
                             t.HasCheckConstraint("ck_file_ref_purpose_allowed", "\"purpose\" IN ('attachment', 'embedded')");
@@ -158,11 +181,26 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("NameChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("name_changed_at");
+
                     b.HasKey("Id");
 
                     b.ToTable("machine_registrations", null, t =>
                         {
                             t.HasCheckConstraint("ck_machine_registration_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_machine_registration_name_length", "char_length(\"name\") BETWEEN 1 AND 200");
+
+                            t.HasCheckConstraint("ck_machine_registration_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
                         });
                 });
 

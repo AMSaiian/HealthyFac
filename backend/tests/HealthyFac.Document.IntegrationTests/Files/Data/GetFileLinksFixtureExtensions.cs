@@ -41,7 +41,7 @@ public static class GetFileLinksFixtureExtensions
             var time = new FakeTimeProvider(now);
             var environment = new TestHostEnvironment { EnvironmentName = environmentName };
 
-            return new SasFileLinkIssuer(options, time, environment);
+            return new SasFileLinkIssuer(options, time, environment, fixture.BlobService);
         }
 
         public Uri RebaseOnStorage(FileLink link)

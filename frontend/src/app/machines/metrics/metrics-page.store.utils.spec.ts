@@ -1,6 +1,8 @@
-import { type MetricDefinition, MetricValueKind } from '@machines/metrics/metric-definition';
+import { DraftState, type MetricDraftDetail } from '@machines/drafts/draft';
+import { MetricValueKind } from '@machines/metrics/metric-definition';
 import type { MetricFormValue } from '@machines/metrics/metric-form/metric-form-schema';
 import {
+  appliedDraftIds,
   buildExamplePayload,
   EMPTY_METRIC_VALUE,
   mapServerErrors,
@@ -8,6 +10,7 @@ import {
   netChanges,
   nextKey,
   parseUnitValue,
+  stageMetricDrafts,
   toApplyBody,
   unitValue,
 } from '@machines/metrics/metrics-page.store.utils';
@@ -24,11 +27,27 @@ const SAVED: MetricFormValue = {
 };
 
 function savedItem(id: string, value: Partial<MetricFormValue> = {}, isDeleted = false): MetricItem {
-  return { localId: id, savedId: id, saved: SAVED, value: { ...SAVED, ...value }, isDeleted };
+  return {
+    localId: id,
+    savedId: id,
+    saved: SAVED,
+    value: { ...SAVED, ...value },
+    isDeleted,
+    draftId: null,
+    sourceLocation: null,
+  };
 }
 
 function newItem(id: string, value: Partial<MetricFormValue> = {}, isDeleted = false): MetricItem {
-  return { localId: id, savedId: null, saved: null, value: { ...EMPTY_METRIC_VALUE, ...value }, isDeleted };
+  return {
+    localId: id,
+    savedId: null,
+    saved: null,
+    value: { ...EMPTY_METRIC_VALUE, ...value },
+    isDeleted,
+    draftId: null,
+    sourceLocation: null,
+  };
 }
 
 describe('netChanges', () => {
@@ -146,29 +165,25 @@ describe('unit values', () => {
 });
 
 describe('buildExamplePayload', () => {
-  const definition = (key: string, overrides: Partial<MetricDefinition>): MetricDefinition => ({
-    id: key,
-    key,
-    name: key,
-    description: null,
-    valueKind: MetricValueKind.Numeric,
-    unit: { quantityKind: 'Temperature', name: 'DegreeCelsius', abbreviation: 'C' },
-    min: null,
-    max: null,
-    states: null,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: null,
+  const item = (key: string, value: Partial<MetricFormValue>, overrides: Partial<MetricItem> = {}): MetricItem => ({
+    localId: key,
+    savedId: null,
+    saved: null,
+    value: { ...SAVED, key, min: null, max: null, states: [], ...value },
+    isDeleted: false,
+    draftId: null,
+    sourceLocation: null,
     ...overrides,
   });
 
   it('buildExamplePayload_WithEveryKind_UsesPlaceholdersInKeyOrder', () => {
     const payload = buildExamplePayload(
       [
-        definition('z.mode', { valueKind: MetricValueKind.StateSet, states: ['auto', 'off'] }),
-        definition('a.door', { valueKind: MetricValueKind.Boolean }),
-        definition('m.min', { min: -20, max: 200 }),
-        definition('m.max', { max: 50 }),
-        definition('m.none', {}),
+        item('z.mode', { valueKind: MetricValueKind.StateSet, states: ['auto', 'off'] }),
+        item('a.door', { valueKind: MetricValueKind.Boolean }),
+        item('m.min', { min: -20, max: 200 }),
+        item('m.max', { max: 50 }),
+        item('m.none', {}),
       ],
       '2026-01-01T00:00:00Z',
     );
@@ -183,7 +198,105 @@ describe('buildExamplePayload', () => {
     expect(parsed.statuses).toEqual([]);
   });
 
-  it('buildExamplePayload_WithoutMetrics_ReturnsNull', () => {
+  it('buildExamplePayload_WithProposedAndNewItems_ShowsThemAndLeavesOutDeletedAndKeylessItems', () => {
+    const payload = buildExamplePayload(
+      [
+        item('saved.key', {}, { savedId: 's1', saved: SAVED }),
+        item('proposed.key', { max: 9 }, { draftId: 'draft-1' }),
+        item('gone.key', {}, { savedId: 's2', saved: SAVED, isDeleted: true }),
+        item('', {}),
+      ],
+      '2026-01-01T00:00:00Z',
+    );
+
+    const parsed = JSON.parse(payload ?? '') as { metrics: Record<string, unknown> };
+    expect(parsed.metrics).toEqual({ 'proposed.key': 9, 'saved.key': 0 });
+  });
+
+  it('buildExamplePayload_WithANewItemTheFormRejects_LeavesItOutAndKeepsASavedItem', () => {
+    const payload = buildExamplePayload(
+      [
+        item('saved.key', { name: '' }, { savedId: 's1', saved: SAVED }),
+        item('new.invalid', { name: '' }),
+        item('new.valid', {}),
+      ],
+      '2026-01-01T00:00:00Z',
+    );
+
+    const parsed = JSON.parse(payload ?? '') as { metrics: Record<string, unknown> };
+    expect(Object.keys(parsed.metrics)).toEqual(['new.valid', 'saved.key']);
+  });
+
+  it('buildExamplePayload_WithoutItems_ReturnsNull', () => {
     expect(buildExamplePayload([], '2026-01-01T00:00:00Z')).toBeNull();
+  });
+
+  it('buildExamplePayload_WithOnlyDeletedItems_ReturnsNull', () => {
+    const items = [item('gone.key', {}, { savedId: 's2', saved: SAVED, isDeleted: true })];
+
+    expect(buildExamplePayload(items, '2026-01-01T00:00:00Z')).toBeNull();
+  });
+});
+
+describe('stageMetricDrafts', () => {
+  const CATALOG = {
+    kinds: [{ name: 'Pressure', units: [{ name: 'Bar', abbreviation: 'bar' }] }],
+  };
+
+  const DRAFT: MetricDraftDetail = {
+    id: 'draft-1',
+    state: DraftState.Pending,
+    sourceLocation: 'page 1',
+    key: 'one.key',
+    name: 'Proposed name',
+    description: null,
+    valueKind: 'numeric',
+    quantityKindName: 'pressure',
+    unitName: 'BAR',
+    min: null,
+    max: 6,
+    states: null,
+  };
+
+  it('stageMetricDrafts_WithKeyOfAnActiveItem_StagesAChangeOfThatItemOnly', () => {
+    const items = [savedItem('a', { key: 'one.key' })];
+
+    const staged = stageMetricDrafts(items, 0, [DRAFT], CATALOG);
+
+    expect(staged.items).toHaveLength(1);
+    expect(staged.items[0].value).toEqual({ ...SAVED, key: 'one.key', name: 'Proposed name', max: 6 });
+    expect(staged.items[0]).toMatchObject({ savedId: 'a', draftId: 'draft-1', sourceLocation: 'page 1' });
+    expect(staged.newCount).toBe(0);
+  });
+
+  it('stageMetricDrafts_WithNewKey_StagesANewItemWithTheUnitFromTheCatalog', () => {
+    const staged = stageMetricDrafts([savedItem('a')], 0, [{ ...DRAFT, key: 'new.key' }], CATALOG);
+
+    expect(staged.items).toHaveLength(2);
+    expect(staged.items[1]).toMatchObject({ localId: 'new-0', savedId: null, draftId: 'draft-1' });
+    expect(staged.items[1].value).toMatchObject({
+      key: 'new.key',
+      name: 'Proposed name',
+      unit: 'Pressure|Bar',
+      max: 6,
+    });
+    expect(staged.newCount).toBe(1);
+  });
+
+  it('stageMetricDrafts_WithUnknownUnitAndMissingName_LeavesThemEmptyForTheUser', () => {
+    const draft = { ...DRAFT, key: 'x.key', name: null, quantityKindName: 'Length', unitName: 'Metre' };
+
+    const staged = stageMetricDrafts([], 2, [draft], CATALOG);
+
+    expect(staged.items[0].localId).toBe('new-2');
+    expect(staged.items[0].value).toMatchObject({ name: '', unit: '' });
+  });
+
+  it('appliedDraftIds_WithStagedAndPlainChanges_ListsOnlyTheStagedDraftsThatAreNotDeleted', () => {
+    const staged = stageMetricDrafts([savedItem('a', { key: 'one.key' }), savedItem('b')], 0, [DRAFT], CATALOG);
+
+    const ids = appliedDraftIds(netChanges(staged.items));
+
+    expect(ids).toEqual(['draft-1']);
   });
 });

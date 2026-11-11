@@ -21,6 +21,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
 
         registration.Should().NotBeNull();
         registration!.CompanyId.Should().Be(message.CompanyId);
+        registration.Name.Should().Be(message.Name);
         registration.DeletedAt.Should().BeNull();
     }
 
@@ -33,6 +34,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
         {
             GatewayId = GatewayIds.Create(),
             CompanyId = MachineRegistrationTestData.OtherCompanyId,
+            Name = "Changed Name",
         };
 
         await _fixture.RegisterMachineAsync(changed);
@@ -40,6 +42,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
         var registration = await _fixture.LoadRegistrationAsync(message.MachineId);
 
         registration!.CompanyId.Should().Be(message.CompanyId);
+        registration.Name.Should().Be(message.Name);
     }
 
     [Fact]

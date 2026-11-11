@@ -2,13 +2,7 @@ import { HttpClient, type HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
-import type {
-  CreateMachineResponse,
-  Machine,
-  MachineBody,
-  MachinesPage,
-  SearchMachinesBody,
-} from '@machines/machine';
+import type { CreateMachineResponse, Machine, MachineBody, MachinesPage, SearchMachinesBody } from '@machines/machine';
 
 const MACHINES_URL = '/api/core/v1/machines';
 const MACHINES_SEARCH_URL = `${MACHINES_URL}/search`;

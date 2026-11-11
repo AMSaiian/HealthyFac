@@ -66,6 +66,18 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task SeedOptionalDataAsync_WithASeedMachineName_UsesItAndElseTheNumberedName()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+
+        var first = await _fixture.LoadMachineRowAsync(DatabaseTestData.FirstSeedMachineId);
+        var second = await _fixture.LoadMachineRowAsync(DatabaseTestData.SecondSeedMachineId);
+
+        first.Name.Should().Be(DatabaseTestData.NamedSeedMachineName);
+        second.Name.Should().Be("Seed machine 02");
+    }
+
+    [Fact]
     public async Task SeedOptionalDataAsync_WithSeedMachines_StoresMachineCreatedOutboxRowPerMachine()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);

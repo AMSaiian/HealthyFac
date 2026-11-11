@@ -23,8 +23,7 @@ public class MachineRegistrationConfiguration : IEntityTypeConfiguration<Machine
             .HasMaxLength(GatewayIds.Length)
             .IsRequired();
 
-        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
-            .IsRowVersion();
+        builder.ConfigureVersioned();
 
         builder.HasIndex(registration => registration.GatewayId)
             .HasDatabaseName(MachineRegistrationIndexNames.GatewayId)

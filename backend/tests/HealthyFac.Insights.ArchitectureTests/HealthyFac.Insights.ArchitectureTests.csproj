@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="NetArchTest.eNhancedEdition" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Insights\HealthyFac.Insights.Domain\HealthyFac.Insights.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Insights\HealthyFac.Insights.Application\HealthyFac.Insights.Application.csproj" />
+    <ProjectReference Include="..\..\src\Insights\HealthyFac.Insights.Infrastructure\HealthyFac.Insights.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Insights\HealthyFac.Insights.Web\HealthyFac.Insights.Web.csproj" />
+    <ProjectReference Include="..\..\src\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Insights\HealthyFac.Insights.Messaging\HealthyFac.Insights.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Messaging\HealthyFac.Document.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Telemetry\HealthyFac.Telemetry.Messaging\HealthyFac.Telemetry.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Document\HealthyFac.Document.Contracts\HealthyFac.Document.Contracts.csproj" />
+    <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

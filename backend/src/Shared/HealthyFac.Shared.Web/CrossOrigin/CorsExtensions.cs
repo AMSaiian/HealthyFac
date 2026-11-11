@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,6 +53,7 @@ public static class CorsExtensions
 
                     policy.AllowAnyHeader();
                     policy.AllowAnyMethod();
+                    policy.WithExposedHeaders(HeaderNames.RetryAfter);
                     policy.SetPreflightMaxAge(TimeSpan.FromSeconds(options.PreflightMaxAgeSeconds));
 
                     if (options.IsCredentialsAllowed)

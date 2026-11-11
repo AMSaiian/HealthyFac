@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, viewChild } from '@angular/core';
+import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -19,6 +19,7 @@ import {
   TableModule,
   type TablePageEvent,
 } from 'primeng/table';
+import { Tag } from 'primeng/tag';
 
 import { toggleColumn } from '@shared/grid/table/grid-columns';
 import { skeletonRows } from '@shared/grid/table/grid-display';
@@ -32,16 +33,32 @@ import { EMPTY_RANGE } from '@shared/time/plain-date-range';
 
 import { FileColumn, type FileFilter, type FileGridItem, type FileSort, type FileSortColumn } from '@files/file';
 import { formatFileSize } from '@files/file.utils';
+import { IngestState } from '@files/ingest/ingest-attempt';
+import type { MachineOption } from '@files/file';
+import type { FileRowAction } from './file-grid.utils';
 import {
   COLUMN_LABEL_KEYS,
   EXTENSION_OPTIONS,
+  type FileRowAccess,
+  FILTER_NOT_TIED_KEY,
   FILTER_READERS,
   FILTER_WRITERS,
   FILTERABLE_COLUMNS,
+  INGEST_COLUMNS,
+  INGEST_NEVER_LABEL_KEY,
+  INGEST_STATE_LABEL_KEYS,
+  ingestLabelKey,
+  ingestSeverity,
   MENU_DELETE_KEY,
   MENU_DOWNLOAD_KEY,
   MENU_EDIT_KEY,
+  NEVER_OPTION,
+  NO_ROW_ACCESS,
+  NOT_TIED_OPTION,
+  ROW_ACTION_ICONS,
+  ROW_ACTION_KEYS,
   SORTABLE_COLUMNS,
+  visibleRowActions,
 } from './file-grid.utils';
 
 @Component({
@@ -59,6 +76,7 @@ import {
     Select,
     Skeleton,
     SortIcon,
+    Tag,
     TableModule,
     TranslatePipe,
   ],
@@ -77,6 +95,10 @@ export class FileGrid {
   readonly filter = input.required<FileFilter>();
   readonly canEdit = input(false);
   readonly canDelete = input(false);
+  /** The company page shows the machine and ingest columns and their row actions; the machine page hides them. */
+  readonly showIngestColumns = input(true);
+  readonly machineOptions = input<readonly MachineOption[]>([]);
+  readonly access = input<FileRowAccess>(NO_ROW_ACCESS);
 
   readonly filterChange = output<Partial<FileFilter>>();
   readonly sortChange = output<FileSort | null>();
@@ -86,33 +108,68 @@ export class FileGrid {
   readonly downloadRequested = output<FileGridItem>();
   readonly editRequested = output<FileGridItem>();
   readonly deleteRequested = output<FileGridItem>();
+  readonly rowActionRequested = output<{ action: FileRowAction; file: FileGridItem }>();
+  readonly machineSearch = output<string>();
 
   protected readonly table = viewChild.required(Table);
   protected readonly FileColumn = FileColumn;
-  protected readonly allColumns = Object.values(FileColumn);
   protected readonly pageSizes = [...PAGE_SIZES];
   protected readonly extensionOptions = EXTENSION_OPTIONS;
   protected readonly formatFileSize = formatFileSize;
+  protected readonly ingestLabelKey = ingestLabelKey;
+  protected readonly ingestSeverity = ingestSeverity;
 
   private readonly _translate = inject(TranslateService);
-  private readonly _labels = toSignal(this._translate.stream([MENU_DOWNLOAD_KEY, MENU_EDIT_KEY, MENU_DELETE_KEY]), {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly _labels = toSignal(
+    this._translate.stream([
+      MENU_DOWNLOAD_KEY,
+      MENU_EDIT_KEY,
+      MENU_DELETE_KEY,
+      FILTER_NOT_TIED_KEY,
+      INGEST_NEVER_LABEL_KEY,
+      ...Object.values(ROW_ACTION_KEYS),
+      ...Object.values(INGEST_STATE_LABEL_KEYS),
+    ]),
+    { initialValue: {} as Record<string, string> },
+  );
+
+  protected readonly allColumns = computed(() =>
+    Object.values(FileColumn).filter((column) => this.showIngestColumns() || !INGEST_COLUMNS.includes(column)),
+  );
+  protected readonly machineFilterOptions = computed(() => [
+    { value: NOT_TIED_OPTION, label: this._labels()[FILTER_NOT_TIED_KEY] ?? FILTER_NOT_TIED_KEY },
+    ...this.machineOptions().map((machine) => ({ value: machine.id, label: machine.name })),
+  ]);
+  protected readonly ingestFilterOptions = computed(() => [
+    { value: NEVER_OPTION, label: this._labels()[INGEST_NEVER_LABEL_KEY] ?? INGEST_NEVER_LABEL_KEY },
+    ...Object.values(IngestState).map((state) => ({
+      value: state,
+      label: this._labels()[INGEST_STATE_LABEL_KEYS[state]] ?? INGEST_STATE_LABEL_KEYS[state],
+    })),
+  ]);
 
   protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
   protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
   protected readonly emptyRange = EMPTY_RANGE;
-  protected readonly tableFilters = computed(() => toTableFilters(this.allColumns, FILTER_WRITERS, this.filter()));
+  protected readonly tableFilters = computed(() => toTableFilters(this.allColumns(), FILTER_WRITERS, this.filter()));
   protected readonly tableRows = computed((): unknown[] => (this.isLoading() ? this.skeletonRows() : [...this.rows()]));
   protected readonly tableStyle = computed(() => ({
     'min-width': '48rem',
     ...(this.isLoading() || this.rows().length > 0 ? {} : { height: '100%' }),
   }));
-  protected readonly tableColumns = computed(() => [...this.columns()]);
+  protected readonly tableColumns = computed(() =>
+    this.columns().filter((column) => this.allColumns().includes(column)),
+  );
 
-  protected activeFile: FileGridItem | null = null;
+  protected readonly activeFile = signal<FileGridItem | null>(null);
 
-  protected readonly menuItems = computed<MenuItem[]>(() => [
+  protected readonly menuItems = computed<MenuItem[]>(() => {
+    const file = this.activeFile();
+    const rowActions = file === null ? [] : visibleRowActions(file, this.access());
+    return [...this._baseItems(), ...this._rowActionItems(rowActions)];
+  });
+
+  private readonly _baseItems = computed<MenuItem[]>(() => [
     {
       label: this._labels()[MENU_DOWNLOAD_KEY] ?? MENU_DOWNLOAD_KEY,
       icon: 'pi pi-download',
@@ -151,7 +208,7 @@ export class FileGrid {
   }
 
   protected isColumnVisible(column: FileColumn): boolean {
-    return this.columns().includes(column);
+    return this.tableColumns().includes(column);
   }
 
   protected onColumnToggle(column: FileColumn, isVisible: boolean): void {
@@ -159,7 +216,7 @@ export class FileGrid {
   }
 
   protected onFilterApplied(event: TableFilterEvent): void {
-    this.filterChange.emit(readTableFilters(this.allColumns, FILTER_READERS, event.filters));
+    this.filterChange.emit(readTableFilters(this.allColumns(), FILTER_READERS, event.filters));
   }
 
   protected onFilterHidden(column: FileColumn): void {
@@ -181,13 +238,27 @@ export class FileGrid {
   }
 
   protected openMenu(event: Event, file: FileGridItem, menu: Menu): void {
-    this.activeFile = file;
+    this.activeFile.set(file);
     menu.toggle(event);
   }
 
+  private _rowActionItems(actions: readonly FileRowAction[]): MenuItem[] {
+    return actions.map((action) => ({
+      label: this._labels()[ROW_ACTION_KEYS[action]] ?? ROW_ACTION_KEYS[action],
+      icon: ROW_ACTION_ICONS[action],
+      command: (): void => {
+        const file = this.activeFile();
+        if (file !== null) {
+          this.rowActionRequested.emit({ action, file });
+        }
+      },
+    }));
+  }
+
   private _emit(target: { emit(value: FileGridItem): void }): void {
-    if (this.activeFile !== null) {
-      target.emit(this.activeFile);
+    const file = this.activeFile();
+    if (file !== null) {
+      target.emit(file);
     }
   }
 }

@@ -4,6 +4,8 @@
         <ProjectReference Include="..\HealthyFac.Document.Domain\HealthyFac.Document.Domain.csproj"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj"/>
         <ProjectReference Include="..\..\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Document.Messaging\HealthyFac.Document.Messaging.csproj"/>
+        <ProjectReference Include="..\..\Insights\HealthyFac.Insights.Messaging\HealthyFac.Insights.Messaging.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

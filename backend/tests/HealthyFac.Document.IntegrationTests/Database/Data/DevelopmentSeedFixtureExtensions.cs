@@ -33,6 +33,7 @@ public static class DevelopmentSeedFixtureExtensions
                 {
                     Id = registration.Id,
                     CompanyId = registration.CompanyId,
+                    Name = registration.Name,
                 })
                 .ToListAsync();
         }
@@ -43,4 +44,5 @@ public sealed record SeededRegistration
 {
     public required Guid Id { get; init; }
     public required Guid CompanyId { get; init; }
+    public required string Name { get; init; }
 }

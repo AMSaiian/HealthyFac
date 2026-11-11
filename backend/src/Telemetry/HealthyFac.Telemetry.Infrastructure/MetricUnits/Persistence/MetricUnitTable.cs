@@ -24,8 +24,9 @@ internal static class MetricUnitTable
         + $"ON CONFLICT ({NameColumn}) WHERE {SoftDeleteConstants.NotDeletedFilter} DO NOTHING";
 
     /// <summary>
-    /// Inserts the missing units and updates the abbreviation of the existing ones. A unit finds its kind by the kind
-    /// name. Parameters: the IDs, the kind names, the unit names, the abbreviations.
+    /// Inserts the missing units and updates the abbreviation of the existing ones whose abbreviation differs, so the
+    /// affected row count is the number of changes. A unit finds its kind by the kind name. Parameters: the IDs, the
+    /// kind names, the unit names, the abbreviations.
     /// </summary>
     public const string UnitUpsertSql =
         $"INSERT INTO {UnitsTable} ({IdColumn}, {QuantityKindIdColumn}, {NameColumn}, {AbbreviationColumn}) "
@@ -34,5 +35,6 @@ internal static class MetricUnitTable
         + $"JOIN {KindsTable} kind ON kind.{NameColumn} = seed.kind_name "
         + $"AND kind.{SoftDeleteConstants.NotDeletedFilter} "
         + $"ON CONFLICT ({QuantityKindIdColumn}, {NameColumn}) WHERE {SoftDeleteConstants.NotDeletedFilter} "
-        + $"DO UPDATE SET {AbbreviationColumn} = EXCLUDED.{AbbreviationColumn}";
+        + $"DO UPDATE SET {AbbreviationColumn} = EXCLUDED.{AbbreviationColumn} "
+        + $"WHERE {UnitsTable}.{AbbreviationColumn} IS DISTINCT FROM EXCLUDED.{AbbreviationColumn}";
 }

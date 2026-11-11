@@ -1,3 +1,4 @@
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Document.Domain.MachineRegistrations;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
@@ -16,6 +17,12 @@ public class MachineRegistrationConfiguration : IEntityTypeConfiguration<Machine
         builder.ConfigureEntity();
         builder.ConfigureSoftDeletable();
 
-        builder.HasNotEmptyGuidCheck(registration => registration.CompanyId);
+        builder.Property(registration => registration.Name)
+            .HasMaxLength(MachineMessageLimits.NameMaxLength)
+            .IsRequired();
+
+        builder.HasNotEmptyGuidCheck(registration => registration.CompanyId)
+            .HasNotBlankCheck(registration => registration.Name)
+            .HasLengthCheck(registration => registration.Name, minLength: 1, MachineMessageLimits.NameMaxLength);
     }
 }

@@ -20,6 +20,7 @@ public sealed class SeedDataFileTests
                 new Dictionary<string, string?>
                 {
                     [$"{TestTenantPath}:CompanyId"] = testTenant.CompanyId.ToString(),
+                    [$"{TestTenantPath}:SupervisorIdentityId"] = testTenant.SupervisorIdentityId.ToString(),
                 })
             .Build();
         var options = configuration.GetSection(SeedingOptions.SectionName).Get<SeedingOptions>()!;
@@ -27,6 +28,7 @@ public sealed class SeedDataFileTests
         var result = new DevelopmentDataOptionsValidator().Validate(options.DevelopmentData);
 
         result.Errors.Should().BeEmpty();
-        options.DevelopmentData.GetSeedMachines().Should().NotBeEmpty();
+        options.DevelopmentData.GetSeedMachines().Select(machine => machine.Name)
+            .Should().Equal("Seed machine 01", "Seed machine 02");
     }
 }

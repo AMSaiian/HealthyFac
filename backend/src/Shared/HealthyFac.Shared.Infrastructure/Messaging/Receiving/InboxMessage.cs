@@ -1,10 +1,12 @@
+using HealthyFac.Shared.Domain.Entities;
+
 namespace HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 
 /// <summary>
 /// Stores a received message before the service handles it. The message ID is the primary key, so a duplicate
 /// delivery adds no second row and every consumer stays idempotent.
 /// </summary>
-public sealed class InboxMessage
+public sealed class InboxMessage : IVersioned
 {
     /// <summary>
     /// Creates a pending message that the processor can handle at once.
@@ -39,6 +41,8 @@ public sealed class InboxMessage
     }
 
     public Guid Id { get; private set; }
+
+    public uint RowVersion { get; private set; }
 
     public string Type { get; private set; }
 

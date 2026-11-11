@@ -5,7 +5,7 @@
       routerLink="/machines"
       severity="secondary"
       iconOnly
-      [text]="true"
+      [outlined]="true"
       [rounded]="true"
       [attr.aria-label]="'FILES.BACK' | translate"
     >
@@ -27,6 +27,7 @@
   </div>
 </header>
 <hf-file-grid
+  [showIngestColumns]="false"
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.files.isLoading()"

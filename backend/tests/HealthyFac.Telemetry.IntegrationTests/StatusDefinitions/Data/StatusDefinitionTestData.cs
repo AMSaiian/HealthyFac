@@ -1,3 +1,6 @@
+using HealthyFac.Telemetry.Application.StatusDefinitions;
+using HealthyFac.Telemetry.Domain.StatusDefinitions;
+
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
 
 public static class StatusDefinitionTestData
@@ -12,6 +15,21 @@ public static class StatusDefinitionTestData
     public const string UpdatedDescription = "<p>Replace the belt.</p>";
 
     public const int DescriptionLimit = 5000;
+
+    public const int RaceParticipantCount = 2;
+
+    public static StatusDefinitionChange Change(
+        string code,
+        StatusSeverity? severity = null,
+        string? description = null
+    ) =>
+        new() { Code = code, Severity = severity ?? StatusSeverity.Info, Description = description };
+
+    /// <summary>A change that proposes no severity and no description.</summary>
+    public static StatusDefinitionChange NoProposal(string code) => new() { Code = code };
+
+    public static IReadOnlyList<StatusDefinitionChange> Changes(int count) =>
+        Enumerable.Range(start: 1, count).Select(number => Change($"B-{number}")).ToList();
 
     /// <summary>5000 visible characters in 500 bold runs: about 13,500 HTML characters.</summary>
     public static string FormattedDescriptionAtVisibleLimit =>

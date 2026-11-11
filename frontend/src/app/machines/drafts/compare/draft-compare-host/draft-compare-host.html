@@ -1,0 +1,21 @@
+<hf-action-dialog
+  title="DRAFTS.COMPARE.TITLE"
+  widthClass="w-[56rem] max-w-[95vw]"
+  [isSaveDisabled]="store.saveDisabledReason() !== null"
+  [saveDisabledReason]="store.saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="store.save()"
+  (cancelled)="store.cancel()"
+>
+  @if (store.data.isLoading() || store.rows().length === 0) {
+    <div class="flex min-h-32">
+      <hf-loading-spinner />
+    </div>
+  } @else {
+    <hf-field-compare-list
+      [rows]="store.rows()"
+      (takeChange)="store.take($event.field, $event.isTaken)"
+      (editChange)="store.edit($event.field, $event.value)"
+    />
+  }
+</hf-action-dialog>

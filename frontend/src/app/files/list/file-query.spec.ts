@@ -1,6 +1,7 @@
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { Temporal } from '@shared/time/temporal';
 
+import { IngestState } from '@files/ingest/ingest-attempt';
 import { type FileFilter, type FileGridState, FileSortColumn } from '@files/file';
 
 import { toSearchBody } from './file-query';
@@ -8,7 +9,13 @@ import { toSearchBody } from './file-query';
 const ZONE = 'Europe/Kyiv';
 const EMPTY_RANGE = { from: null, to: null };
 
-const EMPTY_FILTER: FileFilter = { fileName: '', extensions: [], uploadedAt: EMPTY_RANGE };
+const EMPTY_FILTER: FileFilter = {
+  fileName: '',
+  extensions: [],
+  uploadedAt: EMPTY_RANGE,
+  machine: { machineIds: [], isUntiedIncluded: false },
+  ingest: { states: [], isNeverIncluded: false },
+};
 
 describe('toSearchBody', () => {
   it('toSearchBody_WithEmptyFilter_SendsNoActiveFilter', () => {
@@ -52,5 +59,31 @@ describe('toSearchBody', () => {
     const body = toSearchBody(state, ZONE);
 
     expect(body.filter.uploadedAt).toEqual({ from: '2026-03-28T22:00:00Z', to: '2026-03-30T21:00:00Z' });
+  });
+
+  it('toSearchBody_WithNotTiedOnly_SendsTheMachineFilterWithTheFlag', () => {
+    const state: FileGridState = {
+      offset: 0,
+      limit: 25,
+      sort: null,
+      filter: { ...EMPTY_FILTER, machine: { machineIds: [], isUntiedIncluded: true } },
+    };
+
+    const body = toSearchBody(state, ZONE);
+
+    expect(body.filter).toEqual({ machine: { machineIds: [], isUntiedIncluded: true } });
+  });
+
+  it('toSearchBody_WithNeverAndAState_SendsTheIngestFilter', () => {
+    const state: FileGridState = {
+      offset: 0,
+      limit: 25,
+      sort: null,
+      filter: { ...EMPTY_FILTER, ingest: { states: [IngestState.Failed], isNeverIncluded: true } },
+    };
+
+    const body = toSearchBody(state, ZONE);
+
+    expect(body.filter).toEqual({ ingestState: { states: ['failed'], isNeverIncluded: true } });
   });
 });

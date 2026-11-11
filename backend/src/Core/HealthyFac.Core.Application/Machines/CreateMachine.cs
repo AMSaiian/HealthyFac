@@ -105,6 +105,7 @@ public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider 
                 MachineId = machine.Id,
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
+                Name = machine.Name,
             });
 
         try

@@ -5,6 +5,7 @@ import type { AppAction } from '@shared/actions/app-action';
 import { hasFormChanges } from '@shared/forms/form-changes';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
+import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachinesApi } from '@machines/machines-api';
 
 import { MachineDrawerStore } from '@machines/drawer/machine-drawer.store';
@@ -14,7 +15,7 @@ import { MachineForm } from '@machines/drawer/machine-form/machine-form';
 @Component({
   imports: [ActionDialog, LoadingSpinner, MachineForm],
   host: { class: 'contents' },
-  providers: [MachinesApi, MachineDrawerStore],
+  providers: [MachinesApi, DraftsApi, MachineDrawerStore],
   selector: 'hf-machine-drawer-host',
   templateUrl: './machine-drawer-host.html',
 })

@@ -1,10 +1,12 @@
 import { HttpContext, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { computed, inject, linkedSignal } from '@angular/core';
+import { computed, effect, inject, linkedSignal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import {
   patchState,
   signalStore,
   withComputed,
+  withHooks,
   withLinkedState,
   withMethods,
   withProps,
@@ -13,9 +15,10 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { EMPTY, exhaustMap, type Observable, pipe, tap } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { EMPTY, exhaustMap, type Observable, of, pipe, tap } from 'rxjs';
+import { catchError, concatMap } from 'rxjs/operators';
 
+import { ActionStore } from '@shared/actions/action.store';
 import { hasFormChanges } from '@shared/forms/form-changes';
 import { httpErrorMessageKey } from '@shared/http/http-error-message';
 import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
@@ -26,11 +29,15 @@ import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 
 import type { Machine } from '@machines/machine';
+import { DraftState } from '@machines/drafts/draft';
+import { DraftActionType } from '@machines/drafts/draft-actions';
+import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachinesApi } from '@machines/machines-api';
 import { MetricDefinitionsApi } from '@machines/metrics/metric-definitions-api';
 import { metricFormSchema, type MetricFormValue } from '@machines/metrics/metric-form/metric-form-schema';
 import { MetricUnitsApi } from '@machines/metrics/metric-units-api';
 import {
+  appliedDraftIds,
   buildExamplePayload,
   EMPTY_METRIC_VALUE,
   firstItemId,
@@ -41,9 +48,11 @@ import {
   type MetricItem,
   netChanges,
   newLocalId,
+  stageMetricDrafts,
   toApplyBody,
 } from '@machines/metrics/metrics-page.store.utils';
 
+const MACHINES_URL = '/machines';
 const SUCCESS_SUMMARY_KEY = 'METRICS.TOASTS.SUCCESS';
 const ERROR_SUMMARY_KEY = 'ERRORS.SUMMARY';
 
@@ -56,10 +65,14 @@ interface PageState {
   machineId: string | null;
   machine: Machine | null;
   newCount: number;
-  draft: MetricFormValue | null;
-  isDraftValid: boolean;
+  formValue: MetricFormValue | null;
+  isFormValid: boolean;
   isExampleOpen: boolean;
+  /** Set while the page leaves after an apply or a confirmed discard: the leave guard does not ask. */
+  isLeaving: boolean;
   isApplying: boolean;
+  /** The attempt whose metric drafts the page stages, or `null` for a visit without drafts. */
+  draftAttemptId: string | null;
 }
 
 export const MetricsPageStore = signalStore(
@@ -67,15 +80,20 @@ export const MetricsPageStore = signalStore(
     machineId: null,
     machine: null,
     newCount: 0,
-    draft: null,
-    isDraftValid: false,
+    formValue: null,
+    isFormValid: false,
     isExampleOpen: false,
+    isLeaving: false,
     isApplying: false,
+    draftAttemptId: null,
   }),
   withProps(() => ({
     _auth: inject(AuthStore),
     _api: inject(MetricDefinitionsApi),
     _unitsApi: inject(MetricUnitsApi),
+    _draftsApi: inject(DraftsApi),
+    _actions: inject(ActionStore),
+    _router: inject(Router),
     _machinesApi: inject(MachinesApi),
     _confirmation: inject(ConfirmationService),
     _messages: inject(MessageService),
@@ -92,6 +110,15 @@ export const MetricsPageStore = signalStore(
     units: rxResource({
       params: () => store.machineId() ?? undefined,
       stream: () => store._unitsApi.getUnits(),
+    }),
+    drafts: rxResource({
+      params: () => {
+        const machineId = store.machineId();
+        const attemptId = store.draftAttemptId();
+        return machineId === null || attemptId === null ? undefined : attemptId;
+      },
+      stream: ({ params }) =>
+        store._draftsApi.listForAttempt(params, { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }),
     }),
   })),
   withComputed((store) => ({
@@ -114,9 +141,7 @@ export const MetricsPageStore = signalStore(
     revision: computed(() => (store.definitions.hasValue() ? store.definitions.value().revision : 0)),
     hasChanges: computed(() => hasNetChanges(store.items())),
     examplePayload: computed((): string | null =>
-      store.isExampleOpen() && store.definitions.hasValue()
-        ? buildExamplePayload(store.definitions.value().definitions, store._clock.now().toString())
-        : null,
+      store.isExampleOpen() ? buildExamplePayload(store.items(), store._clock.now().toString()) : null,
     ),
     selected: computed(
       (): MetricItem | null => store.items().find((item) => item.localId === store.selectedId()) ?? null,
@@ -159,16 +184,16 @@ export const MetricsPageStore = signalStore(
     }),
   })),
   withComputed((store) => ({
-    isDraftChanged: computed(() => {
+    isFormChanged: computed(() => {
       const initial = store.editInitial();
-      const draft = store.draft();
-      return initial !== null && draft !== null && hasFormChanges(metricFormSchema, initial, draft);
+      const current = store.formValue();
+      return initial !== null && current !== null && hasFormChanges(metricFormSchema, initial, current);
     }),
   })),
   withComputed((store) => ({
-    canDone: computed(() => store.isDraftValid() && store.isDraftChanged()),
+    canDone: computed(() => store.isFormValid() && store.isFormChanged()),
     canApply: computed(() => store.hasChanges() && store.edit() === null && !store.isApplying()),
-    hasPendingWork: computed(() => store.hasChanges() || store.isDraftChanged()),
+    hasPendingWork: computed(() => store.hasChanges() || store.isFormChanged()),
   })),
   withMethods((store) => {
     const showError = (detailKey: string): void => {
@@ -192,8 +217,8 @@ export const MetricsPageStore = signalStore(
       });
     };
 
-    const guardDraft = (action: () => void): void => {
-      if (store.isDraftChanged()) {
+    const guardForm = (action: () => void): void => {
+      if (store.isFormChanged()) {
         confirmLoss('METRICS.CONFIRM.DRAFT_MESSAGE', action);
       } else {
         action();
@@ -201,11 +226,40 @@ export const MetricsPageStore = signalStore(
     };
 
     const closeForm = (): void => {
-      patchState(store, { edit: null, draft: null, isDraftValid: false });
+      patchState(store, { edit: null, formValue: null, isFormValid: false });
     };
 
     const replaceItem = (localId: string, change: (item: MetricItem) => MetricItem): void => {
       patchState(store, { items: store.items().map((item) => (item.localId === localId ? change(item) : item)) });
+    };
+
+    /** Marks the drafts of the applied items. A failed mark shows a toast and leaves those drafts pending. */
+    const markApplied$ = (draftIds: readonly string[]): Observable<void> => {
+      if (draftIds.length === 0) {
+        return of(undefined);
+      }
+      return store._draftsApi.markApplied(draftIds, { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(
+        tap(() => store._actions.complete(DraftActionType.Changed)),
+        catchError(() => {
+          showError('DRAFTS.METRICS.MARK_FAILED');
+          return of(undefined);
+        }),
+      );
+    };
+
+    /**
+     * Goes back to the page and the dialog that opened this review. The user has already decided (an apply or a
+     * confirmed discard), so `isLeaving` lets the leave guard pass: the pending drafts are staged again after a
+     * reload and would make it ask a second time. Does nothing without a return path.
+     */
+    const leaveToReturnPath = (): void => {
+      const url = store._actions.returnPath()?.url;
+      if (url !== undefined) {
+        patchState(store, { isLeaving: true });
+        void store._router.navigateByUrl(url).finally(() => {
+          patchState(store, { isLeaving: false });
+        });
+      }
     };
 
     const apply = rxMethod<void>(
@@ -219,6 +273,7 @@ export const MetricsPageStore = signalStore(
               context: new HttpContext().set(SKIP_ERROR_TOAST, true),
             })
             .pipe(
+              concatMap(() => markApplied$(appliedDraftIds(changes))),
               tap(() => {
                 store._messages.add({
                   severity: 'success',
@@ -227,6 +282,8 @@ export const MetricsPageStore = signalStore(
                 });
                 patchState(store, { isApplying: false });
                 store.definitions.reload();
+                store.drafts.reload();
+                leaveToReturnPath();
               }),
               catchError((error: unknown) => {
                 const status = error instanceof HttpErrorResponse ? error.status : 0;
@@ -259,9 +316,10 @@ export const MetricsPageStore = signalStore(
               machineId,
               machine,
               newCount: 0,
-              draft: null,
-              isDraftValid: false,
+              formValue: null,
+              isFormValid: false,
               isExampleOpen: false,
+              isLeaving: false,
             });
           }),
         );
@@ -269,46 +327,58 @@ export const MetricsPageStore = signalStore(
       reload(): void {
         store.definitions.reload();
       },
+      /** Sets the attempt whose pending metric drafts the page stages as proposed items. */
+      loadDrafts(attemptId: string | null): void {
+        patchState(store, { draftAttemptId: attemptId });
+      },
       select(localId: string): void {
         if (localId !== store.selectedId()) {
-          guardDraft(() => {
+          guardForm(() => {
             closeForm();
             patchState(store, { selectedId: localId });
           });
         }
       },
       startAdd(): void {
-        guardDraft(() => {
-          patchState(store, { edit: { localId: null }, draft: null, isDraftValid: false, selectedId: null });
+        guardForm(() => {
+          patchState(store, { edit: { localId: null }, formValue: null, isFormValid: false, selectedId: null });
         });
       },
       startEdit(): void {
         const selectedId = store.selectedId();
         if (selectedId !== null) {
-          patchState(store, { edit: { localId: selectedId }, draft: null, isDraftValid: false });
+          patchState(store, { edit: { localId: selectedId }, formValue: null, isFormValid: false });
         }
       },
       cancelEdit(): void {
         closeForm();
       },
-      setDraft(draft: MetricFormValue): void {
-        patchState(store, { draft });
+      setFormValue(formValue: MetricFormValue): void {
+        patchState(store, { formValue });
       },
-      setDraftValidity(isDraftValid: boolean): void {
-        patchState(store, { isDraftValid });
+      setFormValidity(isFormValid: boolean): void {
+        patchState(store, { isFormValid });
       },
       done(): void {
         const edit = store.edit();
-        const draft = store.draft();
-        if (edit === null || draft === null || !store.canDone()) {
+        const current = store.formValue();
+        if (edit === null || current === null || !store.canDone()) {
           return;
         }
         if (edit.localId === null) {
           const localId = newLocalId(store.newCount());
-          const item: MetricItem = { localId, savedId: null, saved: null, value: draft, isDeleted: false };
+          const item: MetricItem = {
+            localId,
+            savedId: null,
+            saved: null,
+            value: current,
+            isDeleted: false,
+            draftId: null,
+            sourceLocation: null,
+          };
           patchState(store, { items: [...store.items(), item], newCount: store.newCount() + 1, selectedId: localId });
         } else {
-          replaceItem(edit.localId, (item) => ({ ...item, value: draft }));
+          replaceItem(edit.localId, (item) => ({ ...item, value: current }));
           patchState(store, { itemErrors: { ...store.itemErrors(), [edit.localId]: [] } });
         }
         closeForm();
@@ -336,7 +406,12 @@ export const MetricsPageStore = signalStore(
           closeForm();
           patchState(store, { newCount: 0 });
           store.definitions.reload();
+          leaveToReturnPath();
         });
+      },
+      /** The page **Back** button: returns to the dialog that opened the review, else to the machines. */
+      back(): void {
+        void store._router.navigateByUrl(store._actions.returnPath()?.url ?? MACHINES_URL);
       },
       apply(): void {
         if (store.canApply()) {
@@ -350,5 +425,38 @@ export const MetricsPageStore = signalStore(
         patchState(store, { isExampleOpen: false });
       },
     };
+  }),
+  withHooks({
+    onInit(store) {
+      let stagedDefinitions: unknown = null;
+      let stagedDrafts: unknown = null;
+      effect(() => {
+        const definitions = store.definitionsValue();
+        const attemptId = store.draftAttemptId();
+        const machineId = store.machineId();
+        const isSettled =
+          store.definitions.status() === 'resolved' && store.drafts.status() === 'resolved' && store.units.hasValue();
+        const drafts = isSettled ? store.drafts.value() : undefined;
+        if (
+          definitions === undefined ||
+          drafts === undefined ||
+          attemptId === null ||
+          machineId === null ||
+          (stagedDefinitions === definitions && stagedDrafts === drafts)
+        ) {
+          return;
+        }
+        stagedDefinitions = definitions;
+        stagedDrafts = drafts;
+        const pending = drafts.groups
+          .filter((group) => group.machineId === machineId)
+          .flatMap((group) => group.metrics)
+          .filter((metric) => metric.state === DraftState.Pending);
+        untracked(() => {
+          const staged = stageMetricDrafts(store.items(), store.newCount(), pending, store.units.value());
+          patchState(store, { items: staged.items, newCount: staged.newCount });
+        });
+      });
+    },
   }),
 );

@@ -14,6 +14,7 @@ export enum MachineColumn {
   State = 'state',
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
+  Drafts = 'pendingDraftCount',
 }
 
 /** The columns that the backend sorts by. The state column never sorts. */
@@ -33,6 +34,7 @@ export interface Machine {
   readonly description: string | null;
   readonly createdAt: string;
   readonly updatedAt: string | null;
+  readonly pendingDraftCount: number;
 }
 
 export interface MachineBody {
@@ -55,6 +57,8 @@ export interface MachineFilter {
   readonly states: readonly MachineState[];
   readonly createdAt: PlainDateRange;
   readonly updatedAt: PlainDateRange;
+  /** `null` lists all machines; `true` lists the machines with pending drafts; `false` lists the others. */
+  readonly hasPendingDrafts: boolean | null;
 }
 
 export type MachineGridState = GridQueryState<MachineFilter, MachineSortColumn>;
@@ -65,6 +69,7 @@ export interface MachineFilterBody {
   readonly states?: SetFilterBody<MachineState>;
   readonly createdAt?: DateRangeBody;
   readonly updatedAt?: DateRangeBody;
+  readonly hasPendingDrafts?: boolean;
 }
 
 export type SearchMachinesBody = GridRequestBody<MachineFilterBody, MachineSortColumn>;

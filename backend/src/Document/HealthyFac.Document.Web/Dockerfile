@@ -13,6 +13,9 @@ COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac
 COPY src/Document/HealthyFac.Document.Domain/*.csproj          src/Document/HealthyFac.Document.Domain/
 COPY src/Document/HealthyFac.Document.Application/*.csproj     src/Document/HealthyFac.Document.Application/
 COPY src/Core/HealthyFac.Core.Messaging/*.csproj                 src/Core/HealthyFac.Core.Messaging/
+COPY src/Document/HealthyFac.Document.Messaging/*.csproj       src/Document/HealthyFac.Document.Messaging/
+COPY src/Document/HealthyFac.Document.Contracts/*.csproj       src/Document/HealthyFac.Document.Contracts/
+COPY src/Insights/HealthyFac.Insights.Messaging/*.csproj       src/Insights/HealthyFac.Insights.Messaging/
 COPY src/Document/HealthyFac.Document.Infrastructure/*.csproj  src/Document/HealthyFac.Document.Infrastructure/
 COPY src/Document/HealthyFac.Document.Web/*.csproj             src/Document/HealthyFac.Document.Web/
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj          src/Shared/HealthyFac.Shared.Domain/
@@ -53,15 +56,16 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0.12-noble-chiseled-extra AS final
 WORKDIR /app
 
 # Kestrel binds 8080 (the API) and 8090 (the health endpoints), because a non-root user cannot bind a privileged
-# port. Keep 8090 equal to HealthEndpoints:Port in appsettings.json.
-ENV ASPNETCORE_HTTP_PORTS=8080;8090 \
+# port. Keep 8090 equal to HealthEndpoints:Port and 8081 equal to Grpc:Port in appsettings.json. Port 8081 serves
+# gRPC (HTTP/2 without TLS) inside the Compose network only; Compose publishes no host port for it.
+ENV ASPNETCORE_HTTP_PORTS=8080;8090;8081 \
     DOTNET_NOLOGO=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 COPY --from=publish --chown=$APP_UID:$APP_UID /app ./
 COPY --from=publish --chown=$APP_UID:$APP_UID /probe ./probe/
 
-EXPOSE 8080 8090
+EXPOSE 8080 8090 8081
 
 # The chiseled images define APP_UID as a non-root account. The app never runs as root.
 USER $APP_UID

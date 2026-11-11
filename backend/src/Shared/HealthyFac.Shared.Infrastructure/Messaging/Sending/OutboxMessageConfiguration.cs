@@ -34,8 +34,7 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         builder.Property(message => message.Error)
             .HasMaxLength(MessagingPersistenceConstants.ErrorMaxLength);
 
-        builder.Property<uint>(PersistenceConstants.ConcurrencyToken)
-            .IsRowVersion();
+        builder.ConfigureVersioned();
 
         builder.HasIndex(message => message.NextAttemptOn)
             .HasFilter(MessagingPersistenceConstants.PendingFilter);

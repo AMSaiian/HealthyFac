@@ -25,9 +25,17 @@ public static class FileErrors
     public static readonly string LinkIdsTooMany =
         $"The request must hold at most {FileValidationConstants.LinkIdsMaxCount} file IDs.";
 
+    public const string LinkAudienceInvalid = "The link audience is not valid.";
     public const string DescriptionTooLong = "The description is too long.";
     public const string CompanyIdRequired = "The company is required.";
     public const string MachineIdRequired = "The machine is required.";
+    public const string MachineFilterIdsRequired = "The machine filter needs its machine IDs.";
+    public const string MachineFilterEmpty = "The machine filter needs a machine or the option for untied files.";
+    public const string IngestStateFilterStatesRequired = "The ingest state filter needs its states.";
+    public const string IngestStateUnknown = "The ingest state filter holds a state that does not exist.";
+
+    public const string IngestStateFilterEmpty =
+        "The ingest state filter needs a state or the option for never ingested.";
 
     public static readonly string NameTooLong =
         $"The file name must have at most {FileValidationConstants.Text.FileNameMaxLength} characters.";

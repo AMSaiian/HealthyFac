@@ -14,6 +14,7 @@ export function toSearchBody(state: MachineGridState, timeZoneId: string): Searc
       states: setFilter(filter.states),
       createdAt: dateRangeFilter(filter.createdAt, timeZoneId),
       updatedAt: dateRangeFilter(filter.updatedAt, timeZoneId),
+      hasPendingDrafts: filter.hasPendingDrafts ?? undefined,
     },
   };
 }

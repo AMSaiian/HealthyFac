@@ -1,13 +1,17 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
+import { ActionStore } from '@shared/actions/action.store';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { AuthStore } from '@shared/security/auth.store';
 import { MachineState } from '@machines/machine';
+import { DraftActionType } from '@machines/drafts/draft-actions';
+import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachinesApi } from '@machines/machines-api';
 import {
   type MetricDefinition,
@@ -29,6 +33,7 @@ const MACHINE = {
   description: null,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: null,
+  pendingDraftCount: 0,
 };
 
 function definition(id: string, key: string): MetricDefinition {
@@ -63,6 +68,62 @@ const NEW_VALUE: MetricFormValue = {
   states: [],
 };
 
+const DRAFTS = {
+  groups: [
+    {
+      machineId: 'machine-1',
+      machineName: 'Lathe',
+      machineDraft: null,
+      metrics: [
+        {
+          id: 'draft-key',
+          state: 'pending',
+          sourceLocation: 'page 1',
+          key: 'one.key',
+          name: 'Proposed one',
+          description: null,
+          valueKind: 'numeric',
+          quantityKindName: null,
+          unitName: null,
+          min: null,
+          max: 50,
+          states: null,
+        },
+        {
+          id: 'draft-new',
+          state: 'pending',
+          sourceLocation: 'page 2',
+          key: 'fresh.key',
+          name: 'Fresh',
+          description: null,
+          valueKind: 'boolean',
+          quantityKindName: null,
+          unitName: null,
+          min: null,
+          max: null,
+          states: null,
+        },
+        {
+          id: 'draft-old',
+          state: 'applied',
+          sourceLocation: null,
+          key: 'old.key',
+          name: 'Old',
+          description: null,
+          valueKind: 'boolean',
+          quantityKindName: null,
+          unitName: null,
+          min: null,
+          max: null,
+          states: null,
+        },
+      ],
+      statuses: [],
+    },
+    { machineId: 'machine-2', machineName: 'Press', machineDraft: null, metrics: [], statuses: [] },
+  ],
+};
+
 const IMAGE_ID = 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 type Spy = ReturnType<typeof vi.fn>;
@@ -70,23 +131,37 @@ type Spy = ReturnType<typeof vi.fn>;
 interface Setup {
   store: InstanceType<typeof MetricsPageStore>;
   api: { getDefinitions: Spy; apply: Spy; getSchema: Spy };
+  draftsApi: { listForAttempt: Spy; markApplied: Spy };
+  actions: { complete: Spy; returnPath: WritableSignal<{ url: string } | null> };
   resolveLinks: Spy;
   messages: { add: Spy };
   confirmation: { confirm: Spy };
 }
 
-async function setup(definitions: MetricDefinitionsResponse = LOADED, apply?: Spy): Promise<Setup> {
+async function setup(
+  definitions: MetricDefinitionsResponse = LOADED,
+  apply?: Spy,
+  markApplied?: Spy,
+  overrides: { getDefinitions?: Spy; listForAttempt?: Spy } = {},
+): Promise<Setup> {
   const messages = { add: vi.fn() };
   const confirmation = { confirm: vi.fn((options: { accept: () => void }) => options.accept()) };
   const resolveLinks = vi.fn(() => of(new Map([[IMAGE_ID, 'https://api/blob?sig=x']])));
   const api = {
-    getDefinitions: vi.fn(() => of(definitions)),
+    getDefinitions: overrides.getDefinitions ?? vi.fn(() => of(definitions)),
     apply: apply ?? vi.fn(() => of({ revision: 4 })),
     getSchema: vi.fn(() => of({ revision: 3, schema: {} })),
   };
+  const draftsApi = {
+    listForAttempt: overrides.listForAttempt ?? vi.fn(() => of(DRAFTS)),
+    markApplied: markApplied ?? vi.fn(() => of(undefined)),
+  };
+  const actions = { complete: vi.fn(), returnPath: signal<{ url: string } | null>(null) };
   TestBed.configureTestingModule({
     providers: [
       MetricsPageStore,
+      { provide: DraftsApi, useValue: draftsApi },
+      { provide: ActionStore, useValue: actions },
       { provide: MetricDefinitionsApi, useValue: api },
       { provide: MetricUnitsApi, useValue: { getUnits: () => of({ kinds: [] }) } },
       { provide: MachinesApi, useValue: { get: () => of(MACHINE) } },
@@ -101,13 +176,13 @@ async function setup(definitions: MetricDefinitionsResponse = LOADED, apply?: Sp
   store.openMachine(MACHINE.id).subscribe();
   TestBed.tick();
   await TestBed.inject(ApplicationRef).whenStable();
-  return { store, api, messages, confirmation, resolveLinks };
+  return { store, api, draftsApi, actions, messages, confirmation, resolveLinks };
 }
 
 function stageNew(store: Setup['store']): void {
   store.startAdd();
-  store.setDraft(NEW_VALUE);
-  store.setDraftValidity(true);
+  store.setFormValue(NEW_VALUE);
+  store.setFormValidity(true);
   store.done();
 }
 
@@ -152,8 +227,8 @@ describe('MetricsPageStore', () => {
   it('done_WithUnchangedDraft_StagesNothing', async () => {
     const { store } = await setup();
     store.startEdit();
-    store.setDraft(store.editInitial()!);
-    store.setDraftValidity(true);
+    store.setFormValue(store.editInitial()!);
+    store.setFormValidity(true);
 
     store.done();
 
@@ -195,7 +270,7 @@ describe('MetricsPageStore', () => {
     const { store, confirmation } = await setup();
     confirmation.confirm.mockImplementation(() => undefined);
     store.startEdit();
-    store.setDraft({ ...store.editInitial()!, name: 'Changed' });
+    store.setFormValue({ ...store.editInitial()!, name: 'Changed' });
 
     store.select('b');
 
@@ -206,8 +281,8 @@ describe('MetricsPageStore', () => {
   it('select_OfPreviouslySelectedItemWhileAdding_AsksAndShowsItOnAccept', async () => {
     const { store, confirmation } = await setup();
     store.startAdd();
-    store.setDraft(NEW_VALUE);
-    store.setDraftValidity(true);
+    store.setFormValue(NEW_VALUE);
+    store.setFormValidity(true);
 
     store.select('a');
 
@@ -229,7 +304,7 @@ describe('MetricsPageStore', () => {
   it('select_WithUnchangedOpenForm_SwitchesWithoutAsking', async () => {
     const { store, confirmation } = await setup();
     store.startEdit();
-    store.setDraft(store.editInitial()!);
+    store.setFormValue(store.editInitial()!);
 
     store.select('b');
 
@@ -297,5 +372,169 @@ describe('MetricsPageStore', () => {
     store.apply();
 
     expect(api.apply).not.toHaveBeenCalled();
+  });
+
+  it('loadDrafts_WithAttempt_StagesTheChangeAndTheNewItemOfThatMachineOnly', async () => {
+    const { store, draftsApi } = await setup();
+
+    store.loadDrafts('attempt-1');
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    expect(draftsApi.listForAttempt).toHaveBeenCalledWith('attempt-1', expect.anything());
+    expect(store.items().map((item) => [item.localId, item.draftId])).toEqual([
+      ['a', 'draft-key'],
+      ['b', null],
+      ['new-0', 'draft-new'],
+    ]);
+    expect(store.items()[0].value).toMatchObject({ name: 'Proposed one', max: 50 });
+    expect(store.hasChanges()).toBe(true);
+  });
+
+  it('apply_WithStagedDrafts_MarksTheirDraftsAfterTheApplyAndCompletesChanged', async () => {
+    const { store, draftsApi, actions } = await setup();
+    store.loadDrafts('attempt-1');
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    store.apply();
+
+    expect(draftsApi.markApplied).toHaveBeenCalledWith(['draft-new', 'draft-key'], expect.anything());
+    expect(actions.complete).toHaveBeenCalledWith(DraftActionType.Changed);
+  });
+
+  it('apply_WhenTheApplyFails_MarksNoDraft', async () => {
+    const apply = vi.fn(() =>
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict, statusText: 'Conflict' })),
+    );
+    const { store, draftsApi } = await setup(LOADED, apply);
+    store.loadDrafts('attempt-1');
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    store.apply();
+
+    expect(draftsApi.markApplied).not.toHaveBeenCalled();
+  });
+
+  it('apply_WhenTheMarkFails_ShowsAToastAndKeepsTheApplyResult', async () => {
+    const markApplied = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500 })));
+    const { store, messages } = await setup(LOADED, undefined, markApplied);
+    store.loadDrafts('attempt-1');
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    store.apply();
+
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'DRAFTS.METRICS.MARK_FAILED' }));
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
+  });
+
+  it('apply_WhenTheDefinitionsReloadBeforeTheDrafts_DoesNotStageTheAppliedDraftsAgain', async () => {
+    const reloadedDefinitions = new Subject<MetricDefinitionsResponse>();
+    const reloadedDrafts = new Subject<typeof DRAFTS>();
+    const getDefinitions = vi.fn().mockReturnValueOnce(of(LOADED)).mockReturnValue(reloadedDefinitions);
+    const listForAttempt = vi.fn().mockReturnValueOnce(of(DRAFTS)).mockReturnValue(reloadedDrafts);
+    const { store } = await setup(LOADED, undefined, undefined, { getDefinitions, listForAttempt });
+    store.loadDrafts('attempt-1');
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    store.apply();
+    TestBed.tick();
+    reloadedDefinitions.next({ ...LOADED, revision: 4 });
+    await new Promise((resolve) => setTimeout(resolve));
+    TestBed.tick();
+
+    expect(store.items().map((item) => item.draftId)).toEqual([null, null]);
+
+    reloadedDrafts.next({
+      groups: DRAFTS.groups.map((group) => ({
+        ...group,
+        metrics: group.metrics.map((metric) => ({ ...metric, state: 'applied' })),
+      })),
+    });
+    await new Promise((resolve) => setTimeout(resolve));
+    TestBed.tick();
+
+    expect(store.items().map((item) => item.draftId)).toEqual([null, null]);
+    expect(store.hasChanges()).toBe(false);
+  });
+
+  it('back_WithoutReturnPath_GoesToTheMachines', async () => {
+    const { store } = await setup();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    store.back();
+
+    expect(navigate).toHaveBeenCalledWith('/machines');
+  });
+
+  it('back_WithReturnPath_GoesToTheStoredUrl', async () => {
+    const { store, actions } = await setup();
+    actions.returnPath.set({ url: '/files' });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+
+    store.back();
+
+    expect(navigate).toHaveBeenCalledWith('/files');
+  });
+
+  it('apply_WithReturnPath_GoesBackToTheStoredUrlAndTheGuardDoesNotAskWhileLeaving', async () => {
+    const { store, actions } = await setup(LOADED);
+    actions.returnPath.set({ url: '/files' });
+    let isLeavingAtNavigation = false;
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(() => {
+      isLeavingAtNavigation = store.isLeaving();
+      return Promise.resolve(true);
+    });
+    stageNew(store);
+
+    store.apply();
+    TestBed.tick();
+
+    expect(navigate).toHaveBeenCalledWith('/files');
+    expect(isLeavingAtNavigation).toBe(true);
+  });
+
+  it('apply_WithReturnPathAndAFailure_StaysOnThePage', async () => {
+    const apply = vi.fn(() =>
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict, statusText: 'Conflict' })),
+    );
+    const { store, actions } = await setup(LOADED, apply);
+    actions.returnPath.set({ url: '/files' });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    stageNew(store);
+
+    store.apply();
+    TestBed.tick();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('requestDiscard_WithReturnPath_GoesBackToTheStoredUrlAtOnce', async () => {
+    const { store, actions } = await setup(LOADED);
+    actions.returnPath.set({ url: '/files' });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    stageNew(store);
+
+    store.requestDiscard();
+
+    expect(navigate).toHaveBeenCalledWith('/files');
+  });
+
+  it('requestDiscard_WithoutReturnPath_StaysOnThePage', async () => {
+    const { store } = await setup();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    stageNew(store);
+
+    store.requestDiscard();
+
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

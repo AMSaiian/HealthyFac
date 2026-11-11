@@ -16,6 +16,18 @@ public static class StatusDefinitionApiFixtureExtensions
             $"{StatusDefinitionApiTestData.MachinesPath}/{encryptedMachineId}"
             + $"/{StatusDefinitionApiTestData.StatusDefinitionsSegment}";
 
+        public string ApplyStatusDefinitionsBody(params string[] codes) =>
+            new JsonObject
+            {
+                [propertyName: "items"] = new JsonArray(
+                    codes.Select(code => (JsonNode)new JsonObject
+                        {
+                            [propertyName: "code"] = code,
+                            [propertyName: "severity"] = StatusDefinitionApiTestData.Severity,
+                        })
+                        .ToArray()),
+            }.ToJsonString();
+
         public string CreateStatusDefinitionBody(string code) =>
             new JsonObject
             {

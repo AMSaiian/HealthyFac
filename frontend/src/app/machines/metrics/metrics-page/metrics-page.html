@@ -1,16 +1,17 @@
 <header class="flex flex-none items-center justify-between gap-2">
   <div class="flex min-w-0 items-center gap-2">
-    <a
+    <button
       pButton
-      routerLink="/machines"
+      type="button"
       severity="secondary"
       iconOnly
-      [text]="true"
+      [outlined]="true"
       [rounded]="true"
       [attr.aria-label]="'METRICS.BACK' | translate"
+      (click)="store.back()"
     >
       <i class="pi pi-arrow-left"></i>
-    </a>
+    </button>
     <h1 class="min-w-0 truncate text-2xl font-bold">{{ 'METRICS.TITLE' | translate }} {{ store.machine()?.name }}</h1>
   </div>
   <div class="flex flex-none items-center gap-2">
@@ -107,8 +108,8 @@
         [isUnitsLoading]="store.units.isLoading()"
         [isDoneDisabled]="!store.canDone()"
         [doneDisabledReason]="doneDisabledReason()"
-        (valueChange)="store.setDraft($event)"
-        (validityChange)="store.setDraftValidity($event)"
+        (valueChange)="store.setFormValue($event)"
+        (validityChange)="store.setFormValidity($event)"
         (done)="store.done()"
         (cancelled)="store.cancelEdit()"
       />
@@ -135,6 +136,7 @@
   <hf-metric-example-dialog
     [revision]="store.revision()"
     [text]="store.examplePayload()"
+    [isPreview]="store.hasChanges()"
     (closed)="store.closeExample()"
   />
 }

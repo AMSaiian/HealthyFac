@@ -13,6 +13,15 @@ public static class ConventionConstants
             ["HealthyFac.Shared.Application", "HealthyFac.Shared.Domain"];
     }
 
+    public static class Grpc
+    {
+        public const string ContractsAssemblyNamePattern = @"^HealthyFac\.[A-Za-z]+\.Contracts$";
+        public const string SharedWebAssemblyName = "HealthyFac.Shared.Web";
+        public const string SettingsFileName = "appsettings.json";
+        public const string SettingsSection = "Grpc";
+        public const string SettingsPort = "Port";
+    }
+
     public static class Options
     {
         public const string TypeSuffix = "Options";

@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
+using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
@@ -32,6 +33,12 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
     public DbSet<Machine> Machines => Set<Machine>();
 
     public DbSet<MachineStateHistory> MachineStateHistories => Set<MachineStateHistory>();
+
+    public DbSet<MachineDraft> MachineDrafts => Set<MachineDraft>();
+
+    public DbSet<MetricDefinitionDraft> MetricDefinitionDrafts => Set<MetricDefinitionDraft>();
+
+    public DbSet<StatusDefinitionDraft> StatusDefinitionDrafts => Set<StatusDefinitionDraft>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
@@ -70,6 +77,7 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
         configurationBuilder.HaveEnumerationConversion<MachineState>();
         configurationBuilder.HaveEnumerationConversion<EmployeeStatus>();
         configurationBuilder.HaveEnumerationConversion<RoleCode>();
+        configurationBuilder.HaveEnumerationConversion<DraftState>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

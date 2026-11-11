@@ -8,7 +8,8 @@
       "applicationUrl": "http://localhost:5071;http://localhost:5072",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "HealthEndpoints__Port": "5072"
+        "HealthEndpoints__Port": "5072",
+        "Grpc__Port": "5073"
       }
     }
   }

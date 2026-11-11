@@ -89,6 +89,36 @@
                         (valueChange)="filterConstraint.value = $event"
                       />
                     }
+                    @case (FileColumn.Machine) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="machineFilterOptions()"
+                        [filter]="true"
+                        (onFilter)="machineSearch.emit($event.filter ?? '')"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        [placeholder]="'FILES.FILTERS.MACHINE_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                    @case (FileColumn.Ingest) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="ingestFilterOptions()"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        [placeholder]="'FILES.FILTERS.INGEST_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
                   }
                 </ng-template>
               </p-column-filter>
@@ -106,7 +136,7 @@
           type="button"
           iconOnly
           severity="secondary"
-          [text]="true"
+          [outlined]="true"
           [rounded]="true"
           [attr.aria-label]="'FILES.COLUMNS_CHOOSER' | translate"
           (click)="chooser.toggle($event)"
@@ -151,6 +181,19 @@
                   >{{ file.description }}</span
                 >
               }
+              @case (FileColumn.Machine) {
+                <span
+                  class="block max-w-xs truncate"
+                  [title]="file.machineName ?? ''"
+                  >{{ file.machineName }}</span
+                >
+              }
+              @case (FileColumn.Ingest) {
+                <p-tag
+                  [severity]="ingestSeverity(file.ingestState)"
+                  [value]="ingestLabelKey(file.ingestState) | translate"
+                />
+              }
             }
           }
         </td>
@@ -168,7 +211,7 @@
             type="button"
             iconOnly
             severity="secondary"
-            [text]="true"
+            [outlined]="true"
             [rounded]="true"
             [attr.aria-label]="'FILES.ROW_ACTIONS' | translate"
             (click)="openMenu($event, file, menu)"
@@ -204,7 +247,7 @@
   appendTo="body"
 >
   <div class="flex flex-col gap-2">
-    @for (column of allColumns; track column) {
+    @for (column of allColumns(); track column) {
       <div class="flex items-center gap-2">
         <p-checkbox
           [binary]="true"

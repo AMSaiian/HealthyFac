@@ -12,6 +12,7 @@ import { providePrimeNG } from 'primeng/config';
 import { routes } from '@app/app.routes';
 import { APP_CONFIG, type AppConfig } from '@shared/config/app-config';
 import { FileActionType } from '@files/file-actions';
+import { DraftActionType } from '@machines/drafts/draft-actions';
 import { MachineActionType } from '@machines/machine-actions';
 import { provideActionHosts } from '@shared/actions/action-registry';
 import { AppErrorHandler } from '@shared/errors/app-error-handler';
@@ -72,6 +73,66 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
               import('@files/file-action-payloads'),
             ]);
             return { component: host.FileEditHost, schema: payloads.fileEditActionPayloadSchema };
+          },
+        },
+        {
+          type: MachineActionType.Drafts,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@machines/drafts/list/machine-drafts-host/machine-drafts-host'),
+              import('@machines/drafts/draft-action-payloads'),
+            ]);
+            return { component: host.MachineDraftsHost, schema: payloads.machineDraftsActionPayloadSchema };
+          },
+        },
+        {
+          type: DraftActionType.CompareMachine,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@machines/drafts/compare/draft-compare-host/draft-compare-host'),
+              import('@machines/drafts/draft-action-payloads'),
+            ]);
+            return { component: host.DraftCompareHost, schema: payloads.draftCompareActionPayloadSchema };
+          },
+        },
+        {
+          type: DraftActionType.ReviewStatus,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@machines/drafts/status/status-draft-review-host/status-draft-review-host'),
+              import('@machines/drafts/draft-action-payloads'),
+            ]);
+            return { component: host.StatusDraftReviewHost, schema: payloads.statusDraftReviewActionPayloadSchema };
+          },
+        },
+        {
+          type: FileActionType.Tie,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@files/tie/file-tie-host/file-tie-host'),
+              import('@files/file-action-payloads'),
+            ]);
+            return { component: host.FileTieHost, schema: payloads.fileTieActionPayloadSchema };
+          },
+        },
+        {
+          type: FileActionType.IngestHistory,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@files/ingest/history/ingest-history-host/ingest-history-host'),
+              import('@files/file-action-payloads'),
+            ]);
+            return { component: host.IngestHistoryHost, schema: payloads.ingestHistoryActionPayloadSchema };
+          },
+        },
+        {
+          type: FileActionType.IngestSummary,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@files/ingest/summary/ingest-summary-host/ingest-summary-host'),
+              import('@files/file-action-payloads'),
+            ]);
+            return { component: host.IngestSummaryHost, schema: payloads.ingestSummaryActionPayloadSchema };
           },
         },
         {

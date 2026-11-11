@@ -105,6 +105,19 @@
                       (valueChange)="filterConstraint.value = $event"
                     />
                   }
+                  @case (MachineColumn.Drafts) {
+                    <p-select
+                      class="w-full"
+                      optionLabel="label"
+                      optionValue="value"
+                      appendTo="self"
+                      [options]="draftsOptions()"
+                      [placeholder]="'MACHINES.FILTERS.DRAFTS_PLACEHOLDER' | translate"
+                      [ngModel]="value"
+                      [showClear]="true"
+                      (ngModelChange)="filterConstraint.value = $event"
+                    />
+                  }
                 }
               </ng-template>
             </p-column-filter>
@@ -121,7 +134,7 @@
           type="button"
           iconOnly
           severity="secondary"
-          [text]="true"
+          [outlined]="true"
           [rounded]="true"
           [attr.aria-label]="'MACHINES.COLUMNS_CHOOSER' | translate"
           (click)="chooser.toggle($event)"
@@ -158,6 +171,11 @@
               @case (MachineColumn.UpdatedAt) {
                 {{ machine.updatedAt | localDateTime }}
               }
+              @case (MachineColumn.Drafts) {
+                @if (machine.pendingDraftCount > 0) {
+                  <p-badge [value]="machine.pendingDraftCount" />
+                }
+              }
             }
           }
         </td>
@@ -175,7 +193,7 @@
             type="button"
             iconOnly
             severity="secondary"
-            [text]="true"
+            [outlined]="true"
             [rounded]="true"
             [attr.aria-label]="'MACHINES.ACTIONS' | translate"
             (click)="openMenu($event, machine, menu)"

@@ -10,6 +10,7 @@
     <PackageReference Include="BouncyCastle.Cryptography" />
     <PackageReference Include="DotNetEnv" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" />
+    <PackageReference Include="Grpc.Net.ClientFactory" />
     <PackageReference Include="HtmlSanitizer" />
     <PackageReference Include="linq2db.EntityFrameworkCore" />
     <PackageReference Include="MailKit" />

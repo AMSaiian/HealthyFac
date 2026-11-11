@@ -43,6 +43,8 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .IsUnique()
             .HasFilter(SoftDeleteConstants.NotDeletedFilter);
 
+        builder.ConfigureVersioned();
+
         builder.HasOne<Company>()
             .WithMany()
             .HasForeignKey(machine => machine.CompanyId)

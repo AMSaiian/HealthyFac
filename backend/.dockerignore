@@ -22,3 +22,4 @@
 # Not needed by the image
 tests/
 **/*.md
+!src/Insights/HealthyFac.Insights.Infrastructure/Extraction/Prompts/*.md

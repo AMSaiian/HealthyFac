@@ -48,4 +48,22 @@ public sealed class SearchFilesApiTests(DocumentApiFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task SearchCompanyFiles_WithEncryptedMachineIdInFilter_FindsTheTiedFile()
+    {
+        var machineId = await _fixture.ArrangeMachineAsync();
+        var tied = await _fixture.ArrangeFileAsync(machineId);
+        var untied = await _fixture.ArrangeFileAsync();
+        var claims = _fixture.CreateClaims(ReadPermission);
+        var body = $"{{\"offset\":0,\"limit\":25,\"filter\":{{\"machine\":{{\"machineIds\":[\"{machineId}\"]}}}}}}";
+
+        var response = await _fixture.SendAsync(
+            HttpMethod.Post, $"{UploadFileApiTestData.CompanyFilesPath}/search", claims, body);
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        content.Should().Contain(tied.EncryptedId);
+        content.Should().NotContain(untied.EncryptedId);
+    }
 }

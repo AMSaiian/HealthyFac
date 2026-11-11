@@ -4,7 +4,7 @@
       pButton
       type="button"
       iconOnly
-      [text]="true"
+      [outlined]="true"
       [attr.aria-label]="'SHELL.MENU' | translate"
       [attr.aria-expanded]="shellStore.isMenuOpen()"
       (click)="shellStore.toggleMenu()"
@@ -36,7 +36,7 @@
         pButton
         type="button"
         iconOnly
-        [text]="true"
+        [outlined]="true"
         [attr.aria-label]="'SHELL.THEME_TOGGLE' | translate"
         (click)="themeStore.toggle()"
       >
@@ -47,9 +47,9 @@
           pButton
           type="button"
           iconOnly
-          [text]="true"
+          [outlined]="true"
           [attr.aria-label]="'SHELL.SIGN_OUT' | translate"
-          (click)="authStore.logout()"
+          (click)="shellStore.confirmSignOut()"
         >
           <i class="pi pi-sign-out"></i>
         </button>
