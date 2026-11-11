@@ -1,0 +1,57 @@
+<div
+  class="from-surface-900 to-surface-950 relative flex min-h-dvh items-center justify-center overflow-hidden bg-linear-to-br p-4"
+>
+  <video
+    #video
+    class="absolute inset-0 h-full w-full object-cover"
+    [autoplay]="!isMotionReduced()"
+    muted
+    loop
+    playsinline
+    aria-hidden="true"
+  >
+    <source
+      [src]="videoUrl"
+      type="video/webm"
+    />
+  </video>
+  <div class="absolute inset-0 bg-black/55"></div>
+
+  <main class="bg-surface-0 relative flex w-full max-w-md flex-col gap-4 rounded-xl px-6 py-8 shadow-2xl">
+    <header class="flex items-start justify-between gap-4">
+      <div class="flex flex-col gap-1">
+        <span class="text-primary text-sm font-bold tracking-wide uppercase">{{ i18n.msgStr('brandTitle') }}</span>
+        <h1
+          id="kc-page-title"
+          class="text-surface-900 text-2xl font-bold"
+        >
+          @let header = slots()?.headerNode?.();
+          @if (header) {
+            <ng-container [ngTemplateOutlet]="header" />
+          }
+        </h1>
+      </div>
+      @if (i18n.enabledLanguages.length > 1) {
+        <hf-language-select
+          [languages]="i18n.enabledLanguages"
+          [currentTag]="i18n.currentLanguage.languageTag"
+          [flagBaseUrl]="flagsUrl"
+          (picked)="openLanguage($event)"
+        />
+      }
+    </header>
+
+    @if (shownMessage(); as message) {
+      <p-message
+        [severity]="messageSeverities[message.type]"
+        [attr.role]="message.type === 'error' ? 'alert' : 'status'"
+      >
+        <span [innerHTML]="message.summary | kcSanitize: 'html'"></span>
+      </p-message>
+    }
+
+    <div class="flex flex-col gap-4">
+      <ng-template #pageRef></ng-template>
+    </div>
+  </main>
+</div>

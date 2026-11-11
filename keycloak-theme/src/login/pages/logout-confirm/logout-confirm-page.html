@@ -1,0 +1,37 @@
+@let logoutConfirm = kcContext.logoutConfirm;
+@let client = kcContext.client;
+
+<ng-template #headerNode>{{ i18n.msgStr('logoutConfirmTitle') }}</ng-template>
+
+<div
+  id="kc-logout-confirm"
+  class="flex flex-col gap-4"
+>
+  <p class="text-surface-700">{{ i18n.msgStr('logoutConfirmHeader') }}</p>
+  <form
+    method="post"
+    [action]="kcContext.url.logoutConfirmAction"
+  >
+    <input
+      type="hidden"
+      name="session_code"
+      [value]="logoutConfirm.code"
+    />
+    <button
+      pButton
+      id="kc-logout"
+      name="confirmLogout"
+      type="submit"
+      class="w-full"
+    >
+      {{ i18n.msgStr('doLogout') }}
+    </button>
+  </form>
+  @if (!logoutConfirm.skipLink && client.baseUrl) {
+    <a
+      class="text-primary text-center text-sm font-bold"
+      [href]="client.baseUrl"
+      [innerHTML]="i18n.msgStr('backToApplication') | kcSanitize: 'html'"
+    ></a>
+  }
+</div>

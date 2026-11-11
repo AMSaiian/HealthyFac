@@ -17,6 +17,7 @@ services:
 
   keycloak:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak
+    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/keycloak:local
     ports: !reset []
 
   keycloak-config:

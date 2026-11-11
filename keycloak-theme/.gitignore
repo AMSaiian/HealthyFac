@@ -1,0 +1,8 @@
+/dist
+/build_keycloak
+/.angular
+/node_modules
+/out-tsc
+/keycloakify-dev-resources
+/public/keycloakify-dev-resources
+npm-debug.log

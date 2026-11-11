@@ -1,0 +1,50 @@
+<button
+  pButton
+  type="button"
+  iconOnly
+  aria-haspopup="menu"
+  [text]="true"
+  [attr.aria-label]="currentLabel()"
+  (click)="menu.toggle($event)"
+>
+  @if (currentFlagUrl(); as flagUrl) {
+    <span class="relative block h-4 w-6 flex-none">
+      <img
+        class="rounded-sm object-cover"
+        fill
+        [ngSrc]="flagUrl"
+        alt=""
+      />
+    </span>
+  } @else {
+    <span>{{ currentLabel() }}</span>
+  }
+</button>
+<p-menu
+  #menu
+  appendTo="body"
+  [popup]="true"
+  [model]="items()"
+>
+  <ng-template
+    #item
+    let-item
+  >
+    <div class="p-menu-item-link flex items-center gap-2 px-3 py-2">
+      @if (item.state.flagUrl) {
+        <span class="relative block h-4 w-6 flex-none">
+          <img
+            class="rounded-sm object-cover"
+            fill
+            [ngSrc]="item.state.flagUrl"
+            alt=""
+          />
+        </span>
+      }
+      <span>{{ item.label }}</span>
+      @if (item.state.isCurrent) {
+        <i class="pi pi-check ml-auto"></i>
+      }
+    </div>
+  </ng-template>
+</p-menu>

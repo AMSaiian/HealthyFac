@@ -1,0 +1,62 @@
+{
+  "name": "healthyfac-keycloak-theme",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "ng": "ng",
+    "prebuild": "keycloakify update-kc-gen",
+    "build": "ng build && node -e \"require('node:fs').rmSync('dist/keycloakify-dev-resources', { recursive: true, force: true })\" && keycloakify build",
+    "preserve": "keycloakify update-kc-gen",
+    "start": "ng serve",
+    "lint": "ng lint --max-warnings 0",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keycloakify": {
+    "themeName": "healthyfac",
+    "accountThemeImplementation": "none",
+    "projectBuildDirPath": "dist",
+    "environmentVariables": [
+      {
+        "name": "PRIMEUI_LICENSE_KEY",
+        "default": ""
+      }
+    ]
+  },
+  "private": true,
+  "packageManager": "npm@11.20.0",
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@fontsource/oxygen": "^5.3.0",
+    "@keycloakify/angular": "22.1.0",
+    "@primeuix/themes": "^3.1.0",
+    "flag-icons": "7.6.0",
+    "keycloakify": "11.16.4",
+    "primeicons": "^8.0.2",
+    "primeng": "^22.1.4",
+    "rxjs": "~7.8.0",
+    "tailwindcss": "^4.3.4",
+    "tailwindcss-primeui": "^0.6.1",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.5",
+    "@angular/cli": "^22.2.5",
+    "@angular/compiler-cli": "^22.2.0",
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/postcss": "^4.3.4",
+    "angular-eslint": "22.6.0",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "postcss": "^8.5.32",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "8.71.0",
+    "vitest": "^5.0.0"
+  }
+}
