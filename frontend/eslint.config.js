@@ -15,7 +15,20 @@ const RESTRICTED_IMPORT_PATTERNS = [
   { group: ['zone.js', 'zone.js/*'], message: ZONELESS_MESSAGE },
   { group: ['@angular/material'], message: 'Use PrimeNG.' },
   { group: ['../*'], message: ALIAS_MESSAGE },
-  { group: ['@app/shared/*', '@app/home/*', '@app/fallback/*', '@app/machines/*', '@app/files/*'], message: FEATURE_ALIAS_MESSAGE },
+  {
+    group: [
+      '@app/shared/*',
+      '@app/home/*',
+      '@app/fallback/*',
+      '@app/machines/*',
+      '@app/files/*',
+      '@app/work-orders/*',
+      '@app/employees/*',
+      '@app/schedule/*',
+      '@app/invite/*',
+    ],
+    message: FEATURE_ALIAS_MESSAGE,
+  },
   {
     group: ['**/services/*', '**/models/*', '**/components/*', '**/utils/*', '**/helpers/*', '**/stores/*'],
     message: LAYOUT_MESSAGE,
@@ -115,7 +128,12 @@ const BASE_IMPORT_PATHS = [
   ACTIVATED_ROUTE_PATH,
 ];
 
-const importRule = (paths) => ['error', { paths, patterns: RESTRICTED_IMPORT_PATTERNS }];
+const TESTDATA_PATTERN = { group: ['@testdata/*'], message: 'Only specs read the shared test data.' };
+
+const importRule = (paths, patterns = [...RESTRICTED_IMPORT_PATTERNS, TESTDATA_PATTERN]) => [
+  'error',
+  { paths, patterns },
+];
 
 const CLOCK_MESSAGE = 'Inject CLOCK.';
 const CLOCK_SYNTAX = [
@@ -198,7 +216,7 @@ module.exports = defineConfig([
         'error',
         {
           paths: [...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_CLIENT_PATH],
-          patterns: [...RESTRICTED_IMPORT_PATTERNS, STORE_IMPORT_PATTERN],
+          patterns: [...RESTRICTED_IMPORT_PATTERNS, TESTDATA_PATTERN, STORE_IMPORT_PATTERN],
         },
       ],
     },
@@ -213,6 +231,12 @@ module.exports = defineConfig([
     files: ['src/app/**/*.spec.ts', 'src/app/**/*-api.ts', 'src/app/shared/http/**/*.ts'],
     rules: {
       'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH]),
+    },
+  },
+  {
+    files: ['src/app/**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH], RESTRICTED_IMPORT_PATTERNS),
     },
   },
   {
@@ -263,7 +287,9 @@ module.exports = defineConfig([
   {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
-    rules: {},
+    rules: {
+      '@angular-eslint/template/prefer-ngsrc': 'error',
+    },
   },
   prettier,
 ]);

@@ -1,0 +1,205 @@
+<header class="flex flex-none flex-wrap items-center justify-between gap-2">
+  <div class="flex min-w-0 items-center gap-2">
+    @if (store.canGoBack()) {
+      <a
+        pButton
+        routerLink="/employees"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'SHIFTS.BACK' | translate"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </a>
+    }
+    <h1 class="text-2xl font-bold">{{ 'SHIFTS.TITLE' | translate }}</h1>
+  </div>
+  @if (store.canManage()) {
+    <button
+      pButton
+      type="button"
+      (click)="store.openVersionDialog(null)"
+    >
+      <i class="pi pi-plus"></i>
+      {{ 'SHIFTS.ADD_VERSION' | translate }}
+    </button>
+  }
+</header>
+
+<section class="flex flex-col gap-2">
+  <h2 class="text-xl font-bold">{{ 'SHIFTS.VERSIONS' | translate }}</h2>
+  @if (showVersionsSkeleton()) {
+    <p-skeleton height="6rem" />
+  } @else {
+    @for (version of versions(); track version.id) {
+      <article class="hf-list-item flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-bold">{{ 'SHIFTS.EFFECTIVE_FROM' | translate }}: {{ version.effectiveFrom }}</span>
+          @if (store.isEditable(version)) {
+            <div class="flex items-center gap-1">
+              <button
+                pButton
+                type="button"
+                size="small"
+                severity="secondary"
+                (click)="editVersion(version)"
+              >
+                {{ 'SHIFTS.EDIT' | translate }}
+              </button>
+              <button
+                pButton
+                type="button"
+                size="small"
+                severity="danger"
+                [outlined]="true"
+                (click)="store.requestDeleteVersion(version)"
+              >
+                {{ 'SHIFTS.DELETE' | translate }}
+              </button>
+            </div>
+          }
+        </div>
+        <ul class="grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm md:grid-cols-2">
+          @for (day of version.days; track day.weekday) {
+            <li class="flex gap-2">
+              <span class="w-28 flex-none">{{ weekdayKey(day.weekday) | translate }}</span>
+              <span class="text-muted-color">{{
+                day.blocks.length > 0 ? summaryOf(day.blocks) : ('SHIFTS.DIALOG.DAY_OFF' | translate)
+              }}</span>
+            </li>
+          }
+        </ul>
+      </article>
+    } @empty {
+      <small class="text-muted-color">{{ 'SHIFTS.EMPTY_VERSIONS' | translate }}</small>
+    }
+  }
+</section>
+
+<section class="flex flex-col gap-2">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2 class="text-xl font-bold">{{ 'SHIFTS.OVERRIDES' | translate }}</h2>
+    <div class="flex items-center gap-2">
+      <button
+        pButton
+        type="button"
+        iconOnly
+        severity="secondary"
+        [attr.aria-label]="'SHIFTS.PREVIOUS_MONTH' | translate"
+        (click)="store.previousMonth()"
+      >
+        <i class="pi pi-chevron-left"></i>
+      </button>
+      <span class="min-w-28 text-center">{{ store.month()?.toString({ calendarName: 'never' })?.slice(0, 7) }}</span>
+      <button
+        pButton
+        type="button"
+        iconOnly
+        severity="secondary"
+        [attr.aria-label]="'SHIFTS.NEXT_MONTH' | translate"
+        (click)="store.nextMonth()"
+      >
+        <i class="pi pi-chevron-right"></i>
+      </button>
+      @if (store.canManage()) {
+        <button
+          pButton
+          type="button"
+          (click)="store.openOverrideDialog(null)"
+        >
+          <i class="pi pi-plus"></i>
+          {{ 'SHIFTS.ADD_OVERRIDE' | translate }}
+        </button>
+      }
+    </div>
+  </div>
+  @if (showOverridesSkeleton()) {
+    <p-skeleton height="4rem" />
+  } @else {
+    @for (override of overrides(); track override.id) {
+      <article class="hf-list-item flex items-center justify-between gap-2">
+        <span class="flex gap-3">
+          <span class="font-bold">{{ override.date }}</span>
+          <span class="text-muted-color">{{
+            override.blocks.length > 0 ? summaryOf(override.blocks) : ('SHIFTS.DIALOG.DAY_OFF' | translate)
+          }}</span>
+        </span>
+        @if (store.canManage()) {
+          <div class="flex items-center gap-1">
+            <button
+              pButton
+              type="button"
+              size="small"
+              severity="secondary"
+              (click)="editOverride(override)"
+            >
+              {{ 'SHIFTS.EDIT' | translate }}
+            </button>
+            <button
+              pButton
+              type="button"
+              size="small"
+              severity="danger"
+              [outlined]="true"
+              (click)="store.requestDeleteOverride(override)"
+            >
+              {{ 'SHIFTS.DELETE' | translate }}
+            </button>
+          </div>
+        }
+      </article>
+    } @empty {
+      <small class="text-muted-color">{{ 'SHIFTS.EMPTY_OVERRIDES' | translate }}</small>
+    }
+  }
+</section>
+
+@if (store.dialog(); as dialog) {
+  <hf-action-dialog
+    [title]="
+      dialog.kind === 'version'
+        ? dialog.version === null
+          ? 'SHIFTS.DIALOG.VERSION_CREATE_TITLE'
+          : 'SHIFTS.DIALOG.VERSION_EDIT_TITLE'
+        : 'SHIFTS.DIALOG.OVERRIDE_TITLE'
+    "
+    [isSaveDisabled]="saveReason() !== null"
+    [saveDisabledReason]="saveReason()"
+    [isSaving]="store.isSaving()"
+    (save)="save()"
+    (cancelled)="store.closeDialog()"
+  >
+    @if (dialog.kind === 'version') {
+      <hf-version-dialog
+        [initialValue]="versionInitial()"
+        [isEdit]="dialog.version !== null"
+        [minDate]="tomorrow()"
+        (valueChange)="onVersion($event)"
+        (validityChange)="onValidity($event)"
+      />
+    } @else {
+      <hf-override-dialog
+        [initialValue]="overrideInitial()"
+        [isEdit]="dialog.override !== null"
+        [minDate]="tomorrow()"
+        (valueChange)="onOverride($event)"
+        (validityChange)="onValidity($event)"
+      />
+    }
+    @if (store.affectedWorkOrders().length > 0) {
+      <section class="hf-list-item mt-4 flex flex-col gap-1">
+        <h3 class="font-bold">{{ 'SHIFTS.AFFECTED.TITLE' | translate }}</h3>
+        <small class="text-muted-color">{{ 'SHIFTS.AFFECTED.HINT' | translate }}</small>
+        @for (workOrder of store.affectedWorkOrders(); track workOrder.id) {
+          <button
+            type="button"
+            class="text-primary cursor-pointer text-left hover:underline"
+            (click)="store.openWorkOrder(workOrder.id)"
+          >
+            {{ workOrder.title }} · {{ workOrder.plannedStartLocal.replace('T', ' ').slice(0, 16) }}
+          </button>
+        }
+      </section>
+    }
+  </hf-action-dialog>
+}

@@ -1,3 +1,4 @@
+using System.Data;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Infrastructure.Database;
@@ -141,6 +142,39 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
         var companyCount = await CountCompaniesAsync(TransactionTestData.EndedTransactionCompanyName);
 
         companyCount.Should().Be(expected: 0);
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_WithSerializable_RunsSerializableTransaction()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+        var isolation = await dbContext.RunInTransactionAsync(
+            _ => ReadIsolationAsync(dbContext), IsolationLevel.Serializable, TestContext.Current.CancellationToken);
+
+        isolation.Should().Be(TransactionTestData.SerializableIsolation);
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_WithoutLevel_RunsReadCommittedTransaction()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+        var isolation = await dbContext.RunInTransactionAsync(
+            _ => ReadIsolationAsync(dbContext), TestContext.Current.CancellationToken);
+
+        isolation.Should().Be(TransactionTestData.ReadCommittedIsolation);
+    }
+
+    private static async Task<string> ReadIsolationAsync(CoreDbContext dbContext)
+    {
+        var isolations = await dbContext.Database
+            .SqlQueryRaw<string>(TransactionTestData.ShowIsolationSql)
+            .ToListAsync();
+
+        return isolations.Single();
     }
 
     private async Task<int> CountCompaniesAsync(string name)

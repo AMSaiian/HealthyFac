@@ -47,6 +47,36 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task CreateAsync_WithNames_StoresThemOnTheInvite()
+    {
+        var companyId = await ArrangeCompanyAsync();
+
+        var inviteId = await CreateAsync(
+            companyId,
+            InviteTestData.NamedEmail,
+            InviteTestData.InvitedFirstName,
+            InviteTestData.InvitedLastName);
+
+        var invite = await _fixture.LoadInviteAsync(inviteId);
+
+        invite.FirstName.Should().Be(InviteTestData.InvitedFirstName);
+        invite.LastName.Should().Be(InviteTestData.InvitedLastName);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithoutNames_StoresNullNames()
+    {
+        var companyId = await ArrangeCompanyAsync();
+
+        var inviteId = await CreateAsync(companyId, InviteTestData.UnnamedEmail);
+
+        var invite = await _fixture.LoadInviteAsync(inviteId);
+
+        invite.FirstName.Should().BeNull();
+        invite.LastName.Should().BeNull();
+    }
+
+    [Fact]
     public async Task CreateAsync_WithSameEmailInOtherCase_ThrowsConflict()
     {
         var companyId = await ArrangeCompanyAsync();
@@ -116,7 +146,12 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
         return messages.Where(message => message.InviteId == inviteId).ToList();
     }
 
-    private async Task<Guid> CreateAsync(Guid companyId, string email)
+    private async Task<Guid> CreateAsync(
+        Guid companyId,
+        string email,
+        string? firstName = null,
+        string? lastName = null
+    )
     {
         using var scope = _fixture.CreateUserScope(companyId);
         var handler = scope.ServiceProvider
@@ -128,6 +163,8 @@ public sealed class CreateEmployeeInviteTests(CoreDatabaseFixture fixture)
                 CompanyId = companyId,
                 Email = email,
                 RoleCode = RoleCode.Worker,
+                FirstName = firstName,
+                LastName = lastName,
             });
 
         return response.Id;

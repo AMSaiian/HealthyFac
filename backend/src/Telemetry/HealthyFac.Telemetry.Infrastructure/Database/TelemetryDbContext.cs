@@ -1,3 +1,4 @@
+using System.Data;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
@@ -50,6 +51,19 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken = default(CancellationToken)
     )
+        => RunInTransactionAsync(operation, IsolationLevel.ReadCommitted, cancellationToken);
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => RunInTransactionAsync(operation, IsolationLevel.ReadCommitted, cancellationToken);
+
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
         => RunInTransactionAsync(
             async token =>
             {
@@ -57,10 +71,12 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
 
                 return true;
             },
+            isolationLevel,
             cancellationToken);
 
     public async Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
@@ -71,7 +87,9 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
 
         return await Database
             .CreateExecutionStrategy()
-            .ExecuteAsync(token => RunTransactionAttemptAsync(operation, token), cancellationToken);
+            .ExecuteAsync(
+                token => RunTransactionAttemptAsync(operation, isolationLevel, token),
+                cancellationToken);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -93,11 +111,12 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
 
     private async Task<TResult> RunTransactionAttemptAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken
     )
     {
         ChangeTracker.Clear();
-        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await Database.BeginTransactionAsync(isolationLevel, cancellationToken);
 
         var result = await operation(cancellationToken);
         if (Database.CurrentTransaction != transaction)

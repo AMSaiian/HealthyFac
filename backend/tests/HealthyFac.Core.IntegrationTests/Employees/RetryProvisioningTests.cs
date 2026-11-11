@@ -74,7 +74,7 @@ public sealed class RetryProvisioningTests(CoreDatabaseFixture fixture)
         var act = () => _fixture.RetryProvisioningAsync(arranged.CompanyId, arranged.EmployeeId);
 
         await act.Should()
-            .ThrowAsync<ConflictException>()
+            .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeNotRetryable);
         var messages = await _fixture.ReadAcceptedMessagesAsync(arranged.EmployeeId);
 

@@ -1,5 +1,6 @@
 using System.Net;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
+using HealthyFac.Auth.Application.Locales;
 using HealthyFac.Auth.IntegrationTests.Identities.Data;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
@@ -175,5 +176,23 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
 
         wasEnabledBefore.Should().BeTrue();
         isEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SetUserLocale_ForProvisionedUser_SetsLocaleAndKeepsOtherAttributes()
+    {
+        var identity = KeycloakAdminTestData.CreateIdentity();
+        var userId = await _fixture.Admin.CreateUserAsync(identity, CancellationToken.None);
+        var attributesBefore = await _fixture.LoadUserAttributesAsync(userId);
+
+        await _fixture.Admin.SetUserLocaleAsync(userId, Locale.Ukrainian, CancellationToken.None);
+
+        var attributesAfter = await _fixture.LoadUserAttributesAsync(userId);
+
+        attributesAfter[KeycloakAdminTestData.LocaleAttribute].Should().Equal(KeycloakAdminTestData.UkrainianLocale);
+        attributesAfter.Where(attribute => attribute.Key != KeycloakAdminTestData.LocaleAttribute)
+            .Should()
+            .BeEquivalentTo(
+                attributesBefore.Where(attribute => attribute.Key != KeycloakAdminTestData.LocaleAttribute));
     }
 }

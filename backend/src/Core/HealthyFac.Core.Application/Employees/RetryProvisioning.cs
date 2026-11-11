@@ -79,7 +79,7 @@ public sealed class RetryProvisioningRequestHandler(ICoreDbContext dbContext, IO
 
         if (!employee.CanRetryProvisioning)
         {
-            throw new ConflictException(EmployeeProvisioningErrors.Rejections.EmployeeNotRetryable);
+            throw new UnprocessableException(EmployeeProvisioningErrors.Rejections.EmployeeNotRetryable);
         }
 
         var roleCode = await _dbContext.Roles

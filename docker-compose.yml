@@ -28,11 +28,25 @@ services:
 
   keycloak:
     container_name: healthyfac-keycloak
-    image: quay.io/keycloak/keycloak:26.8.0
+    build:
+      context: ./keycloak-theme
+      dockerfile: ../docker/keycloak/Dockerfile
+      # The theme imports the preset and the language flags of the frontend, so the frontend folder is a named extra
+      # context. The base image of the final stage must equal TestImages.Keycloak (KeycloakImageTagTests).
+      additional_contexts:
+        frontend: ./frontend
+    image: healthyfac/keycloak:local
     restart: unless-stopped
     command: ["start-dev", "--http-port=8080", "--import-realm"]
     stop_signal: SIGTERM
     stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # No read_only: start-dev builds the server at each start and writes the build output to /opt/keycloak/lib/quarkus
+    # (verified: "Read-only file system" for transformed-bytecode.jar). A tmpfs on that folder would hide the files that
+    # the image holds there. The root and the capabilities are dropped instead.
     # The import only creates the realm and the supervisor with the fixed ID on a fresh database, because only the import
     # keeps a fixed user ID. The import skips a realm that exists. The keycloak-config job applies everything else.
     volumes:
@@ -45,6 +59,8 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_HEALTH_ENABLED: "true"
+      # The login theme reads the public PrimeUI license key from this variable (theme.properties).
+      PRIMEUI_LICENSE_KEY: ${PRIMEUI_LICENSE_KEY:?set PRIMEUI_LICENSE_KEY in .env}
       # The public URL is the auth name of the gateway (api., auth., and app. names are in docs/architecture.md).
       # KC_HOSTNAME_BACKCHANNEL_DYNAMIC lets services read the metadata from the
       # internal address, and the metadata then holds internal back-channel URLs such as the JWKS URI.
@@ -679,6 +695,10 @@ services:
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       Messaging__QueueName: auth
+      Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
+      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
+      Jwt__IsHttpsMetadataRequired: "false"
+      Proxy__KnownNetworks__0: 172.16.0.0/12
       # Auth calls the Keycloak admin API and the token endpoint on the internal address. The set-password link
       # returns to the web app.
       KeycloakAdmin__BaseAddress: http://keycloak:8080
@@ -692,8 +712,8 @@ services:
       Tracing__Endpoint: http://lgtm:4317
       Metrics__Endpoint: http://lgtm:4317
       OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
-    # The service maps no endpoint. The health port (8090 in the container) is the only port, and it binds to the
-    # loopback address of the host. The container port equals HealthEndpoints:Port in appsettings.json.
+    # The API port (8080 in the container) is internal: the gateway reaches it. The health port (8090 in the
+    # container) binds to the loopback address of the host and equals HealthEndpoints:Port in appsettings.json.
     ports:
       - "127.0.0.1:${AUTH_HEALTH_PORT:-8092}:8090"
     # Hard dependencies: the host does not start without the database and the subscriptions. The realm job must end
@@ -772,6 +792,8 @@ services:
       ASPNETCORE_HTTPS_PORTS: "8443"
       Kestrel__Certificates__Default__Path: /certs/healthyfac.test.pem
       Kestrel__Certificates__Default__KeyPath: /certs/healthyfac.test-key.pem
+      ReverseProxy__Clusters__auth__Destinations__main__Address: http://auth:8080/
+      ReverseProxy__Clusters__auth__Destinations__main__Health: http://auth:8090/
       ReverseProxy__Clusters__core__Destinations__main__Address: http://core:8080/
       # The active health check of the cluster calls the health port of Core, not the API port.
       ReverseProxy__Clusters__core__Destinations__main__Health: http://core:8090/
@@ -792,8 +814,10 @@ services:
       Jwt__IsHttpsMetadataRequired: "false"
       Cors__AllowedOrigins__0: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
       # Each public route answers one logical name. A host without a port matches every port.
+      ReverseProxy__Routes__auth__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__core__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
-      ReverseProxy__Routes__core-invite-public__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__core-invite-verify__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__core-invite-accept__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__telemetry__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__insights__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
@@ -820,6 +844,8 @@ services:
     # answers 503 for Core or the SPA host alone. It reads the signing keys of Keycloak at the first token. The realm job
     # runs only after a healthy Keycloak, so its success also covers the Keycloak routes.
     depends_on:
+      auth:
+        condition: service_started
       core:
         condition: service_started
       telemetry:

@@ -34,8 +34,7 @@
               type="button"
               iconOnly
               severity="secondary"
-              [outlined]="true"
-              [rounded]="true"
+              [text]="true"
               [loading]="applyingIds().includes(row.id)"
               [attr.aria-label]="'DRAFTS.ROW_ACTIONS' | translate"
               (click)="openMenu($event, row, menu)"

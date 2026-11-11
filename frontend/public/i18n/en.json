@@ -9,7 +9,14 @@
     "STATUS_DEFINITIONS": "Statuses",
     "METRICS": "Metrics",
     "FILES": "Files",
-    "MACHINE_FILES": "Machine files"
+    "MACHINE_FILES": "Machine files",
+    "WORK_ORDERS": "Work orders",
+    "EMPLOYEE_SCHEDULE": "Schedule",
+    "COMPANY_SCHEDULE": "Company schedule",
+    "SHIFTS": "Shifts",
+    "EMPLOYEES": "Employees",
+    "MY_SCHEDULE": "My schedule",
+    "INVITE": "Invite"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -19,7 +26,7 @@
     "SIGN_OUT": "Sign out",
     "SIGN_OUT_CONFIRM": {
       "HEADER": "Sign out?",
-      "MESSAGE": "You will leave HealthyFac. Unsaved changes are lost.",
+      "MESSAGE": "You will leave HealthyFac. Unsaved changes are lost",
       "ACCEPT": "Sign out"
     }
   },
@@ -28,26 +35,27 @@
     "UK": "Українська"
   },
   "HOME": {
-    "INTRO": "HealthyFac connects machines with maintenance staff.",
+    "INTRO": "HealthyFac connects machines with maintenance staff",
     "DISMISS": "Got it"
   },
   "NOT_FOUND": {
-    "MESSAGE": "This page does not exist.",
+    "MESSAGE": "This page does not exist",
     "BACK": "Go to the home page"
   },
   "ERRORS": {
-    "UNEXPECTED": "An unexpected error occurred.",
+    "UNEXPECTED": "An unexpected error occurred",
     "SUMMARY": "Error",
     "HTTP": {
-      "NETWORK": "The server is not reachable. Check your connection and try again.",
-      "BAD_REQUEST": "The request is not valid.",
-      "UNAUTHORIZED": "Your session has ended. Sign in again.",
-      "FORBIDDEN": "You do not have permission for this action.",
-      "NOT_FOUND": "The requested item does not exist.",
-      "CONFLICT": "The item was changed by someone else. Reload and try again.",
-      "TOO_MANY_REQUESTS": "Too many requests. Wait a moment and try again.",
-      "SERVER": "The server failed to process the request. Try again later.",
-      "UNKNOWN": "The request failed."
+      "NETWORK": "The server is not reachable. Check your connection and try again",
+      "BAD_REQUEST": "The request is not valid",
+      "UNAUTHORIZED": "Your session has ended. Sign in again",
+      "FORBIDDEN": "You do not have permission for this action",
+      "NOT_FOUND": "The requested item does not exist",
+      "CONFLICT": "The item was changed by someone else. Reload and try again",
+      "UNPROCESSABLE": "The request breaks a rule. Change it and try again",
+      "TOO_MANY_REQUESTS": "Too many requests. Wait a moment and try again",
+      "SERVER": "The server failed to process the request. Try again later",
+      "UNKNOWN": "The request failed"
     }
   },
   "ACTIONS": {
@@ -62,15 +70,16 @@
     "STRIKE": "Strikethrough",
     "ORDERED_LIST": "Numbered list",
     "BULLET_LIST": "Bulleted list",
+    "CHECK_LIST": "Checklist",
     "LINK": "Link",
     "CLEAN": "Clear formatting",
     "ERRORS": {
-      "TOO_MUCH_FORMATTING": "The formatting is too large. Remove some formatting or shorten the text."
+      "TOO_MUCH_FORMATTING": "The formatting is too large. Remove some formatting or shorten the text"
     },
     "IMAGE": "Image",
-    "IMAGE_MISSING": "The image is not available.",
-    "IMAGE_UPLOAD_FAILED": "The image could not be uploaded.",
-    "IMAGE_NOT_ALLOWED": "Only PNG, JPG, GIF, and WebP images up to 5 MB are allowed."
+    "IMAGE_MISSING": "The image is not available",
+    "IMAGE_UPLOAD_FAILED": "The image could not be uploaded",
+    "IMAGE_NOT_ALLOWED": "Only PNG, JPG, GIF, and WebP images up to 5 MB are allowed"
   },
   "MACHINES": {
     "TITLE": "Machines",
@@ -82,8 +91,8 @@
     "STATUSES": "Statuses",
     "DELETE_HEADER": "Delete machine",
     "DELETE_MESSAGE": "Delete the machine {{name}}?",
-    "DELETED": "The machine is deleted.",
-    "EMPTY": "No machines found.",
+    "DELETED": "The machine is deleted",
+    "EMPTY": "No machines found",
     "COLUMNS": {
       "NAME": "Name",
       "SERIAL_NUMBER": "Serial number",
@@ -109,9 +118,9 @@
     },
     "TOASTS": {
       "SUCCESS": "Done",
-      "CREATED": "The machine is created.",
-      "UPDATED": "The machine is updated.",
-      "SERIAL_NUMBER_TAKEN": "A machine with this serial number already exists."
+      "CREATED": "The machine is created",
+      "UPDATED": "The machine is updated",
+      "SERIAL_NUMBER_TAKEN": "A machine with this serial number already exists"
     },
     "FORM": {
       "CREATE_TITLE": "New machine",
@@ -123,8 +132,8 @@
       "DESCRIPTION": "Description",
       "NO_CHANGES": "No changes provided",
       "ERRORS": {
-        "REQUIRED": "This field is required.",
-        "TOO_LONG": "The value is too long."
+        "REQUIRED": "This field is required",
+        "TOO_LONG": "The value is too long"
       },
       "NAME_PLACEHOLDER": "Enter the name",
       "SERIAL_NUMBER_PLACEHOLDER": "Enter the serial number",
@@ -144,7 +153,7 @@
     "DELETE": "Delete",
     "DELETE_HEADER": "Delete status",
     "DELETE_MESSAGE": "Delete the status {{code}}?",
-    "EMPTY": "No statuses found.",
+    "EMPTY": "No statuses found",
     "COLUMNS": {
       "CODE": "Code",
       "SEVERITY": "Severity",
@@ -157,10 +166,10 @@
     },
     "TOASTS": {
       "SUCCESS": "Done",
-      "CREATED": "The status is created.",
-      "UPDATED": "The status is updated.",
-      "DELETED": "The status is deleted.",
-      "CODE_TAKEN": "A status with this code already exists for this machine."
+      "CREATED": "The status is created",
+      "UPDATED": "The status is updated",
+      "DELETED": "The status is deleted",
+      "CODE_TAKEN": "A status with this code already exists for this machine"
     },
     "FORM": {
       "CREATE_TITLE": "New status",
@@ -173,8 +182,8 @@
       "NO_CHANGES": "No changes provided",
       "INVALID": "Form is not valid",
       "ERRORS": {
-        "REQUIRED": "This field is required.",
-        "TOO_LONG": "The value is too long."
+        "REQUIRED": "This field is required",
+        "TOO_LONG": "The value is too long"
       }
     },
     "SEVERITIES": {
@@ -195,8 +204,8 @@
     "DELETE": "Delete",
     "RESTORE": "Restore",
     "RELOAD": "Reload",
-    "EMPTY": "This machine has no metrics yet.",
-    "NOT_REGISTERED": "The machine is not ready for metrics yet. Try again in a few seconds.",
+    "EMPTY": "This machine has no metrics yet",
+    "NOT_REGISTERED": "The machine is not ready for metrics yet. Try again in a few seconds",
     "ITEM_ERRORS": "The server rejected this metric:",
     "DISABLED": {
       "NO_CHANGES": "There are no changes",
@@ -242,14 +251,14 @@
       "NO_CHANGES": "No changes provided",
       "INVALID": "The form has errors",
       "ERRORS": {
-        "REQUIRED": "This field is required.",
-        "TOO_LONG": "The value is too long.",
-        "KEY_INVALID": "Use lower case letters, digits, underscores, and dots between parts.",
-        "KEY_TAKEN": "Another metric of this machine has this key.",
-        "UNIT_REQUIRED": "A numeric metric needs a unit.",
-        "RANGE": "The minimum must be below the maximum.",
-        "STATES_TOO_FEW": "A state set needs at least 2 states.",
-        "STATES_DUPLICATED": "The states must be unique."
+        "REQUIRED": "This field is required",
+        "TOO_LONG": "The value is too long",
+        "KEY_INVALID": "Use lower case letters, digits, underscores, and dots between parts",
+        "KEY_TAKEN": "Another metric of this machine has this key",
+        "UNIT_REQUIRED": "A numeric metric needs a unit",
+        "RANGE": "The minimum must be below the maximum",
+        "STATES_TOO_FEW": "A state set needs at least 2 states",
+        "STATES_DUPLICATED": "The states must be unique"
       }
     },
     "EXAMPLE": {
@@ -258,7 +267,7 @@
       "PREVIEW": "Preview with unapplied changes",
       "COPY": "Copy",
       "CLOSE": "Close",
-      "EMPTY": "This machine has no metrics, so there is no example."
+      "EMPTY": "This machine has no metrics, so there is no example"
     },
     "CONFIRM": {
       "HEADER": "Unsaved changes",
@@ -269,9 +278,9 @@
     },
     "TOASTS": {
       "SUCCESS": "Done",
-      "APPLIED": "The changes are applied.",
-      "CONFLICT": "The metrics changed since you opened the page, or a key is taken. Reload and apply again.",
-      "INVALID": "The server rejected some metrics. Check the marked items."
+      "APPLIED": "The changes are applied",
+      "CONFLICT": "The metrics changed since you opened the page, or a key is taken. Reload and apply again",
+      "INVALID": "The server rejected some metrics. Check the marked items"
     },
     "UNIT_WITHOUT_ABBREVIATION": "count",
     "QUANTITY_KINDS": {
@@ -293,7 +302,7 @@
       "DURATION": "Duration",
       "SCALAR": "Scalar"
     },
-    "SELECT_HINT": "Select a metric to see its details."
+    "SELECT_HINT": "Select a metric to see its details"
   },
   "PRIMENG": {
     "dayNames": [
@@ -388,7 +397,7 @@
     "UPLOAD": "Upload",
     "ROW_ACTIONS": "Row actions",
     "COLUMNS_CHOOSER": "Columns",
-    "EMPTY": "No files found.",
+    "EMPTY": "No files found",
     "DELETE_HEADER": "Delete file",
     "DELETE_MESSAGE": "Delete the file {{name}}?",
     "ACTIONS_MENU": {
@@ -419,19 +428,19 @@
     },
     "TOASTS": {
       "SUCCESS": "Done",
-      "UPLOADED": "The file is uploaded.",
-      "UPDATED": "The file is updated.",
-      "DELETED": "The file is deleted.",
-      "TIED": "The file is tied to the machine.",
-      "UNTIED": "The file is untied."
+      "UPLOADED": "The file is uploaded",
+      "UPDATED": "The file is updated",
+      "DELETED": "The file is deleted",
+      "TIED": "The file is tied to the machine",
+      "UNTIED": "The file is untied"
     },
     "ERRORS": {
-      "TYPE_NOT_ALLOWED": "This file type is not allowed.",
-      "TOO_LARGE": "The file is too large.",
-      "EMPTY": "The file is empty.",
-      "BUSY": "The service is busy. Try again in a moment.",
-      "NOT_FOUND": "The file does not exist any more.",
-      "CONFLICT": "The file was changed by someone else. The list is reloaded."
+      "TYPE_NOT_ALLOWED": "This file type is not allowed",
+      "TOO_LARGE": "The file is too large",
+      "EMPTY": "The file is empty",
+      "BUSY": "The service is busy. Try again in a moment",
+      "NOT_FOUND": "The file does not exist any more",
+      "CONFLICT": "The file was changed by someone else. The list is reloaded"
     },
     "UPLOAD_DIALOG": {
       "TITLE": "Upload files",
@@ -446,12 +455,12 @@
     "EDIT_DIALOG": {
       "TITLE": "Edit file",
       "NAME": "Name",
-      "EXTENSION_HINT": "The type of the file stays {{extension}}.",
+      "EXTENSION_HINT": "The type of the file stays {{extension}}",
       "DESCRIPTION": "Description",
       "NO_CHANGES": "No changes provided",
       "INVALID": "Form is not valid",
-      "REQUIRED": "This field is required.",
-      "TOO_LONG": "The value is too long."
+      "REQUIRED": "This field is required",
+      "TOO_LONG": "The value is too long"
     },
     "UNTIE_HEADER": "Untie file",
     "UNTIE_MESSAGE": "Untie \"{{name}}\" from its machine?",
@@ -474,49 +483,49 @@
     "CANCEL_HEADER": "Cancel ingest",
     "CANCEL_MESSAGE": "Cancel the processing of \"{{name}}\"?",
     "TOASTS": {
-      "STARTED": "The file is queued for processing.",
-      "CANCELLED": "The processing is cancelled."
+      "STARTED": "The file is queued for processing",
+      "CANCELLED": "The processing is cancelled"
     },
     "CONFLICTS": {
-      "INGEST_ACTIVE": "The file is already in processing.",
-      "INGEST_COMPLETED": "The processing of this file is already completed.",
-      "INGEST_FAILED_LIMIT": "The processing of this file failed too many times.",
-      "INGEST_FINAL": "The processing of this file is final.",
-      "NOT_ACTIVE": "The processing is not active any more. The list is reloaded."
+      "INGEST_ACTIVE": "The file is already in processing",
+      "INGEST_COMPLETED": "The processing of this file is already completed",
+      "INGEST_FAILED_LIMIT": "The processing of this file failed too many times",
+      "INGEST_FINAL": "The processing of this file is final",
+      "NOT_ACTIVE": "The processing is not active any more. The list is reloaded"
     },
     "HISTORY": {
       "TITLE": "Ingest history",
       "QUEUED_AT": "Queued",
       "FINISHED_AT": "Finished",
       "DRAFTS": "Drafts",
-      "EMPTY": "This file was never processed.",
+      "EMPTY": "This file was never processed",
       "OPEN": "Open summary"
     },
     "SUMMARY": {
       "TITLE": "Ingest summary",
-      "NOT_FOUND": "The ingest attempt does not exist any more.",
-      "NO_DRAFTS": "The attempt proposed no drafts.",
+      "NOT_FOUND": "The ingest attempt does not exist any more",
+      "NO_DRAFTS": "The attempt proposed no drafts",
       "FILE": "File",
       "PAGES": "Pages",
       "CHUNKS": "Text parts"
     },
     "ERRORS": {
-      "FILE_NOT_FOUND": "The file does not exist any more.",
-      "NO_TEXT": "The file has no text that the service can read.",
-      "TOO_MANY_PAGES": "The file has too many pages.",
-      "CONVERSION_FAILED": "The service could not read the file.",
-      "CONVERSION_TIMEOUT": "The reading of the file took too long.",
-      "INVALID_EXTRACTION": "The model gave an answer that the service could not use.",
-      "PROVIDER_UNAVAILABLE": "An external service is not available. Try again later."
+      "FILE_NOT_FOUND": "The file does not exist any more",
+      "NO_TEXT": "The file has no text that the service can read",
+      "TOO_MANY_PAGES": "The file has too many pages",
+      "CONVERSION_FAILED": "The service could not read the file",
+      "CONVERSION_TIMEOUT": "The reading of the file took too long",
+      "INVALID_EXTRACTION": "The model gave an answer that the service could not use",
+      "PROVIDER_UNAVAILABLE": "An external service is not available. Try again later"
     },
     "INTERRUPTED": {
-      "CANCELLED": "The processing was cancelled.",
-      "LEASE_EXPIRED": "The processing was interrupted. You can try again.",
-      "SERVICE_STOPPED": "The service stopped during the processing. You can try again.",
-      "FILE_DELETED": "The file was deleted."
+      "CANCELLED": "The processing was cancelled",
+      "LEASE_EXPIRED": "The processing was interrupted. You can try again",
+      "SERVICE_STOPPED": "The service stopped during the processing. You can try again",
+      "FILE_DELETED": "The file was deleted"
     },
     "WARNINGS": {
-      "TRUNCATED": "The file held {{found}} {{kind}}. Only {{cap}} were kept.",
+      "TRUNCATED": "The file held {{found}} {{kind}}. Only {{cap}} were kept",
       "KINDS": {
         "MACHINES": "machines",
         "METRICS": "metrics",
@@ -550,19 +559,19 @@
     "ROW_ACTIONS": "Row actions",
     "DISMISS_ALL": "Dismiss all",
     "DISMISS_ALL_HEADER": "Dismiss all drafts",
-    "DISMISS_ALL_MESSAGE": "Dismiss all {{count}} pending drafts of this machine? It cannot be undone.",
-    "REVIEW_AFTER_MACHINE": "Review the machine draft first.",
+    "DISMISS_ALL_MESSAGE": "Dismiss all {{count}} pending drafts of this machine? It cannot be undone",
+    "REVIEW_AFTER_MACHINE": "Review the machine draft first",
     "DISMISS_HEADER": "Dismiss draft",
-    "DISMISS_MESSAGE": "Dismiss the draft \"{{name}}\"? It cannot be undone.",
+    "DISMISS_MESSAGE": "Dismiss the draft \"{{name}}\"? It cannot be undone",
     "UNNAMED": "Unnamed",
     "TOASTS": {
-      "DISMISSED": "The draft is dismissed.",
-      "DISMISSED_ALL": "{{count}} drafts are dismissed."
+      "DISMISSED": "The draft is dismissed",
+      "DISMISSED_ALL": "{{count}} drafts are dismissed"
     },
     "LIST": {
       "TITLE": "Pending drafts",
-      "EMPTY": "The machine has no pending drafts.",
-      "LOAD_FAILED": "The drafts could not be loaded.",
+      "EMPTY": "The machine has no pending drafts",
+      "LOAD_FAILED": "The drafts could not be loaded",
       "RETRY": "Try again",
       "COLUMNS": {
         "KIND": "Kind",
@@ -582,8 +591,8 @@
       "TAKE": "Take the proposed value",
       "NO_CHANGES": "Take at least one change",
       "INVALID": "A value is not valid",
-      "APPLIED": "The machine is updated.",
-      "CONFLICT": "The machine changed. The values are loaded again.",
+      "APPLIED": "The machine is updated",
+      "CONFLICT": "The machine changed. The values are loaded again",
       "FIELDS": {
         "NAME": "Name",
         "SERIAL_NUMBER": "Serial number",
@@ -598,38 +607,346 @@
       "DESCRIPTION": "Description",
       "NO_CHANGES": "Take at least one change",
       "NOT_READY": "The draft is loading",
-      "MISSING": "The draft does not exist any more.",
-      "CREATED": "The status is created.",
-      "UPDATED": "The status is updated.",
-      "CODE_TAKEN": "A status with this code exists already.",
-      "MARK_FAILED": "The status is saved, but the draft stays pending. Review it again."
+      "MISSING": "The draft does not exist any more",
+      "CREATED": "The status is created",
+      "UPDATED": "The status is updated",
+      "CODE_TAKEN": "A status with this code exists already",
+      "MARK_FAILED": "The status is saved, but the draft stays pending. Review it again"
     },
     "METRICS": {
-      "MARK_FAILED": "The metrics are saved, but the drafts stay pending. Review them again."
+      "MARK_FAILED": "The metrics are saved, but the drafts stay pending. Review them again"
     },
     "CONFLICTS": {
-      "DRAFT_NOT_PENDING": "The draft is not pending any more. The list is loaded again.",
-      "MACHINE_DRAFT_NOT_APPLIED": "Apply the machine draft first.",
-      "DRAFT_CHANGED": "The draft or the machine changed. Reload it and try again."
+      "DRAFT_NOT_PENDING": "The draft is not pending any more. The list is loaded again",
+      "MACHINE_DRAFT_NOT_APPLIED": "Apply the machine draft first",
+      "DRAFT_CHANGED": "The draft or the machine changed. Reload it and try again"
     },
     "QUICK": {
-      "APPLIED": "Applied drafts: {{count}}.",
-      "APPLIED_SKIPPED": "Applied drafts: {{count}}. Left for review: {{skipped}}.",
+      "APPLIED": "Applied drafts: {{count}}",
+      "APPLIED_SKIPPED": "Applied drafts: {{count}}. Left for review: {{skipped}}",
       "FAILED": "Stopped after {{count}} applied drafts. {{reason}}",
-      "CONFLICT": "A draft or an item changed. Open the list again and try again.",
-      "INVALID": "A value is not valid. Use Review to correct it.",
-      "NEEDS_MACHINE_VALUES": "The machine draft needs a name and a serial number. Use Review.",
-      "NEEDS_METRIC_VALUES": "The metric draft needs a key and a name. Use Review.",
-      "UNKNOWN_UNIT": "The unit is not in the catalog. Use Review.",
-      "NEEDS_STATES": "The metric draft needs states. Use Review.",
-      "NEEDS_STATUS_VALUES": "The status draft needs a code. Use Review.",
-      "MACHINE_PENDING": "Apply the machine draft first, or use Apply all.",
-      "UNITS_LOADING": "The unit catalog is loading.",
-      "ALL_NEED_REVIEW": "Every pending draft of the group needs review.",
-      "MACHINE_NOT_READY": "The machine is not ready yet. Try again in a moment.",
+      "CONFLICT": "A draft or an item changed. Open the list again and try again",
+      "INVALID": "A value is not valid. Use Review to correct it",
+      "NEEDS_MACHINE_VALUES": "The machine draft needs a name and a serial number. Use Review",
+      "NEEDS_METRIC_VALUES": "The metric draft needs a key and a name. Use Review",
+      "UNKNOWN_UNIT": "The unit is not in the catalog. Use Review",
+      "NEEDS_STATES": "The metric draft needs states. Use Review",
+      "NEEDS_STATUS_VALUES": "The status draft needs a code. Use Review",
+      "MACHINE_PENDING": "Apply the machine draft first, or use Apply all",
+      "UNITS_LOADING": "The unit catalog is loading",
+      "ALL_NEED_REVIEW": "Every pending draft of the group needs review",
+      "MACHINE_NOT_READY": "The machine is not ready yet. Try again in a moment",
       "WAITING_TITLE": "Request limit",
-      "WAITING": "Waiting {{seconds}} s for the request limit.",
-      "RATE_LIMITED": "The request limit is still reached. Try again in a minute."
+      "WAITING": "Waiting {{seconds}} s for the request limit",
+      "RATE_LIMITED": "The request limit is still reached. Try again in a minute"
     }
+  },
+  "WORK_ORDERS": {
+    "STATUSES": {
+      "BACKLOG": "Backlog",
+      "STAGED": "Staged",
+      "IN_PROGRESS": "In progress",
+      "BLOCKED": "Blocked",
+      "COMPLETED": "Completed",
+      "REJECTED": "Rejected"
+    },
+    "PRIORITIES": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "CRITICAL": "Critical"
+    },
+    "CATEGORIES": {
+      "INSPECTION": "Inspection",
+      "PREVENTIVE": "Preventive",
+      "REPAIR": "Repair",
+      "OTHER": "Other"
+    },
+    "FORM": {
+      "ERRORS": {
+        "REQUIRED": "This field is required",
+        "TOO_LONG": "The text is too long",
+        "ESTIMATE_RANGE": "The estimate must be from 5 to 720 minutes",
+        "ESTIMATE_STEP": "The estimate must be a multiple of 5 minutes",
+        "TOO_MANY_FILES": "A work order holds at most 20 files"
+      },
+      "CREATE_TITLE": "New work order",
+      "UPDATE_TITLE": "Work order",
+      "TITLE": "Title",
+      "TITLE_PLACEHOLDER": "What must be done",
+      "DESCRIPTION": "Description",
+      "DESCRIPTION_PLACEHOLDER": "Steps, hints, and a checklist",
+      "PRIORITY": "Priority",
+      "CATEGORY": "Category",
+      "MACHINE": "Machine",
+      "MACHINE_PLACEHOLDER": "No machine",
+      "ESTIMATE": "Estimate",
+      "FILES": "Files",
+      "INVALID": "Fix the fields with errors first",
+      "NO_CHANGES": "Nothing has changed"
+    },
+    "TITLE": "Work orders",
+    "ADD_NEW": "New work order",
+    "EMPTY": "No work orders found",
+    "ACTIONS": "Actions",
+    "COLUMNS_CHOOSER": "Choose columns",
+    "DELAYED": "Delayed",
+    "MACHINE_DELETED": "(deleted)",
+    "ESTIMATE_MINUTES": "{{count}} min",
+    "VIEW": {
+      "LABEL": "View",
+      "GRID": "Grid",
+      "BOARD": "Board"
+    },
+    "COLUMNS": {
+      "TITLE": "Title",
+      "STATUS": "Status",
+      "PRIORITY": "Priority",
+      "CATEGORY": "Category",
+      "ASSIGNEE": "Assignee",
+      "MACHINE": "Machine",
+      "PLANNED_START": "Planned start",
+      "ESTIMATE": "Estimate",
+      "CREATED_AT": "Created"
+    },
+    "FILTERS": {
+      "TITLE_PLACEHOLDER": "Starts with",
+      "STATUS_PLACEHOLDER": "Select statuses",
+      "PRIORITY_PLACEHOLDER": "Select priorities",
+      "CATEGORY_PLACEHOLDER": "Select categories",
+      "ASSIGNEE_PLACEHOLDER": "Select people",
+      "MACHINE_PLACEHOLDER": "Select machines"
+    },
+    "MENU": {
+      "OPEN": "Open",
+      "ASSIGN": "Assign",
+      "MOVE": "Move",
+      "UNASSIGN": "Unassign",
+      "STATUS": "Change status",
+      "DELETE": "Delete"
+    },
+    "TABS": {
+      "DETAILS": "Details",
+      "HISTORY": "History"
+    },
+    "FILES": {
+      "ATTACH_NEW": "Attach new",
+      "ATTACH_EXISTING": "Attach existing",
+      "EMPTY": "No files attached",
+      "UNAVAILABLE": "File unavailable",
+      "REMOVE": "Remove file"
+    },
+    "PICKER": {
+      "TITLE": "Attach existing files",
+      "COMPANY_FILES": "Company files",
+      "MACHINE_FILES": "Machine files",
+      "EMPTY": "No files to attach",
+      "ATTACH": "Attach"
+    },
+    "HISTORY": {
+      "EMPTY": "No history yet",
+      "ASSIGNEE": "Assignee",
+      "PLANNED_START": "Planned start"
+    },
+    "TOASTS": {
+      "SUCCESS": "Done",
+      "CREATED": "The work order was created",
+      "UPDATED": "The work order was saved",
+      "CONFLICT": "Someone else changed this work order. It was reloaded; check it and save again",
+      "RULE": "The change breaks a rule. Change it and try again",
+      "UPLOAD_FAILED": "The file could not be uploaded"
+    },
+    "SCHEDULE": {
+      "ASSIGN_TITLE": "Assign work order",
+      "MOVE_TITLE": "Move work order",
+      "STATUS_TITLE": "Change status",
+      "ASSIGNEE": "Assignee",
+      "ASSIGNEE_PLACEHOLDER": "Choose a person",
+      "START": "Planned start",
+      "STATUS": "New status",
+      "PICK_STATUS": "Choose a status",
+      "SUGGESTED": "First free start",
+      "USE_SUGGESTION": "Use",
+      "NO_FREE_START": "No free start is left on this day",
+      "ERRORS": {
+        "ASSIGNEE_REQUIRED": "Choose a person",
+        "START_REQUIRED": "Choose a start"
+      }
+    },
+    "CONFIRM": {
+      "UNASSIGN_HEADER": "Unassign work order",
+      "UNASSIGN_MESSAGE": "Return \"{{title}}\" to the backlog?",
+      "UNASSIGN_ACCEPT": "Unassign",
+      "DELETE_HEADER": "Delete work order",
+      "DELETE_MESSAGE": "Delete \"{{title}}\"? This cannot be undone",
+      "DELETE_ACCEPT": "Delete"
+    },
+    "BOARD": {
+      "CHANGE_STATUS": "Change status",
+      "EMPTY_COLUMN": "No work orders in this column",
+      "CHANGE_STATUS_UNSAVED": "Save or discard the changes first"
+    }
+  },
+  "SCHEDULE": {
+    "EMPLOYEE_TITLE": "Schedule",
+    "COMPANY_TITLE": "Company schedule",
+    "EMPLOYEE": "Employee",
+    "PREVIOUS_DAY": "Previous day",
+    "NEXT_DAY": "Next day",
+    "TODAY": "Today",
+    "EMPTY": "No employees to show",
+    "BACK": "Back to employees"
+  },
+  "SHIFTS": {
+    "TITLE": "Shifts",
+    "VERSIONS": "Weekly templates",
+    "OVERRIDES": "Overrides",
+    "ADD_VERSION": "New version",
+    "ADD_OVERRIDE": "New override",
+    "EFFECTIVE_FROM": "From",
+    "EDIT": "Edit",
+    "DELETE": "Delete",
+    "EMPTY_VERSIONS": "No shift templates yet",
+    "EMPTY_OVERRIDES": "No overrides in this month",
+    "PREVIOUS_MONTH": "Previous month",
+    "NEXT_MONTH": "Next month",
+    "WEEKDAYS": {
+      "MONDAY": "Monday",
+      "TUESDAY": "Tuesday",
+      "WEDNESDAY": "Wednesday",
+      "THURSDAY": "Thursday",
+      "FRIDAY": "Friday",
+      "SATURDAY": "Saturday",
+      "SUNDAY": "Sunday"
+    },
+    "DIALOG": {
+      "VERSION_CREATE_TITLE": "New weekly template",
+      "VERSION_EDIT_TITLE": "Edit weekly template",
+      "OVERRIDE_TITLE": "Day override",
+      "EFFECTIVE_FROM": "First day of effect",
+      "DATE": "Date",
+      "BLOCKS": "Blocks",
+      "ADD_BLOCK": "Add block",
+      "REMOVE_BLOCK": "Remove block",
+      "START": "start",
+      "END": "end",
+      "DAY_OFF": "Day off",
+      "INVALID": "Fix the blocks and the date first"
+    },
+    "ERRORS": {
+      "TIME_FORMAT": "Use the format HH:mm",
+      "GRID": "Times use steps of 5 minutes",
+      "LATEST_END": "A block ends at 23:55 at the latest",
+      "END_AFTER_START": "A block must end after it starts",
+      "UNSORTED": "Sort the blocks by their start",
+      "OVERLAP": "Blocks must not overlap",
+      "TOO_MANY": "A day has at most 6 blocks",
+      "DAYS": "The template needs all 7 weekdays",
+      "DATE_REQUIRED": "Choose a date"
+    },
+    "TOASTS": {
+      "SAVED": "The shifts were saved",
+      "DELETED": "The entry was deleted",
+      "CONFLICT": "Someone else changed the shifts. They were reloaded; check them and try again",
+      "RULE": "The change breaks a rule. Change it and try again"
+    },
+    "CONFIRM": {
+      "DELETE": "Delete",
+      "DELETE_VERSION_HEADER": "Delete weekly template",
+      "DELETE_VERSION_MESSAGE": "Delete this weekly template? This cannot be undone",
+      "DELETE_OVERRIDE_HEADER": "Delete override",
+      "DELETE_OVERRIDE_MESSAGE": "Delete this override? The weekly template applies again"
+    },
+    "AFFECTED": {
+      "TITLE": "Work orders outside the new shifts",
+      "HINT": "Move or unassign these work orders first, then save again"
+    },
+    "BACK": "Back to employees"
+  },
+  "EMPLOYEES": {
+    "TITLE": "Employees",
+    "INVITE_BUTTON": "Invite",
+    "ACTIONS": "Actions",
+    "EMPTY": "No employees found",
+    "EMPTY_INVITES": "No pending invites",
+    "RESEND": "Resend",
+    "YES": "Yes",
+    "NO": "No",
+    "TABS": {
+      "EMPLOYEES": "Employees",
+      "INVITES": "Pending invites"
+    },
+    "COLUMNS": {
+      "NAME": "Name",
+      "EMAIL": "Email",
+      "ROLE": "Role",
+      "STATUS": "Status",
+      "CREATED_AT": "Created",
+      "EXPIRES_AT": "Expires",
+      "IS_EXPIRED": "Expired"
+    },
+    "ROLES": {
+      "WORKER": "Worker",
+      "SUPERVISOR": "Supervisor"
+    },
+    "STATUSES": {
+      "PROVISIONING": "Provisioning",
+      "ACTIVE": "Active",
+      "PROVISIONING_FAILED": "Provisioning failed",
+      "DEACTIVATED": "Deactivated"
+    },
+    "MENU": {
+      "SHIFTS": "Shifts",
+      "SCHEDULE": "Schedule",
+      "RETRY_PROVISIONING": "Retry provisioning"
+    },
+    "INVITE": {
+      "TITLE": "Invite an employee",
+      "EMAIL": "Email",
+      "ROLE": "Role",
+      "INVALID": "Enter a valid email first",
+      "ERRORS": {
+        "EMAIL_REQUIRED": "Enter an email",
+        "EMAIL_INVALID": "Enter a valid email",
+        "EMAIL_TOO_LONG": "The email is too long",
+        "NAME_TOO_LONG": "The name is too long"
+      },
+      "FIRST_NAME": "First name (optional)",
+      "LAST_NAME": "Last name (optional)",
+      "NAME_TOO_LONG": "A name has at most {{max}} characters"
+    },
+    "TOASTS": {
+      "INVITED": "The invite was sent",
+      "RESENT": "The invite was sent again. It expires at {{expiresAt}}",
+      "RETRIED": "The provisioning started again",
+      "OPEN_INVITE_EXISTS": "An open invite for this email exists. See the pending invites tab and resend it",
+      "ALREADY_EMPLOYEE": "A person with this email is already an employee",
+      "RULE": "The change breaks a rule. Change it and try again",
+      "REVOKED": "The invite was revoked",
+      "INVITE_CHANGED": "The invite changed. Reload and try again"
+    },
+    "REVOKE": "Revoke",
+    "REVOKE_HEADER": "Revoke the invite",
+    "REVOKE_MESSAGE": "Revoke the invite for {{email}}? The link stops working"
+  },
+  "INVITE": {
+    "TITLE": "Join HealthyFac",
+    "COMPANY": "Company",
+    "EMAIL": "Email",
+    "ROLE": "Role",
+    "FIRST_NAME": "First name",
+    "LAST_NAME": "Last name",
+    "ACCEPT": "Accept the invite",
+    "SUCCESS": "Check your email to set a password, then sign in",
+    "SIGN_IN": "Sign in",
+    "EMPLOYED": "This email already belongs to an employee. Sign in",
+    "INVALID": "The invite link is invalid or expired. Ask your supervisor for a new invite",
+    "FAILED": "The invite could not be checked. Try again later",
+    "ERRORS": {
+      "NAME_REQUIRED": "This field is required",
+      "NAME_TOO_LONG": "The name is too long"
+    },
+    "SIGNED_IN_AS": "You are signed in as {{email}}. Sign out to accept this invite",
+    "SIGN_OUT_AND_CONTINUE": "Sign out and continue"
   }
 }

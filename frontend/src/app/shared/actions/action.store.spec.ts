@@ -180,4 +180,26 @@ describe('ActionStore', () => {
     expect(store.returnPath()).toEqual({ url: PAGE_URL, action: PARENT, targetPrefix: TARGET_PREFIX });
     expect(store.active()).toBeNull();
   });
+
+  it('complete_WithAReturnAction_ReopensTheCallingAction', async () => {
+    const store = createStore();
+    const caller = { type: CREATE_TYPE, payload: { name: 'Lathe' } };
+    await store.dispatch(caller);
+
+    await store.dispatch({ type: CREATE_TYPE, payload: { name: 'Press' } }, caller);
+    store.complete(SAVED_TYPE);
+
+    expect(store.active()).toEqual(caller);
+    expect(store.lastResult()?.type).toBe(SAVED_TYPE);
+  });
+
+  it('cancel_WithAReturnAction_ReopensTheCallingAction', async () => {
+    const store = createStore();
+    const caller = { type: CREATE_TYPE, payload: { name: 'Lathe' } };
+
+    await store.dispatch({ type: CREATE_TYPE, payload: { name: 'Press' } }, caller);
+    store.cancel();
+
+    expect(store.active()).toEqual(caller);
+  });
 });

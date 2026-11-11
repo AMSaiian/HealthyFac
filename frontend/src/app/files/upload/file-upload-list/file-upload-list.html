@@ -3,7 +3,7 @@
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)"
 >
-  <i class="pi pi-cloud-upload text-3xl text-surface-500"></i>
+  <i class="pi pi-cloud-upload text-3xl text-muted-color"></i>
   <span>{{ 'FILES.UPLOAD_DIALOG.DROP' | translate }}</span>
   <button
     pButton
@@ -24,7 +24,7 @@
 </div>
 <ul class="flex min-h-0 flex-col gap-2 overflow-auto">
   @for (item of items(); track item.key) {
-    <li class="flex min-w-0 flex-col gap-1 rounded-border border border-surface-200 p-2 dark:border-surface-700">
+    <li class="hf-list-item flex min-w-0 flex-col gap-1">
       <div class="flex min-w-0 items-center justify-between gap-2">
         <span
           class="min-w-0 truncate font-medium"
@@ -32,15 +32,14 @@
           >{{ item.file.name }}</span
         >
         <span class="flex flex-none items-center gap-2">
-          <span class="text-sm text-surface-500">{{ formatFileSize(item.file.size) }}</span>
+          <span class="text-sm text-muted-color">{{ formatFileSize(item.file.size) }}</span>
           @if (canRemove(item)) {
             <button
               pButton
               type="button"
               iconOnly
               severity="secondary"
-              [outlined]="true"
-              [rounded]="true"
+              [text]="true"
               [attr.aria-label]="'FILES.UPLOAD_DIALOG.REMOVE' | translate"
               (click)="removed.emit(item.key)"
             >

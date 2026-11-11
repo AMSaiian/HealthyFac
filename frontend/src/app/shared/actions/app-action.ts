@@ -8,6 +8,8 @@ export interface AppAction<TPayload = unknown> {
 export interface ActionResult {
   readonly type: string;
   readonly sequence: number;
+  /** What the action host tells the readers of the result (e.g., the status of a new work order). */
+  readonly detail?: unknown;
 }
 
 export interface PayloadValidationResult {

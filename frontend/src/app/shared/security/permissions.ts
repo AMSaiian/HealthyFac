@@ -16,6 +16,14 @@ export const Permission = {
   IngestWrite: 'ingest:write',
   DraftsRead: 'drafts:read',
   DraftsWrite: 'drafts:write',
+  EmployeesRead: 'employees:read',
+  EmployeesInvite: 'employees:invite',
+  EmployeesManage: 'employees:manage',
+  WorkOrdersRead: 'work-orders:read',
+  WorkOrdersWrite: 'work-orders:write',
+  WorkOrdersManage: 'work-orders:manage',
+  ShiftsRead: 'shifts:read',
+  ShiftsManage: 'shifts:manage',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

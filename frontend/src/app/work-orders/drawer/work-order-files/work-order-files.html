@@ -1,0 +1,72 @@
+<div class="flex items-center justify-between gap-2">
+  <span>{{ 'WORK_ORDERS.FORM.FILES' | translate }}</span>
+  @if (isEditable()) {
+    <div class="flex items-center gap-2">
+      <label
+        pButton
+        severity="secondary"
+        size="small"
+        class="cursor-pointer"
+        [class.pointer-events-none]="isFull()"
+        [class.opacity-60]="isFull()"
+        for="work-order-file-input"
+      >
+        <i class="pi pi-upload"></i>
+        {{ 'WORK_ORDERS.FILES.ATTACH_NEW' | translate }}
+      </label>
+      <input
+        id="work-order-file-input"
+        type="file"
+        class="sr-only"
+        [disabled]="isFull()"
+        (change)="onFileChosen($event)"
+      />
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        size="small"
+        [disabled]="isFull()"
+        (click)="pickRequested.emit()"
+      >
+        <i class="pi pi-paperclip"></i>
+        {{ 'WORK_ORDERS.FILES.ATTACH_EXISTING' | translate }}
+      </button>
+    </div>
+  }
+</div>
+@if (showSkeleton() && !isEmpty()) {
+  <p-skeleton height="2rem" />
+} @else if (isEmpty()) {
+  @if (!isLoading()) {
+    <small class="text-muted-color">{{ 'WORK_ORDERS.FILES.EMPTY' | translate }}</small>
+  }
+} @else {
+  <ul class="flex flex-col gap-1">
+    @for (entry of entries(); track entry.id) {
+      <li class="flex items-center justify-between gap-2">
+        @if (entry.file; as file) {
+          <span class="min-w-0 truncate"
+            >{{ file.fileName }}<span class="text-muted-color">.{{ file.extension }}</span></span
+          >
+        } @else {
+          <span class="text-muted-color italic">{{ 'WORK_ORDERS.FILES.UNAVAILABLE' | translate }}</span>
+        }
+        @if (isEditable()) {
+          <button
+            pButton
+            type="button"
+            iconOnly
+            severity="secondary"
+            size="small"
+            [text]="true"
+            [attr.aria-label]="'WORK_ORDERS.FILES.REMOVE' | translate"
+            (click)="removed.emit(entry.id)"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </li>
+    }
+  </ul>
+}

@@ -5,9 +5,12 @@ import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Subject } from 'rxjs';
 
+import { EmployeeStore } from '@shared/employee/employee.store';
+import { Language } from '@shared/i18n/i18n.constants';
 import { AuthStore } from '@shared/security/auth.store';
+import { Permission } from '@shared/security/permissions';
 
-import { SHELL_NAV_ITEMS } from './shell.store.utils';
+import { languageMenuItems, SHELL_NAV_ITEMS, visibleNavItems } from './shell.store.utils';
 import { ShellStore } from './shell.store';
 
 const HOME_PATH = '/';
@@ -20,7 +23,7 @@ interface Setup {
   logout: ReturnType<typeof vi.fn>;
 }
 
-function setup(options: { isAuthenticated: boolean; hasPermission: boolean }): Setup {
+function setup(options: { isAuthenticated: boolean; hasPermission: boolean; employeeId?: string | null }): Setup {
   const events = new Subject<NavigationStart>();
   const confirm = vi.fn();
   const logout = vi.fn();
@@ -28,6 +31,7 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean }): S
     providers: [
       ShellStore,
       { provide: Router, useValue: { events } },
+      { provide: EmployeeStore, useValue: { id: signal(options.employeeId ?? null) } },
       {
         provide: AuthStore,
         useValue: {
@@ -47,6 +51,18 @@ const FILES_PATH = '/files';
 const SIGN_OUT_HEADER_KEY = 'SHELL.SIGN_OUT_CONFIRM.HEADER';
 
 describe('ShellStore', () => {
+  it('isMenuShown_WithoutASession_IsFalse', () => {
+    const { store } = setup({ isAuthenticated: false, hasPermission: true });
+
+    expect(store.isMenuShown()).toBe(false);
+  });
+
+  it('isMenuShown_WithASession_IsTrue', () => {
+    const { store } = setup({ isAuthenticated: true, hasPermission: true });
+
+    expect(store.isMenuShown()).toBe(true);
+  });
+
   it('navItems_WithoutMachinesRead_HidesMachines', () => {
     const { store } = setup({ isAuthenticated: true, hasPermission: false });
 
@@ -55,13 +71,20 @@ describe('ShellStore', () => {
     expect(paths).toEqual([HOME_PATH]);
   });
 
-  it('navItems_WithMachinesRead_ShowsEveryItem', () => {
-    const { store } = setup({ isAuthenticated: true, hasPermission: true });
+  it('navItems_WithEveryPermissionAndEmployee_ShowsEveryItemWithTheOwnSchedulePath', () => {
+    const { store } = setup({ isAuthenticated: true, hasPermission: true, employeeId: 'e 1' });
 
     const paths = store.navItems().map((item) => item.path);
 
-    expect(paths).toEqual([HOME_PATH, MACHINES_PATH, FILES_PATH]);
-    expect(store.navItems()).toEqual(SHELL_NAV_ITEMS);
+    expect(paths).toEqual([
+      HOME_PATH,
+      MACHINES_PATH,
+      '/work-orders',
+      '/employees',
+      '/company/schedule',
+      '/employees/e%201/schedule',
+      FILES_PATH,
+    ]);
   });
 
   it('navItems_WhenSignedOut_IsEmpty', () => {
@@ -105,5 +128,62 @@ describe('ShellStore', () => {
     confirm.mock.calls[0][0].reject?.();
 
     expect(logout).not.toHaveBeenCalled();
+  });
+});
+
+describe('visibleNavItems', () => {
+  const only =
+    (...allowed: Permission[]) =>
+    (permission: Permission): boolean =>
+      allowed.includes(permission);
+
+  it('visibleNavItems_WithoutEmployee_HidesTheOwnSchedule', () => {
+    const items = visibleNavItems(SHELL_NAV_ITEMS, only(Permission.ShiftsRead), null);
+
+    expect(items.map((item) => item.path)).toEqual([HOME_PATH]);
+  });
+
+  it('visibleNavItems_WorkerWithShiftsRead_ShowsHomeAndOwnSchedule', () => {
+    const items = visibleNavItems(SHELL_NAV_ITEMS, only(Permission.ShiftsRead, Permission.WorkOrdersRead), 'e1');
+
+    expect(items.map((item) => item.path)).toEqual([HOME_PATH, '/work-orders', '/employees/e1/schedule']);
+  });
+
+  it('visibleNavItems_SupervisorWithShiftsManage_ShowsCompanyScheduleAndEmployees', () => {
+    const items = visibleNavItems(
+      SHELL_NAV_ITEMS,
+      only(Permission.ShiftsRead, Permission.ShiftsManage, Permission.EmployeesRead),
+      'e1',
+    );
+
+    expect(items.map((item) => item.path)).toEqual([
+      HOME_PATH,
+      '/employees',
+      '/company/schedule',
+      '/employees/e1/schedule',
+    ]);
+  });
+});
+
+describe('languageMenuItems', () => {
+  it('languageMenuItems_WithTwoLanguages_MarksTheCurrentOneAndKeepsTheNameKeys', () => {
+    const items = languageMenuItems(
+      [Language.English, Language.Ukrainian],
+      Language.Ukrainian,
+      (language) => `/${language}.svg`,
+      () => undefined,
+    );
+
+    expect(items.map((item) => item.label)).toEqual(['LANGUAGE.EN', 'LANGUAGE.UK']);
+    expect(items.map((item) => (item.state as { isCurrent: boolean }).isCurrent)).toEqual([false, true]);
+  });
+
+  it('languageMenuItems_OnCommand_ChoosesThatLanguage', () => {
+    const choose = vi.fn();
+    const items = languageMenuItems([Language.English, Language.Ukrainian], Language.English, () => '', choose);
+
+    items[1].command?.({ originalEvent: new Event('click'), item: items[1] });
+
+    expect(choose).toHaveBeenCalledWith(Language.Ukrainian);
   });
 });

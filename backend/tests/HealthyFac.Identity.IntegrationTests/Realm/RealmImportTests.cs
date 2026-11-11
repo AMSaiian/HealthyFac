@@ -19,12 +19,23 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
     }
 
     [Fact]
-    public async Task Import_WithPlaceholders_AddsSupervisorAsOrganizationMember()
+    public async Task Import_WithPlaceholders_AddsSupervisorAndWorkerAsOrganizationMembers()
     {
         var organizations = await _fixture.ListOrganizationsAsync();
         var memberIds = await _fixture.ListOrganizationMemberIdsAsync(organizations.Single().Id);
 
-        memberIds.Should().Equal(RealmTestData.SupervisorIdentityId);
+        memberIds.Should().BeEquivalentTo([RealmTestData.SupervisorIdentityId, RealmTestData.WorkerIdentityId]);
+    }
+
+    [Fact]
+    public async Task Import_ForTheSpaClient_HasRootAndBaseUrlSoErrorPagesLinkBack()
+    {
+        var uuid = await _fixture.FindClientUuidAsync(RealmTestData.SpaClientId);
+
+        var client = await _fixture.GetClientAsync(uuid);
+
+        client[propertyName: "rootUrl"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
+        client[propertyName: "baseUrl"]!.GetValue<string>().Should().Be(expected: "/");
     }
 
     [Fact]

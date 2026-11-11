@@ -1,11 +1,17 @@
 using HealthyFac.Core.Application.Employees;
+using HealthyFac.Core.Application.Employees.SearchEmployees;
+using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using ApplicationDeactivateEmployeeRequest =
     HealthyFac.Core.Application.Employees.DeactivateEmployeeRequest;
 using ApplicationRetryProvisioningRequest =
     HealthyFac.Core.Application.Employees.RetryProvisioningRequest;
+using ApplicationGetCurrentEmployeeRequest = HealthyFac.Core.Application.Employees.GetCurrentEmployeeRequest;
+using ApplicationLookupEmployeesRequest = HealthyFac.Core.Application.Employees.LookupEmployeesRequest;
+using ApplicationSearchEmployeesRequest = HealthyFac.Core.Application.Employees.SearchEmployees.SearchEmployeesRequest;
 
 namespace HealthyFac.Core.Web.Employees;
 
@@ -27,9 +33,52 @@ public static class EmployeeEndpoints
                 .RequireAuthorization(CorePermissions.Employees.Manage);
             group.MapPost(EmployeeRoutes.Deactivate, DeactivateAsync)
                 .RequireAuthorization(CorePermissions.Employees.Manage);
+            group.MapGet(EmployeeRoutes.Me, GetCurrentAsync);
+            group.MapPost(EmployeeRoutes.Search, SearchAsync)
+                .RequireAuthorization(CorePermissions.Employees.Read);
+            group.MapPost(EmployeeRoutes.Lookup, LookupAsync)
+                .RequireAuthorization(CorePermissions.Employees.Read);
 
             return app;
         }
+    }
+
+    private static async Task<IResult> GetCurrentAsync(
+        IRequestHandler<ApplicationGetCurrentEmployeeRequest, CurrentEmployeeResponse> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(new ApplicationGetCurrentEmployeeRequest(), cancellationToken);
+
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> LookupAsync(
+        LookupEmployeesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationLookupEmployeesRequest, LookupResponse> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return Results.Ok(response);
+    }
+
+    private static async Task<IResult> SearchAsync(
+        SearchEmployeesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationSearchEmployeesRequest, GridResponse<EmployeeRowResponse>> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> RetryProvisioningAsync(

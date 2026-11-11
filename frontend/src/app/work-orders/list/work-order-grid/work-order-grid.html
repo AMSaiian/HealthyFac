@@ -1,0 +1,346 @@
+<p-table
+  dataKey="id"
+  sortMode="single"
+  scrollHeight="flex"
+  [value]="tableRows()"
+  [columns]="tableColumns()"
+  [lazy]="true"
+  [lazyLoadOnInit]="false"
+  [paginator]="true"
+  [rows]="limit()"
+  [first]="offset()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="{first} - {last} / {totalRecords}"
+  [scrollable]="true"
+  [reorderableColumns]="true"
+  [sortField]="sort()?.column"
+  [sortOrder]="sortOrder()"
+  [tableStyle]="tableStyle()"
+  [filters]="tableFilters()"
+  (onPage)="onPage($event)"
+  (onSort)="onSort($event)"
+  (onFilter)="onFilterApplied($event)"
+  (onColReorder)="onColumnReorder($event)"
+>
+  <ng-template
+    #header
+    let-columns
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <th
+          pReorderableColumn
+          [pSortableColumn]="column"
+          [pSortableColumnDisabled]="!isSortable(column)"
+        >
+          <div class="flex items-center gap-1">
+            <span>{{ columnLabelKey(column) | translate }}</span>
+            @if (isSortable(column)) {
+              <p-sort-icon [field]="column" />
+            }
+            @if (isFilterable(column)) {
+              <p-column-filter
+                [filterButtonProps]="squareFilterButtonProps"
+                #columnFilter
+                display="menu"
+                [field]="column"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+                [showApplyButton]="true"
+                [showClearButton]="true"
+                (onHide)="onFilterHidden(column)"
+              >
+                <ng-template
+                  #filter
+                  let-value
+                  let-filterConstraint="filterConstraint"
+                >
+                  @switch (column) {
+                    @case (WorkOrderColumn.Title) {
+                      <input
+                        pInputText
+                        class="w-full"
+                        [attr.aria-label]="columnLabelKey(column) | translate"
+                        [placeholder]="'WORK_ORDERS.FILTERS.TITLE_PLACEHOLDER' | translate"
+                        [value]="value ?? ''"
+                        (input)="filterConstraint.value = $any($event.target).value"
+                        (keydown.enter)="columnFilter.applyFilter()"
+                      />
+                    }
+                    @case (WorkOrderColumn.Status) {
+                      <p-select
+                        class="w-48"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="statusOptions()"
+                        [placeholder]="'WORK_ORDERS.FILTERS.STATUS_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      >
+                        <ng-template #selectedItem>
+                          <hf-chip-summary
+                            [chips]="statusChips(value ?? [])"
+                            [placeholder]="'WORK_ORDERS.FILTERS.STATUS_PLACEHOLDER' | translate"
+                          />
+                        </ng-template>
+                        <ng-template
+                          #item
+                          let-option
+                        >
+                          <p-tag
+                            [class]="'hf-status-' + option.value"
+                            [value]="option.label"
+                          />
+                        </ng-template>
+                      </p-select>
+                    }
+                    @case (WorkOrderColumn.Priority) {
+                      <p-select
+                        class="w-48"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="priorityOptions()"
+                        [placeholder]="'WORK_ORDERS.FILTERS.PRIORITY_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      >
+                        <ng-template #selectedItem>
+                          <hf-chip-summary
+                            [chips]="priorityChips(value ?? [])"
+                            [placeholder]="'WORK_ORDERS.FILTERS.PRIORITY_PLACEHOLDER' | translate"
+                          />
+                        </ng-template>
+                        <ng-template
+                          #item
+                          let-option
+                        >
+                          <p-tag
+                            [class]="'hf-priority-' + option.value"
+                            [value]="option.label"
+                          />
+                        </ng-template>
+                      </p-select>
+                    }
+                    @case (WorkOrderColumn.Category) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        [options]="categoryOptions()"
+                        [placeholder]="'WORK_ORDERS.FILTERS.CATEGORY_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                    @case (WorkOrderColumn.Assignee) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="displayName"
+                        optionValue="id"
+                        appendTo="self"
+                        [filter]="true"
+                        [loading]="isEmployeesLoading()"
+                        [options]="employees()"
+                        (onShow)="employeeLookupRequested.emit({ text: '', isImmediate: true })"
+                        (onFilter)="employeeLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
+                        [placeholder]="'WORK_ORDERS.FILTERS.ASSIGNEE_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                    @case (WorkOrderColumn.Machine) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="displayName"
+                        optionValue="id"
+                        appendTo="self"
+                        [filter]="true"
+                        [loading]="isMachinesLoading()"
+                        [options]="machines()"
+                        (onShow)="machineLookupRequested.emit({ text: '', isImmediate: true })"
+                        (onFilter)="machineLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
+                        [placeholder]="'WORK_ORDERS.FILTERS.MACHINE_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      />
+                    }
+                    @case (WorkOrderColumn.PlannedStart) {
+                      <hf-plain-date-range-picker
+                        appendTo="self"
+                        [value]="value ?? emptyRange"
+                        (valueChange)="filterConstraint.value = $event"
+                      />
+                    }
+                  }
+                </ng-template>
+              </p-column-filter>
+            }
+          </div>
+        </th>
+      }
+      <th
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        <button
+          pButton
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'WORK_ORDERS.COLUMNS_CHOOSER' | translate"
+          (click)="chooser.toggle($event)"
+        >
+          <i class="pi pi-table"></i>
+        </button>
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-row
+    let-columns="columns"
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <td>
+          @if (showSkeleton()) {
+            <p-skeleton />
+          } @else {
+            @switch (column) {
+              @case (WorkOrderColumn.Title) {
+                <button
+                  type="button"
+                  class="text-primary cursor-pointer text-left font-bold hover:underline"
+                  (click)="openRequested.emit(row.id)"
+                >
+                  {{ row.title }}
+                </button>
+              }
+              @case (WorkOrderColumn.Status) {
+                <div class="flex flex-col items-start gap-1">
+                  @if (row.isDelayed) {
+                    <span class="inline-flex items-center gap-1 whitespace-nowrap text-xs text-red-500">
+                      <i class="pi pi-exclamation-circle"></i>
+                      {{ 'WORK_ORDERS.DELAYED' | translate }}
+                    </span>
+                  }
+                  <p-tag
+                    [class]="'hf-status-' + row.status"
+                    [value]="statusLabel(row.status)"
+                  />
+                </div>
+              }
+              @case (WorkOrderColumn.Priority) {
+                <p-tag
+                  [class]="'hf-priority-' + row.priority"
+                  [value]="priorityLabel(row.priority)"
+                />
+              }
+              @case (WorkOrderColumn.Category) {
+                {{ categoryLabel(row.category) }}
+              }
+              @case (WorkOrderColumn.Assignee) {
+                {{ row.assigneeName ?? '—' }}
+              }
+              @case (WorkOrderColumn.Machine) {
+                @if (row.machineName) {
+                  <span [class.line-through]="row.isMachineDeleted">{{ row.machineName }}</span>
+                  @if (row.isMachineDeleted) {
+                    <span class="text-muted-color ml-1 text-xs">{{ 'WORK_ORDERS.MACHINE_DELETED' | translate }}</span>
+                  }
+                } @else {
+                  —
+                }
+              }
+              @case (WorkOrderColumn.PlannedStart) {
+                {{ row.plannedStartUtc ? (row.plannedStartUtc | localDateTime) : '—' }}
+              }
+              @case (WorkOrderColumn.Estimate) {
+                {{ 'WORK_ORDERS.ESTIMATE_MINUTES' | translate: { count: row.estimateMinutes } }}
+              }
+              @case (WorkOrderColumn.CreatedAt) {
+                {{ row.createdAt | localDateTime }}
+              }
+            }
+          }
+        </td>
+      }
+      <td
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        @if (showSkeleton()) {
+          <p-skeleton />
+        } @else {
+          <button
+            pButton
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [attr.aria-label]="'WORK_ORDERS.ACTIONS' | translate"
+            (click)="openMenu($event, row, menu)"
+          >
+            <i class="pi pi-ellipsis-v"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr class="h-full">
+      <td
+        class="h-full"
+        [attr.colspan]="tableColumns().length + 1"
+      >
+        <hf-empty-state
+          icon="pi pi-inbox"
+          messageKey="WORK_ORDERS.EMPTY"
+        />
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-menu
+  #menu
+  appendTo="body"
+  [popup]="true"
+  [model]="menuItems()"
+/>
+<p-popover
+  #chooser
+  appendTo="body"
+>
+  <div class="flex flex-col gap-2">
+    @for (column of allColumns(); track column) {
+      <div class="flex items-center gap-2">
+        <p-checkbox
+          [binary]="true"
+          [inputId]="'column-' + column"
+          [ngModel]="isColumnVisible(column)"
+          (ngModelChange)="onColumnToggle(column, $event)"
+        />
+        <label [for]="'column-' + column">{{ columnLabelKey(column) | translate }}</label>
+      </div>
+    }
+  </div>
+</p-popover>

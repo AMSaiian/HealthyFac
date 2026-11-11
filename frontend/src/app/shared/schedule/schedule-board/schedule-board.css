@@ -1,0 +1,95 @@
+:host {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--p-schedule-board-border-color);
+  border-radius: var(--p-content-border-radius);
+}
+
+.hf-schedule-header,
+.hf-schedule-row {
+  display: grid;
+  grid-template-columns: 10rem repeat(var(--hf-schedule-hours), minmax(0, 1fr));
+}
+
+.hf-schedule-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  border-bottom: 1px solid var(--p-schedule-board-border-color);
+  background: var(--p-schedule-board-header-background);
+  color: var(--p-text-color);
+  font-weight: var(--p-schedule-board-header-font-weight);
+}
+
+.hf-schedule-header-title {
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--p-schedule-board-border-color);
+  padding: 0 0.875rem;
+}
+
+.hf-schedule-row {
+  border-bottom: 1px solid var(--p-schedule-board-border-color);
+}
+
+.hf-schedule-row:hover {
+  background: var(--p-content-hover-background);
+}
+
+.hf-schedule-name {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  align-items: center;
+  overflow: hidden;
+  border-right: 1px solid var(--p-schedule-board-border-color);
+  padding: 0 0.875rem;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hf-schedule-cell {
+  grid-row: 1;
+  border-right: 1px solid var(--p-schedule-board-border-color);
+}
+
+.hf-schedule-cell:last-of-type {
+  border-right: 0;
+}
+
+.hf-schedule-layer {
+  position: relative;
+  grid-column: 2 / -1;
+  grid-row: 1;
+  pointer-events: none;
+}
+
+.hf-schedule-layer button {
+  pointer-events: auto;
+}
+
+.hf-schedule-now {
+  border-left: 2px solid var(--p-red-500);
+}
+
+.hf-schedule-gap {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 4px,
+    var(--p-content-border-color) 4px,
+    var(--p-content-border-color) 5px
+  );
+  opacity: 0.6;
+}
+
+.hf-schedule-lanes {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  padding-block: 0.9375rem;
+}

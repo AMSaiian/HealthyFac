@@ -195,13 +195,19 @@ public class ApplicationExceptionHandler : IExceptionHandler
                 exception.GetType());
         }
 
-        return new ProblemDetails
+        var problemDetails = new ProblemDetails
         {
             Status = StatusCodes.Status422UnprocessableEntity,
             Title = ProblemDetailsConstants.Unprocessable.Title,
             Type = ProblemDetailsConstants.Unprocessable.TypeUrl,
             Detail = unprocessableException.Message,
         };
+        foreach (var (key, value) in unprocessableException.Extensions)
+        {
+            problemDetails.Extensions[key] = value;
+        }
+
+        return problemDetails;
     }
 
     /// <summary>

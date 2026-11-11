@@ -1,0 +1,68 @@
+<div class="flex flex-col gap-1">
+  <label for="invite-email">{{ 'EMPLOYEES.INVITE.EMAIL' | translate }}</label>
+  @for (error of inviteForm.email().errors(); track $index) {
+    @if (isShown(inviteForm.email)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <input
+    pInputText
+    id="invite-email"
+    type="email"
+    autocomplete="off"
+    [attr.data-hf-calm]="isShown(inviteForm.email) ? null : ''"
+    [formField]="inviteForm.email"
+  />
+</div>
+<div class="flex flex-col gap-1">
+  <label for="invite-role">{{ 'EMPLOYEES.INVITE.ROLE' | translate }}</label>
+  <p-select
+    inputId="invite-role"
+    optionLabel="label"
+    optionValue="value"
+    appendTo="body"
+    [options]="roleOptions()"
+    [formField]="inviteForm.roleCode"
+  >
+    <ng-template
+      #selectedItem
+      let-option
+      >{{ option.label }}</ng-template
+    >
+    <ng-template
+      #item
+      let-option
+      >{{ option.label }}</ng-template
+    >
+  </p-select>
+</div>
+<div class="flex flex-col gap-1">
+  <label for="invite-first-name">{{ 'EMPLOYEES.INVITE.FIRST_NAME' | translate }}</label>
+  @for (error of inviteForm.firstName().errors(); track $index) {
+    @if (isShown(inviteForm.firstName)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <input
+    pInputText
+    id="invite-first-name"
+    autocomplete="off"
+    [attr.data-hf-calm]="isShown(inviteForm.firstName) ? null : ''"
+    [formField]="inviteForm.firstName"
+  />
+</div>
+<div class="flex flex-col gap-1">
+  <label for="invite-last-name">{{ 'EMPLOYEES.INVITE.LAST_NAME' | translate }}</label>
+  @for (error of inviteForm.lastName().errors(); track $index) {
+    @if (isShown(inviteForm.lastName)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <input
+    pInputText
+    id="invite-last-name"
+    autocomplete="off"
+    [attr.data-hf-calm]="isShown(inviteForm.lastName) ? null : ''"
+    [formField]="inviteForm.lastName"
+  />
+</div>

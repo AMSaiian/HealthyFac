@@ -9,6 +9,9 @@
       "members": [
         {
           "username": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}"
+        },
+        {
+          "username": "worker@healthyfac.local"
         }
       ]
     }
@@ -35,6 +38,29 @@
       ],
       "realmRoles": [
         "supervisor"
+      ]
+    },
+    {
+      "username": "worker@healthyfac.local",
+      "email": "worker@healthyfac.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Worker",
+      "attributes": {
+        "employee_id": [
+          "0190f3a0-0000-7000-8000-000000000202"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "worker"
       ]
     }
   ]

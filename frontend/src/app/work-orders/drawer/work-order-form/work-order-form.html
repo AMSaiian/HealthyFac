@@ -1,0 +1,124 @@
+<div class="flex flex-col gap-1">
+  <label for="work-order-title">{{ 'WORK_ORDERS.FORM.TITLE' | translate }}</label>
+  @for (error of workOrderForm.title().errors(); track $index) {
+    @if (isShown(workOrderForm.title)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <input
+    pInputText
+    id="work-order-title"
+    autocomplete="off"
+    [placeholder]="'WORK_ORDERS.FORM.TITLE_PLACEHOLDER' | translate"
+    [attr.data-hf-calm]="isShown(workOrderForm.title) ? null : ''"
+    [formField]="workOrderForm.title"
+  />
+</div>
+<div class="grid grid-cols-2 gap-4">
+  <div class="flex flex-col gap-1">
+    <label for="work-order-priority">{{ 'WORK_ORDERS.FORM.PRIORITY' | translate }}</label>
+    <p-select
+      inputId="work-order-priority"
+      optionLabel="labelKey"
+      optionValue="value"
+      appendTo="body"
+      [options]="priorityOptions"
+      [formField]="workOrderForm.priority"
+    >
+      <ng-template
+        #selectedItem
+        let-option
+        >{{ option.labelKey | translate }}</ng-template
+      >
+      <ng-template
+        #item
+        let-option
+        >{{ option.labelKey | translate }}</ng-template
+      >
+    </p-select>
+  </div>
+  <div class="flex flex-col gap-1">
+    <label for="work-order-category">{{ 'WORK_ORDERS.FORM.CATEGORY' | translate }}</label>
+    <p-select
+      inputId="work-order-category"
+      optionLabel="labelKey"
+      optionValue="value"
+      appendTo="body"
+      [options]="categoryOptions"
+      [formField]="workOrderForm.category"
+    >
+      <ng-template
+        #selectedItem
+        let-option
+        >{{ option.labelKey | translate }}</ng-template
+      >
+      <ng-template
+        #item
+        let-option
+        >{{ option.labelKey | translate }}</ng-template
+      >
+    </p-select>
+  </div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+  <div class="flex flex-col gap-1">
+    <label for="work-order-machine">{{ 'WORK_ORDERS.FORM.MACHINE' | translate }}</label>
+    <p-select
+      inputId="work-order-machine"
+      optionLabel="displayName"
+      optionValue="id"
+      appendTo="body"
+      [filter]="true"
+      [showClear]="true"
+      [loading]="isMachinesLoading()"
+      [options]="machineList()"
+      (onShow)="machineLookupRequested.emit({ text: '', isImmediate: true })"
+      (onFilter)="machineLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
+      [placeholder]="'WORK_ORDERS.FORM.MACHINE_PLACEHOLDER' | translate"
+      [formField]="workOrderForm.machineId"
+    />
+  </div>
+  <div class="flex flex-col gap-1">
+    <label for="work-order-estimate">{{ 'WORK_ORDERS.FORM.ESTIMATE' | translate }}</label>
+    @for (error of workOrderForm.estimateMinutes().errors(); track $index) {
+      @if (isShown(workOrderForm.estimateMinutes)) {
+        <small class="text-red-500">{{ error.message | translate }}</small>
+      }
+    }
+    <p-inputnumber
+      inputId="work-order-estimate"
+      suffix=" min"
+      [min]="estimateMin"
+      [max]="estimateMax"
+      [step]="estimateStep"
+      [showButtons]="true"
+      [readonly]="isEstimateReadOnly()"
+      [attr.data-hf-calm]="isShown(workOrderForm.estimateMinutes) ? null : ''"
+      [formField]="workOrderForm.estimateMinutes"
+    />
+  </div>
+</div>
+<div class="flex flex-col gap-1">
+  <span>{{ 'WORK_ORDERS.FORM.DESCRIPTION' | translate }}</span>
+  @for (error of workOrderForm.description().errors(); track $index) {
+    @if (isShown(workOrderForm.description)) {
+      <small class="text-red-500">{{ error.message | translate }}</small>
+    }
+  }
+  <hf-rich-text-editor
+    [formField]="workOrderForm.description"
+    [characterLimit]="descriptionMaxLength"
+    [placeholder]="'WORK_ORDERS.FORM.DESCRIPTION_PLACEHOLDER' | translate"
+  />
+</div>
+@for (error of workOrderForm.fileIds().errors(); track $index) {
+  <small class="text-red-500">{{ error.message | translate }}</small>
+}
+<hf-work-order-files
+  [entries]="fileEntries()"
+  [isLoading]="isFilesLoading()"
+  [isFull]="isFull()"
+  (removed)="removeFile($event)"
+  (uploadChosen)="uploadChosen.emit($event)"
+  (pickRequested)="pickRequested.emit()"
+/>

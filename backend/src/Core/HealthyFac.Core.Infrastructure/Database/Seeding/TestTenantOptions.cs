@@ -28,6 +28,9 @@ public sealed class TestTenantOptions
     public required string SupervisorFirstName { get; init; }
 
     public required string SupervisorLastName { get; init; }
+
+    /// <summary>The optional worker. Without it, the seed adds no worker and only the supervisor works.</summary>
+    public TestTenantWorkerOptions? Worker { get; init; }
 }
 
 public sealed class TestTenantOptionsValidator : AbstractValidator<TestTenantOptions>
@@ -59,5 +62,9 @@ public sealed class TestTenantOptionsValidator : AbstractValidator<TestTenantOpt
         RuleFor(options => options.SupervisorLastName)
             .NotEmpty()
             .MaximumLength(EmployeeValidationConstants.NameMaxLength);
+
+        RuleFor(options => options.Worker!)
+            .SetValidator(new TestTenantWorkerOptionsValidator())
+            .When(options => options.Worker is not null);
     }
 }

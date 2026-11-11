@@ -34,6 +34,8 @@ public static class RichTextTestData
         "<p><s>a</s></p>",
         "<ol><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span>a</li></ol>",
         "<ol><li data-list=\"ordered\"><span class=\"ql-ui\" contenteditable=\"false\"></span>a</li></ol>",
+        "<ol><li data-list=\"checked\"><span class=\"ql-ui\" contenteditable=\"false\"></span>a</li>"
+        + "<li data-list=\"unchecked\"><span class=\"ql-ui\" contenteditable=\"false\"></span>b</li></ol>",
         "<p><a href=\"https://example.com\" rel=\"noopener noreferrer\" target=\"_blank\">a</a></p>",
         "<p><a href=\"mailto:a@example.com\" rel=\"noopener noreferrer\" target=\"_blank\">a</a></p>",
         "<p>a<br></p>",
@@ -43,6 +45,15 @@ public static class RichTextTestData
         "<p><strong>a&nbsp;</strong><em>b&nbsp;</em><u>c</u><s>d</s></p>",
         "<ol><li><a href=\"https://example.com\" rel=\"noopener noreferrer\" target=\"_blank\">first</a></li></ol>"
         + "<ul><li>b</li></ul>",
+    };
+
+    public static TheoryData<string> RejectedDataLists => new()
+    {
+        "<ol><li data-list=\"x\">a</li></ol>",
+        "<ol><li data-list=\"\">a</li></ol>",
+        "<ol><li data-list=\"Checked\">a</li></ol>",
+        "<ol><li data-list=\"checked unchecked\">a</li></ol>",
+        "<ol><li data-list=\"bullet\">a</li><li data-list=\"todo\">b</li></ol>",
     };
 
     public static TheoryData<string> HostileHtml => new()
@@ -65,6 +76,11 @@ public static class RichTextTestData
         { "<p><br></p>", 0 },
         { "<p>&amp;</p>", 1 },
         { "<ol><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span>ab</li></ol>", 2 },
+        {
+            "<ol><li data-list=\"checked\"><span class=\"ql-ui\" contenteditable=\"false\"></span>ab</li>"
+            + "<li data-list=\"unchecked\"><span class=\"ql-ui\" contenteditable=\"false\"></span>c</li></ol>",
+            3
+        },
         { "<p>e" + (char)0x0301 + "</p>", 1 },
         { "<p>e&#x301;</p>", 1 },
         { "<p>" + (char)0x0958 + "</p>", 2 },

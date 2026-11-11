@@ -26,7 +26,7 @@ import { ingestConflictKey } from '@files/ingest/ingest-conflict';
 import { IngestState } from '@files/ingest/ingest-attempt';
 import { toSearchBody } from '@files/list/file-query';
 import { type FileRowAccess, FileRowAction } from '@files/list/file-grid/file-grid.utils';
-import { INITIAL_GRID } from '@files/list/files-grid.store.utils';
+import { INITIAL_GRID, isSameScope } from '@files/list/files-grid.store.utils';
 import { withMachineSearch } from '@files/with-machine-search';
 
 interface ScopeState {
@@ -320,8 +320,11 @@ export const FilesGridStore = signalStore(
             break;
         }
       },
-      /** Starts a visit to the files of a scope: sets the scope and resets the grid. */
+      /** Starts a visit to the files of a scope: sets the scope and resets the grid. An equal scope changes nothing. */
       setScope(scope: FilesScope): void {
+        if (isSameScope(store.scope(), scope)) {
+          return;
+        }
         patchState(store, { scope });
         store.enableMachineSearch(scope.kind === 'company' && store._auth.hasPermission(Permission.MachinesRead));
         store.resetGrid();

@@ -17,5 +17,11 @@ var app = builder.Build();
 await app.Services.InitializeDatabaseAsync();
 
 app.UseApiPipeline();
+app.MapApiEndpoints();
 
 await app.RunAsync();
+
+namespace HealthyFac.Auth.Web
+{
+    public partial class Program;
+}

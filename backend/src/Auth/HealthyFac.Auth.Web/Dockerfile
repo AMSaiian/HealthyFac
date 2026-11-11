@@ -50,16 +50,16 @@ RUN mkdir /app/logs
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.12-noble-chiseled-extra AS final
 WORKDIR /app
 
-# The service maps no endpoint, so Kestrel binds only the health port 8090. A non-root user cannot bind a privileged
-# port. Keep 8090 equal to HealthEndpoints:Port in appsettings.json.
-ENV ASPNETCORE_HTTP_PORTS=8090 \
+# Kestrel binds the API port 8080 and the health port 8090. A non-root user cannot bind a privileged port. Keep 8090
+# equal to HealthEndpoints:Port in appsettings.json.
+ENV ASPNETCORE_HTTP_PORTS=8080;8090 \
     DOTNET_NOLOGO=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 COPY --from=publish --chown=$APP_UID:$APP_UID /app ./
 COPY --from=publish --chown=$APP_UID:$APP_UID /probe ./probe/
 
-EXPOSE 8090
+EXPOSE 8080 8090
 
 # The chiseled images define APP_UID as a non-root account. The app never runs as root.
 USER $APP_UID

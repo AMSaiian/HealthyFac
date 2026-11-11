@@ -14,15 +14,10 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { debounceTime, distinctUntilChanged, pipe, tap } from 'rxjs';
 
-import { textFilter } from '@shared/grid/requests/grid-filters';
-import { SortDirection } from '@shared/grid/requests/grid-request';
+import type { LookupOption } from '@shared/lookups/lookup-options';
+import { LookupsApi } from '@shared/lookups/lookups-api';
 
 import type { MachineOption } from '@files/file';
-import { MachineSortColumn, type MachinesPage } from '@machines/machine';
-import { MachinesApi } from '@machines/machines-api';
-
-/** The most machines that one search lists. The page size limit of the grids is the same. */
-export const MACHINE_OPTION_LIMIT = 100;
 
 /** The pause after the last typed letter before the search goes to the server. */
 export const MACHINE_SEARCH_DEBOUNCE_MILLISECONDS = 300;
@@ -45,8 +40,8 @@ export function withMachineSearch(): SignalStoreFeature<
   {
     state: MachineSearchState;
     props: {
-      _machinesApi: MachinesApi;
-      machines: ResourceRef<MachinesPage | undefined>;
+      _lookups: LookupsApi;
+      machines: ResourceRef<LookupOption[] | undefined>;
       machineOptions: Signal<MachineOption[]>;
     };
     methods: {
@@ -63,24 +58,18 @@ export function withMachineSearch(): SignalStoreFeature<
       selectedMachineIds: [],
       knownMachines: {},
     }),
-    withProps(() => ({ _machinesApi: inject(MachinesApi) })),
+    withProps(() => ({ _lookups: inject(LookupsApi) })),
     withProps((store) => ({
       machines: rxResource({
         params: () => (store.isMachineSearchEnabled() ? store.machineQuery() : undefined),
-        stream: ({ params }) =>
-          store._machinesApi.search({
-            offset: 0,
-            limit: MACHINE_OPTION_LIMIT,
-            sort: { column: MachineSortColumn.Name, direction: SortDirection.Ascending },
-            filter: { name: textFilter(params) },
-          }),
+        stream: ({ params }) => store._lookups.machines(params),
       }),
     })),
     withComputed((store) => ({
       /** The search result plus the selected machines that the result does not hold, by name. */
       machineOptions: computed((): MachineOption[] => {
         const found: MachineOption[] = store.machines.hasValue()
-          ? store.machines.value().items.map(({ id, name }) => ({ id, name }))
+          ? store.machines.value().map(({ id, displayName }) => ({ id, name: displayName }))
           : [];
         const foundIds = new Set(found.map((machine) => machine.id));
         const known = store.knownMachines();
@@ -111,12 +100,12 @@ export function withMachineSearch(): SignalStoreFeature<
       onInit(store) {
         effect(() => {
           if (store.machines.hasValue()) {
-            const items = store.machines.value().items;
+            const items = store.machines.value();
             untracked(() =>
               patchState(store, (state) => ({
                 knownMachines: {
                   ...state.knownMachines,
-                  ...Object.fromEntries(items.map((machine) => [machine.id, machine.name])),
+                  ...Object.fromEntries(items.map((machine) => [machine.id, machine.displayName])),
                 },
               })),
             );

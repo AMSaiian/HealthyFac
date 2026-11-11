@@ -1,5 +1,6 @@
 import { fileBaseNameOf } from '@shared/files/upload-check';
 import { ALT_ATTRIBUTE, FILE_ID_ATTRIBUTE } from '@shared/rich-text/file-image/file-image-blot';
+import { markChecklistItems } from '@shared/rich-text/rich-text-checklist';
 import { IMAGE_ALT_MAX_LENGTH } from '@shared/rich-text/rich-text-limits';
 
 export const MISSING_IMAGE_CLASS = 'hf-missing-image';
@@ -47,5 +48,5 @@ export function toDisplayHtml(html: string, links: ReadonlyMap<string, string>, 
       image.setAttribute(ALT_ATTRIBUTE, '');
     }
   }
-  return document.body.innerHTML;
+  return markChecklistItems(document.body.innerHTML);
 }

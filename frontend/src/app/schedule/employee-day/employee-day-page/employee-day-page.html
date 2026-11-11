@@ -1,0 +1,61 @@
+<header class="flex flex-none flex-wrap items-center justify-between gap-2">
+  <div class="flex min-w-0 items-center gap-2">
+    @if (store.canGoBack()) {
+      <a
+        pButton
+        routerLink="/employees"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'SCHEDULE.BACK' | translate"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </a>
+    }
+    <h1 class="text-2xl font-bold">{{ 'SCHEDULE.EMPLOYEE_TITLE' | translate }}</h1>
+  </div>
+  <div class="flex items-center gap-2">
+    <button
+      pButton
+      type="button"
+      iconOnly
+      severity="secondary"
+      [attr.aria-label]="'SCHEDULE.PREVIOUS_DAY' | translate"
+      (click)="store.previousDay()"
+    >
+      <i class="pi pi-chevron-left"></i>
+    </button>
+    <hf-plain-date-picker
+      [value]="store.date()"
+      (valueChange)="onDate($event)"
+    />
+    <button
+      pButton
+      type="button"
+      iconOnly
+      severity="secondary"
+      [attr.aria-label]="'SCHEDULE.NEXT_DAY' | translate"
+      (click)="store.nextDay()"
+    >
+      <i class="pi pi-chevron-right"></i>
+    </button>
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      (click)="store.goToToday()"
+    >
+      {{ 'SCHEDULE.TODAY' | translate }}
+    </button>
+  </div>
+</header>
+@if (store.date(); as date) {
+  <hf-schedule-board
+    [rows]="store.rows()"
+    [isLoading]="store.day.isLoading()"
+    [date]="date"
+    [timeZoneId]="clock.timeZoneId()"
+    [now]="store.now()"
+    (workOrderClick)="store.openWorkOrder($event)"
+  />
+}

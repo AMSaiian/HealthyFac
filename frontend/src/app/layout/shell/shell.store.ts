@@ -6,22 +6,25 @@ import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { filter } from 'rxjs';
 
+import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth.store';
 
-import { SHELL_NAV_ITEMS, type ShellNavItem } from './shell.store.utils';
+import { SHELL_NAV_ITEMS, type ShellNavItem, visibleNavItems } from './shell.store.utils';
 
 export const ShellStore = signalStore(
   withState({ isMenuOpen: false }),
   withProps(() => ({
     _auth: inject(AuthStore),
     _confirmation: inject(ConfirmationService),
+    _employee: inject(EmployeeStore),
     _router: inject(Router),
     _translate: inject(TranslateService),
   })),
   withComputed((store) => ({
+    isMenuShown: computed(() => store._auth.isAuthenticated()),
     navItems: computed((): readonly ShellNavItem[] =>
       store._auth.isAuthenticated()
-        ? SHELL_NAV_ITEMS.filter((item) => item.permission === undefined || store._auth.hasPermission(item.permission))
+        ? visibleNavItems(SHELL_NAV_ITEMS, (permission) => store._auth.hasPermission(permission), store._employee.id())
         : [],
     ),
   })),

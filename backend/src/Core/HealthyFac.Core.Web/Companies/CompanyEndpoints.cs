@@ -1,6 +1,11 @@
 using HealthyFac.Core.Application.Companies;
+using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Core.Web.Shifts;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
+using ApplicationCompanyDayScheduleResponse = HealthyFac.Core.Application.Shifts.CompanyDayScheduleResponse;
+using ApplicationGetCompanyDayScheduleRequest = HealthyFac.Core.Application.Shifts.GetCompanyDayScheduleRequest;
 
 namespace HealthyFac.Core.Web.Companies;
 
@@ -20,6 +25,8 @@ public static class CompanyEndpoints
         {
             var group = app.MapGroup(CompanyRoutes.BaseRoute);
             group.MapGet(CompanyRoutes.Root, GetCurrentAsync);
+            group.MapGet(CompanyRoutes.Schedule, GetScheduleAsync)
+                .RequireAuthorization(CorePermissions.Shifts.Manage, CorePermissions.Employees.Read);
 
             return app;
         }
@@ -31,6 +38,20 @@ public static class CompanyEndpoints
     )
     {
         var response = await handler.HandleAsync(new GetCurrentCompanyRequest(), cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<ApplicationCompanyDayScheduleResponse>> GetScheduleAsync(
+        [AsParameters] GetCompanyDayScheduleRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetCompanyDayScheduleRequest, ApplicationCompanyDayScheduleResponse> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
 
         return TypedResults.Ok(response);
     }

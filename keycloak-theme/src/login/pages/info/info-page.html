@@ -1,0 +1,48 @@
+@let client = kcContext.client;
+
+<ng-template #headerNode>
+  <span [innerHTML]="title() | kcSanitize: 'html'"></span>
+</ng-template>
+
+<div
+  id="kc-info-message"
+  class="flex flex-col gap-4"
+>
+  @if (summary(); as text) {
+    <p
+      class="text-surface-700"
+      [innerHTML]="text | kcSanitize: 'html'"
+    ></p>
+  }
+  @if (actionNames().length > 0) {
+    <ul class="text-surface-700 flex list-disc flex-col gap-1 pl-5">
+      @for (name of actionNames(); track name) {
+        <li class="font-bold">{{ name }}</li>
+      }
+    </ul>
+  }
+  @if (!kcContext.skipLink) {
+    @if (kcContext.pageRedirectUri) {
+      <a
+        pButton
+        class="w-full"
+        [href]="kcContext.pageRedirectUri"
+        >{{ i18n.msgStr('backToApplication') }}</a
+      >
+    } @else if (kcContext.actionUri) {
+      <a
+        pButton
+        class="w-full"
+        [href]="kcContext.actionUri"
+        >{{ i18n.msgStr('proceed') }}</a
+      >
+    } @else if (client.baseUrl) {
+      <a
+        pButton
+        class="w-full"
+        [href]="client.baseUrl"
+        >{{ i18n.msgStr('backToApplication') }}</a
+      >
+    }
+  }
+</div>

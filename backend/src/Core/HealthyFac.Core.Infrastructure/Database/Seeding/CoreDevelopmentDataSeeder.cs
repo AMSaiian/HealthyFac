@@ -5,12 +5,16 @@ using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Infrastructure.Companies.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
+using HealthyFac.Core.Infrastructure.WorkOrders.Seeding;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Shared.Domain.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -135,10 +139,7 @@ public sealed class CoreDevelopmentDataSeeder(
             return;
         }
 
-        var supervisorRoleId = await _dbContext.Roles
-            .Where(role => role.Code == RoleCode.Supervisor)
-            .Select(role => role.Id)
-            .SingleAsync(cancellationToken);
+        var roleIds = await _dbContext.Roles.ToDictionaryAsync(role => role.Code, role => role.Id, cancellationToken);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         var company = new Company { Name = tenant.CompanyName, TimeZoneId = tenant.TimeZoneId };
@@ -148,45 +149,157 @@ public sealed class CoreDevelopmentDataSeeder(
         AddMachines(tenant.CompanyId, now);
         AddSeedMachines(tenant, now);
 
-        var invite = new EmployeeInvite(
-            tenant.CompanyId,
-            tenant.SupervisorEmail,
-            supervisorRoleId,
-            _inviteTokenService.CreateSalt(),
-            now.AddDays(_options.InviteLifetimeDays));
-        invite.UpdateProfile(tenant.SupervisorFirstName, tenant.SupervisorLastName);
+        var supervisor = AddTestTenantEmployee(
+            tenant,
+            roleIds[RoleCode.Supervisor],
+            new TestTenantEmployee
+            {
+                Id = tenant.SupervisorEmployeeId,
+                IdentityId = tenant.SupervisorIdentityId,
+                Email = tenant.SupervisorEmail,
+                FirstName = tenant.SupervisorFirstName,
+                LastName = tenant.SupervisorLastName,
+            },
+            now);
+        var worker = tenant.Worker is null
+            ? supervisor
+            : AddTestTenantEmployee(
+                tenant,
+                roleIds[RoleCode.Worker],
+                new TestTenantEmployee
+                {
+                    Id = tenant.Worker.EmployeeId,
+                    IdentityId = tenant.Worker.IdentityId,
+                    Email = tenant.Worker.Email,
+                    FirstName = tenant.Worker.FirstName,
+                    LastName = tenant.Worker.LastName,
+                },
+                now);
 
-        var supervisor = invite.Accept(now);
-        _dbContext.Entry(supervisor).Property(entity => entity.Id).CurrentValue = tenant.SupervisorEmployeeId;
-        supervisor.Activate(tenant.SupervisorIdentityId);
-
-        _dbContext.EmployeeInvites.Add(invite);
-        _dbContext.Employees.Add(supervisor);
+        AddTestTenantSchedule(tenant, supervisor, worker, now);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task DeleteBusinessDataAsync(CancellationToken cancellationToken)
+    private Employee AddTestTenantEmployee(
+        TestTenantOptions tenant,
+        Guid roleId,
+        TestTenantEmployee person,
+        DateTime now
+    )
     {
-        await _dbContext.OutboxMessages.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.InboxMessages.ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.MetricDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.StatusDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.MachineDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Employees.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.EmployeeInvites.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.MachineStateHistories.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Machines.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
-        await _dbContext.Companies.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .ExecuteDeleteAsync(cancellationToken);
+        var invite = new EmployeeInvite(
+            tenant.CompanyId,
+            person.Email,
+            roleId,
+            _inviteTokenService.CreateSalt(),
+            now.AddDays(_options.InviteLifetimeDays));
+        invite.UpdateProfile(person.FirstName, person.LastName);
+
+        var employee = invite.Accept(now);
+        _dbContext.Entry(employee).Property(entity => entity.Id).CurrentValue = person.Id;
+        employee.Activate(person.IdentityId);
+
+        _dbContext.EmployeeInvites.Add(invite);
+        _dbContext.Employees.Add(employee);
+
+        return employee;
     }
+
+    private void AddTestTenantSchedule(TestTenantOptions tenant, Employee supervisor, Employee worker, DateTime now)
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(tenant.TimeZoneId);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now, zone));
+        var firstDay = NextWorkday(today);
+        var secondDay = NextWorkday(firstDay.AddDays(value: 1));
+
+        foreach (var employee in new[] { supervisor, worker }.DistinctBy(employee => employee.Id))
+        {
+            _dbContext.ShiftTemplateVersions.Add(
+                new ShiftTemplateVersion(
+                    employee.Id,
+                    today,
+                    SeedSchedule.Workdays.SelectMany(weekday =>
+                        SeedSchedule.Blocks.Select(times => (weekday, times)))));
+        }
+
+        var machineIds = _options.GetSeedMachines().Select(machine => machine.MachineId).ToList();
+        var orders = new WorkOrderFaker(tenant.CompanyId, machineIds, NextSeed()).Generate(count: 6);
+        _dbContext.WorkOrders.AddRange(orders);
+
+        Schedule(orders[index: 1], worker, firstDay, SeedSchedule.FirstSlot, zone, WorkOrderStatus.InProgress);
+        Schedule(orders[index: 2], worker, firstDay, SeedSchedule.SecondSlot, zone, WorkOrderStatus.Blocked);
+        Schedule(orders[index: 3], worker, firstDay, SeedSchedule.ThirdSlot, zone, WorkOrderStatus.Staged);
+        Schedule(orders[index: 4], supervisor, firstDay, SeedSchedule.AfternoonSlot, zone, WorkOrderStatus.Completed);
+        Schedule(orders[index: 5], supervisor, secondDay, SeedSchedule.AfternoonSlot, zone, WorkOrderStatus.Staged);
+    }
+
+    private static void Schedule(
+        WorkOrder order,
+        Employee assignee,
+        DateOnly day,
+        TimeOnly time,
+        TimeZoneInfo zone,
+        WorkOrderStatus status
+    )
+    {
+        var local = day.ToDateTime(time);
+        order.Assign(assignee.Id, local, LocalTimes.ToUtc(local, zone));
+
+        if (status != WorkOrderStatus.Staged)
+        {
+            order.ChangeStatus(status);
+        }
+    }
+
+    private static DateOnly NextWorkday(DateOnly day)
+    {
+        while (!SeedSchedule.Workdays.Any(weekday => weekday.DayOfWeek == day.DayOfWeek))
+        {
+            day = day.AddDays(value: 1);
+        }
+
+        return day;
+    }
+
+    private Task DeleteBusinessDataAsync(CancellationToken cancellationToken) =>
+        _dbContext.RunInTransactionAsync(
+            async token =>
+            {
+                await _dbContext.OutboxMessages.ExecuteDeleteAsync(token);
+                await _dbContext.InboxMessages.ExecuteDeleteAsync(token);
+                await _dbContext.MetricDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.StatusDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.MachineDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.WorkOrderFiles.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.WorkOrderHistories.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.WorkOrders.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.ShiftOverrideBlocks.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.ShiftOverrides.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.ShiftTemplateBlocks.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.ShiftTemplateVersions.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.Employees.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.EmployeeInvites.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.MachineStateHistories.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.Machines.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+                await _dbContext.Companies.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ExecuteDeleteAsync(token);
+            },
+            cancellationToken);
 
     private void AddMachines(Guid companyId, DateTime now)
     {

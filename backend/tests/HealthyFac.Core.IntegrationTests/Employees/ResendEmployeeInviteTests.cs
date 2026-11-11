@@ -72,7 +72,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
         var act = () => ResendAsync(companyId, inviteId);
 
         await act.Should()
-            .ThrowAsync<ConflictException>()
+            .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeInviteErrors.Rejections.InviteAlreadyAccepted);
     }
 

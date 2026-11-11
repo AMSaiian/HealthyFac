@@ -8,7 +8,6 @@ import { ActionStore } from '@shared/actions/action.store';
 
 import { FileActionType } from '@files/file-actions';
 import { FilesApi } from '@files/files-api';
-import { MachinesApi } from '@machines/machines-api';
 
 import { FileTieStore } from './file-tie.store';
 
@@ -28,7 +27,6 @@ describe('FileTieStore', () => {
       providers: [
         FileTieStore,
         FilesApi,
-        MachinesApi,
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: ActionStore, useValue: actions },

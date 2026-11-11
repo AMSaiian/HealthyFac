@@ -17,6 +17,7 @@ import { routes } from './app.routes';
 
 const COMPANY_URL = '/api/core/v1/company';
 const MACHINES_SEARCH_URL = '/api/core/v1/machines/search';
+const MACHINES_LOOKUP_URL = '/api/core/v1/machines/lookup';
 const FILES_SEARCH_URL = '/api/document/v1/files/search';
 const COMPANY = { name: 'Test Company', timeZoneId: 'Europe/Kyiv' };
 const SERVER_ERROR = { status: 500, statusText: 'Server Error' };
@@ -144,7 +145,7 @@ describe('app routes', () => {
       requests
         .filter((request) => !request.cancelled)
         .forEach((request) => request.flush({ items: [], totalCount: 0 }));
-      http.expectOne(MACHINES_SEARCH_URL).flush({ items: [], totalCount: 0 });
+      http.expectOne(MACHINES_LOOKUP_URL).flush({ items: [] });
     });
     await TestBed.inject(ApplicationRef).whenStable();
 

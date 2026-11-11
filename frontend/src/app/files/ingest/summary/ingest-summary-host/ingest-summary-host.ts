@@ -18,14 +18,7 @@ import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api'
 @Component({
   imports: [ActionDialog, DraftGroupList, EmptyState, LoadingSpinner, TranslatePipe],
   host: { class: 'contents' },
-  providers: [
-    IngestApi,
-    DraftsApi,
-    MetricDefinitionsApi,
-    MetricUnitsApi,
-    StatusDefinitionsApi,
-    IngestSummaryStore,
-  ],
+  providers: [IngestApi, DraftsApi, MetricDefinitionsApi, MetricUnitsApi, StatusDefinitionsApi, IngestSummaryStore],
   selector: 'hf-ingest-summary-host',
   templateUrl: './ingest-summary-host.html',
 })

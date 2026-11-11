@@ -1,3 +1,5 @@
+using System.Data;
+
 namespace HealthyFac.Shared.Application.Persistence;
 
 /// <summary>
@@ -49,6 +51,42 @@ public interface ITransactionalDbContext
     /// operation, or the operation committed or rolled back the transaction.</exception>
     Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    );
+
+    /// <summary>
+    /// Runs <paramref name="operation"/> in one transaction with the given isolation level and commits. It follows the
+    /// same rules as <see cref="RunInTransactionAsync(Func{CancellationToken, Task}, CancellationToken)"/>. Use
+    /// <see cref="IsolationLevel.Serializable"/> only for a write that checks an invariant across rows (e.g., an
+    /// overlap). A serialization failure (<c>40001</c>) runs the whole unit again.
+    /// </summary>
+    /// <param name="operation">The work to run in the transaction.</param>
+    /// <param name="isolationLevel">The isolation level of the transaction.</param>
+    /// <param name="cancellationToken">Cancels the operation and rolls back the transaction.</param>
+    /// <returns>A task that completes when the transaction commits.</returns>
+    /// <exception cref="InvalidOperationException">The context has unsaved changes before the call or after the
+    /// operation, or the operation committed or rolled back the transaction.</exception>
+    Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default(CancellationToken)
+    );
+
+    /// <summary>
+    /// Runs <paramref name="operation"/> in one transaction with the given isolation level, commits, and returns the
+    /// result of the operation. It follows the same rules as
+    /// <see cref="RunInTransactionAsync(Func{CancellationToken, Task}, IsolationLevel, CancellationToken)"/>.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the operation result.</typeparam>
+    /// <param name="operation">The work to run in the transaction.</param>
+    /// <param name="isolationLevel">The isolation level of the transaction.</param>
+    /// <param name="cancellationToken">Cancels the operation and rolls back the transaction.</param>
+    /// <returns>The result of the attempt that committed.</returns>
+    /// <exception cref="InvalidOperationException">The context has unsaved changes before the call or after the
+    /// operation, or the operation committed or rolled back the transaction.</exception>
+    Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     );
 }

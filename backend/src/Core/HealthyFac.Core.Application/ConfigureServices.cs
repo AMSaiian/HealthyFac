@@ -1,4 +1,8 @@
+using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.WorkOrders;
+using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +23,12 @@ public static class ConfigureServices
         {
             services.AddUseCases(CoreApplicationAssembly.Instance);
             services.AddScoped<EmployeeInviteResolver>();
+            services.AddScoped<OwnEmployeeResolver>();
+            services.AddScoped<WorkOrderSearchQuery>();
+            services.AddScoped<DayScheduleReader>();
+            services.AddScoped<ShiftChangeGuard>();
+            services.AddScoped<DayScheduleBuilder>();
+            services.AddScoped<ScheduleChecks>();
 
             return services;
         }

@@ -3,6 +3,8 @@ using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
+using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -34,6 +36,27 @@ public interface ICoreDbContext : ITransactionalDbContext
 
     DbSet<StatusDefinitionDraft> StatusDefinitionDrafts { get; }
 
+    DbSet<WorkOrder> WorkOrders { get; }
+
+    DbSet<WorkOrderHistory> WorkOrderHistories { get; }
+
+    DbSet<WorkOrderFile> WorkOrderFiles { get; }
+
+    DbSet<ShiftTemplateVersion> ShiftTemplateVersions { get; }
+
+    DbSet<ShiftTemplateBlock> ShiftTemplateBlocks { get; }
+
+    DbSet<ShiftOverride> ShiftOverrides { get; }
+
+    DbSet<ShiftOverrideBlock> ShiftOverrideBlocks { get; }
+
+    /// <summary>
+    /// Gives access to the tracking state of an entity. A use case sets the original <c>xmin</c> value of a row from
+    /// the row version that the client sent, and marks a parent row modified when only its child rows change.
+    /// </summary>
+    /// <param name="entity">The tracked entity.</param>
+    /// <typeparam name="TEntity">The entity type.</typeparam>
+    /// <returns>The tracking entry of the entity.</returns>
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity)
         where TEntity : class;
 

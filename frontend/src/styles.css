@@ -14,6 +14,25 @@
 @custom-variant dark (&:where(.app-dark, .app-dark *));
 
 @layer components {
+  .hf-board-scroller {
+    overflow-x: hidden;
+  }
+
+  .hf-board-scroller .p-virtualscroller-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hf-list-item {
+    @apply rounded-border border border-surface p-3;
+  }
+
+  .hf-menu-danger .p-menu-item-link,
+  .hf-menu-danger .p-menu-item-icon,
+  .hf-menu-danger .p-menu-item-label {
+    color: var(--p-red-500);
+  }
+
   .hf-image-pending {
     display: inline-block;
     width: 6rem;
@@ -28,6 +47,79 @@
     min-height: 2rem;
     padding: 0.25rem 0.5rem;
     border: 1px dashed var(--p-content-border-color);
+    color: var(--p-text-muted-color);
+  }
+
+  .hf-status-backlog {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-status-backlog);
+  }
+
+  .hf-status-staged {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-status-staged);
+  }
+
+  .hf-status-inProgress {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-status-in-progress);
+  }
+
+  .hf-status-blocked {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-status-blocked);
+  }
+
+  .hf-status-completed {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-status-completed);
+  }
+
+  .hf-status-rejected {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-status-rejected);
+  }
+
+  .hf-priority-low {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-priority-low);
+  }
+
+  .hf-priority-medium {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-priority-medium);
+  }
+
+  .hf-priority-high {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-priority-high);
+  }
+
+  .hf-priority-critical {
+    color: var(--p-surface-0);
+    background-color: var(--p-work-order-priority-critical);
+  }
+
+  .hf-rich-text li.hf-check-checked,
+  .hf-rich-text li.hf-check-unchecked {
+    list-style: none;
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .hf-rich-text li.hf-check-checked::before,
+  .hf-rich-text li.hf-check-unchecked::before {
+    position: absolute;
+    left: 0;
+    content: '\2610';
+  }
+
+  .hf-rich-text li.hf-check-checked::before {
+    content: '\2611';
+  }
+
+  .hf-rich-text li.hf-check-checked {
+    text-decoration: line-through;
     color: var(--p-text-muted-color);
   }
 

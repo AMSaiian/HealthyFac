@@ -7,6 +7,12 @@
       "username": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}",
       "email": "${HEALTHYFAC_TEST_SUPERVISOR_EMAIL}",
       "enabled": true
+    },
+    {
+      "id": "0190f3a0-0000-7000-8000-000000000201",
+      "username": "worker@healthyfac.local",
+      "email": "worker@healthyfac.local",
+      "enabled": true
     }
   ]
 }

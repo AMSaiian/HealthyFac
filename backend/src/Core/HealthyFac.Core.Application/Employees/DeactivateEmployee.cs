@@ -78,12 +78,12 @@ public sealed class DeactivateEmployeeRequestHandler(
 
         if (employee.IsLinkedTo(_currentUser.TryGetUserId()))
         {
-            throw new ConflictException(EmployeeProvisioningErrors.Rejections.EmployeeIsSelf);
+            throw new UnprocessableException(EmployeeProvisioningErrors.Rejections.EmployeeIsSelf);
         }
 
         if (!employee.CanDeactivate)
         {
-            throw new ConflictException(EmployeeProvisioningErrors.Rejections.EmployeeAlreadyDeactivated);
+            throw new UnprocessableException(EmployeeProvisioningErrors.Rejections.EmployeeAlreadyDeactivated);
         }
 
         var deactivatedAt = _timeProvider.GetUtcNow().UtcDateTime;

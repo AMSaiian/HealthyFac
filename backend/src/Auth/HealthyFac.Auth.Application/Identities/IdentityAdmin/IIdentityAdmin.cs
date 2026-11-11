@@ -1,3 +1,5 @@
+using HealthyFac.Auth.Application.Locales;
+
 namespace HealthyFac.Auth.Application.Identities.IdentityAdmin;
 
 /// <summary>
@@ -105,4 +107,16 @@ public interface IIdentityAdmin
     /// </param>
     /// <returns>A task that completes when the sessions are ended.</returns>
     Task LogoutUserAsync(Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sets the <c>locale</c> attribute of the user and nothing else: the provider keeps every other attribute and
+    /// field. The same value twice changes nothing.
+    /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="locale">The locale.</param>
+    /// <param name="cancellationToken">
+    /// The <see cref="CancellationToken"/> to observe for cancellation requests.
+    /// </param>
+    /// <returns>A task that completes when the attribute holds the locale.</returns>
+    Task SetUserLocaleAsync(Guid userId, Locale locale, CancellationToken cancellationToken);
 }

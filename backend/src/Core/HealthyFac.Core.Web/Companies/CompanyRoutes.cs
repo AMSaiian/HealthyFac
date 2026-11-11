@@ -7,4 +7,5 @@ public static class CompanyRoutes
 {
     public const string BaseRoute = "/company";
     public const string Root = "/";
+    public const string Schedule = "/schedule";
 }

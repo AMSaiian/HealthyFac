@@ -2,6 +2,13 @@
   "realm": "healthyfac",
   "enabled": true,
   "organizationsEnabled": true,
+  "loginTheme": "healthyfac",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "en",
+    "uk"
+  ],
+  "defaultLocale": "en",
   "registrationAllowed": false,
   "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,
@@ -648,7 +655,7 @@
     },
     {
       "name": "healthyfac-claims",
-      "description": "Audiences of the Core, Telemetry, Document, and Insights APIs, the employee ID of the user, and the permissions of the user for the APIs",
+      "description": "Audiences of the Core, Telemetry, Document, Insights, and Auth APIs, the employee ID of the user, and the permissions of the user for the APIs",
       "protocol": "openid-connect",
       "attributes": {
         "include.in.token.scope": "false",
@@ -686,6 +693,18 @@
           "consentRequired": false,
           "config": {
             "included.client.audience": "healthyfac-document",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "healthyfac-auth-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "healthyfac-auth",
             "id.token.claim": "false",
             "access.token.claim": "true",
             "introspection.token.claim": "true"
@@ -840,13 +859,19 @@
         "composites": {
           "client": {
             "healthyfac-core": [
+              "employees:read",
               "employees:invite",
               "employees:manage",
               "machines:read",
               "machines:write",
               "machines:delete",
               "drafts:read",
-              "drafts:write"
+              "drafts:write",
+              "work-orders:read",
+              "work-orders:write",
+              "work-orders:manage",
+              "shifts:read",
+              "shifts:manage"
             ],
             "healthyfac-telemetry": [
               "metric-definitions:read",
@@ -880,7 +905,10 @@
               "machines:write",
               "machines:delete",
               "drafts:read",
-              "drafts:write"
+              "drafts:write",
+              "work-orders:read",
+              "work-orders:write",
+              "shifts:read"
             ],
             "healthyfac-telemetry": [
               "metric-definitions:read",
@@ -923,6 +951,10 @@
     "client": {
       "healthyfac-core": [
         {
+          "name": "employees:read",
+          "description": "View and search employees"
+        },
+        {
           "name": "employees:invite",
           "description": "Invite and re-invite employees"
         },
@@ -949,6 +981,26 @@
         {
           "name": "drafts:write",
           "description": "Dismiss drafts and mark them as applied, and apply machine drafts"
+        },
+        {
+          "name": "work-orders:read",
+          "description": "View work orders; without work-orders:manage only the own ones"
+        },
+        {
+          "name": "work-orders:write",
+          "description": "Create and change work orders and their status"
+        },
+        {
+          "name": "work-orders:manage",
+          "description": "Assign, move, unassign, and delete work orders; reach every work order of the company"
+        },
+        {
+          "name": "shifts:read",
+          "description": "View shift templates, overrides, and day schedules; without shifts:manage only the own ones"
+        },
+        {
+          "name": "shifts:manage",
+          "description": "Change shift templates and overrides of every employee; view the company schedule"
         }
       ],
       "healthyfac-telemetry": [
@@ -1119,6 +1171,8 @@
     {
       "clientId": "healthyfac-spa",
       "name": "HealthyFac Web App",
+      "rootUrl": "${HEALTHYFAC_SPA_URL}",
+      "baseUrl": "/",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,

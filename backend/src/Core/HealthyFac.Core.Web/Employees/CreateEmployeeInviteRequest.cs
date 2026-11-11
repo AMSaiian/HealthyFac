@@ -8,6 +8,8 @@ public record CreateEmployeeInviteRequest
 {
     public required string Email { get; init; }
     public required RoleCode RoleCode { get; init; }
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
 }
 
 public static class CreateEmployeeInviteRequestExtensions
@@ -20,6 +22,8 @@ public static class CreateEmployeeInviteRequestExtensions
                 CompanyId = companyId,
                 Email = request.Email,
                 RoleCode = request.RoleCode,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
             };
     }
 }

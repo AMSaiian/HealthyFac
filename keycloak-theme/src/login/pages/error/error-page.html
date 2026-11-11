@@ -1,0 +1,22 @@
+@let client = kcContext.client;
+
+<ng-template #headerNode>{{ i18n.msgStr('errorTitle') }}</ng-template>
+
+<div
+  id="kc-error-message"
+  class="flex flex-col gap-4"
+>
+  <p
+    class="text-surface-700"
+    [innerHTML]="kcContext.message.summary | kcSanitize: 'html'"
+  ></p>
+  @if (!kcContext.skipLink && client?.baseUrl) {
+    <a
+      pButton
+      id="backToApplication"
+      class="w-full"
+      [href]="client?.baseUrl"
+      >{{ i18n.msgStr('backToApplication') }}</a
+    >
+  }
+</div>

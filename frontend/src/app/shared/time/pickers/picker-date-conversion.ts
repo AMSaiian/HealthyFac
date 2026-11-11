@@ -52,3 +52,35 @@ export function pickerDateToZonedDateTime(value: Date | null, timeZone: string):
   const plain = pickerDateToPlainDateTime(value);
   return plain === null ? null : plain.toZonedDateTime(timeZone, { disambiguation: 'compatible' });
 }
+
+const CARRIER_YEAR = 2000;
+const CARRIER_MONTH = 0;
+const CARRIER_DAY = 1;
+
+/** The time picker keeps its time on a fixed carrier day: the day is never read back. */
+export function plainTimeToPickerDate(value: Temporal.PlainTime | null): Date | null {
+  if (value === null) {
+    return null;
+  }
+  return new Date(CARRIER_YEAR, CARRIER_MONTH, CARRIER_DAY, value.hour, value.minute);
+}
+
+export function pickerDateToPlainTime(value: Date | null): Temporal.PlainTime | null {
+  return value === null ? null : new Temporal.PlainTime(value.getHours(), value.getMinutes());
+}
+
+/** Tells whether two picker dates are the same moment, so an equal value never sets the model again. */
+export function isSameDate(first: Date | null | undefined, second: Date | null | undefined): boolean {
+  return first === second || (!!first && !!second && first.getTime() === second.getTime());
+}
+
+/** Tells whether two range values of the date picker hold the same days. */
+export function areSameDates(first: readonly (Date | null)[] | null, second: readonly (Date | null)[] | null): boolean {
+  if (first === second) {
+    return true;
+  }
+  if (first === null || second === null || first.length !== second.length) {
+    return false;
+  }
+  return first.every((date, index) => isSameDate(date, second[index]));
+}

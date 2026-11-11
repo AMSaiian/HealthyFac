@@ -6,6 +6,8 @@ using HealthyFac.Core.Web.Drafts;
 using HealthyFac.Core.Web.Employees;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Core.Web.Machines;
+using HealthyFac.Core.Web.Shifts;
+using HealthyFac.Core.Web.WorkOrders;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
@@ -153,6 +155,8 @@ public static class ConfigureServices
             versionedGroup.MapDraftEndpoints();
             versionedGroup.MapEmployeeInviteEndpoints();
             versionedGroup.MapEmployeeEndpoints();
+            versionedGroup.MapShiftEndpoints();
+            versionedGroup.MapWorkOrderEndpoints();
 
             return app;
         }

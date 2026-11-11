@@ -11,11 +11,13 @@ import { Skeleton } from 'primeng/skeleton';
 import { ColumnFilter, SortIcon, type TableFilterEvent, TableModule, type TablePageEvent } from 'primeng/table';
 
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
-import { skeletonRows } from '@shared/grid/table/grid-display';
+import { keepWhileLoading, skeletonRows } from '@shared/grid/table/grid-display';
 import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
 import { asList, readTableFilters, toConstraint, toTableFilters } from '@shared/grid/table/table-filters';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
+import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
 
 import {
   DraftColumn,
@@ -74,6 +76,7 @@ const WRITERS: Readonly<Record<DraftColumn, (filter: MachineDraftFilter) => unkn
   templateUrl: './draft-grid.html',
 })
 export class DraftGrid {
+  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   readonly rows = input.required<readonly MachineDraftGridItem[]>();
   readonly totalCount = input.required<number>();
   readonly isLoading = input(false);
@@ -110,12 +113,14 @@ export class DraftGrid {
   );
   protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
   protected readonly tableFilters = computed(() => toTableFilters(this.columns, WRITERS, this.filter()));
+  protected readonly showSkeleton = delayedLoading(this.isLoading);
+  protected readonly keptRows = keepWhileLoading(this.rows, this.isLoading);
   protected readonly tableRows = computed((): unknown[] =>
-    this.isLoading() ? skeletonRows(this.limit()) : [...this.rows()],
+    this.showSkeleton() ? skeletonRows(this.limit()) : [...this.keptRows()],
   );
   protected readonly tableStyle = computed(() => ({
     'min-width': '40rem',
-    ...(this.isLoading() || this.rows().length > 0 ? {} : { height: '100%' }),
+    ...(this.showSkeleton() || this.keptRows().length > 0 ? {} : { height: '100%' }),
   }));
 
   protected columnLabelKey(column: DraftColumn): string {

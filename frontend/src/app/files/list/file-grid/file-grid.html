@@ -29,6 +29,9 @@
     let-columns
   >
     <tr>
+      @if (isSelectable()) {
+        <th class="w-12"></th>
+      }
       @for (column of columns; track column) {
         <th
           pReorderableColumn
@@ -42,6 +45,7 @@
             }
             @if (isFilterable(column)) {
               <p-column-filter
+                [filterButtonProps]="squareFilterButtonProps"
                 #columnFilter
                 display="menu"
                 [field]="column"
@@ -85,6 +89,7 @@
                     }
                     @case (FileColumn.UploadedAt) {
                       <hf-plain-date-range-picker
+                        appendTo="self"
                         [value]="value ?? emptyRange"
                         (valueChange)="filterConstraint.value = $event"
                       />
@@ -136,8 +141,7 @@
           type="button"
           iconOnly
           severity="secondary"
-          [outlined]="true"
-          [rounded]="true"
+          [text]="true"
           [attr.aria-label]="'FILES.COLUMNS_CHOOSER' | translate"
           (click)="chooser.toggle($event)"
         >
@@ -152,9 +156,22 @@
     let-columns="columns"
   >
     <tr>
+      @if (isSelectable()) {
+        <td>
+          @if (!isLoading()) {
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isChecked(file.id)"
+              [disabled]="lockedIds().includes(file.id)"
+              [attr.aria-label]="file.fileName"
+              (ngModelChange)="selectionToggled.emit({ id: file.id, isSelected: $event })"
+            />
+          }
+        </td>
+      }
       @for (column of columns; track column) {
         <td>
-          @if (isLoading()) {
+          @if (showSkeleton()) {
             <p-skeleton />
           } @else {
             @switch (column) {
@@ -203,7 +220,7 @@
         alignFrozen="right"
         [frozen]="true"
       >
-        @if (isLoading()) {
+        @if (showSkeleton()) {
           <p-skeleton />
         } @else {
           <button
@@ -211,8 +228,7 @@
             type="button"
             iconOnly
             severity="secondary"
-            [outlined]="true"
-            [rounded]="true"
+            [text]="true"
             [attr.aria-label]="'FILES.ROW_ACTIONS' | translate"
             (click)="openMenu($event, file, menu)"
           >

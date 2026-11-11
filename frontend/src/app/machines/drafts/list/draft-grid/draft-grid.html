@@ -34,6 +34,7 @@
             }
             @if (column === DraftColumn.Kind) {
               <p-column-filter
+                [filterButtonProps]="squareFilterButtonProps"
                 display="menu"
                 [field]="column"
                 [showMatchModes]="false"
@@ -76,7 +77,7 @@
     <tr>
       @for (column of columns; track column) {
         <td>
-          @if (isLoading()) {
+          @if (showSkeleton()) {
             <p-skeleton />
           } @else {
             @switch (column) {
@@ -101,7 +102,7 @@
         </td>
       }
       <td>
-        @if (isLoading()) {
+        @if (showSkeleton()) {
           <p-skeleton />
         } @else if (canWrite()) {
           <button
@@ -109,8 +110,7 @@
             type="button"
             iconOnly
             severity="secondary"
-            [outlined]="true"
-            [rounded]="true"
+            [text]="true"
             [loading]="applyingIds().includes(draft.id)"
             [attr.aria-label]="'DRAFTS.ROW_ACTIONS' | translate"
             (click)="openMenu($event, draft, menu)"

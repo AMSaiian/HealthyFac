@@ -31,6 +31,34 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
         text.Should().NotContain(EmployeeInviteApiTestData.NullCharacterEmailDomain);
     }
 
+    [Fact]
+    public async Task CreateInvite_WithFirstNameOverTheLimit_Returns400()
+    {
+        var extraFields = new Dictionary<string, object?>
+        {
+            [EmployeeInviteApiTestData.FirstNameField] =
+                new string(c: 'a', EmployeeValidationConstants.NameMaxLength + 1),
+        };
+
+        var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateInvite_WithFirstNameAtTheLimit_Returns201()
+    {
+        var extraFields = new Dictionary<string, object?>
+        {
+            [EmployeeInviteApiTestData.FirstNameField] =
+                new string(c: 'a', EmployeeValidationConstants.NameMaxLength),
+        };
+
+        var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
     /// <summary>
     /// Uses an accepted invite, because the employee check has no unique index behind it: only the normalized
     /// request email can find the employee.

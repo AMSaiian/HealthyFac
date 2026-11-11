@@ -8,12 +8,11 @@ import type { AppAction } from '@shared/actions/app-action';
 
 import { FilesApi } from '@files/files-api';
 import { FileTieStore } from '@files/tie/file-tie.store';
-import { MachinesApi } from '@machines/machines-api';
 
 @Component({
   imports: [ActionDialog, FormsModule, Select, TranslatePipe],
   host: { class: 'contents' },
-  providers: [FilesApi, MachinesApi, FileTieStore],
+  providers: [FilesApi, FileTieStore],
   selector: 'hf-file-tie-host',
   templateUrl: './file-tie-host.html',
 })

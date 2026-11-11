@@ -10,6 +10,14 @@ const MIN_TOKEN_VALIDITY_SECONDS = 30;
 const FORCE_REFRESH_VALIDITY_SECONDS = -1;
 const SILENT_CHECK_SSO_PATH = '/silent-check-sso.html';
 const NO_SESSION_MESSAGE = 'The session has ended.';
+const LOGIN_RETURN_PATTERN = /[#?&](?:code|state)=/;
+const LOCALE_CLAIM = 'locale';
+const EMAIL_CLAIM = 'email';
+
+const emailOf = (claims: Record<string, unknown> | undefined): string | null => {
+  const claim = claims?.[EMAIL_CLAIM];
+  return typeof claim === 'string' ? claim : null;
+};
 
 interface PendingOperations {
   login: Promise<void> | null;
@@ -20,7 +28,13 @@ const createPendingOperations = (): PendingOperations => ({ login: null, refresh
 
 export const AuthStore = signalStore(
   { providedIn: 'root' },
-  withState({ isAuthenticated: false, permissions: [] as readonly string[] }),
+  withState({
+    isAuthenticated: false,
+    permissions: [] as readonly string[],
+    email: null as string | null,
+    uiLocale: undefined as string | undefined,
+    signInLocale: null as string | null,
+  }),
   withProps(() => ({
     _keycloak: inject(KEYCLOAK),
     _router: inject(Router),
@@ -29,7 +43,7 @@ export const AuthStore = signalStore(
   withMethods((store) => {
     const login = (redirectPath: string): Promise<void> => {
       store._pending.login ??= store._keycloak
-        .login({ redirectUri: `${location.origin}${redirectPath}` })
+        .login({ redirectUri: `${location.origin}${redirectPath}`, locale: store.uiLocale() })
         .catch((error: unknown) => {
           store._pending.login = null;
           console.error(error);
@@ -64,27 +78,40 @@ export const AuthStore = signalStore(
     return {
       async init(): Promise<void> {
         store._keycloak.onAuthRefreshSuccess = (): void => {
-          patchState(store, { permissions: readPermissions(store._keycloak.idTokenParsed) });
+          patchState(store, {
+            permissions: readPermissions(store._keycloak.idTokenParsed),
+            email: emailOf(store._keycloak.idTokenParsed),
+          });
         };
         store._keycloak.onTokenExpired = (): void => {
           refresh().catch((error: unknown) =>
             error instanceof SessionEndedError ? login(store._router.url) : undefined,
           );
         };
+        const isLoginReturn = LOGIN_RETURN_PATTERN.test(`${location.hash}${location.search}`);
         const isAuthenticated = await store._keycloak.init({
           onLoad: 'check-sso',
           silentCheckSsoRedirectUri: `${location.origin}${SILENT_CHECK_SSO_PATH}`,
           pkceMethod: 'S256',
           checkLoginIframe: false,
         });
-        patchState(store, { isAuthenticated, permissions: readPermissions(store._keycloak.idTokenParsed) });
+        const claim: unknown = store._keycloak.idTokenParsed?.[LOCALE_CLAIM];
+        patchState(store, {
+          isAuthenticated,
+          permissions: readPermissions(store._keycloak.idTokenParsed),
+          email: emailOf(store._keycloak.idTokenParsed),
+          signInLocale: isAuthenticated && isLoginReturn && typeof claim === 'string' ? claim : null,
+        });
       },
       login,
+      setUiLocale(uiLocale: string): void {
+        patchState(store, { uiLocale });
+      },
       hasPermission(permission: Permission): boolean {
         return store.permissions().includes(permission);
       },
-      logout(): Promise<void> {
-        return store._keycloak.logout({ redirectUri: `${location.origin}/` });
+      logout(redirectPath = '/'): Promise<void> {
+        return store._keycloak.logout({ redirectUri: `${location.origin}${redirectPath}` });
       },
       async accessToken(): Promise<string> {
         if (!hasSession()) {

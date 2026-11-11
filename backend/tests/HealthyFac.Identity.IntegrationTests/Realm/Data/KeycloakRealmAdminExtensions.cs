@@ -29,6 +29,9 @@ public static class KeycloakRealmAdminExtensions
             return clients.Single()![propertyName: "id"]!.GetValue<string>();
         }
 
+        public async Task<JsonObject> GetClientAsync(string clientUuid) =>
+            await fixture.GetAdminJsonAsync<JsonObject>($"clients/{clientUuid}");
+
         public async Task<JsonObject> CreateClientRoleAsync(string clientUuid, string roleName)
         {
             using var response = await fixture.SendAdminAsync(

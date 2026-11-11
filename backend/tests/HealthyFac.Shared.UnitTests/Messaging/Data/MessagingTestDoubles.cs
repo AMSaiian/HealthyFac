@@ -1,3 +1,4 @@
+using System.Data;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
@@ -27,6 +28,20 @@ public sealed class TestServiceDbContext(DbContextOptions<TestServiceDbContext> 
 
     public Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => throw new NotSupportedException();
+
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+        => throw new NotSupportedException();
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     )
         => throw new NotSupportedException();

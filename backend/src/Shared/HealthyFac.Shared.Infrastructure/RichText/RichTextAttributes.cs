@@ -14,6 +14,18 @@ internal static class RichTextAttributes
     public const string DataFileId = "data-file-id";
     public const string Alt = "alt";
 
+    /// <summary>The <c>data-list</c> value of a bullet list item.</summary>
+    public const string DataListBullet = "bullet";
+
+    /// <summary>The <c>data-list</c> value of an ordered list item.</summary>
+    public const string DataListOrdered = "ordered";
+
+    /// <summary>The <c>data-list</c> value of a checked checklist item.</summary>
+    public const string DataListChecked = "checked";
+
+    /// <summary>The <c>data-list</c> value of an unchecked checklist item.</summary>
+    public const string DataListUnchecked = "unchecked";
+
     /// <summary>The class of the list marker element that Quill 2 adds inside each list item.</summary>
     public const string QuillUiClass = "ql-ui";
 

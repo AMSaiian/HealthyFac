@@ -3,7 +3,7 @@ import { SortDirection } from '@shared/grid/requests/grid-request';
 import type { GridStateInit } from '@shared/grid/with-grid-state';
 import { EMPTY_RANGE } from '@shared/time/plain-date-range';
 
-import { FileColumn, type FileFilter, FileSortColumn } from '@files/file';
+import { FileColumn, type FileFilter, FileSortColumn, type FilesScope } from '@files/file';
 
 export const INITIAL_FILTER: FileFilter = {
   fileName: '',
@@ -30,3 +30,11 @@ export const INITIAL_GRID: GridStateInit<FileFilter, FileSortColumn, FileColumn>
   filter: INITIAL_FILTER,
   columns: COLUMN_ORDER,
 };
+
+/** Tells whether two scopes point to the same files, so a new object with the same values is not a new scope. */
+export function isSameScope(first: FilesScope | null, second: FilesScope): boolean {
+  if (first === null || first.kind !== second.kind) {
+    return false;
+  }
+  return first.kind === 'company' || (second.kind === 'machine' && first.machineId === second.machineId);
+}

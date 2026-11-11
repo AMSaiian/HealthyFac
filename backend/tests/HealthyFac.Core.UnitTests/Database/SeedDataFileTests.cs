@@ -38,7 +38,10 @@ public sealed class SeedDataFileTests
         var result = validator.Validate(options.DevelopmentData);
 
         result.Errors.Should().BeEmpty();
-        options.DevelopmentData.GetSeedMachines().Select(machine => machine.Name)
-            .Should().Equal("Seed machine 01", "Seed machine 02");
+        options.DevelopmentData.GetSeedMachines()
+            .Select(machine => machine.Name)
+            .Should()
+            .Equal("Seed machine 01", "Seed machine 02");
+        options.DevelopmentData.TestTenant!.Worker.Should().NotBeNull();
     }
 }

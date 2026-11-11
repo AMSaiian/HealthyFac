@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { FileDownloader } from '@shared/files/file-downloader';
+import { LookupsApi } from '@shared/lookups/lookups-api';
 import { FilesLinksApi } from '@shared/files/files-links-api';
 import { AuthStore } from '@shared/security/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -21,7 +22,6 @@ import { FilesApi } from '@files/files-api';
 import { IngestApi } from '@files/ingest/ingest-api';
 import { IngestState } from '@files/ingest/ingest-attempt';
 import { FileRowAction } from '@files/list/file-grid/file-grid.utils';
-import { MachinesApi } from '@machines/machines-api';
 
 import { FilesGridStore } from './files-grid.store';
 
@@ -77,7 +77,7 @@ describe('FilesGridStore', () => {
       cancel: vi.fn(() => of(undefined)),
       listForFile: vi.fn(() => of({ items: [{ id: 'attempt-id', state: IngestState.Queued }] })),
     };
-    const machinesSearch = vi.fn(() => of({ items: [{ id: MACHINE_ID, name: 'Pump' }], totalCount: 1 }));
+    const machinesSearch = vi.fn(() => of([{ id: MACHINE_ID, displayName: 'Pump' }]));
     const remove = vi.fn(() => of(undefined));
     const getLinks = vi.fn(() => of({ links: options.links ?? [] }));
     const assign = vi.fn();
@@ -87,7 +87,7 @@ describe('FilesGridStore', () => {
         FilesGridStore,
         { provide: FilesApi, useValue: { search, delete: remove, untie } },
         { provide: IngestApi, useValue: ingest },
-        { provide: MachinesApi, useValue: { search: machinesSearch } },
+        { provide: LookupsApi, useValue: { machines: machinesSearch } },
         { provide: FilesLinksApi, useValue: { getLinks } },
         { provide: FileDownloader, useValue: { start: assign } },
         { provide: MessageService, useValue: messages },
@@ -154,6 +154,18 @@ describe('FilesGridStore', () => {
     expect(last?.[0]).toEqual({ kind: 'machine', machineId: MACHINE_ID });
     expect(last?.[1].offset).toBe(0);
     expect(last?.[1].limit).toBe(25);
+  });
+
+  it('setScope_WithEqualNewScopeObject_SendsNoSecondSearch', async () => {
+    const { store, search } = await setup();
+    store.setScope({ kind: 'machine', machineId: MACHINE_ID });
+    await settle();
+    const before = search.mock.calls.length;
+
+    store.setScope({ kind: 'machine', machineId: MACHINE_ID });
+    await settle();
+
+    expect(search.mock.calls.length - before).toBe(0);
   });
 
   it('setFilter_WithNameAfterPaging_ResetsTheOffset', async () => {

@@ -12,7 +12,7 @@ public static class RouteHostTestData
 
     private const string KeycloakAddressKey = "ReverseProxy:Clusters:keycloak:Destinations:main:Address";
 
-    private static readonly string[] ApiRoutes = ["core", "core-invite-public"];
+    private static readonly string[] ApiRoutes = ["core", "core-invite-verify", "core-invite-accept"];
     private static readonly string[] AuthRoutes = ["keycloak-token", "keycloak-realm", "keycloak-resources"];
 
     public static IReadOnlyDictionary<string, string> CreateSettings(string keycloakAddress)

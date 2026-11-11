@@ -1,0 +1,42 @@
+[
+  {
+    "local": "2027-03-28T02:55",
+    "utc": "2027-03-28T00:55Z",
+    "isSkipped": false
+  },
+  {
+    "local": "2027-03-28T03:00",
+    "utc": "2027-03-28T01:00Z",
+    "isSkipped": true
+  },
+  {
+    "local": "2027-03-28T03:30",
+    "utc": "2027-03-28T01:30Z",
+    "isSkipped": true
+  },
+  {
+    "local": "2027-03-28T04:00",
+    "utc": "2027-03-28T01:00Z",
+    "isSkipped": false
+  },
+  {
+    "local": "2027-10-31T02:55",
+    "utc": "2027-10-30T23:55Z",
+    "isSkipped": false
+  },
+  {
+    "local": "2027-10-31T03:00",
+    "utc": "2027-10-31T00:00Z",
+    "isSkipped": false
+  },
+  {
+    "local": "2027-10-31T03:30",
+    "utc": "2027-10-31T00:30Z",
+    "isSkipped": false
+  },
+  {
+    "local": "2027-10-31T04:00",
+    "utc": "2027-10-31T02:00Z",
+    "isSkipped": false
+  }
+]

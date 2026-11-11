@@ -1,0 +1,108 @@
+<section
+  class="bg-surface-0 dark:bg-surface-900 border-surface flex w-full max-w-md flex-col gap-4 rounded-xl border p-6 shadow"
+>
+  <h1 class="text-2xl font-bold">{{ 'INVITE.TITLE' | translate }}</h1>
+  @switch (store.view()) {
+    @case ('loading') {
+      <div class="flex min-h-32">
+        <hf-loading-spinner />
+      </div>
+    }
+    @case ('form') {
+      @if (store.details(); as details) {
+        <dl class="flex flex-col gap-1 text-sm">
+          <div class="flex gap-2">
+            <dt class="text-muted-color w-24 flex-none">{{ 'INVITE.COMPANY' | translate }}</dt>
+            <dd class="font-bold">{{ details.companyName }}</dd>
+          </div>
+          <div class="flex gap-2">
+            <dt class="text-muted-color w-24 flex-none">{{ 'INVITE.EMAIL' | translate }}</dt>
+            <dd class="font-bold">{{ details.email }}</dd>
+          </div>
+          <div class="flex gap-2">
+            <dt class="text-muted-color w-24 flex-none">{{ 'INVITE.ROLE' | translate }}</dt>
+            <dd class="font-bold">{{ roleKey() | translate }}</dd>
+          </div>
+        </dl>
+        <form
+          class="flex flex-col gap-4"
+          (submit)="$event.preventDefault(); submit()"
+        >
+          <div class="flex flex-col gap-1">
+            <label for="invite-first-name">{{ 'INVITE.FIRST_NAME' | translate }}</label>
+            @for (error of acceptForm.firstName().errors(); track $index) {
+              @if (isShown(acceptForm.firstName)) {
+                <small class="text-red-500">{{ error.message | translate }}</small>
+              }
+            }
+            <input
+              pInputText
+              id="invite-first-name"
+              autocomplete="given-name"
+              [attr.data-hf-calm]="isShown(acceptForm.firstName) ? null : ''"
+              [formField]="acceptForm.firstName"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label for="invite-last-name">{{ 'INVITE.LAST_NAME' | translate }}</label>
+            @for (error of acceptForm.lastName().errors(); track $index) {
+              @if (isShown(acceptForm.lastName)) {
+                <small class="text-red-500">{{ error.message | translate }}</small>
+              }
+            }
+            <input
+              pInputText
+              id="invite-last-name"
+              autocomplete="family-name"
+              [attr.data-hf-calm]="isShown(acceptForm.lastName) ? null : ''"
+              [formField]="acceptForm.lastName"
+            />
+          </div>
+          <button
+            pButton
+            type="submit"
+            [disabled]="!acceptForm().valid() || store.isSaving()"
+          >
+            {{ 'INVITE.ACCEPT' | translate }}
+          </button>
+        </form>
+      }
+    }
+    @case ('signedIn') {
+      <p>{{ 'INVITE.SIGNED_IN_AS' | translate: { email: signedInEmail() } }}</p>
+      <button
+        pButton
+        type="button"
+        (click)="signOutAndContinue()"
+      >
+        {{ 'INVITE.SIGN_OUT_AND_CONTINUE' | translate }}
+      </button>
+    }
+    @case ('success') {
+      <p>{{ 'INVITE.SUCCESS' | translate }}</p>
+      <button
+        pButton
+        type="button"
+        (click)="signIn()"
+      >
+        {{ 'INVITE.SIGN_IN' | translate }}
+      </button>
+    }
+    @case ('employed') {
+      <p>{{ 'INVITE.EMPLOYED' | translate }}</p>
+      <button
+        pButton
+        type="button"
+        (click)="signIn()"
+      >
+        {{ 'INVITE.SIGN_IN' | translate }}
+      </button>
+    }
+    @case ('failed') {
+      <p>{{ 'INVITE.FAILED' | translate }}</p>
+    }
+    @default {
+      <p>{{ 'INVITE.INVALID' | translate }}</p>
+    }
+  }
+</section>

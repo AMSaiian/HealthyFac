@@ -8,6 +8,7 @@ describe('httpErrorMessageKey', () => {
     [403, 'ERRORS.HTTP.FORBIDDEN'],
     [404, 'ERRORS.HTTP.NOT_FOUND'],
     [409, 'ERRORS.HTTP.CONFLICT'],
+    [422, 'ERRORS.HTTP.UNPROCESSABLE'],
     [429, 'ERRORS.HTTP.TOO_MANY_REQUESTS'],
   ])('httpErrorMessageKey_WithMappedStatuses_ReturnsKeys (%i)', (status, key) => {
     const result = httpErrorMessageKey(status);

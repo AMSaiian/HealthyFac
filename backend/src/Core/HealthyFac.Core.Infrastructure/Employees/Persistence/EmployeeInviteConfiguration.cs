@@ -1,7 +1,6 @@
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Employees;
-using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
@@ -42,7 +41,7 @@ public class EmployeeInviteConfiguration : IEntityTypeConfiguration<EmployeeInvi
             .HasForeignKey(invite => invite.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Role>()
+        builder.HasOne(invite => invite.Role)
             .WithMany()
             .HasForeignKey(invite => invite.RoleId)
             .OnDelete(DeleteBehavior.Restrict);

@@ -14,6 +14,8 @@ import { APP_CONFIG, type AppConfig } from '@shared/config/app-config';
 import { FileActionType } from '@files/file-actions';
 import { DraftActionType } from '@machines/drafts/draft-actions';
 import { MachineActionType } from '@machines/machine-actions';
+import { WorkOrderActionType } from '@work-orders/work-order-actions';
+import { EmployeeActionType } from '@employees/employee-actions';
 import { provideActionHosts } from '@shared/actions/action-registry';
 import { AppErrorHandler } from '@shared/errors/app-error-handler';
 import { apiBaseUrlInterceptor } from '@shared/http/api-base-url.interceptor';
@@ -63,6 +65,47 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
               import('@machines/drawer/machine-form/machine-form-schema'),
             ]);
             return { component: host.MachineDrawerHost, schema: form.machineActionPayloadSchema };
+          },
+        })),
+        {
+          type: WorkOrderActionType.Open,
+          load: async () => {
+            const [host, schema] = await Promise.all([
+              import('@work-orders/drawer/work-order-drawer-host/work-order-drawer-host'),
+              import('@work-orders/work-order-schema'),
+            ]);
+            return { component: host.WorkOrderDrawerHost, schema: schema.workOrderActionPayloadSchema };
+          },
+        },
+        ...[
+          WorkOrderActionType.Assign,
+          WorkOrderActionType.Move,
+          WorkOrderActionType.Unassign,
+          WorkOrderActionType.ChangeStatus,
+          WorkOrderActionType.Delete,
+        ].map((type) => ({
+          type,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@work-orders/schedule-actions/schedule-actions-host/schedule-actions-host'),
+              import('@work-orders/work-order-actions'),
+            ]);
+            return { component: host.ScheduleActionsHost, schema: payloads.workOrderRowActionPayloadSchema };
+          },
+        })),
+        ...[
+          EmployeeActionType.Invite,
+          EmployeeActionType.Resend,
+          EmployeeActionType.RetryProvisioning,
+          EmployeeActionType.Revoke,
+        ].map((type) => ({
+          type,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@employees/employee-actions-host/employee-actions-host'),
+              import('@employees/employee-action-payloads'),
+            ]);
+            return { component: host.EmployeeActionsHost, schema: payloads.employeeActionPayloadSchema };
           },
         })),
         {

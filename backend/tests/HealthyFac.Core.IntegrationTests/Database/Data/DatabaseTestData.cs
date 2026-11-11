@@ -31,6 +31,11 @@ public static class DatabaseTestData
     public static readonly Guid TestSupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
     public static readonly Guid TestSupervisorEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000003");
     public const string TestSupervisorEmail = "supervisor@healthyfac.local";
+    public static readonly Guid TestWorkerIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000201");
+    public static readonly Guid TestWorkerEmployeeId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000202");
+    public const string TestWorkerEmail = "worker@healthyfac.local";
+    public const int SeededWorkOrderCount = 6;
+    public const int SeededShiftBlocksPerEmployee = 10;
     public const string TestTenantTimeZoneId = "Europe/Kyiv";
 
     public static readonly IReadOnlyList<string> SeededTimeZoneIds =
@@ -46,6 +51,14 @@ public static class DatabaseTestData
         SupervisorEmail = TestSupervisorEmail,
         SupervisorFirstName = "Test",
         SupervisorLastName = "Supervisor",
+        Worker = new TestTenantWorkerOptions
+        {
+            IdentityId = TestWorkerIdentityId,
+            EmployeeId = TestWorkerEmployeeId,
+            Email = TestWorkerEmail,
+            FirstName = "Test",
+            LastName = "Worker",
+        },
     };
 
     public const string NamedSeedMachineName = "Press line 01";
