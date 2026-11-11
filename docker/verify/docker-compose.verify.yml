@@ -61,6 +61,15 @@ services:
     image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/document:local
     ports: !reset []
 
+  insights:
+    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-insights
+    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/insights:local
+    ports: !reset []
+
+  docling:
+    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-docling
+    ports: !reset []
+
   auth:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-auth
     image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/auth:local
