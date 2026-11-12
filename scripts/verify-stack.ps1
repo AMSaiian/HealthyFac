@@ -2,7 +2,7 @@
 # a browser next to the running dev stack and next to the verify stacks of other worktrees. It never touches the dev
 # project "healthyfac".
 #
-# Slots: every worktree owns one slot (1 to the slot count of verify-slots.psm1) while its stack exists. Slot n is the Compose project healthyfac-verify<n>
+# Slots: every worktree owns one slot (1 to the slot count of verify-slots.psm1) while its stack exists. Slot n is the Compose project healthyfac-verify-<n>
 # with the domain s<n>.hfverify.test, the gateway port 9443 + n, the Mailpit port 8026 + n, the Grafana port 3000 + n, the RabbitMQ management port 15672 + n, and the Keycloak admin port 8180 + n. `up` takes the slot of
 # the worktree, else the lowest free slot. `status` and `down` act on the slot of the worktree only. -Slot names a
 # slot; the script refuses a slot that another worktree owns. The owner is the worktree root in the lock file

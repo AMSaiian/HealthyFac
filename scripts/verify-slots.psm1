@@ -2,7 +2,7 @@
 # verify-slots.psm1 - the pure rules of the verify slots (scripts/verify-stack.ps1). No function calls Docker, so
 # scripts/tests/verify-slots.tests.ps1 checks them without a container.
 #
-# A slot is a number from 1 to $MaxSlots. Slot n is the Compose project healthyfac-verify<n>. The owner of a slot is the
+# A slot is a number from 1 to $MaxSlots. Slot n is the Compose project healthyfac-verify-<n>. The owner of a slot is the
 # lock file of the slot (slot<n>.lock in the lock folder of the git common folder) or the working directory label that
 # Compose puts on its containers. `up` claims the lock file before the build, so two parallel `up` runs get different
 # slots. A crashed `up` keeps its slot until `down`.
@@ -28,14 +28,14 @@ function Get-VerifySlotValues {
   Assert-VerifySlot -Slot $Slot
   [pscustomobject]@{
     Slot        = $Slot
-    Project     = "$ProjectPrefix$Slot"
+    Project     = "$ProjectPrefix-$Slot"
     Domain      = "s$Slot.$DomainSuffix"
     GatewayPort = $GatewayPortBase + $Slot
     MailpitPort = $MailpitPortBase + $Slot
     GrafanaPort = $GrafanaPortBase + $Slot
     RabbitMqUiPort = $RabbitMqUiPortBase + $Slot
     KeycloakPort = $KeycloakPortBase + $Slot
-    ImagePrefix = "$ProjectPrefix$Slot"
+    ImagePrefix = "$ProjectPrefix-$Slot"
   }
 }
 
@@ -49,7 +49,7 @@ function ConvertTo-VerifyProjects {
   $seen = @{}
   foreach ($line in $Lines) {
     $parts = "$line" -split '\|', 2
-    if ($parts.Count -ne 2 -or $parts[0] -notmatch "^$ProjectPrefix([1-9]\d*)$") { continue }
+    if ($parts.Count -ne 2 -or $parts[0] -notmatch "^$ProjectPrefix-([1-9]\d*)$") { continue }
     $slot = [int]$Matches[1]
     if ($slot -gt $MaxSlots -or $seen.ContainsKey($slot)) { continue }
     $seen[$slot] = [pscustomobject]@{ Slot = $slot; WorkingDir = $parts[1] }

@@ -1,7 +1,7 @@
 # Override for the isolated verify stack. scripts/verify-stack.ps1 applies it on top of docker-compose.yml as the
-# project healthyfac-verify<slot> (slot 1-4, one per worktree), with .env and then .env.verify, so agents can check the
+# project healthyfac-verify-<slot> (slot 1-4, one per worktree), with .env and then .env.verify, so agents can check the
 # UI next to the running dev stack and next to the stacks of other worktrees:
-# - own container names (healthyfac-verify<slot>-*) and own image tags (healthyfac-verify<slot>/*:local), so the dev
+# - own container names (healthyfac-verify-<slot>-*) and own image tags (healthyfac-verify-<slot>/*:local), so the dev
 #   images keep their tags. The script sets VERIFY_SLOT; without it Compose stops with a message;
 # - own volumes and network (Compose scopes both by project), so `down -v` removes only verify data;
 # - own domain (s<slot>.hfverify.test) and public URLs (.env.verify), because browser cookies ignore the port and a second Keycloak on
@@ -12,81 +12,81 @@
 # certificate first.
 services:
   postgres:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-postgres
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-postgres
     ports: !reset []
 
   keycloak:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/keycloak:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/keycloak:local
     # The admin console URL (KC_HOSTNAME_ADMIN) reads KEYCLOAK_PORT, so the host port must equal it.
     ports: !override
       - "127.0.0.1:${KEYCLOAK_PORT:?run scripts/verify-stack.ps1}:8080"
 
   keycloak-config:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak-config
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak-config
 
   redis:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-redis
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-redis
     ports: !reset []
 
   rabbitmq:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-rabbitmq
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-rabbitmq
     ports: !override
       - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:?run scripts/verify-stack.ps1}:15672"
 
   mailpit:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mailpit
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mailpit
     ports: !override
       - "127.0.0.1:${MAILPIT_UI_PORT:?run scripts/verify-stack.ps1}:8025"
 
   core:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-core
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/core:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-core
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/core:local
     ports: !reset []
 
   mosquitto-init:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mosquitto-init
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mosquitto-init
 
   mosquitto:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mosquitto
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mosquitto
     ports: !reset []
 
   telemetry:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-telemetry
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/telemetry:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-telemetry
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/telemetry:local
     ports: !reset []
 
   azurite:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-azurite
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-azurite
     ports: !reset []
 
   document:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-document
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/document:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-document
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/document:local
     ports: !reset []
 
   insights:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-insights
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/insights:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-insights
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/insights:local
     ports: !reset []
 
   docling:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-docling
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-docling
     ports: !reset []
 
   auth:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-auth
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/auth:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-auth
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/auth:local
     ports: !reset []
 
   spa:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-spa
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/spa:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-spa
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/spa:local
     ports: !reset []
 
   gateway:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-gateway
-    image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/gateway:local
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-gateway
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/gateway:local
     environment:
       # mkcert certificate for the verify names (docker/certs/README.md). The script creates it when it is missing.
       Kestrel__Certificates__Default__Path: /certs/hfverify.test.pem
@@ -95,6 +95,6 @@ services:
       - "${GATEWAY_PORT:?run scripts/verify-stack.ps1}:8443"
 
   lgtm:
-    container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-lgtm
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-lgtm
     ports: !override
       - "127.0.0.1:${GRAFANA_PORT:?run scripts/verify-stack.ps1}:3000"

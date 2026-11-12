@@ -18,7 +18,7 @@ Only the main checkout runs `docker compose up` for the dev project `healthyfac`
 
 Each worktree checks the UI in its own verify stack (`pwsh scripts/verify-stack.ps1 up`).
 
-*   The script gives the worktree a slot from 1 to 4. Slot `n` is the Compose project `healthyfac-verify<n>`, the domain `s<n>.hfverify.test`, the gateway port `9443 + n`, and the Mailpit port `8026 + n`. The stack also publishes Grafana on `3000 + n`, the RabbitMQ management UI on `15672 + n`, and the Keycloak admin console on `8180 + n`, all on `127.0.0.1`. `up` prints the URLs.
+*   The script gives the worktree a slot from 1 to 4. Slot `n` is the Compose project `healthyfac-verify-<n>`, the domain `s<n>.hfverify.test`, the gateway port `9443 + n`, and the Mailpit port `8026 + n`. The stack also publishes Grafana on `3000 + n`, the RabbitMQ management UI on `15672 + n`, and the Keycloak admin console on `8180 + n`, all on `127.0.0.1`. `up` prints the URLs.
 *   `status` and `down` act on the slot of the worktree only. `-Slot <n>` names a slot, and the script refuses a slot that another worktree owns.
 *   `up` claims the slot with the lock file `slot<n>.lock` in the folder `healthyfac-verify-slots` of the git common folder, so two `up` runs at the same time get different slots. `down` removes the lock file. A crashed `up` keeps its slot until `down`. The script removes a lock file whose worktree folder is gone and whose slot has no container.
 *   The hosts file needs the 12 names of the 4 slots, and the certificate is a wildcard certificate. See `docker/certs/README.md`, **Verify stack**.

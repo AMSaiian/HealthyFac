@@ -36,24 +36,24 @@ $other = 'D:\Other'
 
 Write-Host 'Slot values'
 $v = Get-VerifySlotValues -Slot 3
-Assert-That ($v.Project -eq 'healthyfac-verify3') 'slot 3 project'
+Assert-That ($v.Project -eq 'healthyfac-verify-3') 'slot 3 project'
 Assert-That ($v.Domain -eq 's3.hfverify.test') 'slot 3 domain'
 Assert-That ($v.GatewayPort -eq 9446) 'slot 3 gateway port is 9443 + 3'
 Assert-That ($v.MailpitPort -eq 8029) 'slot 3 mailpit port is 8026 + 3'
 Assert-That ($v.GrafanaPort -eq 3003) 'slot 3 grafana port is 3000 + 3'
 Assert-That ($v.RabbitMqUiPort -eq 15675) 'slot 3 rabbitmq port is 15672 + 3'
 Assert-That ($v.KeycloakPort -eq 8183) 'slot 3 keycloak port is 8180 + 3'
-Assert-That ($v.ImagePrefix -eq 'healthyfac-verify3') 'slot 3 image prefix'
+Assert-That ($v.ImagePrefix -eq 'healthyfac-verify-3') 'slot 3 image prefix'
 
 Write-Host 'Projects'
 $lines = @(
-  'healthyfac-verify2|d:/repo/',
-  'healthyfac-verify2|d:/repo/',
+  'healthyfac-verify-2|d:/repo/',
+  'healthyfac-verify-2|d:/repo/',
   'healthyfac|D:\Dev',
   'healthyfac-verify|D:\Old',
-  'healthyfac-verify9|D:\Far',
-  'healthyfac-verify10|D:\Far10',
-  'healthyfac-verify1|D:\Other',
+  'healthyfac-verify-9|D:\Far',
+  'healthyfac-verify-10|D:\Far10',
+  'healthyfac-verify-1|D:\Other',
   ''
 )
 $projects = @(ConvertTo-VerifyProjects -Lines $lines)
@@ -131,7 +131,7 @@ Assert-That ($message -match 'D:\\Tree\\\.env' -and $message -match 'D:\\Main\\\
 
 Write-Host 'Compose'
 $composeArgs = @(
-  'compose', '-p', 'healthyfac-verify2', '--project-directory', $repo,
+  'compose', '-p', 'healthyfac-verify-2', '--project-directory', $repo,
   '--env-file', (Join-Path $repo '.env.example'), '--env-file', (Join-Path $repo '.env.verify'),
   '-f', (Join-Path $repo 'docker-compose.yml'), '-f', (Join-Path $repo 'docker\verify\docker-compose.verify.yml'),
   'config', '--format', 'json'
@@ -152,11 +152,11 @@ try {
   $json = & docker @composeArgs 2>&1
   Assert-That ($LASTEXITCODE -eq 0) 'compose config renders for slot 2'
   $c = ($json -join "`n") | ConvertFrom-Json
-  Assert-That ($c.name -eq 'healthyfac-verify2') 'project name'
+  Assert-That ($c.name -eq 'healthyfac-verify-2') 'project name'
   $names = $c.services.PSObject.Properties | ForEach-Object { $_.Value.container_name }
-  Assert-That (@($names | Where-Object { $_ -notmatch '^healthyfac-verify2-' }).Count -eq 0) 'every container name starts with healthyfac-verify2-'
+  Assert-That (@($names | Where-Object { $_ -notmatch '^healthyfac-verify-2-' }).Count -eq 0) 'every container name starts with healthyfac-verify-2-'
   $images = $c.services.PSObject.Properties | ForEach-Object { $_.Value.image } | Where-Object { $_ -match ':local$' }
-  Assert-That (@($images | Where-Object { $_ -notmatch '^healthyfac-verify2/' }).Count -eq 0 -and $images.Count -ge 6) 'every built image tag starts with healthyfac-verify2/'
+  Assert-That (@($images | Where-Object { $_ -notmatch '^healthyfac-verify-2/' }).Count -eq 0 -and $images.Count -ge 6) 'every built image tag starts with healthyfac-verify-2/'
   Assert-That ([int]$c.services.gateway.ports[0].published -eq 9445) 'gateway port 9445'
   Assert-That ([int]$c.services.mailpit.ports[0].published -eq 8028) 'mailpit port 8028'
   Assert-That ([int]$c.services.lgtm.ports[0].published -eq 3002 -and @($c.services.lgtm.ports).Count -eq 1) 'grafana port 3002 only'
