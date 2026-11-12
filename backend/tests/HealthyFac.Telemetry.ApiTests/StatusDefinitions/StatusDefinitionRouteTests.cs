@@ -9,49 +9,27 @@ public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
 
-    [Fact]
-    public async Task Get_WithMalformedMachineId_Returns404()
+    [Theory]
+    [MemberData(
+        nameof(StatusDefinitionApiTestData.MalformedIdReadRoutes),
+        MemberType = typeof(StatusDefinitionApiTestData)
+    )]
+    public async Task MalformedId_WithReadPermission_Returns404(
+        string caseName,
+        string method,
+        string pathTemplate,
+        string? body
+    )
     {
-        var status = await _fixture.ArrangeStatusDefinitionAsync(
-            StatusDefinitionApiTestData.Code);
+        var status = await _fixture.ArrangeStatusDefinitionAsync(StatusDefinitionApiTestData.Code);
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
+        var path = pathTemplate
+            .Replace("{machineId}", status.MachineId.ToString())
+            .Replace("{statusDefinitionId}", status.Id.ToString());
 
-        var response = await _fixture.SendAsync(
-            HttpMethod.Get,
-            $"{_fixture.StatusDefinitionsPath(StatusDefinitionApiTestData.InvalidEncryptedId)}/{status.Id}",
-            claims);
+        var response = await _fixture.SendAsync(new HttpMethod(method), path, claims, body);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Get_WithMalformedStatusDefinitionId_Returns404()
-    {
-        var status = await _fixture.ArrangeStatusDefinitionAsync(
-            StatusDefinitionApiTestData.Code);
-        var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
-
-        var response = await _fixture.SendAsync(
-            HttpMethod.Get,
-            $"{_fixture.StatusDefinitionsPath(status.MachineId)}/{StatusDefinitionApiTestData.InvalidEncryptedId}",
-            claims);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Search_WithMalformedMachineId_Returns404()
-    {
-        var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
-
-        var response = await _fixture.SendAsync(
-            HttpMethod.Post,
-            $"{_fixture.StatusDefinitionsPath(StatusDefinitionApiTestData.InvalidEncryptedId)}"
-            + $"/{StatusDefinitionApiTestData.SearchSegment}",
-            claims,
-            StatusDefinitionApiTestData.SearchEmptyBody);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound, because: caseName);
     }
 
     [Fact]

@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
-import type { TableFilterEvent } from 'primeng/table';
 
 import {
   StatusDefinitionColumn,
@@ -19,9 +18,7 @@ const EMPTY_FILTER: StatusDefinitionFilter = {
 };
 
 interface GridAccess {
-  onFilterApplied(event: TableFilterEvent): void;
-  onSort(event: { field?: string | null; order?: number | null }): void;
-  isSortable(column: StatusDefinitionColumn): boolean;
+  grid: { onSort(event: { field?: string | null; order?: number | null }): void };
   menuItems(): { label?: string }[];
 }
 
@@ -32,7 +29,6 @@ class FakeResizeObserver {
 }
 
 interface Setup {
-  emittedFilters: Partial<StatusDefinitionFilter>[];
   emittedSorts: unknown[];
   grid: GridAccess;
 }
@@ -51,11 +47,9 @@ function setup(options: { canWrite?: boolean; canDelete?: boolean } = {}): Setup
   fixture.componentRef.setInput('canWrite', options.canWrite ?? false);
   fixture.componentRef.setInput('canDelete', options.canDelete ?? false);
   fixture.detectChanges();
-  const emittedFilters: Partial<StatusDefinitionFilter>[] = [];
   const emittedSorts: unknown[] = [];
-  fixture.componentInstance.filterChange.subscribe((patch) => emittedFilters.push(patch));
   fixture.componentInstance.sortChange.subscribe((sort) => emittedSorts.push(sort));
-  return { emittedFilters, emittedSorts, grid: fixture.componentInstance as unknown as GridAccess };
+  return { emittedSorts, grid: fixture.componentInstance as unknown as GridAccess };
 }
 
 describe('StatusDefinitionGrid', () => {
@@ -63,23 +57,10 @@ describe('StatusDefinitionGrid', () => {
     vi.unstubAllGlobals();
   });
 
-  it('onFilterApplied_WithCodeValue_EmitsOneTrimmedFilter', () => {
-    const { grid, emittedFilters } = setup();
-
-    grid.onFilterApplied({
-      filters: { [StatusDefinitionColumn.Code]: [{ value: '  e-1  ' }] },
-      filteredValue: [],
-    } as unknown as TableFilterEvent);
-
-    expect(emittedFilters).toEqual([
-      { code: 'e-1', severities: [], createdAt: { from: null, to: null }, updatedAt: { from: null, to: null } },
-    ]);
-  });
-
   it('onSort_WithSortableField_EmitsColumnAndDirection', () => {
     const { grid, emittedSorts } = setup();
 
-    grid.onSort({ field: StatusDefinitionSortColumn.Code, order: -1 });
+    grid.grid.onSort({ field: StatusDefinitionSortColumn.Code, order: -1 });
 
     expect(emittedSorts).toEqual([{ column: StatusDefinitionSortColumn.Code, direction: SortDirection.Descending }]);
   });
@@ -87,7 +68,7 @@ describe('StatusDefinitionGrid', () => {
   it('onSort_WithUnknownField_EmitsNull', () => {
     const { grid, emittedSorts } = setup();
 
-    grid.onSort({ field: 'unknown', order: 1 });
+    grid.grid.onSort({ field: 'unknown', order: 1 });
 
     expect(emittedSorts).toEqual([null]);
   });

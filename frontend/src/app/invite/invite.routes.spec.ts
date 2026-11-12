@@ -8,7 +8,7 @@ import { MessageService } from 'primeng/api';
 
 import { APP_CONFIG } from '@shared/config/app-config';
 import { authInterceptor } from '@shared/security/auth.interceptor';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { SessionEndedError } from '@shared/security/session-errors';
 
 import { InvitePage } from '@invite/invite-page/invite-page';

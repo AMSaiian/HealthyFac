@@ -38,6 +38,12 @@ public static class ShiftTestData
     public static readonly DateOnly Tomorrow = Today.AddDays(value: 1);
     public static readonly DateOnly InTwoDays = Today.AddDays(value: 2);
 
+    public static TheoryData<string, int> DatesOutsideTheRange => new()
+    {
+        { "BeforeToday", -1 },
+        { "BeyondOneYear", ShiftValidationConstants.MaxDaysAhead + 1 },
+    };
+
     public static TimeZoneInfo Zone => TimeZoneInfo.FindSystemTimeZoneById(ZoneId);
 
     public static DateTimeOffset NowAt(string time) =>

@@ -3,6 +3,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 
+import { isEmptyResult } from '@shared/grid/table/grid-display';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 
 import { MetricDetail } from '@machines/metrics/metric-detail/metric-detail';
@@ -10,7 +11,7 @@ import { MetricForm } from '@machines/metrics/metric-form/metric-form';
 import { toUnitGroups } from '@machines/metrics/metric-form/metric-form.utils';
 import { MetricList } from '@machines/metrics/metric-list/metric-list';
 import { MetricExampleDialog } from '@machines/metrics/metric-example-dialog/metric-example-dialog';
-import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
+import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 
 @Component({
   imports: [
@@ -37,8 +38,13 @@ export class MetricsPage {
     toUnitGroups(this.store.units.hasValue() ? this.store.units.value() : undefined),
   );
   protected readonly isLoading = computed(() => this.store.definitions.isLoading() && this.store.items().length === 0);
-  protected readonly isEmpty = computed(
-    () => this.store.definitions.hasValue() && this.store.items().length === 0 && this.store.edit() === null,
+  protected readonly showEmpty = computed(
+    () =>
+      isEmptyResult({
+        rows: this.store.items(),
+        isLoading: this.store.definitions.isLoading(),
+        hasLoaded: this.store.definitions.hasValue(),
+      }) && this.store.edit() === null,
   );
   protected readonly selectedErrors = computed(() => this.store.itemErrors()[this.store.selectedId() ?? ''] ?? []);
   protected readonly changesDisabledReason = computed((): string | null => {
@@ -51,7 +57,7 @@ export class MetricsPage {
     if (!this.store.isFormValid()) {
       return 'METRICS.FORM.INVALID';
     }
-    return this.store.isFormChanged() ? null : 'METRICS.FORM.NO_CHANGES';
+    return this.store.isFormChanged() ? null : 'FORMS.NO_CHANGES';
   });
 
   constructor() {

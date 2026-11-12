@@ -1,14 +1,20 @@
 <div
   #measureRow
   aria-hidden="true"
-  class="pointer-events-none invisible absolute flex gap-1 whitespace-nowrap"
+  class="pointer-events-none invisible absolute flex whitespace-nowrap"
+  [class.gap-1]="appearance() === 'tag'"
 >
-  @for (chip of chips(); track $index) {
-    <p-tag
-      #measuredChip
-      [class]="chip.styleClass"
-      [value]="chip.label"
-    />
+  @for (chip of chips(); track $index; let isLast = $last) {
+    @if (appearance() === 'tag') {
+      <p-tag
+        #measuredChip
+        [class]="chip.styleClass"
+        [severity]="chip.severity"
+        [value]="chip.label"
+      />
+    } @else {
+      <span #measuredChip>{{ chip.label }}{{ isLast ? '' : ', ' }}</span>
+    }
   }
   <p-tag
     #measuredMore
@@ -16,12 +22,17 @@
     [value]="'+' + chips().length"
   />
 </div>
-@for (chip of summary().shown; track $index) {
-  <p-tag
-    class="min-w-0"
-    [class]="chip.styleClass"
-    [value]="chip.label"
-  />
+@if (appearance() === 'tag') {
+  @for (chip of summary().shown; track $index) {
+    <p-tag
+      class="min-w-0"
+      [class]="chip.styleClass"
+      [severity]="chip.severity"
+      [value]="chip.label"
+    />
+  }
+} @else if (summary().shown.length > 0) {
+  <span class="min-w-0 truncate">{{ shownLabels() }}</span>
 }
 @if (summary().hiddenCount > 0) {
   <p-tag

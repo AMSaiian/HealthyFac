@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
 import { hasFormChanges } from '@shared/forms/form-changes';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import { FileEditForm } from '@files/edit/file-edit-form/file-edit-form';
@@ -21,18 +22,19 @@ export class FileEditHost {
   readonly action = input.required<AppAction>();
 
   protected readonly store = inject(FileEditStore);
+  protected readonly showSpinner = delayedLoading(computed(() => !this.store.initialValue()));
 
   private readonly _current = signal<FileEditFormValue | null>(null);
   private readonly _isValid = signal(false);
 
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
-      return 'FILES.EDIT_DIALOG.INVALID';
+      return 'FORMS.INVALID';
     }
     const initial = this.store.initialValue();
     const current = this._current();
     return initial !== null && current !== null && !hasFormChanges(fileEditFormSchema, initial, current)
-      ? 'FILES.EDIT_DIALOG.NO_CHANGES'
+      ? 'FORMS.NO_CHANGES'
       : null;
   });
 

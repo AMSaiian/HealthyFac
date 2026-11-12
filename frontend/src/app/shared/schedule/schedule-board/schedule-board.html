@@ -12,63 +12,101 @@
       </div>
     }
   </div>
-  @if (rows().length === 0 && !isLoading()) {
+  @if (showEmpty()) {
     <hf-empty-state
       class="min-h-48"
       icon="pi pi-calendar"
       messageKey="SCHEDULE.EMPTY"
     />
   }
+  @if (hasFailed() && !isLoading()) {
+    <p-message
+      class="m-4"
+      severity="error"
+      icon="pi pi-exclamation-circle"
+    >
+      {{ 'SCHEDULE.LOAD_FAILED' | translate }}
+    </p-message>
+  }
   <div class="hf-schedule-body">
-    @for (layout of layouts(); track layout.row.id) {
-      <div
-        class="hf-schedule-row"
-        [style.--hf-schedule-hours]="hours().length"
-      >
-        <div class="hf-schedule-name">{{ layout.row.label }}</div>
-        @for (hour of hours(); track $index) {
-          <div
-            class="hf-schedule-cell"
-            [style.grid-column]="$index + 2"
-          ></div>
-        }
-        <div class="hf-schedule-layer">
-          @for (gap of layout.gaps; track gap.left) {
+    @if (showSkeleton()) {
+      @for (rowIndex of skeletonRowIndexes(); track rowIndex) {
+        <div
+          class="hf-schedule-row"
+          [style.--hf-schedule-hours]="hours().length"
+        >
+          <div class="hf-schedule-name"><p-skeleton width="8rem" /></div>
+          @for (hour of hours(); track $index) {
             <div
-              class="hf-schedule-gap absolute inset-y-0"
-              [style.left.%]="gap.left"
-              [style.width.%]="gap.width"
+              class="hf-schedule-cell"
+              [style.grid-column]="$index + 2"
             ></div>
           }
-          <div class="hf-schedule-lanes">
-            @for (lane of layout.lanes; track $index) {
+          <div class="hf-schedule-layer">
+            <div class="hf-schedule-lanes">
               <div class="relative h-6 flex-none">
-                @for (item of lane; track item.bar.id) {
-                  <button
-                    type="button"
-                    class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
-                    [class]="item.bar.colorClass"
-                    [style.left.%]="item.left"
-                    [style.width.%]="item.width"
-                    [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
-                    [pTooltip]="tooltip(item.bar)"
-                    tooltipStyleClass="whitespace-pre-line"
-                    (click)="workOrderClick.emit(item.bar.id)"
-                  >
-                    {{ item.bar.title }}
-                  </button>
-                }
+                <p-skeleton
+                  class="absolute inset-y-0"
+                  height="1.5rem"
+                  [style.left.%]="20"
+                  [style.width.%]="40"
+                />
               </div>
+            </div>
+          </div>
+        </div>
+      }
+    } @else {
+      @for (layout of layouts(); track layout.row.id) {
+        <div
+          class="hf-schedule-row"
+          [style.--hf-schedule-hours]="hours().length"
+        >
+          <div class="hf-schedule-name">{{ layout.row.label }}</div>
+          @for (hour of hours(); track $index) {
+            <div
+              class="hf-schedule-cell"
+              [style.grid-column]="$index + 2"
+            ></div>
+          }
+          <div class="hf-schedule-layer">
+            @for (gap of layout.gaps; track gap.left) {
+              <div
+                class="hf-schedule-gap absolute inset-y-0"
+                [style.left.%]="gap.left"
+                [style.width.%]="gap.width"
+              ></div>
+            }
+            <div class="hf-schedule-lanes">
+              @for (lane of layout.lanes; track $index) {
+                <div class="relative h-6 flex-none">
+                  @for (item of lane; track item.bar.id) {
+                    <button
+                      type="button"
+                      class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
+                      [class]="item.bar.colorClass"
+                      [style.left.%]="item.left"
+                      [style.width.%]="item.width"
+                      [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
+                      [pTooltip]="tooltip(item.bar)"
+                      tooltipStyleClass="whitespace-pre-line"
+                      (click)="workOrderClick.emit(item.bar.id)"
+                    >
+                      {{ item.bar.title }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            @if (nowPercent(); as percent) {
+              <div
+                class="hf-schedule-now pointer-events-none absolute inset-y-0"
+                [style.left.%]="percent"
+              ></div>
             }
           </div>
-          @if (nowPercent(); as percent) {
-            <div
-              class="hf-schedule-now pointer-events-none absolute inset-y-0"
-              [style.left.%]="percent"
-            ></div>
-          }
         </div>
-      </div>
+      }
     }
   </div>
 </div>

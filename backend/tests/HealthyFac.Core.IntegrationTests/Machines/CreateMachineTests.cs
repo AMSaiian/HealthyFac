@@ -181,8 +181,13 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         machine.CompanyId.Should().Be(tenant.CompanyId);
     }
 
-    [Fact]
-    public async Task CreateMachine_WithDescriptionAboveLimit_ThrowsValidation()
+    [Theory]
+    [MemberData(nameof(MachineTestData.DescriptionsOutsideTheRules), MemberType = typeof(MachineTestData))]
+    public async Task CreateMachine_WithDescriptionOutsideTheRules_ThrowsValidation(
+        string caseName,
+        string description,
+        string errorMessage
+    )
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
 
@@ -190,9 +195,11 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
-            MachineTestData.TooLongDescription);
+            description);
 
-        await act.Should().ThrowAsync<AppValidationException>().WithMessage($"*{MachineErrors.DescriptionTooLong}*");
+        await act.Should()
+            .ThrowAsync<AppValidationException>(because: caseName)
+            .WithMessage($"*{errorMessage}*");
     }
 
     [Fact]
@@ -210,22 +217,6 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         machine.Description.Should().Be(MachineTestData.FormattedDescriptionAtVisibleLimit);
         machine.Description!.Length.Should().BeGreaterThan(MachineTestData.DescriptionLimit);
-    }
-
-    [Fact]
-    public async Task CreateMachine_WithHostileDescription_ThrowsValidation()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-
-        var act = () => _fixture.CreateMachineAsync(
-            tenant.CompanyId,
-            MachineTestData.MachineName,
-            MachineTestData.SerialNumber,
-            MachineTestData.HostileDescription);
-
-        await act.Should()
-            .ThrowAsync<AppValidationException>()
-            .WithMessage($"*{MachineErrors.DescriptionNotAllowed}*");
     }
 
     [Fact]

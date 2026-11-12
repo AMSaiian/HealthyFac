@@ -2,18 +2,18 @@ import { Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
+import { Tooltip } from 'primeng/tooltip';
 
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
-import { SQUARE_CLOSE_BUTTON_PROPS } from '@shared/theme/square-button-props';
+import { HIDDEN_CLOSE_BUTTON_PT } from '@shared/theme/square-button-props';
 
 @Component({
-  imports: [ButtonDirective, Dialog, EmptyState, TranslatePipe],
+  imports: [ButtonDirective, Dialog, EmptyState, Tooltip, TranslatePipe],
   host: { class: 'contents' },
   selector: 'hf-metric-example-dialog',
   templateUrl: './metric-example-dialog.html',
 })
 export class MetricExampleDialog {
-  protected readonly squareCloseButtonProps = SQUARE_CLOSE_BUTTON_PROPS;
   readonly revision = input.required<number>();
   readonly text = input.required<string | null>();
   /** Tells that the text holds changes of the user that the server does not have yet. */
@@ -21,6 +21,7 @@ export class MetricExampleDialog {
   readonly closed = output<void>();
 
   protected readonly isVisible = signal(true);
+  protected readonly hiddenClosePt = HIDDEN_CLOSE_BUTTON_PT;
   protected readonly contentStyle = { overflow: 'hidden' };
 
   protected copy(): void {

@@ -11,7 +11,7 @@
     optionValue="id"
     appendTo="body"
     [filter]="true"
-    [loading]="isEmployeesLoading()"
+    [loading]="showEmployeesLoading()"
     [options]="employeeOptions()"
     (onShow)="employeeLookupRequested.emit({ text: '', isImmediate: true })"
     (onFilter)="employeeLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
@@ -41,10 +41,11 @@
       </small>
       <button
         pButton
+        [pTooltip]="'WORK_ORDERS.TOOLTIPS.USE_SUGGESTION' | translate"
+        tooltipPosition="bottom"
         type="button"
         size="small"
         severity="secondary"
-        [outlined]="true"
         (click)="useSuggestion()"
       >
         {{ 'WORK_ORDERS.SCHEDULE.USE_SUGGESTION' | translate }}

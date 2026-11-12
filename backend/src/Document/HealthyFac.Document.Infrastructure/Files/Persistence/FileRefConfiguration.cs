@@ -1,5 +1,6 @@
 using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Domain.Files;
+using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
@@ -64,7 +65,7 @@ public class FileRefConfiguration : IEntityTypeConfiguration<FileRef>
             .HasNotBlankCheck(file => file.FileName)
             .HasLengthCheck(file => file.FileName, minLength: 1, FileValidationConstants.Text.FileNameMaxLength)
             .HasNotBlankCheck(file => file.ContentType)
-            .HasLengthCheck(file => file.Description, minLength: 0, FileValidationConstants.Text.DescriptionMaxLength)
+            .HasLengthCheck(file => file.Description, minLength: 0, RichTextConstants.HtmlMaxLength)
             .HasRangeCheck(file => file.SizeBytes, min: 1L, long.MaxValue)
             .HasNotEmptyGuidCheck(file => file.CompanyId);
 

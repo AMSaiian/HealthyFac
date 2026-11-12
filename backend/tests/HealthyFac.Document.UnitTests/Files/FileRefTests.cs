@@ -5,12 +5,22 @@ namespace HealthyFac.Document.UnitTests.Files;
 
 public sealed class FileRefTests
 {
-    [Fact]
-    public void Constructor_WithEmbeddedPurposeAndMachine_Throws()
+    [Theory]
+    [MemberData(
+        nameof(FileRefTestData.InvalidConstructorArguments),
+        MemberType = typeof(FileRefTestData)
+    )]
+    public void Constructor_WithInvalidArgument_Throws(
+        string caseName,
+        FilePurpose purpose,
+        Guid? machineId,
+        long sizeBytes,
+        byte[] sha256
+    )
     {
-        var act = () => FileRefTestData.Create(FilePurpose.Embedded, FileRefTestData.MachineId);
+        var act = () => FileRefTestData.Create(purpose, machineId, sizeBytes, sha256);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<InvalidOperationException>(because: caseName);
     }
 
     [Fact]
@@ -19,22 +29,6 @@ public sealed class FileRefTests
         var act = () => FileRefTestData.Create(FilePurpose.Embedded);
 
         act.Should().NotThrow();
-    }
-
-    [Fact]
-    public void Constructor_WithZeroSize_Throws()
-    {
-        var act = () => FileRefTestData.Create(FilePurpose.Attachment, sizeBytes: 0);
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Fact]
-    public void Constructor_WithShortHash_Throws()
-    {
-        var act = () => FileRefTestData.Create(FilePurpose.Attachment, sha256: new byte[FileRef.Sha256Length - 1]);
-
-        act.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]

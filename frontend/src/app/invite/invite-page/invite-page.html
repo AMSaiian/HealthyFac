@@ -5,7 +5,9 @@
   @switch (store.view()) {
     @case ('loading') {
       <div class="flex min-h-32">
-        <hf-loading-spinner />
+        @if (showSpinner()) {
+          <hf-loading-spinner />
+        }
       </div>
     }
     @case ('form') {
@@ -60,6 +62,8 @@
           </div>
           <button
             pButton
+            [pTooltip]="'INVITE.TOOLTIPS.ACCEPT' | translate"
+            tooltipPosition="bottom"
             type="submit"
             [disabled]="!acceptForm().valid() || store.isSaving()"
           >
@@ -72,6 +76,8 @@
       <p>{{ 'INVITE.SIGNED_IN_AS' | translate: { email: signedInEmail() } }}</p>
       <button
         pButton
+        [pTooltip]="'INVITE.TOOLTIPS.SIGN_OUT_AND_CONTINUE' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="signOutAndContinue()"
       >
@@ -82,6 +88,8 @@
       <p>{{ 'INVITE.SUCCESS' | translate }}</p>
       <button
         pButton
+        [pTooltip]="'INVITE.TOOLTIPS.SIGN_IN' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="signIn()"
       >
@@ -92,6 +100,8 @@
       <p>{{ 'INVITE.EMPLOYED' | translate }}</p>
       <button
         pButton
+        [pTooltip]="'INVITE.TOOLTIPS.SIGN_IN' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="signIn()"
       >

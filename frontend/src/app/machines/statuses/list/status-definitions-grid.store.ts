@@ -1,18 +1,17 @@
-import { HttpContext } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
-import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
+import { skipErrorToast } from '@shared/http/http-error-key';
 import { CLOCK } from '@shared/time/clock';
+import { withToasts } from '@shared/toasts/with-toasts';
 
 import type { Machine } from '@machines/machine';
 import type {
@@ -25,6 +24,8 @@ import { toSearchBody } from '@machines/statuses/list/status-definition-query';
 import { type ErrorCodeEditor, INITIAL_GRID } from '@machines/statuses/list/status-definitions-grid.store.utils';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 import { MachinesApi } from '@machines/machines-api';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 interface ScopeState {
   machineId: string | null;
@@ -40,10 +41,9 @@ export const StatusDefinitionsGridStore = signalStore(
     _clock: inject(CLOCK),
     _api: inject(StatusDefinitionsApi),
     _machinesApi: inject(MachinesApi),
-    _confirmation: inject(ConfirmationService),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
   })),
+  withToasts(),
+  withConfirm(),
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsWrite)),
     canDelete: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsDelete)),
@@ -71,11 +71,7 @@ export const StatusDefinitionsGridStore = signalStore(
         exhaustMap((statusDefinition) =>
           store._api.delete(store.machineId() ?? '', statusDefinition.id).pipe(
             tap(() => {
-              store._messages.add({
-                severity: 'success',
-                summary: store._translate.instant('STATUS_DEFINITIONS.TOASTS.SUCCESS'),
-                detail: store._translate.instant('STATUS_DEFINITIONS.TOASTS.DELETED'),
-              });
+              store._toastSuccess('STATUS_DEFINITIONS.TOASTS.DELETED');
               store.statuses.reload();
             }),
             catchError(() => EMPTY),
@@ -91,7 +87,7 @@ export const StatusDefinitionsGridStore = signalStore(
        * current machine. The load skips the error toast, so the caller decides what a failure means.
        */
       openMachine(machineId: string): Observable<Machine> {
-        return store._machinesApi.get(machineId, { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(
+        return store._machinesApi.get(machineId, skipErrorToast()).pipe(
           tap((machine) => {
             patchState(store, { machineId, machine, editor: null });
             store.resetGrid();
@@ -112,19 +108,17 @@ export const StatusDefinitionsGridStore = signalStore(
         store.statuses.reload();
       },
       requestDelete(statusDefinition: StatusDefinition): void {
-        store._confirmation.confirm({
-          header: store._translate.instant('STATUS_DEFINITIONS.DELETE_HEADER'),
-          message: store._translate.instant('STATUS_DEFINITIONS.DELETE_MESSAGE', { code: statusDefinition.code }),
-          icon: 'pi pi-exclamation-triangle',
-          acceptLabel: store._translate.instant('STATUS_DEFINITIONS.DELETE'),
-          rejectLabel: store._translate.instant('ACTIONS.CANCEL'),
-          acceptButtonProps: { severity: 'danger' },
-          rejectButtonProps: { severity: 'secondary' },
-          accept: () => {
+        store._confirmDestructive({
+          headerKey: 'STATUS_DEFINITIONS.DELETE_HEADER',
+          messageKey: 'STATUS_DEFINITIONS.DELETE_MESSAGE',
+          params: { code: statusDefinition.code },
+          acceptKey: 'ACTIONS.DELETE',
+          onAccept: () => {
             deleteErrorCode(statusDefinition);
           },
         });
       },
     };
   }),
+  withStoreDevtools('status-definitions-grid'),
 );

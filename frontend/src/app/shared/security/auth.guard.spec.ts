@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { authGuard } from './auth.guard';
-import { AuthStore } from './auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 const REQUESTED_URL = '/some/path?x=1';
 

@@ -62,14 +62,15 @@ public static class DraftFixtureExtensions
                 .ToListAsync();
         }
 
-        public async Task AddDraftsForMachineAsync(Guid companyId, Guid machineId)
+        public async Task AddDraftsForMachineAsync(Guid companyId, Guid machineId, Guid? attemptId = null)
         {
+            var attempt = attemptId ?? DraftTestData.AttemptId;
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var applied = MetricDefinitionDraft.ForMachine(
                 Guid.CreateVersion7(),
                 companyId,
-                DraftTestData.AttemptId,
+                attempt,
                 DraftTestData.FileId,
                 machineId,
                 new MetricDraftValues { Key = DraftTestData.AppliedKey });
@@ -79,7 +80,7 @@ public static class DraftFixtureExtensions
                 new MachineDraft(
                     Guid.CreateVersion7(),
                     companyId,
-                    DraftTestData.AttemptId,
+                    attempt,
                     DraftTestData.FileId,
                     DraftTestData.QueuedAt,
                     machineId,
@@ -90,7 +91,7 @@ public static class DraftFixtureExtensions
                 MetricDefinitionDraft.ForMachine(
                     Guid.CreateVersion7(),
                     companyId,
-                    DraftTestData.AttemptId,
+                    attempt,
                     DraftTestData.FileId,
                     machineId,
                     new MetricDraftValues { Key = DraftTestData.PendingKey }));
@@ -99,7 +100,7 @@ public static class DraftFixtureExtensions
                 StatusDefinitionDraft.ForMachine(
                     Guid.CreateVersion7(),
                     companyId,
-                    DraftTestData.AttemptId,
+                    attempt,
                     DraftTestData.FileId,
                     machineId,
                     new StatusDraftValues { Code = "E1" }));

@@ -1,6 +1,6 @@
 import type { MenuItem } from 'primeng/api';
 
-import type { Language } from '@shared/i18n/i18n.constants';
+import { Language } from '@shared/i18n/i18n.constants';
 import { Permission } from '@shared/security/permissions';
 
 export interface ShellNavItem {
@@ -11,6 +11,12 @@ export interface ShellNavItem {
   readonly isOwnSchedule?: boolean;
 }
 
+const CHOOSE_LANGUAGE_TOOLTIP_KEY = 'SHELL.TOOLTIPS.CHOOSE_LANGUAGE';
+/** The translation key of each language. Literal keys, so the translation check finds each one. */
+const LANGUAGE_KEYS: Readonly<Record<Language, string>> = {
+  [Language.English]: 'LANGUAGE.EN',
+  [Language.Ukrainian]: 'LANGUAGE.UK',
+};
 const OWN_SCHEDULE_PATH = (employeeId: string): string => `/employees/${encodeURIComponent(employeeId)}/schedule`;
 
 export const SHELL_NAV_ITEMS: readonly ShellNavItem[] = [
@@ -70,7 +76,8 @@ export function languageMenuItems(
 ): MenuItem[] {
   return languages.map((language) => ({
     id: language,
-    label: `LANGUAGE.${language.toUpperCase()}`,
+    label: LANGUAGE_KEYS[language],
+    tooltip: CHOOSE_LANGUAGE_TOOLTIP_KEY,
     state: { flagUrl: flagUrl(language), isCurrent: language === current },
     command: (): void => choose(language),
   }));

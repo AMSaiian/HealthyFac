@@ -1,18 +1,19 @@
-import { computed, effect, inject, untracked } from '@angular/core';
+import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { signalStore, withComputed, withHooks, withMethods, withProps } from '@ngrx/signals';
+import { signalStore, withComputed, withMethods, withProps } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
+import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
+import { withToasts } from '@shared/toasts/with-toasts';
 
 import type { MachineColumn, MachineSortColumn } from '@machines/machine';
 import { type Machine, type MachineFilter } from '@machines/machine';
@@ -21,6 +22,8 @@ import { DraftActionType } from '@machines/drafts/draft-actions';
 import { toSearchBody } from '@machines/list/machine-query';
 import { INITIAL_GRID } from '@machines/list/machines-grid.store.utils';
 import { MachinesApi } from '@machines/machines-api';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const MACHINES_PATH = '/machines';
 const STATUSES_PATH = 'statuses';
@@ -35,10 +38,9 @@ export const MachinesGridStore = signalStore(
     _actions: inject(ActionStore),
     _api: inject(MachinesApi),
     _router: inject(Router),
-    _confirmation: inject(ConfirmationService),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
   })),
+  withToasts(),
+  withConfirm(),
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.MachinesWrite)),
     canDelete: computed(() => store._auth.hasPermission(Permission.MachinesDelete)),
@@ -63,11 +65,7 @@ export const MachinesGridStore = signalStore(
         exhaustMap((machine) =>
           store._api.delete(machine.id).pipe(
             tap(() => {
-              store._messages.add({
-                severity: 'success',
-                summary: store._translate.instant('MACHINES.TOASTS.SUCCESS'),
-                detail: store._translate.instant('MACHINES.DELETED'),
-              });
+              store._toastSuccess('MACHINES.DELETED');
               store.machines.reload();
             }),
             catchError(() => EMPTY),
@@ -96,32 +94,20 @@ export const MachinesGridStore = signalStore(
         void store._router.navigate([MACHINES_PATH, id, STATUSES_PATH]);
       },
       requestDelete(machine: Machine): void {
-        store._confirmation.confirm({
-          header: store._translate.instant('MACHINES.DELETE_HEADER'),
-          message: store._translate.instant('MACHINES.DELETE_MESSAGE', { name: machine.name }),
-          icon: 'pi pi-exclamation-triangle',
-          acceptLabel: store._translate.instant('MACHINES.DELETE'),
-          rejectLabel: store._translate.instant('ACTIONS.CANCEL'),
-          acceptButtonProps: { severity: 'danger' },
-          rejectButtonProps: { severity: 'secondary' },
-          accept: () => {
+        store._confirmDestructive({
+          headerKey: 'MACHINES.DELETE_HEADER',
+          messageKey: 'MACHINES.DELETE_MESSAGE',
+          params: { name: machine.name },
+          acceptKey: 'ACTIONS.DELETE',
+          onAccept: () => {
             deleteMachine(machine);
           },
         });
       },
     };
   }),
-  withHooks({
-    onInit(store) {
-      let seen = store._actions.lastResult()?.sequence ?? 0;
-      effect(() => {
-        const result = store._actions.lastResult();
-        const isChange = result?.type === MachineActionType.Saved || result?.type === DraftActionType.Changed;
-        if (result !== null && isChange && result.sequence > seen) {
-          seen = result.sequence;
-          untracked(() => store.machines.reload());
-        }
-      });
-    },
+  withActionResultReload<{ machines: Reloadable }>([MachineActionType.Saved, DraftActionType.Changed], (store) => {
+    store.machines.reload();
   }),
+  withStoreDevtools('machines-grid'),
 );

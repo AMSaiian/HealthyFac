@@ -9,6 +9,7 @@ import { Drawer } from 'primeng/drawer';
 import { Menu } from 'primeng/menu';
 import { Toast } from 'primeng/toast';
 import { Toolbar } from 'primeng/toolbar';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ActionHost } from '@shared/actions/action-host/action-host';
 import { Language } from '@shared/i18n/i18n.constants';
@@ -16,8 +17,8 @@ import { languageFlagUrl } from '@shared/i18n/language-flags';
 import { LanguageStore } from '@shared/i18n/language.store';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 import { NavigationStore } from '@shared/loading/navigation.store';
-import { AuthStore } from '@shared/security/auth.store';
-import { SQUARE_CLOSE_BUTTON_PROPS, SQUARE_CONFIRM_DIALOG_PT } from '@shared/theme/square-button-props';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { HIDDEN_CLOSE_BUTTON_PT } from '@shared/theme/square-button-props';
 import { ThemeStore } from '@shared/theme/theme.store';
 
 import { ShellStore } from './shell.store';
@@ -32,6 +33,7 @@ import { languageMenuItems } from './shell.store.utils';
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
+    Tooltip,
     TranslatePipe,
     UpperCasePipe,
     ButtonDirective,
@@ -47,11 +49,10 @@ import { languageMenuItems } from './shell.store.utils';
   templateUrl: './shell.html',
 })
 export class Shell {
-  protected readonly squareCloseButtonProps = SQUARE_CLOSE_BUTTON_PROPS;
-  protected readonly squareConfirmDialogPt = SQUARE_CONFIRM_DIALOG_PT;
   protected readonly shellStore = inject(ShellStore);
   protected readonly languageStore = inject(LanguageStore);
   protected readonly themeStore = inject(ThemeStore);
+  protected readonly hiddenClosePt = HIDDEN_CLOSE_BUTTON_PT;
   protected readonly authStore = inject(AuthStore);
   protected readonly navigationStore = inject(NavigationStore);
   protected readonly languages = Object.values(Language);

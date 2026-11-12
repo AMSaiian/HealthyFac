@@ -34,6 +34,10 @@
   border-bottom: 1px solid var(--p-schedule-board-border-color);
 }
 
+.hf-schedule-row:nth-child(even) {
+  background: var(--p-schedule-board-stripe-background);
+}
+
 .hf-schedule-row:hover {
   background: var(--p-content-hover-background);
 }

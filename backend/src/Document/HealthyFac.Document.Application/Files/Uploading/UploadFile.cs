@@ -2,6 +2,7 @@ using FluentValidation;
 using HealthyFac.Document.Application.MachineRegistrations;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
@@ -21,7 +22,7 @@ public record UploadFileRequest : IRequest<UploadFileResponse>
 
 public class UploadFileRequestValidator : AbstractValidator<UploadFileRequest>
 {
-    public UploadFileRequestValidator()
+    public UploadFileRequestValidator(IRichTextPolicy richTextPolicy)
     {
         RuleFor(x => x.CompanyId).NotEmpty().WithMessage(FileErrors.CompanyIdRequired);
 
@@ -41,7 +42,7 @@ public class UploadFileRequestValidator : AbstractValidator<UploadFileRequest>
             .When(x => x.File is not null)
             .WithName(nameof(UploadFileRequest.File));
 
-        RuleFor(x => x.Description).IsFileDescription();
+        RuleFor(x => x.Description).IsFileDescription(richTextPolicy);
     }
 }
 

@@ -1,9 +1,12 @@
 <p-table
+  [pt]="grid.tablePt()"
+  #table
   dataKey="id"
   sortMode="single"
   scrollHeight="flex"
-  [value]="tableRows()"
-  [columns]="columns"
+  [stripedRows]="true"
+  [value]="grid.tableRows()"
+  [columns]="grid.tableColumns()"
   [lazy]="true"
   [lazyLoadOnInit]="false"
   [paginator]="true"
@@ -15,12 +18,11 @@
   currentPageReportTemplate="{first} - {last} / {totalRecords}"
   [scrollable]="true"
   [sortField]="sort()?.column"
-  [sortOrder]="sortOrder()"
+  [sortOrder]="grid.sortOrder()"
   [tableStyle]="tableStyle()"
-  [filters]="tableFilters()"
-  (onPage)="onPage($event)"
-  (onSort)="onSort($event)"
-  (onFilter)="onFilterApplied($event)"
+  [filters]="grid.tableFilters()"
+  (onPage)="grid.onPage($event)"
+  (onSort)="grid.onSort($event)"
 >
   <ng-template
     #header
@@ -30,23 +32,25 @@
       @for (column of columns; track column) {
         <th
           [pSortableColumn]="column"
-          [pSortableColumnDisabled]="!isSortable(column)"
+          [pSortableColumnDisabled]="!grid.isSortable(column)"
         >
           <div class="flex items-center gap-1">
-            <span>{{ columnLabelKey(column) | translate }}</span>
-            @if (isSortable(column)) {
+            <span>{{ grid.columnLabelKey(column) | translate }}</span>
+            @if (grid.isSortable(column)) {
               <p-sort-icon [field]="column" />
             }
             @if (column === InviteColumn.Email) {
-              <p-column-filter [filterButtonProps]="squareFilterButtonProps"
-                #columnFilter
+              <p-column-filter
+                [pt]="grid.filterPt()"
+                [filterButtonProps]="squareFilterButtonProps"
                 display="menu"
                 [field]="column"
                 [showMatchModes]="false"
                 [showOperator]="false"
                 [showAddButton]="false"
-                [showApplyButton]="true"
+                [showApplyButton]="false"
                 [showClearButton]="true"
+                (onHide)="grid.onFilterHidden(column, $any(table.filters[column])?.[0]?.value)"
               >
                 <ng-template
                   #filter
@@ -54,12 +58,12 @@
                   let-filterConstraint="filterConstraint"
                 >
                   <input
+                    [placeholder]="'EMPLOYEES.FILTERS.EMAIL_PLACEHOLDER' | translate"
                     pInputText
                     class="w-full"
-                    [attr.aria-label]="columnLabelKey(column) | translate"
+                    [attr.aria-label]="grid.columnLabelKey(column) | translate"
                     [value]="value ?? ''"
                     (input)="filterConstraint.value = $any($event.target).value"
-                    (keydown.enter)="columnFilter.applyFilter()"
                   />
                 </ng-template>
               </p-column-filter>
@@ -82,7 +86,7 @@
     <tr>
       @for (column of columns; track column) {
         <td>
-          @if (showSkeleton()) {
+          @if (grid.showSkeleton()) {
             <p-skeleton />
           } @else {
             @switch (column) {
@@ -110,12 +114,14 @@
         @if (!isLoading()) {
           <button
             pButton
+            [pTooltip]="'ACTIONS.ROW_ACTIONS' | translate"
+            tooltipPosition="bottom"
             type="button"
             iconOnly
             severity="secondary"
             [text]="true"
-            [attr.aria-label]="'EMPLOYEES.ACTIONS' | translate"
-            (click)="openMenu($event, row, menu)"
+            [attr.aria-label]="'ACTIONS.ROW_ACTIONS' | translate"
+            (click)="rowMenu.open($event, row, menu)"
           >
             <i class="pi pi-ellipsis-v"></i>
           </button>
@@ -129,10 +135,12 @@
         class="h-full"
         [attr.colspan]="columns.length + 1"
       >
-        <hf-empty-state
-          icon="pi pi-inbox"
-          messageKey="EMPLOYEES.EMPTY_INVITES"
-        />
+        @if (grid.showEmpty()) {
+          <hf-empty-state
+            icon="pi pi-inbox"
+            messageKey="EMPLOYEES.EMPTY_INVITES"
+          />
+        }
       </td>
     </tr>
   </ng-template>
@@ -142,4 +150,17 @@
   appendTo="body"
   [popup]="true"
   [model]="menuItems()"
-/>
+>
+  <ng-template
+    #item
+    let-item
+  >
+    <div
+      class="p-menu-item-link flex items-center gap-2 px-3 py-2"
+      [pTooltip]="item.tooltip"
+    >
+      <span [class]="item.icon"></span>
+      <span>{{ item.label }}</span>
+    </div>
+  </ng-template>
+</p-menu>

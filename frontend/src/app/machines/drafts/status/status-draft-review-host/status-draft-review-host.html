@@ -66,7 +66,9 @@
     }
     @default {
       <div class="flex min-h-32">
-        <hf-loading-spinner />
+        @if (showSpinner()) {
+          <hf-loading-spinner />
+        }
       </div>
     }
   }

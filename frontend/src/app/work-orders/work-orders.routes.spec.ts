@@ -6,11 +6,11 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
-import { BOARD_STATUSES } from '@work-orders/board/board.store.utils';
+import { BOARD_STATUSES } from '@work-orders/board/board-store/board.store.utils';
 import { BoardPage } from '@work-orders/board/board-page/board-page';
 import { WorkOrdersPage } from '@work-orders/list/work-orders-page/work-orders-page';
 import { WORK_ORDERS_ROUTES } from '@work-orders/work-orders.routes';

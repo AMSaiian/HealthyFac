@@ -190,6 +190,13 @@ module.exports = defineConfig([
     },
   },
   {
+    // NgRx infers the type of a signal store feature; a written type is long and repeats the code.
+    files: ['src/app/**/*.slice.ts', 'src/app/**/with-*.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+    },
+  },
+  {
     files: ['src/app/**/*.ts'],
     ignores: ['src/app/shared/**'],
     rules: {
@@ -205,6 +212,7 @@ module.exports = defineConfig([
       'src/app/**/*.resolver.ts',
       'src/app/**/*.guard.ts',
       'src/app/**/*.store.ts',
+      'src/app/**/*.slice.ts',
       'src/app/**/*.spec.ts',
       'src/app/layout/**',
       'src/app/shared/**',
@@ -222,7 +230,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ['src/app/**/*.store.ts', 'src/app/shared/**/*.ts'],
+    files: ['src/app/**/*.store.ts', 'src/app/**/*.slice.ts', 'src/app/shared/**/*.ts'],
     rules: {
       'no-restricted-imports': importRule([...BASE_IMPORT_PATHS, KEYCLOAK_PATH, HTTP_CLIENT_PATH]),
     },

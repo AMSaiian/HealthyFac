@@ -1,5 +1,5 @@
 import { CdkDrag, type CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, inject } from '@angular/core';
+import { Component, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -9,14 +9,17 @@ import { Checkbox } from 'primeng/checkbox';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { type Chip, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
 import type { PlainDateRange } from '@shared/time/plain-date-range';
 
-import { BOARD_STATUSES } from '@work-orders/board/board.store.utils';
-import { BoardStore } from '@work-orders/board/board.store';
+import { BOARD_STATUSES } from '@work-orders/board/board-store/board.store.utils';
+import { BoardStore } from '@work-orders/board/board-store/board.store';
+import { isFilterChanged } from '@shared/grid/table/filter-changes';
 import { BoardColumn, type CardDrop } from '@work-orders/board/board-column/board-column';
 import { ViewHeader } from '@work-orders/view-header/view-header';
 import type { StatusChoice } from '@work-orders/board/work-order-card/work-order-card';
@@ -39,6 +42,7 @@ import { PRIORITY_LABEL_KEYS, STATUS_LABEL_KEYS } from '@work-orders/list/work-o
     Popover,
     Select,
     Tag,
+    Tooltip,
     TranslatePipe,
     ViewHeader,
   ],
@@ -49,8 +53,12 @@ import { PRIORITY_LABEL_KEYS, STATUS_LABEL_KEYS } from '@work-orders/list/work-o
 export class BoardPage {
   protected readonly store = inject(BoardStore);
   protected readonly grid = inject(WorkOrdersGridStore);
+  protected readonly showEmployeesLoading = delayedLoading(this.grid.employeeLookup.isLoading);
   protected readonly statuses = BOARD_STATUSES;
   protected readonly statusLabelKeys = STATUS_LABEL_KEYS;
+
+  protected readonly pendingPriorities = linkedSignal(() => this.grid.filter().priorities);
+  protected readonly pendingAssignees = linkedSignal(() => this.grid.filter().assigneeIds);
 
   protected readonly priorityOptions = Object.values(WorkOrderPriority).map((value) => ({
     value,
@@ -62,11 +70,37 @@ export class BoardPage {
   });
 
   protected priorityChips(priorities: readonly WorkOrderPriority[]): Chip[] {
-    return toChips(priorities, 'hf-priority-', (priority) => this._labels()[PRIORITY_LABEL_KEYS[priority]] ?? '');
+    return toChips(
+      priorities,
+      'hf-priority-',
+      (priority) => this._labels()[PRIORITY_LABEL_KEYS[priority]] ?? '',
+      Object.values(WorkOrderPriority),
+    );
+  }
+
+  protected assigneeChips(assigneeIds: readonly string[]): Chip[] {
+    return toChips(
+      assigneeIds,
+      '',
+      (id) => this.grid.employeeLookup.options().find((option) => option.id === id)?.displayName ?? id,
+      this.grid.employeeLookup.options().map((option) => option.id),
+    );
   }
 
   protected priorityLabelKey(priority: WorkOrderPriority): string {
     return PRIORITY_LABEL_KEYS[priority];
+  }
+
+  protected applyPriorities(): void {
+    if (isFilterChanged(this.grid.filter().priorities, this.pendingPriorities())) {
+      this.grid.setFilter({ priorities: this.pendingPriorities() });
+    }
+  }
+
+  protected applyAssignees(): void {
+    if (isFilterChanged(this.grid.filter().assigneeIds, this.pendingAssignees())) {
+      this.grid.setFilter({ assigneeIds: this.pendingAssignees() });
+    }
   }
 
   protected onHeaderDrop(event: CdkDragDrop<unknown>): void {

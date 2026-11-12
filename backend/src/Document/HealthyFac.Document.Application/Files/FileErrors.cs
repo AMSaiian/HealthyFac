@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Application.RichText;
+
 namespace HealthyFac.Document.Application.Files;
 
 /// <summary>
@@ -30,7 +32,14 @@ public static class FileErrors
     public static readonly string LookupIdsTooMany =
         $"The request must hold at most {FileValidationConstants.LookupIdsMaxCount} file IDs.";
 
-    public const string DescriptionTooLong = "The description is too long.";
+    public static readonly string DescriptionTooLong =
+        $"The description must have at most {FileValidationConstants.Text.DescriptionMaxLength} characters.";
+
+    public const string DescriptionNotAllowed = "The description contains formatting that is not allowed.";
+
+    public static readonly string DescriptionTooMuchFormatting =
+        $"The description formatting is too large. The stored HTML must have at most {RichTextConstants.HtmlMaxLength} "
+        + "characters.";
     public const string CompanyIdRequired = "The company is required.";
     public const string MachineIdRequired = "The machine is required.";
     public const string MachineFilterIdsRequired = "The machine filter needs its machine IDs.";
@@ -49,7 +58,4 @@ public static class FileErrors
 
     public static readonly string EmbeddedTooLarge =
         $"The image must have at most {FileValidationConstants.Size.EmbeddedMaxBytes} bytes.";
-
-    public static readonly string DescriptionLength =
-        $"The description must have at most {FileValidationConstants.Text.DescriptionMaxLength} characters.";
 }

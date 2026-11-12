@@ -12,7 +12,7 @@ export class AppErrorHandler implements ErrorHandler {
     console.error(error);
     this._messages.add({
       severity: 'error',
-      summary: this._translate.instant('ERRORS.SUMMARY'),
+      summary: this._translate.instant('TOASTS.ERROR'),
       detail: this._translate.instant('ERRORS.UNEXPECTED'),
     });
   }

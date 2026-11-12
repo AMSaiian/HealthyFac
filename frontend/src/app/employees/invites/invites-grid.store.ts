@@ -1,16 +1,18 @@
-import { effect, inject, untracked } from '@angular/core';
+import { inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { ConfirmationService } from 'primeng/api';
-import { patchState, signalStore, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
+import { patchState, signalStore, withMethods, withProps, withState } from '@ngrx/signals';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
+import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
 
 import type { InviteColumn, InviteFilter, InviteRow, InviteSortColumn } from '@employees/employee';
 import { EmployeeActionType } from '@employees/employee-actions';
 import { EmployeesApi } from '@employees/employees-api';
 import { INITIAL_GRID, toSearchBody } from '@employees/invites/invites-grid.store.utils';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 /** The grid state and the rows of the pending invites. */
 export const InvitesGridStore = signalStore(
@@ -19,9 +21,8 @@ export const InvitesGridStore = signalStore(
   withProps(() => ({
     _actions: inject(ActionStore),
     _api: inject(EmployeesApi),
-    _confirmation: inject(ConfirmationService),
-    _translate: inject(TranslateService),
   })),
+  withConfirm(),
   withProps((store) => ({
     invites: rxResource({
       params: () =>
@@ -32,21 +33,25 @@ export const InvitesGridStore = signalStore(
     }),
   })),
   withMethods((store) => ({
-    /** Starts the loading: the tab of the pending invites calls it when it opens, so a closed tab sends no request. */
+    /**
+     * Starts the loading on the first call, so a closed tab sends no request.
+     * Each later call reloads the rows, so a return to the tab shows the current invites.
+     */
     activate(): void {
-      patchState(store, { isActive: true });
+      if (store.isActive()) {
+        store.invites.reload();
+      } else {
+        patchState(store, { isActive: true });
+      }
     },
     /** Asks to confirm, then starts the revoke action with the row version that the row showed. */
     requestRevoke(row: InviteRow): void {
-      store._confirmation.confirm({
-        header: store._translate.instant('EMPLOYEES.REVOKE_HEADER'),
-        message: store._translate.instant('EMPLOYEES.REVOKE_MESSAGE', { email: row.email }),
-        icon: 'pi pi-exclamation-triangle',
-        acceptLabel: store._translate.instant('EMPLOYEES.REVOKE'),
-        rejectLabel: store._translate.instant('ACTIONS.CANCEL'),
-        acceptButtonProps: { severity: 'danger' },
-        rejectButtonProps: { severity: 'secondary' },
-        accept: () => {
+      store._confirmDestructive({
+        headerKey: 'EMPLOYEES.REVOKE_HEADER',
+        messageKey: 'EMPLOYEES.REVOKE_MESSAGE',
+        params: { email: row.email },
+        acceptKey: 'EMPLOYEES.REVOKE',
+        onAccept: () => {
           void store._actions.dispatch({
             type: EmployeeActionType.Revoke,
             payload: { inviteId: row.id, rowVersion: row.rowVersion },
@@ -58,16 +63,8 @@ export const InvitesGridStore = signalStore(
       void store._actions.dispatch({ type: EmployeeActionType.Resend, payload: { inviteId } });
     },
   })),
-  withHooks({
-    onInit(store) {
-      let seen = store._actions.lastResult()?.sequence ?? 0;
-      effect(() => {
-        const result = store._actions.lastResult();
-        if (result !== null && result.type === EmployeeActionType.Saved && result.sequence > seen) {
-          seen = result.sequence;
-          untracked(() => store.invites.reload());
-        }
-      });
-    },
+  withActionResultReload<{ invites: Reloadable }>([EmployeeActionType.Saved], (store) => {
+    store.invites.reload();
   }),
+  withStoreDevtools('invites-grid'),
 );

@@ -32,6 +32,12 @@ public static class DraftApiTestData
     public static string DismissMachineDraftsPath(string encryptedMachineId) =>
         $"v1/machines/{encryptedMachineId}/drafts/dismiss";
 
+    public static TheoryData<string, string> DismissRoutesWithoutWrite => new()
+    {
+        { "DismissDraft", DismissPath("{draftId}") },
+        { "DismissMachineDrafts", DismissMachineDraftsPath("{machineId}") },
+    };
+
     public const string MarkBodyWithNullIds = "{\"ids\": null}";
 
     public static string MarkBody(params string[] encryptedIds) =>

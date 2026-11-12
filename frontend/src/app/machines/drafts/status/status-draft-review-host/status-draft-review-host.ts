@@ -5,12 +5,16 @@ import { Checkbox } from 'primeng/checkbox';
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 import { RichTextView } from '@shared/rich-text/rich-text-view/rich-text-view';
 
 import { DraftsApi } from '@machines/drafts/drafts-api';
-import { StatusDraftReviewStore } from '@machines/drafts/status/status-draft-review.store';
-import { StatusCompareField, type StatusCompareRow } from '@machines/drafts/status/status-draft-review.store.utils';
+import { StatusDraftReviewStore } from '@machines/drafts/status/status-draft-review-store/status-draft-review.store';
+import {
+  StatusCompareField,
+  type StatusCompareRow,
+} from '@machines/drafts/status/status-draft-review-store/status-draft-review.store.utils';
 import { StatusDefinitionForm } from '@machines/statuses/drawer/status-definition-form/status-definition-form';
 import type { StatusDefinitionFormValue } from '@machines/statuses/drawer/status-definition-form/status-definition-form-schema';
 import type { StatusSeverity } from '@machines/statuses/status-definition';
@@ -28,6 +32,7 @@ export class StatusDraftReviewHost {
   readonly action = input.required<AppAction>();
 
   protected readonly store = inject(StatusDraftReviewStore);
+  protected readonly showSpinner = delayedLoading(computed(() => this.store.mode() === 'loading'));
   protected readonly StatusCompareField = StatusCompareField;
 
   private readonly _current = signal<StatusDefinitionFormValue | null>(null);
@@ -39,7 +44,7 @@ export class StatusDraftReviewHost {
   protected readonly saveDisabledReason = computed((): string | null => {
     switch (this.store.mode()) {
       case 'create':
-        return this._isValid() ? null : 'STATUS_DEFINITIONS.FORM.INVALID';
+        return this._isValid() ? null : 'FORMS.INVALID';
       case 'update':
         return this.store.updateDisabledReason();
       default:

@@ -4,7 +4,7 @@ import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
 import { EmployeeRole } from '@shared/employee/employee';
 
-import { EmployeeActionsStore } from '@employees/employee-actions.store';
+import { EmployeeActionsStore } from '@employees/employee-actions-store/employee-actions.store';
 import { EmployeesApi } from '@employees/employees-api';
 import { InviteDialog } from '@employees/invites/invite-dialog/invite-dialog';
 import type { InviteFormValue } from '@employees/invites/invite-dialog/invite-dialog-schema';

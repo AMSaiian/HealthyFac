@@ -7,7 +7,7 @@ import { of, throwError } from 'rxjs';
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -130,6 +130,17 @@ describe('EmployeeDayStore', () => {
     const store = await setup();
 
     expect(store.isNotFound()).toBe(false);
+  });
+
+  it('hasFailed_With500_IsTrueAndTheRowsStayEmpty', async () => {
+    employeeDay.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.InternalServerError })),
+    );
+
+    const store = await setup();
+
+    expect(store.hasFailed()).toBe(true);
+    expect(store.rows()).toEqual([]);
   });
 
   it('lastResult_WithSavedType_ReloadsTheDay', async () => {

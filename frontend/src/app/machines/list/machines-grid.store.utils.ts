@@ -8,6 +8,7 @@ import { MachineColumn, type MachineFilter, MachineSortColumn } from '@machines/
 export const INITIAL_FILTER: MachineFilter = {
   name: '',
   serialNumber: '',
+  gatewayId: '',
   states: [],
   createdAt: EMPTY_RANGE,
   updatedAt: EMPTY_RANGE,
@@ -17,6 +18,7 @@ export const INITIAL_FILTER: MachineFilter = {
 export const COLUMN_ORDER: readonly MachineColumn[] = [
   MachineColumn.Name,
   MachineColumn.SerialNumber,
+  MachineColumn.GatewayId,
   MachineColumn.State,
   MachineColumn.CreatedAt,
   MachineColumn.UpdatedAt,

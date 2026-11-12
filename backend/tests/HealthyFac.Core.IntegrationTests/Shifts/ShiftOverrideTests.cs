@@ -11,32 +11,19 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 
-    [Fact]
-    public async Task SetOverride_ForPastDate_ThrowsValidation()
+    [Theory]
+    [MemberData(nameof(ShiftTestData.DatesOutsideTheRange), MemberType = typeof(ShiftTestData))]
+    public async Task SetOverride_WithDateOutsideTheRange_ThrowsValidation(string caseName, int dayOffset)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
 
         var act = () => _fixture.SetOverrideAsync(
             tenant,
-            ShiftTestData.Today.AddDays(value: -1),
+            ShiftTestData.Today.AddDays(dayOffset),
             ShiftTestData.Blocks(ShiftTestData.Morning));
 
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
-    public async Task SetOverride_BeyondOneYear_ThrowsValidation()
-    {
-        var tenant = await _fixture.ArrangeShiftTenantAsync();
-        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
-
-        var act = () => _fixture.SetOverrideAsync(
-            tenant,
-            ShiftTestData.Today.AddDays(ShiftValidationConstants.MaxDaysAhead + 1),
-            ShiftTestData.Blocks(ShiftTestData.Morning));
-
-        await act.Should().ThrowAsync<AppValidationException>();
+        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
     }
 
     [Fact]

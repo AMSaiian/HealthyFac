@@ -15,6 +15,12 @@ public static class DevelopmentDataOptionsValidatorTestData
 
     public static TestTenantOptions ValidTestTenant => CreateTestTenant();
 
+    public static TheoryData<string, TestTenantOptions?> ValidTestTenantSettings => new()
+    {
+        { "without a test tenant", null },
+        { "with a valid test tenant", ValidTestTenant },
+    };
+
     private static TestTenantOptions CreateTestTenant(
         Guid? companyId = null,
         string timeZoneId = "Europe/Kyiv"

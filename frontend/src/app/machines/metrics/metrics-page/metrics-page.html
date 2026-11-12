@@ -2,11 +2,13 @@
   <div class="flex min-w-0 items-center gap-2">
     <button
       pButton
+      [pTooltip]="'ACTIONS.BACK_TO_MACHINES' | translate"
+      tooltipPosition="bottom"
       type="button"
       severity="secondary"
       iconOnly
       [text]="true"
-      [attr.aria-label]="'METRICS.BACK' | translate"
+      [attr.aria-label]="'ACTIONS.BACK_TO_MACHINES' | translate"
       (click)="store.back()"
     >
       <i class="pi pi-arrow-left"></i>
@@ -16,6 +18,8 @@
   <div class="flex flex-none items-center gap-2">
     <button
       pButton
+      [pTooltip]="'METRICS.TOOLTIPS.EXAMPLE_PAYLOAD' | translate"
+      tooltipPosition="bottom"
       type="button"
       severity="secondary"
       [disabled]="store.isNotRegistered()"
@@ -31,8 +35,11 @@
       >
         <button
           pButton
+          [pTooltip]="'METRICS.TOOLTIPS.DISCARD' | translate"
+          tooltipPosition="bottom"
           type="button"
-          severity="secondary"
+          severity="danger"
+          [outlined]="true"
           [disabled]="!store.canApply()"
           (click)="store.requestDiscard()"
         >
@@ -45,6 +52,8 @@
       >
         <button
           pButton
+          [pTooltip]="'METRICS.TOOLTIPS.APPLY' | translate"
+          tooltipPosition="bottom"
           type="button"
           [disabled]="!store.canApply()"
           (click)="store.apply()"
@@ -63,14 +72,16 @@
   <div class="flex flex-none justify-center">
     <button
       pButton
+      [pTooltip]="'ACTIONS.TOOLTIPS.RELOAD' | translate"
+      tooltipPosition="bottom"
       type="button"
       severity="secondary"
       (click)="store.reload()"
     >
-      {{ 'METRICS.RELOAD' | translate }}
+      {{ 'ACTIONS.RELOAD' | translate }}
     </button>
   </div>
-} @else if (isEmpty()) {
+} @else if (showEmpty()) {
   <hf-empty-state
     icon="pi pi-chart-line"
     messageKey="METRICS.EMPTY"
@@ -79,6 +90,8 @@
     <div class="flex flex-none justify-center">
       <button
         pButton
+        [pTooltip]="'METRICS.TOOLTIPS.ADD_NEW' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="store.startAdd()"
       >

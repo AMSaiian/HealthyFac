@@ -11,6 +11,7 @@ export enum MachineState {
 export enum MachineColumn {
   Name = 'name',
   SerialNumber = 'serialNumber',
+  GatewayId = 'gatewayId',
   State = 'state',
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
@@ -21,6 +22,7 @@ export enum MachineColumn {
 export enum MachineSortColumn {
   Name = 'name',
   SerialNumber = 'serialNumber',
+  GatewayId = 'gatewayId',
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
 }
@@ -54,6 +56,7 @@ export type MachineSort = GridSort<MachineSortColumn>;
 export interface MachineFilter {
   readonly name: string;
   readonly serialNumber: string;
+  readonly gatewayId: string;
   readonly states: readonly MachineState[];
   readonly createdAt: PlainDateRange;
   readonly updatedAt: PlainDateRange;
@@ -66,6 +69,7 @@ export type MachineGridState = GridQueryState<MachineFilter, MachineSortColumn>;
 export interface MachineFilterBody {
   readonly name?: TextFilterBody;
   readonly serialNumber?: TextFilterBody;
+  readonly gatewayId?: TextFilterBody;
   readonly states?: SetFilterBody<MachineState>;
   readonly createdAt?: DateRangeBody;
   readonly updatedAt?: DateRangeBody;

@@ -7,7 +7,7 @@ import { Subject } from 'rxjs';
 
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { Language } from '@shared/i18n/i18n.constants';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 
 import { languageMenuItems, SHELL_NAV_ITEMS, visibleNavItems } from './shell.store.utils';

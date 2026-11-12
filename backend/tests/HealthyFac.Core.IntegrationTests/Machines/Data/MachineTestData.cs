@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Application.Machines.SearchMachines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.Grids;
@@ -15,6 +16,11 @@ public static class MachineTestData
     public const string SerialNumberOtherCase = "abc-1";
     public const string OtherSerialNumber = "XYZ-2";
     public const string ThirdSerialNumber = "QRS-3";
+
+    public const string GatewayIdPrefix = "lmno";
+    public const string GatewayIdWithPrefix = "lmnoabcdefghijkl";
+    public const string GatewayIdWithSecondPrefix = "lmnoxyzxyzxyzxyz";
+    public const string GatewayIdWithoutPrefix = "zyxwvu234567tsrq";
 
     public const string BulletListDescription =
         "<ol><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span>a</li></ol>";
@@ -40,6 +46,12 @@ public static class MachineTestData
         year: 2026, month: 3, day: 1, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
 
     public static string TooLongDescription => new(c: 'a', DescriptionLimit + 1);
+
+    public static TheoryData<string, string, string> DescriptionsOutsideTheRules => new()
+    {
+        { "TooLong", TooLongDescription, MachineErrors.DescriptionTooLong },
+        { "Hostile", HostileDescription, MachineErrors.DescriptionNotAllowed },
+    };
 
     /// <summary>5000 visible characters in 500 bold runs: about 13,500 HTML characters.</summary>
     public static string FormattedDescriptionAtVisibleLimit =>

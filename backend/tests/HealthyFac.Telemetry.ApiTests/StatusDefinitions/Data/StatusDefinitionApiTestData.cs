@@ -20,4 +20,26 @@ public static class StatusDefinitionApiTestData
     public const string SrcImageDescription = "<p><img src=\"https://example.com/a.png\"></p>";
     public const string UpdatedCode = "E-200";
     public const string SearchEmptyBody = "{\"offset\":0,\"limit\":25,\"filter\":{}}";
+
+    public static TheoryData<string, string, string, string?> MalformedIdReadRoutes => new()
+    {
+        {
+            "GetMalformedMachineId",
+            "GET",
+            MachinesPath + "/" + InvalidEncryptedId + "/" + StatusDefinitionsSegment + "/{statusDefinitionId}",
+            null
+        },
+        {
+            "GetMalformedStatusDefinitionId",
+            "GET",
+            MachinesPath + "/{machineId}/" + StatusDefinitionsSegment + "/" + InvalidEncryptedId,
+            null
+        },
+        {
+            "SearchMalformedMachineId",
+            "POST",
+            MachinesPath + "/" + InvalidEncryptedId + "/" + StatusDefinitionsSegment + "/" + SearchSegment,
+            SearchEmptyBody
+        },
+    };
 }

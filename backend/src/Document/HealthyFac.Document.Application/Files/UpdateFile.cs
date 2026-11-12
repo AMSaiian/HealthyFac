@@ -4,6 +4,7 @@ using HealthyFac.Document.Application.MachineRegistrations;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ public record UpdateFileRequest : IRequest
 
 public class UpdateFileRequestValidator : AbstractValidator<UpdateFileRequest>
 {
-    public UpdateFileRequestValidator()
+    public UpdateFileRequestValidator(IRichTextPolicy richTextPolicy)
     {
         RuleFor(x => x.CompanyId).NotEmpty().WithMessage(FileErrors.CompanyIdRequired);
 
@@ -42,7 +43,7 @@ public class UpdateFileRequestValidator : AbstractValidator<UpdateFileRequest>
 
         RuleFor(x => x.FileName).IsFileNameInput();
 
-        RuleFor(x => x.Description).IsFileDescription();
+        RuleFor(x => x.Description).IsFileDescription(richTextPolicy);
     }
 }
 

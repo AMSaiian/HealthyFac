@@ -37,21 +37,18 @@ describe('theme classes', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('lightOnlyLists_WithAnUnpairedShade_ReportsIt', () => {
-    const offenders = lightOnlyLists('<div class="bg-surface-50 flex"></div>');
-
-    expect(offenders).toHaveLength(1);
+  it.each(
+    [
+      { name: 'WithAnUnpairedShade', html: '<div class="bg-surface-50 flex"></div>' },
+      { name: 'WithOnlyTheOtherPrefixPaired', html: '<div class="bg-surface-50 dark:text-surface-100"></div>' },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('lightOnlyLists_%s_ReportsIt', (_name, { html }) => {
+    expect(lightOnlyLists(html)).toHaveLength(1);
   });
 
   it('lightOnlyLists_WithTheDarkPair_ReportsNothing', () => {
     const offenders = lightOnlyLists('<div class="bg-surface-50 dark:bg-surface-900 border-surface"></div>');
 
     expect(offenders).toEqual([]);
-  });
-
-  it('lightOnlyLists_WithOnlyTheOtherPrefixPaired_ReportsIt', () => {
-    const offenders = lightOnlyLists('<div class="bg-surface-50 dark:text-surface-100"></div>');
-
-    expect(offenders).toHaveLength(1);
   });
 });

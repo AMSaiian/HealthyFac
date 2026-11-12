@@ -1,18 +1,23 @@
-import { Component, computed, DestroyRef, inject, input, model, output } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, model, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import type { FormValueControl } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { Editor, type EditorInitEvent } from 'primeng/editor';
+import { ProgressSpinner } from 'primeng/progressspinner';
+import { Tooltip } from 'primeng/tooltip';
 import Quill from 'quill';
+import { finalize } from 'rxjs';
 
 import { checkUploadCandidate } from '@shared/files/upload-check';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EMBEDDED_MAX_BYTES, IMAGE_EXTENSIONS, IMAGE_MIME_TYPES } from '@shared/files/upload-limits';
 import {
   FILE_ID_ATTRIBUTE,
   FILE_IMAGE_BLOT_NAME,
   keepFileImagesOnly,
+  PENDING_CLASS,
   registerFileImageBlot,
 } from '@shared/rich-text/file-image/file-image-blot';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
@@ -31,7 +36,7 @@ registerFileImageBlot();
 
 @Component({
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- PrimeNG Editor stays until a free replacement is chosen (user decision 2026-11-04).
-  imports: [Editor, FormsModule, TranslatePipe],
+  imports: [Editor, FormsModule, ProgressSpinner, Tooltip, TranslatePipe],
   host: { class: 'flex flex-col gap-1' },
   selector: 'hf-rich-text-editor',
   templateUrl: './rich-text-editor.html',
@@ -49,6 +54,9 @@ export class RichTextEditor implements FormValueControl<string | null> {
   protected readonly isInvalidShown = computed(() => this.invalid() && this.touched());
   protected readonly length = computed(() => visibleTextLength(this.value()));
   protected readonly isTooLong = computed(() => this.length() > (this.characterLimit() ?? Infinity));
+  protected readonly pendingUploads = signal(0);
+  /** The editor is read-only for the whole upload; the spinner shows only after the delay of the shared spinner. */
+  protected readonly showUploadSpinner = delayedLoading(computed(() => this.pendingUploads() > 0));
 
   /**
    * The Quill modules. The clipboard drops every image that is no file image. The uploader sends a chosen, pasted, or
@@ -69,6 +77,7 @@ export class RichTextEditor implements FormValueControl<string | null> {
   private readonly _translate = inject(TranslateService);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _handled = new WeakSet<Element>();
+  private readonly _claimed = new WeakSet<Element>();
   private _quill: Quill | null = null;
 
   protected onEditorChange(html: string | null): void {
@@ -123,7 +132,7 @@ export class RichTextEditor implements FormValueControl<string | null> {
     if (quill === null) {
       return;
     }
-    let index = range?.index ?? quill.getLength();
+    let index = Math.min(range?.index ?? quill.getLength(), quill.getLength() - 1);
     for (const file of files) {
       if (checkUploadCandidate(file, IMAGE_EXTENSIONS, EMBEDDED_MAX_BYTES) !== null) {
         this._showError('RICH_TEXT.IMAGE_NOT_ALLOWED');
@@ -136,10 +145,19 @@ export class RichTextEditor implements FormValueControl<string | null> {
 
   private _insertPlaceholderAndUpload(quill: Quill, index: number, file: File): void {
     quill.insertEmbed(index, FILE_IMAGE_BLOT_NAME, { fileId: '', alt: imageAltOf(file.name) }, 'user');
-    const placeholder = quill.getLeaf(index)[0]?.domNode as HTMLElement | undefined;
+    const placeholder = Array.from(quill.root.querySelectorAll<HTMLElement>(`.${PENDING_CLASS}`)).find(
+      (candidate) => !this._claimed.has(candidate),
+    );
+    if (placeholder !== undefined) {
+      this._claimed.add(placeholder);
+    }
+    this.pendingUploads.update((count) => count + 1);
     this._links
       .upload(file)
-      .pipe(takeUntilDestroyed(this._destroyRef))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.pendingUploads.update((count) => count - 1)),
+      )
       .subscribe({
         next: (fileId) => this._replacePlaceholder(quill, placeholder, { fileId, alt: imageAltOf(file.name) }),
         error: () => {
@@ -159,16 +177,21 @@ export class RichTextEditor implements FormValueControl<string | null> {
       return;
     }
     const index = quill.getIndex(blot);
+    const wasEnabled = quill.isEnabled();
+    quill.enable();
     quill.deleteText(index, 1, 'user');
     if (image !== null) {
       quill.insertEmbed(index, FILE_IMAGE_BLOT_NAME, image, 'user');
+    }
+    if (!wasEnabled) {
+      quill.disable();
     }
   }
 
   private _showError(detailKey: string): void {
     this._messages.add({
       severity: 'error',
-      summary: this._translate.instant('ERRORS.SUMMARY'),
+      summary: this._translate.instant('TOASTS.ERROR'),
       detail: this._translate.instant(detailKey),
     });
   }

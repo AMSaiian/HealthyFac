@@ -11,15 +11,22 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
 
-    [Fact]
-    public async Task List_WithoutReadPermission_Returns403()
+    [Theory]
+    [MemberData(
+        nameof(MetricDefinitionApiTestData.ReadRoutesWithoutReadPermission),
+        MemberType = typeof(MetricDefinitionApiTestData)
+    )]
+    public async Task Read_WithoutReadPermission_Returns403(string caseName, string pathTemplate)
     {
         var machineId = await _fixture.ArrangeMachineAsync();
         var claims = _fixture.CreateClaims(MetricDefinitionApiTestData.WritePermission);
 
-        var response = await _fixture.SendAsync(HttpMethod.Get, _fixture.DefinitionsPath(machineId), claims);
+        var response = await _fixture.SendAsync(
+            HttpMethod.Get,
+            pathTemplate.Replace("{machineId}", machineId.ToString()),
+            claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
     }
 
     [Fact]
@@ -33,17 +40,6 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture)
             _fixture.DefinitionsPath(machineId),
             claims,
             MetricDefinitionApiTestData.CreateBody);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    [Fact]
-    public async Task GetSchema_WithoutReadPermission_Returns403()
-    {
-        var machineId = await _fixture.ArrangeMachineAsync();
-        var claims = _fixture.CreateClaims(MetricDefinitionApiTestData.WritePermission);
-
-        var response = await _fixture.SendAsync(HttpMethod.Get, _fixture.SchemaPath(machineId), claims);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

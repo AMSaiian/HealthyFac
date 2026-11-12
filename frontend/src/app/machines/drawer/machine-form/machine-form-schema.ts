@@ -15,8 +15,8 @@ import { richTextSchema } from '@shared/rich-text/rich-text-schema';
 
 import { DESCRIPTION_MAX_LENGTH, NAME_MAX_LENGTH, SERIAL_NUMBER_MAX_LENGTH } from '@machines/machine-limits';
 
-export const REQUIRED_ERROR_KEY = 'MACHINES.FORM.ERRORS.REQUIRED';
-export const TOO_LONG_ERROR_KEY = 'MACHINES.FORM.ERRORS.TOO_LONG';
+export const REQUIRED_ERROR_KEY = 'FORMS.REQUIRED';
+export const TOO_LONG_ERROR_KEY = 'FORMS.TOO_LONG';
 
 const requiredText = (limit: number): ZodMiniString =>
   string().check(trim(), minLength(1, REQUIRED_ERROR_KEY), maxLength(limit, TOO_LONG_ERROR_KEY));

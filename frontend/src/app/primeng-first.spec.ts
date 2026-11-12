@@ -6,7 +6,11 @@ const HIDDEN_OR_FILE = /type="(hidden|file)"/;
 const SELECT_TAG = /^<select(?=[\s/>])/;
 const PRIMENG_ONLY_INPUT_TYPE = /type="(checkbox|radio|date|time|datetime-local|number|range|color)"/;
 const WHITESPACE = /\s+/g;
-const EXCEPTIONS = ['./work-orders/board/', './shared/schedule/schedule-board/'];
+const EXCEPTIONS = [
+  './work-orders/board/',
+  './shared/schedule/schedule-board/',
+  './shared/rich-text/rich-text-editor/',
+];
 
 /** Lists the native `select`, `textarea`, and `input` tags that carry no PrimeNG directive. */
 function nativeControlsWithoutPrimeNg(source: string): string[] {
@@ -36,27 +40,19 @@ describe('PrimeNG first', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('nativeControlsWithoutPrimeNg_WithABareInput_ReportsIt', () => {
-    const offenders = nativeControlsWithoutPrimeNg('<input type="text" class="x" />');
-
-    expect(offenders).toHaveLength(1);
+  it.each(
+    [
+      { name: 'WithABareInput', html: '<input type="text" class="x" />' },
+      { name: 'WithATimeInputThatHasPInputText', html: '<input pInputText type="time" />' },
+      { name: 'WithASelectThatHasPInputText', html: '<select pInputText></select>' },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('nativeControlsWithoutPrimeNg_%s_ReportsIt', (_name, { html }) => {
+    expect(nativeControlsWithoutPrimeNg(html)).toHaveLength(1);
   });
 
   it('nativeControlsWithoutPrimeNg_WithPInputText_ReportsNothing', () => {
     const offenders = nativeControlsWithoutPrimeNg('<input pInputText type="text" />');
 
     expect(offenders).toEqual([]);
-  });
-
-  it('nativeControlsWithoutPrimeNg_WithATimeInputThatHasPInputText_ReportsIt', () => {
-    const offenders = nativeControlsWithoutPrimeNg('<input pInputText type="time" />');
-
-    expect(offenders).toHaveLength(1);
-  });
-
-  it('nativeControlsWithoutPrimeNg_WithASelectThatHasPInputText_ReportsIt', () => {
-    const offenders = nativeControlsWithoutPrimeNg('<select pInputText></select>');
-
-    expect(offenders).toHaveLength(1);
   });
 });

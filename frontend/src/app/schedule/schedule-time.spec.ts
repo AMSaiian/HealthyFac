@@ -50,18 +50,18 @@ describe('followToday', () => {
     expect(result?.toString()).toBe('2027-06-02');
   });
 
-  it('followToday_WhenAnotherDateIsShown_ReturnsTheShownDate', () => {
-    const shown = Temporal.PlainDate.from('2027-06-05');
-
-    const result = followToday(shown, yesterday, today);
-
-    expect(result?.toString()).toBe('2027-06-05');
-  });
-
-  it('followToday_WhenTheDayDidNotChange_ReturnsTheShownDate', () => {
-    const result = followToday(today, today, today);
-
-    expect(result?.toString()).toBe('2027-06-02');
+  it.each(
+    [
+      {
+        name: 'WhenAnotherDateIsShown',
+        shown: Temporal.PlainDate.from('2027-06-05'),
+        previous: yesterday,
+        expected: '2027-06-05',
+      },
+      { name: 'WhenTheDayDidNotChange', shown: today, previous: today, expected: '2027-06-02' },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('followToday_%s_ReturnsTheShownDate', (_name, { shown, previous, expected }) => {
+    expect(followToday(shown, previous, today)?.toString()).toBe(expected);
   });
 
   it('followToday_WithoutAShownDate_ReturnsNull', () => {

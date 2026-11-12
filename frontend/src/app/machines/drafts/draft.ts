@@ -16,6 +16,8 @@ export enum DraftState {
 /** The columns of the drafts grid of a machine. */
 export enum DraftColumn {
   Kind = 'kind',
+  State = 'state',
+  Machine = 'machine',
   Label = 'label',
   SourceLocation = 'sourceLocation',
   ProposedAt = 'proposedAt',
@@ -24,6 +26,7 @@ export enum DraftColumn {
 /** The column that the backend sorts the drafts of a machine by. */
 export enum DraftSortColumn {
   ProposedAt = 'proposedAt',
+  State = 'state',
 }
 
 export interface MachineDraftDetail {
@@ -108,12 +111,19 @@ export interface ApplyMachineDraftResponse {
 export interface MachineDraftGridItem {
   readonly id: string;
   readonly kind: DraftKind;
+  readonly state: DraftState;
   readonly attemptId: string;
   readonly fileId: string;
   readonly proposedAt: string;
   readonly sourceLocation: string | null;
   readonly label: string | null;
   readonly rowVersion: number;
+  /** True for a machine draft that proposes a new machine. */
+  readonly isCreate: boolean;
+  /** The machine that the draft targets, or `null` while the create draft is pending. */
+  readonly machineId: string | null;
+  /** The name of the machine, or the proposed name of the pending create draft. */
+  readonly machineName: string | null;
 }
 
 export type MachineDraftsPage = GridPage<MachineDraftGridItem>;
@@ -122,12 +132,14 @@ export type MachineDraftSort = GridSort<DraftSortColumn>;
 
 export interface MachineDraftFilter {
   readonly kinds: readonly DraftKind[];
+  readonly states: readonly DraftState[];
 }
 
 export type MachineDraftGridState = GridQueryState<MachineDraftFilter, DraftSortColumn>;
 
 export interface MachineDraftFilterBody {
   readonly kinds?: SetFilterBody<DraftKind>;
+  readonly states?: SetFilterBody<DraftState>;
 }
 
 export type SearchMachineDraftsBody = GridRequestBody<MachineDraftFilterBody, DraftSortColumn>;

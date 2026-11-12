@@ -29,24 +29,18 @@ public sealed class StatusDefinitionGridFilterValidator : AbstractValidator<Stat
 {
     public StatusDefinitionGridFilterValidator()
     {
-        RuleFor(filter => filter.Code!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.Code is not null);
+        When(
+            filter => filter.Code is not null,
+            () => RuleFor(filter => filter.Code!).IsTextFilter(StatusDefinitionValidationConstants.CodeMaxLength));
 
-        RuleFor(filter => filter.Code!.Value)
-            .MaximumLength(StatusDefinitionValidationConstants.CodeMaxLength)
-            .When(filter => filter.Code?.Value is not null);
+        When(filter => filter.Severities is not null, () => RuleFor(filter => filter.Severities!).IsSetFilter());
 
-        RuleFor(filter => filter.Severities!)
-            .SetValidator(new SetFilterValidator<StatusSeverity>())
-            .When(filter => filter.Severities is not null);
+        When(
+            filter => filter.CreatedAt is not null,
+            () => RuleFor(filter => filter.CreatedAt!).IsDateRangeFilter());
 
-        RuleFor(filter => filter.CreatedAt!)
-            .SetValidator(new DateRangeFilterValidator())
-            .When(filter => filter.CreatedAt is not null);
-
-        RuleFor(filter => filter.UpdatedAt!)
-            .SetValidator(new DateRangeFilterValidator())
-            .When(filter => filter.UpdatedAt is not null);
+        When(
+            filter => filter.UpdatedAt is not null,
+            () => RuleFor(filter => filter.UpdatedAt!).IsDateRangeFilter());
     }
 }

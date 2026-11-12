@@ -7,7 +7,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeRole } from '@shared/employee/employee';
 import { SortDirection } from '@shared/grid/requests/grid-request';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { EmployeeSortColumn, EmployeeStatus } from '@employees/employee';
 import { EmployeeActionType } from '@employees/employee-actions';
@@ -131,6 +131,16 @@ describe('EmployeesGridStore', () => {
     const before = searchEmployees.mock.calls.length;
 
     lastResult.set({ type: EmployeeActionType.Saved, sequence: 1 });
+    await settle();
+
+    expect(searchEmployees.mock.calls.length - before).toBe(1);
+  });
+
+  it('refresh_AfterTheFirstLoad_SendsANewSearch', async () => {
+    const store = await setup();
+    const before = searchEmployees.mock.calls.length;
+
+    store.refresh();
     await settle();
 
     expect(searchEmployees.mock.calls.length - before).toBe(1);

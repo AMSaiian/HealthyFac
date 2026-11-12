@@ -6,7 +6,7 @@ import { catchError, defer, from, type Observable, of, switchMap, throwError } f
 import { APP_CONFIG } from '@shared/config/app-config';
 import { ANONYMOUS_REQUEST } from '@shared/http/anonymous-request';
 
-import { AuthStore } from './auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { SessionEndedError } from './session-errors';
 
 const isUnauthorized = (error: unknown): boolean =>

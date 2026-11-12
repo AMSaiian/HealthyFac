@@ -38,9 +38,10 @@ public record MachineResponse
         BuildProjection(dbContext);
 
     /// <summary>
-    /// Builds <see cref="CreateProjection"/> from a template lambda. It puts <see cref="MachineCurrentState.Selector"/>
-    /// in place of the state parameter of the template, so the projection and the grid filter share one definition of
-    /// the current state, and EF Core translates the result without LINQKit.
+    /// Builds <see cref="CreateProjection"/> from a template lambda. <c>Embed</c> puts
+    /// <see cref="MachineCurrentState.Selector"/> in place of the state parameter and the pending draft count in place
+    /// of the count parameter, so the projection and the grid filter share one definition of the current state, and
+    /// EF Core translates the result without LINQKit.
     /// </summary>
     /// <param name="dbContext">Provides the draft sets for the pending draft count.</param>
     /// <returns>The projection with the current state selector embedded.</returns>
@@ -60,15 +61,6 @@ public record MachineResponse
                 PendingDraftCount = pendingCount,
             };
 
-        var machineParameter = template.Parameters[index: 0];
-        var selectorBody = new ParameterReplacer(MachineCurrentState.Selector.Parameters[index: 0], machineParameter)
-            .Visit(MachineCurrentState.Selector.Body);
-        var countSelector = MachinePendingDrafts.CountSelector(dbContext);
-        var countBody = new ParameterReplacer(countSelector.Parameters[index: 0], machineParameter)
-            .Visit(countSelector.Body);
-        var stateBody = new ParameterReplacer(template.Parameters[index: 1], selectorBody).Visit(template.Body);
-        var body = new ParameterReplacer(template.Parameters[index: 2], countBody).Visit(stateBody);
-
-        return Expression.Lambda<Func<Machine, MachineResponse>>(body, machineParameter);
+        return template.Embed(MachineCurrentState.Selector, MachinePendingDrafts.CountSelector(dbContext));
     }
 }

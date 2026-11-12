@@ -4,6 +4,8 @@
     @if (store.canWrite()) {
       <button
         pButton
+        [pTooltip]="'MACHINES.TOOLTIPS.ADD_NEW' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="store.requestCreate()"
       >
@@ -17,6 +19,7 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.machines.isLoading()"
+  [hasLoaded]="store.machines.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"
   [limit]="store.limit()"

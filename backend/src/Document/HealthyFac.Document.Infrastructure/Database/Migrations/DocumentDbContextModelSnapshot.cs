@@ -104,6 +104,12 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(10)")
                         .HasColumnName("purpose");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<byte[]>("Sha256")
                         .IsRequired()
                         .HasColumnType("bytea")
@@ -121,12 +127,6 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
 
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id");
 
                     b.HasIndex("MachineId");
@@ -141,7 +141,7 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("ck_file_ref_content_type_not_blank", "\"content_type\" COLLATE \"default\" ~ '\\S'");
 
-                            t.HasCheckConstraint("ck_file_ref_description_length", "char_length(\"description\") BETWEEN 0 AND 500");
+                            t.HasCheckConstraint("ck_file_ref_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
 
                             t.HasCheckConstraint("ck_file_ref_extension_allowed", "\"extension\" IN ('csv', 'docx', 'gif', 'jpg', 'md', 'pdf', 'png', 'pptx', 'txt', 'webp', 'xlsx')");
 
@@ -249,6 +249,12 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("received_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -260,12 +266,6 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -321,6 +321,12 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -332,12 +338,6 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -352,10 +352,12 @@ namespace HealthyFac.Document.Infrastructure.Database.Migrations
 
             modelBuilder.Entity("HealthyFac.Document.Domain.Files.FileRef", b =>
                 {
-                    b.HasOne("HealthyFac.Document.Domain.MachineRegistrations.MachineRegistration", null)
+                    b.HasOne("HealthyFac.Document.Domain.MachineRegistrations.MachineRegistration", "Machine")
                         .WithMany()
                         .HasForeignKey("MachineId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Machine");
                 });
 #pragma warning restore 612, 618
         }

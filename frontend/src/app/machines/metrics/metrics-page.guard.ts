@@ -4,7 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Observable } from 'rxjs';
 
-import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
+import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 
 /**
  * Asks before an in-app navigation leaves the page with staged changes or a changed open form. It does not ask while

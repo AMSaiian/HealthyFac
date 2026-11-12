@@ -9,7 +9,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { FileDownloader } from '@shared/files/file-downloader';
 import { LookupsApi } from '@shared/lookups/lookups-api';
 import { FilesLinksApi } from '@shared/files/files-links-api';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';

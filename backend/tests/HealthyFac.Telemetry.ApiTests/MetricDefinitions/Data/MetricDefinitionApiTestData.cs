@@ -10,6 +10,12 @@ public static class MetricDefinitionApiTestData
     public const string InvalidEncryptedId = "not-an-encrypted-id";
     public const string Key = "spindle.temperature";
 
+    public static TheoryData<string, string> ReadRoutesWithoutReadPermission => new()
+    {
+        { "ListDefinitions", MachinesPath + "/{machineId}/" + DefinitionsSegment },
+        { "GetSchema", MachinesPath + "/{machineId}/" + SchemaSegment },
+    };
+
     public const string CreateBody =
         "{\"expectedRevision\":0,\"created\":[{\"key\":\"spindle.temperature\",\"name\":\"Spindle temperature\","
         + "\"valueKind\":\"numeric\",\"unit\":{\"quantityKind\":\"Temperature\",\"name\":\"DegreeCelsius\"},"

@@ -22,6 +22,7 @@ export class PlainDateRangePicker implements FormValueControl<PlainDateRange> {
   readonly readonly = input(false);
   readonly invalid = input(false);
   readonly appendTo = input<'body' | 'self'>('body');
+  readonly placeholder = input('');
   readonly touch = output<void>();
 
   protected readonly pickerValue = computed(() => plainDateRangeToPickerDates(this.value()), { equal: areSameDates });

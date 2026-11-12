@@ -2,11 +2,13 @@
   <div class="flex min-w-0 items-center gap-2">
     <a
       pButton
+      [pTooltip]="'ACTIONS.BACK_TO_MACHINES' | translate"
+      tooltipPosition="bottom"
       routerLink="/machines"
       severity="secondary"
       iconOnly
       [text]="true"
-      [attr.aria-label]="'FILES.BACK' | translate"
+      [attr.aria-label]="'ACTIONS.BACK_TO_MACHINES' | translate"
     >
       <i class="pi pi-arrow-left"></i>
     </a>
@@ -16,6 +18,8 @@
     @if (store.canUpload()) {
       <button
         pButton
+        [pTooltip]="'FILES.TOOLTIPS.UPLOAD_MACHINE' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="store.requestUpload()"
       >
@@ -30,6 +34,7 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.files.isLoading()"
+  [hasLoaded]="store.files.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"
   [limit]="store.limit()"

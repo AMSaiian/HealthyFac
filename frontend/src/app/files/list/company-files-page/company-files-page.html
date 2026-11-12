@@ -4,6 +4,8 @@
     @if (store.canUpload()) {
       <button
         pButton
+        [pTooltip]="'FILES.TOOLTIPS.UPLOAD' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="store.requestUpload()"
       >
@@ -17,6 +19,7 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.files.isLoading()"
+  [hasLoaded]="store.files.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"
   [limit]="store.limit()"

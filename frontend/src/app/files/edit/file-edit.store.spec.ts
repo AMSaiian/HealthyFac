@@ -53,10 +53,10 @@ describe('FileEditStore', () => {
     return { store, http: TestBed.inject(HttpTestingController), actions, messages };
   }
 
-  it('initialValue_WithItem_ShowsTheBaseNameAndAnEmptyDescription', () => {
+  it('initialValue_WithItem_ShowsTheBaseNameAndANullDescription', () => {
     const { store } = setup({ kind: 'company' });
 
-    expect(store.initialValue()).toEqual({ fileName: 'old', description: '' });
+    expect(store.initialValue()).toEqual({ fileName: 'old', description: null });
     expect(store.extension()).toBe('pdf');
   });
 
@@ -72,10 +72,10 @@ describe('FileEditStore', () => {
     expect(actions.complete).toHaveBeenCalledWith(FileActionType.Saved);
   });
 
-  it('save_WithMachineScopeAndEmptyDescription_PutsToTheMachineRouteWithNullDescription', () => {
+  it('save_WithMachineScopeAndNullDescription_PutsToTheMachineRouteWithNullDescription', () => {
     const { store, http } = setup({ kind: 'machine', machineId: MACHINE_ID });
 
-    store.save({ fileName: 'new', description: '' });
+    store.save({ fileName: 'new', description: null });
     const request = http.expectOne(`/api/document/v1/machines/${MACHINE_ID}/files/file-id`);
     request.flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
 

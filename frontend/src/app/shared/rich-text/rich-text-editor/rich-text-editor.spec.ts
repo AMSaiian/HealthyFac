@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 
@@ -57,6 +57,22 @@ describe('RichTextEditor', () => {
     expect(upload).not.toHaveBeenCalled();
     expect(messages.add).toHaveBeenCalledTimes(2);
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'RICH_TEXT.IMAGE_NOT_ALLOWED' }));
+  });
+
+  it('upload_WhileTheImageIsInFlight_CountsOnePendingUpload', async () => {
+    const { editor, internals, upload } = await setup();
+    const response = new Subject<string>();
+    upload.mockReturnValueOnce(response);
+    const pendingUploads = (editor as unknown as { pendingUploads: () => number }).pendingUploads;
+
+    internals._upload(null, [file('pump.png', 10, 'image/png')]);
+
+    expect(pendingUploads()).toBe(1);
+
+    response.next(FILE_ID);
+    response.complete();
+
+    expect(pendingUploads()).toBe(0);
   });
 
   it('quillUploader_WithGifWebpAndPdf_UploadsTheImagesAndRefusesThePdfWithTheToast', async () => {

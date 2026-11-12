@@ -7,7 +7,7 @@ import { of, Subject, throwError } from 'rxjs';
 
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import type { Machine } from '@machines/machine';

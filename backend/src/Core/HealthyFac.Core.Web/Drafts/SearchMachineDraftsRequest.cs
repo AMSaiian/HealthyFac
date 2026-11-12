@@ -27,5 +27,20 @@ public static class SearchMachineDraftsRequestExtensions
                 Sort = request.Sort,
                 Filter = request.Filter,
             };
+
+        public ApplicationSearchMachineDraftsRequest ToApplicationAttemptRequest(
+            string encryptedAttemptId,
+            Guid companyId,
+            IIdEncryptor idEncryptor
+        ) =>
+            new()
+            {
+                CompanyId = companyId,
+                AttemptId = DraftRouteIds.Decrypt(encryptedAttemptId, idEncryptor),
+                Offset = request.Offset,
+                Limit = request.Limit,
+                Sort = request.Sort,
+                Filter = request.Filter,
+            };
     }
 }

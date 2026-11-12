@@ -196,24 +196,22 @@ public sealed class DraftProposalMapperTests
         OnlyMetric(result).Max.Should().BeNull();
     }
 
-    [Fact]
-    public void Map_WithStatesOnNumericMetric_NullsTheStates()
+    [Theory]
+    [MemberData(
+        nameof(DraftProposalMapperTestData.StatesOutsideTheRule),
+        MemberType = typeof(DraftProposalMapperTestData)
+    )]
+    public void Map_WithStatesOutsideTheRule_NullsTheStates(
+        string caseName,
+        ExtractedValueKind valueKind,
+        string[] states
+    )
     {
-        var metric = Metric(valueKind: ExtractedValueKind.Numeric, states: ["on", "off"]);
+        var metric = Metric(valueKind: valueKind, states: states);
 
         var result = _mapper.Map(Result(Machine(metrics: [metric])), Context());
 
-        OnlyMetric(result).States.Should().BeNull();
-    }
-
-    [Fact]
-    public void Map_WithFewerThanTwoUniqueStates_NullsTheStates()
-    {
-        var metric = Metric(valueKind: ExtractedValueKind.StateSet, states: ["on", "ON", " "]);
-
-        var result = _mapper.Map(Result(Machine(metrics: [metric])), Context());
-
-        OnlyMetric(result).States.Should().BeNull();
+        OnlyMetric(result).States.Should().BeNull(because: caseName);
     }
 
     [Fact]

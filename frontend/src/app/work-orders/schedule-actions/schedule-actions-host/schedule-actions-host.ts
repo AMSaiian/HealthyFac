@@ -6,6 +6,7 @@ import { Tag } from 'primeng/tag';
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import type { WorkOrderStatus } from '@work-orders/work-order';
@@ -15,7 +16,7 @@ import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 import { AssignDialog, type AssignSelection } from '@work-orders/schedule-actions/assign-dialog/assign-dialog';
 import type { AssignFormValue } from '@work-orders/schedule-actions/assign-dialog/assign-dialog-schema';
-import { ScheduleActionsStore } from '@work-orders/schedule-actions/schedule-actions.store';
+import { ScheduleActionsStore } from '@work-orders/schedule-actions/schedule-actions-store/schedule-actions.store';
 
 @Component({
   imports: [ActionDialog, AssignDialog, FormsModule, LoadingSpinner, Select, Tag, TranslatePipe],
@@ -28,6 +29,8 @@ export class ScheduleActionsHost {
   readonly action = input.required<AppAction>();
 
   protected readonly store = inject(ScheduleActionsStore);
+  protected readonly showSpinner = delayedLoading(computed(() => !this.store.initialAssignValue()));
+  protected readonly showSaving = delayedLoading(this.store.isSaving);
 
   protected readonly title = computed(() => {
     switch (this.store.type()) {

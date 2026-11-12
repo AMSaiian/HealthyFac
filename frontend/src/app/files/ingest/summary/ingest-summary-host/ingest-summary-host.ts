@@ -1,24 +1,18 @@
 import { Component, computed, effect, inject, input } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
-import { EmptyState } from '@shared/loading/empty-state/empty-state';
-import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import { IngestApi } from '@files/ingest/ingest-api';
 import { toKeySegment } from '@files/ingest/ingest-attempt.utils';
-import { DraftGroupList } from '@files/ingest/summary/draft-group-list/draft-group-list';
 import { IngestSummaryStore } from '@files/ingest/summary/ingest-summary.store';
-import { DraftsApi } from '@machines/drafts/drafts-api';
-import { MetricDefinitionsApi } from '@machines/metrics/metric-definitions-api';
-import { MetricUnitsApi } from '@machines/metrics/metric-units-api';
-import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
+import { MachineDraftsHost } from '@machines/drafts/list/machine-drafts-host/machine-drafts-host';
 
+/** The ingest summary is the shared drafts dialog of one attempt, with the notices of the attempt above the list. */
 @Component({
-  imports: [ActionDialog, DraftGroupList, EmptyState, LoadingSpinner, TranslatePipe],
+  imports: [MachineDraftsHost, TranslatePipe],
   host: { class: 'contents' },
-  providers: [IngestApi, DraftsApi, MetricDefinitionsApi, MetricUnitsApi, StatusDefinitionsApi, IngestSummaryStore],
+  providers: [IngestApi, IngestSummaryStore],
   selector: 'hf-ingest-summary-host',
   templateUrl: './ingest-summary-host.html',
 })

@@ -7,9 +7,11 @@
   (save)="store.save()"
   (cancelled)="store.cancel()"
 >
-  @if (store.data.isLoading() || store.rows().length === 0) {
+  @if (isWaiting()) {
     <div class="flex min-h-32">
-      <hf-loading-spinner />
+      @if (showSpinner()) {
+        <hf-loading-spinner />
+      }
     </div>
   } @else {
     <hf-field-compare-list

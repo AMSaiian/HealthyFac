@@ -78,41 +78,20 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    [Fact]
-    public async Task AssignWorkOrder_WithStartOffGrid_ThrowsValidation()
+    [Theory]
+    [MemberData(nameof(WorkOrderTestData.StartsOutsideTheRules), MemberType = typeof(WorkOrderTestData))]
+    public async Task AssignWorkOrder_WithStartOutsideTheRules_ThrowsValidation(
+        string caseName,
+        int dayOffset,
+        string time
+    )
     {
         var tenant = await ArrangeTenantAsync();
         var workOrderId = await CreateBacklogAsync(tenant);
 
-        var act = () => AssignAsync(tenant, workOrderId, WorkOrderTestData.OffGridTime);
+        var act = () => AssignOnAsync(tenant, workOrderId, ShiftTestData.Today.AddDays(dayOffset), time);
 
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
-    public async Task AssignWorkOrder_WithStartInThePast_ThrowsValidation()
-    {
-        var tenant = await ArrangeTenantAsync();
-        var workOrderId = await CreateBacklogAsync(tenant);
-
-        var act = () => AssignOnAsync(tenant, workOrderId, ShiftTestData.Today, time: "06:00");
-
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
-    public async Task AssignWorkOrder_WithStartBeyondOneYear_ThrowsValidation()
-    {
-        var tenant = await ArrangeTenantAsync();
-        var workOrderId = await CreateBacklogAsync(tenant);
-
-        var act = () => AssignOnAsync(
-            tenant,
-            workOrderId,
-            ShiftTestData.Today.AddDays(ShiftValidationConstants.MaxDaysAhead + 1),
-            WorkOrderTestData.ScheduledTime);
-
-        await act.Should().ThrowAsync<AppValidationException>();
+        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
     }
 
     [Fact]

@@ -14,7 +14,13 @@ import {
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
-import { type Chip, fitChipCount, summarizeChips } from '@shared/chips/chip-summary/chip-summary.utils';
+import {
+  type Chip,
+  type ChipAppearance,
+  chipGapOf,
+  fitChipCount,
+  summarizeChips,
+} from '@shared/chips/chip-summary/chip-summary.utils';
 
 function isSameList(first: readonly number[], second: readonly number[]): boolean {
   return first.length === second.length && first.every((width, index) => width === second[index]);
@@ -23,17 +29,21 @@ function isSameList(first: readonly number[], second: readonly number[]): boolea
 /**
  * The selected chips of a multi-value select on one row: as many chips as fit, then one `+N` chip for the rest, with
  * every label in a tooltip. A hidden row holds every chip and the `+N` chip, and a resize observer on the host
- * measures them, so the count follows the width and the text of the chips.
+ * measures them, so the count follows the width and the text of the chips. The host contains its inline size: the chips
+ * do not widen a filter menu that sizes to its content, so the count stays under the width of the menu.
  */
 @Component({
   imports: [Tag, Tooltip],
-  host: { class: 'relative flex h-lh w-full min-w-0 flex-nowrap items-center gap-1 overflow-hidden' },
+  host: {
+    class: 'relative flex h-lh w-full min-w-0 flex-nowrap items-center gap-1 overflow-hidden contain-inline-size',
+  },
   selector: 'hf-chip-summary',
   templateUrl: './chip-summary.html',
 })
 export class ChipSummary {
   readonly chips = input.required<readonly Chip[]>();
   readonly placeholder = input('');
+  readonly appearance = input<ChipAppearance>('tag');
 
   private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly _destroyRef = inject(DestroyRef);
@@ -59,11 +69,17 @@ export class ChipSummary {
       : chips.length;
     return summarizeChips(chips, shownCount);
   });
+  protected readonly shownLabels = computed(() =>
+    this.summary()
+      .shown.map((chip) => chip.label)
+      .join(', '),
+  );
 
   constructor() {
     afterRenderEffect({
       read: () => {
         this.chips();
+        this.appearance();
         this._measure();
       },
     });
@@ -79,7 +95,7 @@ export class ChipSummary {
 
   private _measure(): void {
     const host = this._host.nativeElement;
-    this._gap.set(parseFloat(getComputedStyle(host).columnGap) || 0);
+    this._gap.set(chipGapOf(this.appearance(), parseFloat(getComputedStyle(host).columnGap) || 0));
     this._availableWidth.set(host.clientWidth);
     this._chipWidths.set(this._measuredChips().map((chip) => chip.nativeElement.getBoundingClientRect().width));
     this._moreWidth.set(this._measuredMore()[0]?.nativeElement.getBoundingClientRect().width ?? 0);

@@ -58,12 +58,12 @@ export const CATEGORY_LABEL_KEYS: Readonly<Record<WorkOrderCategory, string>> = 
 };
 
 export const MENU_KEYS = {
-  open: 'WORK_ORDERS.MENU.OPEN',
+  open: 'ACTIONS.OPEN',
   assign: 'WORK_ORDERS.MENU.ASSIGN',
   move: 'WORK_ORDERS.MENU.MOVE',
   unassign: 'WORK_ORDERS.MENU.UNASSIGN',
   status: 'WORK_ORDERS.MENU.STATUS',
-  delete: 'WORK_ORDERS.MENU.DELETE',
+  delete: 'ACTIONS.DELETE',
 } as const;
 
 export const SORTABLE_COLUMNS: readonly string[] = Object.values(WorkOrderSortColumn);
@@ -89,3 +89,25 @@ export const FILTER_WRITERS: Readonly<Record<FilterableColumn, (filter: WorkOrde
   [WorkOrderColumn.Machine]: (filter) => (filter.machineIds.length > 0 ? [...filter.machineIds] : null),
   [WorkOrderColumn.PlannedStart]: (filter) => (isRangeEmpty(filter.plannedStart) ? null : filter.plannedStart),
 };
+
+/** The readers of every column: the estimate and the creation date have no filter, so their readers ignore the value. */
+export const ALL_FILTER_READERS: Readonly<Record<WorkOrderColumn, (value: unknown) => Partial<WorkOrderFilter>>> = {
+  ...FILTER_READERS,
+  [WorkOrderColumn.Estimate]: () => ({}),
+  [WorkOrderColumn.CreatedAt]: () => ({}),
+};
+
+export const ALL_FILTER_WRITERS: Readonly<Record<WorkOrderColumn, (filter: WorkOrderFilter) => unknown>> = {
+  ...FILTER_WRITERS,
+  [WorkOrderColumn.Estimate]: () => null,
+  [WorkOrderColumn.CreatedAt]: () => null,
+};
+
+export const MENU_TOOLTIP_KEYS = {
+  open: 'WORK_ORDERS.TOOLTIPS.OPEN',
+  assign: 'WORK_ORDERS.TOOLTIPS.ASSIGN',
+  move: 'WORK_ORDERS.TOOLTIPS.MOVE',
+  unassign: 'WORK_ORDERS.TOOLTIPS.UNASSIGN',
+  status: 'WORK_ORDERS.TOOLTIPS.STATUS',
+  delete: 'WORK_ORDERS.TOOLTIPS.DELETE',
+} as const;

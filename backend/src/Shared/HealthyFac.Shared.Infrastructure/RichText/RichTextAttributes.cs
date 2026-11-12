@@ -29,6 +29,15 @@ internal static class RichTextAttributes
     /// <summary>The class of the list marker element that Quill 2 adds inside each list item.</summary>
     public const string QuillUiClass = "ql-ui";
 
+    /// <summary>The class of a small text span that the font size format of Quill 2 writes.</summary>
+    public const string QuillSizeSmallClass = "ql-size-small";
+
+    /// <summary>The class of a large text span that the font size format of Quill 2 writes.</summary>
+    public const string QuillSizeLargeClass = "ql-size-large";
+
+    /// <summary>The class of a huge text span that the font size format of Quill 2 writes.</summary>
+    public const string QuillSizeHugeClass = "ql-size-huge";
+
     /// <summary>The maximum length of the <c>alt</c> text of an image.</summary>
     public const int AltMaxLength = 255;
 

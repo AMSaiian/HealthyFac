@@ -7,6 +7,8 @@ public static class UpdateFileTestData
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000e21");
     public static readonly Guid OtherCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000e22");
     public const string Description = "New description";
+    public const string FormattedDescription = "<p><strong>Bold</strong> text</p>";
+    public const string ScriptDescription = "<p>a</p><script>alert(1)</script>";
     public const int RaceParticipantCount = 2;
 
     public static readonly DateTime UploadedAt = new(

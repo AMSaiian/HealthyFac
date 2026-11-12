@@ -52,3 +52,20 @@ export const FILTER_WRITERS: Readonly<Record<FilterableColumn, (filter: Employee
   [EmployeeColumn.Role]: (filter) => (filter.roles.length > 0 ? [...filter.roles] : null),
   [EmployeeColumn.Status]: (filter) => (filter.statuses.length > 0 ? [...filter.statuses] : null),
 };
+
+/** The readers of every column: the creation date has no filter, so its reader ignores the value. */
+export const ALL_FILTER_READERS: Readonly<Record<EmployeeColumn, (value: unknown) => Partial<EmployeeFilter>>> = {
+  ...FILTER_READERS,
+  [EmployeeColumn.CreatedAt]: () => ({}),
+};
+
+export const ALL_FILTER_WRITERS: Readonly<Record<EmployeeColumn, (filter: EmployeeFilter) => unknown>> = {
+  ...FILTER_WRITERS,
+  [EmployeeColumn.CreatedAt]: () => null,
+};
+
+export const MENU_TOOLTIP_KEYS = {
+  shifts: 'EMPLOYEES.TOOLTIPS.SHIFTS',
+  schedule: 'EMPLOYEES.TOOLTIPS.SCHEDULE',
+  retry: 'EMPLOYEES.TOOLTIPS.RETRY_PROVISIONING',
+} as const;

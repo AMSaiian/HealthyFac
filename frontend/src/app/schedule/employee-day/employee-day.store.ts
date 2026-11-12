@@ -5,8 +5,9 @@ import { patchState, signalStore, withComputed, withHooks, withMethods, withProp
 import { TranslateService } from '@ngx-translate/core';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import type { ScheduleRow } from '@shared/schedule/schedule-row';
 import { CLOCK } from '@shared/time/clock';
@@ -15,6 +16,8 @@ import type { Temporal } from '@shared/time/temporal';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
 import { followToday, minuteTicker, todayOf, toRow } from '@schedule/schedule-time';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const RELOAD_RESULT_TYPES: readonly string[] = [WorkOrderActionType.Saved, WorkOrderActionType.Conflict];
 const FALLBACK_LABEL_KEY = 'SCHEDULE.EMPLOYEE';
@@ -48,6 +51,7 @@ export const EmployeeDayStore = signalStore(
   })),
   withComputed((store) => ({
     canGoBack: computed(() => store._auth.hasPermission(Permission.EmployeesRead)),
+    hasFailed: computed(() => store.day.status() === 'error'),
     isNotFound: computed(() => {
       const error: unknown = store.day.error();
       return error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound;
@@ -106,14 +110,10 @@ export const EmployeeDayStore = signalStore(
           }
         });
       });
-      let seen = store._actions.lastResult()?.sequence ?? 0;
-      effect(() => {
-        const result = store._actions.lastResult();
-        if (result !== null && RELOAD_RESULT_TYPES.includes(result.type) && result.sequence > seen) {
-          seen = result.sequence;
-          untracked(() => store.day.reload());
-        }
-      });
     },
   }),
+  withActionResultReload<{ day: Reloadable }>(RELOAD_RESULT_TYPES, (store) => {
+    store.day.reload();
+  }),
+  withStoreDevtools('employee-day'),
 );

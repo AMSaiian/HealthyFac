@@ -3,6 +3,8 @@
     <p class="mb-4">{{ 'HOME.INTRO' | translate }}</p>
     <button
       pButton
+      [pTooltip]="'HOME.TOOLTIPS.DISMISS' | translate"
+      tooltipPosition="bottom"
       type="button"
       (click)="store.dismissIntro()"
     >

@@ -20,12 +20,8 @@ public sealed class EmployeeInviteGridFilterValidator : AbstractValidator<Employ
 {
     public EmployeeInviteGridFilterValidator()
     {
-        RuleFor(filter => filter.Email!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.Email is not null);
-
-        RuleFor(filter => filter.Email!.Value)
-            .MaximumLength(EmployeeValidationConstants.EmailMaxLength)
-            .When(filter => filter.Email?.Value is not null);
+        When(
+            filter => filter.Email is not null,
+            () => RuleFor(filter => filter.Email!).IsTextFilter(EmployeeValidationConstants.EmailMaxLength));
     }
 }

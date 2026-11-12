@@ -4,6 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { ProgressBar } from 'primeng/progressbar';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ATTACHMENT_EXTENSIONS } from '@shared/files/upload-limits';
 
@@ -17,7 +18,7 @@ export interface DescriptionChange {
 }
 
 @Component({
-  imports: [ButtonDirective, FormsModule, InputText, ProgressBar, TranslatePipe],
+  imports: [ButtonDirective, FormsModule, InputText, ProgressBar, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 flex-col gap-3' },
   selector: 'hf-file-upload-list',
   templateUrl: './file-upload-list.html',

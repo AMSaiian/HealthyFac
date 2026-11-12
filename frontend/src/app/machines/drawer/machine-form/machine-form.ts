@@ -3,6 +3,7 @@ import { type FieldTree, form, FormField, validateStandardSchema } from '@angula
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
+import { Tooltip } from 'primeng/tooltip';
 
 import { RichTextEditor } from '@shared/rich-text/rich-text-editor/rich-text-editor';
 import { isFieldInvalid } from '@shared/forms/field-state';
@@ -10,7 +11,7 @@ import { machineFormSchema, type MachineFormValue } from '@machines/drawer/machi
 import { DESCRIPTION_MAX_LENGTH } from '@machines/machine-limits';
 
 @Component({
-  imports: [ButtonDirective, FormField, InputText, RichTextEditor, TranslatePipe],
+  imports: [ButtonDirective, FormField, InputText, RichTextEditor, Tooltip, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-machine-form',
   templateUrl: './machine-form.html',

@@ -29,6 +29,13 @@ public static class FileRefTestData
     public static readonly DateTime QueuedAt =
         new(year: 2026, month: 11, day: 9, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
 
+    public static TheoryData<string, FilePurpose, Guid?, long, byte[]> InvalidConstructorArguments => new()
+    {
+        { "EmbeddedWithMachine", FilePurpose.Embedded, MachineId, 1, ValidHash },
+        { "ZeroSize", FilePurpose.Attachment, null, 0, ValidHash },
+        { "ShortHash", FilePurpose.Attachment, null, 1, new byte[FileRef.Sha256Length - 1] },
+    };
+
     public static TheoryData<FileRef, bool> AutomaticTieCases
     {
         get

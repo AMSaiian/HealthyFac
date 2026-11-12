@@ -26,6 +26,12 @@ public static class DraftProposalMapperTestData
         new() { QuantityKind = MetricUnit.DiscreteKind, Name = "count", Abbreviation = "#" },
     ];
 
+    public static TheoryData<string, ExtractedValueKind, string[]> StatesOutsideTheRule => new()
+    {
+        { "NumericMetric", ExtractedValueKind.Numeric, ["on", "off"] },
+        { "FewerThanTwoUniqueStates", ExtractedValueKind.StateSet, ["on", "ON", " "] },
+    };
+
     public static MappingContext Context(bool isMachineFile = false) =>
         new()
         {

@@ -50,21 +50,14 @@ describe('ActionStore', () => {
     expect(store.active()).toEqual(action);
   });
 
-  it('dispatch_WithInvalidPayload_DoesNotOpen', async () => {
+  it.each([
+    ['WithInvalidPayload', { type: CREATE_TYPE, payload: { name: 42 } }],
+    ['WithUnknownType', { type: 'things.unknown', payload: {} }],
+  ])('dispatch_%s_DoesNotOpen', async (_name, action) => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const store = createStore();
 
-    await store.dispatch({ type: CREATE_TYPE, payload: { name: 42 } });
-
-    expect(store.active()).toBeNull();
-    expect(logged).toHaveBeenCalledTimes(1);
-  });
-
-  it('dispatch_WithUnknownType_DoesNotOpen', async () => {
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const store = createStore();
-
-    await store.dispatch({ type: 'things.unknown', payload: {} });
+    await store.dispatch(action);
 
     expect(store.active()).toBeNull();
     expect(logged).toHaveBeenCalledTimes(1);

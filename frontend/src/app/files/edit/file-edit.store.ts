@@ -1,21 +1,21 @@
-import { HttpContext, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { HttpStatusCode } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, finalize, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
-import { httpErrorMessageKey } from '@shared/http/http-error-message';
-import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
+import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
+import { withToasts } from '@shared/toasts/with-toasts';
 
 import type { FileEditActionPayload } from '@files/file-action-payloads';
 import { FileActionType } from '@files/file-actions';
 import { FilesApi } from '@files/files-api';
 import type { FileEditFormValue } from '@files/edit/file-edit-form/file-edit-form-schema';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 interface EditState {
   action: AppAction | null;
@@ -27,28 +27,19 @@ export const FileEditStore = signalStore(
   withProps(() => ({
     _api: inject(FilesApi),
     _actions: inject(ActionStore),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
   })),
+  withToasts(),
   withComputed((store) => ({
     payload: computed(() => store.action()?.payload as FileEditActionPayload | undefined),
   })),
   withComputed((store) => ({
     initialValue: computed((): FileEditFormValue | null => {
       const item = store.payload()?.item;
-      return item === undefined ? null : { fileName: item.fileName, description: item.description ?? '' };
+      return item === undefined ? null : { fileName: item.fileName, description: item.description };
     }),
     extension: computed(() => store.payload()?.item.extension ?? ''),
   })),
   withMethods((store) => {
-    const showError = (detailKey: string): void => {
-      store._messages.add({
-        severity: 'error',
-        summary: store._translate.instant('ERRORS.SUMMARY'),
-        detail: store._translate.instant(detailKey),
-      });
-    };
-
     return {
       start(action: AppAction): void {
         patchState(store, { action });
@@ -67,30 +58,25 @@ export const FileEditStore = signalStore(
                 payload.item.id,
                 {
                   fileName: value.fileName,
-                  description: value.description === '' ? null : value.description,
+                  description: value.description,
                   rowVersion: payload.item.rowVersion,
                 },
-                { context: new HttpContext().set(SKIP_ERROR_TOAST, true) },
+                skipErrorToast(),
               )
               .pipe(
                 tap(() => {
-                  store._messages.add({
-                    severity: 'success',
-                    summary: store._translate.instant('FILES.TOASTS.SUCCESS'),
-                    detail: store._translate.instant('FILES.TOASTS.UPDATED'),
-                  });
+                  store._toastSuccess('FILES.TOASTS.UPDATED');
                   store._actions.complete(FileActionType.Saved);
                 }),
                 catchError((error: unknown) => {
-                  const status = error instanceof HttpErrorResponse ? error.status : 0;
-                  if (status === HttpStatusCode.Conflict) {
-                    showError('FILES.ERRORS.CONFLICT');
+                  store._toastError(
+                    httpErrorKey(error, {
+                      [HttpStatusCode.Conflict]: 'FILES.ERRORS.CONFLICT',
+                      [HttpStatusCode.NotFound]: 'FILES.ERRORS.NOT_FOUND',
+                    }),
+                  );
+                  if (isHttpStatus(error, HttpStatusCode.Conflict, HttpStatusCode.NotFound)) {
                     store._actions.complete(FileActionType.Saved);
-                  } else if (status === HttpStatusCode.NotFound) {
-                    showError('FILES.ERRORS.NOT_FOUND');
-                    store._actions.complete(FileActionType.Saved);
-                  } else {
-                    showError(httpErrorMessageKey(status));
                   }
                   return EMPTY;
                 }),
@@ -104,4 +90,5 @@ export const FileEditStore = signalStore(
       },
     };
   }),
+  withStoreDevtools('file-edit'),
 );

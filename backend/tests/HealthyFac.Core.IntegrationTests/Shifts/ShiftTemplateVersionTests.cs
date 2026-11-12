@@ -11,32 +11,19 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
 
-    [Fact]
-    public async Task CreateVersion_WithDateBeforeToday_ThrowsValidation()
+    [Theory]
+    [MemberData(nameof(ShiftTestData.DatesOutsideTheRange), MemberType = typeof(ShiftTestData))]
+    public async Task CreateVersion_WithDateOutsideTheRange_ThrowsValidation(string caseName, int dayOffset)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
 
         var act = () => _fixture.CreateVersionAsync(
             tenant,
-            ShiftTestData.Today.AddDays(value: -1),
+            ShiftTestData.Today.AddDays(dayOffset),
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
 
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
-    public async Task CreateVersion_WithDateBeyond365Days_ThrowsValidation()
-    {
-        var tenant = await _fixture.ArrangeShiftTenantAsync();
-        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
-
-        var act = () => _fixture.CreateVersionAsync(
-            tenant,
-            ShiftTestData.Today.AddDays(ShiftValidationConstants.MaxDaysAhead + 1),
-            ShiftTestData.WorkWeek(ShiftTestData.Morning));
-
-        await act.Should().ThrowAsync<AppValidationException>();
+        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
     }
 
     [Fact]

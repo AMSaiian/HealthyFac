@@ -3,16 +3,17 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Message } from 'primeng/message';
 import { Tag } from 'primeng/tag';
+import { Tooltip } from 'primeng/tooltip';
 
 import { EMPTY_CELL } from '@shared/grid/table/grid-display';
 import { RichTextView } from '@shared/rich-text/rich-text-view/rich-text-view';
 
 import { MetricValueKind } from '@machines/metrics/metric-definition';
-import { type MetricItem } from '@machines/metrics/metrics-page.store.utils';
+import { type MetricItem } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 import { findUnitOption, KIND_LABEL_KEYS, type UnitGroup } from '@machines/metrics/metric-form/metric-form.utils';
 
 @Component({
-  imports: [ButtonDirective, Message, RichTextView, Tag, TranslatePipe],
+  imports: [ButtonDirective, Message, RichTextView, Tag, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto' },
   selector: 'hf-metric-detail',
   templateUrl: './metric-detail.html',

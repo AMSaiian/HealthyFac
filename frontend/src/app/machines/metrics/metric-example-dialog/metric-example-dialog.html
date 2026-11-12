@@ -1,5 +1,6 @@
 <p-dialog
-  [closeButtonProps]="squareCloseButtonProps"
+  [pt]="hiddenClosePt"
+  [dismissableMask]="true"
   styleClass="w-[48rem] max-w-[95vw]"
   appendTo="body"
   [contentStyle]="contentStyle"
@@ -27,6 +28,8 @@
     @if (text() !== null) {
       <button
         pButton
+        [pTooltip]="'ACTIONS.TOOLTIPS.COPY' | translate"
+        tooltipPosition="bottom"
         type="button"
         severity="secondary"
         (click)="copy()"
@@ -37,10 +40,12 @@
     }
     <button
       pButton
+      [pTooltip]="'ACTIONS.TOOLTIPS.CLOSE' | translate"
+      tooltipPosition="bottom"
       type="button"
       (click)="closed.emit()"
     >
-      {{ 'METRICS.EXAMPLE.CLOSE' | translate }}
+      {{ 'ACTIONS.CLOSE' | translate }}
     </button>
   </ng-template>
 </p-dialog>

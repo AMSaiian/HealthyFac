@@ -19,3 +19,17 @@ export function keepWhileLoading<T>(rows: Signal<readonly T[]>, isLoading: Signa
       source.isLoading && source.rows.length === 0 && previous ? previous.value : source.rows,
   });
 }
+
+export interface EmptyResultState {
+  readonly rows: readonly unknown[];
+  readonly isLoading: boolean;
+  readonly hasLoaded: boolean;
+}
+
+/**
+ * `true` only after a finished load that returned no rows. Before the first result, and during a load, a grid shows no
+ * empty state, so it never shows "no rows" while its first load starts.
+ */
+export function isEmptyResult(state: EmptyResultState): boolean {
+  return state.hasLoaded && !state.isLoading && state.rows.length === 0;
+}

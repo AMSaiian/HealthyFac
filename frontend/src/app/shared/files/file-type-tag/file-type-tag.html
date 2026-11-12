@@ -1,0 +1,5 @@
+<p-tag
+  [value]="extension() | uppercase"
+  [class]="typeClass() ?? ''"
+  [severity]="typeClass() === undefined ? 'secondary' : undefined"
+/>

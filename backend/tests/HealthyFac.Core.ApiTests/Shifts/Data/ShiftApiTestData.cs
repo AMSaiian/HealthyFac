@@ -30,4 +30,12 @@ public static class ShiftApiTestData
 
     public static string ScheduleWithDatePath(string employeeId, string date) =>
         $"v1/employees/{employeeId}/schedule?date={date}";
+
+    public static TheoryData<string, string, string> WorkerWriteRoutes => new()
+    {
+        { "CreateTemplate", "POST", TemplatesPath("{employeeId}") },
+        { "SetOverride", "PUT", OverridePath("{employeeId}") },
+        { "DeleteOverride", "DELETE", OverridePath("{employeeId}") },
+        { "CompanySchedule", "GET", $"{CompanySchedulePath}?date={Date}" },
+    };
 }

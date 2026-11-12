@@ -1,7 +1,9 @@
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Shifts;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
+using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Shared.Application.Grids;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders.Data;
@@ -126,6 +128,19 @@ public static class WorkOrderTestData
 
     public static TheoryData<int> InvalidBatchSizes { get; } =
         new() { 0, WorkOrderValidationConstants.BatchMaxSearches + 1 };
+
+    public static TheoryData<string, int, string> StartsOutsideTheRules => new()
+    {
+        { "OffGridTime", 1, OffGridTime },
+        { "InThePast", 0, "06:00" },
+        { "BeyondOneYear", ShiftValidationConstants.MaxDaysAhead + 1, ScheduledTime },
+    };
+
+    public static TheoryData<string, Func<ShiftTenant, Guid?>> OwnScopeWithStartCases => new()
+    {
+        { "WithAssignee", tenant => tenant.EmployeeId },
+        { "WithoutAssignee", _ => null },
+    };
 
     public static GridSort<WorkOrderSortColumn> SortBy(WorkOrderSortColumn column, SortDirection direction) =>
         new() { Column = column, Direction = direction };

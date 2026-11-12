@@ -8,7 +8,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { CompanyStore } from '@shared/company/company.store';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { CompanyFilesPage } from '@files/list/company-files-page/company-files-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';

@@ -2,7 +2,7 @@ import { type infer as Infer, maxLength, minLength, object, string, trim } from 
 
 import { NAME_MAX_LENGTH } from '@shared/employee/person-name-limits';
 
-export const NAME_REQUIRED_ERROR_KEY = 'INVITE.ERRORS.NAME_REQUIRED';
+export const NAME_REQUIRED_ERROR_KEY = 'FORMS.REQUIRED';
 export const NAME_TOO_LONG_ERROR_KEY = 'INVITE.ERRORS.NAME_TOO_LONG';
 
 const nameText = (): ReturnType<typeof string> =>

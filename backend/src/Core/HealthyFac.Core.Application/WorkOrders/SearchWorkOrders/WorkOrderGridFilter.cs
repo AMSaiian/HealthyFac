@@ -41,36 +41,26 @@ public sealed class WorkOrderGridFilterValidator : AbstractValidator<WorkOrderGr
 {
     public WorkOrderGridFilterValidator()
     {
-        RuleFor(filter => filter.Title!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.Title is not null);
+        When(
+            filter => filter.Title is not null,
+            () => RuleFor(filter => filter.Title!).IsTextFilter(WorkOrderValidationConstants.TitleMaxLength));
 
-        RuleFor(filter => filter.Title!.Value)
-            .MaximumLength(WorkOrderValidationConstants.TitleMaxLength)
-            .When(filter => filter.Title?.Value is not null);
+        When(filter => filter.Statuses is not null, () => RuleFor(filter => filter.Statuses!).IsSetFilter());
 
-        RuleFor(filter => filter.Statuses!)
-            .SetValidator(new SetFilterValidator<WorkOrderStatus>())
-            .When(filter => filter.Statuses is not null);
+        When(filter => filter.Priorities is not null, () => RuleFor(filter => filter.Priorities!).IsSetFilter());
 
-        RuleFor(filter => filter.Priorities!)
-            .SetValidator(new SetFilterValidator<WorkOrderPriority>())
-            .When(filter => filter.Priorities is not null);
+        When(filter => filter.Categories is not null, () => RuleFor(filter => filter.Categories!).IsSetFilter());
 
-        RuleFor(filter => filter.Categories!)
-            .SetValidator(new SetFilterValidator<WorkOrderCategory>())
-            .When(filter => filter.Categories is not null);
+        When(
+            filter => filter.Assignee is not null,
+            () => RuleFor(filter => filter.Assignee!).SetValidator(new IdSetFilterValidator()));
 
-        RuleFor(filter => filter.Assignee!)
-            .SetValidator(new IdSetFilterValidator())
-            .When(filter => filter.Assignee is not null);
+        When(
+            filter => filter.Machine is not null,
+            () => RuleFor(filter => filter.Machine!).SetValidator(new IdSetFilterValidator()));
 
-        RuleFor(filter => filter.Machine!)
-            .SetValidator(new IdSetFilterValidator())
-            .When(filter => filter.Machine is not null);
-
-        RuleFor(filter => filter.PlannedStart!)
-            .SetValidator(new DateRangeFilterValidator())
-            .When(filter => filter.PlannedStart is not null);
+        When(
+            filter => filter.PlannedStart is not null,
+            () => RuleFor(filter => filter.PlannedStart!).IsDateRangeFilter());
     }
 }

@@ -17,7 +17,7 @@ import { MetricDefinitionsApi } from './metrics/metric-definitions-api';
 import { MetricUnitsApi } from './metrics/metric-units-api';
 import { MetricsPage } from './metrics/metrics-page/metrics-page';
 import { metricsPageGuard } from './metrics/metrics-page.guard';
-import { MetricsPageStore } from './metrics/metrics-page.store';
+import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 import { metricsResolver } from './metrics/metrics.resolver';
 
 export const MACHINES_ROUTES: Routes = [

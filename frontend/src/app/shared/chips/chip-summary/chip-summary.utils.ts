@@ -1,6 +1,10 @@
+import type { TagSeverity } from 'primeng/tag';
+
 export interface Chip {
   readonly label: string;
   readonly styleClass: string;
+  /** The tag severity of a chip whose color comes from a severity, not from a style class. */
+  readonly severity?: TagSeverity;
 }
 
 export interface ChipSummary {
@@ -16,13 +20,31 @@ export interface ChipMeasures {
   readonly moreWidth: number;
 }
 
-/** Builds the chips of the values: the style class is the prefix plus the value. */
+/**
+ * Orders the values by their place in the options, so a summary lists them as the list shows them, not in click order.
+ * A value without an option keeps its click order after the known values.
+ */
+export function orderByOptions<T extends string>(values: readonly T[], optionValues: readonly T[]): T[] {
+  const placeOf = (value: T): number => {
+    const place = optionValues.indexOf(value);
+    return place === -1 ? optionValues.length : place;
+  };
+  return [...values].sort((first, second) => placeOf(first) - placeOf(second));
+}
+
+/**
+ * Builds the chips of the values, in the order of the options: the style class is the prefix plus the value.
+ */
 export function toChips<T extends string>(
   values: readonly T[],
   classPrefix: string,
   label: (value: T) => string,
+  optionValues: readonly T[],
 ): Chip[] {
-  return values.map((value) => ({ label: label(value), styleClass: `${classPrefix}${value}` }));
+  return orderByOptions(values, optionValues).map((value) => ({
+    label: label(value),
+    styleClass: `${classPrefix}${value}`,
+  }));
 }
 
 /**
@@ -40,6 +62,31 @@ export function fitChipCount({ availableWidth, chipWidths, gap, moreWidth }: Chi
     count--;
   }
   return count;
+}
+
+/** The tag chips are colored boxes. The text chips are plain labels, separated by `, `. */
+export type ChipAppearance = 'tag' | 'text';
+
+/**
+ * Builds the chips of the values, labelled and colored by their option, in the order of the options. A value without
+ * an option shows as its own text.
+ */
+export function labelChipsOf(
+  values: readonly string[],
+  options: readonly { readonly value: string; readonly label: string; readonly severity?: TagSeverity }[],
+): Chip[] {
+  return orderByOptions(
+    values,
+    options.map((option) => option.value),
+  ).map((value) => {
+    const option = options.find((candidate) => candidate.value === value);
+    return { label: option?.label ?? value, styleClass: '', severity: option?.severity };
+  });
+}
+
+/** The gap of the fit: a text chip carries its separator in its width, so text chips have no gap between them. */
+export function chipGapOf(appearance: ChipAppearance, columnGap: number): number {
+  return appearance === 'text' ? 0 : columnGap;
 }
 
 /** Splits the chips into the shown ones and the count of the rest. The tooltip lists every label when some are hidden. */

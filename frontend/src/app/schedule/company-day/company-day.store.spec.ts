@@ -1,6 +1,6 @@
 import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
@@ -73,6 +73,21 @@ describe('CompanyDayStore', () => {
 
     expect(companyDay).toHaveBeenCalledWith('2027-06-01');
     expect(labels).toEqual(['Ann Lee', 'Bo Kim']);
+  });
+
+  it('hasFailed_WhenTheRequestFails_IsTrueAndTheRowsStayEmpty', async () => {
+    companyDay.mockReturnValue(throwError(() => new Error('gateway')));
+
+    const store = await setup();
+
+    expect(store.hasFailed()).toBe(true);
+    expect(store.rows()).toEqual([]);
+  });
+
+  it('hasFailed_AfterASuccessfulLoad_IsFalse', async () => {
+    const store = await setup();
+
+    expect(store.hasFailed()).toBe(false);
   });
 
   it('setDate_WithAnotherDate_ReloadsTheDay', async () => {

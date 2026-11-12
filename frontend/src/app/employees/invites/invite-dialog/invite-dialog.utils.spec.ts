@@ -15,10 +15,13 @@ describe('inviteSaveReason', () => {
     expect(inviteSaveReason(VALID, true)).toBeNull();
   });
 
-  it('inviteSaveReason_WithAnInvalidEmail_AsksForAValidEmail', () => {
-    const reason = inviteSaveReason({ ...VALID, email: 'not-an-email', firstName: 'x'.repeat(101) }, false);
-
-    expect(reason).toEqual({ key: INVALID_REASON_KEY });
+  it.each(
+    [
+      { name: 'WithAnInvalidEmail', value: { ...VALID, email: 'not-an-email', firstName: 'x'.repeat(101) } },
+      { name: 'WithNoValueYet', value: null },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('inviteSaveReason_%s_AsksForAValidEmail', (_name, { value }) => {
+    expect(inviteSaveReason(value, false)).toEqual({ key: INVALID_REASON_KEY });
   });
 
   it('inviteSaveReason_WithAValidEmailAndALongFirstName_NamesTheLimit', () => {
@@ -31,9 +34,5 @@ describe('inviteSaveReason', () => {
     const reason = inviteSaveReason({ ...VALID, lastName: 'x'.repeat(101) }, false);
 
     expect(reason?.key).toBe(NAME_TOO_LONG_REASON_KEY);
-  });
-
-  it('inviteSaveReason_WithNoValueYet_AsksForAValidEmail', () => {
-    expect(inviteSaveReason(null, false)).toEqual({ key: INVALID_REASON_KEY });
   });
 });

@@ -83,6 +83,26 @@ describe('InvitesGridStore', () => {
     expect(searchInvites).toHaveBeenCalledTimes(1);
   });
 
+  it('activate_CalledOnce_SendsOneSearch', async () => {
+    const store = await setup(false);
+
+    store.activate();
+    await settle();
+
+    expect(searchInvites).toHaveBeenCalledTimes(1);
+  });
+
+  it('activate_CalledTwice_SendsTwoSearches', async () => {
+    const store = await setup(false);
+
+    store.activate();
+    await settle();
+    store.activate();
+    await settle();
+
+    expect(searchInvites).toHaveBeenCalledTimes(2);
+  });
+
   it('requestResend_WithInvite_DispatchesTheResendAction', async () => {
     const store = await setup();
 

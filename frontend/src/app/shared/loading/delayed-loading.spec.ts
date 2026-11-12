@@ -2,6 +2,9 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { delayedLoading } from './delayed-loading';
+import { SPINNER_MIN_VISIBLE_MS, SPINNER_SHOW_AFTER_MS } from './loading-constants';
+
+const LOAD_AFTER_SHOWN_MS = 50;
 
 describe('delayedLoading', () => {
   beforeEach(() => {
@@ -19,12 +22,12 @@ describe('delayedLoading', () => {
     return { isLoading, shown };
   }
 
-  it('delayedLoading_WhenTheLoadEndsBefore300ms_NeverTurnsOn', () => {
+  it('delayedLoading_WhenTheLoadEndsBeforeTheShowDelay_NeverTurnsOn', () => {
     const { isLoading, shown } = setup();
 
     isLoading.set(true);
     TestBed.tick();
-    vi.advanceTimersByTime(299);
+    vi.advanceTimersByTime(SPINNER_SHOW_AFTER_MS - 1);
     isLoading.set(false);
     TestBed.tick();
     vi.advanceTimersByTime(1000);
@@ -32,17 +35,17 @@ describe('delayedLoading', () => {
     expect(shown()).toBe(false);
   });
 
-  it('delayedLoading_WhenTheLoadTakesLonger_TurnsOnAfter300msAndStaysAtLeast500ms', () => {
+  it('delayedLoading_WhenTheLoadTakesLonger_TurnsOnAfterTheShowDelayAndStaysTheMinimumTime', () => {
     const { isLoading, shown } = setup();
 
     isLoading.set(true);
     TestBed.tick();
-    vi.advanceTimersByTime(300);
+    vi.advanceTimersByTime(SPINNER_SHOW_AFTER_MS);
     const isShownAfterDelay = shown();
-    vi.advanceTimersByTime(50);
+    vi.advanceTimersByTime(LOAD_AFTER_SHOWN_MS);
     isLoading.set(false);
     TestBed.tick();
-    vi.advanceTimersByTime(449);
+    vi.advanceTimersByTime(SPINNER_MIN_VISIBLE_MS - LOAD_AFTER_SHOWN_MS - 1);
     const isShownBeforeMinimum = shown();
     vi.advanceTimersByTime(1);
 

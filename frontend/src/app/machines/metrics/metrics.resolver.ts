@@ -8,10 +8,10 @@ import { catchError, EMPTY, of, throwError } from 'rxjs';
 import { httpErrorMessageKey } from '@shared/http/http-error-message';
 
 import type { Machine } from '@machines/machine';
-import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
+import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 import { MACHINE_ID_PARAMETER, NOT_FOUND_URL } from '@machines/statuses/list/status-definitions.resolver';
 
-const ERROR_SUMMARY_KEY = 'ERRORS.SUMMARY';
+const ERROR_SUMMARY_KEY = 'TOASTS.ERROR';
 
 /**
  * Opens the machine of the route in the metrics store before the page activates. A missing machine (`404`) leads to the

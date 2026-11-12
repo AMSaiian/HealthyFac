@@ -97,9 +97,13 @@ public sealed class DocumentRouteTests(GatewayEnvironment environment) : IAsyncL
         gateway.UseKestrel();
         using var client = gateway.CreateAuthenticatedClient();
         using var body = new ZeroBodyContent(DocumentRouteTestData.BodyAboveRouteLimitBytes);
+        using var request = new HttpRequestMessage(HttpMethod.Post, DocumentRouteTestData.UploadPath)
+        {
+            Content = body,
+            Headers = { ExpectContinue = true },
+        };
 
-        var response = await client.PostAsync(
-            DocumentRouteTestData.UploadPath, body, TestContext.Current.CancellationToken);
+        var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
 

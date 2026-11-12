@@ -3,8 +3,10 @@ import { type FieldTree, form, FormField, validateStandardSchema } from '@angula
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
+import { Tooltip } from 'primeng/tooltip';
 
 import { isFieldInvalid } from '@shared/forms/field-state';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { keepSelectedOptions, type LookupOption, type LookupRequest } from '@shared/lookups/lookup-options';
 import { PlainDateTimePicker } from '@shared/time/pickers/plain-date-time-picker/plain-date-time-picker';
 import type { Temporal } from '@shared/time/temporal';
@@ -30,7 +32,7 @@ function isSameSelection(first: AssignSelection | null, second: AssignSelection 
 
 /** The people and the start of an assign or move. The suggestion is the first free start of the chosen day. */
 @Component({
-  imports: [ButtonDirective, FormField, PlainDateTimePicker, Select, TranslatePipe],
+  imports: [ButtonDirective, FormField, PlainDateTimePicker, Select, Tooltip, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-assign-dialog',
   templateUrl: './assign-dialog.html',
@@ -39,6 +41,7 @@ export class AssignDialog {
   readonly initialValue = input.required<AssignFormValue>();
   readonly employees = input.required<LookupOption[]>();
   readonly isEmployeesLoading = input(false);
+  protected readonly showEmployeesLoading = delayedLoading(this.isEmployeesLoading);
   readonly suggestion = input<Temporal.PlainDateTime | null>(null);
   readonly hasNoFreeStart = input(false);
 

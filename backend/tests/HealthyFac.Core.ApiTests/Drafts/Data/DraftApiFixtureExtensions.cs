@@ -60,20 +60,27 @@ public static class DraftApiFixtureExtensions
             return new ArrangedDraft(draft.Id, fixture.IdEncryptor.Encrypt(draft.Id));
         }
 
-        public async Task<ArrangedDraft> ArrangeMetricDraftAsync(Guid? targetMachineId, Guid? targetMachineDraftId)
+        public async Task<ArrangedDraft> ArrangeMetricDraftAsync(
+            Guid? targetMachineId,
+            Guid? targetMachineDraftId,
+            Guid? attemptId = null,
+            Guid? companyId = null
+        )
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var values = new MetricDraftValues { Key = DraftApiTestData.MetricKey };
             var id = Guid.CreateVersion7();
+            var owner = companyId ?? fixture.CompanyId;
+            var attempt = attemptId ?? DraftApiTestData.AttemptId;
             dbContext.MetricDefinitionDrafts.Add(
                 targetMachineId is { } machineId
                     ? MetricDefinitionDraft.ForMachine(
-                        id, fixture.CompanyId, DraftApiTestData.AttemptId, DraftApiTestData.FileId, machineId, values)
+                        id, owner, attempt, DraftApiTestData.FileId, machineId, values)
                     : MetricDefinitionDraft.ForMachineDraft(
                         id,
-                        fixture.CompanyId,
-                        DraftApiTestData.AttemptId,
+                        owner,
+                        attempt,
                         DraftApiTestData.FileId,
                         targetMachineDraftId!.Value,
                         values));

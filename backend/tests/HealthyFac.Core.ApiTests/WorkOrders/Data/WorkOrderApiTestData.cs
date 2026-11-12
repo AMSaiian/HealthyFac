@@ -25,4 +25,12 @@ public static class WorkOrderApiTestData
     public const string Morning = "08:00-12:00";
     public const string Afternoon = "13:00-17:00";
     public const string SearchBody = "{\"offset\":0,\"limit\":50,\"filter\":{}}";
+
+    public static TheoryData<string, string, string> WorkerWriteRoutes => new()
+    {
+        { "Assign", "PUT", BasePath + "/{id}/assignee" },
+        { "Move", "POST", BasePath + "/{id}/move" },
+        { "Unassign", "DELETE", BasePath + "/{id}/assignee?rowVersion=1" },
+        { "Delete", "DELETE", BasePath + "/{id}?rowVersion=1" },
+    };
 }

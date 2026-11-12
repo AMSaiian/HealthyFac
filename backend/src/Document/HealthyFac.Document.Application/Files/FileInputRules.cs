@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.TextInput;
 
 namespace HealthyFac.Document.Application.Files;
@@ -18,9 +19,13 @@ public static class FileInputRules
                 .WithMessage(FileErrors.NameTooLong)
                 .SingleLineText();
 
-        public IRuleBuilderOptions<T, string?> IsFileDescription() =>
-            ruleBuilder.MaximumLength(FileValidationConstants.Text.DescriptionMaxLength)
-                .WithMessage(FileErrors.DescriptionLength)
-                .MultilineText();
+        public IRuleBuilderOptionsConditions<T, string?> IsFileDescription(IRichTextPolicy richTextPolicy) =>
+            ruleBuilder.IsRichText(
+                richTextPolicy,
+                FileValidationConstants.Text.DescriptionMaxLength,
+                FileErrors.DescriptionTooLong,
+                FileErrors.DescriptionNotAllowed,
+                FileErrors.DescriptionTooMuchFormatting
+            );
     }
 }

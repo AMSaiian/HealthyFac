@@ -1,26 +1,27 @@
 import { Component } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting, type TestRequest } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
+import { provideRouter, Router, withAutoCleanupInjectors, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { CompanyStore } from '@shared/company/company.store';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { MachineState } from '@machines/machine';
 import { MACHINES_ROUTES } from '@machines/machines.routes';
 import { MetricsPage } from '@machines/metrics/metrics-page/metrics-page';
-import { MetricsPageStore } from '@machines/metrics/metrics-page.store';
+import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 import { MetricValueKind } from '@machines/metrics/metric-definition';
 import { StatusDefinitionsPage } from '@machines/statuses/list/status-definitions-page/status-definitions-page';
 import { MachineFilesPage } from '@machines/files/machine-files-page/machine-files-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
 
 const MACHINE_URL = '/api/core/v1/machines/m1';
+const MACHINES_SEARCH_URL = '/api/core/v1/machines/search';
 const DEFINITIONS_URL = '/api/telemetry/v1/machines/m1/metric-definitions';
 const UNITS_URL = '/api/telemetry/v1/metric-units';
 const FILES_SEARCH_URL = '/api/document/v1/machines/m1/files/search';
@@ -77,6 +78,7 @@ function setup(isConfirmed: boolean): { http: HttpTestingController; confirm: Re
           { path: 'not-found', component: NotFoundStub },
         ],
         withComponentInputBinding(),
+        withAutoCleanupInjectors(),
       ),
       provideHttpClient(),
       provideHttpClientTesting(),
@@ -117,6 +119,37 @@ class ResizeObserverStub {
 describe('machines routes', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('machinesRoute_AfterLeavingAndReturning_SearchesWithoutTheEarlierFilter', async () => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+    const { http } = setup(true);
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl('/machines');
+    TestBed.tick();
+    await vi.waitFor(() => {
+      expect(http.match(MACHINES_SEARCH_URL).length).toBeGreaterThan(0);
+    });
+
+    Reflect.get(harness.routeDebugElement?.componentInstance, 'store').setFilter({ name: 'lathe' });
+    TestBed.tick();
+    await vi.waitFor(() => {
+      expect(http.match(MACHINES_SEARCH_URL).length).toBeGreaterThan(0);
+    });
+
+    await harness.navigateByUrl('/elsewhere');
+    TestBed.tick();
+    await harness.navigateByUrl('/machines');
+    TestBed.tick();
+
+    let returned: TestRequest[] = [];
+    await vi.waitFor(() => {
+      TestBed.tick();
+      returned = http.match(MACHINES_SEARCH_URL);
+      expect(returned.length).toBeGreaterThan(0);
+    });
+    expect(JSON.stringify(returned.at(-1)?.request.body)).not.toContain('lathe');
   });
 
   it('metricsRoute_OnOpen_RequestsDefinitionsAndUnitsAndActivatesThePage', async () => {
@@ -318,7 +351,6 @@ describe('machines routes', () => {
 
     store?.apply();
     await flushWhenRequested(http, DEFINITIONS_URL, { revision: 3 });
-    await flushWhenRequested(http, DEFINITIONS_URL, { revision: 3, definitions: [] });
     await vi.waitFor(() => {
       expect(TestBed.inject(Router).url).toBe('/not-found');
     });
@@ -339,7 +371,6 @@ describe('machines routes', () => {
     store?.remove('a');
 
     store?.requestDiscard();
-    await flushWhenRequested(http, DEFINITIONS_URL, { ...DEFINITIONS });
     await vi.waitFor(() => {
       expect(TestBed.inject(Router).url).toBe('/not-found');
     });

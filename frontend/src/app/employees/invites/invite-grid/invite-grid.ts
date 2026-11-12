@@ -7,14 +7,15 @@ import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Menu } from 'primeng/menu';
 import { Skeleton } from 'primeng/skeleton';
-import { ColumnFilter, SortIcon, type TableFilterEvent, TableModule, type TablePageEvent } from 'primeng/table';
+import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { Tooltip } from 'primeng/tooltip';
 
 import { EmployeeRole } from '@shared/employee/employee';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
-import { keepWhileLoading, skeletonRows } from '@shared/grid/table/grid-display';
-import { delayedLoading } from '@shared/loading/delayed-loading';
-import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
-import { asText, readTableFilters, toTableFilters } from '@shared/grid/table/table-filters';
+import type { GridSort } from '@shared/grid/requests/grid-request';
+import { createGridTable } from '@shared/grid/table/grid-table';
+import { createRowMenu } from '@shared/grid/table/row-menu';
+import { asText } from '@shared/grid/table/table-filters';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
@@ -38,10 +39,20 @@ const ROLE_LABEL_KEYS: Readonly<Record<EmployeeRole, string>> = {
   [EmployeeRole.Worker]: 'EMPLOYEES.ROLES.WORKER',
   [EmployeeRole.Supervisor]: 'EMPLOYEES.ROLES.SUPERVISOR',
 };
+const INVITE_COLUMNS: readonly InviteColumn[] = Object.values(InviteColumn);
 const SORTABLE_COLUMNS: readonly string[] = Object.values(InviteSortColumn);
-const FILTER_COLUMNS: readonly InviteColumn.Email[] = [InviteColumn.Email];
-const FILTER_READERS = { [InviteColumn.Email]: (value: unknown): Partial<InviteFilter> => ({ email: asText(value) }) };
-const FILTER_WRITERS = { [InviteColumn.Email]: (filter: InviteFilter): unknown => filter.email || null };
+const FILTER_READERS: Readonly<Record<InviteColumn, (value: unknown) => Partial<InviteFilter>>> = {
+  [InviteColumn.Email]: (value) => ({ email: asText(value) }),
+  [InviteColumn.Role]: () => ({}),
+  [InviteColumn.ExpiresAt]: () => ({}),
+  [InviteColumn.IsExpired]: () => ({}),
+};
+const FILTER_WRITERS: Readonly<Record<InviteColumn, (filter: InviteFilter) => unknown>> = {
+  [InviteColumn.Email]: (filter) => filter.email || null,
+  [InviteColumn.Role]: () => null,
+  [InviteColumn.ExpiresAt]: () => null,
+  [InviteColumn.IsExpired]: () => null,
+};
 
 @Component({
   imports: [
@@ -55,6 +66,7 @@ const FILTER_WRITERS = { [InviteColumn.Email]: (filter: InviteFilter): unknown =
     Skeleton,
     SortIcon,
     TableModule,
+    Tooltip,
     TranslatePipe,
   ],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col' },
@@ -62,87 +74,68 @@ const FILTER_WRITERS = { [InviteColumn.Email]: (filter: InviteFilter): unknown =
   templateUrl: './invite-grid.html',
 })
 export class InviteGrid {
-  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   readonly rows = input.required<readonly InviteRow[]>();
   readonly totalCount = input.required<number>();
   readonly isLoading = input(false);
+  readonly hasLoaded = input(false);
   readonly offset = input.required<number>();
   readonly limit = input.required<number>();
   readonly sort = input.required<InviteSort | null>();
   readonly filter = input.required<InviteFilter>();
 
   readonly filterChange = output<Partial<InviteFilter>>();
-  readonly sortChange = output<InviteSort | null>();
+  readonly sortChange = output<GridSort<InviteSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();
   readonly resendRequested = output<string>();
   readonly revokeRequested = output<InviteRow>();
 
+  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   protected readonly InviteColumn = InviteColumn;
-  protected readonly columns = Object.values(InviteColumn);
+  protected readonly columns = INVITE_COLUMNS;
   protected readonly pageSizes = [...PAGE_SIZES];
+  protected readonly labelKeys = COLUMN_LABEL_KEYS;
 
   private readonly _translate = inject(TranslateService);
   private readonly _labels = toSignal(
     this._translate.stream([...Object.values(ROLE_LABEL_KEYS), ...Object.values(INVITE_MENU_KEYS)]),
     { initialValue: {} as Record<string, string> },
   );
-  private readonly _activeRow = signal<InviteRow | null>(null);
 
-  protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
-  protected readonly showSkeleton = delayedLoading(this.isLoading);
-  protected readonly keptRows = keepWhileLoading(this.rows, this.isLoading);
-  protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
-  protected readonly tableFilters = computed(() => toTableFilters(FILTER_COLUMNS, FILTER_WRITERS, this.filter()));
-  protected readonly tableRows = computed((): unknown[] =>
-    this.showSkeleton() ? this.skeletonRows() : [...this.keptRows()],
+  protected readonly grid = createGridTable<InviteRow, InviteColumn, InviteFilter, InviteSortColumn>({
+    allColumns: INVITE_COLUMNS,
+    columns: signal(INVITE_COLUMNS),
+    filter: this.filter,
+    sort: this.sort,
+    limit: this.limit,
+    isLoading: this.isLoading,
+    hasLoaded: this.hasLoaded,
+    rows: this.rows,
+    filterReaders: FILTER_READERS,
+    filterWriters: FILTER_WRITERS,
+    sortableColumns: SORTABLE_COLUMNS,
+    labelKeys: COLUMN_LABEL_KEYS,
+    filterChange: (patch) => this.filterChange.emit(patch),
+    sortChange: (sort) => this.sortChange.emit(sort),
+    pageChange: (page) => this.pageChange.emit(page),
+    columnsChange: () => undefined,
+    columnsReorder: () => undefined,
+  });
+
+  protected readonly rowMenu = createRowMenu<InviteRow>();
+  protected readonly menuItems = computed<MenuItem[]>(() =>
+    inviteMenuItems(
+      this.rowMenu,
+      this._labels(),
+      (row) => this.resendRequested.emit(row.id),
+      (row) => this.revokeRequested.emit(row),
+    ),
   );
   protected readonly tableStyle = computed(() => ({
     'min-width': '48rem',
-    ...(this.showSkeleton() || this.keptRows().length > 0 ? {} : { height: '100%' }),
+    ...(this.grid.tableRows().length > 0 ? {} : { height: '100%' }),
   }));
-
-  protected readonly menuItems = computed<MenuItem[]>(() =>
-    inviteMenuItems(
-      this._labels(),
-      () => this._withActiveRow((row) => this.resendRequested.emit(row.id)),
-      () => this._withActiveRow((row) => this.revokeRequested.emit(row)),
-    ),
-  );
-
-  protected columnLabelKey(column: InviteColumn): string {
-    return COLUMN_LABEL_KEYS[column];
-  }
-
-  protected isSortable(column: InviteColumn): boolean {
-    return SORTABLE_COLUMNS.includes(column);
-  }
 
   protected roleLabel(role: EmployeeRole): string {
     return this._labels()[ROLE_LABEL_KEYS[role]] ?? role;
-  }
-
-  protected onFilterApplied(event: TableFilterEvent): void {
-    this.filterChange.emit(readTableFilters(FILTER_COLUMNS, FILTER_READERS, event.filters));
-  }
-
-  protected onPage(event: TablePageEvent): void {
-    this.pageChange.emit({ offset: event.first, limit: event.rows });
-  }
-
-  protected onSort(event: { field?: string | null; order?: number | null }): void {
-    const column = SORTABLE_COLUMNS.find((candidate) => candidate === event.field) as InviteSortColumn | undefined;
-    this.sortChange.emit(column === undefined ? null : { column, direction: toSortDirection(event.order) });
-  }
-
-  protected openMenu(event: Event, row: InviteRow, menu: Menu): void {
-    this._activeRow.set(row);
-    menu.toggle(event);
-  }
-
-  private _withActiveRow(action: (row: InviteRow) => void): void {
-    const row = this._activeRow();
-    if (row !== null) {
-      action(row);
-    }
   }
 }

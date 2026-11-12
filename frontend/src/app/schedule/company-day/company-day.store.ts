@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import type { ScheduleRow } from '@shared/schedule/schedule-row';
 import { CLOCK } from '@shared/time/clock';
 import type { Temporal } from '@shared/time/temporal';
@@ -10,6 +11,8 @@ import type { Temporal } from '@shared/time/temporal';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
 import { followToday, minuteTicker, todayOf, toRow } from '@schedule/schedule-time';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const RELOAD_RESULT_TYPES: readonly string[] = [WorkOrderActionType.Saved, WorkOrderActionType.Conflict];
 
@@ -33,6 +36,7 @@ export const CompanyDayStore = signalStore(
     }),
   })),
   withComputed((store) => ({
+    hasFailed: computed(() => store.day.status() === 'error'),
     rows: computed((): readonly ScheduleRow[] =>
       store.day.hasValue()
         ? store.day
@@ -82,14 +86,10 @@ export const CompanyDayStore = signalStore(
           }
         });
       });
-      let seen = store._actions.lastResult()?.sequence ?? 0;
-      effect(() => {
-        const result = store._actions.lastResult();
-        if (result !== null && RELOAD_RESULT_TYPES.includes(result.type) && result.sequence > seen) {
-          seen = result.sequence;
-          untracked(() => store.day.reload());
-        }
-      });
     },
   }),
+  withActionResultReload<{ day: Reloadable }>(RELOAD_RESULT_TYPES, (store) => {
+    store.day.reload();
+  }),
+  withStoreDevtools('company-day'),
 );
