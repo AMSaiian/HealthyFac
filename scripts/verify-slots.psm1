@@ -11,6 +11,9 @@ $MaxSlots = 4
 $ProjectPrefix = 'healthyfac-verify'
 $GatewayPortBase = 9443
 $MailpitPortBase = 8026
+$GrafanaPortBase = 3000
+$RabbitMqUiPortBase = 15672
+$KeycloakPortBase = 8180
 $DomainSuffix = 'hfverify.test'
 
 function Get-VerifySlotNumbers { 1..$MaxSlots }
@@ -29,6 +32,9 @@ function Get-VerifySlotValues {
     Domain      = "s$Slot.$DomainSuffix"
     GatewayPort = $GatewayPortBase + $Slot
     MailpitPort = $MailpitPortBase + $Slot
+    GrafanaPort = $GrafanaPortBase + $Slot
+    RabbitMqUiPort = $RabbitMqUiPortBase + $Slot
+    KeycloakPort = $KeycloakPortBase + $Slot
     ImagePrefix = "$ProjectPrefix$Slot"
   }
 }

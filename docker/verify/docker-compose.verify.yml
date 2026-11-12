@@ -6,8 +6,8 @@
 # - own volumes and network (Compose scopes both by project), so `down -v` removes only verify data;
 # - own domain (s<slot>.hfverify.test) and public URLs (.env.verify), because browser cookies ignore the port and a second Keycloak on
 #   auth.healthyfac.test would overwrite the dev sign-in;
-# - only the gateway and the Mailpit UI publish host ports (GATEWAY_PORT and MAILPIT_UI_PORT, set by the script from the slot). Every
-#   other service has no host port.
+# - only the gateway and the web UIs publish host ports, set by the script from the slot: GATEWAY_PORT, MAILPIT_UI_PORT,
+#   GRAFANA_PORT, RABBITMQ_MANAGEMENT_PORT, and KEYCLOAK_PORT (the UIs bind to 127.0.0.1). Every other service has no host port.
 # Never start this file without the script: the script passes .env.verify and checks the host names and the
 # certificate first.
 services:
@@ -18,7 +18,9 @@ services:
   keycloak:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak
     image: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}/keycloak:local
-    ports: !reset []
+    # The admin console URL (KC_HOSTNAME_ADMIN) reads KEYCLOAK_PORT, so the host port must equal it.
+    ports: !override
+      - "127.0.0.1:${KEYCLOAK_PORT:?run scripts/verify-stack.ps1}:8080"
 
   keycloak-config:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-keycloak-config
@@ -29,7 +31,8 @@ services:
 
   rabbitmq:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-rabbitmq
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:?run scripts/verify-stack.ps1}:15672"
 
   mailpit:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-mailpit
@@ -93,4 +96,5 @@ services:
 
   lgtm:
     container_name: healthyfac-verify${VERIFY_SLOT:?run scripts/verify-stack.ps1}-lgtm
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:${GRAFANA_PORT:?run scripts/verify-stack.ps1}:3000"

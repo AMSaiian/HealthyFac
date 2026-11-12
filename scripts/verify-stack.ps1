@@ -3,7 +3,7 @@
 # project "healthyfac".
 #
 # Slots: every worktree owns one slot (1 to the slot count of verify-slots.psm1) while its stack exists. Slot n is the Compose project healthyfac-verify<n>
-# with the domain s<n>.hfverify.test, the gateway port 9443 + n, and the Mailpit port 8026 + n. `up` takes the slot of
+# with the domain s<n>.hfverify.test, the gateway port 9443 + n, the Mailpit port 8026 + n, the Grafana port 3000 + n, the RabbitMQ management port 15672 + n, and the Keycloak admin port 8180 + n. `up` takes the slot of
 # the worktree, else the lowest free slot. `status` and `down` act on the slot of the worktree only. -Slot names a
 # slot; the script refuses a slot that another worktree owns. The owner is the worktree root in the lock file
 # slot<n>.lock (folder healthyfac-verify-slots in the git common folder), else the working directory label of the project.
@@ -18,8 +18,8 @@
 #
 # Configuration: Compose reads .env (the secrets, shared with the dev stack) and then .env.verify (the shared
 # overrides). The script sets VERIFY_SLOT, HEALTHYFAC_DOMAIN, GATEWAY_PORT, and MAILPIT_UI_PORT in the process
-# environment. docker/verify/docker-compose.verify.yml renames the containers and images and removes every other host
-# port. A worktree without a .env uses the .env of the main checkout.
+# environment (also GRAFANA_PORT, RABBITMQ_MANAGEMENT_PORT, KEYCLOAK_PORT). docker/verify/docker-compose.verify.yml
+# renames the containers and images and removes every other host port. A worktree without a .env uses the .env of the main checkout.
 #
 # One-time setup:
 # - Add this line to C:\Windows\System32\drivers\etc\hosts as an administrator (the names of every slot):
@@ -114,6 +114,9 @@ $env:VERIFY_SLOT = "$slotNumber"
 $env:HEALTHYFAC_DOMAIN = $values.Domain
 $env:GATEWAY_PORT = "$($values.GatewayPort)"
 $env:MAILPIT_UI_PORT = "$($values.MailpitPort)"
+$env:GRAFANA_PORT = "$($values.GrafanaPort)"
+$env:RABBITMQ_MANAGEMENT_PORT = "$($values.RabbitMqUiPort)"
+$env:KEYCLOAK_PORT = "$($values.KeycloakPort)"
 
 $BuiltImages = $BuiltServices | ForEach-Object { "$($values.ImagePrefix)/${_}:local" }
 
@@ -276,6 +279,9 @@ switch ($Command) {
     Assert-Certificate
     Assert-PortFree $config.GatewayPort 'the gateway port'
     Assert-PortFree $config.MailpitPort 'the Mailpit port'
+    Assert-PortFree $values.GrafanaPort 'the Grafana port'
+    Assert-PortFree $values.RabbitMqUiPort 'the RabbitMQ management port'
+    Assert-PortFree $values.KeycloakPort 'the Keycloak admin port'
     if (docker ps --all --filter "label=com.docker.compose.project=$OldProject" --quiet) {
       Write-Host "A container of the old project $OldProject exists. Remove it with: docker compose -p $OldProject down --volumes" -ForegroundColor Yellow
     }
@@ -289,6 +295,9 @@ switch ($Command) {
     Write-Host "App:     $($config.SpaUrl)"
     Write-Host "Sign in: $($config.SupervisorEmail) / $($config.SupervisorPassword)"
     Write-Host "Mailpit: http://localhost:$($config.MailpitPort)"
+    Write-Host "Grafana: http://localhost:$($values.GrafanaPort) (admin / admin)"
+    Write-Host "RabbitMQ: http://localhost:$($values.RabbitMqUiPort)"
+    Write-Host "Keycloak admin: http://localhost:$($values.KeycloakPort)"
     Write-Host 'Stop:    pwsh scripts/verify-stack.ps1 down'
   }
   'status' {

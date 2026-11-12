@@ -40,6 +40,9 @@ Assert-That ($v.Project -eq 'healthyfac-verify3') 'slot 3 project'
 Assert-That ($v.Domain -eq 's3.hfverify.test') 'slot 3 domain'
 Assert-That ($v.GatewayPort -eq 9446) 'slot 3 gateway port is 9443 + 3'
 Assert-That ($v.MailpitPort -eq 8029) 'slot 3 mailpit port is 8026 + 3'
+Assert-That ($v.GrafanaPort -eq 3003) 'slot 3 grafana port is 3000 + 3'
+Assert-That ($v.RabbitMqUiPort -eq 15675) 'slot 3 rabbitmq port is 15672 + 3'
+Assert-That ($v.KeycloakPort -eq 8183) 'slot 3 keycloak port is 8180 + 3'
 Assert-That ($v.ImagePrefix -eq 'healthyfac-verify3') 'slot 3 image prefix'
 
 Write-Host 'Projects'
@@ -134,7 +137,7 @@ $composeArgs = @(
   'config', '--format', 'json'
 )
 $saved = @{}
-foreach ($name in 'VERIFY_SLOT', 'HEALTHYFAC_DOMAIN', 'GATEWAY_PORT', 'MAILPIT_UI_PORT') {
+foreach ($name in 'VERIFY_SLOT', 'HEALTHYFAC_DOMAIN', 'GATEWAY_PORT', 'MAILPIT_UI_PORT', 'GRAFANA_PORT', 'RABBITMQ_MANAGEMENT_PORT', 'KEYCLOAK_PORT') {
   $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 try {
@@ -143,6 +146,9 @@ try {
   $env:HEALTHYFAC_DOMAIN = $s.Domain
   $env:GATEWAY_PORT = "$($s.GatewayPort)"
   $env:MAILPIT_UI_PORT = "$($s.MailpitPort)"
+  $env:GRAFANA_PORT = "$($s.GrafanaPort)"
+  $env:RABBITMQ_MANAGEMENT_PORT = "$($s.RabbitMqUiPort)"
+  $env:KEYCLOAK_PORT = "$($s.KeycloakPort)"
   $json = & docker @composeArgs 2>&1
   Assert-That ($LASTEXITCODE -eq 0) 'compose config renders for slot 2'
   $c = ($json -join "`n") | ConvertFrom-Json
@@ -153,6 +159,9 @@ try {
   Assert-That (@($images | Where-Object { $_ -notmatch '^healthyfac-verify2/' }).Count -eq 0 -and $images.Count -ge 6) 'every built image tag starts with healthyfac-verify2/'
   Assert-That ([int]$c.services.gateway.ports[0].published -eq 9445) 'gateway port 9445'
   Assert-That ([int]$c.services.mailpit.ports[0].published -eq 8028) 'mailpit port 8028'
+  Assert-That ([int]$c.services.lgtm.ports[0].published -eq 3002 -and @($c.services.lgtm.ports).Count -eq 1) 'grafana port 3002 only'
+  Assert-That ([int]$c.services.rabbitmq.ports[0].published -eq 15674 -and @($c.services.rabbitmq.ports).Count -eq 1) 'rabbitmq management port 15674 only'
+  Assert-That ([int]$c.services.keycloak.ports[0].published -eq 8182 -and $c.services.keycloak.environment.KC_HOSTNAME_ADMIN -eq 'http://localhost:8182') 'keycloak admin port 8182 matches KC_HOSTNAME_ADMIN'
   Assert-That ($c.services.core.environment.Jwt__Issuer -eq 'https://auth.s2.hfverify.test:9445/realms/healthyfac' -or $c.services.core.environment.Jwt__Issuer -like 'https://auth.s2.hfverify.test:9445*') 'Jwt__Issuer uses slot 2'
   Assert-That ($c.services.keycloak.environment.KC_HOSTNAME -like 'https://auth.s2.hfverify.test:9445*') 'KC_HOSTNAME uses slot 2'
   Assert-That ($c.services.core.environment.InviteLinks__SpaBaseUrl -like 'https://app.s2.hfverify.test:9445*') 'InviteLinks__SpaBaseUrl uses slot 2'
