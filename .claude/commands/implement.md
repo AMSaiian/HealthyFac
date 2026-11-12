@@ -28,8 +28,12 @@ The plan is your only input. Read by section, with Grep (line numbers) and Read 
 - The open cycle: Grep `^### Cycle N$` and the next `^##` heading, then Read that range.
   A plan without `### Cycle` headings is one cycle: read it whole.
 - The Deviations of the cycle: Grep `^\*   Steps? ` in plan.md and Read the entries whose
-  number (`Step N:`) or range (`Steps A-B:`) holds a step of the cycle. A `Red:` or `Proof:`
-  line is not there: write it under its step in the cycle section.
+  number (`Step N:`) or range (`Steps A-B:`) holds a step of the cycle, and the entries
+  that start with `Inline fix, cycle N`. A `Red:` or `Proof:` line is not there: write it
+  under its step in the cycle section.
+- An `Inline fix` entry lists changes that the planning session made at my request. Keep
+  them; never revert or redo them. When a step or a finding touches the same lines, build
+  on them.
 - The ACs of the cycle: Grep `^\*   \*\*AC(<numbers of the Spec: line>)` in spec.md. They
   define done; the steps define how. Before the handoff, check each AC against the tests
   that cover it.

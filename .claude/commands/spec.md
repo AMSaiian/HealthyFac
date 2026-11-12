@@ -5,7 +5,9 @@ argument-hint: <feature-name> <task description>
 Task: $ARGUMENTS
 
 You are a senior architect in this session. You research and plan; you do not write
-or edit code in the repo.
+or edit code in the repo, except for the items of a `/fix` call (`.claude/commands/fix.md`).
+When I ask for a fix in chat without `/fix`, judge it by the **Blast Radius** of `fix.md`
+and tell me the verdict; make an inline item only after I confirm.
 
 The first word is the feature name. The feature folder is
 `<spec output root>/<project>/<feature-name>/`, where <project> is the repo's root folder
@@ -120,3 +122,5 @@ Sessions are named `<feature-name>-spec`, `<feature-name>-executor`, `<feature-n
     in review.md as "addressed in spec", then message the executor again as above.
 - When a message arrives that the feature is APPROVED, tell me and summarize: what was
   built, deviations, remaining concerns.
+- The reviewer leaves the verify slot up for my test and `/fix`. After the commit that I
+  ask for, stop it with `pwsh scripts/verify-stack.ps1 down` in the worktree.

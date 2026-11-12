@@ -5,7 +5,8 @@ argument-hint: <feature-name>
 Feature: $ARGUMENTS
 
 You are the reviewer in this session. Do not edit, create or delete any file in the repo.
-The only file you write is review.md.
+The only files you write are review.md and the screenshots under `screens/` in the
+feature folder.
 
 The feature folder is `<spec output root>/<project>/$ARGUMENTS/`, where <project> is the
 repo's root folder name and the spec output root is defined in the user's CLAUDE.md.
@@ -15,7 +16,10 @@ If no spec output root is defined, ask me before doing anything.
 When this command is first run, do not read files or start work. Reply only:
 "Reviewer for $ARGUMENTS ready - waiting for handoff." and end your turn.
 Start a review only when a message from the session `$ARGUMENTS-executor` asks you to,
-or when I tell you to. Any other message: answer it, but do not start a review.
+or when I tell you to. A relay of my words from the session `$ARGUMENTS-spec` counts as
+my request. For a review of inline fixes, review only the files that the relay lists and
+their `Inline fix` Deviations entry, in the open round. Any other message: answer it, but
+do not start a review.
 At the start of every review, read the parts of **Reading** below, then the diff in the
 repo (`git diff`, and `git diff --staged`).
 
@@ -25,8 +29,9 @@ Read by section, with Grep (line numbers) and Read (`offset`, `limit`).
 - The open cycle: Grep `^### Cycle N$` and the next `^##` heading, then Read that range.
   A plan without `### Cycle` headings is one cycle: read it whole.
 - The Deviations of the cycle: Grep `^\*   Steps? ` in plan.md and Read the entries whose
-  number (`Step N:`) or range (`Steps A-B:`) holds a step of the cycle. The `Red:` and
-  `Proof:` lines are under their steps in the cycle section, not there.
+  number (`Step N:`) or range (`Steps A-B:`) holds a step of the cycle, and the entries
+  that start with `Inline fix, cycle N` (changes of the planning session at my request).
+  The `Red:` and `Proof:` lines are under their steps in the cycle section, not there.
 - The ACs of the cycle: Grep `^\*   \*\*AC(<numbers of the Spec: line>)` in spec.md, and the
   rows of the cycle steps under `## Acceptance Criteria Map` in plan.md.
 - The spec sections of the `Spec:` line of the cycle: Grep each heading in spec.md, and
@@ -48,8 +53,9 @@ Read a full file only for a reference that points outside these parts.
   one on the last `Full run:` line of the cycle, the code is the code that the executor
   tested: do not run the full suite or the build again, and run only the tests that you
   doubt. Otherwise run the build and the full suite. Use the shell only for: build, test,
-  git diff/log, `pwsh scripts/verify-stack.ps1 up|down`, `pwsh .claude/tree-id.ps1`, and
-  `pwsh .claude/check-review-routing.ps1`.
+  git diff/log, `pwsh scripts/verify-stack.ps1 up|down`, `pwsh .claude/tree-id.ps1`,
+  `pwsh .claude/check-review-routing.ps1`, and the copy of the screenshots into the
+  feature folder.
 - Checkpoint review: on a message "checkpoint <x> ready" with two tree IDs, review
   `git diff <base tree> <checkpoint tree>` for the design, the rules, and the plan. Run no
   tests. Write the findings under `## Checkpoint <x>` in review.md with the usual IDs, all
@@ -65,11 +71,29 @@ Read a full file only for a reference that points outside these parts.
 - Each new route flow has route flow tests (`frontend-angular.md`, **Tests**). A missing
   one is a MAJOR [CODE] finding.
 - For a UI feature: the browser check list has a `pass` or `fail` line for every flow.
-  A missing or partial log is a MAJOR [CODE] finding. Then start the isolated stack and
-  run the flows yourself in Chrome (Claude in Chrome); do not trust the executor's log.
+  A missing or partial log is a MAJOR [CODE] finding. Then start a clean isolated stack:
+  run `pwsh scripts/verify-stack.ps1 down`, then `up`, because data that earlier users
+  left (moved cards, deleted rows, an old seed) changes the expected results. On the app
+  page, run `localStorage.clear(); sessionStorage.clear(); location.reload()` with the
+  JavaScript tool: it clears only the app origin, and the sign-in session stays. Then run
+  the flows yourself in Chrome (Claude in Chrome); do not trust the executor's log.
   Also try a few flows outside the list (back navigation, an undo, a double click, a long
   input). The browser writes only to the isolated stack; this does not break the "no
-  repo changes" rule. Stop the stack when you are done.
+  repo changes" rule. Leave the stack up when you are done: my test and `/fix` use it.
+  Give the app URL in the report.
+- Screenshots (UI feature): for each flow of the list, take 2 screenshots at scale 0.5
+  with `save_to_disk`: light mode at 1024 x 600 and dark mode at full HD (a flow that
+  names other sizes gets those). Use the `zoom` action for a detail (a chip, a border, a
+  radius). Check each screenshot:
+  - no clipped text, control, or tag;
+  - the same height for the controls of one row;
+  - the same corner radius for the same component;
+  - no horizontal scroll and no overflow at 1024 x 600;
+  - no overlay or tooltip clipped by its container;
+  - readable in both themes.
+  Each failure is a [CODE] finding with the screenshot name. Copy the saved files to
+  `<feature folder>/screens/cycle-C-round-R/<flow>-<1024|fhd>-<light|dark>.png` and name
+  the folder in the report.
 - Judge the code as it is now, not by what you concluded in earlier rounds.
 
 ## Web access
