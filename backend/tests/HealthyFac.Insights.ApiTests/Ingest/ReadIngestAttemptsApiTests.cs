@@ -88,28 +88,24 @@ public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact]
-    public async Task GetFileAttempts_WithoutReadPermission_Returns403()
-    {
-        var response = await _fixture.SendRequestAsync(
-            HttpMethod.Get,
-            StartIngestAttemptTestData.StartPath(_fixture.IdEncryptor.Encrypt(StartIngestAttemptTestData.FileId)),
-            _fixture.CreateIngestClaims(StartIngestAttemptTestData.WritePermission));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    [Fact]
-    public async Task GetAttempt_WithoutReadPermission_Returns403()
+    [Theory]
+    [MemberData(
+        nameof(ReadIngestAttemptsTestData.RoutesWithoutReadPermission),
+        MemberType = typeof(ReadIngestAttemptsTestData)
+    )]
+    public async Task Read_WithoutReadPermission_Returns403(string caseName, string pathTemplate)
     {
         var attemptId = await _fixture.ArrangeAttemptAsync(IngestState.Queued);
+        var path = pathTemplate
+            .Replace("{fileId}", _fixture.IdEncryptor.Encrypt(StartIngestAttemptTestData.FileId))
+            .Replace("{attemptId}", _fixture.IdEncryptor.Encrypt(attemptId));
 
         var response = await _fixture.SendRequestAsync(
             HttpMethod.Get,
-            ReadIngestAttemptsTestData.AttemptPath(_fixture.IdEncryptor.Encrypt(attemptId)),
+            path,
             _fixture.CreateIngestClaims(StartIngestAttemptTestData.WritePermission));
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
     }
 
     private Task<HttpResponseMessage> GetFileAttemptsAsync() =>

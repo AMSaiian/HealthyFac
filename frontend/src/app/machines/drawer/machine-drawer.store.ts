@@ -1,17 +1,15 @@
-import { HttpContext, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { HttpStatusCode } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
-import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
-import { httpErrorMessageKey } from '@shared/http/http-error-message';
+import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { withToasts } from '@shared/toasts/with-toasts';
 import { draftConflictKey } from '@machines/drafts/draft-conflict';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachineActionType } from '@machines/machine-actions';
@@ -20,8 +18,7 @@ import { MachinesApi } from '@machines/machines-api';
 import { EMPTY_VALUE, fromDraftValue, overlay, payloadOf, toBody, toFormValue } from './machine-drawer.store.utils';
 import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 
-const SUCCESS_SUMMARY_KEY = 'MACHINES.TOASTS.SUCCESS';
-const ERROR_SUMMARY_KEY = 'ERRORS.SUMMARY';
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 interface DrawerState {
   action: AppAction | null;
@@ -34,9 +31,8 @@ export const MachineDrawerStore = signalStore(
     _api: inject(MachinesApi),
     _draftsApi: inject(DraftsApi),
     _actions: inject(ActionStore),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
   })),
+  withToasts(),
   withComputed((store) => ({
     isUpdate: computed(() => store.action()?.type === MachineActionType.Update),
     machineId: computed(() => payloadOf(store.action()).machineId),
@@ -74,17 +70,9 @@ export const MachineDrawerStore = signalStore(
     gatewayId: computed((): string | null => (store.machine.hasValue() ? store.machine.value().gatewayId : null)),
   })),
   withMethods((store) => {
-    const showError = (detailKey: string): void => {
-      store._messages.add({
-        severity: 'error',
-        summary: store._translate.instant(ERROR_SUMMARY_KEY),
-        detail: store._translate.instant(detailKey),
-      });
-    };
-
     const request$ = (value: MachineFormValue): Observable<unknown> => {
       const body = toBody(value);
-      const options = { context: new HttpContext().set(SKIP_ERROR_TOAST, true) };
+      const options = skipErrorToast();
       const draftId = store.draftId();
       if (draftId !== undefined && !store.isUpdate()) {
         return store._draftsApi.applyMachineDraft(draftId, body, options);
@@ -104,22 +92,13 @@ export const MachineDrawerStore = signalStore(
           exhaustMap((value) =>
             request$(value).pipe(
               tap(() => {
-                store._messages.add({
-                  severity: 'success',
-                  summary: store._translate.instant(SUCCESS_SUMMARY_KEY),
-                  detail: store._translate.instant(
-                    store.isUpdate() ? 'MACHINES.TOASTS.UPDATED' : 'MACHINES.TOASTS.CREATED',
-                  ),
-                });
+                store._toastSuccess(store.isUpdate() ? 'MACHINES.TOASTS.UPDATED' : 'MACHINES.TOASTS.CREATED');
                 store._actions.complete(MachineActionType.Saved);
               }),
               catchError((error: unknown) => {
-                const status = error instanceof HttpErrorResponse ? error.status : 0;
-                showError(
+                store._toastError(
                   draftConflictKey(error) ??
-                    (status === HttpStatusCode.Conflict
-                      ? 'MACHINES.TOASTS.SERIAL_NUMBER_TAKEN'
-                      : httpErrorMessageKey(status)),
+                    httpErrorKey(error, { [HttpStatusCode.Conflict]: 'MACHINES.TOASTS.SERIAL_NUMBER_TAKEN' }),
                 );
                 return EMPTY;
               }),
@@ -133,4 +112,5 @@ export const MachineDrawerStore = signalStore(
       },
     };
   }),
+  withStoreDevtools('machine-drawer'),
 );

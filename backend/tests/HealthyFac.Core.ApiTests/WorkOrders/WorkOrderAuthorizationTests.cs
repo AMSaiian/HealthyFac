@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
@@ -49,31 +48,18 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
         own.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    [Fact]
-    public async Task ScheduleEndpoints_WithWorkerToken_Return403()
+    [Theory]
+    [MemberData(nameof(WorkOrderApiTestData.WorkerWriteRoutes), MemberType = typeof(WorkOrderApiTestData))]
+    public async Task Writes_WithWorkerToken_Return403(string caseName, string method, string pathTemplate)
     {
         var arranged = await ArrangeAsync();
-        var id = arranged.AssignedToWorkerId;
-        var body = new JsonObject
-        {
-            [propertyName: "assigneeId"] = arranged.WorkerEncryptedId,
-            [propertyName: "plannedStartLocal"] = _fixture.FutureStart(StartTime),
-            [propertyName: "rowVersion"] = 1,
-        }.ToJsonString();
 
-        var assign = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Put, $"{WorkOrderApiTestData.BasePath}/{id}/assignee", arranged.WorkerClaims, body);
-        var move = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Post, $"{WorkOrderApiTestData.BasePath}/{id}/move", arranged.WorkerClaims, body);
-        var unassign = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Delete, $"{WorkOrderApiTestData.BasePath}/{id}/assignee?rowVersion=1", arranged.WorkerClaims);
-        var delete = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Delete, $"{WorkOrderApiTestData.BasePath}/{id}?rowVersion=1", arranged.WorkerClaims);
+        var response = await _fixture.SendShiftRequestAsync(
+            new HttpMethod(method),
+            pathTemplate.Replace("{id}", arranged.AssignedToWorkerId.ToString()),
+            arranged.WorkerClaims);
 
-        assign.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        move.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        unassign.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        delete.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
     }
 
     [Fact]

@@ -3,6 +3,8 @@
   @if (store.canInvite()) {
     <button
       pButton
+      [pTooltip]="'EMPLOYEES.TOOLTIPS.INVITE' | translate"
+      tooltipPosition="bottom"
       type="button"
       (click)="store.requestInvite()"
     >
@@ -15,11 +17,22 @@
   class="flex min-h-0 flex-1 flex-col"
   [lazy]="true"
   [(value)]="tab"
+  (valueChange)="onTabChange($event)"
 >
   <p-tablist>
-    <p-tab [value]="EMPLOYEES_TAB">{{ 'EMPLOYEES.TABS.EMPLOYEES' | translate }}</p-tab>
+    <p-tab
+      [pTooltip]="'EMPLOYEES.TOOLTIPS.TAB_EMPLOYEES' | translate"
+      tooltipPosition="bottom"
+      [value]="EMPLOYEES_TAB"
+      >{{ 'EMPLOYEES.TABS.EMPLOYEES' | translate }}</p-tab
+    >
     @if (store.canInvite()) {
-      <p-tab [value]="INVITES_TAB">{{ 'EMPLOYEES.TABS.INVITES' | translate }}</p-tab>
+      <p-tab
+        [pTooltip]="'EMPLOYEES.TOOLTIPS.TAB_INVITES' | translate"
+        tooltipPosition="bottom"
+        [value]="INVITES_TAB"
+        >{{ 'EMPLOYEES.TABS.INVITES' | translate }}</p-tab
+      >
     }
   </p-tablist>
   <p-tabpanels class="flex min-h-0 flex-1 flex-col">
@@ -32,6 +45,7 @@
           [rows]="page().items"
           [totalCount]="page().totalCount"
           [isLoading]="store.employees.isLoading()"
+          [hasLoaded]="store.employees.hasValue()"
           [offset]="store.offset()"
           [limit]="store.limit()"
           [sort]="store.sort()"
@@ -57,6 +71,7 @@
             [rows]="invites().items"
             [totalCount]="invites().totalCount"
             [isLoading]="invitesStore.invites.isLoading()"
+            [hasLoaded]="invitesStore.invites.hasValue()"
             [offset]="invitesStore.offset()"
             [limit]="invitesStore.limit()"
             [sort]="invitesStore.sort()"

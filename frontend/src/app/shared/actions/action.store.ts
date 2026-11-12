@@ -7,6 +7,8 @@ import { filter } from 'rxjs';
 import { ACTION_HOSTS } from './action-registry';
 import type { ActionResult, AppAction } from './app-action';
 
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
+
 /** The dialog to open again, the page it was open on, and the pages that the review flow itself may visit. */
 export interface ReturnPath {
   readonly url: string;
@@ -97,4 +99,5 @@ export const ActionStore = signalStore(
         });
     },
   }),
+  withStoreDevtools('action'),
 );

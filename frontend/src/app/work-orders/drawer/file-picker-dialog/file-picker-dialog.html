@@ -1,6 +1,8 @@
 <p-dialog
-  [closeButtonProps]="squareCloseButtonProps"
-  styleClass="w-[64rem] max-w-[95vw]"
+  [pt]="hiddenClosePt"
+  [dismissableMask]="true"
+  [contentStyle]="{ display: 'flex', 'flex-direction': 'column', 'min-height': '0', overflow: 'hidden' }"
+  styleClass="w-[64rem] max-w-[95vw] h-[85vh] flex flex-col"
   appendTo="body"
   [modal]="true"
   [draggable]="false"
@@ -9,17 +11,31 @@
   (onHide)="closed.emit()"
 >
   <p-tabs
+    class="flex min-h-0 flex-1 flex-col"
     [lazy]="true"
     [(value)]="tab"
   >
     <p-tablist>
-      <p-tab [value]="COMPANY_TAB">{{ 'WORK_ORDERS.PICKER.COMPANY_FILES' | translate }}</p-tab>
+      <p-tab
+        [pTooltip]="'WORK_ORDERS.TOOLTIPS.TAB_COMPANY_FILES' | translate"
+        tooltipPosition="bottom"
+        [value]="COMPANY_TAB"
+        >{{ 'WORK_ORDERS.PICKER.COMPANY_FILES' | translate }}</p-tab
+      >
       @if (machineId()) {
-        <p-tab [value]="MACHINE_TAB">{{ 'WORK_ORDERS.PICKER.MACHINE_FILES' | translate }}</p-tab>
+        <p-tab
+          [pTooltip]="'WORK_ORDERS.TOOLTIPS.TAB_MACHINE_FILES' | translate"
+          tooltipPosition="bottom"
+          [value]="MACHINE_TAB"
+          >{{ 'WORK_ORDERS.PICKER.MACHINE_FILES' | translate }}</p-tab
+        >
       }
     </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel [value]="COMPANY_TAB">
+    <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+      <p-tabpanel
+        class="flex min-h-0 flex-1 flex-col"
+        [value]="COMPANY_TAB"
+      >
         <ng-template #content>
           <hf-file-picker-grid-host
             [scope]="companyScope"
@@ -30,7 +46,10 @@
         </ng-template>
       </p-tabpanel>
       @if (machineScope(); as scope) {
-        <p-tabpanel [value]="MACHINE_TAB">
+        <p-tabpanel
+          class="flex min-h-0 flex-1 flex-col"
+          [value]="MACHINE_TAB"
+        >
           <ng-template #content>
             <hf-file-picker-grid-host
               [scope]="scope"
@@ -46,19 +65,23 @@
   <ng-template #footer>
     <button
       pButton
-      type="button"
-      [disabled]="selected().length === 0"
-      (click)="attach()"
-    >
-      {{ 'WORK_ORDERS.PICKER.ATTACH' | translate }}
-    </button>
-    <button
-      pButton
+      [pTooltip]="'ACTIONS.TOOLTIPS.CANCEL' | translate"
+      tooltipPosition="bottom"
       type="button"
       severity="secondary"
       (click)="closed.emit()"
     >
       {{ 'ACTIONS.CANCEL' | translate }}
+    </button>
+    <button
+      pButton
+      [pTooltip]="'WORK_ORDERS.TOOLTIPS.ATTACH' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      [disabled]="selected().length === 0"
+      (click)="attach()"
+    >
+      {{ 'WORK_ORDERS.PICKER.ATTACH' | translate }}
     </button>
   </ng-template>
 </p-dialog>

@@ -70,7 +70,7 @@
       appendTo="body"
       [filter]="true"
       [showClear]="true"
-      [loading]="isMachinesLoading()"
+      [loading]="showMachinesLoading()"
       [options]="machineList()"
       (onShow)="machineLookupRequested.emit({ text: '', isImmediate: true })"
       (onFilter)="machineLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"

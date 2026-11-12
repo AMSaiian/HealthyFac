@@ -2,6 +2,7 @@ import { Component, effect, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ScheduleBoard } from '@shared/schedule/schedule-board/schedule-board';
 import { CLOCK } from '@shared/time/clock';
@@ -13,7 +14,7 @@ import { EmployeeDayStore } from '@schedule/employee-day/employee-day.store';
 const NOT_FOUND_URL = '/not-found';
 
 @Component({
-  imports: [ButtonDirective, PlainDatePicker, RouterLink, ScheduleBoard, TranslatePipe],
+  imports: [ButtonDirective, PlainDatePicker, RouterLink, ScheduleBoard, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4' },
   selector: 'hf-employee-day-page',
   templateUrl: './employee-day-page.html',

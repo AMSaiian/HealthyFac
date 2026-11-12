@@ -45,6 +45,12 @@ public static class DraftEndpoints
                 .MapPost(DraftRoutes.DismissAll, DismissMachineDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write);
             app.MapGroup(DraftRoutes.AttemptDraftsRoute)
+                .MapPost(DraftRoutes.Search, SearchAttemptDraftsAsync)
+                .RequireAuthorization(CorePermissions.Drafts.Read);
+            app.MapGroup(DraftRoutes.AttemptDraftsRoute)
+                .MapPost(DraftRoutes.DismissAll, DismissAttemptDraftsAsync)
+                .RequireAuthorization(CorePermissions.Drafts.Write);
+            app.MapGroup(DraftRoutes.AttemptDraftsRoute)
                 .MapGet(DraftRoutes.Root, GetAttemptDraftsAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
 
@@ -69,6 +75,37 @@ public static class DraftEndpoints
     {
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(machineId, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<GridResponse<MachineDraftGridItem>>> SearchAttemptDraftsAsync(
+        [FromRoute(Name = DraftRoutes.AttemptIdParameter)] string attemptId,
+        SearchMachineDraftsRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationSearchMachineDraftsRequest, GridResponse<MachineDraftGridItem>> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationAttemptRequest(attemptId, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<DismissMachineDraftsResponse>> DismissAttemptDraftsAsync(
+        [AsParameters] DismissAttemptDraftsRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationDismissMachineDraftsRequest, DismissMachineDraftsResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
             cancellationToken);
 
         return TypedResults.Ok(response);

@@ -28,6 +28,9 @@
       "HEADER": "Sign out?",
       "MESSAGE": "You will leave HealthyFac. Unsaved changes are lost",
       "ACCEPT": "Sign out"
+    },
+    "TOOLTIPS": {
+      "CHOOSE_LANGUAGE": "Switch the app to this language"
     }
   },
   "LANGUAGE": {
@@ -36,7 +39,10 @@
   },
   "HOME": {
     "INTRO": "HealthyFac connects machines with maintenance staff",
-    "DISMISS": "Got it"
+    "DISMISS": "Got it",
+    "TOOLTIPS": {
+      "DISMISS": "Hide this message"
+    }
   },
   "NOT_FOUND": {
     "MESSAGE": "This page does not exist",
@@ -44,7 +50,6 @@
   },
   "ERRORS": {
     "UNEXPECTED": "An unexpected error occurred",
-    "SUMMARY": "Error",
     "HTTP": {
       "NETWORK": "The server is not reachable. Check your connection and try again",
       "BAD_REQUEST": "The request is not valid",
@@ -58,10 +63,47 @@
       "UNKNOWN": "The request failed"
     }
   },
+  "TOASTS": {
+    "SUCCESS": "Done",
+    "ERROR": "Error"
+  },
   "ACTIONS": {
     "SAVE": "Save",
     "CANCEL": "Cancel",
-    "CLOSE": "Close"
+    "CLOSE": "Close",
+    "OPEN": "Open",
+    "DELETE": "Delete",
+    "EDIT": "Edit",
+    "RELOAD": "Reload",
+    "RETRY": "Try again",
+    "BACK_TO_MACHINES": "Back to machines",
+    "COLUMNS": "Columns",
+    "ROW_ACTIONS": "Row actions",
+    "TOOLTIPS": {
+      "COLUMNS": "Show or hide columns",
+      "OPEN": "Open the details",
+      "SAVE": "Save the changes",
+      "CANCEL": "Close the window and drop the changes",
+      "CLOSE": "Close the window",
+      "DELETE": "Delete this item",
+      "EDIT": "Change the details of this item",
+      "RELOAD": "Load the data again",
+      "RETRY": "Try the load again",
+      "COPY": "Copy to the clipboard",
+      "FILTER": "Filter this column",
+      "CLEAR": "Clear the filter",
+      "FIRST_PAGE": "Go to the first page",
+      "PREVIOUS_PAGE": "Go to the previous page",
+      "NEXT_PAGE": "Go to the next page",
+      "LAST_PAGE": "Go to the last page",
+      "ROWS_PER_PAGE": "Choose how many rows to show"
+    }
+  },
+  "FORMS": {
+    "REQUIRED": "This field is required",
+    "TOO_LONG": "The value is too long",
+    "INVALID": "Form is not valid",
+    "NO_CHANGES": "No changes provided"
   },
   "RICH_TEXT": {
     "BOLD": "Bold",
@@ -73,6 +115,13 @@
     "CHECK_LIST": "Checklist",
     "LINK": "Link",
     "CLEAN": "Clear formatting",
+    "SIZE": "Font size",
+    "SIZES": {
+      "SMALL": "Small",
+      "NORMAL": "Normal",
+      "LARGE": "Large",
+      "HUGE": "Huge"
+    },
     "ERRORS": {
       "TOO_MUCH_FORMATTING": "The formatting is too large. Remove some formatting or shorten the text"
     },
@@ -84,9 +133,14 @@
   "MACHINES": {
     "TITLE": "Machines",
     "ADD_NEW": "Add new",
-    "ACTIONS": "Row actions",
-    "UPDATE": "Update",
-    "DELETE": "Delete",
+    "TOOLTIPS": {
+      "METRICS": "Show the metrics of the machine",
+      "STATUSES": "Show the statuses of the machine",
+      "DRAFTS": "Show the pending drafts of the machine",
+      "FILES": "Show the files of the machine",
+      "DELETE": "Delete the machine",
+      "ADD_NEW": "Add a machine to the company"
+    },
     "METRICS": "Metrics",
     "STATUSES": "Statuses",
     "DELETE_HEADER": "Delete machine",
@@ -96,6 +150,7 @@
     "COLUMNS": {
       "NAME": "Name",
       "SERIAL_NUMBER": "Serial number",
+      "GATEWAY_ID": "Gateway ID",
       "STATE": "State",
       "CREATED_AT": "Created",
       "UPDATED_AT": "Updated",
@@ -109,6 +164,7 @@
     "FILTERS": {
       "NAME_PLACEHOLDER": "Filter by name",
       "SERIAL_NUMBER_PLACEHOLDER": "Filter by serial number",
+      "GATEWAY_ID_PLACEHOLDER": "Starts with",
       "STATE_PLACEHOLDER": "Select states",
       "CREATED_AT_PLACEHOLDER": "Select created dates",
       "UPDATED_AT_PLACEHOLDER": "Select updated dates",
@@ -117,7 +173,6 @@
       "DRAFTS_NO": "No drafts"
     },
     "TOASTS": {
-      "SUCCESS": "Done",
       "CREATED": "The machine is created",
       "UPDATED": "The machine is updated",
       "SERIAL_NUMBER_TAKEN": "A machine with this serial number already exists"
@@ -130,27 +185,22 @@
       "GATEWAY_ID": "Gateway ID",
       "COPY_GATEWAY_ID": "Copy gateway ID",
       "DESCRIPTION": "Description",
-      "NO_CHANGES": "No changes provided",
-      "ERRORS": {
-        "REQUIRED": "This field is required",
-        "TOO_LONG": "The value is too long"
-      },
       "NAME_PLACEHOLDER": "Enter the name",
       "SERIAL_NUMBER_PLACEHOLDER": "Enter the serial number",
-      "DESCRIPTION_PLACEHOLDER": "Describe the machine",
-      "INVALID": "Form is not valid"
+      "DESCRIPTION_PLACEHOLDER": "Describe the machine"
     },
-    "COLUMNS_CHOOSER": "Columns",
     "FILES": "Files",
     "DRAFTS": "Drafts"
   },
   "STATUS_DEFINITIONS": {
     "TITLE": "Statuses of",
-    "BACK": "Back to machines",
     "ADD_NEW": "Add new",
-    "ACTIONS": "Row actions",
     "UPDATE": "Update",
-    "DELETE": "Delete",
+    "TOOLTIPS": {
+      "UPDATE": "Edit the status",
+      "DELETE": "Delete the status",
+      "ADD_NEW": "Add a status for the machine"
+    },
     "DELETE_HEADER": "Delete status",
     "DELETE_MESSAGE": "Delete the status {{code}}?",
     "EMPTY": "No statuses found",
@@ -162,10 +212,11 @@
     },
     "FILTERS": {
       "CODE_PLACEHOLDER": "Filter by code",
+      "CREATED_AT_PLACEHOLDER": "Select created dates",
+      "UPDATED_AT_PLACEHOLDER": "Select updated dates",
       "SEVERITY_PLACEHOLDER": "Filter by severity"
     },
     "TOASTS": {
-      "SUCCESS": "Done",
       "CREATED": "The status is created",
       "UPDATED": "The status is updated",
       "DELETED": "The status is deleted",
@@ -178,32 +229,21 @@
       "CODE_PLACEHOLDER": "Enter the code",
       "SEVERITY": "Severity",
       "DESCRIPTION": "Description",
-      "DESCRIPTION_PLACEHOLDER": "Describe the status and the actions to take",
-      "NO_CHANGES": "No changes provided",
-      "INVALID": "Form is not valid",
-      "ERRORS": {
-        "REQUIRED": "This field is required",
-        "TOO_LONG": "The value is too long"
-      }
+      "DESCRIPTION_PLACEHOLDER": "Describe the status and the actions to take"
     },
     "SEVERITIES": {
       "INFO": "Info",
       "WARNING": "Warning",
       "ERROR": "Error"
-    },
-    "COLUMNS_CHOOSER": "Columns"
+    }
   },
   "METRICS": {
     "TITLE": "Metrics:",
-    "BACK": "Back to machines",
     "ADD_NEW": "Add metric",
     "EXAMPLE_PAYLOAD": "Example payload",
     "DISCARD": "Discard",
     "APPLY": "Apply changes",
-    "EDIT": "Edit",
-    "DELETE": "Delete",
     "RESTORE": "Restore",
-    "RELOAD": "Reload",
     "EMPTY": "This machine has no metrics yet",
     "NOT_REGISTERED": "The machine is not ready for metrics yet. Try again in a few seconds",
     "ITEM_ERRORS": "The server rejected this metric:",
@@ -248,11 +288,8 @@
       "DESCRIPTION": "Description",
       "DESCRIPTION_PLACEHOLDER": "Describe the metric",
       "DONE": "Done",
-      "NO_CHANGES": "No changes provided",
       "INVALID": "The form has errors",
       "ERRORS": {
-        "REQUIRED": "This field is required",
-        "TOO_LONG": "The value is too long",
         "KEY_INVALID": "Use lower case letters, digits, underscores, and dots between parts",
         "KEY_TAKEN": "Another metric of this machine has this key",
         "UNIT_REQUIRED": "A numeric metric needs a unit",
@@ -266,7 +303,6 @@
       "REVISION": "Revision {{revision}}",
       "PREVIEW": "Preview with unapplied changes",
       "COPY": "Copy",
-      "CLOSE": "Close",
       "EMPTY": "This machine has no metrics, so there is no example"
     },
     "CONFIRM": {
@@ -277,7 +313,6 @@
       "LEAVE_MESSAGE": "You have changes that are not applied. Leave the page and lose them?"
     },
     "TOASTS": {
-      "SUCCESS": "Done",
       "APPLIED": "The changes are applied",
       "CONFLICT": "The metrics changed since you opened the page, or a key is taken. Reload and apply again",
       "INVALID": "The server rejected some metrics. Check the marked items"
@@ -302,36 +337,21 @@
       "DURATION": "Duration",
       "SCALAR": "Scalar"
     },
-    "SELECT_HINT": "Select a metric to see its details"
+    "SELECT_HINT": "Select a metric to see its details",
+    "TOOLTIPS": {
+      "RESTORE": "Undo the removal of this metric",
+      "ADD_STATE": "Add the state to the list",
+      "DONE": "Keep the changes of this metric",
+      "ADD_NEW": "Add a metric to the machine",
+      "EXAMPLE_PAYLOAD": "Show a sample message of a machine",
+      "DISCARD": "Drop all changes that are not applied",
+      "APPLY": "Save the changes to the metrics"
+    }
   },
   "PRIMENG": {
-    "dayNames": [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday"
-    ],
-    "dayNamesShort": [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat"
-    ],
-    "dayNamesMin": [
-      "Su",
-      "Mo",
-      "Tu",
-      "We",
-      "Th",
-      "Fr",
-      "Sa"
-    ],
+    "dayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "dayNamesShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "dayNamesMin": ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
     "monthNames": [
       "January",
       "February",
@@ -346,20 +366,7 @@
       "November",
       "December"
     ],
-    "monthNamesShort": [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
-    ],
+    "monthNamesShort": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     "dateFormat": "mm/dd/yy",
     "firstDayOfWeek": "0",
     "today": "Today",
@@ -393,17 +400,25 @@
   "FILES": {
     "TITLE": "Files",
     "MACHINE_TITLE": "Files of",
-    "BACK": "Back to machines",
+    "TOOLTIPS": {
+      "DOWNLOAD": "Download the file",
+      "EDIT": "Edit the file name and description",
+      "DELETE": "Delete the file",
+      "INGEST": "Start the ingest of the file",
+      "CANCEL_INGEST": "Cancel the ingest of the file",
+      "HISTORY": "Show the ingest history of the file",
+      "TIE": "Attach the file to a machine",
+      "UNTIE": "Detach the file from its machine",
+      "UPLOAD": "Upload files to the company",
+      "UPLOAD_MACHINE": "Upload files to this machine",
+      "CHOOSE": "Pick files from your computer"
+    },
     "UPLOAD": "Upload",
-    "ROW_ACTIONS": "Row actions",
-    "COLUMNS_CHOOSER": "Columns",
     "EMPTY": "No files found",
     "DELETE_HEADER": "Delete file",
     "DELETE_MESSAGE": "Delete the file {{name}}?",
     "ACTIONS_MENU": {
       "DOWNLOAD": "Download",
-      "EDIT": "Edit",
-      "DELETE": "Delete",
       "INGEST": "Ingest",
       "CANCEL_INGEST": "Cancel ingest",
       "HISTORY": "History",
@@ -415,19 +430,18 @@
       "TYPE": "Type",
       "SIZE": "Size",
       "UPLOADED_AT": "Uploaded",
-      "DESCRIPTION": "Description",
       "MACHINE": "Machine",
       "INGEST": "Ingest"
     },
     "FILTERS": {
       "FILE_NAME_PLACEHOLDER": "Filter by name",
+      "UPLOADED_AT_PLACEHOLDER": "Select uploaded dates",
       "TYPE_PLACEHOLDER": "Select types",
       "MACHINE_PLACEHOLDER": "Select machines",
       "INGEST_PLACEHOLDER": "Select states",
       "NOT_TIED": "Not tied to a machine"
     },
     "TOASTS": {
-      "SUCCESS": "Done",
       "UPLOADED": "The file is uploaded",
       "UPDATED": "The file is updated",
       "DELETED": "The file is deleted",
@@ -455,12 +469,8 @@
     "EDIT_DIALOG": {
       "TITLE": "Edit file",
       "NAME": "Name",
-      "EXTENSION_HINT": "The type of the file stays {{extension}}",
-      "DESCRIPTION": "Description",
-      "NO_CHANGES": "No changes provided",
-      "INVALID": "Form is not valid",
-      "REQUIRED": "This field is required",
-      "TOO_LONG": "The value is too long"
+      "EXTENSION_HINT": "The type of the file stays",
+      "DESCRIPTION": "Description"
     },
     "UNTIE_HEADER": "Untie file",
     "UNTIE_MESSAGE": "Untie \"{{name}}\" from its machine?",
@@ -531,6 +541,9 @@
         "METRICS": "metrics",
         "STATUSES": "statuses"
       }
+    },
+    "TOOLTIPS": {
+      "OPEN": "Open the result of this attempt"
     }
   },
   "DRAFTS": {
@@ -555,12 +568,23 @@
     "REVIEW": "Review",
     "APPLY": "Apply",
     "APPLY_ALL": "Apply all",
+    "PENDING_COUNT": "{{count}} pending",
     "DISMISS": "Dismiss",
-    "ROW_ACTIONS": "Row actions",
     "DISMISS_ALL": "Dismiss all",
     "DISMISS_ALL_HEADER": "Dismiss all drafts",
+    "DISMISS_SELECTED_HEADER": "Dismiss selected drafts",
+    "DISMISS_SELECTED_MESSAGE": "Dismiss the {{count}} selected drafts? It cannot be undone",
     "DISMISS_ALL_MESSAGE": "Dismiss all {{count}} pending drafts of this machine? It cannot be undone",
     "REVIEW_AFTER_MACHINE": "Review the machine draft first",
+    "TOOLTIPS": {
+      "REVIEW": "Review the draft",
+      "APPLY": "Apply the draft",
+      "DISMISS": "Dismiss the draft",
+      "APPLY_ALL": "Apply every draft that you can apply",
+      "DISMISS_ALL": "Dismiss every draft in the list",
+      "DISMISS_SELECTED": "Dismiss the {{count}} selected drafts",
+      "APPLY_SELECTED": "Apply the {{count}} selected drafts"
+    },
     "DISMISS_HEADER": "Dismiss draft",
     "DISMISS_MESSAGE": "Dismiss the draft \"{{name}}\"? It cannot be undone",
     "UNNAMED": "Unnamed",
@@ -569,18 +593,22 @@
       "DISMISSED_ALL": "{{count}} drafts are dismissed"
     },
     "LIST": {
-      "TITLE": "Pending drafts",
-      "EMPTY": "The machine has no pending drafts",
+      "TITLE": "Drafts",
+      "EMPTY": "No drafts match",
       "LOAD_FAILED": "The drafts could not be loaded",
-      "RETRY": "Try again",
+      "SELECT_PAGE": "Select all pending drafts of the page",
+      "SELECT_ROW": "Select the draft",
       "COLUMNS": {
         "KIND": "Kind",
+        "STATE": "Status",
+        "MACHINE": "Machine",
         "LABEL": "Draft",
         "SOURCE_LOCATION": "Source",
         "PROPOSED_AT": "Proposed"
       },
       "FILTERS": {
-        "KIND_PLACEHOLDER": "Select kinds"
+        "KIND_PLACEHOLDER": "Select kinds",
+        "STATE_PLACEHOLDER": "Select statuses"
       }
     },
     "NO_CHANGE": "No change",
@@ -664,7 +692,6 @@
     },
     "FORM": {
       "ERRORS": {
-        "REQUIRED": "This field is required",
         "TOO_LONG": "The text is too long",
         "ESTIMATE_RANGE": "The estimate must be from 5 to 720 minutes",
         "ESTIMATE_STEP": "The estimate must be a multiple of 5 minutes",
@@ -688,8 +715,6 @@
     "TITLE": "Work orders",
     "ADD_NEW": "New work order",
     "EMPTY": "No work orders found",
-    "ACTIONS": "Actions",
-    "COLUMNS_CHOOSER": "Choose columns",
     "DELAYED": "Delayed",
     "MACHINE_DELETED": "(deleted)",
     "ESTIMATE_MINUTES": "{{count}} min",
@@ -697,6 +722,26 @@
       "LABEL": "View",
       "GRID": "Grid",
       "BOARD": "Board"
+    },
+    "TOOLTIPS": {
+      "GRID_VIEW": "Show work orders as a list",
+      "BOARD_VIEW": "Show work orders on a board",
+      "OPEN": "Open the work order",
+      "ASSIGN": "Assign an employee to the work order",
+      "MOVE": "Change the planned start of the work order",
+      "UNASSIGN": "Return the work order to the backlog",
+      "STATUS": "Change the status of the work order",
+      "DELETE": "Delete the work order. This cannot be undone",
+      "CHANGE_TO_STATUS": "Move the work order to this status",
+      "TAB_COMPANY_FILES": "Pick from the files of the company",
+      "TAB_MACHINE_FILES": "Pick from the files of the machine",
+      "ATTACH": "Attach the selected files to the work order",
+      "TAB_DETAILS": "Show the details of the work order",
+      "TAB_HISTORY": "Show the changes of the work order",
+      "ATTACH_NEW": "Upload a new file and attach it",
+      "ATTACH_EXISTING": "Attach a file that is stored already",
+      "USE_SUGGESTION": "Fill the start with the suggested time",
+      "ADD_NEW": "Create a work order"
     },
     "COLUMNS": {
       "TITLE": "Title",
@@ -712,18 +757,17 @@
     "FILTERS": {
       "TITLE_PLACEHOLDER": "Starts with",
       "STATUS_PLACEHOLDER": "Select statuses",
+      "PLANNED_START_PLACEHOLDER": "Select planned dates",
       "PRIORITY_PLACEHOLDER": "Select priorities",
       "CATEGORY_PLACEHOLDER": "Select categories",
       "ASSIGNEE_PLACEHOLDER": "Select people",
       "MACHINE_PLACEHOLDER": "Select machines"
     },
     "MENU": {
-      "OPEN": "Open",
       "ASSIGN": "Assign",
       "MOVE": "Move",
       "UNASSIGN": "Unassign",
-      "STATUS": "Change status",
-      "DELETE": "Delete"
+      "STATUS": "Change status"
     },
     "TABS": {
       "DETAILS": "Details",
@@ -749,7 +793,6 @@
       "PLANNED_START": "Planned start"
     },
     "TOASTS": {
-      "SUCCESS": "Done",
       "CREATED": "The work order was created",
       "UPDATED": "The work order was saved",
       "CONFLICT": "Someone else changed this work order. It was reloaded; check it and save again",
@@ -778,8 +821,7 @@
       "UNASSIGN_MESSAGE": "Return \"{{title}}\" to the backlog?",
       "UNASSIGN_ACCEPT": "Unassign",
       "DELETE_HEADER": "Delete work order",
-      "DELETE_MESSAGE": "Delete \"{{title}}\"? This cannot be undone",
-      "DELETE_ACCEPT": "Delete"
+      "DELETE_MESSAGE": "Delete \"{{title}}\"? This cannot be undone"
     },
     "BOARD": {
       "CHANGE_STATUS": "Change status",
@@ -795,7 +837,11 @@
     "NEXT_DAY": "Next day",
     "TODAY": "Today",
     "EMPTY": "No employees to show",
-    "BACK": "Back to employees"
+    "LOAD_FAILED": "The schedule did not load",
+    "BACK": "Back to employees",
+    "TOOLTIPS": {
+      "TODAY": "Go to today"
+    }
   },
   "SHIFTS": {
     "TITLE": "Shifts",
@@ -804,8 +850,6 @@
     "ADD_VERSION": "New version",
     "ADD_OVERRIDE": "New override",
     "EFFECTIVE_FROM": "From",
-    "EDIT": "Edit",
-    "DELETE": "Delete",
     "EMPTY_VERSIONS": "No shift templates yet",
     "EMPTY_OVERRIDES": "No overrides in this month",
     "PREVIOUS_MONTH": "Previous month",
@@ -851,7 +895,6 @@
       "RULE": "The change breaks a rule. Change it and try again"
     },
     "CONFIRM": {
-      "DELETE": "Delete",
       "DELETE_VERSION_HEADER": "Delete weekly template",
       "DELETE_VERSION_MESSAGE": "Delete this weekly template? This cannot be undone",
       "DELETE_OVERRIDE_HEADER": "Delete override",
@@ -861,15 +904,35 @@
       "TITLE": "Work orders outside the new shifts",
       "HINT": "Move or unassign these work orders first, then save again"
     },
-    "BACK": "Back to employees"
+    "BACK": "Back to employees",
+    "TOOLTIPS": {
+      "ADD_BLOCK": "Add a work block to the day",
+      "ADD_VERSION": "Add a weekly template from a date",
+      "ADD_OVERRIDE": "Add a change for one day"
+    }
   },
   "EMPLOYEES": {
+    "FILTERS": {
+      "NAME_PLACEHOLDER": "Filter by name",
+      "EMAIL_PLACEHOLDER": "Filter by email",
+      "ROLES_PLACEHOLDER": "Select roles",
+      "STATES_PLACEHOLDER": "Select states"
+    },
     "TITLE": "Employees",
     "INVITE_BUTTON": "Invite",
-    "ACTIONS": "Actions",
     "EMPTY": "No employees found",
     "EMPTY_INVITES": "No pending invites",
     "RESEND": "Resend",
+    "TOOLTIPS": {
+      "RESEND": "Send the invite again",
+      "REVOKE": "Revoke the invite",
+      "SHIFTS": "Show the shifts of the employee",
+      "SCHEDULE": "Show the schedule of the employee",
+      "RETRY_PROVISIONING": "Retry the account setup of the employee",
+      "INVITE": "Invite a new employee by email",
+      "TAB_EMPLOYEES": "Show the employees",
+      "TAB_INVITES": "Show the pending invites"
+    },
     "YES": "Yes",
     "NO": "No",
     "TABS": {
@@ -943,10 +1006,14 @@
     "INVALID": "The invite link is invalid or expired. Ask your supervisor for a new invite",
     "FAILED": "The invite could not be checked. Try again later",
     "ERRORS": {
-      "NAME_REQUIRED": "This field is required",
       "NAME_TOO_LONG": "The name is too long"
     },
     "SIGNED_IN_AS": "You are signed in as {{email}}. Sign out to accept this invite",
-    "SIGN_OUT_AND_CONTINUE": "Sign out and continue"
+    "SIGN_OUT_AND_CONTINUE": "Sign out and continue",
+    "TOOLTIPS": {
+      "ACCEPT": "Accept the invite and create your account",
+      "SIGN_OUT_AND_CONTINUE": "Sign out and continue with the invite",
+      "SIGN_IN": "Sign in to accept the invite"
+    }
   }
 }

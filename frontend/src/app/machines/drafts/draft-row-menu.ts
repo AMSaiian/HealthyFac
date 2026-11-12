@@ -1,10 +1,15 @@
 import type { MenuItem } from 'primeng/api';
 
+import { createRowMenu } from '@shared/grid/table/row-menu';
+
 export const DRAFT_MENU_KEYS = {
   review: 'DRAFTS.REVIEW',
   apply: 'DRAFTS.APPLY',
   dismiss: 'DRAFTS.DISMISS',
   reviewAfterMachine: 'DRAFTS.REVIEW_AFTER_MACHINE',
+  reviewTooltip: 'DRAFTS.TOOLTIPS.REVIEW',
+  applyTooltip: 'DRAFTS.TOOLTIPS.APPLY',
+  dismissTooltip: 'DRAFTS.TOOLTIPS.DISMISS',
 } as const;
 
 export interface DraftRowMenuOptions {
@@ -22,34 +27,66 @@ export interface DraftRowMenuOptions {
 }
 
 /**
- * Builds the row menu of a pending draft: **Review**, **Apply**, and **Dismiss**. An item that cannot run is
- * disabled and shows its reason as the item tooltip.
+ * Builds the row menu of a pending draft: **Review**, **Apply**, and **Dismiss**. Each item has a tooltip. An item that
+ * cannot run is disabled, and its tooltip gives the reason. The menu holds no row: the handlers close over the draft.
  */
 export function draftRowMenuItems(options: DraftRowMenuOptions): MenuItem[] {
-  const { translate } = options;
+  const rowMenu = createRowMenu<boolean>();
+  rowMenu.activeRow = true;
+  const labels = translatedLabels(options);
   const applyReason = options.applyReasonKey ?? null;
   return [
     {
-      label: translate(DRAFT_MENU_KEYS.review),
-      icon: 'pi pi-search',
+      ...rowMenu.menuItem(
+        {
+          labelKey: DRAFT_MENU_KEYS.review,
+          tooltipKey: options.isReviewDisabled ? DRAFT_MENU_KEYS.reviewAfterMachine : DRAFT_MENU_KEYS.reviewTooltip,
+          icon: 'pi pi-search',
+          onSelect: options.onReview,
+        },
+        labels,
+      ),
       disabled: options.isReviewDisabled,
-      ...(options.isReviewDisabled
-        ? { tooltipOptions: { tooltipLabel: translate(DRAFT_MENU_KEYS.reviewAfterMachine) } }
-        : {}),
-      command: options.onReview,
     },
     {
-      label: translate(DRAFT_MENU_KEYS.apply),
-      icon: 'pi pi-check',
+      ...rowMenu.menuItem(
+        {
+          labelKey: DRAFT_MENU_KEYS.apply,
+          tooltipKey: applyReason ?? DRAFT_MENU_KEYS.applyTooltip,
+          icon: 'pi pi-check',
+          onSelect: options.onApply,
+        },
+        labels,
+      ),
       disabled: applyReason !== null || options.isBusy,
-      ...(applyReason === null ? {} : { tooltipOptions: { tooltipLabel: translate(applyReason) } }),
-      command: options.onApply,
     },
     {
-      label: translate(DRAFT_MENU_KEYS.dismiss),
-      icon: 'pi pi-times',
+      ...rowMenu.menuItem(
+        {
+          labelKey: DRAFT_MENU_KEYS.dismiss,
+          tooltipKey: DRAFT_MENU_KEYS.dismissTooltip,
+          icon: 'pi pi-times',
+          onSelect: options.onDismiss,
+        },
+        labels,
+      ),
       disabled: options.isBusy,
-      command: options.onDismiss,
     },
   ];
+}
+
+function translatedLabels(options: DraftRowMenuOptions): Record<string, string> {
+  const reasonKeys =
+    options.applyReasonKey === null || options.applyReasonKey === undefined ? [] : [options.applyReasonKey];
+  const keys = [
+    DRAFT_MENU_KEYS.review,
+    DRAFT_MENU_KEYS.apply,
+    DRAFT_MENU_KEYS.dismiss,
+    DRAFT_MENU_KEYS.reviewAfterMachine,
+    DRAFT_MENU_KEYS.reviewTooltip,
+    DRAFT_MENU_KEYS.applyTooltip,
+    DRAFT_MENU_KEYS.dismissTooltip,
+    ...reasonKeys,
+  ];
+  return Object.fromEntries(keys.map((key) => [key, options.translate(key)]));
 }

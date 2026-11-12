@@ -3,10 +3,12 @@ import { type FieldTree, form, FormField, validateStandardSchema } from '@angula
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
+import { Tooltip } from 'primeng/tooltip';
 
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 import { isFieldInvalid } from '@shared/forms/field-state';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { InviteStore } from '@invite/invite.store';
 import { acceptFormSchema, type AcceptFormValue } from '@invite/invite-page/invite-page-schema';
@@ -17,13 +19,14 @@ const ROLE_KEYS: Readonly<Record<string, string>> = {
 };
 
 @Component({
-  imports: [ButtonDirective, FormField, InputText, LoadingSpinner, TranslatePipe],
+  imports: [ButtonDirective, FormField, InputText, LoadingSpinner, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 flex-1 items-center justify-center p-4' },
   selector: 'hf-invite-page',
   templateUrl: './invite-page.html',
 })
 export class InvitePage {
   protected readonly store = inject(InviteStore);
+  protected readonly showSpinner = delayedLoading(computed(() => this.store.view() === 'loading'));
 
   private readonly _auth = inject(AuthStore);
 

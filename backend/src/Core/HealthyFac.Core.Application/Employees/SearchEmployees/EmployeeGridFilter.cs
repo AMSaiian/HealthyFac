@@ -30,28 +30,16 @@ public sealed class EmployeeGridFilterValidator : AbstractValidator<EmployeeGrid
 {
     public EmployeeGridFilterValidator()
     {
-        RuleFor(filter => filter.Name!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.Name is not null);
+        When(
+            filter => filter.Name is not null,
+            () => RuleFor(filter => filter.Name!).IsTextFilter(EmployeeValidationConstants.NameFilterMaxLength));
 
-        RuleFor(filter => filter.Name!.Value)
-            .MaximumLength(EmployeeValidationConstants.NameFilterMaxLength)
-            .When(filter => filter.Name?.Value is not null);
+        When(
+            filter => filter.Email is not null,
+            () => RuleFor(filter => filter.Email!).IsTextFilter(EmployeeValidationConstants.EmailMaxLength));
 
-        RuleFor(filter => filter.Email!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.Email is not null);
+        When(filter => filter.Roles is not null, () => RuleFor(filter => filter.Roles!).IsSetFilter());
 
-        RuleFor(filter => filter.Email!.Value)
-            .MaximumLength(EmployeeValidationConstants.EmailMaxLength)
-            .When(filter => filter.Email?.Value is not null);
-
-        RuleFor(filter => filter.Roles!)
-            .SetValidator(new SetFilterValidator<RoleCode>())
-            .When(filter => filter.Roles is not null);
-
-        RuleFor(filter => filter.Statuses!)
-            .SetValidator(new SetFilterValidator<EmployeeStatus>())
-            .When(filter => filter.Statuses is not null);
+        When(filter => filter.Statuses is not null, () => RuleFor(filter => filter.Statuses!).IsSetFilter());
     }
 }

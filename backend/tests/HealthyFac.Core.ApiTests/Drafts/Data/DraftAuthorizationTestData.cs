@@ -18,6 +18,8 @@ public static class DraftAuthorizationTestData
         { "POST", $"v1/machine-drafts/{AnyId}/apply", ApplyBody },
         { "POST", $"v1/machines/{AnyId}/drafts/search", SearchBody },
         { "GET", $"v1/ingest-attempts/{AnyId}/drafts", null },
+        { "POST", $"v1/ingest-attempts/{AnyId}/drafts/search", SearchBody },
+        { "POST", $"v1/ingest-attempts/{AnyId}/drafts/dismiss", EmptyBody },
         { "POST", $"v1/drafts/{AnyId}/dismiss", EmptyBody },
         { "POST", "v1/drafts/mark-applied", MarkBody },
         { "POST", $"v1/machines/{AnyId}/drafts/dismiss", EmptyBody },

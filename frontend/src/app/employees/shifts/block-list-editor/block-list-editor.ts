@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { PlainTimePicker } from '@shared/time/pickers/plain-time-picker/plain-time-picker';
 import { Temporal } from '@shared/time/temporal';
@@ -11,7 +12,7 @@ import { BLOCK_GRID_MINUTES, BLOCK_LATEST_END, MAX_BLOCKS_PER_DAY } from '@emplo
 
 /** Edits the work blocks of one day: the times are 5-minute steps and end at 23:55 at the latest. */
 @Component({
-  imports: [ButtonDirective, PlainTimePicker, TranslatePipe],
+  imports: [ButtonDirective, PlainTimePicker, Tooltip, TranslatePipe],
   host: { class: 'flex flex-col gap-1' },
   selector: 'hf-block-list-editor',
   templateUrl: './block-list-editor.html',

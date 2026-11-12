@@ -9,6 +9,8 @@ import type { IngestHistoryActionPayload } from '@files/file-action-payloads';
 import { FileActionType } from '@files/file-actions';
 import { IngestApi } from '@files/ingest/ingest-api';
 
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
+
 interface HistoryState {
   action: AppAction | null;
 }
@@ -48,4 +50,5 @@ export const IngestHistoryStore = signalStore(
       store._actions.cancel();
     },
   })),
+  withStoreDevtools('ingest-history'),
 );

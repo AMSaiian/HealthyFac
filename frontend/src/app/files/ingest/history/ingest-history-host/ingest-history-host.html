@@ -6,9 +6,11 @@
 >
   @if (store.attempts.isLoading()) {
     <div class="flex min-h-32">
-      <hf-loading-spinner />
+      @if (showSpinner()) {
+        <hf-loading-spinner />
+      }
     </div>
-  } @else if (store.rows().length === 0) {
+  } @else if (showEmpty()) {
     <div class="flex min-h-32">
       <hf-empty-state
         icon="pi pi-history"
@@ -43,9 +45,10 @@
           </div>
           <button
             pButton
+            [pTooltip]="'INGEST.TOOLTIPS.OPEN' | translate"
+            tooltipPosition="bottom"
             type="button"
             severity="secondary"
-            [outlined]="true"
             (click)="store.openSummary(attempt.id)"
           >
             {{ 'INGEST.HISTORY.OPEN' | translate }}

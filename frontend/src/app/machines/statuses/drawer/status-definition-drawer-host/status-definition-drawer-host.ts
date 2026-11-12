@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import { hasFormChanges } from '@shared/forms/form-changes';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import { StatusDefinitionDrawerStore } from '@machines/statuses/drawer/status-definition-drawer.store';
@@ -27,6 +28,8 @@ export class StatusDefinitionDrawerHost {
   readonly cancelled = output<void>();
 
   protected readonly store = inject(StatusDefinitionDrawerStore);
+  protected readonly showSpinner = delayedLoading(computed(() => !this.store.initialValue()));
+  protected readonly showSaving = delayedLoading(this.store.isSaving);
 
   private readonly _current = signal<StatusDefinitionFormValue | null>(null);
   private readonly _isValid = signal(false);
@@ -43,9 +46,9 @@ export class StatusDefinitionDrawerHost {
   });
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
-      return 'STATUS_DEFINITIONS.FORM.INVALID';
+      return 'FORMS.INVALID';
     }
-    return this.hasNoChanges() ? 'STATUS_DEFINITIONS.FORM.NO_CHANGES' : null;
+    return this.hasNoChanges() ? 'FORMS.NO_CHANGES' : null;
   });
 
   constructor() {

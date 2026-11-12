@@ -17,20 +17,14 @@ public static class WorkOrderCurrentRow
 
     /// <summary>
     /// Builds a lambda over a work order from a template over the work order and its current row. The current row
-    /// parameter of the template is replaced by <see cref="Selector"/>, so EF Core translates the result without
-    /// LINQKit.
+    /// parameter of the template is replaced by <see cref="Selector"/> through <c>Embed</c>, so EF Core translates the
+    /// result without LINQKit.
     /// </summary>
     /// <param name="template">The template with a parameter for the current row.</param>
     /// <typeparam name="T">The result type.</typeparam>
     /// <returns>The lambda over the work order.</returns>
-    public static Expression<Func<WorkOrder, T>> Of<T>(Expression<Func<WorkOrder, WorkOrderHistory, T>> template)
-    {
-        var workOrderParameter = template.Parameters[index: 0];
-        var rowBody = new ParameterReplacer(Selector.Parameters[index: 0], workOrderParameter).Visit(Selector.Body);
-        var body = new ParameterReplacer(template.Parameters[index: 1], rowBody).Visit(template.Body);
-
-        return Expression.Lambda<Func<WorkOrder, T>>(body, workOrderParameter);
-    }
+    public static Expression<Func<WorkOrder, T>> Of<T>(Expression<Func<WorkOrder, WorkOrderHistory, T>> template) =>
+        template.Embed(Selector);
 
     /// <summary>
     /// The delayed rule: a staged work order whose planned start is before now.

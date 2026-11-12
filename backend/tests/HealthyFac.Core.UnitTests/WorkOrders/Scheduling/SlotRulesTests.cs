@@ -5,22 +5,14 @@ namespace HealthyFac.Core.UnitTests.WorkOrders.Scheduling;
 
 public sealed class SlotRulesTests
 {
-    [Fact]
-    public void FitsOneBlock_WithSlotInsideBlock_ReturnsTrue()
+    [Theory]
+    [MemberData(nameof(SlotRulesTestData.SlotsInsideOneBlock), MemberType = typeof(SlotRulesTestData))]
+    public void FitsOneBlock_WithSlotInsideOneBlock_ReturnsTrue(string caseName, string start, int minutes)
     {
         var result = SlotRules.FitsOneBlock(
-            SchedulingTestData.Slot(number: 1, start: "09:00", minutes: 60), SchedulingTestData.Day());
+            SchedulingTestData.Slot(number: 1, start: start, minutes: minutes), SchedulingTestData.Day());
 
-        result.Should().BeTrue();
-    }
-
-    [Fact]
-    public void FitsOneBlock_WithSlotUpToBlockEnd_ReturnsTrue()
-    {
-        var result = SlotRules.FitsOneBlock(
-            SchedulingTestData.Slot(number: 1, start: "11:00", minutes: 60), SchedulingTestData.Day());
-
-        result.Should().BeTrue();
+        result.Should().BeTrue(because: caseName);
     }
 
     [Fact]

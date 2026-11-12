@@ -1,34 +1,46 @@
-<header class="flex flex-wrap items-center justify-between gap-2">
+<header class="flex flex-none items-center justify-between">
   <h1 class="text-2xl font-bold">{{ 'WORK_ORDERS.TITLE' | translate }}</h1>
-  <div class="flex items-center gap-2">
-    <nav
-      class="flex items-center gap-1"
-      [attr.aria-label]="'WORK_ORDERS.VIEW.LABEL' | translate"
+  @if (canCreate()) {
+    <button
+      pButton
+      [pTooltip]="'WORK_ORDERS.TOOLTIPS.ADD_NEW' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      (click)="createRequested.emit()"
     >
-      <a
-        pButton
-        severity="secondary"
-        routerLink="/work-orders"
-        [outlined]="activeView() !== 'grid'"
-        >{{ 'WORK_ORDERS.VIEW.GRID' | translate }}</a
-      >
-      <a
-        pButton
-        severity="secondary"
-        routerLink="/work-orders/board"
-        [outlined]="activeView() !== 'board'"
-        >{{ 'WORK_ORDERS.VIEW.BOARD' | translate }}</a
-      >
-    </nav>
-    @if (canCreate()) {
-      <button
-        pButton
-        type="button"
-        (click)="createRequested.emit()"
-      >
-        <i class="pi pi-plus"></i>
-        {{ 'WORK_ORDERS.ADD_NEW' | translate }}
-      </button>
-    }
-  </div>
+      <i class="pi pi-plus"></i>
+      {{ 'WORK_ORDERS.ADD_NEW' | translate }}
+    </button>
+  }
 </header>
+<p-tabs
+  class="flex min-h-0 flex-1 flex-col"
+  [value]="activeView()"
+>
+  <p-tablist [attr.aria-label]="'WORK_ORDERS.VIEW.LABEL' | translate">
+    <p-tab
+      value="grid"
+      routerLink="/work-orders"
+      [pTooltip]="'WORK_ORDERS.TOOLTIPS.GRID_VIEW' | translate"
+      tooltipPosition="bottom"
+    >
+      {{ 'WORK_ORDERS.VIEW.GRID' | translate }}
+    </p-tab>
+    <p-tab
+      value="board"
+      routerLink="/work-orders/board"
+      [pTooltip]="'WORK_ORDERS.TOOLTIPS.BOARD_VIEW' | translate"
+      tooltipPosition="bottom"
+    >
+      {{ 'WORK_ORDERS.VIEW.BOARD' | translate }}
+    </p-tab>
+  </p-tablist>
+  <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+    <p-tabpanel
+      class="flex min-h-0 flex-1 flex-col"
+      [value]="activeView()"
+    >
+      <ng-content />
+    </p-tabpanel>
+  </p-tabpanels>
+</p-tabs>

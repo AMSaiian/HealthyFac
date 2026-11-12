@@ -3,6 +3,8 @@
     @if (store.canGoBack()) {
       <a
         pButton
+        [pTooltip]="'SHIFTS.BACK' | translate"
+        tooltipPosition="bottom"
         routerLink="/employees"
         severity="secondary"
         iconOnly
@@ -17,6 +19,8 @@
   @if (store.canManage()) {
     <button
       pButton
+      [pTooltip]="'SHIFTS.TOOLTIPS.ADD_VERSION' | translate"
+      tooltipPosition="bottom"
       type="button"
       (click)="store.openVersionDialog(null)"
     >
@@ -39,22 +43,26 @@
             <div class="flex items-center gap-1">
               <button
                 pButton
+                [pTooltip]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+                tooltipPosition="bottom"
                 type="button"
                 size="small"
                 severity="secondary"
                 (click)="editVersion(version)"
               >
-                {{ 'SHIFTS.EDIT' | translate }}
+                {{ 'ACTIONS.EDIT' | translate }}
               </button>
               <button
                 pButton
+                [pTooltip]="'ACTIONS.TOOLTIPS.DELETE' | translate"
+                tooltipPosition="bottom"
                 type="button"
                 size="small"
                 severity="danger"
                 [outlined]="true"
                 (click)="store.requestDeleteVersion(version)"
               >
-                {{ 'SHIFTS.DELETE' | translate }}
+                {{ 'ACTIONS.DELETE' | translate }}
               </button>
             </div>
           }
@@ -82,9 +90,12 @@
     <div class="flex items-center gap-2">
       <button
         pButton
+        [pTooltip]="'SHIFTS.PREVIOUS_MONTH' | translate"
+        tooltipPosition="bottom"
         type="button"
         iconOnly
         severity="secondary"
+        [text]="true"
         [attr.aria-label]="'SHIFTS.PREVIOUS_MONTH' | translate"
         (click)="store.previousMonth()"
       >
@@ -93,9 +104,12 @@
       <span class="min-w-28 text-center">{{ store.month()?.toString({ calendarName: 'never' })?.slice(0, 7) }}</span>
       <button
         pButton
+        [pTooltip]="'SHIFTS.NEXT_MONTH' | translate"
+        tooltipPosition="bottom"
         type="button"
         iconOnly
         severity="secondary"
+        [text]="true"
         [attr.aria-label]="'SHIFTS.NEXT_MONTH' | translate"
         (click)="store.nextMonth()"
       >
@@ -104,6 +118,8 @@
       @if (store.canManage()) {
         <button
           pButton
+          [pTooltip]="'SHIFTS.TOOLTIPS.ADD_OVERRIDE' | translate"
+          tooltipPosition="bottom"
           type="button"
           (click)="store.openOverrideDialog(null)"
         >
@@ -128,22 +144,26 @@
           <div class="flex items-center gap-1">
             <button
               pButton
+              [pTooltip]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+              tooltipPosition="bottom"
               type="button"
               size="small"
               severity="secondary"
               (click)="editOverride(override)"
             >
-              {{ 'SHIFTS.EDIT' | translate }}
+              {{ 'ACTIONS.EDIT' | translate }}
             </button>
             <button
               pButton
+              [pTooltip]="'ACTIONS.TOOLTIPS.DELETE' | translate"
+              tooltipPosition="bottom"
               type="button"
               size="small"
               severity="danger"
               [outlined]="true"
               (click)="store.requestDeleteOverride(override)"
             >
-              {{ 'SHIFTS.DELETE' | translate }}
+              {{ 'ACTIONS.DELETE' | translate }}
             </button>
           </div>
         }
@@ -169,6 +189,21 @@
     (save)="save()"
     (cancelled)="store.closeDialog()"
   >
+    @if (store.affectedWorkOrders().length > 0) {
+      <section class="hf-list-item mb-4 flex flex-col gap-1">
+        <h3 class="font-bold">{{ 'SHIFTS.AFFECTED.TITLE' | translate }}</h3>
+        <small class="text-muted-color">{{ 'SHIFTS.AFFECTED.HINT' | translate }}</small>
+        @for (workOrder of store.affectedWorkOrders(); track workOrder.id) {
+          <button
+            type="button"
+            class="text-primary cursor-pointer text-left hover:underline"
+            (click)="store.openWorkOrder(workOrder.id)"
+          >
+            {{ workOrder.title }} · {{ workOrder.plannedStartLocal.replace('T', ' ').slice(0, 16) }}
+          </button>
+        }
+      </section>
+    }
     @if (dialog.kind === 'version') {
       <hf-version-dialog
         [initialValue]="versionInitial()"
@@ -185,21 +220,6 @@
         (valueChange)="onOverride($event)"
         (validityChange)="onValidity($event)"
       />
-    }
-    @if (store.affectedWorkOrders().length > 0) {
-      <section class="hf-list-item mt-4 flex flex-col gap-1">
-        <h3 class="font-bold">{{ 'SHIFTS.AFFECTED.TITLE' | translate }}</h3>
-        <small class="text-muted-color">{{ 'SHIFTS.AFFECTED.HINT' | translate }}</small>
-        @for (workOrder of store.affectedWorkOrders(); track workOrder.id) {
-          <button
-            type="button"
-            class="text-primary cursor-pointer text-left hover:underline"
-            (click)="store.openWorkOrder(workOrder.id)"
-          >
-            {{ workOrder.title }} · {{ workOrder.plannedStartLocal.replace('T', ' ').slice(0, 16) }}
-          </button>
-        }
-      </section>
     }
   </hf-action-dialog>
 }

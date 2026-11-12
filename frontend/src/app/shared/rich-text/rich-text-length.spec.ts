@@ -1,4 +1,12 @@
-import { visibleTextLength } from './rich-text-length';
+import { visibleText, visibleTextLength } from './rich-text-length';
+
+describe('visibleText', () => {
+  it('visibleText_WithParagraphsAndEntities_ReturnsJoinedDecodedText', () => {
+    const text = visibleText('<p>Tom &amp; Jerry</p><p>a &lt; b</p>');
+
+    expect(text).toBe('Tom & Jerry a < b');
+  });
+});
 
 describe('visibleTextLength', () => {
   it('visibleTextLength_WithNull_ReturnsZero', () => {

@@ -6,12 +6,13 @@ import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 
 import { isFieldInvalid } from '@shared/forms/field-state';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { keepSelectedOptions, type LookupOption, type LookupRequest } from '@shared/lookups/lookup-options';
 import { RichTextEditor } from '@shared/rich-text/rich-text-editor/rich-text-editor';
 
 import { WorkOrderCategory, WorkOrderPriority } from '@work-orders/work-order';
 import { WorkOrderFiles } from '@work-orders/drawer/work-order-files/work-order-files';
-import type { FileEntry } from '@work-orders/drawer/work-order-drawer.store.utils';
+import type { FileEntry } from '@work-orders/drawer/work-order-drawer-store/work-order-drawer.store.utils';
 import { CATEGORY_LABEL_KEYS, PRIORITY_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 import {
   DESCRIPTION_MAX_LENGTH,
@@ -32,6 +33,7 @@ export class WorkOrderForm {
   readonly initialValue = input.required<WorkOrderFormValue>();
   readonly machines = input<LookupOption[]>([]);
   readonly isMachinesLoading = input(false);
+  protected readonly showMachinesLoading = delayedLoading(this.isMachinesLoading);
   readonly fileEntries = input<readonly FileEntry[]>([]);
   readonly isFilesLoading = input(false);
   readonly isEstimateReadOnly = input(false);

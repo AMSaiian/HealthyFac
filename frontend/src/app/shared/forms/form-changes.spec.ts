@@ -14,15 +14,12 @@ describe('hasFormChanges', () => {
     expect(result).toBe(false);
   });
 
-  it('hasFormChanges_WithChangedField_ReturnsTrue', () => {
-    const result = hasFormChanges(schema, { name: 'Lathe', note: 'a' }, { name: 'Lathe', note: 'b' });
-
-    expect(result).toBe(true);
-  });
-
-  it('hasFormChanges_WithInvalidValue_ReturnsTrue', () => {
-    const result = hasFormChanges(schema, { name: 'Lathe', note: 'a' }, { name: '   ', note: 'a' });
-
-    expect(result).toBe(true);
+  it.each(
+    [
+      { name: 'WithChangedField', current: { name: 'Lathe', note: 'b' } },
+      { name: 'WithInvalidValue', current: { name: '   ', note: 'a' } },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('hasFormChanges_%s_ReturnsTrue', (_name, { current }) => {
+    expect(hasFormChanges(schema, { name: 'Lathe', note: 'a' }, current)).toBe(true);
   });
 });

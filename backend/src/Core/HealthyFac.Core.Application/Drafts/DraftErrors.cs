@@ -11,6 +11,7 @@ public static class DraftErrors
     public const string CompanyIdRequired = "CompanyId is required.";
     public const string AttemptIdRequired = "The ingest attempt is required.";
     public const string KindUnknown = "The kind filter holds a kind that does not exist.";
+    public const string SearchScopeRequired = "Give exactly one of the machine and the ingest attempt.";
     public const string IdsRequired = "The list of draft IDs is required.";
     public const string RowVersionRequired = "The row version of the machine is required to apply an update draft.";
     public const string DraftChanged = "The draft or the machine changed since you read it. Reload it and try again.";

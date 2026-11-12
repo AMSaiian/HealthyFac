@@ -1,19 +1,31 @@
 <p-dialog
-  [closeButtonProps]="squareCloseButtonProps"
-  [styleClass]="widthClass()"
-  [contentStyle]="{ 'max-height': '70vh', 'overflow-y': 'auto' }"
+  [styleClass]="rootClass()"
+  [contentStyle]="contentStyle()"
   appendTo="body"
   [modal]="true"
   [draggable]="false"
-  [closeOnEscape]="!isSaving() && !isClosedByHeaderOnly()"
+  [pt]="hiddenClosePt"
+  [dismissableMask]="!isSaving()"
+  [closeOnEscape]="false"
   [header]="title() | translate"
   [(visible)]="isVisible"
   (onHide)="cancelled.emit()"
 >
-  <div class="relative p-1">
+  <div [class]="bodyClass()">
     <ng-content />
   </div>
   <ng-template #footer>
+    <button
+      pButton
+      [pTooltip]="(isSaveShown() ? 'ACTIONS.TOOLTIPS.CANCEL' : 'ACTIONS.TOOLTIPS.CLOSE') | translate"
+      tooltipPosition="bottom"
+      type="button"
+      severity="secondary"
+      [disabled]="isSaving()"
+      (click)="cancelled.emit()"
+    >
+      {{ (isSaveShown() ? 'ACTIONS.CANCEL' : 'ACTIONS.CLOSE') | translate }}
+    </button>
     <ng-content select="[hfDialogFooter]" />
     @if (isSaveShown()) {
       <span
@@ -22,6 +34,8 @@
       >
         <button
           pButton
+          [pTooltip]="'ACTIONS.TOOLTIPS.SAVE' | translate"
+          tooltipPosition="bottom"
           type="button"
           [disabled]="isSaveDisabled() || isSaving()"
           (click)="save.emit()"
@@ -29,17 +43,6 @@
           {{ 'ACTIONS.SAVE' | translate }}
         </button>
       </span>
-    }
-    @if (!isClosedByHeaderOnly()) {
-      <button
-        pButton
-        type="button"
-        severity="secondary"
-        [disabled]="isSaving()"
-        (click)="cancelled.emit()"
-      >
-        {{ (isSaveShown() ? 'ACTIONS.CANCEL' : 'ACTIONS.CLOSE') | translate }}
-      </button>
     }
   </ng-template>
 </p-dialog>

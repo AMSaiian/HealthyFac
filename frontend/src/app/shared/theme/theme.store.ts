@@ -8,6 +8,8 @@ import { withStorageSync } from '@shared/storage/with-storage-sync';
 import { themeSerializer } from './theme-serializer';
 import { DARK_MODE_CLASS } from './theme.constants';
 
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
+
 export const ThemeStore = signalStore(
   { providedIn: 'root' },
   withState({ isDark: false }),
@@ -25,4 +27,5 @@ export const ThemeStore = signalStore(
       });
     },
   }),
+  withStoreDevtools('theme'),
 );

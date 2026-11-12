@@ -1,26 +1,45 @@
 import { TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
-import type { TableFilterEvent } from 'primeng/table';
 
-import { Temporal } from '@shared/time/temporal';
-import { MachineColumn, type MachineFilter, MachineState } from '@machines/machine';
+import { type Machine, MachineColumn, type MachineFilter, MachineState } from '@machines/machine';
 
 import { MachineGrid } from './machine-grid';
 
 const EMPTY_FILTER: MachineFilter = {
   name: '',
   serialNumber: '',
+  gatewayId: '',
   states: [],
   createdAt: { from: null, to: null },
   updatedAt: { from: null, to: null },
   hasPendingDrafts: null,
 };
 
+const MACHINE: Machine = {
+  id: 'machine-1',
+  name: 'Lathe',
+  serialNumber: 'ABC-1',
+  gatewayId: 'lmnoabcdefghijkl',
+  state: MachineState.Operational,
+  description: null,
+  createdAt: '2026-03-01T08:00:00Z',
+  updatedAt: null,
+  pendingDraftCount: 0,
+};
+
 interface GridAccess {
-  onFilterApplied(event: TableFilterEvent): void;
-  onFilterHidden(column: MachineColumn): void;
-  table: () => { filters: Record<string, { value: unknown }[]> };
-  menuItems(): { label?: string; icon?: string }[];
+  menuItems(): { label?: string; icon?: string; command?: (event: never) => void }[];
+  rowMenu: { activeRow: Machine | null };
+}
+
+interface SetupOptions {
+  canWrite?: boolean;
+  canReadStatuses?: boolean;
+}
+
+interface Setup {
+  updates: string[];
+  grid: GridAccess;
 }
 
 class FakeResizeObserver {
@@ -29,12 +48,7 @@ class FakeResizeObserver {
   readonly disconnect = vi.fn();
 }
 
-interface Setup {
-  emitted: Partial<MachineFilter>[];
-  grid: GridAccess;
-}
-
-function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadStatuses?: boolean } = {}): Setup {
+function setup(options: SetupOptions = {}): Setup {
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
   TestBed.configureTestingModule({ providers: [provideTranslateService()] });
   const fixture = TestBed.createComponent(MachineGrid);
@@ -44,16 +58,13 @@ function setup(filter: MachineFilter = EMPTY_FILTER, options: { canReadStatuses?
   fixture.componentRef.setInput('offset', 0);
   fixture.componentRef.setInput('limit', 25);
   fixture.componentRef.setInput('sort', null);
-  fixture.componentRef.setInput('filter', filter);
+  fixture.componentRef.setInput('filter', EMPTY_FILTER);
+  fixture.componentRef.setInput('canWrite', options.canWrite ?? false);
   fixture.componentRef.setInput('canReadStatuses', options.canReadStatuses ?? false);
   fixture.detectChanges();
-  const emitted: Partial<MachineFilter>[] = [];
-  fixture.componentInstance.filterChange.subscribe((patch) => emitted.push(patch));
-  return { emitted, grid: fixture.componentInstance as unknown as GridAccess };
-}
-
-function appliedEvent(filters: Record<string, { value: unknown }[]>): TableFilterEvent {
-  return { filters, filteredValue: [] } as unknown as TableFilterEvent;
+  const updates: string[] = [];
+  fixture.componentInstance.updateRequested.subscribe((id) => updates.push(id));
+  return { updates, grid: fixture.componentInstance as unknown as GridAccess };
 }
 
 describe('MachineGrid', () => {
@@ -61,57 +72,8 @@ describe('MachineGrid', () => {
     vi.unstubAllGlobals();
   });
 
-  it('onFilterApplied_WithAllColumns_EmitsOneTrimmedFilter', () => {
-    const { grid, emitted } = setup();
-
-    grid.onFilterApplied(
-      appliedEvent({
-        [MachineColumn.Name]: [{ value: '  ab  ' }],
-        [MachineColumn.State]: [{ value: [MachineState.Operational] }],
-      }),
-    );
-
-    expect(emitted).toEqual([
-      {
-        name: 'ab',
-        serialNumber: '',
-        states: [MachineState.Operational],
-        createdAt: { from: null, to: null },
-        updatedAt: { from: null, to: null },
-        hasPendingDrafts: null,
-      },
-    ]);
-  });
-
-  it('onFilterApplied_WithHasDraftsNo_EmitsFalseAndNotNull', () => {
-    const { grid, emitted } = setup();
-
-    grid.onFilterApplied(appliedEvent({ [MachineColumn.Drafts]: [{ value: false }] }));
-
-    expect(emitted[0].hasPendingDrafts).toBe(false);
-  });
-
-  it('onFilterApplied_WithClearedColumn_EmitsEmptyValue', () => {
-    const day = Temporal.PlainDate.from('2026-03-29');
-    const { grid, emitted } = setup({ ...EMPTY_FILTER, createdAt: { from: day, to: day } });
-
-    grid.onFilterApplied(appliedEvent({ [MachineColumn.CreatedAt]: [{ value: null }] }));
-
-    expect(emitted).toHaveLength(1);
-    expect(emitted[0].createdAt).toEqual({ from: null, to: null });
-  });
-
-  it('onFilterHidden_WithPendingValue_RestoresAppliedValue', () => {
-    const { grid } = setup({ ...EMPTY_FILTER, name: 'applied' });
-    grid.table().filters[MachineColumn.Name] = [{ value: 'pending' }];
-
-    grid.onFilterHidden(MachineColumn.Name);
-
-    expect(grid.table().filters[MachineColumn.Name][0].value).toBe('applied');
-  });
-
   it('menuItems_WithStatusesPermission_HoldsStatusesItem', () => {
-    const { grid } = setup(EMPTY_FILTER, { canReadStatuses: true });
+    const { grid } = setup({ canReadStatuses: true });
 
     expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-list']);
   });
@@ -120,5 +82,20 @@ describe('MachineGrid', () => {
     const { grid } = setup();
 
     expect(grid.menuItems()).toEqual([]);
+  });
+
+  it('menuItems_WithWritePermission_OpenItemIsFirst', () => {
+    const { grid } = setup({ canWrite: true, canReadStatuses: true });
+
+    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-external-link', 'pi pi-list']);
+  });
+
+  it('menuItems_OpenItemOfActiveRow_EmitsUpdateRequestedWithItsId', () => {
+    const { grid, updates } = setup({ canWrite: true });
+    grid.rowMenu.activeRow = MACHINE;
+
+    grid.menuItems()[0].command?.({} as never);
+
+    expect(updates).toEqual([MACHINE.id]);
   });
 });

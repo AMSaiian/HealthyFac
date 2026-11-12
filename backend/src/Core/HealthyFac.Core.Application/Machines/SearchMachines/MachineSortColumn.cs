@@ -10,6 +10,7 @@ public sealed class MachineSortColumn : Enumeration<MachineSortColumn>
 {
     public static readonly MachineSortColumn Name = new(value: "name");
     public static readonly MachineSortColumn SerialNumber = new(value: "serialNumber");
+    public static readonly MachineSortColumn GatewayId = new(value: "gatewayId");
     public static readonly MachineSortColumn CreatedAt = new(value: "createdAt");
     public static readonly MachineSortColumn UpdatedAt = new(value: "updatedAt");
 

@@ -9,6 +9,7 @@ const EMPTY_RANGE = { from: null, to: null };
 const EMPTY_FILTER: MachineFilter = {
   name: '',
   serialNumber: '',
+  gatewayId: '',
   states: [],
   createdAt: EMPTY_RANGE,
   updatedAt: EMPTY_RANGE,
@@ -51,6 +52,12 @@ describe('toSearchBody', () => {
         states: { values: ['operational'] },
       },
     });
+  });
+
+  it('toSearchBody_WithGatewayIdFilter_AddsStartsWithFilter', () => {
+    const body = toSearchBody(stateWith({ gatewayId: 'lmno' }), ZONE);
+
+    expect(body.filter.gatewayId).toEqual({ value: 'lmno' });
   });
 
   it.each([true, false])('toSearchBody_WithHasPendingDrafts%s_SendsTheFlag', (hasPendingDrafts) => {

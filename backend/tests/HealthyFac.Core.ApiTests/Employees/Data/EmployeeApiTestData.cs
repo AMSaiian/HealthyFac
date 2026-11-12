@@ -12,4 +12,10 @@ public static class EmployeeApiTestData
     public const string MachinesReadPermission = "machines:read";
     public const string InvitePermission = "employees:invite";
     public const string ManagePermission = "employees:manage";
+
+    public static TheoryData<string, string> ActionPathsForInviteOnly => new()
+    {
+        { "RetryProvisioning", RetryProvisioningPath },
+        { "Deactivate", DeactivatePath },
+    };
 }

@@ -1,42 +1,32 @@
-import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
 import { Menu } from 'primeng/menu';
-import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
-import {
-  ColumnFilter,
-  SortIcon,
-  Table,
-  type TableColumnReorderEvent,
-  type TableFilterEvent,
-  TableModule,
-  type TablePageEvent,
-} from 'primeng/table';
+import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { Tooltip } from 'primeng/tooltip';
 
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { type Chip, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
+import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
+import { createGridTable } from '@shared/grid/table/grid-table';
+import { createRowMenu } from '@shared/grid/table/row-menu';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
-import { keepWhileLoading, skeletonRows } from '@shared/grid/table/grid-display';
-import type { LookupOption, LookupRequest } from '@shared/lookups/lookup-options';
+import type { GridSort } from '@shared/grid/requests/grid-request';
 import { delayedLoading } from '@shared/loading/delayed-loading';
-import { toggleColumn } from '@shared/grid/table/grid-columns';
-import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
-import { readTableFilters, toConstraint, toTableFilters } from '@shared/grid/table/table-filters';
+import type { LookupOption, LookupRequest } from '@shared/lookups/lookup-options';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
 import { EMPTY_RANGE } from '@shared/time/plain-date-range';
 import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
 
-import type { WorkOrderSortColumn } from '@work-orders/work-order';
 import {
   WorkOrderCategory,
   WorkOrderColumn,
@@ -44,17 +34,18 @@ import {
   WorkOrderPriority,
   type WorkOrderRow,
   type WorkOrderSort,
+  type WorkOrderSortColumn,
   WorkOrderStatus,
 } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import {
+  ALL_FILTER_READERS,
+  ALL_FILTER_WRITERS,
   CATEGORY_LABEL_KEYS,
   COLUMN_LABEL_KEYS,
-  FILTER_READERS,
-  FILTER_WRITERS,
   FILTERABLE_COLUMNS,
-  type FilterableColumn,
   MENU_KEYS,
+  MENU_TOOLTIP_KEYS,
   PRIORITY_LABEL_KEYS,
   SORTABLE_COLUMNS,
   STATUS_LABEL_KEYS,
@@ -72,10 +63,13 @@ export interface RowActionRequest {
   readonly row: WorkOrderRow;
 }
 
+const ALL_COLUMNS: readonly WorkOrderColumn[] = Object.values(WorkOrderColumn);
+
 @Component({
   imports: [
     ButtonDirective,
-    Checkbox,
+    ChipSummary,
+    ColumnChooser,
     ColumnFilter,
     EmptyState,
     FormsModule,
@@ -83,13 +77,12 @@ export interface RowActionRequest {
     LocalDateTimePipe,
     Menu,
     PlainDateRangePicker,
-    Popover,
     Select,
     Skeleton,
     SortIcon,
-    TableModule,
-    ChipSummary,
     Tag,
+    TableModule,
+    Tooltip,
     TranslatePipe,
   ],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col' },
@@ -97,10 +90,10 @@ export interface RowActionRequest {
   templateUrl: './work-order-grid.html',
 })
 export class WorkOrderGrid {
-  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   readonly rows = input.required<readonly WorkOrderRow[]>();
   readonly totalCount = input.required<number>();
   readonly isLoading = input(false);
+  readonly hasLoaded = input(false);
   readonly columns = input.required<readonly WorkOrderColumn[]>();
   readonly offset = input.required<number>();
   readonly limit = input.required<number>();
@@ -112,9 +105,11 @@ export class WorkOrderGrid {
   readonly machines = input<LookupOption[]>([]);
   readonly isEmployeesLoading = input(false);
   readonly isMachinesLoading = input(false);
+  protected readonly showEmployeesLoading = delayedLoading(this.isEmployeesLoading);
+  protected readonly showMachinesLoading = delayedLoading(this.isMachinesLoading);
 
   readonly filterChange = output<Partial<WorkOrderFilter>>();
-  readonly sortChange = output<WorkOrderSort | null>();
+  readonly sortChange = output<GridSort<WorkOrderSortColumn> | null>();
   readonly pageChange = output<{ offset: number; limit: number }>();
   readonly columnsChange = output<readonly WorkOrderColumn[]>();
   readonly columnsReorder = output<readonly WorkOrderColumn[]>();
@@ -123,10 +118,11 @@ export class WorkOrderGrid {
   readonly employeeLookupRequested = output<LookupRequest>();
   readonly machineLookupRequested = output<LookupRequest>();
 
-  protected readonly table = viewChild.required(Table);
+  protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   protected readonly WorkOrderColumn = WorkOrderColumn;
   protected readonly pageSizes = [...PAGE_SIZES];
   protected readonly emptyRange = EMPTY_RANGE;
+  protected readonly columnLabelKeys = COLUMN_LABEL_KEYS;
 
   private readonly _translate = inject(TranslateService);
   private readonly _labels = toSignal(
@@ -135,69 +131,46 @@ export class WorkOrderGrid {
       ...Object.values(PRIORITY_LABEL_KEYS),
       ...Object.values(CATEGORY_LABEL_KEYS),
       ...Object.values(MENU_KEYS),
+      ...Object.values(MENU_TOOLTIP_KEYS),
     ]),
     { initialValue: {} as Record<string, string> },
   );
 
   protected readonly allColumns = computed(() =>
-    Object.values(WorkOrderColumn).filter((column) => this.canManage() || column !== WorkOrderColumn.Assignee),
+    ALL_COLUMNS.filter((column) => this.canManage() || column !== WorkOrderColumn.Assignee),
   );
-  protected readonly tableColumns = computed(() =>
-    this.columns().filter((column) => this.canManage() || column !== WorkOrderColumn.Assignee),
-  );
-  protected readonly sortOrder = computed(() => toSortOrder(this.sort()?.direction));
-  protected readonly showSkeleton = delayedLoading(this.isLoading);
-  protected readonly keptRows = keepWhileLoading(this.rows, this.isLoading);
-  protected readonly skeletonRows = computed(() => skeletonRows(this.limit()));
-  protected readonly tableFilters = computed(() => toTableFilters(FILTERABLE_COLUMNS, FILTER_WRITERS, this.filter()));
-  protected readonly tableRows = computed((): unknown[] =>
-    this.showSkeleton() ? this.skeletonRows() : [...this.keptRows()],
-  );
+
+  protected readonly grid = createGridTable<WorkOrderRow, WorkOrderColumn, WorkOrderFilter, WorkOrderSortColumn>({
+    allColumns: ALL_COLUMNS,
+    columns: computed(() => this.columns().filter((column) => this.allColumns().includes(column))),
+    filter: this.filter,
+    sort: this.sort,
+    limit: this.limit,
+    isLoading: this.isLoading,
+    hasLoaded: this.hasLoaded,
+    rows: this.rows,
+    filterReaders: ALL_FILTER_READERS,
+    filterWriters: ALL_FILTER_WRITERS,
+    sortableColumns: SORTABLE_COLUMNS,
+    labelKeys: COLUMN_LABEL_KEYS,
+    filterChange: (patch) => this.filterChange.emit(patch),
+    sortChange: (sort) => this.sortChange.emit(sort),
+    pageChange: (page) => this.pageChange.emit(page),
+    columnsChange: (columns) => this.columnsChange.emit(columns),
+    columnsReorder: (columns) => this.columnsReorder.emit(columns),
+  });
+
   protected readonly tableStyle = computed(() => ({
     'min-width': '72rem',
-    ...(this.showSkeleton() || this.keptRows().length > 0 ? {} : { height: '100%' }),
+    ...(this.grid.tableRows().length > 0 ? {} : { height: '100%' }),
   }));
 
   protected readonly statusOptions = computed(() => this._options(STATUS_LABEL_KEYS, WorkOrderStatus));
   protected readonly priorityOptions = computed(() => this._options(PRIORITY_LABEL_KEYS, WorkOrderPriority));
   protected readonly categoryOptions = computed(() => this._options(CATEGORY_LABEL_KEYS, WorkOrderCategory));
 
-  private readonly _activeRow = signal<WorkOrderRow | null>(null);
-
-  protected readonly menuItems = computed<MenuItem[]>(() => {
-    const row = this._activeRow();
-    const isScheduled = row !== null && row.status !== WorkOrderStatus.Backlog;
-    return [
-      this._item(MENU_KEYS.open, 'pi pi-eye', () => this._open()),
-      ...(this.canManage() && row?.status === WorkOrderStatus.Backlog
-        ? [this._item(MENU_KEYS.assign, 'pi pi-user-plus', () => this._emit(WorkOrderActionType.Assign))]
-        : []),
-      ...(this.canManage() && isScheduled
-        ? [
-            this._item(MENU_KEYS.move, 'pi pi-arrows-alt', () => this._emit(WorkOrderActionType.Move)),
-            this._item(MENU_KEYS.unassign, 'pi pi-user-minus', () => this._emit(WorkOrderActionType.Unassign)),
-          ]
-        : []),
-      ...(this.canWrite() && isScheduled
-        ? [this._item(MENU_KEYS.status, 'pi pi-flag', () => this._emit(WorkOrderActionType.ChangeStatus))]
-        : []),
-      ...(this.canManage()
-        ? [this._item(MENU_KEYS.delete, 'pi pi-trash', () => this._emit(WorkOrderActionType.Delete))]
-        : []),
-    ];
-  });
-
-  protected columnLabelKey(column: WorkOrderColumn): string {
-    return COLUMN_LABEL_KEYS[column];
-  }
-
-  protected isSortable(column: WorkOrderColumn): boolean {
-    return SORTABLE_COLUMNS.includes(column);
-  }
-
-  protected isFilterable(column: WorkOrderColumn): boolean {
-    return (FILTERABLE_COLUMNS as readonly string[]).includes(column);
-  }
+  protected readonly rowMenu = createRowMenu<WorkOrderRow>();
+  protected readonly menuItems = signal<MenuItem[]>([]);
 
   protected statusLabel(status: WorkOrderStatus): string {
     return this._labels()[STATUS_LABEL_KEYS[status]] ?? STATUS_LABEL_KEYS[status];
@@ -208,50 +181,52 @@ export class WorkOrderGrid {
   }
 
   protected statusChips(statuses: readonly WorkOrderStatus[]): Chip[] {
-    return toChips(statuses, 'hf-status-', (status) => this.statusLabel(status));
+    return toChips(statuses, 'hf-status-', (status) => this.statusLabel(status), Object.values(WorkOrderStatus));
   }
 
   protected priorityChips(priorities: readonly WorkOrderPriority[]): Chip[] {
-    return toChips(priorities, 'hf-priority-', (priority) => this.priorityLabel(priority));
+    return toChips(
+      priorities,
+      'hf-priority-',
+      (priority) => this.priorityLabel(priority),
+      Object.values(WorkOrderPriority),
+    );
+  }
+
+  protected categoryChips(categories: readonly WorkOrderCategory[]): Chip[] {
+    return toChips(categories, '', (category) => this.categoryLabel(category), Object.values(WorkOrderCategory));
+  }
+
+  protected assigneeChips(assigneeIds: readonly string[]): Chip[] {
+    return toChips(
+      assigneeIds,
+      '',
+      (id) => this.employees().find((option) => option.id === id)?.displayName ?? id,
+      this.employees().map((option) => option.id),
+    );
+  }
+
+  protected machineChips(machineIds: readonly string[]): Chip[] {
+    return toChips(
+      machineIds,
+      '',
+      (id) => this.machines().find((option) => option.id === id)?.displayName ?? id,
+      this.machines().map((option) => option.id),
+    );
   }
 
   protected categoryLabel(category: WorkOrderCategory): string {
     return this._labels()[CATEGORY_LABEL_KEYS[category]] ?? CATEGORY_LABEL_KEYS[category];
   }
 
-  protected isColumnVisible(column: WorkOrderColumn): boolean {
-    return this.columns().includes(column);
+  protected isFilterable(column: WorkOrderColumn): boolean {
+    return (FILTERABLE_COLUMNS as readonly WorkOrderColumn[]).includes(column);
   }
 
-  protected onColumnToggle(column: WorkOrderColumn, isVisible: boolean): void {
-    this.columnsChange.emit(toggleColumn(this.columns(), column, isVisible));
-  }
-
-  protected onFilterApplied(event: TableFilterEvent): void {
-    this.filterChange.emit(readTableFilters(FILTERABLE_COLUMNS, FILTER_READERS, event.filters));
-  }
-
-  protected onFilterHidden(column: FilterableColumn): void {
-    const table = this.table();
-    table.filters = { ...table.filters, [column]: [toConstraint(FILTER_WRITERS[column](this.filter()))] };
-  }
-
-  protected onPage(event: TablePageEvent): void {
-    this.pageChange.emit({ offset: event.first, limit: event.rows });
-  }
-
-  protected onSort(event: { field?: string | null; order?: number | null }): void {
-    const column = SORTABLE_COLUMNS.find((candidate) => candidate === event.field) as WorkOrderSortColumn | undefined;
-    this.sortChange.emit(column === undefined ? null : { column, direction: toSortDirection(event.order) });
-  }
-
-  protected onColumnReorder(event: TableColumnReorderEvent): void {
-    this.columnsReorder.emit((event.columns ?? []) as WorkOrderColumn[]);
-  }
-
+  /** Builds the menu of the row at the click: the actions follow the status of the row and the permissions. */
   protected openMenu(event: Event, row: WorkOrderRow, menu: Menu): void {
-    this._activeRow.set(row);
-    menu.toggle(event);
+    this.menuItems.set(this._menuItemsFor(row));
+    this.rowMenu.open(event, row, menu);
   }
 
   private _options<TValue extends string>(
@@ -261,21 +236,84 @@ export class WorkOrderGrid {
     return Object.values(values).map((value) => ({ value, label: this._labels()[keys[value]] ?? keys[value] }));
   }
 
-  private _item(key: string, icon: string, command: () => void): MenuItem {
-    return { label: this._labels()[key] ?? key, icon, command };
-  }
-
-  private _open(): void {
-    const row = this._activeRow();
-    if (row !== null) {
-      this.openRequested.emit(row.id);
-    }
-  }
-
-  private _emit(type: RowActionType): void {
-    const row = this._activeRow();
-    if (row !== null) {
-      this.actionRequested.emit({ type, row });
-    }
+  private _menuItemsFor(row: WorkOrderRow): MenuItem[] {
+    const labels = this._labels();
+    const isScheduled = row.status !== WorkOrderStatus.Backlog;
+    const action =
+      (type: RowActionType) =>
+      (target: WorkOrderRow): void =>
+        this.actionRequested.emit({ type, row: target });
+    return [
+      this.rowMenu.menuItem(
+        {
+          labelKey: MENU_KEYS.open,
+          tooltipKey: MENU_TOOLTIP_KEYS.open,
+          icon: 'pi pi-eye',
+          onSelect: (target) => this.openRequested.emit(target.id),
+        },
+        labels,
+      ),
+      ...(this.canManage() && !isScheduled
+        ? [
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_KEYS.assign,
+                tooltipKey: MENU_TOOLTIP_KEYS.assign,
+                icon: 'pi pi-user-plus',
+                onSelect: action(WorkOrderActionType.Assign),
+              },
+              labels,
+            ),
+          ]
+        : []),
+      ...(this.canManage() && isScheduled
+        ? [
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_KEYS.move,
+                tooltipKey: MENU_TOOLTIP_KEYS.move,
+                icon: 'pi pi-arrows-alt',
+                onSelect: action(WorkOrderActionType.Move),
+              },
+              labels,
+            ),
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_KEYS.unassign,
+                tooltipKey: MENU_TOOLTIP_KEYS.unassign,
+                icon: 'pi pi-user-minus',
+                onSelect: action(WorkOrderActionType.Unassign),
+              },
+              labels,
+            ),
+          ]
+        : []),
+      ...(this.canWrite() && isScheduled
+        ? [
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_KEYS.status,
+                tooltipKey: MENU_TOOLTIP_KEYS.status,
+                icon: 'pi pi-flag',
+                onSelect: action(WorkOrderActionType.ChangeStatus),
+              },
+              labels,
+            ),
+          ]
+        : []),
+      ...(this.canManage()
+        ? [
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_KEYS.delete,
+                tooltipKey: MENU_TOOLTIP_KEYS.delete,
+                icon: 'pi pi-trash',
+                onSelect: action(WorkOrderActionType.Delete),
+              },
+              labels,
+            ),
+          ]
+        : []),
+    ];
   }
 }

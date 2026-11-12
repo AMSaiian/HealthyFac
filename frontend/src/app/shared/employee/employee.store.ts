@@ -4,9 +4,11 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { signalStore, withComputed, withProps } from '@ngrx/signals';
 import { catchError, of, throwError } from 'rxjs';
 
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { EmployeeApi } from './employee-api';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 /** Holds the employee of the signed-in user. A user without an employee (`404`) gives `null`. */
 export const EmployeeStore = signalStore(
@@ -42,4 +44,5 @@ export const EmployeeStore = signalStore(
       hasEmployee: computed(() => current() !== null),
     };
   }),
+  withStoreDevtools('employee'),
 );

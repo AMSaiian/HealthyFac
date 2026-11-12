@@ -49,6 +49,8 @@
 @if (canWrite()) {
   <button
     pButton
+    [pTooltip]="'METRICS.TOOLTIPS.ADD_NEW' | translate"
+    tooltipPosition="bottom"
     type="button"
     class="flex-none"
     severity="secondary"

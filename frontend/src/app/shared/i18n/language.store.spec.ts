@@ -4,7 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { PrimeNG } from 'primeng/config';
 import { of, throwError } from 'rxjs';
 
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { BROWSER_STORAGE } from '@shared/storage/browser-storage';
 
 import { Language } from './i18n.constants';

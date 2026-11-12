@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
@@ -58,6 +59,34 @@ public sealed class UpdateFileTests(DocumentDatabaseFixture fixture)
 
         file.Description.Should().Be(UpdateFileTestData.Description);
         file.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateCompanyFile_WithFormattedDescription_StoresTheHtml()
+    {
+        var id = await ArrangeCompanyFileAsync();
+        var rowVersion = await _fixture.LoadRowVersionAsync(id);
+
+        await _fixture.UpdateCompanyFileAsync(
+            UpdateFileTestData.CompanyId,
+            UpdateFileTestData.CompanyUpdate(id, rowVersion, description: UpdateFileTestData.FormattedDescription));
+
+        var file = await _fixture.LoadFileRowAsync(id);
+
+        file.Description.Should().Be(UpdateFileTestData.FormattedDescription);
+    }
+
+    [Fact]
+    public async Task UpdateCompanyFile_WithScriptInDescription_ThrowsValidation()
+    {
+        var id = await ArrangeCompanyFileAsync();
+        var rowVersion = await _fixture.LoadRowVersionAsync(id);
+
+        var act = () => _fixture.UpdateCompanyFileAsync(
+            UpdateFileTestData.CompanyId,
+            UpdateFileTestData.CompanyUpdate(id, rowVersion, description: UpdateFileTestData.ScriptDescription));
+
+        await act.Should().ThrowAsync<ValidationException>().WithMessage($"*{FileErrors.DescriptionNotAllowed}*");
     }
 
     [Fact]

@@ -1,6 +1,25 @@
-import { type IngestAttempt, type IngestErrorCode, IngestState } from '@files/ingest/ingest-attempt';
+import { type IngestAttempt, IngestErrorCode, IngestInterruptReason, IngestState } from '@files/ingest/ingest-attempt';
 
 const UPPER_SNAKE_BOUNDARY = /([a-z0-9])([A-Z])/g;
+
+/** The translation key of each error code. Literal keys, so the translation check finds each one. */
+const INGEST_ERROR_KEYS: Readonly<Record<IngestErrorCode, string>> = {
+  [IngestErrorCode.FileNotFound]: 'INGEST.ERRORS.FILE_NOT_FOUND',
+  [IngestErrorCode.NoText]: 'INGEST.ERRORS.NO_TEXT',
+  [IngestErrorCode.TooManyPages]: 'INGEST.ERRORS.TOO_MANY_PAGES',
+  [IngestErrorCode.ConversionFailed]: 'INGEST.ERRORS.CONVERSION_FAILED',
+  [IngestErrorCode.ConversionTimeout]: 'INGEST.ERRORS.CONVERSION_TIMEOUT',
+  [IngestErrorCode.InvalidExtraction]: 'INGEST.ERRORS.INVALID_EXTRACTION',
+  [IngestErrorCode.ProviderUnavailable]: 'INGEST.ERRORS.PROVIDER_UNAVAILABLE',
+};
+
+/** The translation key of each reason of an interrupted attempt. Literal keys, so the translation check finds each one. */
+const INGEST_INTERRUPT_KEYS: Readonly<Record<IngestInterruptReason, string>> = {
+  [IngestInterruptReason.Cancelled]: 'INGEST.INTERRUPTED.CANCELLED',
+  [IngestInterruptReason.LeaseExpired]: 'INGEST.INTERRUPTED.LEASE_EXPIRED',
+  [IngestInterruptReason.ServiceStopped]: 'INGEST.INTERRUPTED.SERVICE_STOPPED',
+  [IngestInterruptReason.FileDeleted]: 'INGEST.INTERRUPTED.FILE_DELETED',
+};
 
 /** Turns a camelCase value of the API into the capitalized snake case of a translation key. */
 export function toKeySegment(value: string): string {
@@ -8,7 +27,7 @@ export function toKeySegment(value: string): string {
 }
 
 export function ingestErrorKey(code: IngestErrorCode): string {
-  return `INGEST.ERRORS.${toKeySegment(code)}`;
+  return INGEST_ERROR_KEYS[code];
 }
 
 /** The translation key of the reason that a `failed` or `interrupted` attempt shows. Other states have none. */
@@ -17,7 +36,7 @@ export function attemptReasonKey(attempt: IngestAttempt): string | null {
     return ingestErrorKey(attempt.errorCode);
   }
   if (attempt.state === IngestState.Interrupted && attempt.interruptReason !== null) {
-    return `INGEST.INTERRUPTED.${toKeySegment(attempt.interruptReason)}`;
+    return INGEST_INTERRUPT_KEYS[attempt.interruptReason];
   }
   return null;
 }

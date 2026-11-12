@@ -1,17 +1,18 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { HttpStatusCode } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { patchState, signalStore, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, finalize, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-import { httpErrorMessageKey } from '@shared/http/http-error-message';
-import { AuthStore } from '@shared/security/auth.store';
+import { httpErrorKey, isHttpStatus } from '@shared/http/http-error-key';
+import { withToasts } from '@shared/toasts/with-toasts';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { type AcceptBody, InviteApi, type InviteDetails } from '@invite/invite-api';
 import { InviteLocation } from '@invite/invite-location';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 export type InviteView = 'loading' | 'form' | 'invalid' | 'employed' | 'success' | 'failed' | 'signedIn';
 
@@ -21,7 +22,6 @@ interface InviteState {
   isSaving: boolean;
 }
 
-const ERROR_SUMMARY_KEY = 'ERRORS.SUMMARY';
 const INVITE_PATH = '/invite';
 const TOKEN_FRAGMENT_KEY = 'token';
 
@@ -35,24 +35,18 @@ export const InviteStore = signalStore(
     _api: inject(InviteApi),
     _auth: inject(AuthStore),
     _location: inject(InviteLocation),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
     _token: { value: null as string | null },
   })),
+  withToasts(),
   withMethods((store) => {
     const fail = (error: unknown): void => {
-      const status = error instanceof HttpErrorResponse ? error.status : 0;
-      if (status === HttpStatusCode.NotFound) {
+      if (isHttpStatus(error, HttpStatusCode.NotFound)) {
         patchState(store, { view: 'invalid' });
-      } else if (status === HttpStatusCode.Conflict) {
+      } else if (isHttpStatus(error, HttpStatusCode.Conflict)) {
         patchState(store, { view: 'employed' });
       } else {
         patchState(store, { view: 'failed' });
-        store._messages.add({
-          severity: 'error',
-          summary: store._translate.instant(ERROR_SUMMARY_KEY),
-          detail: store._translate.instant(httpErrorMessageKey(status)),
-        });
+        store._toastError(httpErrorKey(error));
       }
     };
 
@@ -123,4 +117,5 @@ export const InviteStore = signalStore(
       store.start();
     },
   }),
+  withStoreDevtools('invite'),
 );

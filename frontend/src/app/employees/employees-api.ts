@@ -21,7 +21,7 @@ import type {
   ShiftVersion,
   UpdateVersionBody,
 } from '@employees/shifts/shift';
-import { normalizeBlocks, normalizeVersion } from '@employees/shifts/shifts.store.utils';
+import { normalizeBlocks, normalizeVersion } from '@employees/shifts/shifts-store/shifts.store.utils';
 
 const EMPLOYEES_URL = '/api/core/v1/employees';
 const EMPLOYEES_SEARCH_URL = `${EMPLOYEES_URL}/search`;

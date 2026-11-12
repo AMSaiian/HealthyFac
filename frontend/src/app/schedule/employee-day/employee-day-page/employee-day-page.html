@@ -3,6 +3,8 @@
     @if (store.canGoBack()) {
       <a
         pButton
+        [pTooltip]="'SCHEDULE.BACK' | translate"
+        tooltipPosition="bottom"
         routerLink="/employees"
         severity="secondary"
         iconOnly
@@ -17,9 +19,12 @@
   <div class="flex items-center gap-2">
     <button
       pButton
+      [pTooltip]="'SCHEDULE.PREVIOUS_DAY' | translate"
+      tooltipPosition="bottom"
       type="button"
       iconOnly
       severity="secondary"
+      [text]="true"
       [attr.aria-label]="'SCHEDULE.PREVIOUS_DAY' | translate"
       (click)="store.previousDay()"
     >
@@ -31,9 +36,12 @@
     />
     <button
       pButton
+      [pTooltip]="'SCHEDULE.NEXT_DAY' | translate"
+      tooltipPosition="bottom"
       type="button"
       iconOnly
       severity="secondary"
+      [text]="true"
       [attr.aria-label]="'SCHEDULE.NEXT_DAY' | translate"
       (click)="store.nextDay()"
     >
@@ -41,6 +49,8 @@
     </button>
     <button
       pButton
+      [pTooltip]="'SCHEDULE.TOOLTIPS.TODAY' | translate"
+      tooltipPosition="bottom"
       type="button"
       severity="secondary"
       (click)="store.goToToday()"
@@ -53,6 +63,8 @@
   <hf-schedule-board
     [rows]="store.rows()"
     [isLoading]="store.day.isLoading()"
+    [hasLoaded]="store.day.hasValue()"
+    [hasFailed]="store.hasFailed()"
     [date]="date"
     [timeZoneId]="clock.timeZoneId()"
     [now]="store.now()"

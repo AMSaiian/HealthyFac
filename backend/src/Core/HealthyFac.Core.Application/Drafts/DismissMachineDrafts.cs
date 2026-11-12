@@ -13,7 +13,9 @@ public record DismissMachineDraftsRequest : IRequest<DismissMachineDraftsRespons
 {
     public required Guid CompanyId { get; init; }
 
-    public required Guid MachineId { get; init; }
+    public Guid? MachineId { get; init; }
+
+    public Guid? AttemptId { get; init; }
 }
 
 public record DismissMachineDraftsResponse
@@ -26,12 +28,19 @@ public class DismissMachineDraftsRequestValidator : AbstractValidator<DismissMac
     public DismissMachineDraftsRequestValidator()
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DraftErrors.CompanyIdRequired);
-        RuleFor(request => request.MachineId).NotEmpty().WithMessage(MachineErrors.MachineIdRequired);
+        RuleFor(request => request.MachineId).NotEmpty().WithMessage(MachineErrors.MachineIdRequired)
+            .When(request => request.MachineId is not null);
+        RuleFor(request => request.AttemptId).NotEmpty().WithMessage(DraftErrors.AttemptIdRequired)
+            .When(request => request.AttemptId is not null);
+        RuleFor(request => request)
+            .Must(request => request.MachineId is null != (request.AttemptId is null))
+            .WithMessage(DraftErrors.SearchScopeRequired);
     }
 }
 
 /// <summary>
-/// Checks the company of the actor and that the machine belongs to it. A machine of another company is "not found".
+/// Checks the company of the actor and, for a machine scope, that the machine belongs to it. A machine of another
+/// company is "not found".
 /// </summary>
 /// <param name="dbContext">Reads the machine.</param>
 /// <param name="currentUser">Provides the company of the actor.</param>
@@ -45,6 +54,11 @@ public sealed class DismissMachineDraftsPreHandlerCheck(ICoreDbContext dbContext
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
 
+        if (request.MachineId is null)
+        {
+            return;
+        }
+
         var isMachineInScope = await _dbContext.Machines.AnyAsync(
             machine => machine.Id == request.MachineId && machine.CompanyId == request.CompanyId,
             cancellationToken);
@@ -57,10 +71,10 @@ public sealed class DismissMachineDraftsPreHandlerCheck(ICoreDbContext dbContext
 }
 
 /// <summary>
-/// Dismisses every pending draft that targets an existing machine of the company: the update machine draft, the
-/// metric drafts, and the status drafts. The drafts that target a create machine draft are not touched; they belong to
-/// a new machine. One save stores all changes, so a draft that changed in parallel is a conflict and nothing is
-/// dismissed.
+/// Dismisses every pending draft in the scope: the update machine drafts, the create machine drafts, the metric drafts,
+/// and the status drafts. The machine scope holds the drafts that target the machine; the drafts that wait for a create
+/// machine draft belong to a new machine and are not touched. The attempt scope holds every draft of the attempt. One
+/// save stores all changes, so a draft that changed in parallel is a conflict and nothing is dismissed.
 /// </summary>
 /// <param name="dbContext">Loads the drafts and saves the change.</param>
 public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext)
@@ -83,17 +97,20 @@ public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext)
     {
         var machineDrafts = await _dbContext.MachineDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
-                && draft.TargetMachineId == request.MachineId
+                && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
+                && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
                 && draft.State == DraftState.Pending)
             .ToListAsync(cancellationToken);
         var metricDrafts = await _dbContext.MetricDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
-                && draft.TargetMachineId == request.MachineId
+                && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
+                && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
                 && draft.State == DraftState.Pending)
             .ToListAsync(cancellationToken);
         var statusDrafts = await _dbContext.StatusDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
-                && draft.TargetMachineId == request.MachineId
+                && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
+                && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
                 && draft.State == DraftState.Pending)
             .ToListAsync(cancellationToken);
 

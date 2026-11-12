@@ -8,7 +8,7 @@ import { InvitesGridStore } from '@employees/invites/invites-grid.store';
 import { EmployeesGridStore } from '@employees/list/employees-grid.store';
 import { EmployeesPage } from '@employees/list/employees-page/employees-page';
 import { ShiftsPage } from '@employees/shifts/shifts-page/shifts-page';
-import { ShiftsStore } from '@employees/shifts/shifts.store';
+import { ShiftsStore } from '@employees/shifts/shifts-store/shifts.store';
 
 export const EMPLOYEES_ROUTES: Routes = [
   {

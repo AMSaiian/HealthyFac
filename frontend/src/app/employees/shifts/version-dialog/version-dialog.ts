@@ -7,6 +7,7 @@ import type { Temporal } from '@shared/time/temporal';
 
 import { BlockListEditor } from '@employees/shifts/block-list-editor/block-list-editor';
 import type { ShiftBlock, Weekday } from '@employees/shifts/shift';
+import { WEEKDAY_KEYS } from '@employees/shifts/shifts-store/shifts.store.utils';
 import { versionFormSchema, type VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 
 /** The form of a version: the first day of effect (a new version only) and the blocks of the 7 weekdays. */
@@ -60,6 +61,6 @@ export class VersionDialog {
   }
 
   protected weekdayKey(weekday: Weekday): string {
-    return `SHIFTS.WEEKDAYS.${weekday.toUpperCase()}`;
+    return WEEKDAY_KEYS[weekday];
   }
 }

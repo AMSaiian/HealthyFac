@@ -51,8 +51,15 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    [Fact]
-    public async Task CreateWorkOrder_InOwnScopeWithAssignee_ThrowsForbidden()
+    [Theory]
+    [MemberData(
+        nameof(WorkOrderTestData.OwnScopeWithStartCases),
+        MemberType = typeof(WorkOrderTestData)
+    )]
+    public async Task CreateWorkOrder_InOwnScopeWithPlannedStart_ThrowsForbidden(
+        string caseName,
+        Func<ShiftTenant, Guid?> assigneeOf
+    )
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
@@ -63,27 +70,10 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
             WorkOrderTestData.NewRequest(
                 tenant.CompanyId,
                 AccessScope.Own,
-                assigneeId: tenant.EmployeeId,
+                assigneeId: assigneeOf(tenant),
                 plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.ScheduledTime)));
 
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
-    }
-
-    [Fact]
-    public async Task CreateWorkOrder_InOwnScopeWithOnlyAStart_ThrowsForbidden()
-    {
-        var tenant = await _fixture.ArrangeShiftTenantAsync();
-        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
-
-        var act = () => _fixture.CreateWorkOrderAsync(
-            tenant.CompanyId,
-            tenant.IdentityUserId,
-            WorkOrderTestData.NewRequest(
-                tenant.CompanyId,
-                AccessScope.Own,
-                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.ScheduledTime)));
-
-        await act.Should().ThrowAsync<ForbiddenAccessException>();
+        await act.Should().ThrowAsync<ForbiddenAccessException>(because: caseName);
     }
 
     [Fact]
@@ -161,18 +151,13 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
             .WithMessage(WorkOrderErrors.Rejections.AssigneeNotActive);
     }
 
-    [Fact]
-    public async Task CreateWorkOrder_WithStartOffTheGrid_ThrowsValidation()
-    {
-        var tenant = await ArrangeScheduledTenantAsync();
-
-        var act = () => CreateScheduledAsync(tenant, WorkOrderTestData.OffGridTime);
-
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
-    public async Task CreateWorkOrder_WithStartInThePast_ThrowsValidation()
+    [Theory]
+    [MemberData(nameof(WorkOrderTestData.StartsOutsideTheRules), MemberType = typeof(WorkOrderTestData))]
+    public async Task CreateWorkOrder_WithStartOutsideTheRules_ThrowsValidation(
+        string caseName,
+        int dayOffset,
+        string time
+    )
     {
         var tenant = await ArrangeScheduledTenantAsync();
 
@@ -183,28 +168,9 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
                 tenant.CompanyId,
                 AccessScope.Company,
                 assigneeId: tenant.EmployeeId,
-                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Today, time: "06:00")));
+                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Today.AddDays(dayOffset), time)));
 
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
-
-    [Fact]
-    public async Task CreateWorkOrder_WithStartBeyondOneYear_ThrowsValidation()
-    {
-        var tenant = await ArrangeScheduledTenantAsync();
-
-        var act = () => _fixture.CreateWorkOrderAsync(
-            tenant.CompanyId,
-            tenant.IdentityUserId,
-            WorkOrderTestData.NewRequest(
-                tenant.CompanyId,
-                AccessScope.Company,
-                assigneeId: tenant.EmployeeId,
-                plannedStartLocal: ShiftTestData.LocalStart(
-                    ShiftTestData.Today.AddDays(Application.Shifts.ShiftValidationConstants.MaxDaysAhead + 1),
-                    WorkOrderTestData.ScheduledTime)));
-
-        await act.Should().ThrowAsync<AppValidationException>();
+        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
     }
 
     [Fact]

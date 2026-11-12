@@ -10,6 +10,7 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
 import { isFieldInvalid } from '@shared/forms/field-state';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { RichTextEditor } from '@shared/rich-text/rich-text-editor/rich-text-editor';
 
 import { MetricValueKind } from '@machines/metrics/metric-definition';
@@ -20,7 +21,7 @@ import {
 } from '@machines/metrics/metric-form/metric-form-schema';
 import { DESCRIPTION_MAX_LENGTH } from '@machines/metrics/metric-limits';
 import { KIND_OPTIONS, quantityKindKey, type UnitGroup } from '@machines/metrics/metric-form/metric-form.utils';
-import { nextKey } from '@machines/metrics/metrics-page.store.utils';
+import { nextKey } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 
 const MAX_FRACTION_DIGITS = 6;
 
@@ -36,6 +37,7 @@ export class MetricForm {
   readonly takenKeys = input<readonly string[]>([]);
   readonly unitGroups = input<readonly UnitGroup[]>([]);
   readonly isUnitsLoading = input(false);
+  protected readonly showUnitsLoading = delayedLoading(this.isUnitsLoading);
   readonly isDoneDisabled = input(false);
   readonly doneDisabledReason = input<string | null>(null);
   readonly valueChange = output<MetricFormValue>();

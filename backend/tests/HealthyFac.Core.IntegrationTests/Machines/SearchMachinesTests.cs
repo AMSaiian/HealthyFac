@@ -117,6 +117,68 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
         response.TotalCount.Should().Be(expected: 1);
     }
 
+    [Fact]
+    public async Task SearchMachines_WithGatewayIdFilter_ReturnsOnlyMachinesWithThatPrefix()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId,
+            MachineTestData.GatewayIdWithPrefix,
+            MachineTestData.SerialNumber);
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId,
+            MachineTestData.GatewayIdWithoutPrefix,
+            MachineTestData.OtherSerialNumber);
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId,
+            MachineTestData.GatewayIdWithSecondPrefix,
+            MachineTestData.ThirdSerialNumber);
+        var filter = new MachineGridFilter
+        {
+            GatewayId = new TextFilter { Value = MachineTestData.GatewayIdPrefix },
+        };
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            MachineTestData.CreateSearch(tenant.CompanyId, filter));
+
+        response.Items.Select(item => item.GatewayId).Should().BeEquivalentTo(
+            new[] { MachineTestData.GatewayIdWithPrefix, MachineTestData.GatewayIdWithSecondPrefix });
+        response.TotalCount.Should().Be(expected: 2);
+    }
+
+    [Fact]
+    public async Task SearchMachines_SortedByGatewayId_ReturnsAscendingOrder()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId,
+            MachineTestData.GatewayIdWithoutPrefix,
+            MachineTestData.SerialNumber);
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId,
+            MachineTestData.GatewayIdWithSecondPrefix,
+            MachineTestData.OtherSerialNumber);
+        await _fixture.AddMachineWithGatewayIdAsync(
+            tenant.CompanyId,
+            MachineTestData.GatewayIdWithPrefix,
+            MachineTestData.ThirdSerialNumber);
+        var sort = new GridSort<MachineSortColumn>
+        {
+            Column = MachineSortColumn.GatewayId,
+            Direction = SortDirection.Ascending,
+        };
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            MachineTestData.CreateSearch(tenant.CompanyId, sort: sort));
+
+        response.Items.Select(item => item.GatewayId).Should().Equal(
+            MachineTestData.GatewayIdWithPrefix,
+            MachineTestData.GatewayIdWithSecondPrefix,
+            MachineTestData.GatewayIdWithoutPrefix);
+    }
+
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, string serialNumber) =>
         _fixture.CreateMachineAsync(
             tenant.CompanyId,

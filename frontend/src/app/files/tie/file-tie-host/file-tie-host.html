@@ -15,7 +15,7 @@
       optionValue="id"
       appendTo="body"
       [options]="store.machineOptions()"
-      [loading]="store.isLoading()"
+      [loading]="showLoading()"
       [filter]="true"
       (onFilter)="store.searchMachines($event.filter ?? '')"
       [placeholder]="'FILES.TIE_DIALOG.PLACEHOLDER' | translate"

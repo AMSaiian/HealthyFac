@@ -1,0 +1,31 @@
+<button
+  type="button"
+  pButton
+  iconOnly
+  severity="secondary"
+  [text]="true"
+  [pTooltip]="'ACTIONS.TOOLTIPS.COLUMNS' | translate"
+  tooltipPosition="bottom"
+  [attr.aria-label]="'ACTIONS.TOOLTIPS.COLUMNS' | translate"
+  (click)="popover.toggle($event)"
+>
+  <i class="pi pi-table"></i>
+</button>
+<p-popover
+  #popover
+  appendTo="body"
+>
+  <div class="hf-check-list">
+    @for (column of columns(); track column) {
+      <div class="flex items-center gap-2">
+        <p-checkbox
+          [binary]="true"
+          [inputId]="'column-' + column"
+          [ngModel]="isVisible(column)"
+          (ngModelChange)="onToggle(column, $event)"
+        />
+        <label [for]="'column-' + column">{{ labelKeys()[column] | translate }}</label>
+      </div>
+    }
+  </div>
+</p-popover>

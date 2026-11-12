@@ -1,12 +1,13 @@
-import { computed, effect, inject, untracked } from '@angular/core';
+import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { withGridState } from '@shared/grid/with-grid-state';
 import { createLookup } from '@shared/lookups/create-lookup';
 import { LookupsApi } from '@shared/lookups/lookups-api';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 
@@ -16,6 +17,8 @@ import { WorkOrderActionType, type WorkOrderRowActionPayload } from '@work-order
 import { toSearchBody } from '@work-orders/list/work-order-query';
 import { INITIAL_GRID } from '@work-orders/list/work-orders-grid.store.utils';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 type RowActionType =
   | typeof WorkOrderActionType.Assign
@@ -81,16 +84,8 @@ export const WorkOrdersGridStore = signalStore(
       void store._actions.dispatch({ type, payload });
     },
   })),
-  withHooks({
-    onInit(store) {
-      let seen = store._actions.lastResult()?.sequence ?? 0;
-      effect(() => {
-        const result = store._actions.lastResult();
-        if (result !== null && RELOAD_RESULT_TYPES.includes(result.type) && result.sequence > seen) {
-          seen = result.sequence;
-          untracked(() => store.workOrders.reload());
-        }
-      });
-    },
+  withActionResultReload<{ workOrders: Reloadable }>(RELOAD_RESULT_TYPES, (store) => {
+    store.workOrders.reload();
   }),
+  withStoreDevtools('work-orders-grid'),
 );

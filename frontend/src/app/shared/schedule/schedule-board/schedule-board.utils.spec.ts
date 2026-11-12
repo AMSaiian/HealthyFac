@@ -10,11 +10,22 @@ import {
   nowPercentOf,
   placeBars,
   segmentOf,
+  skeletonRowCount,
   tooltipOf,
 } from './schedule-board.utils';
 
 const ZONE = 'Europe/Kyiv';
 const HOUR_MS = 3_600_000;
+
+describe('skeletonRowCount', () => {
+  it('skeletonRowCount_WithRowsShownBefore_KeepsTheirCount', () => {
+    expect(skeletonRowCount(3)).toBe(3);
+  });
+
+  it('skeletonRowCount_WithNoRowsShownBefore_UsesTheDefaultCount', () => {
+    expect(skeletonRowCount(0)).toBe(5);
+  });
+});
 
 function at(local: string): Temporal.Instant {
   return Temporal.PlainDateTime.from(local).toZonedDateTime(ZONE, { disambiguation: 'compatible' }).toInstant();

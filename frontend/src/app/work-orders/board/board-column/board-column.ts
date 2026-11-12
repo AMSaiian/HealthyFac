@@ -15,6 +15,7 @@ import {
   ElementRef,
   inject,
   input,
+  linkedSignal,
   output,
   viewChild,
 } from '@angular/core';
@@ -25,7 +26,13 @@ import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 
 import { type WorkOrderRow, WorkOrderStatus } from '@work-orders/work-order';
-import { canEnterColumn, type ColumnState, type ScrollRange, slotsOf } from '@work-orders/board/board.store.utils';
+import {
+  canEnterColumn,
+  type ColumnState,
+  EMPTY_WINDOW,
+  type ScrollRange,
+  slotsOf,
+} from '@work-orders/board/board-store/board.store.utils';
 import { type StatusChoice, WorkOrderCard } from '@work-orders/board/work-order-card/work-order-card';
 
 export const CARD_HEIGHT = 114;
@@ -62,7 +69,15 @@ export class BoardColumn {
   readonly statusChosen = output<StatusChoice>();
 
   protected readonly cardHeight = CARD_HEIGHT;
-  protected readonly isEmpty = computed(() => this.column().window.totalCount === 0 && !this.column().isLoading);
+  /** A column has loaded once when its window is no longer the initial `EMPTY_WINDOW`, and it stays loaded. */
+  protected readonly hasLoaded = linkedSignal({
+    source: () => this.column().window,
+    computation: (window, previous) => (previous?.value ?? false) || window !== EMPTY_WINDOW,
+  });
+  /** The window holds only the loaded slice, so the count decides, not the loaded items. */
+  protected readonly showEmpty = computed(
+    () => this.hasLoaded() && this.column().window.totalCount === 0 && !this.column().isLoading,
+  );
   protected readonly showSkeleton = delayedLoading(computed(() => this.column().isLoading));
 
   private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);

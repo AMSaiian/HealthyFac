@@ -5,7 +5,7 @@ import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
 import { EmployeeRole } from '@shared/employee/employee';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { InviteApi, type InviteDetails } from '@invite/invite-api';
 import { InviteLocation } from '@invite/invite-location';

@@ -1,15 +1,14 @@
-import { HttpContext, HttpEventType } from '@angular/common/http';
+import { HttpEventType } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, from, mergeMap, pipe, Subject, takeUntil, tap, toArray } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
-import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
+import { skipErrorToast } from '@shared/http/http-error-key';
+import { withToasts } from '@shared/toasts/with-toasts';
 
 import type { FilesScope } from '@files/file';
 import { FileActionType } from '@files/file-actions';
@@ -19,11 +18,14 @@ import {
   MAX_PARALLEL_UPLOADS,
   progressOf,
   scopeOf,
+  toDescriptionHtml,
   toUploadItem,
   uploadErrorKey,
   type UploadItem,
   UploadStatus,
 } from '@files/upload/file-upload.store.utils';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const MAX_PERCENT = 100;
 
@@ -39,10 +41,9 @@ export const FileUploadStore = signalStore(
   withProps(() => ({
     _api: inject(FilesApi),
     _actions: inject(ActionStore),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
     _stop: new Subject<void>(),
   })),
+  withToasts(),
   withComputed((store) => ({
     readyCount: computed(() => store.items().filter((item) => item.status === UploadStatus.Ready).length),
     isUploading: computed(() => store.items().some((item) => item.status === UploadStatus.Uploading)),
@@ -61,11 +62,7 @@ export const FileUploadStore = signalStore(
       }
       const hasFailed = store.items().some((item) => item.status === UploadStatus.Failed);
       if (!hasFailed && store.hasDone()) {
-        store._messages.add({
-          severity: 'success',
-          summary: store._translate.instant('FILES.TOASTS.SUCCESS'),
-          detail: store._translate.instant('FILES.TOASTS.UPLOADED'),
-        });
+        store._toastSuccess('FILES.TOASTS.UPLOADED');
         patchState(store, { isClosed: true });
         store._actions.complete(FileActionType.Saved);
       }
@@ -83,24 +80,20 @@ export const FileUploadStore = signalStore(
           return from(pending).pipe(
             mergeMap(
               (item) =>
-                store._api
-                  .upload(store.scope(), item.file, item.description === '' ? null : item.description, {
-                    context: new HttpContext().set(SKIP_ERROR_TOAST, true),
-                  })
-                  .pipe(
-                    tap((event) => {
-                      const progress = progressOf(event);
-                      if (progress !== null) {
-                        update(item.key, { progress });
-                      } else if (event.type === HttpEventType.Response) {
-                        update(item.key, { status: UploadStatus.Done, progress: MAX_PERCENT });
-                      }
-                    }),
-                    catchError((error: unknown) => {
-                      update(item.key, { status: UploadStatus.Failed, errorKey: uploadErrorKey(error) });
-                      return EMPTY;
-                    }),
-                  ),
+                store._api.upload(store.scope(), item.file, toDescriptionHtml(item.description), skipErrorToast()).pipe(
+                  tap((event) => {
+                    const progress = progressOf(event);
+                    if (progress !== null) {
+                      update(item.key, { progress });
+                    } else if (event.type === HttpEventType.Response) {
+                      update(item.key, { status: UploadStatus.Done, progress: MAX_PERCENT });
+                    }
+                  }),
+                  catchError((error: unknown) => {
+                    update(item.key, { status: UploadStatus.Failed, errorKey: uploadErrorKey(error) });
+                    return EMPTY;
+                  }),
+                ),
               MAX_PARALLEL_UPLOADS,
             ),
             takeUntil(store._stop),
@@ -140,4 +133,5 @@ export const FileUploadStore = signalStore(
       },
     };
   }),
+  withStoreDevtools('file-upload'),
 );

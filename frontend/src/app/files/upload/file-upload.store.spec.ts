@@ -10,7 +10,7 @@ import { FileActionType } from '@files/file-actions';
 import { FilesApi } from '@files/files-api';
 
 import { FileUploadStore } from './file-upload.store';
-import { UploadStatus } from './file-upload.store.utils';
+import { toDescriptionHtml, UploadStatus } from './file-upload.store.utils';
 
 const MACHINE_ID = 'encrypted-machine-id';
 const COMPANY_URL = '/api/document/v1/files';
@@ -71,10 +71,19 @@ describe('FileUploadStore', () => {
     request.event({ type: HttpEventType.UploadProgress, loaded: 5, total: 10 });
 
     const body = request.request.body as FormData;
-    expect(body.get('description')).toBe('My manual');
+    expect(body.get('description')).toBe('<p>My manual</p>');
     expect((body.get('file') as File).name).toBe('manual.pdf');
     expect(store.items()[0].progress).toBe(50);
     expect(store.items()[0].status).toBe(UploadStatus.Uploading);
+  });
+
+  it.each([
+    ['WithMarkupCharacters_EscapesThemInOneParagraph', 'a <b> & "c"', '<p>a &lt;b&gt; &amp; &quot;c&quot;</p>'],
+    ['WithBlankText_ReturnsNull', '   ', null],
+  ])('toDescriptionHtml_%s', (_name, text, expected) => {
+    const html = toDescriptionHtml(text);
+
+    expect(html).toBe(expected);
   });
 
   it('upload_WithMachineScope_UsesTheMachineUrl', () => {

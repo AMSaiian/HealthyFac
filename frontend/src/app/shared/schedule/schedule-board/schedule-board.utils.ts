@@ -1,3 +1,4 @@
+import { SCHEDULE_SKELETON_ROWS } from '@shared/loading/loading-constants';
 import { Temporal } from '@shared/time/temporal';
 import { dayRange } from '@shared/time/zoned-times';
 
@@ -104,6 +105,11 @@ export function placeBars(bars: readonly ScheduleBar[], axis: Axis): { placed: P
 export function nowPercentOf(now: Temporal.Instant, axis: Axis): number | null {
   const percent = percentOf(now, axis);
   return percent >= 0 && percent < PERCENT ? percent : null;
+}
+
+/** The skeleton rows of a loading day: the rows shown before the load, or the default count when none were shown. */
+export function skeletonRowCount(previousCount: number): number {
+  return previousCount > 0 ? previousCount : SCHEDULE_SKELETON_ROWS;
 }
 
 /** The tooltip of a bar on two lines: the title, then the status, the local range, and the offset. */

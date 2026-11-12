@@ -7,6 +7,8 @@
   <span>{{ 'FILES.UPLOAD_DIALOG.DROP' | translate }}</span>
   <button
     pButton
+    [pTooltip]="'FILES.TOOLTIPS.CHOOSE' | translate"
+    tooltipPosition="bottom"
     type="button"
     severity="secondary"
     (click)="openPicker()"
@@ -36,6 +38,8 @@
           @if (canRemove(item)) {
             <button
               pButton
+              [pTooltip]="'FILES.UPLOAD_DIALOG.REMOVE' | translate"
+              tooltipPosition="bottom"
               type="button"
               iconOnly
               severity="secondary"

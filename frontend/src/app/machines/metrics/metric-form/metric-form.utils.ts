@@ -1,5 +1,5 @@
 import { type MetricUnitsResponse, MetricValueKind } from '@machines/metrics/metric-definition';
-import { unitValue } from '@machines/metrics/metrics-page.store.utils';
+import { unitValue } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 
 export const KIND_LABEL_KEYS: Readonly<Record<MetricValueKind, string>> = {
   [MetricValueKind.Numeric]: 'METRICS.KINDS.NUMERIC',

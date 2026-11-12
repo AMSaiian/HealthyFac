@@ -45,6 +45,70 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task DismissMachineDrafts_ForAnAttempt_DismissesThePendingDraftsOfEveryMachineOfThatAttempt()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var otherMachineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, machineId);
+        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, otherMachineId);
+
+        var response = await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, DraftTestData.AttemptId);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
+        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
+        var states = machineDrafts.Select(draft => draft.State)
+            .Concat(metricDrafts.Select(draft => draft.State))
+            .Concat(statusDrafts.Select(draft => draft.State))
+            .ToList();
+
+        response.DismissedCount.Should().Be(PendingDraftsOfAMachine * 2);
+        states.Should().NotContain(DraftState.Pending);
+    }
+
+    [Fact]
+    public async Task DismissMachineDrafts_ForAnAttempt_LeavesAnotherAttemptAndAnotherCompanyPending()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync(companyName: "Other company");
+        var attemptId = Guid.CreateVersion7();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var otherCompanyMachineId = await _fixture.ArrangeMachineAsync(otherTenant.CompanyId);
+        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, machineId, attemptId);
+        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, machineId);
+        await _fixture.AddDraftsForMachineAsync(otherTenant.CompanyId, otherCompanyMachineId, attemptId);
+
+        var response = await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, attemptId);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
+        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
+        var pendingCompanies = machineDrafts.Where(draft => draft.State == DraftState.Pending)
+            .Select(draft => (draft.CompanyId, draft.AttemptId))
+            .Concat(metricDrafts.Where(draft => draft.State == DraftState.Pending)
+                .Select(draft => (draft.CompanyId, draft.AttemptId)))
+            .Concat(statusDrafts.Where(draft => draft.State == DraftState.Pending)
+                .Select(draft => (draft.CompanyId, draft.AttemptId)))
+            .Distinct()
+            .ToList();
+
+        response.DismissedCount.Should().Be(PendingDraftsOfAMachine);
+        pendingCompanies.Should().BeEquivalentTo(
+            [(tenant.CompanyId, DraftTestData.AttemptId), (otherTenant.CompanyId, attemptId)]);
+    }
+
+    [Fact]
+    public async Task DismissMachineDrafts_ForAnAttemptWithoutPendingDrafts_ReturnsZero()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+
+        var response = await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, DraftTestData.AttemptId);
+
+        response.DismissedCount.Should().Be(expected: 0);
+    }
+
+    [Fact]
     public async Task DismissMachineDrafts_WithoutPendingDrafts_ReturnsZero()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();

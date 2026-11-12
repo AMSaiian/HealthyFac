@@ -1,4 +1,4 @@
-import { MetricMarker } from '@machines/metrics/metrics-page.store.utils';
+import { MetricMarker } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 
 export const MARKER_LABEL_KEYS: Readonly<Record<MetricMarker, string>> = {
   [MetricMarker.New]: 'METRICS.MARKERS.NEW',

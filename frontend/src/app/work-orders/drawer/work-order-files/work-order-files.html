@@ -4,6 +4,8 @@
     <div class="flex items-center gap-2">
       <label
         pButton
+        [pTooltip]="'WORK_ORDERS.TOOLTIPS.ATTACH_NEW' | translate"
+        tooltipPosition="bottom"
         severity="secondary"
         size="small"
         class="cursor-pointer"
@@ -23,6 +25,8 @@
       />
       <button
         pButton
+        [pTooltip]="'WORK_ORDERS.TOOLTIPS.ATTACH_EXISTING' | translate"
+        tooltipPosition="bottom"
         type="button"
         severity="secondary"
         size="small"
@@ -46,15 +50,18 @@
     @for (entry of entries(); track entry.id) {
       <li class="flex items-center justify-between gap-2">
         @if (entry.file; as file) {
-          <span class="min-w-0 truncate"
-            >{{ file.fileName }}<span class="text-muted-color">.{{ file.extension }}</span></span
-          >
+          <span class="flex min-w-0 items-center gap-2">
+            <span class="min-w-0 truncate">{{ file.fileName }}</span>
+            <hf-file-type-tag [extension]="file.extension" />
+          </span>
         } @else {
           <span class="text-muted-color italic">{{ 'WORK_ORDERS.FILES.UNAVAILABLE' | translate }}</span>
         }
         @if (isEditable()) {
           <button
             pButton
+            [pTooltip]="'WORK_ORDERS.FILES.REMOVE' | translate"
+            tooltipPosition="bottom"
             type="button"
             iconOnly
             severity="secondary"

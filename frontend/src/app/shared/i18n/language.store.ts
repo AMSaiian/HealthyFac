@@ -6,13 +6,15 @@ import { TranslateService } from '@ngx-translate/core';
 import { PrimeNG } from 'primeng/config';
 import { catchError, EMPTY, mergeMap, pipe } from 'rxjs';
 
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { StorageKey } from '@shared/storage/storage-keys';
 import { withStorageSync } from '@shared/storage/with-storage-sync';
 
 import { DEFAULT_LANGUAGE, Language } from './i18n.constants';
 import { languageSerializer } from './language-serializer';
 import { LocaleApi } from './locale-api';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const PRIMENG_KEY = 'PRIMENG';
 
@@ -60,4 +62,5 @@ export const LanguageStore = signalStore(
       });
     },
   }),
+  withStoreDevtools('language'),
 );

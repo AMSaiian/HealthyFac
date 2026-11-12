@@ -1,42 +1,46 @@
-import { HttpContext, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { computed, effect, inject, untracked } from '@angular/core';
+import { HttpStatusCode } from '@angular/common/http';
+import { computed, effect, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { TranslateService } from '@ngx-translate/core';
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { EMPTY, exhaustMap, pipe, tap } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
-import { httpErrorMessageKey } from '@shared/http/http-error-message';
-import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
+import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
+import { withConfirm } from '@shared/confirm/with-confirm';
 import { FileDownloader } from '@shared/files/file-downloader';
 import { FilesLinksApi } from '@shared/files/files-links-api';
 import { withGridState } from '@shared/grid/with-grid-state';
-import { AuthStore } from '@shared/security/auth.store';
+import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
+import { withToasts } from '@shared/toasts/with-toasts';
 
 import type { FileColumn, FileFilter, FileGridItem, FileSortColumn, FilesScope } from '@files/file';
 import { FileActionType } from '@files/file-actions';
 import { FilesApi } from '@files/files-api';
 import { IngestApi } from '@files/ingest/ingest-api';
-import { ingestConflictKey } from '@files/ingest/ingest-conflict';
 import { IngestState } from '@files/ingest/ingest-attempt';
+import { ingestConflictKey } from '@files/ingest/ingest-conflict';
 import { toSearchBody } from '@files/list/file-query';
 import { type FileRowAccess, FileRowAction } from '@files/list/file-grid/file-grid.utils';
-import { INITIAL_GRID, isSameScope } from '@files/list/files-grid.store.utils';
+import { INITIAL_GRID, isSameScope, type ScopeState } from '@files/list/files-grid.store.utils';
 import { withMachineSearch } from '@files/with-machine-search';
 
-interface ScopeState {
-  scope: FilesScope | null;
-}
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
+/**
+ * The files grid. Its one owned state group is the scope of the visit. The grid, the machine search, and the toasts are
+ * shared features with their own state. The list resource and the row actions write the list, not the scope.
+ */
 export const FilesGridStore = signalStore(
   withGridState<FileFilter, FileSortColumn, FileColumn>(INITIAL_GRID),
   withState<ScopeState>({ scope: null }),
   withMachineSearch(),
+  withToasts(),
+  withConfirm(),
   withProps(() => ({
     _auth: inject(AuthStore),
     _clock: inject(CLOCK),
@@ -45,9 +49,6 @@ export const FilesGridStore = signalStore(
     _ingestApi: inject(IngestApi),
     _linksApi: inject(FilesLinksApi),
     _downloader: inject(FileDownloader),
-    _confirmation: inject(ConfirmationService),
-    _messages: inject(MessageService),
-    _translate: inject(TranslateService),
   })),
   withComputed((store) => {
     const isCompany = computed(() => store.scope()?.kind === 'company');
@@ -93,12 +94,21 @@ export const FilesGridStore = signalStore(
   })),
   withMethods((store) => {
     const showNotFound = (): void => {
-      store._messages.add({
-        severity: 'error',
-        summary: store._translate.instant('ERRORS.SUMMARY'),
-        detail: store._translate.instant('FILES.ERRORS.NOT_FOUND'),
-      });
+      store._toastError('FILES.ERRORS.NOT_FOUND');
       store.files.reload();
+    };
+
+    const showHttpError = (error: unknown): void => {
+      store._toastError(httpErrorKey(error));
+    };
+
+    /** Shows the new ingest state in the row at once, before the grid loads again. */
+    const patchRow = (fileId: string, patch: Partial<FileGridItem>): void => {
+      store.files.update((page) =>
+        page === undefined
+          ? page
+          : { ...page, items: page.items.map((item) => (item.id === fileId ? { ...item, ...patch } : item)) },
+      );
     };
 
     const deleteFile = rxMethod<FileGridItem>(
@@ -108,31 +118,107 @@ export const FilesGridStore = signalStore(
           if (scope === null) {
             return EMPTY;
           }
-          return store._api.delete(scope, file.id, { context: new HttpContext().set(SKIP_ERROR_TOAST, true) }).pipe(
+          return store._api.delete(scope, file.id, skipErrorToast()).pipe(
             tap(() => {
-              store._messages.add({
-                severity: 'success',
-                summary: store._translate.instant('FILES.TOASTS.SUCCESS'),
-                detail: store._translate.instant('FILES.TOASTS.DELETED'),
-              });
+              store._toastSuccess('FILES.TOASTS.DELETED');
               store.files.reload();
             }),
             catchError((error: unknown) => {
-              if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound) {
+              if (isHttpStatus(error, HttpStatusCode.NotFound)) {
                 showNotFound();
               } else {
-                store._messages.add({
-                  severity: 'error',
-                  summary: store._translate.instant('ERRORS.SUMMARY'),
-                  detail: store._translate.instant(
-                    httpErrorMessageKey(error instanceof HttpErrorResponse ? error.status : 0),
-                  ),
-                });
+                showHttpError(error);
               }
               return EMPTY;
             }),
           );
         }),
+      ),
+    );
+
+    const untie = rxMethod<FileGridItem>(
+      pipe(
+        exhaustMap((file) =>
+          store._api.untie(file.id, { rowVersion: file.rowVersion }, skipErrorToast()).pipe(
+            tap(() => {
+              store._toastSuccess('FILES.TOASTS.UNTIED');
+              store.files.reload();
+            }),
+            catchError((error: unknown) => {
+              if (isHttpStatus(error, HttpStatusCode.Conflict)) {
+                store._toastError('FILES.ERRORS.CONFLICT');
+                store.files.reload();
+              } else if (isHttpStatus(error, HttpStatusCode.NotFound)) {
+                showNotFound();
+              } else {
+                showHttpError(error);
+              }
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    );
+
+    const startIngest = rxMethod<FileGridItem>(
+      pipe(
+        exhaustMap((file) =>
+          store._ingestApi.start(file.id, skipErrorToast()).pipe(
+            tap(() => {
+              patchRow(file.id, { ingestState: IngestState.Queued, canIngest: false });
+              store._toastSuccess('INGEST.TOASTS.STARTED');
+            }),
+            catchError((error: unknown) => {
+              const conflictKey = ingestConflictKey(error);
+              if (conflictKey !== null) {
+                store._toastError(conflictKey);
+                store.files.reload();
+              } else if (isHttpStatus(error, HttpStatusCode.NotFound)) {
+                showNotFound();
+              } else {
+                showHttpError(error);
+              }
+              return EMPTY;
+            }),
+          ),
+        ),
+      ),
+    );
+
+    const cancelIngest = rxMethod<FileGridItem>(
+      pipe(
+        exhaustMap((file) =>
+          store._ingestApi.listForFile(file.id, skipErrorToast()).pipe(
+            map((page) =>
+              page.items.find(
+                (attempt) => attempt.state === IngestState.Queued || attempt.state === IngestState.InProcess,
+              ),
+            ),
+            exhaustMap((attempt) => {
+              if (attempt === undefined) {
+                store._toastError('INGEST.CONFLICTS.NOT_ACTIVE');
+                store.files.reload();
+                return EMPTY;
+              }
+              return store._ingestApi.cancel(attempt.id, skipErrorToast()).pipe(
+                tap(() => {
+                  patchRow(file.id, { ingestState: IngestState.Interrupted, canIngest: true });
+                  store._toastSuccess('INGEST.TOASTS.CANCELLED');
+                }),
+              );
+            }),
+            catchError((error: unknown) => {
+              const conflictKey = ingestConflictKey(error);
+              if (conflictKey !== null) {
+                store._toastError(conflictKey);
+                store.files.reload();
+              } else {
+                showHttpError(error);
+              }
+              return EMPTY;
+            }),
+          ),
+        ),
       ),
     );
 
@@ -154,172 +240,7 @@ export const FilesGridStore = signalStore(
       ),
     );
 
-    const showError = (detailKey: string): void => {
-      store._messages.add({
-        severity: 'error',
-        summary: store._translate.instant('ERRORS.SUMMARY'),
-        detail: store._translate.instant(detailKey),
-      });
-    };
-
-    const showHttpError = (error: unknown): void => {
-      showError(httpErrorMessageKey(error instanceof HttpErrorResponse ? error.status : 0));
-    };
-
-    const showSuccess = (detailKey: string): void => {
-      store._messages.add({
-        severity: 'success',
-        summary: store._translate.instant('FILES.TOASTS.SUCCESS'),
-        detail: store._translate.instant(detailKey),
-      });
-    };
-
-    /** Shows the new ingest state in the row at once, before the grid loads again. */
-    const patchRow = (fileId: string, patch: Partial<FileGridItem>): void => {
-      store.files.update((page) =>
-        page === undefined
-          ? page
-          : { ...page, items: page.items.map((item) => (item.id === fileId ? { ...item, ...patch } : item)) },
-      );
-    };
-
-    const quiet = (): { context: HttpContext } => ({ context: new HttpContext().set(SKIP_ERROR_TOAST, true) });
-
-    const startIngest = rxMethod<FileGridItem>(
-      pipe(
-        exhaustMap((file) =>
-          store._ingestApi.start(file.id, quiet()).pipe(
-            tap(() => {
-              patchRow(file.id, { ingestState: IngestState.Queued, canIngest: false });
-              showSuccess('INGEST.TOASTS.STARTED');
-            }),
-            catchError((error: unknown) => {
-              const conflictKey = ingestConflictKey(error);
-              if (conflictKey !== null) {
-                showError(conflictKey);
-                store.files.reload();
-              } else if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound) {
-                showNotFound();
-              } else {
-                showHttpError(error);
-              }
-              return EMPTY;
-            }),
-          ),
-        ),
-      ),
-    );
-
-    const cancelIngest = rxMethod<FileGridItem>(
-      pipe(
-        exhaustMap((file) =>
-          store._ingestApi.listForFile(file.id, quiet()).pipe(
-            map((page) =>
-              page.items.find(
-                (attempt) => attempt.state === IngestState.Queued || attempt.state === IngestState.InProcess,
-              ),
-            ),
-            exhaustMap((attempt) => {
-              if (attempt === undefined) {
-                showError('INGEST.CONFLICTS.NOT_ACTIVE');
-                store.files.reload();
-                return EMPTY;
-              }
-              return store._ingestApi.cancel(attempt.id, quiet()).pipe(
-                tap(() => {
-                  patchRow(file.id, { ingestState: IngestState.Interrupted, canIngest: true });
-                  showSuccess('INGEST.TOASTS.CANCELLED');
-                }),
-              );
-            }),
-            catchError((error: unknown) => {
-              const conflictKey = ingestConflictKey(error);
-              if (conflictKey !== null) {
-                showError(conflictKey);
-                store.files.reload();
-              } else {
-                showHttpError(error);
-              }
-              return EMPTY;
-            }),
-          ),
-        ),
-      ),
-    );
-
-    const untie = rxMethod<FileGridItem>(
-      pipe(
-        exhaustMap((file) =>
-          store._api.untie(file.id, { rowVersion: file.rowVersion }, quiet()).pipe(
-            tap(() => {
-              showSuccess('FILES.TOASTS.UNTIED');
-              store.files.reload();
-            }),
-            catchError((error: unknown) => {
-              const status = error instanceof HttpErrorResponse ? error.status : 0;
-              if (status === HttpStatusCode.Conflict) {
-                showError('FILES.ERRORS.CONFLICT');
-                store.files.reload();
-              } else if (status === HttpStatusCode.NotFound) {
-                showNotFound();
-              } else {
-                showHttpError(error);
-              }
-              return EMPTY;
-            }),
-          ),
-        ),
-      ),
-    );
-
-    const confirm = (
-      headerKey: string,
-      messageKey: string,
-      acceptKey: string,
-      file: FileGridItem,
-      run: () => void,
-    ): void => {
-      store._confirmation.confirm({
-        header: store._translate.instant(headerKey),
-        message: store._translate.instant(messageKey, { name: file.fileName }),
-        icon: 'pi pi-exclamation-triangle',
-        acceptLabel: store._translate.instant(acceptKey),
-        rejectLabel: store._translate.instant('ACTIONS.CANCEL'),
-        acceptButtonProps: { severity: 'danger' },
-        rejectButtonProps: { severity: 'secondary' },
-        accept: run,
-      });
-    };
-
     return {
-      /** Runs one ingest or tie action of the row menu. */
-      requestRowAction(request: { action: FileRowAction; file: FileGridItem }): void {
-        const { action, file } = request;
-        switch (action) {
-          case FileRowAction.Ingest:
-            startIngest(file);
-            break;
-          case FileRowAction.CancelIngest:
-            confirm('INGEST.CANCEL_HEADER', 'INGEST.CANCEL_MESSAGE', 'FILES.ACTIONS_MENU.CANCEL_INGEST', file, () => {
-              cancelIngest(file);
-            });
-            break;
-          case FileRowAction.Tie:
-            void store._actions.dispatch({
-              type: FileActionType.Tie,
-              payload: { item: { id: file.id, fileName: file.fileName, rowVersion: file.rowVersion } },
-            });
-            break;
-          case FileRowAction.Untie:
-            confirm('FILES.UNTIE_HEADER', 'FILES.UNTIE_MESSAGE', 'FILES.ACTIONS_MENU.UNTIE', file, () => {
-              untie(file);
-            });
-            break;
-          case FileRowAction.History:
-            void store._actions.dispatch({ type: FileActionType.IngestHistory, payload: { fileId: file.id } });
-            break;
-        }
-      },
       /** Starts a visit to the files of a scope: sets the scope and resets the grid. An equal scope changes nothing. */
       setScope(scope: FilesScope): void {
         if (isSameScope(store.scope(), scope)) {
@@ -342,16 +263,53 @@ export const FilesGridStore = signalStore(
           void store._actions.dispatch({ type: FileActionType.Edit, payload: { scope, item: file } });
         }
       },
+      /** Runs one ingest or tie action of the row menu. */
+      requestRowAction(request: { action: FileRowAction; file: FileGridItem }): void {
+        const { action, file } = request;
+        switch (action) {
+          case FileRowAction.Ingest:
+            startIngest(file);
+            break;
+          case FileRowAction.CancelIngest:
+            store._confirmDestructive({
+              headerKey: 'INGEST.CANCEL_HEADER',
+              messageKey: 'INGEST.CANCEL_MESSAGE',
+              params: { name: file.fileName },
+              acceptKey: 'FILES.ACTIONS_MENU.CANCEL_INGEST',
+              onAccept: () => {
+                cancelIngest(file);
+              },
+            });
+            break;
+          case FileRowAction.Tie:
+            void store._actions.dispatch({
+              type: FileActionType.Tie,
+              payload: { item: { id: file.id, fileName: file.fileName, rowVersion: file.rowVersion } },
+            });
+            break;
+          case FileRowAction.Untie:
+            store._confirmDestructive({
+              headerKey: 'FILES.UNTIE_HEADER',
+              messageKey: 'FILES.UNTIE_MESSAGE',
+              params: { name: file.fileName },
+              acceptKey: 'FILES.ACTIONS_MENU.UNTIE',
+              onAccept: () => {
+                untie(file);
+              },
+            });
+            break;
+          case FileRowAction.History:
+            void store._actions.dispatch({ type: FileActionType.IngestHistory, payload: { fileId: file.id } });
+            break;
+        }
+      },
       requestDelete(file: FileGridItem): void {
-        store._confirmation.confirm({
-          header: store._translate.instant('FILES.DELETE_HEADER'),
-          message: store._translate.instant('FILES.DELETE_MESSAGE', { name: file.fileName }),
-          icon: 'pi pi-exclamation-triangle',
-          acceptLabel: store._translate.instant('FILES.ACTIONS_MENU.DELETE'),
-          rejectLabel: store._translate.instant('ACTIONS.CANCEL'),
-          acceptButtonProps: { severity: 'danger' },
-          rejectButtonProps: { severity: 'secondary' },
-          accept: () => {
+        store._confirmDestructive({
+          headerKey: 'FILES.DELETE_HEADER',
+          messageKey: 'FILES.DELETE_MESSAGE',
+          params: { name: file.fileName },
+          acceptKey: 'ACTIONS.DELETE',
+          onAccept: () => {
             deleteFile(file);
           },
         });
@@ -363,14 +321,10 @@ export const FilesGridStore = signalStore(
       effect(() => {
         store.setSelectedMachines(store.filter().machine.machineIds);
       });
-      let seen = store._actions.lastResult()?.sequence ?? 0;
-      effect(() => {
-        const result = store._actions.lastResult();
-        if (result !== null && result.type === FileActionType.Saved && result.sequence > seen) {
-          seen = result.sequence;
-          untracked(() => store.files.reload());
-        }
-      });
     },
   }),
+  withActionResultReload<{ files: Reloadable }>([FileActionType.Saved], (store) => {
+    store.files.reload();
+  }),
+  withStoreDevtools('files-grid'),
 );

@@ -22,7 +22,9 @@
         />
       } @else {
         <div class="flex min-h-32">
-          <hf-loading-spinner />
+          @if (showSpinner()) {
+            <hf-loading-spinner />
+          }
         </div>
       }
     } @else {
@@ -59,7 +61,7 @@
         </p-select>
       </div>
     }
-    @if (store.isSaving()) {
+    @if (showSaving()) {
       <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
         <hf-loading-spinner />
       </div>

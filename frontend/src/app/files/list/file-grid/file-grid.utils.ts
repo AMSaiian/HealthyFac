@@ -10,7 +10,6 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<FileColumn, string>> = {
   [FileColumn.Extension]: 'FILES.COLUMNS.TYPE',
   [FileColumn.SizeBytes]: 'FILES.COLUMNS.SIZE',
   [FileColumn.UploadedAt]: 'FILES.COLUMNS.UPLOADED_AT',
-  [FileColumn.Description]: 'FILES.COLUMNS.DESCRIPTION',
   [FileColumn.Machine]: 'FILES.COLUMNS.MACHINE',
   [FileColumn.Ingest]: 'FILES.COLUMNS.INGEST',
 };
@@ -19,8 +18,11 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<FileColumn, string>> = {
 export const INGEST_COLUMNS: readonly FileColumn[] = [FileColumn.Machine, FileColumn.Ingest];
 
 export const MENU_DOWNLOAD_KEY = 'FILES.ACTIONS_MENU.DOWNLOAD';
-export const MENU_EDIT_KEY = 'FILES.ACTIONS_MENU.EDIT';
-export const MENU_DELETE_KEY = 'FILES.ACTIONS_MENU.DELETE';
+export const MENU_EDIT_KEY = 'ACTIONS.EDIT';
+export const MENU_DELETE_KEY = 'ACTIONS.DELETE';
+export const MENU_DOWNLOAD_TOOLTIP_KEY = 'FILES.TOOLTIPS.DOWNLOAD';
+export const MENU_EDIT_TOOLTIP_KEY = 'FILES.TOOLTIPS.EDIT';
+export const MENU_DELETE_TOOLTIP_KEY = 'FILES.TOOLTIPS.DELETE';
 export const MENU_INGEST_KEY = 'FILES.ACTIONS_MENU.INGEST';
 export const MENU_CANCEL_INGEST_KEY = 'FILES.ACTIONS_MENU.CANCEL_INGEST';
 export const MENU_HISTORY_KEY = 'FILES.ACTIONS_MENU.HISTORY';
@@ -105,7 +107,6 @@ export const FILTER_READERS: Readonly<Record<FileColumn, (value: unknown) => Par
   [FileColumn.Extension]: (value) => ({ extensions: asList<string>(value) }),
   [FileColumn.SizeBytes]: () => ({}),
   [FileColumn.UploadedAt]: (value) => ({ uploadedAt: asRange(value) }),
-  [FileColumn.Description]: () => ({}),
   [FileColumn.Machine]: (value) => ({ machine: toMachineFilter(value) }),
   [FileColumn.Ingest]: (value) => ({ ingest: toIngestFilter(value) }),
 };
@@ -116,7 +117,6 @@ export const FILTER_WRITERS: Readonly<Record<FileColumn, (filter: FileFilter) =>
   [FileColumn.Extension]: (filter) => (filter.extensions.length === 0 ? null : filter.extensions),
   [FileColumn.SizeBytes]: () => null,
   [FileColumn.UploadedAt]: (filter) => (isRangeEmpty(filter.uploadedAt) ? null : filter.uploadedAt),
-  [FileColumn.Description]: () => null,
   [FileColumn.Machine]: (filter) => toMachineValues(filter.machine),
   [FileColumn.Ingest]: (filter) => toIngestValues(filter.ingest),
 };
@@ -146,6 +146,14 @@ export interface FileRowAccess {
 }
 
 export const NO_ROW_ACCESS: FileRowAccess = { canIngestWrite: false, canIngestRead: false, canTie: false };
+
+export const ROW_ACTION_TOOLTIP_KEYS: Readonly<Record<FileRowAction, string>> = {
+  [FileRowAction.Ingest]: 'FILES.TOOLTIPS.INGEST',
+  [FileRowAction.CancelIngest]: 'FILES.TOOLTIPS.CANCEL_INGEST',
+  [FileRowAction.History]: 'FILES.TOOLTIPS.HISTORY',
+  [FileRowAction.Tie]: 'FILES.TOOLTIPS.TIE',
+  [FileRowAction.Untie]: 'FILES.TOOLTIPS.UNTIE',
+};
 
 export const ROW_ACTION_KEYS: Readonly<Record<FileRowAction, string>> = {
   [FileRowAction.Ingest]: MENU_INGEST_KEY,

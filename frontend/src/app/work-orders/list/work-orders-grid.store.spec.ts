@@ -6,7 +6,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { LookupsApi } from '@shared/lookups/lookups-api';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -109,14 +109,13 @@ describe('WorkOrdersGridStore', () => {
     expect(search.mock.calls.length).toBe(1);
   });
 
-  it('lastResult_WithSavedType_ReloadsTheRows', async () => {
-    const reloads = await reloadsAfter(WorkOrderActionType.Saved);
-
-    expect(reloads).toBe(1);
-  });
-
-  it('lastResult_WithConflictType_ReloadsTheRows', async () => {
-    const reloads = await reloadsAfter(WorkOrderActionType.Conflict);
+  it.each(
+    [
+      { name: 'WithSavedType', type: WorkOrderActionType.Saved },
+      { name: 'WithConflictType', type: WorkOrderActionType.Conflict },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('lastResult_%s_ReloadsTheRows', async (_name, { type }) => {
+    const reloads = await reloadsAfter(type);
 
     expect(reloads).toBe(1);
   });

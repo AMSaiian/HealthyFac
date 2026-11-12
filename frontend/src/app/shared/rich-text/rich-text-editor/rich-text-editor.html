@@ -1,76 +1,119 @@
-<p-editor
-  [pt]="{ content: { class: 'h-64' } }"
-  [modules]="modules"
-  [ngModel]="value()"
-  [readonly]="readonly() || disabled()"
-  [placeholder]="placeholder()"
-  [invalid]="isInvalidShown()"
-  (ngModelChange)="onEditorChange($event)"
-  (onBlur)="touch.emit()"
-  (onInit)="onInit($event)"
->
-  <ng-template #header>
-    <span class="ql-formats">
-      <button
-        type="button"
-        class="ql-bold"
-        [attr.aria-label]="'RICH_TEXT.BOLD' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-italic"
-        [attr.aria-label]="'RICH_TEXT.ITALIC' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-underline"
-        [attr.aria-label]="'RICH_TEXT.UNDERLINE' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-strike"
-        [attr.aria-label]="'RICH_TEXT.STRIKE' | translate"
-      ></button>
-    </span>
-    <span class="ql-formats">
-      <button
-        type="button"
-        class="ql-list"
-        value="ordered"
-        [attr.aria-label]="'RICH_TEXT.ORDERED_LIST' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-list"
-        value="bullet"
-        [attr.aria-label]="'RICH_TEXT.BULLET_LIST' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-list"
-        value="check"
-        [attr.aria-label]="'RICH_TEXT.CHECK_LIST' | translate"
-      ></button>
-    </span>
-    <span class="ql-formats">
-      <button
-        type="button"
-        class="ql-link"
-        [attr.aria-label]="'RICH_TEXT.LINK' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-image"
-        [attr.aria-label]="'RICH_TEXT.IMAGE' | translate"
-      ></button>
-      <button
-        type="button"
-        class="ql-clean"
-        [attr.aria-label]="'RICH_TEXT.CLEAN' | translate"
-      ></button>
-    </span>
-  </ng-template>
-</p-editor>
+<div class="relative flex flex-col">
+  <p-editor
+    [pt]="{ content: { class: 'h-64' } }"
+    [modules]="modules"
+    [ngModel]="value()"
+    [readonly]="readonly() || disabled() || pendingUploads() > 0"
+    [placeholder]="placeholder()"
+    [invalid]="isInvalidShown()"
+    (ngModelChange)="onEditorChange($event)"
+    (onBlur)="touch.emit()"
+    (onInit)="onInit($event)"
+  >
+    <ng-template #header>
+      <span
+        class="ql-formats"
+        [pTooltip]="'RICH_TEXT.SIZE' | translate"
+        tooltipPosition="bottom"
+      >
+        <select
+          class="ql-size"
+          [attr.aria-label]="'RICH_TEXT.SIZE' | translate"
+        >
+          <option value="small">{{ 'RICH_TEXT.SIZES.SMALL' | translate }}</option>
+          <option selected>{{ 'RICH_TEXT.SIZES.NORMAL' | translate }}</option>
+          <option value="large">{{ 'RICH_TEXT.SIZES.LARGE' | translate }}</option>
+          <option value="huge">{{ 'RICH_TEXT.SIZES.HUGE' | translate }}</option>
+        </select>
+      </span>
+      <span class="ql-formats">
+        <button
+          type="button"
+          class="ql-bold"
+          [attr.aria-label]="'RICH_TEXT.BOLD' | translate"
+          [pTooltip]="'RICH_TEXT.BOLD' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-italic"
+          [attr.aria-label]="'RICH_TEXT.ITALIC' | translate"
+          [pTooltip]="'RICH_TEXT.ITALIC' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-underline"
+          [attr.aria-label]="'RICH_TEXT.UNDERLINE' | translate"
+          [pTooltip]="'RICH_TEXT.UNDERLINE' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-strike"
+          [attr.aria-label]="'RICH_TEXT.STRIKE' | translate"
+          [pTooltip]="'RICH_TEXT.STRIKE' | translate"
+          tooltipPosition="bottom"
+        ></button>
+      </span>
+      <span class="ql-formats">
+        <button
+          type="button"
+          class="ql-list"
+          value="ordered"
+          [attr.aria-label]="'RICH_TEXT.ORDERED_LIST' | translate"
+          [pTooltip]="'RICH_TEXT.ORDERED_LIST' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-list"
+          value="bullet"
+          [attr.aria-label]="'RICH_TEXT.BULLET_LIST' | translate"
+          [pTooltip]="'RICH_TEXT.BULLET_LIST' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-list"
+          value="check"
+          [attr.aria-label]="'RICH_TEXT.CHECK_LIST' | translate"
+          [pTooltip]="'RICH_TEXT.CHECK_LIST' | translate"
+          tooltipPosition="bottom"
+        ></button>
+      </span>
+      <span class="ql-formats">
+        <button
+          type="button"
+          class="ql-link"
+          [attr.aria-label]="'RICH_TEXT.LINK' | translate"
+          [pTooltip]="'RICH_TEXT.LINK' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-image"
+          [attr.aria-label]="'RICH_TEXT.IMAGE' | translate"
+          [pTooltip]="'RICH_TEXT.IMAGE' | translate"
+          tooltipPosition="bottom"
+        ></button>
+        <button
+          type="button"
+          class="ql-clean"
+          [attr.aria-label]="'RICH_TEXT.CLEAN' | translate"
+          [pTooltip]="'RICH_TEXT.CLEAN' | translate"
+          tooltipPosition="bottom"
+        ></button>
+      </span>
+    </ng-template>
+  </p-editor>
+  @if (showUploadSpinner()) {
+    <p-progressspinner
+      class="pointer-events-none absolute bottom-3 end-3 z-10 size-6"
+      strokeWidth="6"
+    />
+  }
+</div>
 <span
   class="self-end text-sm"
   [class.text-red-500]="isTooLong()"

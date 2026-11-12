@@ -25,6 +25,8 @@
     @if (canChangeStatus()) {
       <button
         pButton
+        [pTooltip]="'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate"
+        tooltipPosition="bottom"
         type="button"
         iconOnly
         size="small"
@@ -32,29 +34,39 @@
         class="ml-auto flex-none"
         [text]="true"
         [attr.aria-label]="'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate"
-        (click)="menu.toggle($event)"
+        (click)="chooser.toggle($event)"
       >
         <i class="pi pi-flag"></i>
       </button>
-      <p-menu
-        #menu
+      <p-popover
+        #chooser
         class="contents"
         appendTo="body"
-        [popup]="true"
-        [model]="menuItems()"
       >
-        <ng-template
-          #item
-          let-item
-        >
-          <div class="p-menu-item-link flex items-center px-3 py-2">
-            <p-tag
-              [class]="'hf-status-' + item.id"
-              [value]="item.label"
-            />
-          </div>
-        </ng-template>
-      </p-menu>
+        <div class="flex min-w-48 flex-col gap-2">
+          <span class="text-muted-color text-xs font-bold">{{ 'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate }}</span>
+          <p-listbox
+            class="hf-option-list"
+            [options]="targets()"
+            (onChange)="chooser.hide(); choose($event.value)"
+          >
+            <ng-template
+              #item
+              let-target
+            >
+              <div
+                class="flex items-center"
+                [pTooltip]="'WORK_ORDERS.TOOLTIPS.CHANGE_TO_STATUS' | translate"
+              >
+                <p-tag
+                  [class]="'hf-status-' + target"
+                  [value]="statusLabel(target)"
+                />
+              </div>
+            </ng-template>
+          </p-listbox>
+        </div>
+      </p-popover>
     }
   </div>
   <button

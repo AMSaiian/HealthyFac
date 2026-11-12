@@ -117,14 +117,21 @@ public sealed class WorkOrderTests
         AssertCurrentIsNewest(workOrder, expectedRevision: 1);
     }
 
-    [Fact]
-    public void ChangeStatus_ToBacklog_ThrowsAndAddsNoRow()
+    [Theory]
+    [MemberData(
+        nameof(WorkOrderTestData.StatusesThatBreakTheRuleOnStaged),
+        MemberType = typeof(WorkOrderTestData)
+    )]
+    public void ChangeStatus_ToStatusThatBreaksTheRule_ThrowsAndAddsNoRow(
+        string caseName,
+        WorkOrderStatus status
+    )
     {
         var workOrder = WorkOrderTestData.CreateStaged();
 
-        var act = () => workOrder.ChangeStatus(WorkOrderStatus.Backlog);
+        var act = () => workOrder.ChangeStatus(status);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<InvalidOperationException>(because: caseName);
         AssertCurrentIsNewest(workOrder, expectedRevision: 2);
     }
 
@@ -137,17 +144,6 @@ public sealed class WorkOrderTests
 
         act.Should().Throw<InvalidOperationException>();
         AssertCurrentIsNewest(workOrder, expectedRevision: 1);
-    }
-
-    [Fact]
-    public void ChangeStatus_ToCurrentStatus_ThrowsAndAddsNoRow()
-    {
-        var workOrder = WorkOrderTestData.CreateStaged();
-
-        var act = () => workOrder.ChangeStatus(WorkOrderStatus.Staged);
-
-        act.Should().Throw<InvalidOperationException>();
-        AssertCurrentIsNewest(workOrder, expectedRevision: 2);
     }
 
     [Fact]

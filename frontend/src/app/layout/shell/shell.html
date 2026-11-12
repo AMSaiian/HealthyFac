@@ -2,8 +2,11 @@
   <ng-template #start>
     <button
       pButton
+      [pTooltip]="'SHELL.MENU' | translate"
+      tooltipPosition="bottom"
       type="button"
       iconOnly
+      severity="secondary"
       [text]="true"
       [class.invisible]="!shellStore.isMenuShown()"
       [disabled]="!shellStore.isMenuShown()"
@@ -21,9 +24,12 @@
     <div class="flex items-center gap-2">
       <button
         pButton
+        [pTooltip]="'LANGUAGE.' + (languageStore.language() | uppercase) | translate"
+        tooltipPosition="bottom"
         type="button"
         iconOnly
         aria-haspopup="menu"
+        severity="secondary"
         [text]="true"
         [attr.aria-label]="'LANGUAGE.' + (languageStore.language() | uppercase) | translate"
         (click)="languageMenu.toggle($event)"
@@ -48,7 +54,11 @@
           #item
           let-item
         >
-          <div class="p-menu-item-link flex items-center gap-2 px-3 py-2">
+          <div
+            class="p-menu-item-link flex items-center gap-2 px-3 py-2"
+            [pTooltip]="item.tooltip | translate"
+            tooltipPosition="bottom"
+          >
             <span class="relative block h-4 w-6 flex-none">
               <img
                 class="rounded-sm object-cover"
@@ -66,8 +76,11 @@
       </p-menu>
       <button
         pButton
+        [pTooltip]="'SHELL.THEME_TOGGLE' | translate"
+        tooltipPosition="bottom"
         type="button"
         iconOnly
+        severity="secondary"
         [text]="true"
         [attr.aria-label]="'SHELL.THEME_TOGGLE' | translate"
         (click)="themeStore.toggle()"
@@ -77,8 +90,11 @@
       @if (authStore.isAuthenticated()) {
         <button
           pButton
+          [pTooltip]="'SHELL.SIGN_OUT' | translate"
+          tooltipPosition="bottom"
           type="button"
           iconOnly
+          severity="secondary"
           [text]="true"
           [attr.aria-label]="'SHELL.SIGN_OUT' | translate"
           (click)="shellStore.confirmSignOut()"
@@ -91,7 +107,8 @@
 </p-toolbar>
 @if (shellStore.isMenuShown()) {
   <p-drawer
-    [closeButtonProps]="squareCloseButtonProps"
+    [dismissible]="true"
+    [showCloseIcon]="false"
     position="left"
     styleClass="w-72"
     [modal]="true"
@@ -119,7 +136,10 @@
   </p-drawer>
 }
 <p-toast position="bottom-right" />
-<p-confirmdialog [pt]="squareConfirmDialogPt" />
+<p-confirmdialog
+  [pt]="hiddenClosePt"
+  [dismissableMask]="true"
+/>
 <hf-action-host />
 <main
   class="relative flex min-h-0 min-w-0 flex-1 flex-col"

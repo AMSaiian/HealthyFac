@@ -73,7 +73,7 @@
         [filter]="true"
         [group]="true"
         [options]="unitGroupList()"
-        [loading]="isUnitsLoading()"
+        [loading]="showUnitsLoading()"
         [placeholder]="'METRICS.FORM.UNIT_PLACEHOLDER' | translate"
         [attr.data-hf-calm]="isShown(metricForm.unit) ? null : ''"
         [formField]="metricForm.unit"
@@ -141,6 +141,8 @@
         />
         <button
           pButton
+          [pTooltip]="'METRICS.TOOLTIPS.ADD_STATE' | translate"
+          tooltipPosition="bottom"
           type="button"
           class="flex-none"
           severity="secondary"
@@ -152,17 +154,25 @@
       </div>
       <div class="mt-1 flex flex-wrap gap-1">
         @for (state of model().states; track $index) {
-          <p-tag severity="secondary">
-            <span class="flex items-center gap-1">
-              {{ state }}
-              <button
-                type="button"
-                class="pi pi-times cursor-pointer"
-                [attr.aria-label]="'METRICS.FORM.REMOVE_STATE' | translate"
-                (click)="removeState($index)"
-              ></button>
-            </span>
-          </p-tag>
+          <div class="flex items-center gap-2">
+            <p-tag
+              severity="secondary"
+              [value]="state"
+            />
+            <button
+              pButton
+              type="button"
+              iconOnly
+              size="small"
+              severity="secondary"
+              [text]="true"
+              [pTooltip]="'METRICS.FORM.REMOVE_STATE' | translate"
+              [attr.aria-label]="'METRICS.FORM.REMOVE_STATE' | translate"
+              (click)="removeState($index)"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
         }
       </div>
     </div>
@@ -182,12 +192,24 @@
   </div>
 </div>
 <div class="flex flex-none justify-end gap-2">
+  <button
+    pButton
+    [pTooltip]="'ACTIONS.TOOLTIPS.CANCEL' | translate"
+    tooltipPosition="bottom"
+    type="button"
+    severity="secondary"
+    (click)="cancelled.emit()"
+  >
+    {{ 'ACTIONS.CANCEL' | translate }}
+  </button>
   <span
     [pTooltip]="doneDisabledReason() ? (doneDisabledReason()! | translate) : ''"
     [tooltipDisabled]="!isDoneDisabled() || doneDisabledReason() === null"
   >
     <button
       pButton
+      [pTooltip]="'METRICS.TOOLTIPS.DONE' | translate"
+      tooltipPosition="bottom"
       type="button"
       [disabled]="isDoneDisabled()"
       (click)="done.emit()"
@@ -195,12 +217,4 @@
       {{ 'METRICS.FORM.DONE' | translate }}
     </button>
   </span>
-  <button
-    pButton
-    type="button"
-    severity="secondary"
-    (click)="cancelled.emit()"
-  >
-    {{ 'ACTIONS.CANCEL' | translate }}
-  </button>
 </div>

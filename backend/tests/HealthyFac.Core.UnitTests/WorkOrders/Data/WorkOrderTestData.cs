@@ -18,6 +18,12 @@ public static class WorkOrderTestData
     public static readonly Guid FileB = Guid.Parse(input: "4da05196-be72-4fc2-b155-6d7e9abc3f45");
     public static readonly Guid FileC = Guid.Parse(input: "5eb162a7-cf83-40d3-8266-7e8fabcd4056");
 
+    public static TheoryData<string, WorkOrderStatus> StatusesThatBreakTheRuleOnStaged => new()
+    {
+        { "ToBacklog", WorkOrderStatus.Backlog },
+        { "ToCurrentStatus", WorkOrderStatus.Staged },
+    };
+
     public static WorkOrder CreateBacklog() =>
         WorkOrder.Create(
             CompanyId,

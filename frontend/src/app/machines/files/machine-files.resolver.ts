@@ -14,7 +14,7 @@ import { MachinesApi } from '@machines/machines-api';
 export const MACHINE_ID_PARAMETER = 'machineId';
 export const NOT_FOUND_URL = '/not-found';
 
-const ERROR_SUMMARY_KEY = 'ERRORS.SUMMARY';
+const ERROR_SUMMARY_KEY = 'TOASTS.ERROR';
 
 /**
  * Loads the machine of the route before the files page activates. A missing machine (`404`) leads to the not-found

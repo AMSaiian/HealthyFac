@@ -9,17 +9,15 @@ public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
 
-    [Fact]
-    public async Task RetryProvisioning_WithOnlyInvitePermission_Returns403()
+    [Theory]
+    [MemberData(nameof(EmployeeApiTestData.ActionPathsForInviteOnly), MemberType = typeof(EmployeeApiTestData))]
+    public async Task EmployeeAction_WithOnlyInvitePermission_Returns403(string caseName, string path)
     {
         var claims = _fixture.CreateSupervisorClaims() with { Permissions = [EmployeeApiTestData.InvitePermission] };
 
-        var response = await _fixture.PostEmployeeActionAsync(
-            EmployeeApiTestData.RetryProvisioningPath,
-            claims,
-            Guid.CreateVersion7());
+        var response = await _fixture.PostEmployeeActionWithoutBodyAsync(path, claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
     }
 
     [Fact]
@@ -33,19 +31,6 @@ public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
             Guid.CreateVersion7());
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task Deactivate_WithOnlyInvitePermission_Returns403()
-    {
-        var claims = _fixture.CreateSupervisorClaims() with { Permissions = [EmployeeApiTestData.InvitePermission] };
-
-        var response = await _fixture.PostEmployeeActionAsync(
-            EmployeeApiTestData.DeactivatePath,
-            claims,
-            Guid.CreateVersion7());
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

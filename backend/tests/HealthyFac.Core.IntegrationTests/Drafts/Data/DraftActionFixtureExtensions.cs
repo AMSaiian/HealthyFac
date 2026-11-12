@@ -45,6 +45,16 @@ public static class DraftActionFixtureExtensions
                 new DismissMachineDraftsRequest { CompanyId = companyId, MachineId = machineId });
         }
 
+        public async Task<DismissMachineDraftsResponse> DismissAttemptDraftsAsync(Guid companyId, Guid attemptId)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<IRequestHandler<DismissMachineDraftsRequest, DismissMachineDraftsResponse>>();
+
+            return await handler.HandleAsync(
+                new DismissMachineDraftsRequest { CompanyId = companyId, AttemptId = attemptId });
+        }
+
         public async Task MarkDraftsAppliedAsync(Guid companyId, params Guid[] ids)
         {
             using var scope = fixture.CreateUserScope(companyId);

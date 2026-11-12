@@ -10,21 +10,16 @@ public sealed class DevelopmentDataOptionsValidatorTests
     private readonly DevelopmentDataOptionsValidator _validator =
         new(new HostingEnvironment { EnvironmentName = Environments.Development });
 
-    [Fact]
-    public void Validate_WithoutTestTenant_IsValid()
+    [Theory]
+    [MemberData(
+        nameof(DevelopmentDataOptionsValidatorTestData.ValidTestTenantSettings),
+        MemberType = typeof(DevelopmentDataOptionsValidatorTestData)
+    )]
+    public void Validate_WithTestTenantSetting_IsValid(string caseName, TestTenantOptions? testTenant)
     {
-        var result = _validator.Validate(new DevelopmentDataOptions());
+        var result = _validator.Validate(new DevelopmentDataOptions { TestTenant = testTenant });
 
-        result.IsValid.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Validate_WithValidTestTenant_IsValid()
-    {
-        var result = _validator.Validate(
-            new DevelopmentDataOptions { TestTenant = DevelopmentDataOptionsValidatorTestData.ValidTestTenant });
-
-        result.IsValid.Should().BeTrue();
+        result.IsValid.Should().BeTrue(because: caseName);
     }
 
     [Theory]

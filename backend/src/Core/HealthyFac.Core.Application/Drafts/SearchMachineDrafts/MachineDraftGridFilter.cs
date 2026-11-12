@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.TextInput;
 
@@ -13,17 +14,21 @@ public sealed record MachineDraftGridFilter : IFilter<MachineDraftGridItem>
     /// <summary>The kinds to show: <c>machine</c>, <c>metric</c>, <c>status</c>.</summary>
     public SetFilter<string>? Kinds { get; init; }
 
+    /// <summary>The states to show: pending, applied, dismissed.</summary>
+    public SetFilter<DraftState>? States { get; init; }
+
     public Expression<Func<MachineDraftGridItem, bool>>? ToPredicate() =>
-        Kinds?.ToPredicate<MachineDraftGridItem>(item => item.Kind);
+        Predicates.From(Kinds?.ToPredicate<MachineDraftGridItem>(item => item.Kind))
+            .And(States?.ToPredicate<MachineDraftGridItem>(item => item.State));
 }
 
 public sealed class MachineDraftGridFilterValidator : AbstractValidator<MachineDraftGridFilter>
 {
     public MachineDraftGridFilterValidator()
     {
-        RuleFor(filter => filter.Kinds!)
-            .SetValidator(new SetFilterValidator<string>())
-            .When(filter => filter.Kinds is not null);
+        When(filter => filter.Kinds is not null, () => RuleFor(filter => filter.Kinds!).IsSetFilter());
+
+        When(filter => filter.States is not null, () => RuleFor(filter => filter.States!).IsSetFilter());
 
         RuleFor(filter => filter.Kinds!.Values)
             .Must(values => values.All(kind => DraftKinds.All.Contains(kind)))

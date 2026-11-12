@@ -42,6 +42,16 @@ public sealed class CompletionSlideTests
     }
 
     [Fact]
+    public void Plan_WithEarlyCompletionAndStagedOrderInsideItsWindow_MovesNothing()
+    {
+        var inside = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "08:15", minutes: 60);
+
+        var moves = Plan(Completed(), completedAt: "08:30", inside);
+
+        moves.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Plan_WithLateCompletion_PushesTheNextOneToTheCompletionMoment()
     {
         var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "09:00", minutes: 60);

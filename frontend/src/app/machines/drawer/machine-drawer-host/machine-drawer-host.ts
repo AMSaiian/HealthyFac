@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
 import { hasFormChanges } from '@shared/forms/form-changes';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import { DraftsApi } from '@machines/drafts/drafts-api';
@@ -23,6 +24,8 @@ export class MachineDrawerHost {
   readonly action = input.required<AppAction>();
 
   protected readonly store = inject(MachineDrawerStore);
+  protected readonly showSpinner = delayedLoading(computed(() => !this.store.prefilledValue()));
+  protected readonly showSaving = delayedLoading(this.store.isSaving);
 
   private readonly _current = signal<MachineFormValue | null>(null);
   private readonly _isValid = signal(false);
@@ -39,9 +42,9 @@ export class MachineDrawerHost {
   });
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
-      return 'MACHINES.FORM.INVALID';
+      return 'FORMS.INVALID';
     }
-    return this.hasNoChanges() ? 'MACHINES.FORM.NO_CHANGES' : null;
+    return this.hasNoChanges() ? 'FORMS.NO_CHANGES' : null;
   });
 
   constructor() {

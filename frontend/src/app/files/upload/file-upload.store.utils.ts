@@ -50,6 +50,21 @@ export function toUploadItem(file: File, key: number): UploadItem {
   };
 }
 
+const HTML_ESCAPES: Readonly<Record<string, string>> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+};
+
+/**
+ * Turns the plain text of an upload into the rich text description that the server stores: one paragraph with the
+ * markup characters escaped. Blank text gives `null`, which means "no description".
+ */
+export function toDescriptionHtml(text: string): string | null {
+  return text.trim() === '' ? null : `<p>${text.replace(/[&<>"]/g, (char) => HTML_ESCAPES[char])}</p>`;
+}
+
 /** Maps a failed upload to the translation key that the list shows next to the file. */
 export function uploadErrorKey(error: unknown): string {
   if (!(error instanceof HttpErrorResponse)) {

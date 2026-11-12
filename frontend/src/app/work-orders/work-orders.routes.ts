@@ -1,6 +1,6 @@
 import type { Routes } from '@angular/router';
 
-import { BoardStore } from '@work-orders/board/board.store';
+import { BoardStore } from '@work-orders/board/board-store/board.store';
 import { BoardPage } from '@work-orders/board/board-page/board-page';
 import { WorkOrdersGridStore } from '@work-orders/list/work-orders-grid.store';
 import { WorkOrdersPage } from '@work-orders/list/work-orders-page/work-orders-page';

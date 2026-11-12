@@ -21,14 +21,18 @@ describe('draftRowMenuItems', () => {
 
     expect(items.map((item) => item.label)).toEqual(['t:DRAFTS.REVIEW', 't:DRAFTS.APPLY', 't:DRAFTS.DISMISS']);
     expect(items.map((item) => item.disabled)).toEqual([false, false, false]);
-    expect(items.map((item) => item.tooltipOptions)).toEqual([undefined, undefined, undefined]);
+    expect(items.map((item) => item.tooltip)).toEqual([
+      't:DRAFTS.TOOLTIPS.REVIEW',
+      't:DRAFTS.TOOLTIPS.APPLY',
+      't:DRAFTS.TOOLTIPS.DISMISS',
+    ]);
   });
 
   it('draftRowMenuItems_ForADraftThatNeedsReview_DisablesApplyWithTheReason', () => {
     const items = draftRowMenuItems(options({ applyReasonKey: NEEDS_REVIEW_KEY }));
 
     expect(items[1].disabled).toBe(true);
-    expect(items[1].tooltipOptions).toEqual({ tooltipLabel: `t:${NEEDS_REVIEW_KEY}` });
+    expect(items[1].tooltip).toBe(`t:${NEEDS_REVIEW_KEY}`);
     expect(items[0].disabled).toBe(false);
   });
 
@@ -36,7 +40,7 @@ describe('draftRowMenuItems', () => {
     const items = draftRowMenuItems(options({ isReviewDisabled: true }));
 
     expect(items[0].disabled).toBe(true);
-    expect(items[0].tooltipOptions).toEqual({ tooltipLabel: 't:DRAFTS.REVIEW_AFTER_MACHINE' });
+    expect(items[0].tooltip).toBe('t:DRAFTS.REVIEW_AFTER_MACHINE');
   });
 
   it('draftRowMenuItems_WhileAnApplyRuns_DisablesApplyAndDismiss', () => {

@@ -7,7 +7,7 @@
   [cdkDropListEnterPredicate]="canEnter"
   (cdkDropListDropped)="onDrop($event)"
 >
-  @if (isEmpty()) {
+  @if (showEmpty()) {
     <hf-empty-state
       icon="pi pi-inbox"
       messageKey="WORK_ORDERS.BOARD.EMPTY_COLUMN"

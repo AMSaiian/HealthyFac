@@ -8,10 +8,11 @@ import { Tooltip } from 'primeng/tooltip';
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
 import { hasFormChanges } from '@shared/forms/form-changes';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import { FilesApi } from '@files/files-api';
-import { WorkOrderDrawerStore } from '@work-orders/drawer/work-order-drawer.store';
+import { WorkOrderDrawerStore } from '@work-orders/drawer/work-order-drawer-store/work-order-drawer.store';
 import { FilePickerDialog } from '@work-orders/drawer/file-picker-dialog/file-picker-dialog';
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 import { WorkOrderForm } from '@work-orders/drawer/work-order-form/work-order-form';
@@ -48,6 +49,8 @@ export class WorkOrderDrawerHost {
   readonly action = input.required<AppAction>();
 
   protected readonly store = inject(WorkOrderDrawerStore);
+  protected readonly showSpinner = delayedLoading(computed(() => !this.store.prefilledValue()));
+  protected readonly showSaving = delayedLoading(this.store.isSaving);
   protected readonly DETAILS_TAB = DETAILS_TAB;
   protected readonly HISTORY_TAB = HISTORY_TAB;
   protected readonly tab = signal(DETAILS_TAB);

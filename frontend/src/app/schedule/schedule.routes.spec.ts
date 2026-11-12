@@ -8,7 +8,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { FALLBACK_ROUTES } from '@fallback/fallback.routes';
 import { NotFoundPage } from '@fallback/not-found/not-found-page';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 

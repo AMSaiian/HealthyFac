@@ -28,7 +28,7 @@ export const problemDetailsInterceptor: HttpInterceptorFn = (request, next) => {
         const translate = injector.get(TranslateService);
         messages.add({
           severity: 'error',
-          summary: translate.instant('ERRORS.SUMMARY'),
+          summary: translate.instant('TOASTS.ERROR'),
           detail: translate.instant(httpErrorMessageKey(error.status)),
         });
       }

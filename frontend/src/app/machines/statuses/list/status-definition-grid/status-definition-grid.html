@@ -1,9 +1,12 @@
 <p-table
+  [pt]="grid.tablePt()"
+  #table
   dataKey="id"
   sortMode="single"
   scrollHeight="flex"
-  [value]="tableRows()"
-  [columns]="tableColumns()"
+  [stripedRows]="true"
+  [value]="grid.tableRows()"
+  [columns]="grid.tableColumns()"
   [lazy]="true"
   [lazyLoadOnInit]="false"
   [paginator]="true"
@@ -16,13 +19,12 @@
   [scrollable]="true"
   [reorderableColumns]="true"
   [sortField]="sort()?.column"
-  [sortOrder]="sortOrder()"
+  [sortOrder]="grid.sortOrder()"
   [tableStyle]="tableStyle()"
-  [filters]="tableFilters()"
-  (onPage)="onPage($event)"
-  (onSort)="onSort($event)"
-  (onFilter)="onFilterApplied($event)"
-  (onColReorder)="onColumnReorder($event)"
+  [filters]="grid.tableFilters()"
+  (onPage)="grid.onPage($event)"
+  (onSort)="grid.onSort($event)"
+  (onColReorder)="grid.onColumnReorder($event)"
 >
   <ng-template
     #header
@@ -33,24 +35,24 @@
         <th
           pReorderableColumn
           [pSortableColumn]="column"
-          [pSortableColumnDisabled]="!isSortable(column)"
+          [pSortableColumnDisabled]="!grid.isSortable(column)"
         >
           <div class="flex items-center gap-1">
-            <span>{{ columnLabelKey(column) | translate }}</span>
-            @if (isSortable(column)) {
+            <span>{{ grid.columnLabelKey(column) | translate }}</span>
+            @if (grid.isSortable(column)) {
               <p-sort-icon [field]="column" />
             }
             <p-column-filter
+              [pt]="grid.filterPt()"
               [filterButtonProps]="squareFilterButtonProps"
-              #columnFilter
               display="menu"
               [field]="column"
               [showMatchModes]="false"
               [showOperator]="false"
               [showAddButton]="false"
-              [showApplyButton]="true"
+              [showApplyButton]="false"
               [showClearButton]="true"
-              (onHide)="onFilterHidden(column)"
+              (onHide)="grid.onFilterHidden(column, $any(table.filters[column])?.[0]?.value)"
             >
               <ng-template
                 #filter
@@ -62,11 +64,10 @@
                     <input
                       pInputText
                       class="w-full"
-                      [attr.aria-label]="columnLabelKey(column) | translate"
+                      [attr.aria-label]="grid.columnLabelKey(column) | translate"
                       [placeholder]="'STATUS_DEFINITIONS.FILTERS.CODE_PLACEHOLDER' | translate"
                       [value]="value ?? ''"
                       (input)="filterConstraint.value = $any($event.target).value"
-                      (keydown.enter)="columnFilter.applyFilter()"
                     />
                   }
                   @case (StatusDefinitionColumn.Severity) {
@@ -75,17 +76,27 @@
                       optionLabel="label"
                       optionValue="value"
                       appendTo="self"
+                      panelStyleClass="hf-option-list"
                       [options]="severityOptions()"
                       [placeholder]="'STATUS_DEFINITIONS.FILTERS.SEVERITY_PLACEHOLDER' | translate"
                       [ngModel]="value ?? []"
                       [multiple]="true"
                       [checkmark]="true"
                       (ngModelChange)="filterConstraint.value = $event"
-                    />
+                    >
+                      <ng-template #selectedItem>
+                        <hf-chip-summary
+                          appearance="text"
+                          [chips]="labelChips(value ?? [], severityOptions())"
+                          [placeholder]="'STATUS_DEFINITIONS.FILTERS.SEVERITY_PLACEHOLDER' | translate"
+                        />
+                      </ng-template>
+                    </p-select>
                   }
                   @case (StatusDefinitionColumn.CreatedAt) {
                     <hf-plain-date-range-picker
                       appendTo="self"
+                      [placeholder]="'STATUS_DEFINITIONS.FILTERS.CREATED_AT_PLACEHOLDER' | translate"
                       [value]="value ?? emptyRange"
                       (valueChange)="filterConstraint.value = $event"
                     />
@@ -93,6 +104,7 @@
                   @case (StatusDefinitionColumn.UpdatedAt) {
                     <hf-plain-date-range-picker
                       appendTo="self"
+                      [placeholder]="'STATUS_DEFINITIONS.FILTERS.UPDATED_AT_PLACEHOLDER' | translate"
                       [value]="value ?? emptyRange"
                       (valueChange)="filterConstraint.value = $event"
                     />
@@ -108,17 +120,12 @@
         alignFrozen="right"
         [frozen]="true"
       >
-        <button
-          pButton
-          type="button"
-          iconOnly
-          severity="secondary"
-          [text]="true"
-          [attr.aria-label]="'STATUS_DEFINITIONS.COLUMNS_CHOOSER' | translate"
-          (click)="chooser.toggle($event)"
-        >
-          <i class="pi pi-table"></i>
-        </button>
+        <hf-column-chooser
+          [columns]="allColumns"
+          [visible]="grid.tableColumns()"
+          [labelKeys]="columnLabelKeys"
+          (toggled)="grid.onColumnToggle($any($event.column), $event.isVisible)"
+        />
       </th>
     </tr>
   </ng-template>
@@ -130,7 +137,7 @@
     <tr>
       @for (column of columns; track column) {
         <td>
-          @if (showSkeleton()) {
+          @if (grid.showSkeleton()) {
             <p-skeleton />
           } @else {
             @switch (column) {
@@ -155,17 +162,19 @@
         alignFrozen="right"
         [frozen]="true"
       >
-        @if (showSkeleton()) {
+        @if (grid.showSkeleton()) {
           <p-skeleton />
         } @else if (hasRowActions()) {
           <button
             pButton
+            [pTooltip]="'ACTIONS.ROW_ACTIONS' | translate"
+            tooltipPosition="bottom"
             type="button"
             iconOnly
             severity="secondary"
             [text]="true"
-            [attr.aria-label]="'STATUS_DEFINITIONS.ACTIONS' | translate"
-            (click)="openMenu($event, statusDefinition, menu)"
+            [attr.aria-label]="'ACTIONS.ROW_ACTIONS' | translate"
+            (click)="rowMenu.open($event, statusDefinition, menu)"
           >
             <i class="pi pi-ellipsis-v"></i>
           </button>
@@ -179,10 +188,12 @@
         class="h-full"
         [attr.colspan]="columns().length + 1"
       >
-        <hf-empty-state
-          icon="pi pi-inbox"
-          messageKey="STATUS_DEFINITIONS.EMPTY"
-        />
+        @if (grid.showEmpty()) {
+          <hf-empty-state
+            icon="pi pi-inbox"
+            messageKey="STATUS_DEFINITIONS.EMPTY"
+          />
+        }
       </td>
     </tr>
   </ng-template>
@@ -192,22 +203,17 @@
   appendTo="body"
   [popup]="true"
   [model]="menuItems()"
-/>
-<p-popover
-  #chooser
-  appendTo="body"
 >
-  <div class="flex flex-col gap-2">
-    @for (column of allColumns; track column) {
-      <div class="flex items-center gap-2">
-        <p-checkbox
-          [binary]="true"
-          [inputId]="'status-definition-column-' + column"
-          [ngModel]="isColumnVisible(column)"
-          (ngModelChange)="onColumnToggle(column, $event)"
-        />
-        <label [for]="'status-definition-column-' + column">{{ columnLabelKey(column) | translate }}</label>
-      </div>
-    }
-  </div>
-</p-popover>
+  <ng-template
+    #item
+    let-item
+  >
+    <div
+      class="p-menu-item-link flex items-center gap-2 px-3 py-2"
+      [pTooltip]="item.tooltip"
+    >
+      <span [class]="item.icon"></span>
+      <span>{{ item.label }}</span>
+    </div>
+  </ng-template>
+</p-menu>

@@ -44,6 +44,27 @@ export class DraftsApi {
     );
   }
 
+  searchForAttempt(
+    attemptId: string,
+    body: SearchMachineDraftsBody,
+    options?: WriteOptions,
+  ): Observable<MachineDraftsPage> {
+    return this._http.post<MachineDraftsPage>(
+      `${ATTEMPTS_URL}/${encodeURIComponent(attemptId)}/${DRAFTS_SEGMENT}/${SEARCH_SEGMENT}`,
+      body,
+      options,
+    );
+  }
+
+  /** Dismisses every pending draft of the ingest attempt, on all pages. */
+  dismissForAttempt(attemptId: string, options?: WriteOptions): Observable<DismissMachineDraftsResponse> {
+    return this._http.post<DismissMachineDraftsResponse>(
+      `${ATTEMPTS_URL}/${encodeURIComponent(attemptId)}/${DRAFTS_SEGMENT}/${DISMISS_SEGMENT}`,
+      null,
+      options,
+    );
+  }
+
   listForAttempt(attemptId: string, options?: WriteOptions): Observable<AttemptDrafts> {
     return this._http.get<AttemptDrafts>(`${ATTEMPTS_URL}/${encodeURIComponent(attemptId)}/${DRAFTS_SEGMENT}`, options);
   }

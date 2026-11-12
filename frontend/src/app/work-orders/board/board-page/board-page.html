@@ -2,138 +2,155 @@
   activeView="board"
   [canCreate]="store.canWrite()"
   (createRequested)="grid.requestCreate()"
-/>
-<div class="flex flex-none flex-wrap items-center gap-2">
-  <input
-    pInputText
-    class="w-48"
-    [attr.aria-label]="'WORK_ORDERS.COLUMNS.TITLE' | translate"
-    [placeholder]="'WORK_ORDERS.FILTERS.TITLE_PLACEHOLDER' | translate"
-    [ngModel]="store.titleDraft()"
-    (ngModelChange)="store.setTitle($event)"
-  />
-  <p-select
-    class="w-48"
-    optionValue="value"
-    optionLabel="labelKey"
-    appendTo="body"
-    [multiple]="true"
-    [checkmark]="true"
-    [options]="priorityOptions"
-    [placeholder]="'WORK_ORDERS.FILTERS.PRIORITY_PLACEHOLDER' | translate"
-    [ngModel]="grid.filter().priorities"
-    (ngModelChange)="grid.setFilter({ priorities: $event })"
-  >
-    <ng-template #selectedItem>
-      <hf-chip-summary
-        [chips]="priorityChips(grid.filter().priorities)"
-        [placeholder]="'WORK_ORDERS.FILTERS.PRIORITY_PLACEHOLDER' | translate"
-      />
-    </ng-template>
-    <ng-template
-      #item
-      let-option
-    >
-      <p-tag
-        [class]="'hf-priority-' + option.value"
-        [value]="option.labelKey | translate"
-      />
-    </ng-template>
-  </p-select>
-  @if (store.canManage()) {
-    <p-select
-      class="w-48"
-      optionValue="id"
-      optionLabel="displayName"
-      appendTo="body"
-      [multiple]="true"
-      [checkmark]="true"
-      [filter]="true"
-      [loading]="grid.employeeLookup.isLoading()"
-      [options]="grid.employeeLookup.options()"
-      (onShow)="grid.employeeLookup.request({ text: '', isImmediate: true })"
-      (onFilter)="grid.employeeLookup.request({ text: $event.filter ?? '', isImmediate: false })"
-      [placeholder]="'WORK_ORDERS.FILTERS.ASSIGNEE_PLACEHOLDER' | translate"
-      [ngModel]="grid.filter().assigneeIds"
-      (ngModelChange)="grid.setFilter({ assigneeIds: $event })"
-    />
-  }
-  <hf-plain-date-range-picker
-    [value]="store.plannedStart()"
-    (valueChange)="onRange($event)"
-  />
-  <button
-    pButton
-    type="button"
-    iconOnly
-    severity="secondary"
-    class="ml-auto"
-    [text]="true"
-    [attr.aria-label]="'WORK_ORDERS.COLUMNS_CHOOSER' | translate"
-    (click)="chooser.toggle($event)"
-  >
-    <i class="pi pi-table"></i>
-  </button>
-</div>
-<div class="flex min-h-0 flex-1 flex-col gap-2 overflow-x-auto pb-2">
-  <div
-    cdkDropList
-    cdkDropListOrientation="horizontal"
-    class="flex w-max flex-none gap-3"
-    (cdkDropListDropped)="onHeaderDrop($event)"
-  >
-    @for (status of store.visibleStatuses(); track status) {
-      <div
-        cdkDrag
-        class="flex w-72 flex-none cursor-grab items-center justify-between gap-2"
-      >
-        <p-tag
-          [class]="'hf-status-' + status"
-          [value]="statusLabelKeys[status] | translate"
-        />
-        <span class="text-muted-color text-sm">{{ store.columns()[status].window.totalCount }}</span>
-      </div>
-    }
-  </div>
-  <div
-    cdkDropListGroup
-    class="flex min-h-0 w-max flex-1 gap-3"
-  >
-    @for (status of store.visibleStatuses(); track status) {
-      <hf-board-column
-        [status]="status"
-        [column]="store.columns()[status]"
-        [canManage]="store.canManage()"
-        [canWrite]="store.canWrite()"
-        (rangeRequested)="store.loadRange(status, $event)"
-        (dropped)="onDrop($event)"
-        (opened)="store.requestOpen($event)"
-        (statusChosen)="onStatusChosen($event)"
-      />
-    }
-  </div>
-</div>
-<p-popover
-  #chooser
-  appendTo="body"
 >
-  <div class="flex flex-col gap-2">
-    @for (status of statuses; track status) {
-      <div class="flex items-center gap-2">
-        <p-checkbox
-          [binary]="true"
-          [inputId]="'board-column-' + status"
-          [disabled]="store.visibleStatuses().length === 1 && store.visibleStatuses()[0] === status"
-          [ngModel]="store.visibleStatuses().includes(status)"
-          (ngModelChange)="store.setColumnVisible(status, $event)"
-        />
-        <label [for]="'board-column-' + status">
-          <p-tag
-            [class]="'hf-status-' + status"
-            [value]="statusLabelKeys[status] | translate"
+  <div class="flex min-h-0 flex-1 flex-col gap-4">
+    <div class="flex flex-none flex-wrap items-center gap-2">
+      <input
+        pInputText
+        class="w-48"
+        [attr.aria-label]="'WORK_ORDERS.COLUMNS.TITLE' | translate"
+        [placeholder]="'WORK_ORDERS.FILTERS.TITLE_PLACEHOLDER' | translate"
+        [ngModel]="store.titleDraft()"
+        (ngModelChange)="store.setTitle($event)"
+      />
+      <p-select
+        class="w-48"
+        optionValue="value"
+        optionLabel="labelKey"
+        appendTo="body"
+        panelStyleClass="hf-option-list"
+        [multiple]="true"
+        [checkmark]="true"
+        [options]="priorityOptions"
+        [placeholder]="'WORK_ORDERS.FILTERS.PRIORITY_PLACEHOLDER' | translate"
+        [ngModel]="pendingPriorities()"
+        (ngModelChange)="pendingPriorities.set($event)"
+        (onHide)="applyPriorities()"
+      >
+        <ng-template #selectedItem>
+          <hf-chip-summary
+            [chips]="priorityChips(pendingPriorities())"
+            [placeholder]="'WORK_ORDERS.FILTERS.PRIORITY_PLACEHOLDER' | translate"
           />
-        </label>
+        </ng-template>
+        <ng-template
+          #item
+          let-option
+        >
+          <p-tag
+            [class]="'hf-priority-' + option.value"
+            [value]="option.labelKey | translate"
+          />
+        </ng-template>
+      </p-select>
+      @if (store.canManage()) {
+        <p-select
+          class="w-48"
+          optionValue="id"
+          optionLabel="displayName"
+          appendTo="body"
+          [multiple]="true"
+          [checkmark]="true"
+          panelStyleClass="hf-option-list"
+          [filter]="true"
+          [loading]="showEmployeesLoading()"
+          [options]="grid.employeeLookup.options()"
+          (onShow)="grid.employeeLookup.request({ text: '', isImmediate: true })"
+          (onFilter)="grid.employeeLookup.request({ text: $event.filter ?? '', isImmediate: false })"
+          [placeholder]="'WORK_ORDERS.FILTERS.ASSIGNEE_PLACEHOLDER' | translate"
+          [ngModel]="pendingAssignees()"
+          (ngModelChange)="pendingAssignees.set($event)"
+          (onHide)="applyAssignees()"
+        >
+          <ng-template #selectedItem>
+            <hf-chip-summary
+              appearance="text"
+              [chips]="assigneeChips(pendingAssignees())"
+              [placeholder]="'WORK_ORDERS.FILTERS.ASSIGNEE_PLACEHOLDER' | translate"
+            />
+          </ng-template>
+        </p-select>
+      }
+      <hf-plain-date-range-picker
+        [value]="store.plannedStart()"
+        (valueChange)="onRange($event)"
+      />
+      <button
+        pButton
+        [pTooltip]="'ACTIONS.TOOLTIPS.COLUMNS' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        iconOnly
+        severity="secondary"
+        class="ml-auto"
+        [text]="true"
+        [attr.aria-label]="'ACTIONS.TOOLTIPS.COLUMNS' | translate"
+        (click)="chooser.toggle($event)"
+      >
+        <i class="pi pi-table"></i>
+      </button>
+    </div>
+    <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-x-auto pb-2">
+      <div
+        cdkDropList
+        cdkDropListOrientation="horizontal"
+        class="flex w-max flex-none gap-3"
+        (cdkDropListDropped)="onHeaderDrop($event)"
+      >
+        @for (status of store.visibleStatuses(); track status) {
+          <div
+            cdkDrag
+            class="flex w-72 flex-none cursor-grab items-center justify-between gap-2"
+          >
+            <p-tag
+              [class]="'hf-status-' + status"
+              [value]="statusLabelKeys[status] | translate"
+            />
+            <span class="text-muted-color text-sm">{{ store.columns()[status].window.totalCount }}</span>
+          </div>
+        }
       </div>
-    }
+      <div
+        cdkDropListGroup
+        class="flex min-h-0 w-max flex-1 gap-3"
+      >
+        @for (status of store.visibleStatuses(); track status) {
+          <hf-board-column
+            [status]="status"
+            [column]="store.columns()[status]"
+            [canManage]="store.canManage()"
+            [canWrite]="store.canWrite()"
+            (rangeRequested)="store.loadRange(status, $event)"
+            (dropped)="onDrop($event)"
+            (opened)="store.requestOpen($event)"
+            (statusChosen)="onStatusChosen($event)"
+          />
+        }
+      </div>
+    </div>
   </div>
-</p-popover>
+  <p-popover
+    #chooser
+    appendTo="body"
+  >
+    <div class="hf-check-list">
+      @for (status of statuses; track status) {
+        <div class="flex items-center gap-2">
+          <p-checkbox
+            [binary]="true"
+            [inputId]="'board-column-' + status"
+            [disabled]="store.visibleStatuses().length === 1 && store.visibleStatuses()[0] === status"
+            [ngModel]="store.visibleStatuses().includes(status)"
+            (ngModelChange)="store.setColumnVisible(status, $event)"
+          />
+          <label [for]="'board-column-' + status">
+            <p-tag
+              [class]="'hf-status-' + status"
+              [value]="statusLabelKeys[status] | translate"
+            />
+          </label>
+        </div>
+      }
+    </div>
+  </p-popover>
+</hf-work-orders-view-header>

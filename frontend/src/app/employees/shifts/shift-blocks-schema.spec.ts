@@ -34,10 +34,14 @@ describe('shiftBlockListSchema', () => {
     expect(messages).toContain(LATEST_END_ERROR_KEY);
   });
 
-  it('shiftBlockListSchema_WithEnd2355_Accepts', () => {
-    const messages = messagesOf([block('16:00', '23:55')]);
-
-    expect(messages).toEqual([]);
+  it.each(
+    [
+      { name: 'WithEnd2355', blocks: [block('16:00', '23:55')] },
+      { name: 'WithBlocksThatTouch', blocks: [block('08:00', '12:00'), block('12:00', '13:00')] },
+      { name: 'WithSixBlocks', blocks: Array.from({ length: 6 }, (_, index) => block(`0${index}:00`, `0${index}:30`)) },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('shiftBlockListSchema_%s_Accepts', (_name, { blocks }) => {
+    expect(messagesOf(blocks)).toEqual([]);
   });
 
   it('shiftBlockListSchema_WithTimeOffTheGrid_RejectsWithTheGridKey', () => {
@@ -64,25 +68,11 @@ describe('shiftBlockListSchema', () => {
     expect(messages).toContain(OVERLAP_ERROR_KEY);
   });
 
-  it('shiftBlockListSchema_WithBlocksThatTouch_Accepts', () => {
-    const messages = messagesOf([block('08:00', '12:00'), block('12:00', '13:00')]);
-
-    expect(messages).toEqual([]);
-  });
-
   it('shiftBlockListSchema_WithSevenBlocks_RejectsWithTheLimitKey', () => {
     const blocks = Array.from({ length: 7 }, (_, index) => block(`0${index}:00`, `0${index}:30`));
 
     const messages = messagesOf(blocks);
 
     expect(messages).toContain(TOO_MANY_ERROR_KEY);
-  });
-
-  it('shiftBlockListSchema_WithSixBlocks_Accepts', () => {
-    const blocks = Array.from({ length: 6 }, (_, index) => block(`0${index}:00`, `0${index}:30`));
-
-    const messages = messagesOf(blocks);
-
-    expect(messages).toEqual([]);
   });
 });

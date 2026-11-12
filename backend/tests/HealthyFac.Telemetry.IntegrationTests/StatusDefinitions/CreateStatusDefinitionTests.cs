@@ -52,8 +52,9 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         row.Description!.Length.Should().BeGreaterThan(StatusDefinitionTestData.DescriptionLimit);
     }
 
-    [Fact]
-    public async Task CreateStatusDefinition_WithDuplicateCode_ThrowsConflict()
+    [Theory]
+    [MemberData(nameof(StatusDefinitionTestData.TakenCodes), MemberType = typeof(StatusDefinitionTestData))]
+    public async Task CreateStatusDefinition_WithTakenCode_ThrowsConflict(string caseName, string code)
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
@@ -65,27 +66,11 @@ public sealed class CreateStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var act = () => _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
-            StatusDefinitionTestData.Code);
+            code);
 
-        await act.Should().ThrowAsync<ConflictException>().WithMessage(StatusDefinitionErrors.CodeTaken);
-    }
-
-    [Fact]
-    public async Task CreateStatusDefinition_WithCodeInOtherCase_ThrowsConflict()
-    {
-        var tenant = _fixture.ArrangeMachineTenant();
-        var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
-        await _fixture.CreateStatusDefinitionAsync(
-            tenant.CompanyId,
-            machineId,
-            StatusDefinitionTestData.Code);
-
-        var act = () => _fixture.CreateStatusDefinitionAsync(
-            tenant.CompanyId,
-            machineId,
-            StatusDefinitionTestData.CodeOtherCase);
-
-        await act.Should().ThrowAsync<ConflictException>().WithMessage(StatusDefinitionErrors.CodeTaken);
+        await act.Should()
+            .ThrowAsync<ConflictException>(because: caseName)
+            .WithMessage(StatusDefinitionErrors.CodeTaken);
     }
 
     [Fact]

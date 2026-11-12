@@ -1,20 +1,26 @@
 <hf-action-dialog
-  title="DRAFTS.LIST.TITLE"
+  [title]="titleKey()"
   widthClass="w-[64rem] max-w-[95vw]"
   [isSaveShown]="false"
-  [isClosedByHeaderOnly]="true"
+  [hasGrid]="true"
   (cancelled)="store.close()"
 >
+  <div class="flex flex-none flex-col gap-2 pb-2">
+    <ng-content />
+    <p class="text-sm text-muted-color">{{ 'DRAFTS.PENDING_COUNT' | translate: { count: store.pendingCount() } }}</p>
+  </div>
   @if (store.hasLoadError()) {
     <div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 py-8">
       <p class="text-muted-color">{{ 'DRAFTS.LIST.LOAD_FAILED' | translate }}</p>
       <button
         pButton
+        [pTooltip]="'ACTIONS.TOOLTIPS.RETRY' | translate"
+        tooltipPosition="bottom"
         type="button"
         severity="secondary"
         (click)="store.retryLoad()"
       >
-        {{ 'DRAFTS.LIST.RETRY' | translate }}
+        {{ 'ACTIONS.RETRY' | translate }}
       </button>
     </div>
   } @else {
@@ -22,46 +28,60 @@
       [rows]="page().items"
       [totalCount]="page().totalCount"
       [isLoading]="store.drafts.isLoading()"
+      [hasLoaded]="store.drafts.hasValue()"
       [offset]="store.offset()"
       [limit]="store.limit()"
       [sort]="store.sort()"
       [filter]="store.filter()"
+      [isMachineShown]="store.attemptId() !== undefined"
       [canWrite]="store.canWrite()"
       [reasons]="store.quickReasons()"
       [applyingIds]="store.applyingIds()"
+      [selectedIds]="store.selectedIds()"
       (applyRequested)="store.requestApply($event)"
       (filterChange)="store.setFilter($event)"
       (sortChange)="store.setSort($event)"
       (pageChange)="store.setPage($event.offset, $event.limit)"
       (reviewRequested)="store.requestReview($event)"
       (dismissRequested)="store.requestDismiss($event)"
+      (selectionToggled)="store.toggleSelected($event.item, $event.isChecked)"
+      (pageSelectionToggled)="store.toggleSelectedMany(pendingItems(), $event)"
     />
   }
-  @if (store.canWrite() && (page().items.length > 0 || store.filter().kinds.length > 0)) {
+  @if (store.canWrite()) {
     <div
       hfDialogFooter
       class="flex gap-2"
     >
       <button
         pButton
+        [pTooltip]="
+          (store.selectedCount() > 0 ? 'DRAFTS.TOOLTIPS.DISMISS_SELECTED' : 'DRAFTS.TOOLTIPS.DISMISS_ALL')
+            | translate: { count: store.selectedCount() }
+        "
+        tooltipPosition="bottom"
         type="button"
         severity="danger"
         [outlined]="true"
-        [disabled]="store.isQuickBusy() || store.isDismissing()"
-        [loading]="store.isDismissing()"
+        [disabled]="isActionDisabled()"
+        [loading]="showDismissing()"
         (click)="store.requestDismissAll()"
       >
-        {{ 'DRAFTS.DISMISS_ALL' | translate }}
+        {{ (store.selectedCount() > 0 ? 'DRAFTS.DISMISS' : 'DRAFTS.DISMISS_ALL') | translate }}
       </button>
       <button
         pButton
+        [pTooltip]="
+          (store.selectedCount() > 0 ? 'DRAFTS.TOOLTIPS.APPLY_SELECTED' : 'DRAFTS.TOOLTIPS.APPLY_ALL')
+            | translate: { count: store.selectedCount() }
+        "
+        tooltipPosition="bottom"
         type="button"
-        [outlined]="true"
-        [disabled]="store.isQuickBusy() || store.isDismissing()"
-        [loading]="store.isQuickBusy()"
+        [disabled]="isActionDisabled()"
+        [loading]="showQuickBusy()"
         (click)="store.requestApplyAll()"
       >
-        {{ 'DRAFTS.APPLY_ALL' | translate }}
+        {{ (store.selectedCount() > 0 ? 'DRAFTS.APPLY' : 'DRAFTS.APPLY_ALL') | translate }}
       </button>
     </div>
   }

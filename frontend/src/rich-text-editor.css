@@ -1,0 +1,68 @@
+/*
+ * Quill 2 core is unlayered, so it wins over the layered PrimeNG and Tailwind rules. These rules restore the editor
+ * height (h-64 of the editor), the placeholder colour, the link builder look, and clear the Quill 1.3.3 list markers
+ * of PrimeNG. The Quill markup is not in a template, so the rules are global and scoped by the host element.
+ */
+hf-rich-text-editor .p-editor-content.ql-container {
+  height: 16rem;
+}
+
+hf-rich-text-editor .ql-editor.ql-blank::before {
+  color: var(--p-form-field-placeholder-color);
+}
+
+hf-rich-text-editor .ql-editor li::before {
+  content: none;
+}
+
+hf-rich-text-editor .p-editor-content .ql-tooltip {
+  left: 0 !important;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  color: var(--p-text-color);
+  white-space: normal;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-content-border-radius);
+  box-shadow: var(--p-overlay-popover-shadow);
+}
+
+hf-rich-text-editor .p-editor-content .ql-tooltip input[type='text'] {
+  max-width: 100%;
+  padding: 0.5rem 0.75rem;
+  color: var(--p-form-field-color);
+  background: var(--p-form-field-background);
+  border: 1px solid var(--p-form-field-border-color);
+  border-radius: var(--p-form-field-border-radius);
+}
+
+hf-rich-text-editor .p-editor-content .ql-tooltip input[type='text']:focus {
+  border-color: var(--p-form-field-focus-border-color);
+  outline: 0;
+}
+
+hf-rich-text-editor .p-editor-content .ql-tooltip a {
+  color: var(--p-primary-color);
+}
+
+hf-rich-text-editor .ql-editor .ql-size-small {
+  font-size: 0.75em;
+}
+
+hf-rich-text-editor .ql-editor .ql-size-large {
+  font-size: 1.5em;
+}
+
+hf-rich-text-editor .ql-editor .ql-size-huge {
+  font-size: 2.5em;
+}
+
+/*
+ * The PrimeNG Quill 1.3.3 styles write the size labels as fixed English `content` strings. Quill copies the text of
+ * each `<option>` into `data-label`, and the option text is translated, so the labels follow the language.
+ */
+hf-rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-label[data-label]::before,
+hf-rich-text-editor .ql-snow .ql-picker.ql-size .ql-picker-item[data-label]::before {
+  content: attr(data-label);
+}

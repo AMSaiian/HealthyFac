@@ -2,9 +2,11 @@ import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { signalStore, withComputed, withProps } from '@ngrx/signals';
 
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { CompanyApi } from './company-api';
+
+import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 export const CompanyStore = signalStore(
   { providedIn: 'root' },
@@ -21,4 +23,5 @@ export const CompanyStore = signalStore(
   withComputed((store) => ({
     timeZoneId: computed((): string | null => (store.company.hasValue() ? store.company.value().timeZoneId : null)),
   })),
+  withStoreDevtools('company'),
 );

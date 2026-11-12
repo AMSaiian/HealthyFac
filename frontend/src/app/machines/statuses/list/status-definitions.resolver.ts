@@ -13,7 +13,7 @@ import { StatusDefinitionsGridStore } from '@machines/statuses/list/status-defin
 export const MACHINE_ID_PARAMETER = 'machineId';
 export const NOT_FOUND_URL = '/not-found';
 
-const ERROR_SUMMARY_KEY = 'ERRORS.SUMMARY';
+const ERROR_SUMMARY_KEY = 'TOASTS.ERROR';
 
 /**
  * Opens the machine of the route in the grid store before the page activates. A missing machine (`404`) leads to the

@@ -18,7 +18,6 @@ export const COLUMN_ORDER: readonly FileColumn[] = [
   FileColumn.Extension,
   FileColumn.SizeBytes,
   FileColumn.UploadedAt,
-  FileColumn.Description,
   FileColumn.Machine,
   FileColumn.Ingest,
 ];
@@ -37,4 +36,8 @@ export function isSameScope(first: FilesScope | null, second: FilesScope): boole
     return false;
   }
   return first.kind === 'company' || (second.kind === 'machine' && first.machineId === second.machineId);
+}
+
+export interface ScopeState {
+  scope: FilesScope | null;
 }

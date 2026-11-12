@@ -28,6 +28,16 @@ public static class EmployeeApiFixtureExtensions
                 new JsonObject { [propertyName: "employeeId"] = fixture.IdEncryptor.Encrypt(employeeId) });
         }
 
+        public async Task<HttpResponseMessage> PostEmployeeActionWithoutBodyAsync(string path, TestTokenClaims claims)
+        {
+            using var client = fixture.CreateClient();
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                BearerScheme,
+                fixture.Tokens.CreateToken(claims));
+
+            return await client.PostAsync(path, content: null);
+        }
+
         public async Task<HttpResponseMessage> PostEmployeeSearchAsync(string path, TestTokenClaims claims)
         {
             using var client = fixture.CreateClient();

@@ -135,16 +135,20 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact]
-    public async Task Dismiss_WithoutWritePermission_Returns403()
+    [Theory]
+    [MemberData(nameof(DraftApiTestData.DismissRoutesWithoutWrite), MemberType = typeof(DraftApiTestData))]
+    public async Task Dismiss_WithoutWritePermission_Returns403(string caseName, string pathTemplate)
     {
         var draft = await _fixture.ArrangeMachineDraftAsync();
+        var encryptedMachineId = await _fixture.ArrangeMachineAsync(serialNumber: "DISMISS-ALL-403");
         var claims = _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission);
 
         var response = await _fixture.SendMachineRequestAsync(
-            HttpMethod.Post, DraftApiTestData.DismissPath(draft.EncryptedId), claims);
+            HttpMethod.Post,
+            pathTemplate.Replace("{draftId}", draft.EncryptedId).Replace("{machineId}", encryptedMachineId),
+            claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
     }
 
     [Fact]
@@ -165,19 +169,6 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         content.Should().Contain("\"dismissedCount\":2");
         metrics.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
-    }
-
-    [Fact]
-    public async Task DismissMachineDrafts_WithoutWritePermission_Returns403()
-    {
-        var encryptedMachineId = await _fixture.ArrangeMachineAsync(serialNumber: "DISMISS-ALL-403");
-
-        var response = await _fixture.SendMachineRequestAsync(
-            HttpMethod.Post,
-            DraftApiTestData.DismissMachineDraftsPath(encryptedMachineId),
-            _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]

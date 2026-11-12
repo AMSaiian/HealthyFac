@@ -8,10 +8,10 @@ namespace HealthyFac.Shared.Infrastructure.RichText;
 
 /// <summary>
 /// Inspects rich text with HtmlSanitizer. The allow-list holds the formats of the editor toolbar (bold, italic,
-/// underline, strikethrough, lists, checklists, links, file images) and the markup that Quill 2 adds for lists. A
-/// <c>data-list</c> value must be <c>bullet</c>, <c>ordered</c>, <c>checked</c>, or <c>unchecked</c>. The policy never
-/// compares the sanitized text with the original: it reports every removal that the sanitizer announces through its
-/// events, so a difference in white space or entity encoding is never a finding.
+/// underline, strikethrough, lists, checklists, font sizes, links, file images) and the markup that Quill 2 adds for
+/// lists. A <c>data-list</c> value must be <c>bullet</c>, <c>ordered</c>, <c>checked</c>, or <c>unchecked</c>. The
+/// policy never compares the sanitized text with the original: it reports every removal that the sanitizer announces
+/// through its events, so a difference in white space or entity encoding is never a finding.
 /// </summary>
 /// <remarks>
 /// A sanitizer with event handlers keeps the state of one call, so each call builds its own sanitizer. One
@@ -91,7 +91,11 @@ public sealed class HtmlSanitizerRichTextPolicy : IRichTextPolicy
                 AllowedTags = new HashSet<string>(AllowedTags, StringComparer.OrdinalIgnoreCase),
                 AllowedAttributes = new HashSet<string>(AllowedAttributes, StringComparer.OrdinalIgnoreCase),
                 AllowedSchemes = new HashSet<string>(AllowedSchemes, StringComparer.OrdinalIgnoreCase),
-                AllowedClasses = new HashSet<string>([RichTextAttributes.QuillUiClass]),
+                AllowedClasses = new HashSet<string>(
+                [
+                    RichTextAttributes.QuillUiClass, RichTextAttributes.QuillSizeSmallClass,
+                    RichTextAttributes.QuillSizeLargeClass, RichTextAttributes.QuillSizeHugeClass,
+                ]),
                 AllowedCssProperties = new HashSet<string>(),
                 AllowedAtRules = new HashSet<CssRuleType>(),
             });

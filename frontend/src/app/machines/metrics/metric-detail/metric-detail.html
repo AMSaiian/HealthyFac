@@ -5,6 +5,8 @@
       @if (item().isDeleted) {
         <button
           pButton
+          [pTooltip]="'METRICS.TOOLTIPS.RESTORE' | translate"
+          tooltipPosition="bottom"
           type="button"
           severity="secondary"
           (click)="restoreRequested.emit()"
@@ -15,21 +17,25 @@
       } @else {
         <button
           pButton
-          type="button"
-          (click)="editRequested.emit()"
-        >
-          <i class="pi pi-pencil"></i>
-          {{ 'METRICS.EDIT' | translate }}
-        </button>
-        <button
-          pButton
+          [pTooltip]="'ACTIONS.TOOLTIPS.DELETE' | translate"
+          tooltipPosition="bottom"
           type="button"
           severity="danger"
           [outlined]="true"
           (click)="removeRequested.emit()"
         >
           <i class="pi pi-trash"></i>
-          {{ 'METRICS.DELETE' | translate }}
+          {{ 'ACTIONS.DELETE' | translate }}
+        </button>
+        <button
+          pButton
+          [pTooltip]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          (click)="editRequested.emit()"
+        >
+          <i class="pi pi-pencil"></i>
+          {{ 'ACTIONS.EDIT' | translate }}
         </button>
       }
     </div>

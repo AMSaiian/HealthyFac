@@ -68,7 +68,7 @@ describe('statusDefinitionsResolver', () => {
     expect(values).toEqual([]);
     expect(messages.add).toHaveBeenCalledExactlyOnceWith({
       severity: 'error',
-      summary: 'ERRORS.SUMMARY',
+      summary: 'TOASTS.ERROR',
       detail: 'ERRORS.HTTP.SERVER',
     });
   });

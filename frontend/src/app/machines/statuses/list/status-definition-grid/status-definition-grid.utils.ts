@@ -19,7 +19,9 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<StatusDefinitionColumn, string>>
 };
 
 export const MENU_UPDATE_KEY = 'STATUS_DEFINITIONS.UPDATE';
-export const MENU_DELETE_KEY = 'STATUS_DEFINITIONS.DELETE';
+export const MENU_DELETE_KEY = 'ACTIONS.DELETE';
+export const MENU_UPDATE_TOOLTIP_KEY = 'STATUS_DEFINITIONS.TOOLTIPS.UPDATE';
+export const MENU_DELETE_TOOLTIP_KEY = 'STATUS_DEFINITIONS.TOOLTIPS.DELETE';
 
 export const SORTABLE_COLUMNS: readonly string[] = Object.values(StatusDefinitionSortColumn);
 

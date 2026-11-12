@@ -5,6 +5,7 @@ import { Select } from 'primeng/select';
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import type { AppAction } from '@shared/actions/app-action';
+import { delayedLoading } from '@shared/loading/delayed-loading';
 
 import { FilesApi } from '@files/files-api';
 import { FileTieStore } from '@files/tie/file-tie.store';
@@ -20,6 +21,7 @@ export class FileTieHost {
   readonly action = input.required<AppAction>();
 
   protected readonly store = inject(FileTieStore);
+  protected readonly showLoading = delayedLoading(this.store.isLoading);
 
   constructor() {
     effect(() => {

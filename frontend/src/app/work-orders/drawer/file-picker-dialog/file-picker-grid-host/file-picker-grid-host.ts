@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, input, output, untracked } from '@
 import type { FilesPage, FilesScope } from '@files/file';
 import { FileGrid } from '@files/list/file-grid/file-grid';
 import { FilesApi } from '@files/files-api';
+import { IngestApi } from '@files/ingest/ingest-api';
 import { FilesGridStore } from '@files/list/files-grid.store';
 
 const EMPTY_PAGE: FilesPage = { items: [], totalCount: 0 };
@@ -11,7 +12,7 @@ const EMPTY_PAGE: FilesPage = { items: [], totalCount: 0 };
 @Component({
   imports: [FileGrid],
   host: { class: 'flex h-96 min-h-0 min-w-0 flex-col' },
-  providers: [FilesApi, FilesGridStore],
+  providers: [FilesApi, IngestApi, FilesGridStore],
   selector: 'hf-file-picker-grid-host',
   templateUrl: './file-picker-grid-host.html',
 })

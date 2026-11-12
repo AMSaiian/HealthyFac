@@ -6,6 +6,7 @@ import { MachineColumn, type MachineFilter, MachineSortColumn, MachineState } fr
 export const COLUMN_LABEL_KEYS: Readonly<Record<MachineColumn, string>> = {
   [MachineColumn.Name]: 'MACHINES.COLUMNS.NAME',
   [MachineColumn.SerialNumber]: 'MACHINES.COLUMNS.SERIAL_NUMBER',
+  [MachineColumn.GatewayId]: 'MACHINES.COLUMNS.GATEWAY_ID',
   [MachineColumn.State]: 'MACHINES.COLUMNS.STATE',
   [MachineColumn.CreatedAt]: 'MACHINES.COLUMNS.CREATED_AT',
   [MachineColumn.UpdatedAt]: 'MACHINES.COLUMNS.UPDATED_AT',
@@ -21,8 +22,14 @@ export const STATE_LABEL_KEYS: Readonly<Record<MachineState, string>> = {
 export const MENU_METRICS_KEY = 'MACHINES.METRICS';
 export const MENU_STATUSES_KEY = 'MACHINES.STATUSES';
 export const MENU_FILES_KEY = 'MACHINES.FILES';
-export const MENU_UPDATE_KEY = 'MACHINES.UPDATE';
-export const MENU_DELETE_KEY = 'MACHINES.DELETE';
+export const MENU_OPEN_KEY = 'ACTIONS.OPEN';
+export const MENU_OPEN_TOOLTIP_KEY = 'ACTIONS.TOOLTIPS.OPEN';
+export const MENU_METRICS_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.METRICS';
+export const MENU_STATUSES_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.STATUSES';
+export const MENU_DRAFTS_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.DRAFTS';
+export const MENU_FILES_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.FILES';
+export const MENU_DELETE_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.DELETE';
+export const MENU_DELETE_KEY = 'ACTIONS.DELETE';
 export const MENU_DRAFTS_KEY = 'MACHINES.DRAFTS';
 export const DRAFTS_YES_KEY = 'MACHINES.FILTERS.DRAFTS_YES';
 export const DRAFTS_NO_KEY = 'MACHINES.FILTERS.DRAFTS_NO';
@@ -33,6 +40,7 @@ export const SORTABLE_COLUMNS: readonly string[] = Object.values(MachineSortColu
 export const FILTER_READERS: Readonly<Record<MachineColumn, (value: unknown) => Partial<MachineFilter>>> = {
   [MachineColumn.Name]: (value) => ({ name: asText(value) }),
   [MachineColumn.SerialNumber]: (value) => ({ serialNumber: asText(value) }),
+  [MachineColumn.GatewayId]: (value) => ({ gatewayId: asText(value) }),
   [MachineColumn.State]: (value) => ({ states: asList<MachineState>(value) }),
   [MachineColumn.CreatedAt]: (value) => ({ createdAt: asRange(value) }),
   [MachineColumn.UpdatedAt]: (value) => ({ updatedAt: asRange(value) }),
@@ -43,6 +51,7 @@ export const FILTER_READERS: Readonly<Record<MachineColumn, (value: unknown) => 
 export const FILTER_WRITERS: Readonly<Record<MachineColumn, (filter: MachineFilter) => unknown>> = {
   [MachineColumn.Name]: (filter) => filter.name || null,
   [MachineColumn.SerialNumber]: (filter) => filter.serialNumber || null,
+  [MachineColumn.GatewayId]: (filter) => filter.gatewayId || null,
   [MachineColumn.State]: (filter) => (filter.states.length > 0 ? [...filter.states] : null),
   [MachineColumn.CreatedAt]: (filter) => (isRangeEmpty(filter.createdAt) ? null : filter.createdAt),
   [MachineColumn.UpdatedAt]: (filter) => (isRangeEmpty(filter.updatedAt) ? null : filter.updatedAt),

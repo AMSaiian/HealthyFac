@@ -50,26 +50,61 @@ function buttonsWithForbiddenVariant(path: string, source: string): string[] {
   return found;
 }
 
-const REQUIRED_BINDINGS: Record<string, string> = {
-  'p-column-filter': '[filterButtonProps]="',
-  'p-dialog': '[closeButtonProps]="',
-  'p-drawer': '[closeButtonProps]="',
-  'p-confirmdialog': '[pt]="',
+const REQUIRED_BINDINGS: Record<string, readonly string[]> = {
+  'p-column-filter': ['[filterButtonProps]="'],
+  'p-dialog': ['[pt]="', '[dismissableMask]="'],
+  'p-drawer': ['[dismissible]="', '[showCloseIcon]="false"'],
+  'p-confirmdialog': ['[pt]="', '[dismissableMask]="'],
 };
 const COMPONENT_START = /<(p-column-filter|p-dialog|p-drawer|p-confirmdialog)(?=[\s>])/g;
 
-/** The `file:line` of each `p-column-filter`, `p-dialog`, `p-drawer`, and `p-confirmdialog` without the square close button. */
-function hostsWithoutSquareButtonProps(path: string, source: string): string[] {
+/** The `file:line` of each `p-column-filter`, `p-dialog`, `p-drawer`, and `p-confirmdialog` without a required binding. */
+function hostsWithoutRequiredBindings(path: string, source: string): string[] {
   const found: string[] = [];
   for (const match of source.matchAll(COMPONENT_START)) {
     const start = match.index;
     const startTag = source.slice(start, endOfStartTag(source, start) + 1);
-    if (!startTag.includes(REQUIRED_BINDINGS[match[1]])) {
+    if (REQUIRED_BINDINGS[match[1]].some((binding) => !startTag.includes(binding))) {
       found.push(`${path}:${source.slice(0, start).split(NEWLINE).length}`);
     }
   }
   return found;
 }
+
+const CLOSABLE_FALSE = '[closable]="false"';
+const HIDDEN_CLOSE_BUTTON_PT_NAME = 'HIDDEN_CLOSE_BUTTON_PT';
+const DIALOG_START = /<p-(dialog|confirmdialog)(?=[\s>])/;
+
+/** The `file:line` of each template line that sets `[closable]="false"`, which also turns off Escape and the backdrop. */
+function closableFalseOffenders(path: string, source: string): string[] {
+  return source
+    .split(NEWLINE)
+    .map((line, index) => (line.includes(CLOSABLE_FALSE) ? `${path}:${index + 1}` : null))
+    .filter((found): found is string => found !== null);
+}
+
+/** Whether a template has a dialog or confirmation whose component does not bind the hidden close button pt. */
+function dialogWithoutHiddenClosePt(template: string, component: string): boolean {
+  return DIALOG_START.test(template) && !component.includes(HIDDEN_CLOSE_BUTTON_PT_NAME);
+}
+
+/** The `file:line` of each `pButton` start tag that `isOffender` accepts. */
+function pButtonOffenders(path: string, source: string, isOffender: (startTag: string) => boolean): string[] {
+  const found: string[] = [];
+  for (const match of source.matchAll(ELEMENT_START)) {
+    const start = match.index;
+    const startTag = source.slice(start, endOfStartTag(source, start) + 1);
+    if (/\spButton[\s>=]/.test(startTag) && isOffender(startTag)) {
+      found.push(`${path}:${source.slice(0, start).split(NEWLINE).length}`);
+    }
+  }
+  return found;
+}
+
+const isOutlinedNotDanger = (startTag: string): boolean =>
+  startTag.includes('[outlined]="true"') && !startTag.includes('severity="danger"');
+const isDangerNotOutlined = (startTag: string): boolean =>
+  startTag.includes('severity="danger"') && !startTag.includes('[outlined]="true"');
 
 describe('button variants', () => {
   it('everyPButton_IsFilledOrOutlined_NeverTextOrLink', () => {
@@ -84,107 +119,202 @@ describe('button variants', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('everyColumnFilterDialogAndDrawer_BindsTheSquareButtonProps', () => {
+  it('everyColumnFilterDialogAndDrawer_HasItsRequiredBindings', () => {
     const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
       string,
       string
     >;
 
-    const offenders = Object.entries(templates).flatMap(([path, source]) =>
-      hostsWithoutSquareButtonProps(path, source),
-    );
+    const offenders = Object.entries(templates).flatMap(([path, source]) => hostsWithoutRequiredBindings(path, source));
 
     expect(offenders).toEqual([]);
   });
 
-  it('hostsWithoutSquareButtonProps_WithoutTheBindings_NamesEachFileAndLine', () => {
+  it('hostsWithoutRequiredBindings_WithoutTheBindings_NamesEachFileAndLine', () => {
     const source = [
       '<p-column-filter [field]="a"></p-column-filter>',
       '<p-dialog [header]="h"></p-dialog>',
       '<p-drawer position="left"></p-drawer>',
     ].join(NEWLINE);
 
-    const found = hostsWithoutSquareButtonProps('h.html', source);
+    const found = hostsWithoutRequiredBindings('h.html', source);
 
     expect(found).toEqual(['h.html:1', 'h.html:2', 'h.html:3']);
   });
 
-  it('hostsWithoutSquareButtonProps_WithAConfirmDialog_NeedsThePassThrough', () => {
-    const source = ['<p-confirmdialog />', '<p-confirmdialog [pt]="squareConfirmDialogPt" />'].join(NEWLINE);
+  it('hostsWithoutRequiredBindings_WithAConfirmDialog_NeedsTheHiddenClosePtAndTheMask', () => {
+    const source = ['<p-confirmdialog />', '<p-confirmdialog [pt]="hiddenClosePt" [dismissableMask]="true" />'].join(
+      NEWLINE,
+    );
 
-    const found = hostsWithoutSquareButtonProps('c.html', source);
+    const found = hostsWithoutRequiredBindings('c.html', source);
 
     expect(found).toEqual(['c.html:1']);
   });
 
-  it('hostsWithoutSquareButtonProps_WithTheBindings_FindsNone', () => {
+  it('closableFalseOffenders_WithClosableFalse_NamesFileAndLine', () => {
+    const source = ['<p-dialog [closable]="false"></p-dialog>', '<p-dialog [pt]="hiddenClosePt"></p-dialog>'].join(
+      NEWLINE,
+    );
+
+    const found = closableFalseOffenders('d.html', source);
+
+    expect(found).toEqual(['d.html:1']);
+  });
+
+  it('dialogWithoutHiddenClosePt_WithoutTheConstantInTheComponent_IsReported', () => {
+    expect(dialogWithoutHiddenClosePt('<p-dialog></p-dialog>', 'class A {}')).toBe(true);
+    expect(dialogWithoutHiddenClosePt('<p-dialog></p-dialog>', 'pt = HIDDEN_CLOSE_BUTTON_PT;')).toBe(false);
+    expect(dialogWithoutHiddenClosePt('<div></div>', 'class A {}')).toBe(false);
+  });
+
+  it('everyTemplate_NeverSetsClosableFalse', () => {
+    const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
+      string,
+      string
+    >;
+
+    const offenders = Object.entries(templates).flatMap(([path, source]) => closableFalseOffenders(path, source));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('everyDialogAndConfirmation_BindsTheHiddenClosePt', () => {
+    const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
+      string,
+      string
+    >;
+    const components = import.meta.glob(['./**/*.ts', '!./**/*.spec.ts'], {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }) as Record<string, string>;
+
+    const offenders = Object.entries(templates)
+      .filter(([path, source]) => dialogWithoutHiddenClosePt(source, components[path.replace(/\.html$/, '.ts')] ?? ''))
+      .map(([path]) => path);
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('hostsWithoutRequiredBindings_WithTheBindings_FindsNone', () => {
     const source = [
       '<p-column-filter [field]="a" [filterButtonProps]="squareFilterButtonProps"></p-column-filter>',
-      '<p-dialog [header]="h" [closeButtonProps]="squareCloseButtonProps"></p-dialog>',
-      '<p-drawer [closeButtonProps]="squareCloseButtonProps"></p-drawer>',
+      '<p-dialog [header]="h" [pt]="hiddenClosePt" [dismissableMask]="true"></p-dialog>',
+      '<p-drawer [dismissible]="true" [showCloseIcon]="false"></p-drawer>',
     ].join(NEWLINE);
 
-    const found = hostsWithoutSquareButtonProps('k.html', source);
+    const found = hostsWithoutRequiredBindings('k.html', source);
 
     expect(found).toEqual([]);
   });
 
-  it('buttonsWithForbiddenVariant_WithTextAndLinkVariants_NamesEachFileAndLine', () => {
-    const source = [
-      '<button pButton [text]="true">A</button>',
-      '<button pButton variant="link">B</button>',
-      '<button pButton text>C</button>',
-      '<a pButton [link]="true">D</a>',
-    ].join(NEWLINE);
+  it('everyOutlinedPButton_IsDanger', () => {
+    const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
+      string,
+      string
+    >;
 
-    const found = buttonsWithForbiddenVariant('x.html', source);
+    const offenders = Object.entries(templates).flatMap(([path, source]) =>
+      pButtonOffenders(path, source, isOutlinedNotDanger),
+    );
 
-    expect(found).toEqual(['x.html:1', 'x.html:2', 'x.html:3', 'x.html:4']);
+    expect(offenders).toEqual([]);
   });
 
-  it('buttonsWithForbiddenVariant_WithOutlinedIconOnlyButtons_NamesEachFileAndLine', () => {
-    const source = [
-      '<button pButton iconOnly [outlined]="true"><i class="pi pi-bars"></i></button>',
-      '<button pButton iconOnly outlined><i class="pi pi-bars"></i></button>',
-    ].join(NEWLINE);
+  it('everyDangerPButton_IsOutlined', () => {
+    const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
+      string,
+      string
+    >;
 
-    const found = buttonsWithForbiddenVariant('z.html', source);
+    const offenders = Object.entries(templates).flatMap(([path, source]) =>
+      pButtonOffenders(path, source, isDangerNotOutlined),
+    );
 
-    expect(found).toEqual(['z.html:1', 'z.html:2']);
+    expect(offenders).toEqual([]);
   });
 
-  it('buttonsWithForbiddenVariant_WithRoundedButtons_NamesEachFileAndLine', () => {
+  it('outlinedPButtons_WithOutlinedNonDanger_NamesFileAndLine', () => {
     const source = [
-      '<button pButton iconOnly [text]="true" [rounded]="true"><i class="pi pi-bars"></i></button>',
-      '<button pButton rounded>A</button>',
+      '<button pButton [outlined]="true">A</button>',
+      '<button pButton severity="danger" [outlined]="true">B</button>',
     ].join(NEWLINE);
 
-    const found = buttonsWithForbiddenVariant('r.html', source);
+    const found = pButtonOffenders('o.html', source, isOutlinedNotDanger);
 
-    expect(found).toEqual(['r.html:1', 'r.html:2']);
+    expect(found).toEqual(['o.html:1']);
   });
 
-  it('buttonsWithForbiddenVariant_WithTextAndFilledIconOnlyButtons_FindsNone', () => {
+  it('dangerPButtons_WithFilledDanger_NamesFileAndLine', () => {
     const source = [
-      '<button pButton iconOnly [text]="true"><i class="pi pi-bars"></i></button>',
-      '<button pButton iconOnly severity="secondary"><i class="pi pi-copy"></i></button>',
+      '<button pButton severity="danger">A</button>',
+      '<button pButton severity="danger" [outlined]="true">B</button>',
     ].join(NEWLINE);
 
-    const found = buttonsWithForbiddenVariant('w.html', source);
+    const found = pButtonOffenders('d.html', source, isDangerNotOutlined);
 
-    expect(found).toEqual([]);
+    expect(found).toEqual(['d.html:1']);
   });
 
-  it('buttonsWithForbiddenVariant_WithFilledOutlinedAndPlainButtons_FindsNone', () => {
-    const source = [
-      '<button pButton>A</button>',
-      '<button pButton [outlined]="true" [disabled]="rows.some((row) => row.isText)" (click)="go(a > b)">B</button>',
-      '<button type="button" [text]="true">C</button>',
-      '<button pButton pTooltip="a text tooltip" severity="secondary">D</button>',
-    ].join(NEWLINE);
+  it.each(
+    [
+      {
+        name: 'WithTextAndLinkVariants',
+        file: 'x.html',
+        source: [
+          '<button pButton [text]="true">A</button>',
+          '<button pButton variant="link">B</button>',
+          '<button pButton text>C</button>',
+          '<a pButton [link]="true">D</a>',
+        ],
+        expected: ['x.html:1', 'x.html:2', 'x.html:3', 'x.html:4'],
+      },
+      {
+        name: 'WithOutlinedIconOnlyButtons',
+        file: 'z.html',
+        source: [
+          '<button pButton iconOnly [outlined]="true"><i class="pi pi-bars"></i></button>',
+          '<button pButton iconOnly outlined><i class="pi pi-bars"></i></button>',
+        ],
+        expected: ['z.html:1', 'z.html:2'],
+      },
+      {
+        name: 'WithRoundedButtons',
+        file: 'r.html',
+        source: [
+          '<button pButton iconOnly [text]="true" [rounded]="true"><i class="pi pi-bars"></i></button>',
+          '<button pButton rounded>A</button>',
+        ],
+        expected: ['r.html:1', 'r.html:2'],
+      },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('buttonsWithForbiddenVariant_%s_NamesEachFileAndLine', (_name, { file, source, expected }) => {
+    expect(buttonsWithForbiddenVariant(file, source.join(NEWLINE))).toEqual(expected);
+  });
 
-    const found = buttonsWithForbiddenVariant('y.html', source);
-
-    expect(found).toEqual([]);
+  it.each(
+    [
+      {
+        name: 'WithTextAndFilledIconOnlyButtons',
+        file: 'w.html',
+        source: [
+          '<button pButton iconOnly [text]="true"><i class="pi pi-bars"></i></button>',
+          '<button pButton iconOnly severity="secondary"><i class="pi pi-copy"></i></button>',
+        ],
+      },
+      {
+        name: 'WithFilledOutlinedAndPlainButtons',
+        file: 'y.html',
+        source: [
+          '<button pButton>A</button>',
+          '<button pButton [outlined]="true" [disabled]="rows.some((row) => row.isText)" (click)="go(a > b)">B</button>',
+          '<button type="button" [text]="true">C</button>',
+          '<button pButton pTooltip="a text tooltip" severity="secondary">D</button>',
+        ],
+      },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('buttonsWithForbiddenVariant_%s_FindsNone', (_name, { file, source }) => {
+    expect(buttonsWithForbiddenVariant(file, source.join(NEWLINE))).toEqual([]);
   });
 });

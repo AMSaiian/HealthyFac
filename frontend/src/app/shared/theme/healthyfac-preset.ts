@@ -1,8 +1,49 @@
 import { definePreset } from '@primeuix/themes';
 import Lara from '@primeuix/themes/lara';
 
+/**
+ * The color token of each attachment type. Each type has one color, so the tags differ. The tag text is white, so each
+ * shade must reach a 4.5:1 contrast with white.
+ */
+export const FILE_TYPE_TOKENS: Readonly<Record<string, string>> = {
+  pdf: '{red.600}',
+  docx: '{blue.600}',
+  xlsx: '{green.700}',
+  pptx: '{orange.700}',
+  csv: '{teal.700}',
+  txt: '{slate.500}',
+  md: '{indigo.600}',
+  png: '{violet.600}',
+  jpg: '{fuchsia.600}',
+  jpeg: '{pink.600}',
+  gif: '{amber.700}',
+  webp: '{cyan.700}',
+};
+
+/**
+ * The shades of the grid header cells: normal and hovered. A sorted header takes the same hover shade, through the
+ * global variable `--p-header-cell-hover-background` (`styles.css`). The hover differs from the normal shade and from the
+ * hover of the column filter button (`button.text.secondary`), so the button shade stays visible on a header.
+ */
+export const HEADER_CELL_SHADES = {
+  background: 'light-dark({surface.50}, {surface.800})',
+  hoverBackground: 'light-dark({surface.200}, {surface.600})',
+} as const;
+
 export const HealthyFacPreset = definePreset(Lara, {
   components: {
+    button: {
+      colorScheme: {
+        light: { outlined: { danger: { hoverBackground: '{red.100}' } } },
+        dark: { outlined: { danger: { hoverBackground: 'color-mix(in srgb, {red.400}, transparent 80%)' } } },
+      },
+    },
+    datatable: {
+      headerCell: {
+        ...HEADER_CELL_SHADES,
+        gap: '0.75rem',
+      },
+    },
     tag: {
       root: { fontSize: '{text.size.xs}', padding: '0.125rem 0.5rem' },
       colorScheme: {
@@ -34,8 +75,11 @@ export const HealthyFacPreset = definePreset(Lara, {
   },
   extend: {
     textSize: { xs: '0.6875rem' },
+    fileType: FILE_TYPE_TOKENS,
+    headerCell: { hoverBackground: HEADER_CELL_SHADES.hoverBackground },
     scheduleBoard: {
       headerBackground: 'light-dark({surface.50}, {surface.800})',
+      stripeBackground: 'light-dark({surface.50}, {surface.900})',
       headerFontWeight: '700',
       borderColor: 'light-dark({content.border.color}, {surface.800})',
     },

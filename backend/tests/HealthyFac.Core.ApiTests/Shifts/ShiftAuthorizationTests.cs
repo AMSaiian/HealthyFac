@@ -62,31 +62,19 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
         schedule.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    [Fact]
-    public async Task Writes_WithWorkerToken_Return403()
+    [Theory]
+    [MemberData(nameof(ShiftApiTestData.WorkerWriteRoutes), MemberType = typeof(ShiftApiTestData))]
+    public async Task Writes_WithWorkerToken_Return403(string caseName, string method, string pathTemplate)
     {
         var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
         var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
 
-        var create = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Post,
-            ShiftApiTestData.TemplatesPath(worker.EncryptedId),
-            claims,
-            _fixture.CreateVersionBody(ShiftApiTestData.LatestEndBlock, ShiftApiTestData.EffectiveFromDaysAhead));
-        var set = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Put,
-            ShiftApiTestData.OverridePath(worker.EncryptedId),
-            claims,
-            _fixture.CreateOverrideBody());
-        var delete = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Delete, ShiftApiTestData.OverridePath(worker.EncryptedId), claims);
-        var company = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Get, $"{ShiftApiTestData.CompanySchedulePath}?date={ShiftApiTestData.Date}", claims);
+        var response = await _fixture.SendShiftRequestAsync(
+            new HttpMethod(method),
+            pathTemplate.Replace("{employeeId}", worker.EncryptedId),
+            claims);
 
-        create.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        set.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        delete.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-        company.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
     }
 
     [Fact]

@@ -14,19 +14,24 @@
           [value]="statusLabelKeys[store.workOrder.value().status] | translate"
         />
         @if (store.canChangeStatus()) {
-          <button
-            pButton
-            type="button"
-            size="small"
-            severity="secondary"
-            [outlined]="true"
-            [disabled]="!hasNoChanges()"
-            [pTooltip]="hasNoChanges() ? '' : ('WORK_ORDERS.BOARD.CHANGE_STATUS_UNSAVED' | translate)"
-            (click)="store.requestChangeStatus()"
+          <span
+            [pTooltip]="'WORK_ORDERS.BOARD.CHANGE_STATUS_UNSAVED' | translate"
+            [tooltipDisabled]="hasNoChanges()"
           >
-            <i class="pi pi-flag"></i>
-            {{ 'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate }}
-          </button>
+            <button
+              pButton
+              type="button"
+              size="small"
+              severity="secondary"
+              [pTooltip]="'WORK_ORDERS.TOOLTIPS.STATUS' | translate"
+              tooltipPosition="bottom"
+              [disabled]="!hasNoChanges()"
+              (click)="store.requestChangeStatus()"
+            >
+              <i class="pi pi-flag"></i>
+              {{ 'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate }}
+            </button>
+          </span>
         }
       </div>
     }
@@ -36,8 +41,18 @@
     >
       @if (store.isUpdate()) {
         <p-tablist>
-          <p-tab [value]="DETAILS_TAB">{{ 'WORK_ORDERS.TABS.DETAILS' | translate }}</p-tab>
-          <p-tab [value]="HISTORY_TAB">{{ 'WORK_ORDERS.TABS.HISTORY' | translate }}</p-tab>
+          <p-tab
+            [pTooltip]="'WORK_ORDERS.TOOLTIPS.TAB_DETAILS' | translate"
+            tooltipPosition="bottom"
+            [value]="DETAILS_TAB"
+            >{{ 'WORK_ORDERS.TABS.DETAILS' | translate }}</p-tab
+          >
+          <p-tab
+            [pTooltip]="'WORK_ORDERS.TOOLTIPS.TAB_HISTORY' | translate"
+            tooltipPosition="bottom"
+            [value]="HISTORY_TAB"
+            >{{ 'WORK_ORDERS.TABS.HISTORY' | translate }}</p-tab
+          >
         </p-tablist>
       }
       <p-tabpanels>
@@ -72,10 +87,12 @@
     </p-tabs>
   } @else {
     <div class="flex min-h-48">
-      <hf-loading-spinner />
+      @if (showSpinner()) {
+        <hf-loading-spinner />
+      }
     </div>
   }
-  @if (store.isSaving()) {
+  @if (showSaving()) {
     <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
       <hf-loading-spinner />
     </div>

@@ -8,7 +8,6 @@ export enum FileColumn {
   Extension = 'extension',
   SizeBytes = 'sizeBytes',
   UploadedAt = 'uploadedAt',
-  Description = 'description',
   Machine = 'machineName',
   Ingest = 'ingestState',
 }

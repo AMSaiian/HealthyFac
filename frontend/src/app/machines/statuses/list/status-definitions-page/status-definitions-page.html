@@ -2,11 +2,13 @@
   <div class="flex items-center gap-2">
     <a
       pButton
+      [pTooltip]="'ACTIONS.BACK_TO_MACHINES' | translate"
+      tooltipPosition="bottom"
       routerLink="/machines"
       severity="secondary"
       iconOnly
       [text]="true"
-      [attr.aria-label]="'STATUS_DEFINITIONS.BACK' | translate"
+      [attr.aria-label]="'ACTIONS.BACK_TO_MACHINES' | translate"
     >
       <i class="pi pi-arrow-left"></i>
     </a>
@@ -16,6 +18,8 @@
     @if (store.canWrite()) {
       <button
         pButton
+        [pTooltip]="'STATUS_DEFINITIONS.TOOLTIPS.ADD_NEW' | translate"
+        tooltipPosition="bottom"
         type="button"
         (click)="store.requestCreate()"
       >
@@ -29,6 +33,7 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.statuses.isLoading()"
+  [hasLoaded]="store.statuses.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"
   [limit]="store.limit()"

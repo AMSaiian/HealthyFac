@@ -7,7 +7,7 @@ import { InputText } from 'primeng/inputtext';
 import { RichTextEditor } from '@shared/rich-text/rich-text-editor/rich-text-editor';
 import { RichTextView } from '@shared/rich-text/rich-text-view/rich-text-view';
 
-import { CompareField, type CompareRow } from '@machines/drafts/compare/draft-compare.store.utils';
+import { CompareField, type CompareRow } from '@machines/drafts/compare/draft-compare-store/draft-compare.store.utils';
 import { DESCRIPTION_MAX_LENGTH } from '@machines/machine-limits';
 
 const LABEL_KEYS: Readonly<Record<CompareField, string>> = {

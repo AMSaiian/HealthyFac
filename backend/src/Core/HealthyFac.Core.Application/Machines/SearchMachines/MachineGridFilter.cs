@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using FluentValidation;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.Filters;
+using HealthyFac.Shared.Domain.Gateways;
 
 namespace HealthyFac.Core.Application.Machines.SearchMachines;
 
@@ -13,6 +14,8 @@ public sealed record MachineGridFilter : IFilter<Machine>
     public TextFilter? Name { get; init; }
 
     public TextFilter? SerialNumber { get; init; }
+
+    public TextFilter? GatewayId { get; init; }
 
     public SetFilter<MachineState>? States { get; init; }
 
@@ -29,6 +32,7 @@ public sealed record MachineGridFilter : IFilter<Machine>
     public Expression<Func<Machine, bool>>? ToPredicate() =>
         Predicates.From(Name?.ToPredicate<Machine>(machine => machine.Name))
             .And(SerialNumber?.ToPredicate<Machine>(machine => machine.SerialNumber))
+            .And(GatewayId?.ToPredicate<Machine>(machine => machine.GatewayId))
             .And(States?.ToPredicate(MachineCurrentState.Selector))
             .And(CreatedAt?.ToPredicate<Machine>(machine => machine.CreatedAt))
             .And(UpdatedAt?.ToPredicate<Machine>(machine => machine.UpdatedAt));
@@ -38,32 +42,22 @@ public sealed class MachineGridFilterValidator : AbstractValidator<MachineGridFi
 {
     public MachineGridFilterValidator()
     {
-        RuleFor(filter => filter.Name!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.Name is not null);
+        When(
+            filter => filter.Name is not null,
+            () => RuleFor(filter => filter.Name!).IsTextFilter(MachineValidationConstants.NameMaxLength));
 
-        RuleFor(filter => filter.Name!.Value)
-            .MaximumLength(MachineValidationConstants.NameMaxLength)
-            .When(filter => filter.Name?.Value is not null);
+        When(
+            filter => filter.SerialNumber is not null,
+            () => RuleFor(filter => filter.SerialNumber!).IsTextFilter(MachineValidationConstants.SerialNumberMaxLength));
 
-        RuleFor(filter => filter.SerialNumber!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.SerialNumber is not null);
+        When(
+            filter => filter.GatewayId is not null,
+            () => RuleFor(filter => filter.GatewayId!).IsTextFilter(GatewayIds.Length));
 
-        RuleFor(filter => filter.SerialNumber!.Value)
-            .MaximumLength(MachineValidationConstants.SerialNumberMaxLength)
-            .When(filter => filter.SerialNumber?.Value is not null);
+        When(filter => filter.States is not null, () => RuleFor(filter => filter.States!).IsSetFilter());
 
-        RuleFor(filter => filter.States!)
-            .SetValidator(new SetFilterValidator<MachineState>())
-            .When(filter => filter.States is not null);
+        When(filter => filter.CreatedAt is not null, () => RuleFor(filter => filter.CreatedAt!).IsDateRangeFilter());
 
-        RuleFor(filter => filter.CreatedAt!)
-            .SetValidator(new DateRangeFilterValidator())
-            .When(filter => filter.CreatedAt is not null);
-
-        RuleFor(filter => filter.UpdatedAt!)
-            .SetValidator(new DateRangeFilterValidator())
-            .When(filter => filter.UpdatedAt is not null);
+        When(filter => filter.UpdatedAt is not null, () => RuleFor(filter => filter.UpdatedAt!).IsDateRangeFilter());
     }
 }

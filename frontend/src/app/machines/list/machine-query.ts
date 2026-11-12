@@ -11,6 +11,7 @@ export function toSearchBody(state: MachineGridState, timeZoneId: string): Searc
     filter: {
       name: textFilter(filter.name),
       serialNumber: textFilter(filter.serialNumber),
+      gatewayId: textFilter(filter.gatewayId),
       states: setFilter(filter.states),
       createdAt: dateRangeFilter(filter.createdAt, timeZoneId),
       updatedAt: dateRangeFilter(filter.updatedAt, timeZoneId),

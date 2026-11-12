@@ -2,6 +2,7 @@
   [rows]="page().items"
   [totalCount]="page().totalCount"
   [isLoading]="store.files.isLoading()"
+  [hasLoaded]="store.files.hasValue()"
   [columns]="store.visibleColumns()"
   [offset]="store.offset()"
   [limit]="store.limit()"

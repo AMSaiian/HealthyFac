@@ -11,6 +11,12 @@ public static class StatusDefinitionTestData
     public const string ThirdCode = "E-303";
     public const string UpdatedCode = "E-909";
 
+    public static TheoryData<string, string> TakenCodes => new()
+    {
+        { "DuplicateCode", Code },
+        { "CodeInOtherCase", CodeOtherCase },
+    };
+
     public const string Description = "<p>Check the <strong>spindle</strong> belt.</p>";
     public const string UpdatedDescription = "<p>Replace the belt.</p>";
 

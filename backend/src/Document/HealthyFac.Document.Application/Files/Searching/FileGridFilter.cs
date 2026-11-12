@@ -111,28 +111,24 @@ public sealed class FileGridFilterValidator : AbstractValidator<FileGridFilter>
 {
     public FileGridFilterValidator()
     {
-        RuleFor(filter => filter.FileName!)
-            .SetValidator(new TextFilterValidator())
-            .When(filter => filter.FileName is not null);
+        When(
+            filter => filter.FileName is not null,
+            () => RuleFor(filter => filter.FileName!).IsTextFilter(FileValidationConstants.Text.FileNameMaxLength));
 
-        RuleFor(filter => filter.FileName!.Value)
-            .MaximumLength(FileValidationConstants.Text.FileNameMaxLength)
-            .When(filter => filter.FileName?.Value is not null);
+        When(
+            filter => filter.Extension is not null,
+            () => RuleFor(filter => filter.Extension!).SetValidator(new TextSetFilterValidator()));
 
-        RuleFor(filter => filter.Extension!)
-            .SetValidator(new TextSetFilterValidator())
-            .When(filter => filter.Extension is not null);
+        When(
+            filter => filter.UploadedAt is not null,
+            () => RuleFor(filter => filter.UploadedAt!).IsDateRangeFilter());
 
-        RuleFor(filter => filter.UploadedAt!)
-            .SetValidator(new DateRangeFilterValidator())
-            .When(filter => filter.UploadedAt is not null);
+        When(
+            filter => filter.Machine is not null,
+            () => RuleFor(filter => filter.Machine!).SetValidator(new FileMachineFilterValidator()));
 
-        RuleFor(filter => filter.Machine!)
-            .SetValidator(new FileMachineFilterValidator())
-            .When(filter => filter.Machine is not null);
-
-        RuleFor(filter => filter.IngestState!)
-            .SetValidator(new FileIngestStateFilterValidator())
-            .When(filter => filter.IngestState is not null);
+        When(
+            filter => filter.IngestState is not null,
+            () => RuleFor(filter => filter.IngestState!).SetValidator(new FileIngestStateFilterValidator()));
     }
 }

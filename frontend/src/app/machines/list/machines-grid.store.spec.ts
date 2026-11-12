@@ -6,7 +6,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
-import { AuthStore } from '@shared/security/auth.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import { type Machine, MachineState } from '@machines/machine';
@@ -74,22 +74,16 @@ describe('MachinesGridStore', () => {
     vi.useRealTimers();
   });
 
-  it('lastResult_WithSavedType_ReloadsMachines', async () => {
+  it.each(
+    [
+      { name: 'WithSavedType', resultType: MachineActionType.Saved },
+      { name: 'WithDraftsChanged', resultType: DraftActionType.Changed },
+    ].map((row) => [row.name, row] as [string, typeof row]),
+  )('lastResult_%s_ReloadsMachines', async (_name, { resultType }) => {
     const { actions, search } = await setup();
     const callsBefore = search.mock.calls.length;
 
-    actions.complete(MachineActionType.Saved);
-    TestBed.tick();
-    await TestBed.inject(ApplicationRef).whenStable();
-
-    expect(search.mock.calls.length - callsBefore).toBe(1);
-  });
-
-  it('lastResult_WithDraftsChanged_ReloadsMachines', async () => {
-    const { actions, search } = await setup();
-    const callsBefore = search.mock.calls.length;
-
-    actions.complete(DraftActionType.Changed);
+    actions.complete(resultType);
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
 
