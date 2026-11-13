@@ -54,10 +54,12 @@ $sessions = @(
   @{ Role = 'reviewer'; Model = 'opus'; Command = 'review' }
 )
 
+# The tab command holds no semicolon: Windows Terminal reads a semicolon as the separator of its own commands and
+# would start the text after it as a new tab. Set-Item with && sets the role and then starts claude.
 function New-ClaudeCommand($session) {
   $start = if ($Resume) { "--resume '$Feature-$($session.Role)'" } else { "--name '$Feature-$($session.Role)'" }
   $prompt = if ($Resume) { '' } else { " '/$($session.Command) $Feature'" }
-  "`$env:HEALTHYFAC_SESSION_ROLE = '$($session.Role)'; claude --chrome $start --model $($session.Model)$prompt"
+  "Set-Item Env:HEALTHYFAC_SESSION_ROLE '$($session.Role)' && claude --chrome $start --model $($session.Model)$prompt"
 }
 
 $wtArguments = @('-w', '0')
