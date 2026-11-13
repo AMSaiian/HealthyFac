@@ -182,8 +182,8 @@ This document records the service boundaries and the decisions that connect the 
 ## Email
 
 - A service sends email through `IEmailSender` (Shared.Application). The host picks the implementation with one registration method. `AddSmtpEmail` registers the SMTP sender (MailKit). A later provider adds its own `Add...Email` method.
-- Development uses Mailpit. It catches all email, and its web UI shows the messages (`MAILPIT_UI_PORT`, default `8025`). Mailpit keeps the messages in the `mailpit-data` volume, and `docker compose down -v` removes them. Compose sets the `Smtp__*` variables of `core`.
-- Other deployments set `Smtp__Host`, `Smtp__Port`, `Smtp__Security`, `Smtp__UserName`, `Smtp__Password`, `Smtp__FromAddress`, and `Smtp__FromName`.
+- Development uses Mailpit. It catches all email, and its web UI shows the messages (`MAILPIT_UI_PORT`, default `8025`). Mailpit keeps the messages in the `mailpit-data` volume, and `docker compose down -v` removes them. `docker/config/core.json` holds the `Smtp` host, port, and security mode of Mailpit for Compose.
+- Other deployments set the `Smtp` section (`Host`, `Port`, `Security`, `UserName`, `FromAddress`, `FromName`) in their settings file, and `Smtp__Password` as a secret.
 - **Invite email:** Core consumes `core.v1:EmployeeInvited` and emails the invited person the link `{InviteLinks:SpaBaseUrl}/invite#token={token}`. The token is in the fragment, so no server log or proxy records it.
 - **Rendering:** the email bodies are Razor components in the Web layer. `RazorComponentRenderer` (`Shared.Web/Rendering`) renders them with `HtmlRenderer`, outside an HTTP request. It is not email-specific: a later feature can reuse it for other output. The Application layer sees only `IEmployeeInviteEmailBuilder`. The text body is the HTML-decoded render of its own component.
 - **Spans:** the `HealthyFac.Rendering` source writes `Razor.Render` for each rendered body. The `HealthyFac.Email` source writes `Email.Send` for each message. The MailKit source `MailKit.Net.SmtpClient` adds the SMTP steps under `Email.Send`. No span holds a recipient, a body, or a link.
@@ -319,6 +319,12 @@ This document records the service boundaries and the decisions that connect the 
 
 - **Redis:** the token revocation list, the gateway rate limiter counters, and the distributed cache. A service caches data only in Redis, through the shared connection, and keeps no copy in process memory (no FusionCache, no `HybridCache`, no `IMemoryCache`, no `IDistributedCache`), so every instance reads the same value. No service caches data yet. Redis also holds the service tokens and the exchanged tokens of each service, without encryption (an accepted risk), with a time to live of the token lifetime, and the short locks that give one token fetch across the instances. No instance keeps a token in process memory. While Redis is down, every outgoing call fetches its own token from Keycloak (an accepted risk), and the Redis circuit breaker makes each Redis call fail fast. Every Redis call goes through one Polly circuit breaker (from `Microsoft.Extensions.Resilience`); the service reports `Degraded` while it is open, and only the calls that guard copies or load fall back. Redis must stay on a private network with authentication. Redis holds no source data.
 - **Azurite:** blob storage for the Document service in development and in tests. It runs the blob service only, with `--skipApiVersionCheck`, because the default service version of the Azure SDK is newer than the newest version of Azurite. The image runs as root, because a non-root user cannot write the data volume. The gateway forwards the file links to it over HTTP, so a link allows HTTP in Development.
+
+## Settings
+
+- **Split:** a setting lives where its value is decided. `appsettings.json` holds a value that is the same in every environment. `appsettings.Development.json` holds the values of a run on the host. `docker/config/<service>.json` holds the fixed values of the Compose network that are no secrets; Compose mounts it as `/app/appsettings.Deployment.json`. Environment variables hold the secrets, the values of the machine, and the values that Compose builds from `.env` (`docker/config/README.md`).
+- **Priority:** `appsettings.json`, then `appsettings.<Environment>.json`, then `appsettings.Deployment.json`, then the environment variables. `AddDeploymentSettingsFile` (Shared.Web) inserts the file before the first environment variable source. The file is optional, so a run on the host and a test load none.
+- **Other deployments:** a cloud environment mounts its own `appsettings.Deployment.json`, or sets environment variables, and takes its secrets from its secret store. The target is not chosen yet.
 
 ## Open Decisions
 
