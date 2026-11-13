@@ -3,6 +3,7 @@ using HealthyFac.Shared.Web.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddDeploymentSettingsFile();
 builder.Configuration.AddDotEnvFile();
 
 builder.Services.AddGatewayServices(builder.Configuration);

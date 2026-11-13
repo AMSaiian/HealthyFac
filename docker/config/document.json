@@ -1,0 +1,28 @@
+{
+  "ServiceActors": {
+    "AllowedClients": [
+      "healthyfac-insights"
+    ]
+  },
+  "Jwt": {
+    "MetadataAddress": "http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration",
+    "IsHttpsMetadataRequired": false
+  },
+  "FileStorage": {
+    "ConnectionString": "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+  },
+  "Proxy": {
+    "KnownNetworks": [
+      "172.16.0.0/12"
+    ]
+  },
+  "Tracing": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "Metrics": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "OpenTelemetryLogging": {
+    "Endpoint": "http://lgtm:4318/v1/logs"
+  }
+}

@@ -259,6 +259,9 @@ services:
       - ALL
     volumes:
       - core-logs:/app/logs
+      # The fixed values of the Compose network (docker/config/README.md). The service reads the file as
+      # appsettings.Deployment.json; an environment variable below still overrides it.
+      - ./docker/config/core.json:/app/appsettings.Deployment.json:ro
       # The seed data file (company name, supervisor name, seed machines). Core reads it in Development only.
       - ./backend/seed:/app/seed:ro
     tmpfs:
@@ -267,27 +270,14 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__Database: >-
         Host=postgres;Port=5432;Database=${POSTGRES_DB:-healthyfac_core};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
-      IdEncryption__Keys__0__IsDefault: "true"
-      InviteTokens__LifetimeHours: ${InviteTokens__LifetimeHours:-72}
-      InviteTokens__Keys__0__Id: ${InviteTokens__Keys__0__Id:-k1}
       InviteTokens__Keys__0__Secret: ${InviteTokens__Keys__0__Secret:?set InviteTokens__Keys__0__Secret in .env}
-      InviteTokens__Keys__0__IsDefault: "true"
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      Messaging__QueueName: core
-      Smtp__Host: mailpit
-      Smtp__Port: 1025
-      Smtp__Security: None
-      Smtp__FromAddress: ${Smtp__FromAddress:-no-reply@healthyfac.local}
-      Smtp__FromName: ${Smtp__FromName:-HealthyFac}
       InviteLinks__SpaBaseUrl: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
       # The issuer is the public URL of the realm (the gateway). Core reads the metadata and the signing keys from
-      # the internal address of Keycloak.
+      # the internal address of Keycloak (docker/config/core.json).
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
-      Jwt__IsHttpsMetadataRequired: "false"
       # The test company and supervisor. Keycloak imports the same values (see the keycloak service), so the
       # supervisor can sign in. Core seeds them only when IsOptionalDataSeeded is true (the Development default).
       # true deletes the Core business data, outbox, and inbox, and seeds again on every start.
@@ -296,10 +286,6 @@ services:
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host, so only
     # this machine reaches it. The container port equals HealthEndpoints:Port in appsettings.json.
     ports:
@@ -398,6 +384,7 @@ services:
       - ALL
     volumes:
       - telemetry-logs:/app/logs
+      - ./docker/config/telemetry.json:/app/appsettings.Deployment.json:ro
       # The seed data file (seed machines). Telemetry reads it in Development only.
       - ./backend/seed:/app/seed:ro
     tmpfs:
@@ -406,31 +393,16 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__Database: >-
         Host=postgres;Port=5432;Database=healthyfac_telemetry;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      # The SPA sends the encrypted machine ID, so the keys equal the keys of Core.
-      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
+      # The SPA sends the encrypted machine ID, so the key equals the key of Core.
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
-      IdEncryption__Keys__0__IsDefault: "true"
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      Messaging__QueueName: telemetry
-      ServiceActors__AllowedClients__0: healthyfac-insights
       # The issuer is the public URL of the realm (the gateway). Telemetry reads the metadata and the signing keys
-      # from the internal address of Keycloak.
+      # from the internal address of Keycloak (docker/config/telemetry.json).
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
-      Jwt__IsHttpsMetadataRequired: "false"
-      MqttIntake__IsEnabled: "true"
-      MqttIntake__Host: mosquitto
-      MqttIntake__Username: telemetry
       MqttIntake__Password: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
-      MqttIntake__ClientId: telemetry
-      MqttIntake__ConsumerCount: "2"
       # The test company ID of Core. The seed machines of the seed data file belong to this company.
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
     ports:
       - "${TELEMETRY_PORT:-8083}:8080"
@@ -492,6 +464,7 @@ services:
       - ALL
     volumes:
       - document-logs:/app/logs
+      - ./docker/config/document.json:/app/appsettings.Deployment.json:ro
       # The seed data file (seed machines). Document reads it in Development only.
       - ./backend/seed:/app/seed:ro
     # Uploads above 64 KiB buffer to ASPNETCORE_TEMP. The size holds one attachment of 100 MiB with room for the
@@ -503,31 +476,16 @@ services:
       ASPNETCORE_TEMP: /tmp
       ConnectionStrings__Database: >-
         Host=postgres;Port=5432;Database=healthyfac_document;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      # The SPA sends the encrypted file ID, so the keys equal the keys of Core.
-      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
+      # The SPA sends the encrypted file ID, so the key equals the key of Core.
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
-      IdEncryption__Keys__0__IsDefault: "true"
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      Messaging__QueueName: document
-      ServiceActors__AllowedClients__0: healthyfac-insights
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
-      Jwt__IsHttpsMetadataRequired: "false"
-      # The well-known development account of Azurite and its published key. They are public by design, and Azurite
-      # accepts no other account. A real storage account gets its own connection string from the deployment.
-      FileStorage__ConnectionString: >-
-        DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
-      FileStorage__ContainerName: files
       # The test tenant ID of Core. The seed machines of the seed data file belong to its company.
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
       # The demo files are created as the test supervisor.
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       FileStorage__PublicBlobBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}/api/document/blobs
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
     ports:
       - "${DOCUMENT_PORT:-8085}:8080"
@@ -560,6 +518,7 @@ services:
       - ALL
     volumes:
       - insights-logs:/app/logs
+      - ./docker/config/insights.json:/app/appsettings.Deployment.json:ro
       # The seed data file and the demo ingest snapshot. Insights reads them in Development only.
       - ./backend/seed:/app/seed:ro
       # The Application Default Credentials file of the developer. Vertex AI reads it through
@@ -573,12 +532,7 @@ services:
         Host=postgres;Port=5432;Database=healthyfac_insights;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      Messaging__QueueName: insights
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
-      Jwt__IsHttpsMetadataRequired: "false"
-      ServiceTokens__TokenEndpoint: http://keycloak:8080/realms/healthyfac/protocol/openid-connect/token
-      ServiceTokens__ClientId: healthyfac-insights
       ServiceTokens__ClientSecret: ${KEYCLOAK_INSIGHTS_CLIENT_SECRET:?set KEYCLOAK_INSIGHTS_CLIENT_SECRET in .env}
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcloud-adc.json
@@ -586,20 +540,11 @@ services:
       Gemini__Location: ${GEMINI_LOCATION:?set GEMINI_LOCATION in .env}
       Gemini__ChatModel: ${GEMINI_CHAT_MODEL:?set GEMINI_CHAT_MODEL in .env}
       Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
-      Docling__BaseUrl: http://docling:5001
       Docling__ApiKey: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
-      DocumentClient__GrpcAddress: http://document:8081
-      TelemetryClient__BaseAddress: http://telemetry:8080
       # The test company and supervisor of Core. The demo ingest results belong to them.
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
-      IdEncryption__Keys__0__Prefix: ${IdEncryption__Keys__0__Prefix:-v1.}
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
-      IdEncryption__Keys__0__IsDefault: "true"
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
     ports:
       - "${INSIGHTS_PORT:-8087}:8080"
@@ -686,6 +631,7 @@ services:
       - ALL
     volumes:
       - auth-logs:/app/logs
+      - ./docker/config/auth.json:/app/appsettings.Deployment.json:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
@@ -694,24 +640,11 @@ services:
         Host=postgres;Port=5432;Database=healthyfac_auth;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      Messaging__QueueName: auth
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
-      Jwt__IsHttpsMetadataRequired: "false"
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      # Auth calls the Keycloak admin API and the token endpoint on the internal address. The set-password link
-      # returns to the web app.
-      KeycloakAdmin__BaseAddress: http://keycloak:8080
-      KeycloakAdmin__Realm: healthyfac
-      KeycloakAdmin__SpaClientId: healthyfac-spa
+      # The set-password link returns to the web app.
       KeycloakAdmin__SpaBaseUrl: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
-      ServiceTokens__TokenEndpoint: http://keycloak:8080/realms/healthyfac/protocol/openid-connect/token
-      ServiceTokens__ClientId: healthyfac-auth
       ServiceTokens__ClientSecret: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # The API port (8080 in the container) is internal: the gateway reaches it. The health port (8090 in the
     # container) binds to the loopback address of the host and equals HealthEndpoints:Port in appsettings.json.
     ports:
@@ -748,6 +681,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    volumes:
+      - ./docker/config/spa.json:/app/appsettings.Deployment.json:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
@@ -758,10 +693,6 @@ services:
       Spa__AuthUrl: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}
       # The PrimeUI license key. The host sends it to the browser in /config.json; a change needs only a restart.
       Spa__PrimeUiLicenseKey: ${PRIMEUI_LICENSE_KEY:?set PRIMEUI_LICENSE_KEY in .env}
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # No public port: the gateway serves the app on app.<domain>. The health port binds to the loopback address.
     ports:
       - "127.0.0.1:${SPA_HEALTH_PORT:-8093}:8090"
@@ -790,28 +721,7 @@ services:
       # The health port stays on HTTP. The public port serves HTTPS with the certificate from docker/certs.
       ASPNETCORE_HTTP_PORTS: "8090"
       ASPNETCORE_HTTPS_PORTS: "8443"
-      Kestrel__Certificates__Default__Path: /certs/healthyfac.test.pem
-      Kestrel__Certificates__Default__KeyPath: /certs/healthyfac.test-key.pem
-      ReverseProxy__Clusters__auth__Destinations__main__Address: http://auth:8080/
-      ReverseProxy__Clusters__auth__Destinations__main__Health: http://auth:8090/
-      ReverseProxy__Clusters__core__Destinations__main__Address: http://core:8080/
-      # The active health check of the cluster calls the health port of Core, not the API port.
-      ReverseProxy__Clusters__core__Destinations__main__Health: http://core:8090/
-      ReverseProxy__Clusters__telemetry__Destinations__main__Address: http://telemetry:8080/
-      ReverseProxy__Clusters__telemetry__Destinations__main__Health: http://telemetry:8090/
-      ReverseProxy__Clusters__document__Destinations__main__Address: http://document:8080/
-      ReverseProxy__Clusters__document__Destinations__main__Health: http://document:8090/
-      ReverseProxy__Clusters__insights__Destinations__main__Address: http://insights:8080/
-      ReverseProxy__Clusters__insights__Destinations__main__Health: http://insights:8090/
-      ReverseProxy__Clusters__document-storage__Destinations__main__Address: http://azurite:10000/
-      # The account path of Azurite. Azure Storage has no account path.
-      ReverseProxy__Routes__document-blobs__Transforms__1__PathPrefix: /devstoreaccount1
-      ReverseProxy__Clusters__keycloak__Destinations__main__Address: http://keycloak:8080/
-      ReverseProxy__Clusters__spa__Destinations__main__Address: http://spa:8080/
-      ReverseProxy__Clusters__spa__Destinations__main__Health: http://spa:8090/
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      Jwt__MetadataAddress: http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration
-      Jwt__IsHttpsMetadataRequired: "false"
       Cors__AllowedOrigins__0: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
       # Each public route answers one logical name. A host without a port matches every port.
       ReverseProxy__Routes__auth__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
@@ -827,10 +737,6 @@ services:
       ReverseProxy__Routes__keycloak-resources__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__spa__Match__Hosts__0: app.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
-      Proxy__KnownNetworks__0: 172.16.0.0/12
-      Tracing__Endpoint: http://lgtm:4317
-      Metrics__Endpoint: http://lgtm:4317
-      OpenTelemetryLogging__Endpoint: http://lgtm:4318/v1/logs
     # The public port is HTTPS only; plain HTTP is not published. The health port (8090 in the container) is
     # internal and binds to the loopback address of the host.
     ports:
@@ -840,6 +746,7 @@ services:
     # them, and the image does not hold them.
     volumes:
       - ./docker/certs:/certs:ro
+      - ./docker/config/gateway.json:/app/appsettings.Deployment.json:ro
     # Redis, Core, and the SPA host are soft dependencies of the gateway: it serves with a local limiter and
     # answers 503 for Core or the SPA host alone. It reads the signing keys of Keycloak at the first token. The realm job
     # runs only after a healthy Keycloak, so its success also covers the Keycloak routes.

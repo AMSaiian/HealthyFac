@@ -1,0 +1,33 @@
+{
+  "Jwt": {
+    "MetadataAddress": "http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration",
+    "IsHttpsMetadataRequired": false
+  },
+  "ServiceTokens": {
+    "TokenEndpoint": "http://keycloak:8080/realms/healthyfac/protocol/openid-connect/token",
+    "ClientId": "healthyfac-insights"
+  },
+  "Docling": {
+    "BaseUrl": "http://docling:5001"
+  },
+  "DocumentClient": {
+    "GrpcAddress": "http://document:8081"
+  },
+  "TelemetryClient": {
+    "BaseAddress": "http://telemetry:8080"
+  },
+  "Proxy": {
+    "KnownNetworks": [
+      "172.16.0.0/12"
+    ]
+  },
+  "Tracing": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "Metrics": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "OpenTelemetryLogging": {
+    "Endpoint": "http://lgtm:4318/v1/logs"
+  }
+}

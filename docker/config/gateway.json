@@ -1,0 +1,94 @@
+{
+  "Kestrel": {
+    "Certificates": {
+      "Default": {
+        "Path": "/certs/healthyfac.test.pem",
+        "KeyPath": "/certs/healthyfac.test-key.pem"
+      }
+    }
+  },
+  "ReverseProxy": {
+    "Clusters": {
+      "auth": {
+        "Destinations": {
+          "main": {
+            "Address": "http://auth:8080/",
+            "Health": "http://auth:8090/"
+          }
+        }
+      },
+      "core": {
+        "Destinations": {
+          "main": {
+            "Address": "http://core:8080/",
+            "Health": "http://core:8090/"
+          }
+        }
+      },
+      "telemetry": {
+        "Destinations": {
+          "main": {
+            "Address": "http://telemetry:8080/",
+            "Health": "http://telemetry:8090/"
+          }
+        }
+      },
+      "document": {
+        "Destinations": {
+          "main": {
+            "Address": "http://document:8080/",
+            "Health": "http://document:8090/"
+          }
+        }
+      },
+      "insights": {
+        "Destinations": {
+          "main": {
+            "Address": "http://insights:8080/",
+            "Health": "http://insights:8090/"
+          }
+        }
+      },
+      "document-storage": {
+        "Destinations": {
+          "main": {
+            "Address": "http://azurite:10000/"
+          }
+        }
+      },
+      "keycloak": {
+        "Destinations": {
+          "main": {
+            "Address": "http://keycloak:8080/"
+          }
+        }
+      },
+      "spa": {
+        "Destinations": {
+          "main": {
+            "Address": "http://spa:8080/",
+            "Health": "http://spa:8090/"
+          }
+        }
+      }
+    }
+  },
+  "Jwt": {
+    "MetadataAddress": "http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration",
+    "IsHttpsMetadataRequired": false
+  },
+  "Proxy": {
+    "KnownNetworks": [
+      "172.16.0.0/12"
+    ]
+  },
+  "Tracing": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "Metrics": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "OpenTelemetryLogging": {
+    "Endpoint": "http://lgtm:4318/v1/logs"
+  }
+}

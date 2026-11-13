@@ -1,0 +1,30 @@
+{
+  "ServiceActors": {
+    "AllowedClients": [
+      "healthyfac-insights"
+    ]
+  },
+  "Jwt": {
+    "MetadataAddress": "http://keycloak:8080/realms/healthyfac/.well-known/openid-configuration",
+    "IsHttpsMetadataRequired": false
+  },
+  "MqttIntake": {
+    "IsEnabled": true,
+    "Host": "mosquitto",
+    "ConsumerCount": 2
+  },
+  "Proxy": {
+    "KnownNetworks": [
+      "172.16.0.0/12"
+    ]
+  },
+  "Tracing": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "Metrics": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "OpenTelemetryLogging": {
+    "Endpoint": "http://lgtm:4318/v1/logs"
+  }
+}

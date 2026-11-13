@@ -7,6 +7,7 @@ using HealthyFac.Telemetry.Web;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddSeedDataFile(builder.Environment);
+builder.Configuration.AddDeploymentSettingsFile();
 builder.Configuration.AddDotEnvFile();
 
 builder.Services.AddApplicationServices();

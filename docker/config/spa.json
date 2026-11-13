@@ -1,0 +1,16 @@
+{
+  "Proxy": {
+    "KnownNetworks": [
+      "172.16.0.0/12"
+    ]
+  },
+  "Tracing": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "Metrics": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "OpenTelemetryLogging": {
+    "Endpoint": "http://lgtm:4318/v1/logs"
+  }
+}
