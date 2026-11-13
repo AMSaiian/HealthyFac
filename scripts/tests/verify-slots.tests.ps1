@@ -8,6 +8,8 @@
 #   compare without case and with / or \ treated the same.
 # - Slot choice: own slot, lowest free slot, a gap, all slots taken, -Slot free / own / foreign, down with no slot.
 # - Env file: the worktree .env, the main checkout .env, or none.
+# - Settings split (docker/config/README.md): each .NET service of docker-compose.yml mounts its docker/config file,
+#   has no fixed "__" entry in its environment, and its file names no secret.
 # - Compose: slot 2 renders slot 2 names, ports, and URLs; no VERIFY_SLOT fails with the ":?" message.
 # Run:  pwsh scripts/tests/verify-slots.tests.ps1
 # It exits 1 when a check fails.
@@ -128,6 +130,58 @@ Assert-That ((Resolve-VerifyEnvFile -WorktreeRoot $tree -MainRoot $main -Exists 
 Assert-That ((Resolve-VerifyEnvFile -WorktreeRoot $tree -MainRoot $main -Exists $onlyMain) -eq 'D:\Main\.env') 'fallback to the main checkout .env'
 $message = Get-Failure { Resolve-VerifyEnvFile -WorktreeRoot $tree -MainRoot $main -Exists $none }
 Assert-That ($message -match 'D:\\Tree\\\.env' -and $message -match 'D:\\Main\\\.env') 'no .env: the error names both paths'
+
+Write-Host 'Settings split'
+# The check reads the raw Compose file, because `docker compose config` replaces every variable, and a fixed value
+# then looks like a value from .env. A .NET service is a service whose Dockerfile is a HealthyFac.<Name>.Web one.
+$composeLines = Get-Content (Join-Path $repo 'docker-compose.yml')
+$blocks = [ordered]@{}
+$service = $null
+foreach ($line in $composeLines) {
+  $start = [regex]::Match($line, '^  ([a-z0-9-]+):\s*$')
+  if ($start.Success) { $service = $start.Groups[1].Value; $blocks[$service] = [Collections.Generic.List[string]]::new(); continue }
+  if ($line -match '^\S') { $service = $null }
+  if ($service) { $blocks[$service].Add($line) }
+}
+$dotnetServices = @($blocks.Keys | Where-Object { $blocks[$_] -match 'dockerfile:\s*src/\w+/HealthyFac\.\w+\.Web/Dockerfile' })
+Assert-That ($dotnetServices.Count -ge 7) "docker-compose.yml has the .NET services ($($dotnetServices -join ', '))"
+$SecretName = '(?i)(password|secret|apikey|^key)$'
+foreach ($name in $dotnetServices) {
+  $block = $blocks[$name]
+  $fixed = [Collections.Generic.List[string]]::new()
+  $isInEnvironment = $false
+  for ($i = 0; $i -lt $block.Count; $i++) {
+    if ($block[$i] -match '^    environment:') { $isInEnvironment = $true; continue }
+    if ($block[$i] -match '^    \S') { $isInEnvironment = $false }
+    $entry = [regex]::Match($block[$i], '^      ([A-Za-z0-9_-]+__[A-Za-z0-9_-]+):\s*(.*)$')
+    if (-not $isInEnvironment -or -not $entry.Success) { continue }
+    $value = $entry.Groups[2].Value.Trim()
+    if ($value -in '>-', '>', '|') { $value = $block[$i + 1] }
+    if ($value -notmatch '\$\{') { $fixed.Add($entry.Groups[1].Value) }
+  }
+  Assert-That ($fixed.Count -eq 0) "$name has no fixed '__' entry in its environment ($($fixed -join ', '))"
+
+  $mount = "./docker/config/$name.json:/app/appsettings.Deployment.json:ro"
+  $configPath = Join-Path $repo "docker\config\$name.json"
+  Assert-That ([bool]($block -match [regex]::Escape($mount)) -and (Test-Path $configPath)) "$name mounts docker/config/$name.json"
+  if (-not (Test-Path $configPath)) { continue }
+
+  $secrets = [Collections.Generic.List[string]]::new()
+  $pending = [Collections.Generic.Stack[object]]::new()
+  $pending.Push(@('', (Get-Content $configPath -Raw | ConvertFrom-Json)))
+  while ($pending.Count -gt 0) {
+    $path, $node = $pending.Pop()
+    if ($node -is [pscustomobject]) {
+      foreach ($property in $node.PSObject.Properties) {
+        if ($property.Name -match $SecretName) { $secrets.Add("$path$($property.Name)") }
+        $pending.Push(@("$path$($property.Name):", $property.Value))
+      }
+    } elseif ($node -is [array]) {
+      foreach ($item in $node) { $pending.Push(@($path, $item)) }
+    } elseif ("$node" -match '(?i)password\s*=') { $secrets.Add("$path (a password in the value)") }
+  }
+  Assert-That ($secrets.Count -eq 0) "docker/config/$name.json names no secret ($($secrets -join ', '))"
+}
 
 Write-Host 'Compose'
 $composeArgs = @(
