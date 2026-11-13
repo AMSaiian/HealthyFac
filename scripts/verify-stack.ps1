@@ -4,16 +4,23 @@
 #
 # Slots: every worktree owns one slot (1 to the slot count of verify-slots.psm1) while its stack exists. Slot n is the Compose project healthyfac-verify-<n>
 # with the domain s<n>.hfverify.test, the gateway port 9443 + n, the Mailpit port 8026 + n, the Grafana port 3000 + n, the RabbitMQ management port 15672 + n, and the Keycloak admin port 8180 + n. `up` takes the slot of
-# the worktree, else the lowest free slot. `status` and `down` act on the slot of the worktree only. -Slot names a
+# the worktree, else the lowest free slot. `status`, `stop`, `reset`, and `down` act on the slot of the worktree only. -Slot names a
 # slot; the script refuses a slot that another worktree owns. The owner is the worktree root in the lock file
 # slot<n>.lock (folder healthyfac-verify-slots in the git common folder), else the working directory label of the project.
 # `up` creates the lock file before the build, so two parallel `up` runs get different slots; `down` removes it. A crashed
-# `up` keeps its slot until `down`. A lock file whose folder is gone and whose slot has no container is removed.
+# `up` keeps its slot until `down`. A stopped or reset stack keeps its slot and its lock file too. A lock file whose folder is
+# gone and whose slot has no container is removed, so run `down` before you remove a worktree with a stopped stack.
 # The rules are in scripts/verify-slots.psm1 and are checked by scripts/tests/verify-slots.tests.ps1.
 #
-# Usage, from anywhere inside the repo or a worktree:
+# The script acts on the checkout (the main one or a worktree) that holds this script file, not on the current
+# folder: run the copy of the worktree whose stack you want.
+# Usage:
 #   pwsh scripts/verify-stack.ps1 up [-Slot n]   builds and starts the stack, waits until it is ready, prints the sign-in
 #   pwsh scripts/verify-stack.ps1 status         lists the containers of the stack
+#   pwsh scripts/verify-stack.ps1 stop [-Slot n] stops the containers and keeps them, the volumes, the images, and the
+#                                                slot; `up` starts them again with the data
+#   pwsh scripts/verify-stack.ps1 reset [-Slot n] removes the containers and the volumes, keeps the images and the
+#                                                slot; the next `up` starts on clean data and rebuilds only changed images
 #   pwsh scripts/verify-stack.ps1 down [-Slot n] removes the containers, the volumes, and the images of the stack
 #
 # Configuration: Compose reads .env (the secrets, shared with the dev stack) and then .env.verify (the shared
@@ -30,7 +37,7 @@
 #Requires -Version 7.4
 param(
   [Parameter(Mandatory = $true, Position = 0)]
-  [ValidateSet('up', 'status', 'down')]
+  [ValidateSet('up', 'status', 'stop', 'reset', 'down')]
   [string]$Command,
 
   [int]$Slot
@@ -41,7 +48,6 @@ $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'verify-slots.psm1') -Force
 
 $DevProject = 'healthyfac'
-$OldProject = 'healthyfac-verify'
 $ReadyTimeout = [TimeSpan]::FromMinutes(15)
 $AppTimeout = [TimeSpan]::FromMinutes(2)
 $PollInterval = [TimeSpan]::FromSeconds(5)
@@ -52,10 +58,10 @@ $BuiltServices = @('core', 'telemetry', 'document', 'insights', 'auth', 'spa', '
 $SlotNumbers = Get-VerifySlotNumbers
 $HostsFile = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
 
-$repo = git rev-parse --show-toplevel 2>$null
-if (-not $repo) { Write-Error 'Run this script from inside the repo.' }
+$repo = git -C $PSScriptRoot rev-parse --show-toplevel 2>$null
+if (-not $repo) { Write-Error 'This script is not inside a git checkout.' }
 $repo = $repo -replace '/', '\'
-$commonDir = (git rev-parse --path-format=absolute --git-common-dir) -replace '/', '\'
+$commonDir = (git -C $repo rev-parse --path-format=absolute --git-common-dir) -replace '/', '\'
 $mainRepo = Split-Path $commonDir -Parent
 $envFile = Resolve-VerifyEnvFile -WorktreeRoot $repo -MainRoot $mainRepo -Exists { param($path) Test-Path $path }
 $verifyEnvFile = Join-Path $repo '.env.verify'
@@ -282,9 +288,6 @@ switch ($Command) {
     Assert-PortFree $values.GrafanaPort 'the Grafana port'
     Assert-PortFree $values.RabbitMqUiPort 'the RabbitMQ management port'
     Assert-PortFree $values.KeycloakPort 'the Keycloak admin port'
-    if (docker ps --all --filter "label=com.docker.compose.project=$OldProject" --quiet) {
-      Write-Host "A container of the old project $OldProject exists. Remove it with: docker compose -p $OldProject down --volumes" -ForegroundColor Yellow
-    }
     Show-MemoryWarning
     Invoke-Compose up -d --build
     Wait-Ready
@@ -298,10 +301,18 @@ switch ($Command) {
     Write-Host "Grafana: http://localhost:$($values.GrafanaPort) (admin / admin)"
     Write-Host "RabbitMQ: http://localhost:$($values.RabbitMqUiPort)"
     Write-Host "Keycloak admin: http://localhost:$($values.KeycloakPort)"
-    Write-Host 'Stop:    pwsh scripts/verify-stack.ps1 down'
+    Write-Host 'Stop:    pwsh scripts/verify-stack.ps1 stop (keeps the data); down removes the data and the images'
   }
   'status' {
     Invoke-Compose ps --all
+  }
+  'stop' {
+    Invoke-Compose stop
+    Write-Host "The verify stack of slot $slotNumber is stopped. Its containers, volumes, images, and slot stay; ``up`` starts it again." -ForegroundColor Green
+  }
+  'reset' {
+    Invoke-Compose down --volumes --remove-orphans
+    Write-Host "The containers and volumes of slot $slotNumber are removed. Its images and slot stay; ``up`` starts on clean data." -ForegroundColor Green
   }
   'down' {
     Invoke-Compose down --volumes --remove-orphans

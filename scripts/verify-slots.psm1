@@ -61,10 +61,10 @@ function Format-SlotOwners([object[]]$Projects) {
   ($Projects | Sort-Object Slot | ForEach-Object { "slot $($_.Slot): $($_.WorkingDir)" }) -join '; '
 }
 
-# Returns the slot number for the worktree, or $null for `status` and `down` when it owns no slot.
+# Returns the slot number for the worktree, or $null for `status`, `stop`, `reset`, and `down` when it owns no slot.
 function Select-VerifySlot {
   param(
-    [Parameter(Mandatory)][ValidateSet('up', 'status', 'down')][string]$Command,
+    [Parameter(Mandatory)][ValidateSet('up', 'status', 'stop', 'reset', 'down')][string]$Command,
     [Parameter(Mandatory)][string]$WorkingDir,
     [object[]]$Projects = @(),
     [int]$Slot

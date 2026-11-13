@@ -3,15 +3,25 @@
 # Usage: pwsh .claude/check-review-routing.ps1 <path to review.md>
 # Output: one line "<target> <reason>", where target is "spec" or "executor".
 # Exit code 1 when review.md lacks the Cycle line, the Round line, the verdict, or the summary table.
+# A review.md with a "## Open" section (the current layout of review.md) is also checked:
+# - every "### " heading in "## Open" has the form "### F<n> <BLOCKER|MAJOR|MINOR> [<CODE|SPEC>] <title>";
+# - the summary table equals the count of the open findings by severity and target;
+# - APPROVE has no open BLOCKER or MAJOR;
+# - REOPENED counts only inside "## Open", so a closed or accepted finding never routes.
+# An older review.md (no "## Open") keeps the old rules: checkpoint sections are dropped, and the last table counts.
 param([Parameter(Mandatory = $true)][string]$ReviewPath)
 
 $NotConvergingRound = 4
 $ReopenLimit = 2
+$Severities = @('BLOCKER', 'MAJOR', 'MINOR')
 
 if (-not (Test-Path $ReviewPath)) { Write-Error "No file: $ReviewPath"; exit 1 }
 $text = Get-Content -Raw -Path $ReviewPath
-# A "## Checkpoint <x>" section holds findings of a checkpoint review. It has no verdict and never routes.
-$text = [regex]::Replace($text, '(?ms)^## Checkpoint\b.*?(?=^## |\z)', '')
+$openSection = [regex]::Match($text, '(?ms)^## Open\s*$(.*?)(?=^## |\z)')
+if (-not $openSection.Success) {
+  # A "## Checkpoint <x>" section of the old layout holds findings of a checkpoint review. It never routes.
+  $text = [regex]::Replace($text, '(?ms)^## Checkpoint\b.*?(?=^## |\z)', '')
+}
 
 $cycle = [regex]::Match($text, '(?m)^Cycle:\s*(\d+)\s*$')
 $round = [regex]::Match($text, '(?m)^Round:\s*(\d+)\s*$')
@@ -26,10 +36,40 @@ if ($summaryRows.Count -lt 3) {
   Write-Error 'review.md needs the summary table "| Severity | [CODE] | [SPEC] |" with the BLOCKER, MAJOR, and MINOR rows.'
   exit 1
 }
-$lastRows = $summaryRows | Select-Object -Last 3
+$lastRows = @($summaryRows | Select-Object -Last 3)
 $openSpec = ($lastRows | ForEach-Object { [int]$_.Groups[3].Value } | Measure-Object -Sum).Sum
+$reopenScope = $text
 
-$reopenCounts = [regex]::Matches($text, 'REOPENED\s*\((\d+)\)') | ForEach-Object { [int]$_.Groups[1].Value }
+if ($openSection.Success) {
+  $openText = $openSection.Groups[1].Value
+  $reopenScope = $openText
+  $errors = [Collections.Generic.List[string]]::new()
+  $counts = @{}
+  foreach ($severity in $Severities) { $counts["$severity CODE"] = 0; $counts["$severity SPEC"] = 0 }
+  foreach ($heading in [regex]::Matches($openText, '(?m)^### (.*)$')) {
+    $finding = [regex]::Match($heading.Groups[1].Value, '^F\d+ (BLOCKER|MAJOR|MINOR) \[(CODE|SPEC)\] \S')
+    if (-not $finding.Success) {
+      $errors.Add("The heading '### $($heading.Groups[1].Value.Trim())' in ## Open is not '### F<n> <SEVERITY> [<TARGET>] <title>'.")
+      continue
+    }
+    $counts["$($finding.Groups[1].Value) $($finding.Groups[2].Value)"]++
+  }
+  foreach ($row in $lastRows) {
+    $severity = $row.Groups[1].Value
+    if ([int]$row.Groups[2].Value -ne $counts["$severity CODE"] -or [int]$row.Groups[3].Value -ne $counts["$severity SPEC"]) {
+      $errors.Add("The summary row $severity says $($row.Groups[2].Value) [CODE] and $($row.Groups[3].Value) [SPEC], " +
+        "but ## Open has $($counts["$severity CODE"]) and $($counts["$severity SPEC"]).")
+    }
+  }
+  $blocking = $counts['BLOCKER CODE'] + $counts['BLOCKER SPEC'] + $counts['MAJOR CODE'] + $counts['MAJOR SPEC']
+  if ($verdict.Groups[1].Value -eq 'APPROVE' -and $blocking -gt 0) {
+    $errors.Add("Verdict: APPROVE with $blocking open BLOCKER or MAJOR findings.")
+  }
+  if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_ -ErrorAction Continue }; exit 1 }
+  $openSpec = $counts['BLOCKER SPEC'] + $counts['MAJOR SPEC'] + $counts['MINOR SPEC']
+}
+
+$reopenCounts = [regex]::Matches($reopenScope, 'REOPENED\s*\((\d+)\)') | ForEach-Object { [int]$_.Groups[1].Value }
 $maxReopened = ($reopenCounts | Measure-Object -Maximum).Maximum
 if ($null -eq $maxReopened) { $maxReopened = 0 }
 

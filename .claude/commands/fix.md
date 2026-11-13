@@ -43,7 +43,7 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 "plan it", follow my answer.
 
 ## Change
-- Read each file before you change it. The repo rules of each path apply (`AGENTS.md`).
+- Read each file before you change it. The repo rules of each path apply (`CLAUDE.md`, **Rules**).
 - Make the smallest change that does the item. Change nothing outside the items.
 - Run the tests of each changed area:
   - Frontend: `cd frontend && npx ng test --watch=false --include <folder>`.
@@ -54,21 +54,22 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - Run `pwsh scripts/verify-stack.ps1 up` in the worktree, in the background, with its
   output in a log file in the scratchpad. On a running slot, Docker rebuilds only the
   changed images and keeps the volumes.
-- Never run `down` between fixes: it removes the volumes and the images. The data that
-  the reviewer or I left is fine for a fix check.
-- Run `down`, then `up`, only when the slot is stale: the diff since the slot started
+- Never run `reset` or `down` between fixes. The data that the reviewer or I left is fine
+  for a fix check. A stopped slot starts again with `up`, with its data.
+- Run `reset`, then `up`, only when the slot is stale: the diff since the slot started
   changes `Migrations/`, `Seeding/`, or `docker/keycloak/realm/` (an edited migration or
   a changed seed does not apply to an existing database), or the slot started on an
   earlier day (the seeded work orders and invites are tied to the seed day). Tell me why.
 - The log holds the sign-in password. Never repeat it. Give me the log path.
 
 ## Log
-- `plan.md`, `## Deviations`, one entry per call:
-  `*   Inline fix, cycle N (Artur, YYYY-MM-DD: "<my words>"): <each change with its files>.`
-  N is the `Cycle:` line. The words "cycle N" let `check-handoff.ps1` count the files.
+- `plan.md`, `#### Deviations` of the open cycle (an old plan: `## Deviations`), one entry
+  per call: `*   Inline fix, cycle N (Artur, YYYY-MM-DD: "<my words>"): <each change with its
+  files>.` N is the `Cycle:` line. The words "cycle N" let `check-handoff.ps1` count the files.
 - `spec.md`: when an item changes what a line describes (a layout, a text, a control),
-  update that line with my words and the date.
-- `review.md`: mark each finding that an item fixes `Fixed inline (Artur, YYYY-MM-DD)`.
+  update that line in place and add a line to `## Changes` (`spec.md` command).
+- `review.md`: move each finding that an item fixes from `## Open` to `## Closed` as
+  `FIXED INLINE (Artur, YYYY-MM-DD)`, and update the summary table.
 - Run `pwsh <worktree>/.claude/check-plan.ps1 <feature folder>` and fix each line it prints.
 
 ## Review

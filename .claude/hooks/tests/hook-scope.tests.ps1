@@ -5,8 +5,10 @@
 #
 # Cases:
 # - Turn skip: a turn that changes no file does nothing; a turn that changes a .cs file runs the cleanup.
-# - Checkout: the Stop with cwd in checkout 1 cleans the changed files of checkout 1 and leaves checkout 2 unchanged.
-# - Outside a checkout: a cwd outside any checkout does nothing, and the hook never falls back to another checkout.
+# - Reviewer: a session with HEALTHYFAC_SESSION_ROLE=reviewer does nothing; the same Stop without it runs the cleanup.
+# - Checkout: the hook verifies the checkout that holds its script file. With the session folder (cwd) in checkout 2,
+#   outside every checkout, or with CLAUDE_PROJECT_DIR on checkout 2, the hook of checkout 1 cleans checkout 1 only.
+#   The hook of a git worktree cleans the worktree and leaves the main checkout unchanged.
 # - Lost update: a file that another writer changes during the cleanup keeps that content.
 # - Deleted file: a file deleted during the cleanup is not created again.
 # - Skipped cleanup: a failed restore of the private copy prints a "Cleanup skipped" line and cleans nothing.
@@ -14,7 +16,8 @@
 #   A lint line without a capital S reaches the output. A turn fingerprint file older than 1 day goes.
 # - Lock: two cleanups of one checkout run one after the other; cleanups of two checkouts run at the same time.
 #   The cases compare the order of logged events, never durations.
-# - Proof: the turn skip case and the two guard cases run once more with the skip or the guard switched off in a copy
+# - Proof: the turn skip case, the checkout case, and the two guard cases run once more with the skip, the script
+#   checkout, or the guard switched off in a copy
 #   of the hook scripts. The checks must then show the difference, which proves that the skip or the guard causes it.
 # Run:  pwsh .claude/hooks/tests/hook-scope.tests.ps1
 # It exits 1 when a check fails.
@@ -79,7 +82,7 @@ function New-TestRepo([string] $name) {
   '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>' |
     Set-Content (Join-Path $backend 'App/App.csproj')
   foreach ($file in 'A', 'B') { "namespace Test; public class $file { }" | Set-Content (Join-Path $backend "App/$file.cs") }
-  "artifacts/`nbin/`nobj/" | Set-Content (Join-Path $repo '.gitignore')
+  "artifacts/`nbin/`nobj/`n.claude/" | Set-Content (Join-Path $repo '.gitignore')
   git -C $repo init -q 2>&1 | Out-Null
   git -C $repo config user.email t@t 2>&1 | Out-Null
   git -C $repo config user.name t 2>&1 | Out-Null
@@ -90,9 +93,17 @@ function New-TestRepo([string] $name) {
   $repo
 }
 
-function Invoke-Hook([string] $cwd, [string] $session = 'test', [string] $hooks = $HooksDir, [string] $script = 'verify-changed.ps1') {
+# Runs a hook script as Claude Code does: from the .claude/hooks folder of the checkout. It copies the scripts of
+# $hooks (the real ones, or a modified copy) into the checkout first; the test repositories ignore .claude/, so the
+# copy changes no git status. $cwd is the session folder of the hook input (default: the checkout).
+function Invoke-Hook(
+  [string] $repo, [string] $session = 'test', [string] $hooks = $HooksDir, [string] $script = 'verify-changed.ps1',
+  [string] $cwd = $repo) {
+  $installed = Join-Path $repo '.claude/hooks'
+  New-Item -ItemType Directory -Force $installed | Out-Null
+  Copy-Item (Join-Path $hooks '*.ps1') $installed -Force
   $inputJson = @{ session_id = $session; cwd = $cwd } | ConvertTo-Json -Compress
-  $output = $inputJson | & pwsh -NoProfile -File (Join-Path $hooks $script) 2>&1
+  $output = $inputJson | & pwsh -NoProfile -File (Join-Path $installed $script) 2>&1
   [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = ($output -join "`n") }
 }
 
@@ -145,21 +156,45 @@ try {
   [void](Invoke-Hook $repo 's1' $noSkip)
   Assert-That (Test-Cleaned $repo 'A') 'Proof: with the skip switched off, a turn without changes runs the cleanup'
 
-  Write-Host 'Checkout resolved from cwd'
+  Write-Host 'Reviewer session'
+  $repo = New-TestRepo 'reviewer'
+  $env:HEALTHYFAC_SESSION_ROLE = 'reviewer'
+  $result = Invoke-Hook $repo 's1'
+  Remove-Item Env:HEALTHYFAC_SESSION_ROLE
+  Assert-That ($result.ExitCode -eq 0 -and -not $result.Output -and -not (Test-Cleaned $repo 'A')) 'A Stop of a reviewer session does nothing'
+  [void](Invoke-Hook $repo 's1')
+  Assert-That (Test-Cleaned $repo 'A') 'Proof: the same Stop without the reviewer role runs the cleanup'
+
+  Write-Host 'Checkout resolved from the hook script'
   $first = New-TestRepo 'checkout-one'
   $second = New-TestRepo 'checkout-two'
-  [void](Invoke-Hook (Join-Path $first 'backend'))
-  Assert-That ((Test-Cleaned $first 'A') -and (Test-Cleaned $first 'B')) 'Stop with cwd in checkout 1 cleans its changed files'
-  Assert-That (-not (Test-Cleaned $second 'A') -and -not (Test-Cleaned $second 'B')) 'Stop with cwd in checkout 1 leaves checkout 2 unchanged'
+  [void](Invoke-Hook $first 'test' $HooksDir 'verify-changed.ps1' (Join-Path $second 'backend'))
+  Assert-That ((Test-Cleaned $first 'A') -and (Test-Cleaned $first 'B')) 'The hook of checkout 1 cleans checkout 1, with the session folder in checkout 2'
+  Assert-That (-not (Test-Cleaned $second 'A') -and -not (Test-Cleaned $second 'B')) 'The hook of checkout 1 leaves checkout 2 unchanged'
 
-  Write-Host 'cwd outside any checkout'
   $outside = Join-Path $work 'not-a-checkout'
   New-Item -ItemType Directory -Force $outside | Out-Null
+  $third = New-TestRepo 'checkout-outside'
   $env:CLAUDE_PROJECT_DIR = $second
-  $result = Invoke-Hook $outside
+  [void](Invoke-Hook $third 'test' $HooksDir 'verify-changed.ps1' $outside)
   Remove-Item Env:CLAUDE_PROJECT_DIR
-  Assert-That ($result.ExitCode -eq 0 -and -not $result.Output) 'Stop with cwd outside a checkout exits 0 and reports nothing'
-  Assert-That (-not (Test-Cleaned $second 'A') -and -not (Test-Cleaned $second 'B')) 'Stop with cwd outside a checkout does not fall back to CLAUDE_PROJECT_DIR'
+  Assert-That (Test-Cleaned $third 'A') 'The hook cleans its checkout, with the session folder outside every checkout'
+  Assert-That (-not (Test-Cleaned $second 'A')) 'CLAUDE_PROJECT_DIR on another checkout changes nothing'
+
+  $fromCwd = New-ModifiedHooks 'from-cwd' 'verify-changed.ps1' `
+    '$worktree = Get-WorktreeRoot $PSScriptRoot' '$worktree = Get-WorktreeRoot $hookInput.cwd'
+  $repo = New-TestRepo 'proof-checkout'
+  [void](Invoke-Hook $repo 'test' $fromCwd 'verify-changed.ps1' $outside)
+  Assert-That (-not (Test-Cleaned $repo 'A')) 'Proof: with the checkout taken from the session folder, the same Stop cleans nothing'
+
+  Write-Host 'Git worktree'
+  $main = New-TestRepo 'worktree-main'
+  $feature = Join-Path $work 'worktree-feature'
+  git -C $main worktree add -q $feature -b feature/x 2>&1 | Out-Null
+  Add-Content (Join-Path $feature 'backend/App/A.cs') '// edited in the worktree'
+  [void](Invoke-Hook $feature)
+  Assert-That (Test-Cleaned $feature 'A') 'The hook of a worktree cleans the changed file of the worktree'
+  Assert-That (-not (Test-Cleaned $main 'A')) 'The hook of a worktree leaves the main checkout unchanged'
 
   $cleanup = Join-Path $HooksDir 'cleanup-changed.ps1'
 

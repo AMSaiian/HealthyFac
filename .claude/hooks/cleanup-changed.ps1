@@ -2,8 +2,8 @@
 # Runs JetBrains ReSharper code cleanup on the given C# files (repository-relative paths).
 # Without -Files, it cleans every backend C# file changed since HEAD (manual use only).
 # verify-changed.ps1 calls it from the Stop and SubagentStop hooks with the files that git reports as changed in the
-# checkout (main or worktree) and with that checkout. A manual run without -Repo cleans the checkout of the current
-# directory.
+# checkout (main or worktree) and with that checkout. A manual run without -Repo cleans the checkout that holds this
+# script file.
 #
 # Safety against other writers (other sessions edit the same checkout):
 # - One cleanup per checkout at a time: a named mutex (the same one that verify-changed.ps1 holds, so it is re-entrant).
@@ -20,10 +20,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$repo = if ($Repo) { $Repo } else { git rev-parse --show-toplevel 2>$null }
-if (-not $repo) {
-  $repo = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { $PSScriptRoot | Split-Path | Split-Path }
-}
+$repo = if ($Repo) { $Repo } else { git -C $PSScriptRoot rev-parse --show-toplevel 2>$null }
+if (-not $repo) { exit 0 }
 $repo = [IO.Path]::GetFullPath($repo).TrimEnd([char]92, [char]47)
 $solution = Join-Path $repo 'backend/HealthyFac.slnx'
 $settings = Join-Path $repo 'backend/HealthyFac.sln.DotSettings'

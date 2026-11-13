@@ -7,7 +7,10 @@
 # - the cycle has no "Spec:" line;
 # - a section name of the Spec line (in **bold**) is no heading of spec.md;
 # - an AC of the Spec line has no "*   **AC<n>:**" line in spec.md, or no row in "## Acceptance Criteria Map";
-# - a step names "spec.md" or "the spec" outside the Spec line (the step is not self-contained).
+# - a step names "spec.md" or "the spec" outside the Spec line (the step is not self-contained);
+# - a step whose Files: line names a test file, without "TDD", "Proof required", or "No proof: <reason>" in its block;
+# - the cycle has no "#### Deviations" heading (the cycle keeps its own Deviations, so one range read holds them);
+# - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused).
 param(
   [Parameter(Mandatory = $true)][string]$Folder,
   [int]$Cycle = 0
@@ -32,20 +35,10 @@ function Expand-AcNumbers([string] $text) {
   return $numbers
 }
 
-$cycleHeadings = for ($i = 0; $i -lt $planLines.Count; $i++) {
-  $match = [regex]::Match($planLines[$i], '^### Cycle (\d+)\s*$')
-  if ($match.Success) { [pscustomobject]@{ Number = [int]$match.Groups[1].Value; Index = $i } }
-}
-if (-not $cycleHeadings) { Write-Error 'plan.md has no "### Cycle N" section.'; exit 1 }
-if ($Cycle -eq 0) { $Cycle = ($cycleHeadings | Measure-Object Number -Maximum).Maximum }
-$heading = $cycleHeadings | Where-Object Number -eq $Cycle | Select-Object -First 1
-if (-not $heading) { Write-Error "plan.md has no section for cycle $Cycle."; exit 1 }
-
-$end = $planLines.Count
-for ($i = $heading.Index + 1; $i -lt $planLines.Count; $i++) {
-  if ($planLines[$i] -match '^#{1,3} ') { $end = $i; break }
-}
-$section = $planLines[($heading.Index + 1)..($end - 1)]
+. (Join-Path $PSScriptRoot 'plan-sections.ps1')
+$planCycle = Get-PlanCycle $planLines $Cycle
+$Cycle = $planCycle.Number
+$section = $planCycle.Section
 
 $problems = [Collections.Generic.List[string]]::new()
 $specLine = $section | Where-Object { $_ -match '^Spec:\s*\S' } | Select-Object -First 1
@@ -76,14 +69,30 @@ if (-not $specLine) {
   }
 }
 
-$currentStep = $null
-$stepProblems = [Collections.Generic.HashSet[string]]::new()
-foreach ($line in $section) {
-  $stepMatch = [regex]::Match($line, '^- \[.\] Step (\d+)')
-  if ($stepMatch.Success) { $currentStep = $stepMatch.Groups[1].Value }
-  if ($null -ne $currentStep -and $line -match '(?i)spec\.md|\bthe spec\b' -and $stepProblems.Add($currentStep)) {
-    $problems.Add("Cycle ${Cycle}: Step $currentStep names the spec. Copy the facts into the step.")
+$steps = @(Get-CycleSteps $section)
+
+$TestFilePattern = '(?i)(^|[/`\s])tests?/|\.spec\.ts\b|Tests?\.cs\b|\.tests\.ps1\b'
+foreach ($step in $steps) {
+  $text = $step.Lines -join "`n"
+  if ($text -match '(?i)spec\.md|\bthe spec\b') {
+    $problems.Add("Cycle ${Cycle}: Step $($step.Number) names the spec. Copy the facts into the step.")
   }
+  $filesText = ($step.Lines | Where-Object { $_ -match 'Files:' }) -join "`n"
+  if ($filesText -match $TestFilePattern -and $text -cnotmatch '\bTDD\b|\bProof required\b|\bNo proof:') {
+    $problems.Add("Cycle ${Cycle}: Step $($step.Number) changes a test file, but says neither TDD, Proof required, nor No proof: <reason>.")
+  }
+}
+
+if (-not ($section | Where-Object { $_ -match '^#### Deviations\s*$' })) {
+  $problems.Add("Cycle ${Cycle}: no '#### Deviations' heading. End the cycle section with it.")
+}
+
+$acLines = $specLines | ForEach-Object {
+  $match = [regex]::Match($_, '^\*\s+\*\*AC(\d+[a-z]*):\*\*')
+  if ($match.Success) { $match.Groups[1].Value }
+}
+foreach ($group in $acLines | Group-Object | Where-Object Count -gt 1) {
+  $problems.Add("spec.md has $($group.Count) lines for AC$($group.Name). Never reuse an AC number.")
 }
 
 $problems

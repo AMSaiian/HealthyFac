@@ -3,10 +3,13 @@
 # warnings and errors in those files back to the agent that stops. It also reports C# lines longer than
 # max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
 # that agent, so a subagent fixes its own diagnostics before it reports to the main session.
-# The hook uses git only. It resolves the checkout (the main one or a git worktree) from the hook input cwd with
-# "git -C <cwd> rev-parse --show-toplevel" and exits when cwd is outside a checkout. It never falls back to
-# CLAUDE_PROJECT_DIR or to the script folder, and it reads no transcript. The changed files are the files that git
-# reports as changed in that checkout (git diff --name-only HEAD plus the untracked files).
+# The hook uses git only. It verifies the checkout (the main one or a git worktree) that holds this script file:
+# "git -C <script folder> rev-parse --show-toplevel". Claude Code runs the script of the project root in which the
+# session started, and that root never changes during a session. The hook never reads the hook input cwd (the
+# session can move to a folder outside the checkout or into another checkout), CLAUDE_PROJECT_DIR, or a transcript.
+# So a session verifies its own checkout only: start each feature session in its feature worktree
+# (start-feature.ps1). The changed files are the files that git reports as changed in that checkout (git diff
+# --name-only HEAD plus the untracked files).
 # A changed file counts as new when its content hash differs from the hash saved at the previous stop. The hash
 # state lives in the git directory of the checkout, so uncommitted changes from earlier stops do not trigger a
 # rebuild. Limit: sessions that share one checkout share this state and these files. Give each session its own
@@ -20,11 +23,14 @@
 # The hook blocks once per stop attempt. When stop_hook_active is set, it reports and lets the turn end,
 # so a warning Claude cannot fix does not loop. Files with diagnostics stay out of the saved state,
 # so the next stop checks them again.
+# A reviewer session (HEALTHYFAC_SESSION_ROLE=reviewer, set by start-feature.ps1) never edits the repo, so the hook
+# does nothing there: the executor session verifies its own files.
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'worktree-fingerprint.ps1')
 
 $hookInput = try { [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { $null }
+if ($env:HEALTHYFAC_SESSION_ROLE -eq 'reviewer') { exit 0 }
 $solutionPath = 'backend/HealthyFac.slnx'
 
 # The checkout (main or worktree) that holds the directory, in the backslash form that the build diagnostics use,
@@ -226,9 +232,8 @@ function Invoke-Verification([string] $repo) {
   }
 }
 
-$worktree = Get-WorktreeRoot $hookInput.cwd
+$worktree = Get-WorktreeRoot $PSScriptRoot
 if (-not $worktree -or -not (Test-Path (Join-Path $worktree $solutionPath))) { exit 0 }
-$checkouts = @($worktree)
 
 # The skip: no file changed since the start of the turn, or since the last clean verification.
 $fingerprint = Get-WorktreeFingerprint $worktree
@@ -251,7 +256,10 @@ if (-not $hasOuterLock) {
   exit 0
 }
 try {
-  $results = @(foreach ($checkout in $checkouts) { Invoke-Verification $checkout; Invoke-FrontendVerification $checkout 'frontend'; Invoke-FrontendVerification $checkout 'keycloak-theme' })
+  $results = @(
+    Invoke-Verification $worktree
+    Invoke-FrontendVerification $worktree 'frontend'
+    Invoke-FrontendVerification $worktree 'keycloak-theme')
 }
 finally {
   $outerLock.ReleaseMutex()
