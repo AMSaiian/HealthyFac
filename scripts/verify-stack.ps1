@@ -15,7 +15,9 @@
 # The script acts on the checkout (the main one or a worktree) that holds this script file, not on the current
 # folder: run the copy of the worktree whose stack you want.
 # Usage:
-#   pwsh scripts/verify-stack.ps1 up [-Slot n]   builds and starts the stack, waits until it is ready, prints the sign-in
+#   pwsh scripts/verify-stack.ps1 up [-Slot n] [-Simulator]   builds and starts the stack, waits until it is ready, prints the
+#                                                sign-in; -Simulator adds the machine simulator (profile simulator) on
+#                                                port 8200 + n and prints its control API page
 #   pwsh scripts/verify-stack.ps1 status         lists the containers of the stack
 #   pwsh scripts/verify-stack.ps1 stop [-Slot n] stops the containers and keeps them, the volumes, the images, and the
 #                                                slot; `up` starts them again with the data
@@ -25,7 +27,7 @@
 #
 # Configuration: Compose reads .env (the secrets, shared with the dev stack) and then .env.verify (the shared
 # overrides). The script sets VERIFY_SLOT, HEALTHYFAC_DOMAIN, GATEWAY_PORT, and MAILPIT_UI_PORT in the process
-# environment (also GRAFANA_PORT, RABBITMQ_MANAGEMENT_PORT, KEYCLOAK_PORT). docker/verify/docker-compose.verify.yml
+# environment (also GRAFANA_PORT, RABBITMQ_MANAGEMENT_PORT, KEYCLOAK_PORT, SIMULATOR_PORT). docker/verify/docker-compose.verify.yml
 # renames the containers and images and removes every other host port. A worktree without a .env uses the .env of the main checkout.
 #
 # One-time setup:
@@ -40,7 +42,9 @@ param(
   [ValidateSet('up', 'status', 'stop', 'reset', 'down')]
   [string]$Command,
 
-  [int]$Slot
+  [int]$Slot,
+
+  [switch]$Simulator
 )
 
 $ErrorActionPreference = 'Stop'
@@ -123,7 +127,13 @@ $env:MAILPIT_UI_PORT = "$($values.MailpitPort)"
 $env:GRAFANA_PORT = "$($values.GrafanaPort)"
 $env:RABBITMQ_MANAGEMENT_PORT = "$($values.RabbitMqUiPort)"
 $env:KEYCLOAK_PORT = "$($values.KeycloakPort)"
+$env:SIMULATOR_PORT = "$($values.SimulatorPort)"
 
+# The other commands always include the simulator profile, so `stop`, `reset`, and `down` also act on a simulator
+# that an earlier `up -Simulator` started.
+$UseSimulatorProfile = $Simulator -or $Command -ne 'up'
+if ($Simulator) { $ReadyServices += 'simulator' }
+if ($UseSimulatorProfile) { $BuiltServices += 'simulator' }
 $BuiltImages = $BuiltServices | ForEach-Object { "$($values.ImagePrefix)/${_}:local" }
 
 $composeArgs = @(
@@ -132,6 +142,7 @@ $composeArgs = @(
   '-f', (Join-Path $repo 'docker-compose.yml'),
   '-f', (Join-Path $repo 'docker\verify\docker-compose.verify.yml')
 )
+if ($UseSimulatorProfile) { $composeArgs += @('--profile', 'simulator') }
 
 function Invoke-Compose {
   & docker @composeArgs @args
@@ -288,6 +299,7 @@ switch ($Command) {
     Assert-PortFree $values.GrafanaPort 'the Grafana port'
     Assert-PortFree $values.RabbitMqUiPort 'the RabbitMQ management port'
     Assert-PortFree $values.KeycloakPort 'the Keycloak admin port'
+    if ($Simulator) { Assert-PortFree $values.SimulatorPort 'the simulator port' }
     Show-MemoryWarning
     Invoke-Compose up -d --build
     Wait-Ready
@@ -301,6 +313,7 @@ switch ($Command) {
     Write-Host "Grafana: http://localhost:$($values.GrafanaPort) (admin / admin)"
     Write-Host "RabbitMQ: http://localhost:$($values.RabbitMqUiPort)"
     Write-Host "Keycloak admin: http://localhost:$($values.KeycloakPort)"
+    if ($Simulator) { Write-Host "Simulator: http://127.0.0.1:$($values.SimulatorPort)/scalar" }
     Write-Host 'Stop:    pwsh scripts/verify-stack.ps1 stop (keeps the data); down removes the data and the images'
   }
   'status' {
