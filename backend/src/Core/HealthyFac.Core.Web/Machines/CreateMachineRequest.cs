@@ -7,6 +7,7 @@ public record CreateMachineRequest
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
     public string? Description { get; init; }
+    public required DateOnly ExpectedGoLiveOn { get; init; }
 }
 
 public static class CreateMachineRequestExtensions
@@ -20,6 +21,7 @@ public static class CreateMachineRequestExtensions
                 SerialNumber = request.SerialNumber,
                 CompanyId = companyId,
                 Description = request.Description,
+                ExpectedGoLiveOn = request.ExpectedGoLiveOn,
             };
     }
 }

@@ -3,19 +3,29 @@ import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
+import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { CLOCK } from '@shared/time/clock';
 import { withToasts } from '@shared/toasts/with-toasts';
 import { draftConflictKey } from '@machines/drafts/draft-conflict';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
 
-import { EMPTY_VALUE, fromDraftValue, overlay, payloadOf, toBody, toFormValue } from './machine-drawer.store.utils';
+import {
+  emptyValue,
+  fromDraftValue,
+  minGoLiveOn,
+  overlay,
+  payloadOf,
+  toBody,
+  toFormValue,
+  toUpdateBody,
+} from './machine-drawer.store.utils';
 import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
@@ -31,12 +41,14 @@ export const MachineDrawerStore = signalStore(
     _api: inject(MachinesApi),
     _draftsApi: inject(DraftsApi),
     _actions: inject(ActionStore),
+    _clock: inject(CLOCK),
   })),
   withToasts(),
   withComputed((store) => ({
     isUpdate: computed(() => store.action()?.type === MachineActionType.Update),
     machineId: computed(() => payloadOf(store.action()).machineId),
     draftId: computed(() => payloadOf(store.action()).draftId),
+    today: computed(() => store._clock.now().toZonedDateTimeISO(store._clock.timeZoneId()).toPlainDate()),
   })),
   withProps((store) => ({
     machine: rxResource({
@@ -53,9 +65,9 @@ export const MachineDrawerStore = signalStore(
     initialValue: computed((): MachineFormValue | null => {
       if (!store.isUpdate()) {
         if (store.draftId() !== undefined) {
-          return store.draft.hasValue() ? fromDraftValue(store.draft.value().draft) : null;
+          return store.draft.hasValue() ? fromDraftValue(store.draft.value().draft, store.today()) : null;
         }
-        return store.action() === null ? null : EMPTY_VALUE;
+        return store.action() === null ? null : emptyValue(store.today());
       }
       return store.machine.hasValue() ? toFormValue(store.machine.value()) : null;
     }),
@@ -68,6 +80,14 @@ export const MachineDrawerStore = signalStore(
   })),
   withComputed((store) => ({
     gatewayId: computed((): string | null => (store.machine.hasValue() ? store.machine.value().gatewayId : null)),
+    /** The first day that the go-live picker allows: today on create, the creation day on edit. */
+    minGoLiveOn: computed(() =>
+      minGoLiveOn(
+        store.isUpdate() && store.machine.hasValue() ? store.machine.value() : null,
+        store.today(),
+        store._clock.timeZoneId(),
+      ),
+    ),
   })),
   withMethods((store) => {
     const request$ = (value: MachineFormValue): Observable<unknown> => {
@@ -77,9 +97,12 @@ export const MachineDrawerStore = signalStore(
       if (draftId !== undefined && !store.isUpdate()) {
         return store._draftsApi.applyMachineDraft(draftId, body, options);
       }
-      return store.isUpdate()
-        ? store._api.update(store.machineId() ?? '', body, options)
-        : store._api.create(body, options);
+      if (store.isUpdate()) {
+        return value.state === null
+          ? throwError(() => new Error('The update form has no state'))
+          : store._api.update(store.machineId() ?? '', toUpdateBody(value, value.state), options);
+      }
+      return store._api.create(body, options);
     };
 
     return {

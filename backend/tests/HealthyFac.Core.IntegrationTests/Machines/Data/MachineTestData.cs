@@ -7,6 +7,10 @@ namespace HealthyFac.Core.IntegrationTests.Machines.Data;
 
 public static class MachineTestData
 {
+    public static readonly DateOnly FutureGoLiveOn = new(year: 2099, month: 1, day: 1);
+    public static readonly DateOnly SecondGoLiveOn = new(year: 2099, month: 1, day: 2);
+    public static readonly DateOnly ThirdGoLiveOn = new(year: 2099, month: 1, day: 3);
+
     public const string CompanyName = "Plant Co";
     public const string OtherCompanyName = "Other Plant Co";
 
@@ -58,6 +62,13 @@ public static class MachineTestData
         "<p>"
         + string.Concat(Enumerable.Repeat(element: "<strong>aaaaaaaaaa</strong>", DescriptionLimit / 10))
         + "</p>";
+
+    public static TheoryData<string, SortDirection, DateOnly[]> GoLiveSorts =>
+        new()
+        {
+            { "Ascending", SortDirection.Ascending, [FutureGoLiveOn, SecondGoLiveOn, ThirdGoLiveOn] },
+            { "Descending", SortDirection.Descending, [ThirdGoLiveOn, SecondGoLiveOn, FutureGoLiveOn] },
+        };
 
     public static SearchMachinesRequest CreateSearch(
         Guid companyId,

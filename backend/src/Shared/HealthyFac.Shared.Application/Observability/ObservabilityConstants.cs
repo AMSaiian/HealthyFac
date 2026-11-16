@@ -228,6 +228,51 @@ public static class ObservabilityConstants
     }
 
     /// <summary>
+    /// The names of the machine simulator (a development and demo tool). The source and the meter are named after the
+    /// .NET namespace of the tool and are registered by the tool itself. No ID enters a span name or a metric tag.
+    /// </summary>
+    public static class Simulator
+    {
+        public const string Source = "HealthyFac.MachineSimulator";
+        public const string Meter = Source;
+
+        /// <summary>The span of a publish, named after the messaging convention.</summary>
+        public const string PublishSpanName = $"{Messaging.Operations.Send} {Intake.DestinationPattern}";
+
+        public static class Spans
+        {
+            public const string PollState = "Simulator.PollState";
+            public const string Discover = "Simulator.Discover";
+        }
+
+        public static class Instruments
+        {
+            public const string Messages = "healthyfac.simulator.messages";
+            public const string PollDuration = "healthyfac.simulator.poll.duration";
+            public const string Publishing = "healthyfac.simulator.machines.publishing";
+        }
+
+        public static class Tags
+        {
+            public const string Scenario = "healthyfac.simulator.scenario";
+            public const string Outcome = "healthyfac.simulator.outcome";
+            public const string Poll = "healthyfac.simulator.poll";
+        }
+
+        public static class Outcomes
+        {
+            public const string Published = "published";
+            public const string Dropped = "dropped";
+        }
+
+        public static class Polls
+        {
+            public const string State = "state";
+            public const string Discovery = "discovery";
+        }
+    }
+
+    /// <summary>
     /// The meter names. A meter is named after its .NET namespace, like an activity source. The built-in meters
     /// of ASP.NET Core and <c>HttpClient</c> come with the instrumentation packages, so only the others are here.
     /// </summary>
@@ -316,6 +361,7 @@ public static class ObservabilityConstants
     {
         public const string Seconds = "s";
         public const string Messages = "{message}";
+        public const string Machines = "{machine}";
         public const string Sessions = "{session}";
         public const string Attempts = "{attempt}";
         public const string Pages = "{page}";

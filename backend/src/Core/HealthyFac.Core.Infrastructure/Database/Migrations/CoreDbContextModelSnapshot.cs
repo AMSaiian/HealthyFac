@@ -691,6 +691,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
 
+                    b.Property<DateOnly>("ExpectedGoLiveOn")
+                        .HasColumnType("date")
+                        .HasColumnName("expected_go_live_on");
+
                     b.Property<string>("GatewayId")
                         .IsRequired()
                         .HasMaxLength(16)

@@ -122,6 +122,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false, collation: "case_insensitive"),
                     serial_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false, collation: "case_insensitive"),
                     description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
+                    expected_go_live_on = table.Column<DateOnly>(type: "date", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     created_by = table.Column<Guid>(type: "uuid", nullable: false),

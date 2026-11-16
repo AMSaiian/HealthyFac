@@ -1,15 +1,27 @@
 import { HTML_MAX_LENGTH } from '@shared/rich-text/rich-text-limits';
 import { TOO_MUCH_FORMATTING_ERROR_KEY } from '@shared/rich-text/rich-text-schema';
 
+import { Temporal } from '@shared/time/temporal';
+
 import { DESCRIPTION_MAX_LENGTH } from '@machines/machine-limits';
 
-import { machineFormSchema, type MachineFormValue } from './machine-form-schema';
+import { machineFormSchema, type MachineFormValue, REQUIRED_ERROR_KEY } from './machine-form-schema';
 
 const VALID: MachineFormValue = {
   name: 'Lathe 01',
   serialNumber: 'ABC-1',
   description: '<p>text</p>',
+  expectedGoLiveOn: Temporal.PlainDate.from('2026-03-11'),
+  state: null,
 };
+
+describe('machineFormSchema expectedGoLiveOn', () => {
+  it('machineFormSchema_WithoutGoLiveDate_FailsWithRequiredKey', () => {
+    const result = machineFormSchema.safeParse({ ...VALID, expectedGoLiveOn: null });
+
+    expect(result.error?.issues.map((issue) => issue.message)).toContain(REQUIRED_ERROR_KEY);
+  });
+});
 
 describe('machineFormSchema description', () => {
   const formatted = (visibleLength: number): string =>

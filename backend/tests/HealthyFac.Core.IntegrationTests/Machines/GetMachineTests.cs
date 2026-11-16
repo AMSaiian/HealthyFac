@@ -27,6 +27,7 @@ public sealed class GetMachineTests(CoreDatabaseFixture fixture)
         machine.Name.Should().Be(MachineTestData.MachineName);
         machine.SerialNumber.Should().Be(MachineTestData.SerialNumber);
         machine.Description.Should().Be(MachineTestData.LinkDescription);
+        machine.ExpectedGoLiveOn.Should().Be(MachineTestData.FutureGoLiveOn);
     }
 
     [Fact]

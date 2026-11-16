@@ -1,0 +1,45 @@
+<hf-action-dialog
+  title="MACHINES.CHANGE_STATE"
+  [isSaveDisabled]="store.saveDisabledReason() !== null"
+  [saveDisabledReason]="store.saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="store.save()"
+  (cancelled)="store.cancel()"
+>
+  @if (store.currentState() !== null) {
+    <div class="flex flex-col gap-1">
+      <label for="machine-state">{{ 'MACHINES.FORM.STATE' | translate }}</label>
+      <p-select
+        inputId="machine-state"
+        optionLabel="labelKey"
+        optionValue="value"
+        appendTo="body"
+        [options]="stateOptions"
+        [ngModel]="store.selectedState()"
+        (ngModelChange)="store.select($event)"
+      >
+        <ng-template
+          #selectedItem
+          let-option
+          >{{ option.labelKey | translate }}</ng-template
+        >
+        <ng-template
+          #item
+          let-option
+          >{{ option.labelKey | translate }}</ng-template
+        >
+      </p-select>
+    </div>
+  } @else {
+    <div class="flex min-h-24">
+      @if (showSpinner()) {
+        <hf-loading-spinner />
+      }
+    </div>
+  }
+  @if (showSaving()) {
+    <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+      <hf-loading-spinner />
+    </div>
+  }
+</hf-action-dialog>

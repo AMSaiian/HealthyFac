@@ -1,3 +1,4 @@
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.IdEncryption;
 using ApplicationUpdateMachineRequest = HealthyFac.Core.Application.Machines.UpdateMachineRequest;
 
@@ -8,6 +9,8 @@ public record UpdateMachineRequest
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
     public string? Description { get; init; }
+    public required DateOnly ExpectedGoLiveOn { get; init; }
+    public required MachineState State { get; init; }
 }
 
 public static class UpdateMachineRequestExtensions
@@ -26,6 +29,8 @@ public static class UpdateMachineRequestExtensions
                 Name = request.Name,
                 SerialNumber = request.SerialNumber,
                 Description = request.Description,
+                ExpectedGoLiveOn = request.ExpectedGoLiveOn,
+                State = request.State,
             };
     }
 }

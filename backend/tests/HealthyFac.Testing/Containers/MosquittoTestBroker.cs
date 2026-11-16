@@ -42,19 +42,24 @@ public sealed class MosquittoTestBroker : IAsyncDisposable
 
     private readonly IContainer _container;
 
-    public MosquittoTestBroker()
+    /// <summary>
+    /// Creates the broker. A test that restarts the broker passes a fixed host port, because Docker gives a new random
+    /// port to a restarted container, and the clients of the test keep the old address.
+    /// </summary>
+    /// <param name="hostPort">The host port of the broker, or <see langword="null"/> for a random port.</param>
+    public MosquittoTestBroker(int? hostPort = null)
     {
         TelemetryPassword = Guid.NewGuid().ToString(format: "N");
         SenderPassword = Guid.NewGuid().ToString(format: "N");
 
         var startScript =
-            $"mosquitto_passwd -b -c {PasswordPath} {TelemetryUser} {TelemetryPassword}"
+            $"rm -f {PasswordPath} && mosquitto_passwd -b -c {PasswordPath} {TelemetryUser} {TelemetryPassword}"
             + $" && mosquitto_passwd -b {PasswordPath} {SenderUser} {SenderPassword}"
             + $" && chown mosquitto:mosquitto {PasswordPath}"
             + $" && exec mosquitto -c {ConfigPath}";
 
         _container = new ContainerBuilder(TestImages.Mosquitto)
-            .WithPortBinding(BrokerContainerPort, assignRandomHostPort: true)
+            .WithPortBinding(hostPort?.ToString() ?? "0", BrokerContainerPort.ToString())
             .WithResourceMapping(Encoding.UTF8.GetBytes(BrokerConfig), ConfigPath)
             .WithResourceMapping(Encoding.UTF8.GetBytes(AccessRules), AclPath)
             .WithEntrypoint("sh", "-c")

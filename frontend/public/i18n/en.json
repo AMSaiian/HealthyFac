@@ -139,6 +139,7 @@
       "DRAFTS": "Show the pending drafts of the machine",
       "FILES": "Show the files of the machine",
       "DELETE": "Delete the machine",
+      "CHANGE_STATE": "Change the state of the machine",
       "ADD_NEW": "Add a machine to the company"
     },
     "METRICS": "Metrics",
@@ -151,6 +152,7 @@
       "NAME": "Name",
       "SERIAL_NUMBER": "Serial number",
       "GATEWAY_ID": "Gateway ID",
+      "EXPECTED_GO_LIVE_ON": "Expected go-live",
       "STATE": "State",
       "CREATED_AT": "Created",
       "UPDATED_AT": "Updated",
@@ -161,11 +163,13 @@
       "IN_MAINTENANCE": "In maintenance",
       "OUT_OF_SERVICE": "Out of service"
     },
+    "CHANGE_STATE": "Change state",
     "FILTERS": {
       "NAME_PLACEHOLDER": "Filter by name",
       "SERIAL_NUMBER_PLACEHOLDER": "Filter by serial number",
       "GATEWAY_ID_PLACEHOLDER": "Starts with",
       "STATE_PLACEHOLDER": "Select states",
+      "EXPECTED_GO_LIVE_ON_PLACEHOLDER": "Select go-live dates",
       "CREATED_AT_PLACEHOLDER": "Select created dates",
       "UPDATED_AT_PLACEHOLDER": "Select updated dates",
       "DRAFTS_PLACEHOLDER": "Has drafts",
@@ -175,6 +179,7 @@
     "TOASTS": {
       "CREATED": "The machine is created",
       "UPDATED": "The machine is updated",
+      "STATE_CHANGED": "The machine state is changed",
       "SERIAL_NUMBER_TAKEN": "A machine with this serial number already exists"
     },
     "FORM": {
@@ -182,11 +187,14 @@
       "UPDATE_TITLE": "Update machine",
       "NAME": "Name",
       "SERIAL_NUMBER": "Serial number",
+      "STATE": "State",
       "GATEWAY_ID": "Gateway ID",
       "COPY_GATEWAY_ID": "Copy gateway ID",
       "DESCRIPTION": "Description",
       "NAME_PLACEHOLDER": "Enter the name",
       "SERIAL_NUMBER_PLACEHOLDER": "Enter the serial number",
+      "EXPECTED_GO_LIVE_ON": "Expected go-live",
+      "EXPECTED_GO_LIVE_ON_HINT": "Estimated date when the metrics flow starts",
       "DESCRIPTION_PLACEHOLDER": "Describe the machine"
     },
     "FILES": "Files",

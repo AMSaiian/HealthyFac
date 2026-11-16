@@ -49,6 +49,7 @@
   </Folder>
   <Folder Name="/src/Tools/">
     <Project Path="src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.csproj" />
+    <Project Path="src/Tools/HealthyFac.MachineSimulator/HealthyFac.MachineSimulator.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/HealthyFac.Auth.ArchitectureTests/HealthyFac.Auth.ArchitectureTests.csproj" />
@@ -68,6 +69,9 @@
     <Project Path="tests/HealthyFac.Insights.ApiTests/HealthyFac.Insights.ApiTests.csproj" />
     <Project Path="tests/HealthyFac.Insights.IntegrationTests/HealthyFac.Insights.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Insights.UnitTests/HealthyFac.Insights.UnitTests.csproj" />
+    <Project Path="tests/HealthyFac.MachineSimulator.ArchitectureTests/HealthyFac.MachineSimulator.ArchitectureTests.csproj" />
+    <Project Path="tests/HealthyFac.MachineSimulator.IntegrationTests/HealthyFac.MachineSimulator.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.MachineSimulator.UnitTests/HealthyFac.MachineSimulator.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Spa.IntegrationTests/HealthyFac.Spa.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Telemetry.ArchitectureTests/HealthyFac.Telemetry.ArchitectureTests.csproj" />
     <Project Path="tests/HealthyFac.Telemetry.ApiTests/HealthyFac.Telemetry.ApiTests.csproj" />

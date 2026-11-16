@@ -102,7 +102,7 @@ public sealed class CoreDevelopmentDataSeeder(
 
         foreach (var company in companies)
         {
-            AddMachines(company.Id, now);
+            AddMachines(company.Id, company.TimeZoneId, now);
 
             AddEmployees(
                 EmployeeInviteFaker.WithProfile(
@@ -146,7 +146,7 @@ public sealed class CoreDevelopmentDataSeeder(
         _dbContext.Entry(company).Property(entity => entity.Id).CurrentValue = tenant.CompanyId;
         _dbContext.Companies.Add(company);
 
-        AddMachines(tenant.CompanyId, now);
+        AddMachines(tenant.CompanyId, tenant.TimeZoneId, now);
         AddSeedMachines(tenant, now);
 
         var supervisor = AddTestTenantEmployee(
@@ -301,10 +301,11 @@ public sealed class CoreDevelopmentDataSeeder(
             },
             cancellationToken);
 
-    private void AddMachines(Guid companyId, DateTime now)
+    private void AddMachines(Guid companyId, string timeZoneId, DateTime now)
     {
         var machines = new MachineFaker(
                 companyId,
+                timeZoneId,
                 _options.GetMachineTypes(),
                 _options.SerialNumberPattern,
                 now,
@@ -321,6 +322,7 @@ public sealed class CoreDevelopmentDataSeeder(
         for (var index = 0; index < seeds.Count; index++)
         {
             var seed = seeds[index];
+            var startedAt = now.AddDays(-SeedingValidationConstants.StateHistory.MinStartDaysBeforeNow);
             var machine = new Machine(
                 seed.MachineId,
                 tenant.CompanyId,
@@ -335,7 +337,9 @@ public sealed class CoreDevelopmentDataSeeder(
                     SeedingValidationConstants.SeedMachineNaming.SerialNumberFormat,
                     index + 1),
                 description: null,
-                now.AddDays(-SeedingValidationConstants.StateHistory.MinStartDaysBeforeNow));
+                DateOnly.FromDateTime(
+                    TimeZoneInfo.ConvertTimeFromUtc(now, TimeZoneInfo.FindSystemTimeZoneById(tenant.TimeZoneId))),
+                startedAt);
             _dbContext.Machines.Add(machine);
             AddMachineCreated(machine);
         }

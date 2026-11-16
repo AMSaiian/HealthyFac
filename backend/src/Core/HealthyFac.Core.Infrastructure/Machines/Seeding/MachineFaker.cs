@@ -22,6 +22,10 @@ internal sealed class MachineFaker : Faker<Machine>
     /// Declares the machine shape.
     /// </summary>
     /// <param name="companyId">The saved company that owns the machines.</param>
+    /// <param name="timeZoneId">
+    /// The IANA time zone of the company. The expected go-live day is the day of <paramref name="now"/> in this zone,
+    /// which is the creation day of the seed. UTC applies when the company has none.
+    /// </param>
     /// <param name="machineTypes">The machine types to pick from. The name appends a two-digit number.</param>
     /// <param name="serialNumberPattern">
     /// The Bogus replacement pattern of serial numbers: <c>#</c> becomes a digit and <c>?</c> becomes a letter.
@@ -32,6 +36,7 @@ internal sealed class MachineFaker : Faker<Machine>
     /// <param name="seed">The random seed, so every run produces the same machines.</param>
     public MachineFaker(
         Guid companyId,
+        string? timeZoneId,
         IReadOnlyList<string> machineTypes,
         string serialNumberPattern,
         DateTime now,
@@ -39,6 +44,7 @@ internal sealed class MachineFaker : Faker<Machine>
     )
     {
         UseSeed(seed);
+        var zone = timeZoneId is null ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
         CustomInstantiator(faker =>
         {
             var firstStartedAt = now
@@ -52,6 +58,7 @@ internal sealed class MachineFaker : Faker<Machine>
                 $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}",
                 faker.Random.Replace(serialNumberPattern),
                 description: null,
+                DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now, zone)),
                 firstStartedAt);
 
             var changedStates =

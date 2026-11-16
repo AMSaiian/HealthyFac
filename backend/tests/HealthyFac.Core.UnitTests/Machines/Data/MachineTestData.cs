@@ -14,6 +14,8 @@ public static class MachineTestData
     public static readonly string Name = Faker.Commerce.ProductName();
     public static readonly string SerialNumber = Faker.Random.AlphaNumeric(length: 12);
 
+    public static readonly DateOnly FutureGoLiveOn = new(year: 2099, month: 1, day: 1);
+
     public static readonly DateTime StartedAt = new(
         year: 2026, month: 11, day: 6, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
 
@@ -27,5 +29,5 @@ public static class MachineTestData
     ];
 
     public static Machine CreateMachine() =>
-        new(CompanyId, GatewayIds.Create(), Name, SerialNumber, description: null, StartedAt);
+        new(CompanyId, GatewayIds.Create(), Name, SerialNumber, description: null, FutureGoLiveOn, StartedAt);
 }

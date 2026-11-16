@@ -11,7 +11,14 @@ public static class DraftActionFixtureExtensions
 {
     extension(CoreDatabaseFixture fixture)
     {
-        public async Task ApplyDraftAsync(Guid companyId, Guid draftId, string name, string serialNumber)
+        public async Task ApplyDraftAsync(
+            Guid companyId,
+            Guid draftId,
+            string name,
+            string serialNumber,
+            DateOnly? expectedGoLiveOn = null,
+            uint? rowVersion = null
+        )
         {
             using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider
@@ -24,6 +31,8 @@ public static class DraftActionFixtureExtensions
                     Id = draftId,
                     Name = name,
                     SerialNumber = serialNumber,
+                    ExpectedGoLiveOn = expectedGoLiveOn,
+                    RowVersion = rowVersion,
                 });
         }
 

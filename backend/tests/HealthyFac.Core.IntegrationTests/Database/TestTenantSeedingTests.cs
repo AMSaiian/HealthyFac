@@ -45,6 +45,20 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task SeedOptionalData_WithSeedMachines_GivesEveryMachineAGoLiveDayNotBeforeItsCreationDay()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+
+        var rows = await _fixture.LoadSeededGoLiveRowsAsync();
+        var daysBeforeCreation = rows.Where(row => row.ExpectedGoLiveOn < CreationDayOf(row))
+            .Select(row => row.MachineId)
+            .ToList();
+
+        rows.Should().NotBeEmpty();
+        daysBeforeCreation.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task SeedOptionalData_WithTestTenant_AddsNoEmployeeAcceptedOutboxRow()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithTestTenantOptions);
@@ -200,4 +214,8 @@ public sealed class TestTenantSeedingTests(CoreDatabaseFixture fixture)
         orders.Should().HaveCount(DatabaseTestData.SeededWorkOrderCount);
         blocks.Should().HaveCount(2 * DatabaseTestData.SeededShiftBlocksPerEmployee);
     }
+
+    private static DateOnly CreationDayOf(SeededGoLiveRow row) =>
+        DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(row.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById(row.TimeZoneId)));
 }

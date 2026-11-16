@@ -1,7 +1,10 @@
-import type { MenuItem } from 'primeng/api';
+import type { MenuItem, TooltipOptions } from 'primeng/api';
 import type { Menu } from 'primeng/menu';
 
 const DANGER_STYLE_CLASS = 'hf-menu-danger';
+
+/** The row menu opens at the right edge of the grid, so its item tooltips open to the left. */
+const ROW_MENU_TOOLTIP_OPTIONS: TooltipOptions = { tooltipPosition: 'left' };
 
 /** The label keys of the destructive items (Delete, Revoke, Dismiss). Every menu shows them in the danger style. */
 const DANGER_LABEL_KEYS: readonly string[] = ['ACTIONS.DELETE', 'EMPLOYEES.REVOKE', 'DRAFTS.DISMISS'];
@@ -26,6 +29,7 @@ export class RowMenu<TRow> {
     return {
       label: labels[item.labelKey] ?? item.labelKey,
       tooltip: labels[item.tooltipKey] ?? item.tooltipKey,
+      tooltipOptions: ROW_MENU_TOOLTIP_OPTIONS,
       icon: item.icon,
       styleClass: DANGER_LABEL_KEYS.includes(item.labelKey) ? DANGER_STYLE_CLASS : undefined,
       command: (): void => {

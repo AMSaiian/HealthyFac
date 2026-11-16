@@ -10,6 +10,7 @@ const EMPTY_FILTER: MachineFilter = {
   serialNumber: '',
   gatewayId: '',
   states: [],
+  expectedGoLiveOn: { from: null, to: null },
   createdAt: { from: null, to: null },
   updatedAt: { from: null, to: null },
   hasPendingDrafts: null,
@@ -22,6 +23,7 @@ const MACHINE: Machine = {
   gatewayId: 'lmnoabcdefghijkl',
   state: MachineState.Operational,
   description: null,
+  expectedGoLiveOn: '2099-01-01',
   createdAt: '2026-03-01T08:00:00Z',
   updatedAt: null,
   pendingDraftCount: 0,
@@ -39,6 +41,7 @@ interface SetupOptions {
 
 interface Setup {
   updates: string[];
+  stateChanges: string[];
   grid: GridAccess;
 }
 
@@ -64,7 +67,9 @@ function setup(options: SetupOptions = {}): Setup {
   fixture.detectChanges();
   const updates: string[] = [];
   fixture.componentInstance.updateRequested.subscribe((id) => updates.push(id));
-  return { updates, grid: fixture.componentInstance as unknown as GridAccess };
+  const stateChanges: string[] = [];
+  fixture.componentInstance.stateChangeRequested.subscribe((change) => stateChanges.push(change));
+  return { updates, stateChanges, grid: fixture.componentInstance as unknown as GridAccess };
 }
 
 describe('MachineGrid', () => {
@@ -87,7 +92,7 @@ describe('MachineGrid', () => {
   it('menuItems_WithWritePermission_OpenItemIsFirst', () => {
     const { grid } = setup({ canWrite: true, canReadStatuses: true });
 
-    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-external-link', 'pi pi-list']);
+    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-external-link', 'pi pi-sync', 'pi pi-list']);
   });
 
   it('menuItems_OpenItemOfActiveRow_EmitsUpdateRequestedWithItsId', () => {
@@ -97,5 +102,29 @@ describe('MachineGrid', () => {
     grid.menuItems()[0].command?.({} as never);
 
     expect(updates).toEqual([MACHINE.id]);
+  });
+
+  it('menuItems_WithWritePermission_HoldsExactlyOneStateItemAfterOpen', () => {
+    const { grid } = setup({ canWrite: true });
+
+    const items = grid.menuItems();
+
+    expect(items.map((item) => item.label)).toEqual(['ACTIONS.OPEN', 'MACHINES.CHANGE_STATE']);
+    expect(items[1].icon).toBe('pi pi-sync');
+  });
+
+  it('menuItems_StateItemOfActiveRow_EmitsStateChangeRequestedWithItsId', () => {
+    const { grid, stateChanges } = setup({ canWrite: true });
+    grid.rowMenu.activeRow = MACHINE;
+
+    grid.menuItems()[1].command?.({} as never);
+
+    expect(stateChanges).toEqual([MACHINE.id]);
+  });
+
+  it('menuItems_WithoutWritePermission_HoldsNoStateItem', () => {
+    const { grid } = setup();
+
+    expect(grid.menuItems().map((item) => item.label)).not.toContain('MACHINES.CHANGE_STATE');
   });
 });

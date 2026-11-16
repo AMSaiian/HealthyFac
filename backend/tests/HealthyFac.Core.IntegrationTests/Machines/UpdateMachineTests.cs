@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
@@ -155,6 +156,137 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(MachineErrors.MachineChanged);
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WithOtherStateAndNewName_StoresBothAndOneStateRowInOneSave()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        _fixture.Clock.Freeze(MachineStateChangeTestData.CreatedNow);
+        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+        _fixture.Clock.Freeze(MachineStateChangeTestData.ChangedNow);
+
+        await _fixture.UpdateMachineAsync(
+            tenant.CompanyId,
+            machineId,
+            MachineTestData.OtherMachineName,
+            MachineTestData.SerialNumber,
+            state: MachineState.InMaintenance);
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+        var renamed = await _fixture.ReadOutboxMessagesAsync<MachineRenamed>();
+
+        machine.Name.Should().Be(MachineTestData.OtherMachineName);
+        history.Should().HaveCount(expected: 2);
+        history[index: 1].State.Should().Be(MachineState.InMaintenance);
+        history[index: 1].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
+        renamed.Where(message => message.MachineId == machineId).Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WithCurrentStateAndNewName_StoresTheNameAndAddsNoStateRow()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+
+        await _fixture.UpdateMachineAsync(
+            tenant.CompanyId,
+            machineId,
+            MachineTestData.OtherMachineName,
+            MachineTestData.SerialNumber,
+            state: MachineState.Operational);
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        machine.Name.Should().Be(MachineTestData.OtherMachineName);
+        history.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WhenUpdateAndStateChangeOverlap_OneSucceedsAndOneConflicts()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+        _fixture.Clock.StepFrom(DateTimeOffset.UtcNow.AddMinutes(minutes: 1), TimeSpan.FromSeconds(seconds: 1));
+        using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
+
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => _fixture.UpdateMachineAsync(
+                tenant.CompanyId, machineId, MachineTestData.MachineName, MachineTestData.SerialNumber,
+                state: MachineState.InMaintenance)),
+            race.RunAsync(() => _fixture.ChangeMachineStateAsync(
+                tenant.CompanyId, machineId, MachineState.OutOfService)));
+
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        race.SaveCounts.Should().Equal(1, 1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
+        failures.Single(failure => failure is not null)
+            .Should()
+            .BeOfType<ConflictException>()
+            .Which.Message.Should()
+            .Be(MachineErrors.MachineChanged);
+        history.Should().HaveCount(expected: 2);
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WhenStateChangeHasTheSameInstantAsAParallelChange_ThrowsMachineChanged()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+        _fixture.Clock.Freeze(DateTimeOffset.UtcNow.AddMinutes(minutes: 1));
+        using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
+
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => _fixture.UpdateMachineAsync(
+                tenant.CompanyId, machineId, MachineTestData.MachineName, MachineTestData.SerialNumber,
+                state: MachineState.InMaintenance)),
+            race.RunAsync(() => _fixture.ChangeMachineStateAsync(
+                tenant.CompanyId, machineId, MachineState.OutOfService)));
+
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        race.SaveCounts.Should().Equal(1, 1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
+        failures.Single(failure => failure is not null)
+            .Should()
+            .BeOfType<ConflictException>()
+            .Which.Message.Should()
+            .Be(MachineErrors.MachineChanged);
+        history.Should().HaveCount(expected: 2);
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WhenTwoUpdatesHaveTheSameInstant_ThrowsMachineChanged()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+        _fixture.Clock.Freeze(DateTimeOffset.UtcNow.AddMinutes(minutes: 1));
+        using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
+
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => _fixture.UpdateMachineAsync(
+                tenant.CompanyId, machineId, MachineTestData.MachineName, MachineTestData.SerialNumber,
+                state: MachineState.InMaintenance)),
+            race.RunAsync(() => _fixture.UpdateMachineAsync(
+                tenant.CompanyId, machineId, MachineTestData.MachineName, MachineTestData.SerialNumber,
+                state: MachineState.OutOfService)));
+
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        race.SaveCounts.Should().Equal(1, 1);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
+        failures.Single(failure => failure is not null)
+            .Should()
+            .BeOfType<ConflictException>()
+            .Which.Message.Should()
+            .Be(MachineErrors.MachineChanged);
+        history.Should().HaveCount(expected: 2);
     }
 
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, string serialNumber) =>

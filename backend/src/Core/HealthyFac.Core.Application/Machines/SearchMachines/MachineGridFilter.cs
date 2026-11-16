@@ -19,6 +19,8 @@ public sealed record MachineGridFilter : IFilter<Machine>
 
     public SetFilter<MachineState>? States { get; init; }
 
+    public DateOnlyRangeFilter? ExpectedGoLiveOn { get; init; }
+
     public DateRangeFilter? CreatedAt { get; init; }
 
     public DateRangeFilter? UpdatedAt { get; init; }
@@ -34,6 +36,7 @@ public sealed record MachineGridFilter : IFilter<Machine>
             .And(SerialNumber?.ToPredicate<Machine>(machine => machine.SerialNumber))
             .And(GatewayId?.ToPredicate<Machine>(machine => machine.GatewayId))
             .And(States?.ToPredicate(MachineCurrentState.Selector))
+            .And(ExpectedGoLiveOn?.ToPredicate<Machine>(machine => machine.ExpectedGoLiveOn))
             .And(CreatedAt?.ToPredicate<Machine>(machine => machine.CreatedAt))
             .And(UpdatedAt?.ToPredicate<Machine>(machine => machine.UpdatedAt));
 }
@@ -48,13 +51,18 @@ public sealed class MachineGridFilterValidator : AbstractValidator<MachineGridFi
 
         When(
             filter => filter.SerialNumber is not null,
-            () => RuleFor(filter => filter.SerialNumber!).IsTextFilter(MachineValidationConstants.SerialNumberMaxLength));
+            () => RuleFor(filter => filter.SerialNumber!)
+                .IsTextFilter(MachineValidationConstants.SerialNumberMaxLength));
 
         When(
             filter => filter.GatewayId is not null,
             () => RuleFor(filter => filter.GatewayId!).IsTextFilter(GatewayIds.Length));
 
         When(filter => filter.States is not null, () => RuleFor(filter => filter.States!).IsSetFilter());
+
+        When(
+            filter => filter.ExpectedGoLiveOn is not null,
+            () => RuleFor(filter => filter.ExpectedGoLiveOn!).IsDateOnlyRangeFilter());
 
         When(filter => filter.CreatedAt is not null, () => RuleFor(filter => filter.CreatedAt!).IsDateRangeFilter());
 

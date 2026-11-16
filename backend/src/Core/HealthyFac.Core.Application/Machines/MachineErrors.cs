@@ -11,9 +11,20 @@ public static class MachineErrors
     public const string SerialNumberRequired = "Serial number is required.";
     public const string CompanyIdRequired = "CompanyId is required.";
     public const string MachineIdRequired = "MachineId is required.";
+    public const string StateRequired = "The state is required.";
     public const string MachineNotFound = "The machine does not exist.";
     public const string SerialNumberTaken = "A machine with this serial number already exists.";
     public const string MachineChanged = "The machine changed. Reload it and try again.";
+
+    public const string ExpectedGoLiveOnBeforeToday =
+        "The expected go-live date must be today or later in the company time zone.";
+
+    public const string ExpectedGoLiveOnBeforeCreation =
+        "The expected go-live date must not be before the creation day of the machine.";
+
+    public const string ExpectedGoLiveOnOnUpdateDraft =
+        "An update draft keeps the expected go-live date of the machine.";
+
     public const string DescriptionNotAllowed = "The description contains formatting that is not allowed.";
 
     public static readonly string DescriptionTooLong =

@@ -22,6 +22,12 @@ export interface DateRangeBody {
   readonly to?: string;
 }
 
+/** A backend `DateOnlyRangeFilter`: days as `yyyy-MM-dd`, `from` inclusive, `to` exclusive. */
+export interface DateOnlyRangeBody {
+  readonly from?: string;
+  readonly to?: string;
+}
+
 export function textFilter(value: string): TextFilterBody | undefined {
   return value === '' ? undefined : { value };
 }
@@ -50,4 +56,18 @@ export function dateRangeFilter(range: PlainDateRange, timeZoneId: string): Date
 
 function startOfDayUtc(day: Temporal.PlainDate, timeZoneId: string): string {
   return day.toZonedDateTime(timeZoneId).toInstant().toString();
+}
+
+/**
+ * The picked days are inclusive in the UI. On the wire the range is half-open and has no time zone: `from` is the first
+ * day, and `to` is the day after the last day.
+ */
+export function plainDateRangeFilter(range: PlainDateRange): DateOnlyRangeBody | undefined {
+  if (range.from === null && range.to === null) {
+    return undefined;
+  }
+  return {
+    ...(range.from === null ? {} : { from: range.from.toString() }),
+    ...(range.to === null ? {} : { to: range.to.add({ days: 1 }).toString() }),
+  };
 }

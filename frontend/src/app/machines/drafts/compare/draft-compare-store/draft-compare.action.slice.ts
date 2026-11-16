@@ -23,7 +23,7 @@ import {
   toCompareRows,
   toCurrentFormValue,
 } from '@machines/drafts/compare/draft-compare-store/draft-compare.store.utils';
-import { machineFormSchema } from '@machines/drawer/machine-form/machine-form-schema';
+import { machineFieldsSchema } from '@machines/drawer/machine-form/machine-form-schema';
 import { MachineActionType } from '@machines/machine-actions';
 
 interface ActionState {
@@ -78,10 +78,10 @@ export function withDraftCompareAction() {
         if (current == null || merged === null) {
           return 'DRAFTS.COMPARE.NO_CHANGES';
         }
-        if (!safeParse(machineFormSchema, merged).success) {
+        if (!safeParse(machineFieldsSchema, merged).success) {
           return 'DRAFTS.COMPARE.INVALID';
         }
-        return hasFormChanges(machineFormSchema, toCurrentFormValue(current), merged)
+        return hasFormChanges(machineFieldsSchema, toCurrentFormValue(current), merged)
           ? null
           : 'DRAFTS.COMPARE.NO_CHANGES';
       }),

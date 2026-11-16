@@ -1,4 +1,4 @@
-import { dateRangeFilter, setFilter, textFilter } from '@shared/grid/requests/grid-filters';
+import { dateRangeFilter, plainDateRangeFilter, setFilter, textFilter } from '@shared/grid/requests/grid-filters';
 
 import type { MachineGridState, SearchMachinesBody } from '@machines/machine';
 
@@ -13,6 +13,7 @@ export function toSearchBody(state: MachineGridState, timeZoneId: string): Searc
       serialNumber: textFilter(filter.serialNumber),
       gatewayId: textFilter(filter.gatewayId),
       states: setFilter(filter.states),
+      expectedGoLiveOn: plainDateRangeFilter(filter.expectedGoLiveOn),
       createdAt: dateRangeFilter(filter.createdAt, timeZoneId),
       updatedAt: dateRangeFilter(filter.updatedAt, timeZoneId),
       hasPendingDrafts: filter.hasPendingDrafts ?? undefined,

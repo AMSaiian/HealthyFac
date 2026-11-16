@@ -75,6 +75,9 @@ export const MachinesGridStore = signalStore(
     );
 
     return {
+      requestStateChange(id: string): void {
+        void store._actions.dispatch({ type: MachineActionType.ChangeState, payload: { machineId: id } });
+      },
       requestCreate(): void {
         void store._actions.dispatch({ type: MachineActionType.Create, payload: {} });
       },

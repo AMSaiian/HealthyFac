@@ -3,9 +3,10 @@ using FluentValidation;
 namespace HealthyFac.Shared.Application.Filters;
 
 /// <summary>
-/// Adds the rules of one filter field to a validator. Call it inside a <c>When(filter => filter.Field is not null, ...)</c>
-/// block, on <c>RuleFor(filter => filter.Field!)</c>: every filter field is optional, and the validator states it before
-/// the shared rule. The <c>!</c> keeps the rule builder non-nullable, as the validators require.
+/// Adds the rules of one filter field to a validator. Call it inside a
+/// <c>When(filter => filter.Field is not null, ...)</c> block, on <c>RuleFor(filter => filter.Field!)</c>: every filter
+/// field is optional, and the validator states it before the shared rule. The <c>!</c> keeps the rule builder
+/// non-nullable, as the validators require.
 /// </summary>
 public static class FilterRules
 {
@@ -29,6 +30,16 @@ public static class FilterRules
         /// <returns>The rule builder, for further rules on the same field.</returns>
         public IRuleBuilderOptions<T, DateRangeFilter> IsDateRangeFilter() =>
             rule.SetValidator(new DateRangeFilterValidator());
+    }
+
+    extension<T>(IRuleBuilderInitial<T, DateOnlyRangeFilter> rule)
+    {
+        /// <summary>
+        /// Checks the day range filter with its validator.
+        /// </summary>
+        /// <returns>The rule builder, for further rules on the same field.</returns>
+        public IRuleBuilderOptions<T, DateOnlyRangeFilter> IsDateOnlyRangeFilter() =>
+            rule.SetValidator(new DateOnlyRangeFilterValidator());
     }
 
     extension<T, TValue>(IRuleBuilderInitial<T, SetFilter<TValue>> rule)

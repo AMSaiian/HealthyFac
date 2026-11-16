@@ -91,7 +91,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
             HttpMethod.Put,
             machinePath,
             claims,
-            DraftApiTestData.ApplyBody(name: "Changed by hand", serialNumber: "STALE-SERIAL"));
+            DraftApiTestData.MachineUpdateBody(name: "Changed by hand", serialNumber: "STALE-SERIAL"));
 
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post,

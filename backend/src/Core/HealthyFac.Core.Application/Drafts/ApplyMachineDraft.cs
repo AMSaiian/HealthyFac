@@ -1,6 +1,7 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using FluentValidation.Results;
+using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Machines;
@@ -28,6 +29,12 @@ public record ApplyMachineDraftRequest : IRequest<ApplyMachineDraftResponse>
     public required string SerialNumber { get; init; }
 
     public string? Description { get; init; }
+
+    /// <summary>
+    /// The date of a create draft from the drawer. Without it, a create draft gets today in the company time zone. An
+    /// update draft keeps its stored date.
+    /// </summary>
+    public DateOnly? ExpectedGoLiveOn { get; init; }
 
     /// <summary>The row version of the machine that the client read. An update draft needs it.</summary>
     public uint? RowVersion { get; init; }
@@ -77,7 +84,13 @@ public sealed class ApplyMachineDraftPreHandlerCheck(ICurrentUserProvider curren
 /// <param name="dbContext">Loads the draft and the machines, and saves the change.</param>
 /// <param name="outbox">Stores the messages with the change.</param>
 /// <param name="timeProvider">Provides the start of the first machine state and the time of a rename.</param>
-public sealed class ApplyMachineDraftRequestHandler(ICoreDbContext dbContext, IOutbox outbox, TimeProvider timeProvider)
+/// <param name="companyZoneReader">Reads the company time zone for the expected go-live rule.</param>
+public sealed class ApplyMachineDraftRequestHandler(
+    ICoreDbContext dbContext,
+    IOutbox outbox,
+    TimeProvider timeProvider,
+    CompanyZoneReader companyZoneReader
+)
     : IRequestHandler<ApplyMachineDraftRequest, ApplyMachineDraftResponse>
 {
     private const string RowVersionKey = "rowVersion";
@@ -85,6 +98,7 @@ public sealed class ApplyMachineDraftRequestHandler(ICoreDbContext dbContext, IO
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly CompanyZoneReader _companyZoneReader = companyZoneReader;
 
     public async Task<ApplyMachineDraftResponse> HandleAsync(
         ApplyMachineDraftRequest request,
@@ -127,6 +141,12 @@ public sealed class ApplyMachineDraftRequestHandler(ICoreDbContext dbContext, IO
         CancellationToken cancellationToken
     )
     {
+        var zone = await _companyZoneReader.FindZoneAsync(request.CompanyId, cancellationToken)
+            ?? throw new NotFoundException(MachineErrors.MachineNotFound);
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var expectedGoLiveOn = request.ExpectedGoLiveOn ?? MachineGoLiveRules.DayOf(nowUtc, zone);
+        MachineGoLiveRules.EnsureNotBeforeToday(expectedGoLiveOn, nowUtc, zone);
+
         await EnsureSerialNumberFreeAsync(request, excludedMachineId: null, cancellationToken);
 
         var machine = new Machine(
@@ -135,7 +155,8 @@ public sealed class ApplyMachineDraftRequestHandler(ICoreDbContext dbContext, IO
             request.Name,
             request.SerialNumber,
             request.Description,
-            _timeProvider.GetUtcNow().UtcDateTime);
+            expectedGoLiveOn,
+            nowUtc);
         _dbContext.Machines.Add(machine);
         _outbox.Add(
             new MachineCreated
@@ -176,6 +197,8 @@ public sealed class ApplyMachineDraftRequestHandler(ICoreDbContext dbContext, IO
         CancellationToken cancellationToken
     )
     {
+        MachineGoLiveRules.EnsureNoDateOnUpdateDraft(request.ExpectedGoLiveOn);
+
         if (request.RowVersion is not { } rowVersion)
         {
             throw new AppValidationException([new ValidationFailure(RowVersionKey, DraftErrors.RowVersionRequired)]);
@@ -190,7 +213,7 @@ public sealed class ApplyMachineDraftRequestHandler(ICoreDbContext dbContext, IO
 
         _dbContext.Entry(machine).Property(stored => stored.RowVersion).OriginalValue = rowVersion;
         var isRenamed = machine.Name != request.Name;
-        machine.Update(request.Name, request.SerialNumber, request.Description);
+        machine.Update(request.Name, request.SerialNumber, request.Description, machine.ExpectedGoLiveOn);
 
         if (isRenamed)
         {

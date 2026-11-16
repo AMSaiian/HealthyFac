@@ -1,0 +1,15 @@
+{
+  "Mqtt": {
+    "Host": "mosquitto",
+    "Username": "sender"
+  },
+  "Tracing": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "Metrics": {
+    "Endpoint": "http://lgtm:4317"
+  },
+  "OpenTelemetryLogging": {
+    "Endpoint": "http://lgtm:4318/v1/logs"
+  }
+}

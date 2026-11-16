@@ -107,7 +107,7 @@ public static class DraftFixtureExtensions
             await dbContext.SaveChangesAsync();
         }
 
-        public async Task<Guid> AddMachineDraftAsync(Guid companyId)
+        public async Task<Guid> AddMachineDraftAsync(Guid companyId, Guid? targetMachineId = null)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
@@ -117,7 +117,7 @@ public static class DraftFixtureExtensions
                 DraftTestData.AttemptId,
                 DraftTestData.FileId,
                 DraftTestData.QueuedAt,
-                targetMachineId: null,
+                targetMachineId,
                 DraftTestData.MachineName,
                 serialNumber: null,
                 description: null);

@@ -30,6 +30,10 @@ public class MachineConfiguration : IEntityTypeConfiguration<Machine>
             .HasMaxLength(MachineValidationConstants.SerialNumberMaxLength)
             .IsRequired();
 
+        builder.Property(machine => machine.ExpectedGoLiveOn)
+            .HasColumnType(typeName: "date")
+            .IsRequired();
+
         builder.Property(machine => machine.GatewayId)
             .HasMaxLength(GatewayIds.Length)
             .IsRequired();
