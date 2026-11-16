@@ -14,6 +14,8 @@ The sessions of a feature run in its own worktree. Claude Code takes the Stop ho
 
 Only the main checkout runs `docker compose up` for the dev project `healthyfac`. A worktree never does, because the container names and the ports are fixed.
 
+The Core `Initial` migration holds the column `expected_go_live_on`. Recreate a development database after you pull it: set `HEALTHYFAC_SEED_RECREATE=true`, or remove the volume of the dev project only.
+
 ## Verify Stacks
 
 Each worktree checks the UI in its own verify stack (`pwsh scripts/verify-stack.ps1 up`).
@@ -26,6 +28,21 @@ Each worktree checks the UI in its own verify stack (`pwsh scripts/verify-stack.
 *   The hosts file needs the 12 names of the 4 slots, and the certificate is a wildcard certificate. See `docker/certs/README.md`, **Verify stack**.
 *   The script warns when less than 3 GiB of Docker memory is free. Four stacks and the dev stack need a large Docker memory limit.
 *   The script checks its pure rules with `pwsh scripts/tests/verify-slots.tests.ps1`.
+
+## Machine Simulator
+
+The machine simulator sends messages for the machines of the dev stack (`docs/architecture.md`, **Machine Simulator**).
+
+*   Start it: `docker compose --profile simulator up -d simulator`. It waits for Postgres, Mosquitto, Core, and Telemetry. The verify stack starts it with `pwsh scripts/verify-stack.ps1 up -Simulator` (port `8200 + <slot>`).
+*   The control API and its page are at `http://127.0.0.1:8088/scalar` (`SIMULATOR_PORT`). The health endpoint is on `SIMULATOR_HEALTH_PORT` (8098).
+*   Demo flow: apply the 3 demo machine drafts and their metric and status drafts from `backend/seed/demo-ingest` in the Insights UI. Telemetry registers each machine and its definitions. The simulator finds the machines within 1 minute and sends messages from the next second.
+*   Stop a machine and start it again:
+
+        curl -X PUT http://127.0.0.1:8088/machines/<machineId>/run -H "Content-Type: application/json" -d "{\"isRunning\": false}"
+        curl -X PUT http://127.0.0.1:8088/machines/<machineId>/run -H "Content-Type: application/json" -d "{\"isRunning\": true}"
+
+*   Make a module fail: `curl -X PUT http://127.0.0.1:8088/machines/<machineId>/modules/spindle/mode -H "Content-Type: application/json" -d "{\"mode\": \"failure\"}"`. The modes are `expected`, `draining`, and `failure`. `GET /machines/<machineId>` shows the drain progress of each module.
+*   Stop the simulator after a demo: `docker compose stop simulator`. One machine adds 86,400 readings each day, and nothing removes them.
 
 ## Docker Address Pool
 
