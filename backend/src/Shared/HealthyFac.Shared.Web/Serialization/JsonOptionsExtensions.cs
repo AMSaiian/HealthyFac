@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using HealthyFac.Shared.Application.Serialization;
 using HealthyFac.Shared.Infrastructure.TextInput;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;

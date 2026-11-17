@@ -89,6 +89,7 @@ public static class ConfigureServices
 
         private IServiceCollection AddSimulation()
         {
+            services.AddHostedService<SimulatorInstanceLock>();
             services.AddScoped<MachineSnapshotReader>();
             services.AddScoped<CounterReadingReader>();
             services.AddSingleton<SimulationEngine>();

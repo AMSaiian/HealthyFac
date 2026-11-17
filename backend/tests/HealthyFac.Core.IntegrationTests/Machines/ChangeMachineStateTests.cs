@@ -184,6 +184,36 @@ public sealed class ChangeMachineStateTests(CoreDatabaseFixture fixture)
         history.Should().HaveCount(expected: 2);
     }
 
+    [Fact]
+    public async Task ChangeMachineState_ToOtherState_StoresOneStateChangedMessage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+
+        await _fixture.ChangeMachineStateAsync(tenant.CompanyId, machineId, MachineState.InMaintenance);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineStateChanged>();
+        var changed = messages.Where(message => message.MachineId == machineId).ToList();
+
+        changed.Should().ContainSingle();
+        changed[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        changed[index: 0].State.Should().Be(MachineStateValue.InMaintenance);
+        changed[index: 0].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
+    }
+
+    [Fact]
+    public async Task ChangeMachineState_ToCurrentState_StoresNoStateChangedMessage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+
+        await _fixture.ChangeMachineStateAsync(tenant.CompanyId, machineId, MachineState.Operational);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineStateChanged>();
+
+        messages.Where(message => message.MachineId == machineId).Should().BeEmpty();
+    }
+
     private async Task<Guid> ArrangeMachineAsync(MachineTenant tenant)
     {
         _fixture.Clock.Freeze(MachineStateChangeTestData.CreatedNow);

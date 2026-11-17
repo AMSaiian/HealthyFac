@@ -1,7 +1,7 @@
 using System.Text.Json;
+using HealthyFac.Shared.Application.Serialization;
 using HealthyFac.Shared.UnitTests.Enumerations.Data;
 using HealthyFac.Shared.UnitTests.Serialization.Data;
-using HealthyFac.Shared.Web.Serialization;
 
 namespace HealthyFac.Shared.UnitTests.Serialization;
 

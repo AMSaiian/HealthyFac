@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.Shared.Web.Serialization;
+namespace HealthyFac.Shared.Application.Serialization;
 
 /// <summary>
 /// Serializes an <see cref="Enumeration{TEnum}"/> member as its camelCase value, and reads it back.
@@ -19,7 +19,7 @@ public sealed class EnumerationJsonConverter : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var enumerationBase = FindEnumerationBase(typeToConvert)
-            ?? throw SerializationErrors.NotAnEnumeration(typeToConvert);
+            ?? throw EnumerationSerializationErrors.NotAnEnumeration(typeToConvert);
 
         var memberType = enumerationBase.GetGenericArguments()[0];
 
@@ -54,7 +54,7 @@ public sealed class EnumerationJsonConverter : JsonConverterFactory
 
             return Enumeration<TEnum>.TryFromValue(value, out var member)
                 ? member
-                : throw SerializationErrors.UnknownEnumerationValue(typeof(TEnum), value);
+                : throw EnumerationSerializationErrors.UnknownEnumerationValue(typeof(TEnum), value);
         }
 
         public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)

@@ -71,8 +71,9 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// <summary>
 /// Changes the name, serial number, description, go-live date, and state of a machine, and queues
 /// <see cref="MachineRenamed"/> in the same save when the name changes. Another state adds one state row that starts
-/// now, in the same save. The current state adds no row. A machine outside the company is "not found". The serial
-/// number must stay unique among the machines of the company that are not deleted, ignoring case.
+/// now, and queues <see cref="MachineStateChanged"/>, in the same save. The current state adds no row. A machine
+/// outside the company is "not found". The serial number must stay unique among the machines of the company that
+/// are not deleted, ignoring case.
 /// </summary>
 /// <remarks>
 /// The handler checks the serial number against the other machines first. The unique index catches a parallel
@@ -114,7 +115,7 @@ public sealed class UpdateMachineRequestHandler(
 
         var isRenamed = machine.Name != request.Name;
         machine.Update(request.Name, request.SerialNumber, request.Description, request.ExpectedGoLiveOn);
-        MachineStateChanges.Apply(_dbContext, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
+        MachineStateChanges.Apply(_dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(
             candidate => candidate.CompanyId == machine.CompanyId

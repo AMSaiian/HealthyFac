@@ -289,6 +289,68 @@ public sealed class UpdateMachineTests(CoreDatabaseFixture fixture)
         history.Should().HaveCount(expected: 2);
     }
 
+    [Fact]
+    public async Task UpdateMachine_WithOtherState_StoresOneStateChangedMessage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        _fixture.Clock.Freeze(MachineStateChangeTestData.CreatedNow);
+        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+        _fixture.Clock.Freeze(MachineStateChangeTestData.ChangedNow);
+
+        await _fixture.UpdateMachineAsync(
+            tenant.CompanyId,
+            machineId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber,
+            state: MachineState.OutOfService);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineStateChanged>();
+        var changed = messages.Where(message => message.MachineId == machineId).ToList();
+
+        changed.Should().ContainSingle();
+        changed[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        changed[index: 0].State.Should().Be(MachineStateValue.OutOfService);
+        changed[index: 0].StartedAt.Should().Be(MachineStateChangeTestData.ChangedNow.UtcDateTime);
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WithCurrentState_StoresNoStateChangedMessage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+
+        await _fixture.UpdateMachineAsync(
+            tenant.CompanyId,
+            machineId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber,
+            state: MachineState.Operational);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineStateChanged>();
+
+        messages.Where(message => message.MachineId == machineId).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task UpdateMachine_WithNewNameAndOtherState_StoresBothMessages()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+
+        await _fixture.UpdateMachineAsync(
+            tenant.CompanyId,
+            machineId,
+            MachineTestData.OtherMachineName,
+            MachineTestData.SerialNumber,
+            state: MachineState.InMaintenance);
+
+        var renamed = await _fixture.ReadOutboxMessagesAsync<MachineRenamed>();
+        var changed = await _fixture.ReadOutboxMessagesAsync<MachineStateChanged>();
+
+        renamed.Where(message => message.MachineId == machineId).Should().ContainSingle();
+        changed.Where(message => message.MachineId == machineId).Should().ContainSingle();
+    }
+
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, string serialNumber) =>
         _fixture.CreateMachineAsync(
             tenant.CompanyId,

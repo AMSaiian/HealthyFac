@@ -1,8 +1,10 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +53,8 @@ public sealed class ChangeMachineStatePreHandlerCheck(ICurrentUserProvider curre
 }
 
 /// <summary>
-/// Starts a new state of a machine now, and changes nothing else. The same state as the current one changes nothing.
+/// Starts a new state of a machine now, queues <see cref="MachineStateChanged"/> in the same save, and changes nothing
+/// else. The same state as the current one changes nothing.
 /// A machine outside the company and a deleted machine are "not found".
 /// </summary>
 /// <remarks>
@@ -60,11 +63,17 @@ public sealed class ChangeMachineStatePreHandlerCheck(ICurrentUserProvider curre
 /// index before the row version check, and it gives the same conflict (<see cref="MachineErrors.MachineChanged"/>).
 /// </remarks>
 /// <param name="dbContext">Loads the machine with its state history and saves the change.</param>
+/// <param name="outbox">Stores the state message with the change.</param>
 /// <param name="timeProvider">Provides the start of the new state.</param>
-public sealed class ChangeMachineStateRequestHandler(ICoreDbContext dbContext, TimeProvider timeProvider)
+public sealed class ChangeMachineStateRequestHandler(
+    ICoreDbContext dbContext,
+    IOutbox outbox,
+    TimeProvider timeProvider
+)
     : RequestHandler<ChangeMachineStateRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
 
     protected override async Task HandleInternalAsync(
@@ -80,7 +89,7 @@ public sealed class ChangeMachineStateRequestHandler(ICoreDbContext dbContext, T
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 
         var isChanged = MachineStateChanges.Apply(
-            _dbContext, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
+            _dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
 
         if (!isChanged)
         {

@@ -52,6 +52,10 @@ public sealed class SimulatorFixture : IAsyncLifetime, IResetBeforeEachTest
 
     public string SimulatorCoreConnectionString => ReadOnly(_coreConnectionString);
 
+    public string SimulatorTelemetryConnectionString => ReadOnly(_telemetryConnectionString);
+
+    public IReadOnlyDictionary<string, string?> SimulatorSettings => CreateSimulatorSettings();
+
     public SimulatorFactory Factory => _factory;
 
     public IServiceScopeFactory CoreScopeFactory =>

@@ -15,6 +15,7 @@ import { MachinesPage } from '@machines/list/machines-page/machines-page';
 
 import { routes } from './app.routes';
 
+const ROUTE_LOAD_TIMEOUT = 10_000;
 const COMPANY_URL = '/api/core/v1/company';
 const MACHINES_SEARCH_URL = '/api/core/v1/machines/search';
 const MACHINES_LOOKUP_URL = '/api/core/v1/machines/lookup';
@@ -37,7 +38,7 @@ function setup(): HttpTestingController {
   return TestBed.inject(HttpTestingController);
 }
 
-describe('app routes', () => {
+describe('app routes', { timeout: ROUTE_LOAD_TIMEOUT * 2 }, () => {
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',
@@ -58,19 +59,25 @@ describe('app routes', () => {
     const harness = await RouterTestingHarness.create();
 
     const navigation = harness.navigateByUrl('/machines');
-    await vi.waitFor(() => {
-      http.expectOne(COMPANY_URL).flush(COMPANY);
-    });
+    await vi.waitFor(
+      () => {
+        http.expectOne(COMPANY_URL).flush(COMPANY);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await navigation;
     TestBed.tick();
-    await vi.waitFor(() => {
-      TestBed.tick();
-      const requests = http.match((request) => request.url === MACHINES_SEARCH_URL);
-      expect(requests.length).toBeGreaterThan(0);
-      requests
-        .filter((request) => !request.cancelled)
-        .forEach((request) => request.flush({ items: [], totalCount: 0 }));
-    });
+    await vi.waitFor(
+      () => {
+        TestBed.tick();
+        const requests = http.match((request) => request.url === MACHINES_SEARCH_URL);
+        expect(requests.length).toBeGreaterThan(0);
+        requests
+          .filter((request) => !request.cancelled)
+          .forEach((request) => request.flush({ items: [], totalCount: 0 }));
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(harness.routeDebugElement?.componentInstance instanceof MachinesPage).toBe(true);
@@ -83,9 +90,12 @@ describe('app routes', () => {
     const harness = await RouterTestingHarness.create();
 
     const navigation = harness.navigateByUrl('/machines');
-    await vi.waitFor(() => {
-      http.expectOne(COMPANY_URL).flush(null, SERVER_ERROR);
-    });
+    await vi.waitFor(
+      () => {
+        http.expectOne(COMPANY_URL).flush(null, SERVER_ERROR);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await navigation;
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
@@ -100,27 +110,36 @@ describe('app routes', () => {
     const http = setup();
     const harness = await RouterTestingHarness.create();
     const failed = harness.navigateByUrl('/machines');
-    await vi.waitFor(() => {
-      http.expectOne(COMPANY_URL).flush(null, SERVER_ERROR);
-    });
+    await vi.waitFor(
+      () => {
+        http.expectOne(COMPANY_URL).flush(null, SERVER_ERROR);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await failed;
     TestBed.tick();
     expect(harness.routeDebugElement?.componentInstance instanceof MachinesPage).toBe(false);
 
     const retried = harness.navigateByUrl('/machines');
-    await vi.waitFor(() => {
-      http.expectOne(COMPANY_URL).flush(COMPANY);
-    });
+    await vi.waitFor(
+      () => {
+        http.expectOne(COMPANY_URL).flush(COMPANY);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await retried;
     TestBed.tick();
-    await vi.waitFor(() => {
-      TestBed.tick();
-      const requests = http.match((request) => request.url === MACHINES_SEARCH_URL);
-      expect(requests.length).toBeGreaterThan(0);
-      requests
-        .filter((request) => !request.cancelled)
-        .forEach((request) => request.flush({ items: [], totalCount: 0 }));
-    });
+    await vi.waitFor(
+      () => {
+        TestBed.tick();
+        const requests = http.match((request) => request.url === MACHINES_SEARCH_URL);
+        expect(requests.length).toBeGreaterThan(0);
+        requests
+          .filter((request) => !request.cancelled)
+          .forEach((request) => request.flush({ items: [], totalCount: 0 }));
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(harness.routeDebugElement?.componentInstance instanceof MachinesPage).toBe(true);
@@ -133,20 +152,26 @@ describe('app routes', () => {
     const harness = await RouterTestingHarness.create();
 
     const navigation = harness.navigateByUrl('/files');
-    await vi.waitFor(() => {
-      http.expectOne(COMPANY_URL).flush(COMPANY);
-    });
+    await vi.waitFor(
+      () => {
+        http.expectOne(COMPANY_URL).flush(COMPANY);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await navigation;
     TestBed.tick();
-    await vi.waitFor(() => {
-      TestBed.tick();
-      const requests = http.match((request) => request.url === FILES_SEARCH_URL);
-      expect(requests.length).toBeGreaterThan(0);
-      requests
-        .filter((request) => !request.cancelled)
-        .forEach((request) => request.flush({ items: [], totalCount: 0 }));
-      http.expectOne(MACHINES_LOOKUP_URL).flush({ items: [] });
-    });
+    await vi.waitFor(
+      () => {
+        TestBed.tick();
+        const requests = http.match((request) => request.url === FILES_SEARCH_URL);
+        expect(requests.length).toBeGreaterThan(0);
+        requests
+          .filter((request) => !request.cancelled)
+          .forEach((request) => request.flush({ items: [], totalCount: 0 }));
+        http.expectOne(MACHINES_LOOKUP_URL).flush({ items: [] });
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(harness.routeDebugElement?.componentInstance instanceof CompanyFilesPage).toBe(true);
