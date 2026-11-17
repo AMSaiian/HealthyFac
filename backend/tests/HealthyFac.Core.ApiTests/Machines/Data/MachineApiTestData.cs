@@ -2,6 +2,7 @@ namespace HealthyFac.Core.ApiTests.Machines.Data;
 
 public static class MachineApiTestData
 {
+    public const string FutureGoLiveOn = "2099-01-01";
     public const string MachinesPath = "v1/machines";
     public const string SearchPath = "v1/machines/search";
     public const string LookupPath = "v1/machines/lookup";
@@ -18,7 +19,28 @@ public static class MachineApiTestData
     public const string SrcImageDescription = "<p><img src=\"https://example.com/a.png\"></p>";
     public const string SerialNumber = "API-001";
     public const string NewSerialNumber = "API-002";
+    public const string GoLiveSerialNumber = "API-GOLIVE";
+    public const string NoGoLiveSerialNumber = "API-NO-GOLIVE";
+    public const string OperationalState = "operational";
+    public const string StatePathSuffix = "/state";
+    public const string ValidStateBody = "{\"state\":\"inMaintenance\"}";
+    public const string UnknownStateBody = "{\"state\":\"broken\"}";
+    public const string MissingStateBody = "{}";
+
+    public const string UpdateWithoutStateBody =
+        "{\"name\":\"Lathe 01\",\"serialNumber\":\"API-NO-STATE\",\"expectedGoLiveOn\":\"2099-01-01\"}";
+
+    public const string UpdateWithUnknownStateBody =
+        "{\"name\":\"Lathe 01\",\"serialNumber\":\"API-BAD-STATE\",\"expectedGoLiveOn\":\"2099-01-01\","
+        + "\"state\":\"broken\"}";
+
     public const string StackTraceMarker = "   at ";
+
+    public const string GoLiveJson = "\"expectedGoLiveOn\":\"2099-01-01\"";
+
+    public const string SearchWithBackwardsGoLiveRangeBody =
+        "{\"offset\":0,\"limit\":25,\"filter\":{\"expectedGoLiveOn\":"
+        + "{\"from\":\"2099-01-03\",\"to\":\"2099-01-02\"}}}";
 
     public const string SearchWithStateFilterBody =
         "{\"offset\":0,\"limit\":25,\"sort\":{\"column\":\"name\",\"direction\":\"desc\"},"
@@ -45,6 +67,18 @@ public static class MachineApiTestData
         SearchUnspecifiedDateBoundBody,
         SearchNullTextValueBody,
         SearchNullStatesBody,
+    };
+
+    public static TheoryData<string, string> BadStateBodies => new()
+    {
+        { "Missing", MissingStateBody },
+        { "Unknown", UnknownStateBody },
+    };
+
+    public static TheoryData<string, string> BadUpdateStateBodies => new()
+    {
+        { "Missing", UpdateWithoutStateBody },
+        { "Unknown", UpdateWithUnknownStateBody },
     };
 
     public const string SearchEmptyBody = "{\"offset\":0,\"limit\":25,\"filter\":{}}";

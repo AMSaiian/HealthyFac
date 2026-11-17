@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Companies;
 using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,10 +7,12 @@ namespace HealthyFac.Core.Application.Shifts;
 /// <summary>
 /// Loads the shift data of an employee, so a use case can resolve the day schedules of a date range.
 /// </summary>
-/// <param name="dbContext">Reads the company, the versions, and the overrides.</param>
-public sealed class DayScheduleReader(ICoreDbContext dbContext)
+/// <param name="dbContext">Reads the versions and the overrides.</param>
+/// <param name="companyZoneReader">Reads the time zone of the company.</param>
+public sealed class DayScheduleReader(ICoreDbContext dbContext, CompanyZoneReader companyZoneReader)
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly CompanyZoneReader _companyZoneReader = companyZoneReader;
 
     /// <summary>
     /// Reads the time zone of a company.
@@ -20,15 +23,9 @@ public sealed class DayScheduleReader(ICoreDbContext dbContext)
     /// <exception cref="NotFoundException">The company does not exist.</exception>
     public async Task<TimeZoneInfo> GetZoneAsync(Guid companyId, CancellationToken cancellationToken)
     {
-        var zoneId = await _dbContext.Companies
-            .AsNoTracking()
-            .Where(company => company.Id == companyId)
-            .Select(company => company.TimeZoneId)
-            .SingleOrDefaultAsync(cancellationToken);
+        var zone = await _companyZoneReader.FindZoneAsync(companyId, cancellationToken);
 
-        return zoneId is null
-            ? throw new NotFoundException(ShiftErrors.Rejections.EmployeeNotFound)
-            : TimeZoneInfo.FindSystemTimeZoneById(zoneId);
+        return zone ?? throw new NotFoundException(ShiftErrors.Rejections.EmployeeNotFound);
     }
 
     /// <summary>

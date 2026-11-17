@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Application.Shifts;
 using HealthyFac.Core.Application.WorkOrders;
@@ -25,6 +26,7 @@ public static class ConfigureServices
             services.AddScoped<EmployeeInviteResolver>();
             services.AddScoped<OwnEmployeeResolver>();
             services.AddScoped<WorkOrderSearchQuery>();
+            services.AddScoped<CompanyZoneReader>();
             services.AddScoped<DayScheduleReader>();
             services.AddScoped<ShiftChangeGuard>();
             services.AddScoped<DayScheduleBuilder>();

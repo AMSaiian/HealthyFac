@@ -15,6 +15,7 @@ public static class MachineSortMap
             [MachineSortColumn.Name] = machine => machine.Name,
             [MachineSortColumn.SerialNumber] = machine => machine.SerialNumber,
             [MachineSortColumn.GatewayId] = machine => machine.GatewayId,
+            [MachineSortColumn.ExpectedGoLiveOn] = machine => machine.ExpectedGoLiveOn,
             [MachineSortColumn.CreatedAt] = machine => machine.CreatedAt,
             [MachineSortColumn.UpdatedAt] = machine => machine.UpdatedAt!,
         }.ToFrozenDictionary();

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using HealthyFac.Core.ApiTests.Machines.Data;
 
 namespace HealthyFac.Core.ApiTests.Drafts.Data;
 
@@ -34,8 +35,8 @@ public static class DraftApiTestData
 
     public static TheoryData<string, string> DismissRoutesWithoutWrite => new()
     {
-        { "DismissDraft", DismissPath("{draftId}") },
-        { "DismissMachineDrafts", DismissMachineDraftsPath("{machineId}") },
+        { "DismissDraft", DismissPath(encryptedDraftId: "{draftId}") },
+        { "DismissMachineDrafts", DismissMachineDraftsPath(encryptedMachineId: "{machineId}") },
     };
 
     public const string MarkBodyWithNullIds = "{\"ids\": null}";
@@ -43,6 +44,15 @@ public static class DraftApiTestData
     public static string MarkBody(params string[] encryptedIds) =>
         new JsonObject { [propertyName: "ids"] = new JsonArray([.. encryptedIds.Select(id => JsonValue.Create(id))]) }
             .ToJsonString();
+
+    public static string MachineUpdateBody(string name, string serialNumber) =>
+        new JsonObject
+        {
+            [propertyName: "name"] = name,
+            [propertyName: "serialNumber"] = serialNumber,
+            [propertyName: "expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
+            [propertyName: "state"] = MachineApiTestData.OperationalState,
+        }.ToJsonString();
 
     public static string ApplyBody(string name, string serialNumber, uint? rowVersion = null)
     {

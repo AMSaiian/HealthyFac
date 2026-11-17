@@ -110,6 +110,27 @@ public static class TestTenantFixtureExtensions
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<SeededGoLiveRow>> LoadSeededGoLiveRowsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+            return await dbContext.Machines
+                .AsNoTracking()
+                .Join(
+                    dbContext.Companies.AsNoTracking(),
+                    machine => machine.CompanyId,
+                    company => company.Id,
+                    (machine, company) => new SeededGoLiveRow
+                    {
+                        MachineId = machine.Id,
+                        ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
+                        CreatedAt = machine.CreatedAt,
+                        TimeZoneId = company.TimeZoneId,
+                    })
+                .ToListAsync();
+        }
+
         public async Task<IReadOnlyList<MachineState>> LoadTenantCurrentStatesAsync(Guid companyId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -189,6 +210,14 @@ public sealed record SeededStateRow
     public required string MachineName { get; init; }
     public required MachineState State { get; init; }
     public required DateTime StartedAt { get; init; }
+}
+
+public sealed record SeededGoLiveRow
+{
+    public required Guid MachineId { get; init; }
+    public required DateOnly ExpectedGoLiveOn { get; init; }
+    public required DateTime CreatedAt { get; init; }
+    public required string TimeZoneId { get; init; }
 }
 
 public sealed record SeededCompany

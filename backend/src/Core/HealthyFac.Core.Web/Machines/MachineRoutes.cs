@@ -9,6 +9,7 @@ public static class MachineRoutes
     public const string Root = "/";
     public const string IdParameter = "id";
     public const string ById = "/{" + IdParameter + "}";
+    public const string State = ById + "/state";
     public const string Search = "/search";
     public const string Lookup = "/lookup";
     public const string ResourceLocationFormat = "{0}/{1}";

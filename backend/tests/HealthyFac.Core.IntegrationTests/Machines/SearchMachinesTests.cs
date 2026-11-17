@@ -142,8 +142,10 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
             tenant.CompanyId,
             MachineTestData.CreateSearch(tenant.CompanyId, filter));
 
-        response.Items.Select(item => item.GatewayId).Should().BeEquivalentTo(
-            new[] { MachineTestData.GatewayIdWithPrefix, MachineTestData.GatewayIdWithSecondPrefix });
+        response.Items.Select(item => item.GatewayId)
+            .Should()
+            .BeEquivalentTo(
+                new[] { MachineTestData.GatewayIdWithPrefix, MachineTestData.GatewayIdWithSecondPrefix });
         response.TotalCount.Should().Be(expected: 2);
     }
 
@@ -173,10 +175,76 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
             tenant.CompanyId,
             MachineTestData.CreateSearch(tenant.CompanyId, sort: sort));
 
-        response.Items.Select(item => item.GatewayId).Should().Equal(
-            MachineTestData.GatewayIdWithPrefix,
-            MachineTestData.GatewayIdWithSecondPrefix,
-            MachineTestData.GatewayIdWithoutPrefix);
+        response.Items.Select(item => item.GatewayId)
+            .Should()
+            .Equal(
+                MachineTestData.GatewayIdWithPrefix,
+                MachineTestData.GatewayIdWithSecondPrefix,
+                MachineTestData.GatewayIdWithoutPrefix);
+    }
+
+    [Fact]
+    public async Task SearchMachines_WithGoLiveRange_ReturnsOnlyDaysInHalfOpenRange()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await ArrangeGoLiveMachinesAsync(tenant);
+        var filter = new MachineGridFilter
+        {
+            ExpectedGoLiveOn = new DateOnlyRangeFilter
+            {
+                From = MachineTestData.SecondGoLiveOn,
+                To = MachineTestData.ThirdGoLiveOn,
+            },
+        };
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            MachineTestData.CreateSearch(tenant.CompanyId, filter));
+
+        response.Items.Select(item => item.ExpectedGoLiveOn).Should().Equal(MachineTestData.SecondGoLiveOn);
+        response.TotalCount.Should().Be(expected: 1);
+    }
+
+    [Theory]
+    [MemberData(nameof(MachineTestData.GoLiveSorts), MemberType = typeof(MachineTestData))]
+    public async Task SearchMachines_SortedByGoLive_ReturnsOrderedDays(
+        string caseName,
+        SortDirection direction,
+        DateOnly[] expected
+    )
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await ArrangeGoLiveMachinesAsync(tenant);
+        var sort = new GridSort<MachineSortColumn>
+        {
+            Column = MachineSortColumn.ExpectedGoLiveOn,
+            Direction = direction,
+        };
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            MachineTestData.CreateSearch(tenant.CompanyId, sort: sort));
+
+        response.Items.Select(item => item.ExpectedGoLiveOn).Should().Equal(expected, caseName);
+    }
+
+    private async Task ArrangeGoLiveMachinesAsync(MachineTenant tenant)
+    {
+        await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            MachineTestData.MachineName,
+            MachineTestData.OtherSerialNumber,
+            expectedGoLiveOn: MachineTestData.SecondGoLiveOn);
+        await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            MachineTestData.MachineName,
+            MachineTestData.ThirdSerialNumber,
+            expectedGoLiveOn: MachineTestData.ThirdGoLiveOn);
+        await _fixture.CreateMachineAsync(
+            tenant.CompanyId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber,
+            expectedGoLiveOn: MachineTestData.FutureGoLiveOn);
     }
 
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, string serialNumber) =>

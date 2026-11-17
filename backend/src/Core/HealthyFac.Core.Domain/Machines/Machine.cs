@@ -18,6 +18,7 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// <param name="name">The name of the machine.</param>
     /// <param name="serialNumber">The serial number as the user typed it.</param>
     /// <param name="description">The description as HTML, or <see langword="null"/>.</param>
+    /// <param name="expectedGoLiveOn">The expected first day of telemetry, in the company time zone.</param>
     /// <param name="startedAt">The moment the machine starts in the operational state, as a UTC instant.</param>
     public Machine(
         Guid companyId,
@@ -25,9 +26,10 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
         string name,
         string serialNumber,
         string? description,
+        DateOnly expectedGoLiveOn,
         DateTime startedAt
     )
-        : this(companyId, gatewayId, name, serialNumber, description)
+        : this(companyId, gatewayId, name, serialNumber, description, expectedGoLiveOn)
     {
         _stateHistory.Add(new MachineStateHistory(Id, MachineState.Operational, startedAt));
     }
@@ -42,6 +44,7 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// <param name="name">The name of the machine.</param>
     /// <param name="serialNumber">The serial number as the user typed it.</param>
     /// <param name="description">The description as HTML, or <see langword="null"/>.</param>
+    /// <param name="expectedGoLiveOn">The expected first day of telemetry, in the company time zone.</param>
     /// <param name="startedAt">The moment the machine starts in the operational state, as a UTC instant.</param>
     public Machine(
         Guid id,
@@ -50,9 +53,10 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
         string name,
         string serialNumber,
         string? description,
+        DateOnly expectedGoLiveOn,
         DateTime startedAt
     )
-        : this(companyId, gatewayId, name, serialNumber, description)
+        : this(companyId, gatewayId, name, serialNumber, description, expectedGoLiveOn)
     {
         Id = id;
         _stateHistory.Add(new MachineStateHistory(Id, MachineState.Operational, startedAt));
@@ -63,12 +67,13 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
         string gatewayId,
         string name,
         string serialNumber,
-        string? description
+        string? description,
+        DateOnly expectedGoLiveOn
     )
     {
         CompanyId = companyId;
         GatewayId = gatewayId;
-        Update(name, serialNumber, description);
+        Update(name, serialNumber, description, expectedGoLiveOn);
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
@@ -80,6 +85,12 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
 
     /// <summary>The description as HTML. The Application layer checks it against the rich text policy.</summary>
     public string? Description { get; private set; }
+
+    /// <summary>
+    /// The expected first day of telemetry, in the company time zone. A future silent sender check skips the machines
+    /// before this day.
+    /// </summary>
+    public DateOnly ExpectedGoLiveOn { get; private set; }
 
     public IReadOnlyCollection<MachineStateHistory> StateHistory => _stateHistory;
 
@@ -97,12 +108,14 @@ public class Machine : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// <param name="name">The name of the machine.</param>
     /// <param name="serialNumber">The serial number as the user typed it.</param>
     /// <param name="description">The description as HTML, or <see langword="null"/>.</param>
+    /// <param name="expectedGoLiveOn">The expected first day of telemetry, in the company time zone.</param>
     [MemberNotNull(nameof(Name), nameof(SerialNumber))]
-    public void Update(string name, string serialNumber, string? description)
+    public void Update(string name, string serialNumber, string? description, DateOnly expectedGoLiveOn)
     {
         Name = name;
         SerialNumber = serialNumber;
         Description = description;
+        ExpectedGoLiveOn = expectedGoLiveOn;
     }
 
     /// <summary>

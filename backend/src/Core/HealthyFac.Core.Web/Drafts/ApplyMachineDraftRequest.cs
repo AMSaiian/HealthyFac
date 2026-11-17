@@ -8,6 +8,7 @@ public record ApplyMachineDraftRequest
     public required string Name { get; init; }
     public required string SerialNumber { get; init; }
     public string? Description { get; init; }
+    public DateOnly? ExpectedGoLiveOn { get; init; }
     public uint? RowVersion { get; init; }
 }
 
@@ -27,6 +28,7 @@ public static class ApplyMachineDraftRequestExtensions
                 Name = request.Name,
                 SerialNumber = request.SerialNumber,
                 Description = request.Description,
+                ExpectedGoLiveOn = request.ExpectedGoLiveOn,
                 RowVersion = request.RowVersion,
             };
     }

@@ -139,6 +139,7 @@
       "DRAFTS": "Показати відкладені чернетки обладнання",
       "FILES": "Показати файли обладнання",
       "DELETE": "Видалити обладнання",
+      "CHANGE_STATE": "Змінити стан обладнання",
       "ADD_NEW": "Додати обладнання до компанії"
     },
     "METRICS": "Метрики",
@@ -151,6 +152,7 @@
       "NAME": "Назва",
       "SERIAL_NUMBER": "Серійний номер",
       "GATEWAY_ID": "ID шлюзу",
+      "EXPECTED_GO_LIVE_ON": "Очікуваний запуск",
       "STATE": "Стан",
       "CREATED_AT": "Створено",
       "UPDATED_AT": "Змінено",
@@ -161,11 +163,13 @@
       "IN_MAINTENANCE": "На обслуговуванні",
       "OUT_OF_SERVICE": "Не працює"
     },
+    "CHANGE_STATE": "Змінити стан",
     "FILTERS": {
       "NAME_PLACEHOLDER": "Фільтр за назвою",
       "SERIAL_NUMBER_PLACEHOLDER": "Фільтр за серійним номером",
       "GATEWAY_ID_PLACEHOLDER": "Починається з",
       "STATE_PLACEHOLDER": "Оберіть стани",
+      "EXPECTED_GO_LIVE_ON_PLACEHOLDER": "Оберіть дати запуску",
       "CREATED_AT_PLACEHOLDER": "Оберіть дати створення",
       "UPDATED_AT_PLACEHOLDER": "Оберіть дати оновлення",
       "DRAFTS_PLACEHOLDER": "Має чернетки",
@@ -175,6 +179,7 @@
     "TOASTS": {
       "CREATED": "Обладнання створено",
       "UPDATED": "Обладнання оновлено",
+      "STATE_CHANGED": "Стан обладнання змінено",
       "SERIAL_NUMBER_TAKEN": "Обладнання з таким серійним номером уже існує"
     },
     "FORM": {
@@ -182,11 +187,14 @@
       "UPDATE_TITLE": "Редагування обладнання",
       "NAME": "Назва",
       "SERIAL_NUMBER": "Серійний номер",
+      "STATE": "Стан",
       "GATEWAY_ID": "Ідентифікатор шлюзу",
       "COPY_GATEWAY_ID": "Копіювати ідентифікатор шлюзу",
       "DESCRIPTION": "Опис",
       "NAME_PLACEHOLDER": "Введіть назву",
       "SERIAL_NUMBER_PLACEHOLDER": "Введіть серійний номер",
+      "EXPECTED_GO_LIVE_ON": "Очікуваний запуск",
+      "EXPECTED_GO_LIVE_ON_HINT": "Орієнтовна дата початку надходження метрик",
       "DESCRIPTION_PLACEHOLDER": "Опишіть верстат"
     },
     "FILES": "Файли",

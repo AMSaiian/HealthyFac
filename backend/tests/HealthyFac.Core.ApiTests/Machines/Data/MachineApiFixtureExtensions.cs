@@ -6,6 +6,7 @@ using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Testing.Authentication;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.ApiTests.Machines.Data;
@@ -52,13 +53,31 @@ public static class MachineApiFixtureExtensions
                 [propertyName: "name"] = MachineApiTestData.MachineName,
                 [propertyName: "serialNumber"] = $"IMG-{Guid.NewGuid():N}",
                 [propertyName: "description"] = description,
+                [propertyName: "expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
             }.ToJsonString();
+
+        public string CreateCreateBodyWithoutGoLive(string serialNumber) =>
+            new JsonObject
+            {
+                [propertyName: "name"] = MachineApiTestData.MachineName,
+                [propertyName: "serialNumber"] = serialNumber,
+            }.ToJsonString();
+
+        public async Task<bool> HasMachineAsync(string serialNumber)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.Machines.AnyAsync(machine => machine.SerialNumber == serialNumber);
+        }
 
         public string CreateUpdateBody(string serialNumber) =>
             new JsonObject
             {
                 [propertyName: "name"] = MachineApiTestData.MachineName,
                 [propertyName: "serialNumber"] = serialNumber,
+                [propertyName: "expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
+                [propertyName: "state"] = MachineApiTestData.OperationalState,
             }.ToJsonString();
 
         public async Task<string> ArrangeMachineAsync(string serialNumber)
@@ -71,6 +90,7 @@ public static class MachineApiFixtureExtensions
                 MachineApiTestData.MachineName,
                 serialNumber,
                 description: null,
+                new DateOnly(year: 2099, month: 1, day: 1),
                 scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime);
 
             dbContext.Machines.Add(machine);

@@ -1,4 +1,9 @@
-import type { DateRangeBody, SetFilterBody, TextFilterBody } from '@shared/grid/requests/grid-filters';
+import type {
+  DateOnlyRangeBody,
+  DateRangeBody,
+  SetFilterBody,
+  TextFilterBody,
+} from '@shared/grid/requests/grid-filters';
 import type { GridPage, GridQueryState, GridRequestBody, GridSort } from '@shared/grid/requests/grid-request';
 import type { PlainDateRange } from '@shared/time/plain-date-range';
 
@@ -13,6 +18,7 @@ export enum MachineColumn {
   SerialNumber = 'serialNumber',
   GatewayId = 'gatewayId',
   State = 'state',
+  ExpectedGoLiveOn = 'expectedGoLiveOn',
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
   Drafts = 'pendingDraftCount',
@@ -23,6 +29,7 @@ export enum MachineSortColumn {
   Name = 'name',
   SerialNumber = 'serialNumber',
   GatewayId = 'gatewayId',
+  ExpectedGoLiveOn = 'expectedGoLiveOn',
   CreatedAt = 'createdAt',
   UpdatedAt = 'updatedAt',
 }
@@ -34,6 +41,8 @@ export interface Machine {
   readonly gatewayId: string;
   readonly state: MachineState;
   readonly description: string | null;
+  /** The expected first day of telemetry, in the company time zone (`yyyy-MM-dd`). */
+  readonly expectedGoLiveOn: string;
   readonly createdAt: string;
   readonly updatedAt: string | null;
   readonly pendingDraftCount: number;
@@ -43,6 +52,17 @@ export interface MachineBody {
   readonly name: string;
   readonly serialNumber: string;
   readonly description: string | null;
+  readonly expectedGoLiveOn: string;
+}
+
+/** The body of an update: the machine fields and the state that the machine has after the save. */
+export interface UpdateMachineBody extends MachineBody {
+  readonly state: MachineState;
+}
+
+/** The body of a state-only change. */
+export interface ChangeMachineStateBody {
+  readonly state: MachineState;
 }
 
 export interface CreateMachineResponse {
@@ -58,6 +78,7 @@ export interface MachineFilter {
   readonly serialNumber: string;
   readonly gatewayId: string;
   readonly states: readonly MachineState[];
+  readonly expectedGoLiveOn: PlainDateRange;
   readonly createdAt: PlainDateRange;
   readonly updatedAt: PlainDateRange;
   /** `null` lists all machines; `true` lists the machines with pending drafts; `false` lists the others. */
@@ -71,6 +92,7 @@ export interface MachineFilterBody {
   readonly serialNumber?: TextFilterBody;
   readonly gatewayId?: TextFilterBody;
   readonly states?: SetFilterBody<MachineState>;
+  readonly expectedGoLiveOn?: DateOnlyRangeBody;
   readonly createdAt?: DateRangeBody;
   readonly updatedAt?: DateRangeBody;
   readonly hasPendingDrafts?: boolean;

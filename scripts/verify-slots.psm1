@@ -14,6 +14,7 @@ $MailpitPortBase = 8026
 $GrafanaPortBase = 3000
 $RabbitMqUiPortBase = 15672
 $KeycloakPortBase = 8180
+$SimulatorPortBase = 8200
 $DomainSuffix = 'hfverify.test'
 
 function Get-VerifySlotNumbers { 1..$MaxSlots }
@@ -35,6 +36,7 @@ function Get-VerifySlotValues {
     GrafanaPort = $GrafanaPortBase + $Slot
     RabbitMqUiPort = $RabbitMqUiPortBase + $Slot
     KeycloakPort = $KeycloakPortBase + $Slot
+    SimulatorPort = $SimulatorPortBase + $Slot
     ImagePrefix = "$ProjectPrefix-$Slot"
   }
 }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Core.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20261111152455_Initial")]
+    [Migration("20261116122531_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -693,6 +693,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
+
+                    b.Property<DateOnly>("ExpectedGoLiveOn")
+                        .HasColumnType("date")
+                        .HasColumnName("expected_go_live_on");
 
                     b.Property<string>("GatewayId")
                         .IsRequired()

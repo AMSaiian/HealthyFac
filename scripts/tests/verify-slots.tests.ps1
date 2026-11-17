@@ -45,6 +45,7 @@ Assert-That ($v.MailpitPort -eq 8029) 'slot 3 mailpit port is 8026 + 3'
 Assert-That ($v.GrafanaPort -eq 3003) 'slot 3 grafana port is 3000 + 3'
 Assert-That ($v.RabbitMqUiPort -eq 15675) 'slot 3 rabbitmq port is 15672 + 3'
 Assert-That ($v.KeycloakPort -eq 8183) 'slot 3 keycloak port is 8180 + 3'
+Assert-That ($v.SimulatorPort -eq 8203) 'slot 3 simulator port is 8200 + 3'
 Assert-That ($v.ImagePrefix -eq 'healthyfac-verify-3') 'slot 3 image prefix'
 
 Write-Host 'Projects'
@@ -133,7 +134,8 @@ Assert-That ($message -match 'D:\\Tree\\\.env' -and $message -match 'D:\\Main\\\
 
 Write-Host 'Settings split'
 # The check reads the raw Compose file, because `docker compose config` replaces every variable, and a fixed value
-# then looks like a value from .env. A .NET service is a service whose Dockerfile is a HealthyFac.<Name>.Web one.
+# then looks like a value from .env. A .NET service is a service whose Dockerfile is a HealthyFac.<Name>.Web one or
+# the one of the machine simulator.
 $composeLines = Get-Content (Join-Path $repo 'docker-compose.yml')
 $blocks = [ordered]@{}
 $service = $null
@@ -143,8 +145,8 @@ foreach ($line in $composeLines) {
   if ($line -match '^\S') { $service = $null }
   if ($service) { $blocks[$service].Add($line) }
 }
-$dotnetServices = @($blocks.Keys | Where-Object { $blocks[$_] -match 'dockerfile:\s*src/\w+/HealthyFac\.\w+\.Web/Dockerfile' })
-Assert-That ($dotnetServices.Count -ge 7) "docker-compose.yml has the .NET services ($($dotnetServices -join ', '))"
+$dotnetServices = @($blocks.Keys | Where-Object { $blocks[$_] -match 'dockerfile:\s*src/(\w+/HealthyFac\.\w+\.Web|Tools/HealthyFac\.MachineSimulator)/Dockerfile' })
+Assert-That ($dotnetServices.Count -ge 8) "docker-compose.yml has the .NET services ($($dotnetServices -join ', '))"
 $SecretName = '(?i)(password|secret|apikey|^key)$'
 foreach ($name in $dotnetServices) {
   $block = $blocks[$name]
@@ -185,13 +187,13 @@ foreach ($name in $dotnetServices) {
 
 Write-Host 'Compose'
 $composeArgs = @(
-  'compose', '-p', 'healthyfac-verify-2', '--project-directory', $repo,
+  'compose', '-p', 'healthyfac-verify-2', '--profile', 'simulator', '--project-directory', $repo,
   '--env-file', (Join-Path $repo '.env.example'), '--env-file', (Join-Path $repo '.env.verify'),
   '-f', (Join-Path $repo 'docker-compose.yml'), '-f', (Join-Path $repo 'docker\verify\docker-compose.verify.yml'),
   'config', '--format', 'json'
 )
 $saved = @{}
-foreach ($name in 'VERIFY_SLOT', 'HEALTHYFAC_DOMAIN', 'GATEWAY_PORT', 'MAILPIT_UI_PORT', 'GRAFANA_PORT', 'RABBITMQ_MANAGEMENT_PORT', 'KEYCLOAK_PORT') {
+foreach ($name in 'VERIFY_SLOT', 'HEALTHYFAC_DOMAIN', 'GATEWAY_PORT', 'MAILPIT_UI_PORT', 'GRAFANA_PORT', 'RABBITMQ_MANAGEMENT_PORT', 'KEYCLOAK_PORT', 'SIMULATOR_PORT') {
   $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 try {
@@ -203,6 +205,7 @@ try {
   $env:GRAFANA_PORT = "$($s.GrafanaPort)"
   $env:RABBITMQ_MANAGEMENT_PORT = "$($s.RabbitMqUiPort)"
   $env:KEYCLOAK_PORT = "$($s.KeycloakPort)"
+  $env:SIMULATOR_PORT = "$($s.SimulatorPort)"
   $json = & docker @composeArgs 2>&1
   Assert-That ($LASTEXITCODE -eq 0) 'compose config renders for slot 2'
   $c = ($json -join "`n") | ConvertFrom-Json
@@ -216,6 +219,8 @@ try {
   Assert-That ([int]$c.services.lgtm.ports[0].published -eq 3002 -and @($c.services.lgtm.ports).Count -eq 1) 'grafana port 3002 only'
   Assert-That ([int]$c.services.rabbitmq.ports[0].published -eq 15674 -and @($c.services.rabbitmq.ports).Count -eq 1) 'rabbitmq management port 15674 only'
   Assert-That ([int]$c.services.keycloak.ports[0].published -eq 8182 -and $c.services.keycloak.environment.KC_HOSTNAME_ADMIN -eq 'http://localhost:8182') 'keycloak admin port 8182 matches KC_HOSTNAME_ADMIN'
+  Assert-That ([int]$c.services.simulator.ports[0].published -eq 8202 -and @($c.services.simulator.ports).Count -eq 1 -and $c.services.simulator.container_name -eq 'healthyfac-verify-2-simulator') 'simulator port 8202 only, in the slot 2 container'
+  Assert-That ($c.services.simulator.image -eq 'healthyfac-verify-2/simulator:local') 'simulator image tag uses slot 2'
   Assert-That ($c.services.core.environment.Jwt__Issuer -eq 'https://auth.s2.hfverify.test:9445/realms/healthyfac' -or $c.services.core.environment.Jwt__Issuer -like 'https://auth.s2.hfverify.test:9445*') 'Jwt__Issuer uses slot 2'
   Assert-That ($c.services.keycloak.environment.KC_HOSTNAME -like 'https://auth.s2.hfverify.test:9445*') 'KC_HOSTNAME uses slot 2'
   Assert-That ($c.services.core.environment.InviteLinks__SpaBaseUrl -like 'https://app.s2.hfverify.test:9445*') 'InviteLinks__SpaBaseUrl uses slot 2'

@@ -419,6 +419,53 @@ services:
       lgtm:
         condition: service_healthy
 
+  # The machine simulator. It reads the machines of Core and Telemetry (read-only) and sends the machine messages to
+  # Mosquitto. It starts only with the profile: docker compose --profile simulator up -d simulator.
+  simulator:
+    container_name: healthyfac-simulator
+    profiles:
+      - simulator
+    build:
+      context: ./backend
+      dockerfile: src/Tools/HealthyFac.MachineSimulator/Dockerfile
+    image: healthyfac/simulator:local
+    restart: unless-stopped
+    read_only: true
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - simulator-logs:/app/logs
+      - ./docker/config/simulator.json:/app/appsettings.Deployment.json:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # Both connections are read-only at the session level: the database refuses a write (SQL state 25006).
+      ConnectionStrings__CoreDatabase: >-
+        Host=postgres;Port=5432;Database=healthyfac_core;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Options=-c default_transaction_read_only=on
+      ConnectionStrings__TelemetryDatabase: >-
+        Host=postgres;Port=5432;Database=healthyfac_telemetry;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Options=-c default_transaction_read_only=on
+      Mqtt__Password: ${MOSQUITTO_SENDER_PASSWORD:?set MOSQUITTO_SENDER_PASSWORD in .env}
+    # The control API has no authentication, so it binds to the loopback address of the host.
+    ports:
+      - "127.0.0.1:${SIMULATOR_PORT:-8088}:8080"
+      - "127.0.0.1:${SIMULATOR_HEALTH_PORT:-8098}:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      lgtm:
+        condition: service_healthy
+      core:
+        condition: service_healthy
+      telemetry:
+        condition: service_healthy
+
   azurite:
     container_name: healthyfac-azurite
     image: mcr.microsoft.com/azure-storage/azurite:3.37.0
@@ -800,6 +847,7 @@ volumes:
   core-logs:
   mosquitto-data:
   telemetry-logs:
+  simulator-logs:
   document-logs:
   insights-logs:
   docling-models:

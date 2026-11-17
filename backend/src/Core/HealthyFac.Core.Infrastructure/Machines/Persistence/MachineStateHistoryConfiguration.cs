@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
@@ -24,6 +25,7 @@ public class MachineStateHistoryConfiguration : IEntityTypeConfiguration<Machine
 
         builder.HasIndex(row => new { row.MachineId, row.StartedAt })
             .IsUnique()
+            .HasDatabaseName(MachineStateHistoryIndexNames.MachineStartedAt)
             .HasFilter(SoftDeleteConstants.NotDeletedFilter);
 
         builder.HasOne<Machine>()

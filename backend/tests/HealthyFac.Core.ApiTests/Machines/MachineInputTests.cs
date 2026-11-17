@@ -26,6 +26,53 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task Create_WithoutExpectedGoLiveOn_Returns400AndStoresNoMachine()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.WritePermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.MachinesPath,
+            claims,
+            _fixture.CreateCreateBodyWithoutGoLive(MachineApiTestData.NoGoLiveSerialNumber));
+
+        var isStored = await _fixture.HasMachineAsync(MachineApiTestData.NoGoLiveSerialNumber);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        isStored.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Get_AfterCreate_ReturnsExpectedGoLiveOnAsPlainDay()
+    {
+        var encrypted = await _fixture.ArrangeMachineAsync(MachineApiTestData.GoLiveSerialNumber);
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Get,
+            $"{MachineApiTestData.MachinesPath}/{encrypted}",
+            claims);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().Contain(MachineApiTestData.GoLiveJson);
+    }
+
+    [Fact]
+    public async Task Search_WithGoLiveRangeFromAfterTo_Returns400()
+    {
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            claims,
+            MachineApiTestData.SearchWithBackwardsGoLiveRangeBody);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Search_WithStateFilterAndSort_BindsEnumerations()
     {
         var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
@@ -94,5 +141,37 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
             _fixture.CreateCreateBody(MachineApiTestData.FileImageDescription));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Theory]
+    [MemberData(nameof(MachineApiTestData.BadStateBodies), MemberType = typeof(MachineApiTestData))]
+    public async Task ChangeState_WithMissingOrUnknownState_Returns400(string caseName, string body)
+    {
+        var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-state-bad-" + caseName);
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.WritePermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            $"{MachineApiTestData.MachinesPath}/{machineId}{MachineApiTestData.StatePathSuffix}",
+            claims,
+            body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [MemberData(nameof(MachineApiTestData.BadUpdateStateBodies), MemberType = typeof(MachineApiTestData))]
+    public async Task Update_WithMissingOrUnknownState_Returns400(string caseName, string body)
+    {
+        var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-upd-bad-" + caseName);
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.WritePermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Put,
+            $"{MachineApiTestData.MachinesPath}/{machineId}",
+            claims,
+            body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

@@ -25,6 +25,7 @@ const MACHINE: Machine = {
   gatewayId: 'abcdefghijklmnop',
   state: MachineState.Operational,
   description: null,
+  expectedGoLiveOn: '2099-01-01',
   createdAt: '2026-03-01T08:00:00Z',
   updatedAt: null,
   pendingDraftCount: 0,
@@ -136,5 +137,17 @@ describe('MachinesGridStore', () => {
     expect(remove).toHaveBeenCalledWith(MACHINE.id);
     expect(search.mock.calls.length - callsBefore).toBe(1);
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
+  });
+
+  it('requestStateChange_WithMachineId_DispatchesTheChangeStateAction', async () => {
+    const { store, actions } = await setup();
+    const dispatch = vi.spyOn(actions, 'dispatch').mockResolvedValue(undefined);
+
+    store.requestStateChange(MACHINE.id);
+
+    expect(dispatch).toHaveBeenCalledWith({
+      type: MachineActionType.ChangeState,
+      payload: { machineId: MACHINE.id },
+    });
   });
 });

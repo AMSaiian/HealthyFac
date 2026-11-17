@@ -4,6 +4,7 @@ using HealthyFac.Core.Application.Machines.SearchMachines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
@@ -27,6 +28,7 @@ public static class MachineFixtureExtensions
             seed.Name,
             seed.SerialNumber,
             description: null,
+            MachineTestData.FutureGoLiveOn,
             seed.CreatedAt);
 
         if (seed.State != MachineState.Operational)
@@ -50,7 +52,8 @@ public static class MachineFixtureExtensions
             Guid companyId,
             string name,
             string serialNumber,
-            string? description = null
+            string? description = null,
+            DateOnly? expectedGoLiveOn = null
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
@@ -64,6 +67,7 @@ public static class MachineFixtureExtensions
                     Name = name,
                     SerialNumber = serialNumber,
                     Description = description,
+                    ExpectedGoLiveOn = expectedGoLiveOn ?? MachineTestData.FutureGoLiveOn,
                 });
 
             return response.Id;
@@ -74,9 +78,13 @@ public static class MachineFixtureExtensions
             Guid machineId,
             string name,
             string serialNumber,
-            string? description = null
+            string? description = null,
+            DateOnly? expectedGoLiveOn = null,
+            MachineState? state = null
         )
         {
+            var history = await fixture.LoadStateHistoryAsync(machineId);
+            var requestedState = state ?? history[^1].State;
             using var scope = fixture.CreateUserScope(companyId);
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<UpdateMachineRequest>>();
 
@@ -88,7 +96,29 @@ public static class MachineFixtureExtensions
                     Name = name,
                     SerialNumber = serialNumber,
                     Description = description,
+                    ExpectedGoLiveOn = expectedGoLiveOn ?? MachineTestData.FutureGoLiveOn,
+                    State = requestedState,
                 });
+        }
+
+        public async Task ChangeMachineStateAsync(
+            Guid companyId,
+            Guid machineId,
+            MachineState state,
+            Guid? actorId = null
+        )
+        {
+            using var scope = fixture.CreateActorScope(
+                new ActorContext
+                {
+                    Kind = ActorKind.User,
+                    UserId = actorId ?? Guid.CreateVersion7(),
+                    CompanyId = companyId,
+                });
+            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<ChangeMachineStateRequest>>();
+
+            await handler.HandleAsync(
+                new ChangeMachineStateRequest { CompanyId = companyId, Id = machineId, State = state });
         }
 
         public async Task DeleteMachineAsync(Guid companyId, Guid machineId)
@@ -161,6 +191,7 @@ public static class MachineFixtureExtensions
                     MachineTestData.MachineName,
                     serialNumber,
                     description: null,
+                    MachineTestData.FutureGoLiveOn,
                     TimeProvider.System.GetUtcNow().UtcDateTime));
             await dbContext.SaveChangesAsync();
         }
@@ -208,6 +239,16 @@ public static class MachineFixtureExtensions
                 .AsNoTracking()
                 .Where(machine => machine.CompanyId == companyId && machine.SerialNumber == serialNumber)
                 .ToListAsync();
+        }
+
+        public async Task<Machine> LoadSingleMachineAsync(Guid companyId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
+                .Machines
+                .AsNoTracking()
+                .SingleAsync(machine => machine.CompanyId == companyId);
         }
 
         public async Task<Machine> LoadMachineRowAsync(Guid machineId)

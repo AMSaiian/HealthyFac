@@ -129,6 +129,16 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
           },
         },
         {
+          type: MachineActionType.ChangeState,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@machines/state/machine-state-host/machine-state-host'),
+              import('@machines/state/machine-state-action-payloads'),
+            ]);
+            return { component: host.MachineStateHost, schema: payloads.machineStateActionPayloadSchema };
+          },
+        },
+        {
           type: DraftActionType.CompareMachine,
           load: async () => {
             const [host, payloads] = await Promise.all([

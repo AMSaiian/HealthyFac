@@ -1,5 +1,7 @@
 import { SortDirection } from '@shared/grid/requests/grid-request';
 
+import { Temporal } from '@shared/time/temporal';
+
 import { type MachineFilter, type MachineGridState, MachineSortColumn, MachineState } from '@machines/machine';
 import { toSearchBody } from './machine-query';
 
@@ -11,6 +13,7 @@ const EMPTY_FILTER: MachineFilter = {
   serialNumber: '',
   gatewayId: '',
   states: [],
+  expectedGoLiveOn: EMPTY_RANGE,
   createdAt: EMPTY_RANGE,
   updatedAt: EMPTY_RANGE,
   hasPendingDrafts: null,
@@ -52,6 +55,25 @@ describe('toSearchBody', () => {
         states: { values: ['operational'] },
       },
     });
+  });
+
+  it('toSearchBody_WithGoLiveRange_SendsHalfOpenDaysWithoutZone', () => {
+    const range = { from: Temporal.PlainDate.from('2026-03-01'), to: Temporal.PlainDate.from('2026-03-10') };
+
+    const body = toSearchBody(stateWith({ expectedGoLiveOn: range }), ZONE);
+
+    expect(body.filter.expectedGoLiveOn).toEqual({ from: '2026-03-01', to: '2026-03-11' });
+  });
+
+  it('toSearchBody_WithGoLiveSort_SendsTheSortColumn', () => {
+    const state: MachineGridState = {
+      ...stateWith({}),
+      sort: { column: MachineSortColumn.ExpectedGoLiveOn, direction: SortDirection.Ascending },
+    };
+
+    const body = toSearchBody(state, ZONE);
+
+    expect(body.sort).toEqual({ column: 'expectedGoLiveOn', direction: 'asc' });
   });
 
   it('toSearchBody_WithGatewayIdFilter_AddsStartsWithFilter', () => {

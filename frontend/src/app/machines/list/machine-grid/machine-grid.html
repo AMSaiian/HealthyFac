@@ -117,6 +117,14 @@
                       </ng-template>
                     </p-select>
                   }
+                  @case (MachineColumn.ExpectedGoLiveOn) {
+                    <hf-plain-date-range-picker
+                      appendTo="self"
+                      [placeholder]="'MACHINES.FILTERS.EXPECTED_GO_LIVE_ON_PLACEHOLDER' | translate"
+                      [value]="value ?? emptyRange"
+                      (valueChange)="filterConstraint.value = $event"
+                    />
+                  }
                   @case (MachineColumn.CreatedAt) {
                     <hf-plain-date-range-picker
                       appendTo="self"
@@ -190,6 +198,9 @@
               @case (MachineColumn.State) {
                 {{ stateLabel(machine.state) }}
               }
+              @case (MachineColumn.ExpectedGoLiveOn) {
+                {{ machine.expectedGoLiveOn | plainDate }}
+              }
               @case (MachineColumn.CreatedAt) {
                 {{ machine.createdAt | localDateTime }}
               }
@@ -259,6 +270,7 @@
     <div
       class="p-menu-item-link flex items-center gap-2 px-3 py-2"
       [pTooltip]="item.tooltip"
+      [tooltipOptions]="item.tooltipOptions"
     >
       <span [class]="item.icon"></span>
       <span>{{ item.label }}</span>

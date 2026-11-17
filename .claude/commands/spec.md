@@ -162,7 +162,7 @@ Sessions are named `<feature-name>-spec`, `<feature-name>-executor`, `<feature-n
     `ACCEPTED (Artur, <date>)` and update the summary table. It never routes again.
 - When a message arrives that the feature is APPROVED, tell me and summarize: what was
   built, deviations, remaining concerns.
-- The reviewer leaves the verify slot up for my test and `/fix`. After the commit that I
-  ask for, ask me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On
-  yes, run `pwsh scripts/verify-stack.ps1 stop` in the worktree. Run `down` only when I
-  ask for it.
+- The reviewer stops the verify slot after each round (`stop` keeps its data); `up`
+  starts it again for my test, and `/fix` starts it. After the commit that I ask for, ask
+  me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On yes, run
+  `pwsh scripts/verify-stack.ps1 stop` in the worktree. Run `down` only when I ask for it.

@@ -5,8 +5,7 @@ argument-hint: <feature-name>
 Feature: $ARGUMENTS
 
 You are the reviewer in this session. Do not edit, create or delete any file in the repo.
-The only files you write are review.md and the screenshots under `screens/` in the
-feature folder.
+The only file you write is review.md in the feature folder.
 
 The feature folder is `<spec output root>/<project>/$ARGUMENTS/`, where <project> is
 the folder name of the main checkout
@@ -67,9 +66,8 @@ Read a full file only for a reference that points outside these parts.
   executor tested this code: do not run that area again, and run only the tests that you
   doubt. Otherwise run the full commands of that area (`implement.md`, **Execution**). An
   old plan with `Full run: tree` lines compares the whole tree (no `-Area`). Use the shell
-  only for: build, test, git diff/log, `pwsh scripts/verify-stack.ps1 up|reset`,
-  `pwsh .claude/tree-id.ps1`, `pwsh .claude/check-review-routing.ps1`, and the copy of the
-  screenshots into the feature folder.
+  only for: build, test, git diff/log, `pwsh scripts/verify-stack.ps1 up|reset|stop`,
+  `pwsh .claude/tree-id.ps1`, and `pwsh .claude/check-review-routing.ps1`.
 - Checkpoint review: on a message "checkpoint <x> ready" with two tree IDs, review
   `git diff <base tree> <checkpoint tree>` for the design, the rules, and the plan. Run no
   tests. Add the findings to `## Open` with `Status: NEW (checkpoint <x>)`, all [CODE] or
@@ -84,8 +82,9 @@ Read a full file only for a reference that points outside these parts.
 - Each new route flow has route flow tests (`frontend-angular.md`, **Tests**). A missing
   one is a MAJOR [CODE] finding.
 - For a UI feature in a later round of a cycle: run only the flows that the diff since
-  `Reviewed tree:` touches and the flows of the open findings, with their screenshots,
-  on the running slot. The next two bullets describe round 1.
+  `Reviewed tree:` touches and the flows of the open findings, with their layout checks,
+  on the slot (`up` starts a stopped slot with its data). The next two bullets describe
+  round 1.
 - For a UI feature: the browser check list has a `pass` or `fail` line for every flow.
   A missing or partial log is a MAJOR [CODE] finding. Then start a clean isolated stack:
   run `pwsh scripts/verify-stack.ps1 reset`, then `up`, because data that earlier users
@@ -95,21 +94,20 @@ Read a full file only for a reference that points outside these parts.
   the flows yourself in Chrome (Claude in Chrome); do not trust the executor's log.
   Also try a few flows outside the list (back navigation, an undo, a double click, a long
   input). The browser writes only to the isolated stack; this does not break the "no
-  repo changes" rule. Leave the stack up when you are done: my test and `/fix` use it.
-  Give the app URL in the report.
-- Screenshots (UI feature): for each flow of the list, take 2 screenshots at scale 0.5
-  with `save_to_disk`: light mode at 1024 x 600 and dark mode at full HD (a flow that
-  names other sizes gets those). Use the `zoom` action for a detail (a chip, a border, a
-  radius). Check each screenshot:
+  repo changes" rule. When the round is done, run `pwsh scripts/verify-stack.ps1 stop`:
+  it frees the memory and keeps the data. `up` starts it again for my test and `/fix`.
+  Give the app URL and that `up` command in the report.
+- Layout checks (UI feature): look at each flow of the list in the browser in light mode
+  at 1024 x 600 and in dark mode at full HD (a flow that names other sizes gets those).
+  Save no screenshot files. Use the `zoom` action for a detail (a chip, a border, a
+  radius). Check each view:
   - no clipped text, control, or tag;
   - the same height for the controls of one row;
   - the same corner radius for the same component;
   - no horizontal scroll and no overflow at 1024 x 600;
   - no overlay or tooltip clipped by its container;
   - readable in both themes.
-  Each failure is a [CODE] finding with the screenshot name. Copy the saved files to
-  `<feature folder>/screens/cycle-C-round-R/<flow>-<1024|fhd>-<light|dark>.png` and name
-  the folder in the report.
+  Each failure is a [CODE] finding with the flow, the size, and the theme.
 - Judge the code as it is now, not by what you concluded in earlier rounds.
 
 ## Web access
@@ -136,8 +134,8 @@ finding or a check that passed. Layout:
   when I decide to keep the code. A closed finding never comes back to `## Open`; a new
   defect at the same place gets a new ID.
 - `## Rounds`: one line per round: `Cycle C, round R: tree <id>; <test areas run and
-  results>; browser <passed>/<total> flows; screens <folder>.` Write no list of the
-  checks that passed.
+  results>; browser <passed>/<total> flows.` Write no list of the checks that
+  passed.
 - `## Summary`: the summary table of `## Open`, then the verdict. `check-review-routing.ps1`
   fails when the table differs from the headings in `## Open`.
 - The table, in exactly this form:

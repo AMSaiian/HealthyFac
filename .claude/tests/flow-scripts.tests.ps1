@@ -7,7 +7,8 @@
 # - tree-id: the same ID twice without a change; a new ID after an edit of a tracked file, a new untracked file, and a
 #   deletion; an ignored file changes nothing; the index, the status, and HEAD are the same before and after; it works
 #   in a git worktree.
-# - tree-id -Area: see the area cases of check-handoff (a backend-only change needs no frontend run).
+# - tree-id -Area: see the area cases of check-handoff (a backend-only change needs no frontend run); -Area with -Ref
+#   of the base works when the branch has a commit after the base.
 # - check-plan: a sample plan with cycles 1 and 2 passes; each problem (Spec line, section name, AC line, map row,
 #   spec reference, test step without a proof marker, no "#### Deviations", duplicate AC) fails alone with its line; a
 #   problem in cycle 1 does not fail a check of cycle 2.
@@ -117,6 +118,21 @@ $worktreeAfter = Get-TreeId $worktree
 Assert-That ($worktreeFirst -match '^[0-9a-f]{40}$' -and $worktreeAfter -match '^[0-9a-f]{40}$' -and
   $worktreeFirst -ne $worktreeAfter) 'it works in a git worktree'
 Assert-That ($worktreeFirst -match '^[0-9a-f]{40}$' -and (Get-TreeId $repo) -eq $worktreeFirst) 'the worktree and the main checkout give the same ID for the same content'
+
+$areaRepo = New-Repo 'tree-area-ref'
+New-Item -ItemType Directory -Force (Join-Path $areaRepo 'src'), (Join-Path $areaRepo 'frontend') | Out-Null
+Set-Content (Join-Path $areaRepo 'src/a.cs') 'class A {}'
+Set-Content (Join-Path $areaRepo 'frontend/app.ts') 'export const a = 1;'
+Save-Commit $areaRepo 'base'
+$areaBase = git -C $areaRepo rev-parse HEAD
+Add-Content (Join-Path $areaRepo 'src/a.cs') '// committed'
+Add-Content (Join-Path $areaRepo 'frontend/app.ts') '// committed'
+Save-Commit $areaRepo 'feature'
+foreach ($area in @('backend', 'frontend')) {
+  $atBase = Invoke-Script 'tree-id.ps1' @('-Repo', $areaRepo, '-Area', $area, '-Ref', $areaBase)
+  Assert-That ($atBase.Exit -eq 0 -and ($atBase.Output -join '').Trim() -match '^[0-9a-f]{40}$') `
+    "-Area $area -Ref <base> works when the branch has a commit after the base"
+}
 
 # --- check-plan ------------------------------------------------------------------------------------------------
 Write-Host 'check-plan'
@@ -236,12 +252,22 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   $backendTree = Get-AreaTreeId $repoDir 'backend'
   $frontendTree = Get-AreaTreeId $repoDir 'frontend'
   if ($change.StaleTree) { Add-Content (Join-Path $repoDir 'src/b.cs') '// late fix' }
+  if ($change.LateClaudeFile) {
+    New-Item -ItemType Directory -Force (Join-Path $repoDir '.claude/commands') | Out-Null
+    Set-Content (Join-Path $repoDir '.claude/commands/late.md') '# a late command change'
+  }
 
   $folder = Join-Path $work "$name-folder"
   New-Item -ItemType Directory -Force $folder | Out-Null
   $step2Mark = if ($change.Step2Open) { ' ' } else { 'x' }
   $lines = @('Cycle: 1', '', '# Plan', '')
-  if ($change.EarlierFrontendRun) { $lines += '### Cycle 0', '', "*   Full run frontend: tree $frontendTree; ng test -> 5 passed, 0 failed", '' }
+  if ($change.EarlierFrontendRun -or $change.EarlierFilesLine -or $change.EarlierDeviationFile) {
+    $lines += '### Cycle 0', ''
+    if ($change.EarlierFilesLine) { $lines += '- [x] Step 0: Add the extra file.', "    *   Files: ``$($change.EarlierFilesLine)``" }
+    if ($change.EarlierFrontendRun) { $lines += "*   Full run frontend: tree $frontendTree; ng test -> 5 passed, 0 failed" }
+    if ($change.EarlierDeviationFile) { $lines += '', '#### Deviations', "*   Step 0: Added $($change.EarlierDeviationFile) because the helper was missing." }
+    $lines += ''
+  }
   $lines += '### Cycle 1', '', 'Spec: **Feature A**, AC1.', ''
   $lines += '- [x] Step 1: Change the code with a TDD red step.', '    *   Files: `src/a.cs`, `src/b.cs`, `src/Migrations/m.cs`, `frontend/app.ts`, `.claude/tree-id.ps1`, `.claude/tests/flow-scripts.tests.ps1`'
   if (-not $change.NoRedLine) { $lines += '    *   Red: the new test fails first with `Expected 1, found 0`.' }
@@ -318,6 +344,18 @@ Assert-That ($areaFrontend.Exit -eq 1 -and $areaFrontend.Output.Count -eq 1 -and
 $areaEarlier = Invoke-Handoff (New-HandoffCase 'ho-area-earlier' @{ AreaRuns = $true; FrontendFile = $true; EarlierFrontendRun = $true })
 Assert-That ($areaEarlier.Exit -eq 0 -and $areaEarlier.Output.Count -eq 0) `
   'a Full run frontend line of an earlier cycle with the current tree passes'
+
+$earlierFiles = Invoke-Handoff (New-HandoffCase 'ho-earlier-files' @{ AreaRuns = $true; ExtraFile = 'src/extra.cs'; EarlierFilesLine = 'src/extra.cs' })
+Assert-That ($earlierFiles.Exit -eq 0 -and $earlierFiles.Output.Count -eq 0) `
+  'a changed file in a Files: line of an earlier cycle passes (the default base holds the earlier cycles)'
+
+$earlierDeviation = Invoke-Handoff (New-HandoffCase 'ho-earlier-dev' @{ AreaRuns = $true; ExtraFile = 'src/extra.cs'; EarlierDeviationFile = 'src/extra.cs' })
+Assert-That ($earlierDeviation.Exit -eq 0 -and $earlierDeviation.Output.Count -eq 0) `
+  'a changed file in the #### Deviations of an earlier cycle passes'
+
+$lateClaude = Invoke-Handoff (New-HandoffCase 'ho-late-claude' @{ AreaRuns = $true; LateClaudeFile = $true; DeviationFile = '.claude/commands/late.md' })
+Assert-That ($lateClaude.Exit -eq 0 -and $lateClaude.Output.Count -eq 0) `
+  'a .claude change after the Full run backend line keeps the backend run current'
 
 $cycleLogged = Invoke-Handoff (New-HandoffCase 'ho-cycle-dev' @{ AreaRuns = $true; ExtraFile = 'src/extra.cs'; DeviationFile = 'src/extra.cs' })
 Assert-That ($cycleLogged.Exit -eq 0 -and $cycleLogged.Output.Count -eq 0) 'a changed file in the #### Deviations of the cycle passes'

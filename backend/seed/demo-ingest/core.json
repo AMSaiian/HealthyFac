@@ -678,10 +678,10 @@
       "name": "Air filter pressure drop",
       "description": "<p>Replace the filter at the warning or at service A.</p>",
       "value_kind": "numeric",
-      "quantity_kind_name": null,
-      "unit_name": null,
+      "quantity_kind_name": "Pressure",
+      "unit_name": "Kilopascal",
       "min": 0,
-      "max": 30,
+      "max": 3,
       "states": null
     },
     {

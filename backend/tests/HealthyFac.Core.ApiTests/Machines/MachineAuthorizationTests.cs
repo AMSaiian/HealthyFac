@@ -116,6 +116,36 @@ public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task ChangeState_WithoutWritePermission_Returns403()
+    {
+        var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-state-denied");
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            $"{MachineApiTestData.MachinesPath}/{machineId}{MachineApiTestData.StatePathSuffix}",
+            claims,
+            MachineApiTestData.ValidStateBody);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task ChangeState_WithWritePermission_Returns204()
+    {
+        var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-state-ok");
+        var claims = _fixture.CreateMachineClaims(MachineApiTestData.WritePermission);
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            $"{MachineApiTestData.MachinesPath}/{machineId}{MachineApiTestData.StatePathSuffix}",
+            claims,
+            MachineApiTestData.ValidStateBody);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
     public async Task Get_WithReadPermission_ReturnsMachine()
     {
         var machineId = await _fixture.ArrangeMachineAsync(MachineApiTestData.SerialNumber + "-get-ok");

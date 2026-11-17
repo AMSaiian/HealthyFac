@@ -56,6 +56,11 @@ services:
     image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/telemetry:local
     ports: !reset []
 
+  simulator:
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-simulator
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/simulator:local
+    ports: !override ["127.0.0.1:${SIMULATOR_PORT:?run scripts/verify-stack.ps1}:8080"]
+
   azurite:
     container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-azurite
     ports: !reset []

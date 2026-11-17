@@ -1,5 +1,7 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Application.Companies;
+using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -22,6 +24,10 @@ public record UpdateMachineRequest : IRequest
     public required string SerialNumber { get; init; }
 
     public string? Description { get; init; }
+
+    public required DateOnly ExpectedGoLiveOn { get; init; }
+
+    public required MachineState State { get; init; }
 }
 
 public class UpdateMachineRequestValidator : AbstractValidator<UpdateMachineRequest>
@@ -41,6 +47,10 @@ public class UpdateMachineRequestValidator : AbstractValidator<UpdateMachineRequ
         RuleFor(x => x.Id)
             .NotEmpty()
             .WithMessage(MachineErrors.MachineIdRequired);
+
+        RuleFor(x => x.State)
+            .NotNull()
+            .WithMessage(MachineErrors.StateRequired);
     }
 }
 
@@ -59,37 +69,53 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 }
 
 /// <summary>
-/// Changes the name, serial number, and description of a machine, and queues <see cref="MachineRenamed"/> in the
-/// same save when the name changes. A machine outside
-/// the company is "not found". The serial number must stay unique among the
-/// machines of the company that are not deleted, ignoring case.
+/// Changes the name, serial number, description, go-live date, and state of a machine, and queues
+/// <see cref="MachineRenamed"/> in the same save when the name changes. Another state adds one state row that starts
+/// now, and queues <see cref="MachineStateChanged"/>, in the same save. The current state adds no row. A machine
+/// outside the company is "not found". The serial number must stay unique among the machines of the company that
+/// are not deleted, ignoring case.
 /// </summary>
 /// <remarks>
 /// The handler checks the serial number against the other machines first. The unique index catches a parallel
-/// change, and the handler maps that failure to the same conflict.
+/// change, and the handler maps that failure to the same conflict. A parallel state change with the same instant
+/// breaks the history index before the row version check, and it gives <see cref="MachineErrors.MachineChanged"/>.
 /// </remarks>
 /// <param name="dbContext">Loads and saves the machine.</param>
 /// <param name="outbox">Stores the rename message with the change.</param>
-/// <param name="timeProvider">Provides the time of the rename.</param>
-public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext, IOutbox outbox, TimeProvider timeProvider)
+/// <param name="timeProvider">Provides the time of the rename and the start of a new state.</param>
+/// <param name="companyZoneReader">Reads the company time zone for the expected go-live rule.</param>
+public sealed class UpdateMachineRequestHandler(
+    ICoreDbContext dbContext,
+    IOutbox outbox,
+    TimeProvider timeProvider,
+    CompanyZoneReader companyZoneReader
+)
     : RequestHandler<UpdateMachineRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly CompanyZoneReader _companyZoneReader = companyZoneReader;
 
     protected override async Task HandleInternalAsync(
         UpdateMachineRequest request,
         CancellationToken cancellationToken
     )
     {
-        var machine = await _dbContext.Machines.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-                cancellationToken)
+        var machine = await _dbContext.Machines
+                .Include(candidate => candidate.StateHistory)
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
+                    cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 
+        var zone = await _companyZoneReader.FindZoneAsync(request.CompanyId, cancellationToken)
+            ?? throw new NotFoundException(MachineErrors.MachineNotFound);
+        MachineGoLiveRules.EnsureNotBeforeCreation(request.ExpectedGoLiveOn, machine.CreatedAt, zone);
+
         var isRenamed = machine.Name != request.Name;
-        machine.Update(request.Name, request.SerialNumber, request.Description);
+        machine.Update(request.Name, request.SerialNumber, request.Description, request.ExpectedGoLiveOn);
+        MachineStateChanges.Apply(_dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(
             candidate => candidate.CompanyId == machine.CompanyId
@@ -117,6 +143,11 @@ public sealed class UpdateMachineRequestHandler(ICoreDbContext dbContext, IOutbo
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintException exception)
+            when (exception.ConstraintName == MachineStateHistoryIndexNames.MachineStartedAt)
+        {
+            throw new ConflictException(MachineErrors.MachineChanged, exception);
         }
         catch (UniqueConstraintException exception)
         {

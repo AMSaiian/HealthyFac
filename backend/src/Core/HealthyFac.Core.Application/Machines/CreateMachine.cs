@@ -1,5 +1,6 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -20,6 +21,8 @@ public record CreateMachineRequest : IRequest<CreateMachineResponse>
     public required Guid CompanyId { get; init; }
 
     public string? Description { get; init; }
+
+    public required DateOnly ExpectedGoLiveOn { get; init; }
 }
 
 public record CreateMachineResponse
@@ -68,24 +71,39 @@ public sealed class CreateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// <param name="dbContext">Reads the serial numbers and saves the machine.</param>
 /// <param name="timeProvider">Provides the start of the first state of the machine.</param>
 /// <param name="outbox">Queues the <see cref="MachineCreated"/> message in the save of the machine.</param>
-public class CreateMachineRequestHandler(ICoreDbContext dbContext, TimeProvider timeProvider, IOutbox outbox)
+/// <param name="companyZoneReader">Reads the company time zone for the expected go-live rule.</param>
+public class CreateMachineRequestHandler(
+    ICoreDbContext dbContext,
+    TimeProvider timeProvider,
+    IOutbox outbox,
+    CompanyZoneReader companyZoneReader
+)
     : IRequestHandler<CreateMachineRequest, CreateMachineResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly IOutbox _outbox = outbox;
+    private readonly CompanyZoneReader _companyZoneReader = companyZoneReader;
 
     public async Task<CreateMachineResponse> HandleAsync(
         CreateMachineRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
+        var zone = await _companyZoneReader.FindZoneAsync(request.CompanyId, cancellationToken)
+            ?? throw new NotFoundException(MachineErrors.MachineNotFound);
+        MachineGoLiveRules.EnsureNotBeforeToday(
+            request.ExpectedGoLiveOn,
+            _timeProvider.GetUtcNow().UtcDateTime,
+            zone);
+
         var machine = new Machine(
             request.CompanyId,
             GatewayIds.Create(),
             request.Name,
             request.SerialNumber,
             request.Description,
+            request.ExpectedGoLiveOn,
             _timeProvider.GetUtcNow().UtcDateTime);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(

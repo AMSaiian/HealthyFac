@@ -1,5 +1,5 @@
 import type { CurrentMachineValues, MachineDraftDetail } from '@machines/drafts/draft';
-import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
+import type { MachineFieldsValue } from '@machines/drawer/machine-form/machine-form-schema';
 
 export enum CompareField {
   Name = 'name',
@@ -62,13 +62,13 @@ export function toCompareRows(
 }
 
 /** Merges the current values with the taken fields. An untaken field keeps its current value. */
-export function mergeValues(current: CurrentMachineValues, rows: readonly CompareRow[]): MachineFormValue {
-  const merged: MachineFormValue = {
+export function mergeValues(current: CurrentMachineValues, rows: readonly CompareRow[]): MachineFieldsValue {
+  const merged: MachineFieldsValue = {
     name: current.name,
     serialNumber: current.serialNumber,
     description: current.description,
   };
-  return rows.reduce<MachineFormValue>(
+  return rows.reduce<MachineFieldsValue>(
     (result, row) =>
       row.isTaken
         ? row.field === CompareField.Description
@@ -79,6 +79,6 @@ export function mergeValues(current: CurrentMachineValues, rows: readonly Compar
   );
 }
 
-export function toCurrentFormValue(current: CurrentMachineValues): MachineFormValue {
+export function toCurrentFormValue(current: CurrentMachineValues): MachineFieldsValue {
   return { name: current.name, serialNumber: current.serialNumber, description: current.description };
 }

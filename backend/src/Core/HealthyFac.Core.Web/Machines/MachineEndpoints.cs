@@ -8,6 +8,7 @@ using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using ApplicationChangeMachineStateRequest = HealthyFac.Core.Application.Machines.ChangeMachineStateRequest;
 using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachineRequest;
 using ApplicationDeleteMachineRequest = HealthyFac.Core.Application.Machines.DeleteMachineRequest;
 using ApplicationGetMachineRequest = HealthyFac.Core.Application.Machines.GetMachineRequest;
@@ -40,6 +41,8 @@ public static class MachineEndpoints
             group.MapGet(MachineRoutes.ById, GetAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
             group.MapPut(MachineRoutes.ById, UpdateAsync)
+                .RequireAuthorization(CorePermissions.Machines.Write);
+            group.MapPost(MachineRoutes.State, ChangeStateAsync)
                 .RequireAuthorization(CorePermissions.Machines.Write);
             group.MapDelete(MachineRoutes.ById, DeleteAsync)
                 .RequireAuthorization(CorePermissions.Machines.Delete);
@@ -117,6 +120,22 @@ public static class MachineEndpoints
         UpdateMachineRequest request,
         ICurrentUserProvider currentUser,
         IRequestHandler<ApplicationUpdateMachineRequest> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        await handler.HandleAsync(
+            request.ToApplicationRequest(id, currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> ChangeStateAsync(
+        [FromRoute(Name = MachineRoutes.IdParameter)] string id,
+        ChangeMachineStateRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationChangeMachineStateRequest> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )

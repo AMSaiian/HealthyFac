@@ -30,6 +30,51 @@
     [formField]="machineForm.serialNumber"
   />
 </div>
+@if (isUpdate()) {
+  <div class="flex flex-col gap-1">
+    <label for="machine-state">{{ 'MACHINES.FORM.STATE' | translate }}</label>
+    <p-select
+      inputId="machine-state"
+      optionLabel="labelKey"
+      optionValue="value"
+      appendTo="body"
+      [options]="stateOptions"
+      [formField]="machineForm.state"
+    >
+      <ng-template
+        #selectedItem
+        let-option
+        >{{ option.labelKey | translate }}</ng-template
+      >
+      <ng-template
+        #item
+        let-option
+        >{{ option.labelKey | translate }}</ng-template
+      >
+    </p-select>
+  </div>
+}
+<div class="flex flex-col gap-1">
+  <div class="flex items-center gap-2">
+    <span>{{ 'MACHINES.FORM.EXPECTED_GO_LIVE_ON' | translate }}</span>
+    <i
+      class="pi pi-info-circle text-muted-color"
+      tabindex="0"
+      tooltipPosition="bottom"
+      tooltipEvent="both"
+      [pTooltip]="'MACHINES.FORM.EXPECTED_GO_LIVE_ON_HINT' | translate"
+      [attr.aria-label]="'MACHINES.FORM.EXPECTED_GO_LIVE_ON_HINT' | translate"
+    ></i>
+  </div>
+  @for (error of machineForm.expectedGoLiveOn().errors(); track $index) {
+    <small class="text-red-500">{{ error.message | translate }}</small>
+  }
+  <hf-plain-date-picker
+    [value]="model().expectedGoLiveOn"
+    [min]="minGoLiveOn()"
+    (valueChange)="setGoLiveOn($event)"
+  />
+</div>
 @if (isUpdate() && gatewayId(); as id) {
   <div class="flex flex-col gap-1">
     <label for="machine-gateway-id">{{ 'MACHINES.FORM.GATEWAY_ID' | translate }}</label>

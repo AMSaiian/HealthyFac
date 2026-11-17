@@ -8,6 +8,7 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<MachineColumn, string>> = {
   [MachineColumn.SerialNumber]: 'MACHINES.COLUMNS.SERIAL_NUMBER',
   [MachineColumn.GatewayId]: 'MACHINES.COLUMNS.GATEWAY_ID',
   [MachineColumn.State]: 'MACHINES.COLUMNS.STATE',
+  [MachineColumn.ExpectedGoLiveOn]: 'MACHINES.COLUMNS.EXPECTED_GO_LIVE_ON',
   [MachineColumn.CreatedAt]: 'MACHINES.COLUMNS.CREATED_AT',
   [MachineColumn.UpdatedAt]: 'MACHINES.COLUMNS.UPDATED_AT',
   [MachineColumn.Drafts]: 'MACHINES.COLUMNS.DRAFTS',
@@ -23,6 +24,9 @@ export const MENU_METRICS_KEY = 'MACHINES.METRICS';
 export const MENU_STATUSES_KEY = 'MACHINES.STATUSES';
 export const MENU_FILES_KEY = 'MACHINES.FILES';
 export const MENU_OPEN_KEY = 'ACTIONS.OPEN';
+export const MENU_CHANGE_STATE_KEY = 'MACHINES.CHANGE_STATE';
+export const MENU_CHANGE_STATE_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.CHANGE_STATE';
+
 export const MENU_OPEN_TOOLTIP_KEY = 'ACTIONS.TOOLTIPS.OPEN';
 export const MENU_METRICS_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.METRICS';
 export const MENU_STATUSES_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.STATUSES';
@@ -42,6 +46,7 @@ export const FILTER_READERS: Readonly<Record<MachineColumn, (value: unknown) => 
   [MachineColumn.SerialNumber]: (value) => ({ serialNumber: asText(value) }),
   [MachineColumn.GatewayId]: (value) => ({ gatewayId: asText(value) }),
   [MachineColumn.State]: (value) => ({ states: asList<MachineState>(value) }),
+  [MachineColumn.ExpectedGoLiveOn]: (value) => ({ expectedGoLiveOn: asRange(value) }),
   [MachineColumn.CreatedAt]: (value) => ({ createdAt: asRange(value) }),
   [MachineColumn.UpdatedAt]: (value) => ({ updatedAt: asRange(value) }),
   [MachineColumn.Drafts]: (value) => ({ hasPendingDrafts: typeof value === 'boolean' ? value : null }),
@@ -53,6 +58,8 @@ export const FILTER_WRITERS: Readonly<Record<MachineColumn, (filter: MachineFilt
   [MachineColumn.SerialNumber]: (filter) => filter.serialNumber || null,
   [MachineColumn.GatewayId]: (filter) => filter.gatewayId || null,
   [MachineColumn.State]: (filter) => (filter.states.length > 0 ? [...filter.states] : null),
+  [MachineColumn.ExpectedGoLiveOn]: (filter) =>
+    isRangeEmpty(filter.expectedGoLiveOn) ? null : filter.expectedGoLiveOn,
   [MachineColumn.CreatedAt]: (filter) => (isRangeEmpty(filter.createdAt) ? null : filter.createdAt),
   [MachineColumn.UpdatedAt]: (filter) => (isRangeEmpty(filter.updatedAt) ? null : filter.updatedAt),
   [MachineColumn.Drafts]: (filter) => filter.hasPendingDrafts,

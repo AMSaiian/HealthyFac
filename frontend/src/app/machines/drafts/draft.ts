@@ -100,6 +100,8 @@ export interface ApplyMachineDraftBody {
   readonly name: string;
   readonly serialNumber: string;
   readonly description: string | null;
+  /** The date of a create draft from the drawer. The compare dialog and the quick apply send none. */
+  readonly expectedGoLiveOn?: string;
   readonly rowVersion?: number;
 }
 

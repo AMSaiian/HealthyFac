@@ -21,6 +21,8 @@ public record MachineResponse
 
     public string? Description { get; init; }
 
+    public required DateOnly ExpectedGoLiveOn { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 
     public DateTime? UpdatedAt { get; init; }
@@ -56,6 +58,7 @@ public record MachineResponse
                 GatewayId = machine.GatewayId,
                 State = state,
                 Description = machine.Description,
+                ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
                 CreatedAt = machine.CreatedAt,
                 UpdatedAt = machine.UpdatedAt,
                 PendingDraftCount = pendingCount,

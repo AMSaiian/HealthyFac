@@ -21,6 +21,7 @@ import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
+import { PlainDatePipe } from '@shared/time/plain-date.pipe';
 import { EMPTY_RANGE } from '@shared/time/plain-date-range';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
 import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
@@ -39,6 +40,8 @@ import {
   DRAFTS_YES_KEY,
   FILTER_READERS,
   FILTER_WRITERS,
+  MENU_CHANGE_STATE_KEY,
+  MENU_CHANGE_STATE_TOOLTIP_KEY,
   MENU_DELETE_KEY,
   MENU_DELETE_TOOLTIP_KEY,
   MENU_DRAFTS_KEY,
@@ -66,6 +69,7 @@ import {
     FormsModule,
     InputText,
     LocalDateTimePipe,
+    PlainDatePipe,
     Menu,
     PlainDateRangePicker,
     Select,
@@ -107,6 +111,7 @@ export class MachineGrid {
   readonly filesRequested = output<string>();
   readonly metricsRequested = output<string>();
   readonly draftsRequested = output<string>();
+  readonly stateChangeRequested = output<string>();
 
   protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
   protected readonly MachineColumn = MachineColumn;
@@ -119,6 +124,8 @@ export class MachineGrid {
   private readonly _labels = toSignal(
     this._translate.stream([
       ...Object.values(STATE_LABEL_KEYS),
+      MENU_CHANGE_STATE_KEY,
+      MENU_CHANGE_STATE_TOOLTIP_KEY,
       MENU_OPEN_KEY,
       MENU_METRICS_KEY,
       MENU_DRAFTS_KEY,
@@ -194,6 +201,15 @@ export class MachineGrid {
                 tooltipKey: MENU_OPEN_TOOLTIP_KEY,
                 icon: 'pi pi-external-link',
                 onSelect: (machine) => this.updateRequested.emit(machine.id),
+              },
+              labels,
+            ),
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_CHANGE_STATE_KEY,
+                tooltipKey: MENU_CHANGE_STATE_TOOLTIP_KEY,
+                icon: 'pi pi-sync',
+                onSelect: (machine) => this.stateChangeRequested.emit(machine.id),
               },
               labels,
             ),
