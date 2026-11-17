@@ -14,7 +14,7 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 
 ## Build and Test
 The repo has two test areas. A change in one area needs only the full commands of that area.
-*   **Backend area** (every path outside `frontend/` and `keycloak-theme/`): xUnit v3 on Microsoft Testing Platform (set in `global.json`). A full run is the build and two test commands. `--test-modules` runs the built files and does not build, so the build comes first. Run the integration command only when the unit command passes.
+*   **Backend area** (every path outside `frontend/`, `keycloak-theme/`, `.claude/`, and `CLAUDE.md`; the script tests below cover the last two): xUnit v3 on Microsoft Testing Platform (set in `global.json`). A full run is the build and two test commands. `--test-modules` runs the built files and does not build, so the build comes first. Run the integration command only when the unit command passes.
     *   Build: `dotnet build backend/HealthyFac.slnx`
     *   Unit and architecture tests (no containers, default limit): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll"`
     *   Integration and API tests (containers, at most 4 projects at a time): `dotnet test --test-modules "backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll" --max-parallel-test-modules 4`

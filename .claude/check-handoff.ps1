@@ -12,7 +12,8 @@
 # - a step of the cycle that is not [x] or [~];
 # - a step whose text says TDD, Red, or "Proof required", with no Red: or Proof: line in its own block (under the step);
 # - a Deviations entry of the cycle that holds a Red: or Proof: line, or that only logs a run ("Step N: done");
-# - a changed or untracked file whose path or file name is in no "Files:" line of the cycle and no Deviations entry;
+# - a changed or untracked file whose path or file name is in no "Files:" line and no Deviations entry of any cycle
+#   (the base holds the earlier cycles of the branch too);
 # - a file that the format script changed, and each note of a skipped cleanup;
 # - a line of a changed C# file (outside Migrations/) that is longer than max_line_length of .editorconfig;
 # - a failing script test, when the change touches the flow scripts, the rules, the hooks, or the verify stack;
@@ -101,15 +102,23 @@ foreach ($line in $deviationLines) {
   }
 }
 
-$filesText = ($section | Where-Object { $_ -match 'Files:' }) -join "`n"
-$knownText = ($filesText + "`n" + $deviationText).Replace('\', '/')
+# The default base holds the earlier cycles of the branch too, so a file that any cycle names (a Files: line or a
+# Deviations entry) is known.
+$planFilesText = ($planLines | Where-Object { $_ -match 'Files:' }) -join "`n"
+$planDeviationLines = [Collections.Generic.List[string]]::new()
+$isInAnyDeviations = $false
+foreach ($line in $planLines) {
+  if ($line -match '^#{2,4} ') { $isInAnyDeviations = $line -match '^#{2,4} Deviations'; continue }
+  if ($isInAnyDeviations) { $planDeviationLines.Add($line) }
+}
+$knownText = ($planFilesText + "`n" + ($planDeviationLines -join "`n")).Replace('\', '/')
 $changed = @(@(git -C $Repo diff --name-only $Base) + @(git -C $Repo ls-files --others --exclude-standard) |
     Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique)
 foreach ($path in $changed) {
   $name = Split-Path $path -Leaf
   if (-not $knownText.Contains($path, [StringComparison]::OrdinalIgnoreCase) -and
     -not $knownText.Contains($name, [StringComparison]::OrdinalIgnoreCase)) {
-    $problems.Add("File $path is in no Files: line and no Deviations entry of cycle $Cycle.")
+    $problems.Add("File $path is in no Files: line and no Deviations entry of plan.md.")
   }
 }
 
