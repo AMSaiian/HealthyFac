@@ -59,9 +59,9 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         }
 
         var second = new ConcurrentBag<string>();
-        var reconnected = await _fixture.ConnectTelemetryAsync(
-            clientId, isCleanStart: false, IntakeTestData.SessionExpirySeconds);
+        var reconnected = _fixture.CreateClient();
         await using var receivingAgain = new ReceivingClient(reconnected, second);
+        await _fixture.ConnectTelemetryToSessionAsync(reconnected, clientId, IntakeTestData.SessionExpirySeconds);
         await ReceivingClient.WaitUntilAsync(() => second.Count >= 1);
 
         first.Should().ContainSingle();
@@ -89,9 +89,9 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         }
 
         var second = new ConcurrentBag<string>();
-        var reconnected = await _fixture.ConnectTelemetryAsync(
-            clientId, isCleanStart: false, IntakeTestData.SessionExpirySeconds);
+        var reconnected = _fixture.CreateClient();
         await using var receivingAgain = new ReceivingClient(reconnected, second);
+        await _fixture.ConnectTelemetryToSessionAsync(reconnected, clientId, IntakeTestData.SessionExpirySeconds);
         await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
 
         second.Should().BeEmpty();
@@ -163,9 +163,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 
         await Task.Delay(IntakeTestData.ReconnectDelay, TestContext.Current.CancellationToken);
         var second = new ConcurrentBag<string>();
-        var reconnected = await _fixture.ConnectTelemetryAsync(
-            clientId, isCleanStart: false, IntakeTestData.ShortSessionExpirySeconds);
+        var reconnected = _fixture.CreateClient();
         await using var receivingAgain = new ReceivingClient(reconnected, second);
+        await _fixture.ConnectTelemetryToSessionAsync(
+            reconnected, clientId, IntakeTestData.ShortSessionExpirySeconds);
         await ReceivingClient.WaitUntilAsync(() => second.Count >= 1);
 
         second.Should().ContainSingle().Which.Should().Be(first.Single());
@@ -190,9 +191,10 @@ public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
         await ReceivingClient.WaitUntilAsync(() => liveReceived.Count >= IntakeTestData.MessageCount);
         await Task.Delay(IntakeTestData.QuietPeriod, TestContext.Current.CancellationToken);
         var liveCountWhileOffline = liveReceived.Count;
-        var reconnected = await _fixture.ConnectTelemetryAsync(
-            clientId: "offline-client", isCleanStart: false, IntakeTestData.SessionExpirySeconds);
+        var reconnected = _fixture.CreateClient();
         await using var offlineAgain = new ReceivingClient(reconnected, offlineReceived);
+        await _fixture.ConnectTelemetryToSessionAsync(
+            reconnected, clientId: "offline-client", IntakeTestData.SessionExpirySeconds);
         await ReceivingClient.WaitUntilAsync(() =>
             liveReceived.Count + offlineReceived.Count >= IntakeTestData.MessageCount);
 

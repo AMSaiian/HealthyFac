@@ -12,22 +12,31 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
 /// <summary>
-/// Starts Keycloak with the development realm and Mailpit, points the SMTP settings of the realm at Mailpit, and
-/// builds the admin client with the service account of the auth service. It also starts Redis, because the service
-/// token client stores its tokens there.
+/// Starts Keycloak with the development realm and Mailpit, and builds the admin client with the service account of the
+/// auth service. It also starts Redis, because the service token client stores its tokens there.
 /// </summary>
+/// <remarks>
+/// Keycloak and Mailpit share one Docker network, as in <c>docker-compose.yml</c>. Keycloak sends email to the SMTP
+/// server of the realm file, the <c>mailpit</c> service on port 1025, which is the Mailpit network alias. The earlier
+/// path through the Docker host and a published port lost connections under the load of a full run, and Keycloak then
+/// failed the email with 500.
+/// </remarks>
 public sealed class KeycloakAdminFixture : IAsyncLifetime
 {
-    private const string RealmPath = "admin/realms/{0}";
-    private const string MailpitSmtpFrom = "noreply@healthyfac.local";
-
     private readonly List<ServiceProvider> _extraServices = [];
+    private readonly TestNetwork _network = new();
 
     private ServiceProvider _services = null!;
 
-    public KeycloakTestServer Keycloak { get; } = new();
+    public KeycloakAdminFixture()
+    {
+        Keycloak = new KeycloakTestServer(_network);
+        Mailpit = new MailpitTestServer(_network);
+    }
 
-    public MailpitTestServer Mailpit { get; } = new();
+    public KeycloakTestServer Keycloak { get; }
+
+    public MailpitTestServer Mailpit { get; }
 
     public RedisTestServer Redis { get; } = new();
 
@@ -42,23 +51,11 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        await _network.CreateAsync();
         await Task.WhenAll(
             Keycloak.StartAsync(KeycloakAdminTestData.RealmEnvironment),
             Mailpit.StartAsync(),
             Redis.StartAsync());
-
-        await Api.SendAsync(
-            HttpMethod.Put,
-            string.Format(RealmPath, KeycloakAdminTestData.RealmName),
-            new
-            {
-                smtpServer = new
-                {
-                    host = KeycloakTestServer.HostGatewayName,
-                    port = Mailpit.SmtpPort.ToString(),
-                    from = MailpitSmtpFrom,
-                },
-            });
 
         var baseAddress = Keycloak.BaseAddress.TrimEnd(trimChar: '/');
         Settings = new Dictionary<string, string?>
@@ -135,5 +132,6 @@ public sealed class KeycloakAdminFixture : IAsyncLifetime
         await Keycloak.DisposeAsync();
         await Mailpit.DisposeAsync();
         await Redis.DisposeAsync();
+        await _network.DisposeAsync();
     }
 }

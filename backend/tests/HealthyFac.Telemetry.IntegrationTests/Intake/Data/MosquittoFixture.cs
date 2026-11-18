@@ -80,6 +80,28 @@ public sealed class MosquittoFixture(MosquittoTestBroker broker)
         return client;
     }
 
+    /// <summary>
+    /// Connects a client that the caller created and gave its message handler first. On a connect to a kept session,
+    /// the broker sends the held and queued messages right after the connect acknowledgement. A client without a
+    /// handler at that moment acknowledges and drops them, so the test never sees them.
+    /// </summary>
+    /// <param name="client">The client from <see cref="CreateClient"/>, with its message handler attached.</param>
+    /// <param name="clientId">The client ID of the session.</param>
+    /// <param name="sessionExpirySeconds">The session expiry interval that the connect sends.</param>
+    /// <returns>The connect result.</returns>
+    public Task<MqttClientConnectResult> ConnectTelemetryToSessionAsync(
+        IMqttClient client,
+        string clientId,
+        uint sessionExpirySeconds
+    ) =>
+        client.ConnectAsync(
+            CreateOptions(
+                MosquittoTestBroker.TelemetryUser,
+                _broker.TelemetryPassword,
+                clientId,
+                isCleanStart: false,
+                sessionExpirySeconds));
+
     public async Task<IMqttClient> ConnectSenderAsync()
     {
         var client = _factory.CreateMqttClient();

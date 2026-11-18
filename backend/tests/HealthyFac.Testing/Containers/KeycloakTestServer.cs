@@ -74,9 +74,27 @@ public sealed class KeycloakTestServer : IAsyncDisposable
 
     private HashSet<string> _baseUserIds = [];
 
-    private INetwork? _network;
+    private readonly INetwork? _sharedNetwork;
+
+    private INetwork? _ownNetwork;
     private KeycloakContainer? _container;
     private IContainer? _configJob;
+
+    public KeycloakTestServer()
+    {
+    }
+
+    /// <summary>
+    /// Creates a server that joins the given network, so other containers of the fixture (e.g., Mailpit) reach
+    /// Keycloak and Keycloak reaches them through their network aliases, without the Docker host.
+    /// </summary>
+    /// <param name="network">
+    /// The network to join. The caller creates it before <see cref="StartAsync"/> and disposes it after this server.
+    /// </param>
+    public KeycloakTestServer(TestNetwork network)
+    {
+        _sharedNetwork = network.Network;
+    }
 
     public string BaseAddress => _container!.GetBaseAddress();
 
@@ -104,14 +122,13 @@ public sealed class KeycloakTestServer : IAsyncDisposable
                 nameof(environment));
         }
 
-        _network = new NetworkBuilder().Build();
-        await _network.CreateAsync();
+        var network = _sharedNetwork ?? await CreateOwnNetworkAsync();
 
         _container = new KeycloakBuilder(TestImages.Keycloak)
             .WithUsername(AdminUsername)
             .WithPassword(AdminPassword)
             .WithExtraHost(HostGatewayName, HostGatewayAddress)
-            .WithNetwork(_network)
+            .WithNetwork(network)
             .WithNetworkAliases(KeycloakNetworkAlias)
             .WithRealm(KeycloakFiles.Find(BootstrapDirectory, BootstrapFileName))
             .WithEnvironment(environment.Where(IsKeycloakVariable).ToDictionary())
@@ -119,7 +136,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         await _container.StartAsync();
 
         var jobBuilder = new ContainerBuilder(TestImages.KeycloakConfigCli)
-            .WithNetwork(_network)
+            .WithNetwork(network)
             .WithResourceMapping(KeycloakFiles.Find(RealmDirectory, RealmFileName), $"{ConfigDirectory}/")
             .WithResourceMapping(KeycloakFiles.Find(TestTenantDirectory, TestTenantFileName), $"{ConfigDirectory}/")
             .WithEnvironment(name: "KEYCLOAK_URL", KeycloakInternalAddress)
@@ -253,10 +270,18 @@ public sealed class KeycloakTestServer : IAsyncDisposable
             await _container.DisposeAsync();
         }
 
-        if (_network is not null)
+        if (_ownNetwork is not null)
         {
-            await _network.DisposeAsync();
+            await _ownNetwork.DisposeAsync();
         }
+    }
+
+    private async Task<INetwork> CreateOwnNetworkAsync()
+    {
+        _ownNetwork = new NetworkBuilder().Build();
+        await _ownNetwork.CreateAsync();
+
+        return _ownNetwork;
     }
 
     private async Task<IReadOnlyList<string>> ListUserIdsAsync()
