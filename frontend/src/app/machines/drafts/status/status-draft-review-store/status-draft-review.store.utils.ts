@@ -73,7 +73,12 @@ export function toCreateValue(draft: StatusDraftDetail): StatusDefinitionFormVal
  * proposal": Telemetry keeps the stored value of a status that exists, as the review save does.
  */
 export function toBatchChange(draft: StatusDraftDetail): StatusDefinitionBatchItem {
-  return { code: (draft.code ?? '').trim(), severity: toSeverity(draft.severity), description: draft.description };
+  return {
+    code: (draft.code ?? '').trim(),
+    severity: toSeverity(draft.severity),
+    description: draft.description,
+    draftId: draft.id,
+  };
 }
 
 /** Builds the compare rows of an existing status. The code is read-only and is not a row. */

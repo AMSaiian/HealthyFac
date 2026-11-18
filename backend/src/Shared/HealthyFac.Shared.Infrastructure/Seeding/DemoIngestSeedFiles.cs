@@ -13,6 +13,7 @@ public static class DemoIngestSeedFiles
     public const string InsightsFileName = "insights.json";
     public const string EmbeddingsFileName = "insights-embeddings.json";
     public const string CoreFileName = "core.json";
+    public const string TelemetryFileName = "telemetry.json";
 
     /// <summary>The folder of the demo files inside <see cref="RelativeFolder"/>.</summary>
     public const string FilesFolderName = "files";

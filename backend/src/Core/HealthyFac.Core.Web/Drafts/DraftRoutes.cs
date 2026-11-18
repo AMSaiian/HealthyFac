@@ -17,6 +17,5 @@ public static class DraftRoutes
     public const string ById = "/{" + IdParameter + "}";
     public const string Apply = ById + "/apply";
     public const string Dismiss = ById + "/dismiss";
-    public const string MarkApplied = "/mark-applied";
     public const string DismissAll = "/dismiss";
 }

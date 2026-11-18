@@ -31,64 +31,92 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     {
         var counts = new[]
         {
-            _files.Rows(_files.Document, "fileRefs").Count,
-            _files.Rows(_files.Insights, "ingestAttempts").Count,
-            _files.Rows(_files.Insights, "ingestedDocuments").Count,
-            _files.Rows(_files.Insights, "documentChunks").Count,
-            _files.Rows(_files.Core, "machineDrafts").Count,
-            _files.Rows(_files.Core, "metricDefinitionDrafts").Count,
-            _files.Rows(_files.Core, "statusDefinitionDrafts").Count,
+            _files.Rows(_files.Document, name: "fileRefs").Count,
+            _files.Rows(_files.Insights, name: "ingestAttempts").Count,
+            _files.Rows(_files.Insights, name: "ingestedDocuments").Count,
+            _files.Rows(_files.Insights, name: "documentChunks").Count,
+            _files.Rows(_files.Core, name: "machineDrafts").Count,
+            _files.Rows(_files.Telemetry, name: "metricDefinitionDrafts").Count,
+            _files.Rows(_files.Telemetry, name: "statusDefinitionDrafts").Count,
         };
 
-        counts.Should().Equal(
-            FileRefCount,
-            AttemptCount,
-            IngestedDocumentCount,
-            ChunkCount,
-            MachineDraftCount,
-            MetricDraftCount,
-            StatusDraftCount);
+        counts.Should()
+            .Equal(
+                FileRefCount,
+                AttemptCount,
+                IngestedDocumentCount,
+                ChunkCount,
+                MachineDraftCount,
+                MetricDraftCount,
+                StatusDraftCount);
     }
 
     [Fact]
     public void Drafts_Always_ReferenceAnExistingAttemptAndFile()
     {
-        var attemptIds = Ids(_files.Rows(_files.Insights, "ingestAttempts"));
-        var fileIds = Ids(_files.Rows(_files.Document, "fileRefs"));
-        var drafts = new[] { "machineDrafts", "metricDefinitionDrafts", "statusDefinitionDrafts" }
-            .SelectMany(name => _files.Rows(_files.Core, name))
+        var attemptIds = Ids(_files.Rows(_files.Insights, name: "ingestAttempts"));
+        var fileIds = Ids(_files.Rows(_files.Document, name: "fileRefs"));
+        var drafts = _files.Rows(_files.Core, name: "machineDrafts")
+            .Concat(_files.Rows(_files.Telemetry, name: "metricDefinitionDrafts"))
+            .Concat(_files.Rows(_files.Telemetry, name: "statusDefinitionDrafts"))
             .ToList();
 
-        var unknownAttempts = drafts.Select(draft => Text(draft, "attempt_id")).Where(id => !attemptIds.Contains(id));
-        var unknownFiles = drafts.Select(draft => Text(draft, "file_id")).Where(id => !fileIds.Contains(id));
+        var unknownAttempts = drafts.Select(draft => Text(draft, name: "attempt_id"))
+            .Where(id => !attemptIds.Contains(id));
+        var unknownFiles = drafts.Select(draft => Text(draft, name: "file_id")).Where(id => !fileIds.Contains(id));
 
         unknownAttempts.Should().BeEmpty();
         unknownFiles.Should().BeEmpty();
     }
 
     [Fact]
+    public void CoreFile_Always_HoldsNoMetricOrStatusDraftRows()
+    {
+        var names = _files.Core.EnumerateObject().Select(property => property.Name);
+
+        names.Should().BeEquivalentTo("referenceTime", "machineDrafts");
+    }
+
+    [Fact]
+    public void DefinitionDrafts_Always_NameTheMachineDraftOfTheirProposalEntry()
+    {
+        var machineDraftIds = Ids(_files.Rows(_files.Core, name: "machineDrafts"));
+        var entryIds = _files.Rows(_files.Telemetry, name: "metricDefinitionDrafts")
+            .Concat(_files.Rows(_files.Telemetry, name: "statusDefinitionDrafts"))
+            .Select(draft => Text(draft, name: "proposal_entry_id"));
+
+        entryIds.Where(id => !machineDraftIds.Contains(id)).Should().BeEmpty();
+    }
+
+    [Fact]
     public void Attempts_Always_ReferenceAnExistingFile()
     {
-        var fileIds = Ids(_files.Rows(_files.Document, "fileRefs"));
-        var attempts = _files.Rows(_files.Insights, "ingestAttempts");
+        var fileIds = Ids(_files.Rows(_files.Document, name: "fileRefs"));
+        var attempts = _files.Rows(_files.Insights, name: "ingestAttempts");
 
-        attempts.Select(attempt => Text(attempt, "file_id")).Where(id => !fileIds.Contains(id)).Should().BeEmpty();
+        attempts.Select(attempt => Text(attempt, name: "file_id"))
+            .Where(id => !fileIds.Contains(id))
+            .Should()
+            .BeEmpty();
     }
 
     [Fact]
     public void Chunks_Always_ReferenceAnExistingDocument()
     {
-        var documentIds = Ids(_files.Rows(_files.Insights, "ingestedDocuments"));
-        var chunks = _files.Rows(_files.Insights, "documentChunks");
+        var documentIds = Ids(_files.Rows(_files.Insights, name: "ingestedDocuments"));
+        var chunks = _files.Rows(_files.Insights, name: "documentChunks");
 
-        chunks.Select(chunk => Text(chunk, "document_id")).Where(id => !documentIds.Contains(id)).Should().BeEmpty();
+        chunks.Select(chunk => Text(chunk, name: "document_id"))
+            .Where(id => !documentIds.Contains(id))
+            .Should()
+            .BeEmpty();
     }
 
     [Fact]
     public void Embeddings_Always_MatchTheChunksOneToOne()
     {
-        var chunkIds = Ids(_files.Rows(_files.Insights, "documentChunks"));
-        var embeddingKeys = _files.Embeddings.GetProperty("embeddings")
+        var chunkIds = Ids(_files.Rows(_files.Insights, name: "documentChunks"));
+        var embeddingKeys = _files.Embeddings.GetProperty(propertyName: "embeddings")
             .EnumerateObject()
             .Select(property => property.Name)
             .ToHashSet();
@@ -99,7 +127,7 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     [Fact]
     public void Embeddings_Always_DecodeToUnitVectorsOf1536Values()
     {
-        var vectors = _files.Embeddings.GetProperty("embeddings")
+        var vectors = _files.Embeddings.GetProperty(propertyName: "embeddings")
             .EnumerateObject()
             .Select(property => Describe(property.Value.GetString()!))
             .ToList();
@@ -111,10 +139,11 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     [Fact]
     public void FileRefs_Always_HaveTheSha256OfTheirFile()
     {
-        var mismatches = _files.Rows(_files.Document, "fileRefs")
-            .Where(row => Text(row, "sha256") != Sha256(
-                _files.FilePath(Text(row, "file_name"), Text(row, "extension"))))
-            .Select(row => Text(row, "file_name"));
+        var mismatches = _files.Rows(_files.Document, name: "fileRefs")
+            .Where(row => Text(row, name: "sha256")
+                != Sha256(
+                    _files.FilePath(Text(row, name: "file_name"), Text(row, name: "extension"))))
+            .Select(row => Text(row, name: "file_name"));
 
         mismatches.Should().BeEmpty();
     }
@@ -130,8 +159,8 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     [Fact]
     public void RowFiles_Always_HoldTheSameReferenceTime()
     {
-        var times = new[] { _files.Core, _files.Document, _files.Insights }
-            .Select(root => root.GetProperty("referenceTime").GetString())
+        var times = new[] { _files.Core, _files.Telemetry, _files.Document, _files.Insights }
+            .Select(root => root.GetProperty(propertyName: "referenceTime").GetString())
             .Distinct();
 
         times.Should().ContainSingle();
@@ -140,7 +169,7 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     public void Dispose() => _files.Dispose();
 
     private static HashSet<string> Ids(IEnumerable<JsonElement> rows) =>
-        rows.Select(row => Text(row, "id")).ToHashSet();
+        rows.Select(row => Text(row, name: "id")).ToHashSet();
 
     private static string Text(JsonElement row, string name) => row.GetProperty(name).GetString()!;
 

@@ -16,29 +16,26 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
     private readonly CoreApiFixture _fixture = fixture;
 
     [Fact]
-    public async Task Search_WithUpdateDraftAndTwoChildren_CountsThreePendingDrafts()
+    public async Task Search_WithTwoPendingUpdateDrafts_CountsTwoPendingDrafts()
     {
-        var encrypted = await _fixture.ArrangeMachineAsync(serialNumber: "COUNT-THREE");
+        var encrypted = await _fixture.ArrangeMachineAsync(serialNumber: "COUNT-TWO");
         var machineId = _fixture.IdEncryptor.Decrypt(encrypted);
         await _fixture.ArrangeMachineDraftAsync(machineId);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
+        await _fixture.ArrangeMachineDraftAsync(machineId);
 
         var counts = await ReadCountsAsync(AllBody);
 
-        counts[encrypted].Should().Be(expected: 3);
+        counts[encrypted].Should().Be(expected: 2);
     }
 
     [Fact]
-    public async Task Search_Always_LeavesDismissedAndAppliedDraftsOutOfTheCount()
+    public async Task Search_Always_LeavesDismissedDraftsOutOfTheCount()
     {
         var encrypted = await _fixture.ArrangeMachineAsync(serialNumber: "COUNT-STATES");
         var machineId = _fixture.IdEncryptor.Decrypt(encrypted);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        var dismissed = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        var applied = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
+        await _fixture.ArrangeMachineDraftAsync(machineId);
+        var dismissed = await _fixture.ArrangeMachineDraftAsync(machineId);
         await SendWriteAsync(DraftApiTestData.DismissPath(dismissed.EncryptedId));
-        await SendWriteAsync(DraftApiTestData.MarkAppliedPath, DraftApiTestData.MarkBody(applied.EncryptedId));
 
         var counts = await ReadCountsAsync(AllBody);
 
@@ -46,10 +43,10 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
     }
 
     [Fact]
-    public async Task Search_WithChildrenOfAPendingCreateDraft_DoesNotCountThem()
+    public async Task Search_WithAPendingCreateDraft_DoesNotCountItOnAnyMachine()
     {
         var encrypted = await _fixture.ArrangeMachineAsync(serialNumber: "COUNT-CREATE");
-        await _fixture.ArrangeMachineDraftAsync(hasChildren: true);
+        await _fixture.ArrangeMachineDraftAsync();
 
         var counts = await ReadCountsAsync(AllBody);
 
@@ -61,8 +58,7 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
     {
         var withDrafts = await _fixture.ArrangeMachineAsync(serialNumber: "FILTER-WITH");
         var withoutDrafts = await _fixture.ArrangeMachineAsync(serialNumber: "FILTER-WITHOUT");
-        await _fixture.ArrangeMetricDraftAsync(
-            _fixture.IdEncryptor.Decrypt(withDrafts), targetMachineDraftId: null);
+        await _fixture.ArrangeMachineDraftAsync(_fixture.IdEncryptor.Decrypt(withDrafts));
 
         var withCounts = await ReadCountsAsync(WithDraftsBody);
         var withoutCounts = await ReadCountsAsync(WithoutDraftsBody);

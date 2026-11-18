@@ -98,6 +98,8 @@ public static class RealmTestData
         "status-definitions:read",
         "status-definitions:write",
         "status-definitions:delete",
+        "definition-drafts:read",
+        "definition-drafts:write",
     ];
 
     public static IReadOnlyList<string> DocumentPermissions { get; } =

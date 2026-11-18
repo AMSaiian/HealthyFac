@@ -2,17 +2,20 @@ import { HttpClient, type HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
-import type {
-  ApplyMachineDraftBody,
-  ApplyMachineDraftResponse,
-  AttemptDrafts,
-  DismissMachineDraftsResponse,
-  MachineDraftResponse,
-  MachineDraftsPage,
-  SearchMachineDraftsBody,
+import {
+  type ApplyMachineDraftBody,
+  type ApplyMachineDraftResponse,
+  type AttemptDrafts,
+  type DismissMachineDraftsResponse,
+  DraftKind,
+  type MachineDraftResponse,
+  type MachineDraftsPage,
+  type SearchMachineDraftsBody,
 } from '@machines/drafts/draft';
 
 const CORE_URL = '/api/core/v1';
+const TELEMETRY_URL = '/api/telemetry/v1';
+const DEFINITION_DRAFTS_URL = `${TELEMETRY_URL}/definition-drafts`;
 const MACHINE_DRAFTS_URL = `${CORE_URL}/machine-drafts`;
 const DRAFTS_URL = `${CORE_URL}/drafts`;
 const MACHINES_URL = `${CORE_URL}/machines`;
@@ -21,7 +24,12 @@ const DRAFTS_SEGMENT = 'drafts';
 const SEARCH_SEGMENT = 'search';
 const APPLY_SEGMENT = 'apply';
 const DISMISS_SEGMENT = 'dismiss';
-const MARK_APPLIED_SEGMENT = 'mark-applied';
+
+/** The part of a draft that decides where its dismiss goes. */
+export interface DismissTarget {
+  readonly id: string;
+  readonly kind: DraftKind;
+}
 
 interface WriteOptions {
   readonly context?: HttpContext;
@@ -85,8 +93,10 @@ export class DraftsApi {
     );
   }
 
-  dismiss(draftId: string, options?: WriteOptions): Observable<void> {
-    return this._http.post<void>(`${DRAFTS_URL}/${encodeURIComponent(draftId)}/${DISMISS_SEGMENT}`, null, options);
+  /** Dismisses one draft: a machine draft in Core, a metric or status draft in Telemetry. */
+  dismiss(draft: DismissTarget, options?: WriteOptions): Observable<void> {
+    const baseUrl = draft.kind === DraftKind.Machine ? DRAFTS_URL : DEFINITION_DRAFTS_URL;
+    return this._http.post<void>(`${baseUrl}/${encodeURIComponent(draft.id)}/${DISMISS_SEGMENT}`, null, options);
   }
 
   /** Dismisses every pending draft that targets the machine, on all pages. */
@@ -96,9 +106,5 @@ export class DraftsApi {
       null,
       options,
     );
-  }
-
-  markApplied(ids: readonly string[], options?: WriteOptions): Observable<void> {
-    return this._http.post<void>(`${DRAFTS_URL}/${MARK_APPLIED_SEGMENT}`, { ids }, options);
   }
 }

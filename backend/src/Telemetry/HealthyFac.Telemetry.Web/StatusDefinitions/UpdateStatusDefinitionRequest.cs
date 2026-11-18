@@ -11,6 +11,7 @@ public record UpdateStatusDefinitionRequest
     public required string Code { get; init; }
     public required StatusSeverity? Severity { get; init; }
     public string? Description { get; init; }
+    public Guid? DraftId { get; init; }
 }
 
 public static class UpdateStatusDefinitionRequestExtensions
@@ -31,6 +32,7 @@ public static class UpdateStatusDefinitionRequestExtensions
                 Code = request.Code,
                 Severity = request.Severity,
                 Description = request.Description,
+                DraftId = request.DraftId,
             };
     }
 }

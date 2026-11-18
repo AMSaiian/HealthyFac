@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Application.Persistence;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.MetricUnits;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace HealthyFac.Telemetry.Application;
 
@@ -23,6 +25,12 @@ public interface ITelemetryDbContext : ITransactionalDbContext
 
     DbSet<MetricSchemaRevision> MetricSchemaRevisions { get; }
 
+    DbSet<ProposalEntry> ProposalEntries { get; }
+
+    DbSet<MetricDefinitionDraft> MetricDefinitionDrafts { get; }
+
+    DbSet<StatusDefinitionDraft> StatusDefinitionDrafts { get; }
+
     DbSet<ReceivedMessage> ReceivedMessages { get; }
 
     DbSet<NumericReading> NumericReadings { get; }
@@ -34,6 +42,9 @@ public interface ITelemetryDbContext : ITransactionalDbContext
     DbSet<QuantityKind> QuantityKinds { get; }
 
     DbSet<MeasurementUnit> MeasurementUnits { get; }
+
+    EntityEntry<TEntity> Entry<TEntity>(TEntity entity)
+        where TEntity : class;
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

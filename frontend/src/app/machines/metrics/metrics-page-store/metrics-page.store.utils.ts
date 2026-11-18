@@ -117,7 +117,8 @@ function isStateSet(value: MetricFormValue): boolean {
   return value.valueKind === MetricValueKind.StateSet;
 }
 
-function toCreated(value: MetricFormValue): CreatedMetricDefinition {
+function toCreated(item: MetricItem): CreatedMetricDefinition {
+  const value = item.value;
   return {
     key: value.key,
     name: value.name.trim(),
@@ -127,6 +128,7 @@ function toCreated(value: MetricFormValue): CreatedMetricDefinition {
     min: isNumeric(value) ? value.min : null,
     max: isNumeric(value) ? value.max : null,
     states: isStateSet(value) ? value.states : null,
+    draftId: item.draftId,
   };
 }
 
@@ -138,13 +140,14 @@ function toUpdated(item: MetricItem): UpdatedMetricDefinition {
     min: isNumeric(item.value) ? item.value.min : null,
     max: isNumeric(item.value) ? item.value.max : null,
     states: isStateSet(item.value) ? item.value.states : null,
+    draftId: item.draftId,
   };
 }
 
 export function toApplyBody(expectedRevision: number, changes: MetricChanges): ApplyMetricDefinitionsBody {
   return {
     expectedRevision,
-    created: changes.created.map((item) => toCreated(item.value)),
+    created: changes.created.map(toCreated),
     updated: changes.updated.map(toUpdated),
     deleted: changes.deleted.map((item) => item.savedId ?? ''),
   };
@@ -321,13 +324,6 @@ export function stageMetricDrafts(
     }
   }
   return { items: staged, newCount: count };
-}
-
-/** The draft IDs of the staged items that an apply sends (new and changed items, not deleted ones). */
-export function appliedDraftIds(changes: MetricChanges): string[] {
-  return [...changes.created, ...changes.updated]
-    .map((item) => item.draftId)
-    .filter((draftId): draftId is string => draftId !== null);
 }
 
 /** The open form: the item that it edits, or `null` for a new metric. */

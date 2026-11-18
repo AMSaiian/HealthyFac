@@ -113,7 +113,7 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
-    public async Task DeleteMachine_WithPendingAndAppliedDrafts_DismissesOnlyThePendingOnes()
+    public async Task DeleteMachine_WithAPendingMachineDraft_DismissesIt()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeMachineAsync(tenant);
@@ -122,13 +122,8 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metrics = await _fixture.LoadMetricDraftsAsync();
-        var statuses = await _fixture.LoadStatusDraftsAsync();
 
         machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
-        metrics.Single(draft => draft.Key == DraftTestData.PendingKey).State.Should().Be(DraftState.Dismissed);
-        metrics.Single(draft => draft.Key == DraftTestData.AppliedKey).State.Should().Be(DraftState.Applied);
-        statuses.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
     }
 
     [Fact]

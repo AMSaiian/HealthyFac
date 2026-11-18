@@ -22,14 +22,13 @@ public sealed class DraftScopeValidatorTests
             CompanyId = CompanyId,
             MachineId = machineId,
             AttemptId = attemptId,
-            Offset = 0,
             Limit = 25,
             Filter = new MachineDraftGridFilter(),
         };
 
         var result = new SearchMachineDraftsRequestValidator().Validate(request);
 
-        result.IsValid.Should().Be(isValid, because: caseName);
+        result.IsValid.Should().Be(isValid, caseName);
     }
 
     [Theory]
@@ -50,6 +49,6 @@ public sealed class DraftScopeValidatorTests
 
         var result = new DismissMachineDraftsRequestValidator().Validate(request);
 
-        result.IsValid.Should().Be(isValid, because: caseName);
+        result.IsValid.Should().Be(isValid, caseName);
     }
 }

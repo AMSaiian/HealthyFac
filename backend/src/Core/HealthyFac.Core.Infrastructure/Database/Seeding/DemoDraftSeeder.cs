@@ -11,9 +11,9 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 
 /// <summary>
-/// Creates the demo drafts of the ingest snapshot from <c>core.json</c>: the machine drafts, the metric drafts, and
-/// the status drafts, all pending. The rows belong to the test company and are created as the test supervisor. The
-/// seeder skips a draft whose ID exists, a deleted one too, so a restart adds nothing.
+/// Creates the demo machine drafts of the ingest snapshot from <c>core.json</c>, all pending (Telemetry seeds the
+/// metric and status drafts). The rows belong to the test company and are created as the test supervisor. The seeder
+/// skips a draft whose ID exists, a deleted one too, so a restart adds nothing.
 /// </summary>
 /// <remarks>
 /// One <c>SaveChangesAsync</c> stores every row. The seeder adds no outbox row: the drafts come from the ingest in
@@ -67,31 +67,11 @@ public sealed class DemoDraftSeeder(
             .Where(draft => machineIds.Contains(draft.Id))
             .Select(draft => draft.Id)
             .ToListAsync(cancellationToken);
-        var metricIds = seedFile.MetricDefinitionDrafts.Select(row => row.Id).ToList();
-        var existingMetricIds = await dbContext.MetricDefinitionDrafts
-            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .Where(draft => metricIds.Contains(draft.Id))
-            .Select(draft => draft.Id)
-            .ToListAsync(cancellationToken);
-        var statusIds = seedFile.StatusDefinitionDrafts.Select(row => row.Id).ToList();
-        var existingStatusIds = await dbContext.StatusDefinitionDrafts
-            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .Where(draft => statusIds.Contains(draft.Id))
-            .Select(draft => draft.Id)
-            .ToListAsync(cancellationToken);
 
         dbContext.MachineDrafts.AddRange(
             seedFile.MachineDrafts
                 .Where(row => !existingMachineIds.Contains(row.Id))
                 .Select(row => ToMachineDraft(row, tenant.CompanyId, shift)));
-        dbContext.MetricDefinitionDrafts.AddRange(
-            seedFile.MetricDefinitionDrafts
-                .Where(row => !existingMetricIds.Contains(row.Id))
-                .Select(row => ToMetricDraft(row, tenant.CompanyId)));
-        dbContext.StatusDefinitionDrafts.AddRange(
-            seedFile.StatusDefinitionDrafts
-                .Where(row => !existingStatusIds.Contains(row.Id))
-                .Select(row => ToStatusDraft(row, tenant.CompanyId)));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -107,66 +87,6 @@ public sealed class DemoDraftSeeder(
             row.Name,
             row.SerialNumber,
             row.Description);
-
-    private static MetricDefinitionDraft ToMetricDraft(DemoMetricDraftRow row, Guid companyId)
-    {
-        var values = new MetricDraftValues
-        {
-            SourceLocation = row.SourceLocation,
-            Key = row.Key,
-            Name = row.Name,
-            Description = row.Description,
-            ValueKind = row.ValueKind,
-            QuantityKindName = row.QuantityKindName,
-            UnitName = row.UnitName,
-            Min = row.Min,
-            Max = row.Max,
-            States = row.States,
-        };
-
-        return row.TargetMachineDraftId is { } machineDraftId
-            ? MetricDefinitionDraft.ForMachineDraft(
-                row.Id,
-                companyId,
-                row.AttemptId,
-                row.FileId,
-                machineDraftId,
-                values)
-            : MetricDefinitionDraft.ForMachine(
-                row.Id,
-                companyId,
-                row.AttemptId,
-                row.FileId,
-                row.TargetMachineId!.Value,
-                values);
-    }
-
-    private static StatusDefinitionDraft ToStatusDraft(DemoStatusDraftRow row, Guid companyId)
-    {
-        var values = new StatusDraftValues
-        {
-            SourceLocation = row.SourceLocation,
-            Code = row.Code,
-            Severity = row.Severity,
-            Description = row.Description,
-        };
-
-        return row.TargetMachineDraftId is { } machineDraftId
-            ? StatusDefinitionDraft.ForMachineDraft(
-                row.Id,
-                companyId,
-                row.AttemptId,
-                row.FileId,
-                machineDraftId,
-                values)
-            : StatusDefinitionDraft.ForMachine(
-                row.Id,
-                companyId,
-                row.AttemptId,
-                row.FileId,
-                row.TargetMachineId!.Value,
-                values);
-    }
 
     private async Task<DemoDraftSeedFile> ReadSeedFileAsync(CancellationToken cancellationToken)
     {

@@ -7,6 +7,7 @@ using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Application.MetricSchemas;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
@@ -43,6 +44,9 @@ public record ApplyMetricDefinitionChangesResponse
 /// <summary>A new metric definition. The key, the value kind, and the unit are fixed from now on.</summary>
 public record CreatedMetricDefinition
 {
+    /// <summary>The metric draft that this definition applies, or <see langword="null"/>.</summary>
+    public Guid? DraftId { get; init; }
+
     public required string Key { get; init; }
 
     public required string Name { get; init; }
@@ -64,6 +68,9 @@ public record CreatedMetricDefinition
 public record UpdatedMetricDefinition
 {
     public required Guid Id { get; init; }
+
+    /// <summary>The metric draft that this change applies, or <see langword="null"/>.</summary>
+    public Guid? DraftId { get; init; }
 
     public required string Name { get; init; }
 
@@ -260,7 +267,9 @@ public sealed class ApplyMetricDefinitionChangesPreHandlerCheck(
 
 /// <summary>
 /// Applies the staged changes of the metric definitions of a machine in one save: the created, updated, and deleted
-/// definitions, the raised revision number of the registration, and the new schema revision.
+/// definitions, the raised revision number of the registration, and the new schema revision. A request that changes no
+/// definition (only equal updates that mark drafts) raises no revision and stores no schema revision; it still marks
+/// the drafts and returns the current revision.
 /// </summary>
 /// <remarks>
 /// A stale <c>ExpectedRevision</c> is a conflict, and the row version of the registration catches a parallel apply
@@ -274,9 +283,11 @@ public sealed class ApplyMetricDefinitionChangesPreHandlerCheck(
 public sealed class ApplyMetricDefinitionChangesRequestHandler(
     ITelemetryDbContext dbContext,
     TimeProvider timeProvider,
-    IMetricSchemaGenerator metricSchemaGenerator
+    IMetricSchemaGenerator metricSchemaGenerator,
+    AppliedDraftMarker draftMarker
 ) : IRequestHandler<ApplyMetricDefinitionChangesRequest, ApplyMetricDefinitionChangesResponse>
 {
+    private readonly AppliedDraftMarker _draftMarker = draftMarker;
     private readonly ITelemetryDbContext _dbContext = dbContext;
     private readonly IMetricSchemaGenerator _metricSchemaGenerator = metricSchemaGenerator;
     private readonly TimeProvider _timeProvider = timeProvider;
@@ -328,25 +339,42 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             .Select((metric, index) => CreateDefinition(registration.Id, metric, index, units))
             .ToList();
 
-        foreach (var (updated, index) in request.Updated.Select((updated, index) => (updated, index)))
-        {
-            UpdateDefinition(definitions.Single(metric => metric.Id == updated.Id), updated, index);
-        }
+        var updateResults = request.Updated
+            .Select((updated, index) => UpdateDefinition(
+                definitions.Single(metric => metric.Id == updated.Id),
+                updated,
+                index))
+            .ToList();
+        var isSchemaChanged = created.Count > 0 || request.Deleted.Count > 0 || updateResults.Contains(item: true);
 
         var deleted = definitions.Where(metric => request.Deleted.Contains(metric.Id)).ToList();
         _dbContext.MetricDefinitions.RemoveRange(deleted);
         _dbContext.MetricDefinitions.AddRange(created);
 
-        var revision = registration.AdvanceMetricSchemaRevision();
-        var active = definitions.Except(deleted).Concat(created).ToList();
-        var schemaMetrics = active.Select(metric => ToSchemaMetric(metric, units)).ToList();
+        if (isSchemaChanged)
+        {
+            var revision = registration.AdvanceMetricSchemaRevision();
+            var active = definitions.Except(deleted).Concat(created).ToList();
+            var schemaMetrics = active.Select(metric => ToSchemaMetric(metric, units)).ToList();
 
-        _dbContext.MetricSchemaRevisions.Add(
-            new MetricSchemaRevision(
-                registration.Id,
-                revision,
-                _metricSchemaGenerator.Generate(registration.GatewayId, revision, schemaMetrics),
-                _timeProvider.GetUtcNow().UtcDateTime));
+            _dbContext.MetricSchemaRevisions.Add(
+                new MetricSchemaRevision(
+                    registration.Id,
+                    revision,
+                    _metricSchemaGenerator.Generate(registration.GatewayId, revision, schemaMetrics),
+                    _timeProvider.GetUtcNow().UtcDateTime));
+        }
+
+        await _draftMarker.MarkMetricDraftsAsync(
+            request.CompanyId,
+            request.MachineId,
+            request.Created
+                .Select((metric, index) => (metric.DraftId, Path: $"created[{index}].draftId"))
+                .Concat(request.Updated.Select((metric, index) => (metric.DraftId, Path: $"updated[{index}].draftId")))
+                .Where(reference => reference.DraftId is not null)
+                .Select(reference => new DraftReference { Path = reference.Path, DraftId = reference.DraftId!.Value })
+                .ToList(),
+            cancellationToken);
 
         try
         {
@@ -357,7 +385,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             throw new ConflictException(MetricDefinitionErrors.RevisionStale, exception);
         }
 
-        return new ApplyMetricDefinitionChangesResponse { Revision = revision };
+        return new ApplyMetricDefinitionChangesResponse { Revision = registration.MetricSchemaRevision };
     }
 
     private static MetricDefinition CreateDefinition(
@@ -407,7 +435,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             : found;
     }
 
-    private static void UpdateDefinition(MetricDefinition definition, UpdatedMetricDefinition updated, int index)
+    private static bool UpdateDefinition(MetricDefinition definition, UpdatedMetricDefinition updated, int index)
     {
         if (definition.ValueKind != MetricValueKind.Numeric && (updated.Min is not null || updated.Max is not null))
         {
@@ -424,7 +452,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             throw Rejected($"updated[{index}].states", MetricDefinitionErrors.StatesNotAllowed);
         }
 
-        definition.Update(updated.Name, updated.Description, updated.Min, updated.Max, updated.States);
+        return definition.Update(updated.Name, updated.Description, updated.Min, updated.Max, updated.States);
     }
 
     private static MetricSchema ToSchemaMetric(MetricDefinition metric, IReadOnlyList<MeasurementUnit> units)

@@ -102,6 +102,35 @@ public sealed class MetricDefinitionTests
         metric.MeasurementUnitId.Should().Be(MetricDefinitionTestData.CelsiusUnit.Id);
     }
 
+    [Theory]
+    [MemberData(nameof(MetricDefinitionTestData.NumericUpdates), MemberType = typeof(MetricDefinitionTestData))]
+    public void Update_OfNumericMetric_ReturnsWhetherAnyValueDiffers(
+        string caseName,
+        string name,
+        string? description,
+        double? min,
+        double? max,
+        bool isChanged
+    )
+    {
+        var metric = MetricDefinitionTestData.CreateNumeric(min: 0, max: 100);
+
+        var result = metric.Update(name, description, min, max, states: null);
+
+        result.Should().Be(isChanged, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(MetricDefinitionTestData.StateSetUpdates), MemberType = typeof(MetricDefinitionTestData))]
+    public void Update_OfStateSetMetric_ReturnsWhetherTheStatesDiffer(string caseName, string[] states, bool isChanged)
+    {
+        var metric = MetricDefinitionTestData.CreateStateSet();
+
+        var result = metric.Update(metric.Name, description: null, min: null, max: null, states);
+
+        result.Should().Be(isChanged, caseName);
+    }
+
     [Fact]
     public void Update_WithRangeOfEqualBounds_Throws()
     {

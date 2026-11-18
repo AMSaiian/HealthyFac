@@ -1,5 +1,5 @@
 import type { SetFilterBody } from '@shared/grid/requests/grid-filters';
-import type { GridPage, GridQueryState, GridRequestBody, GridSort } from '@shared/grid/requests/grid-request';
+import type { GridQueryState, GridSort, KeysetGridRequestBody, KeysetPage } from '@shared/grid/requests/grid-request';
 
 export enum DraftKind {
   Machine = 'machine',
@@ -8,6 +8,8 @@ export enum DraftKind {
 }
 
 export enum DraftState {
+  /** A metric or status draft that waits for the machine check of its proposal. It has no target yet. */
+  AwaitingTarget = 'awaitingTarget',
   Pending = 'pending',
   Applied = 'applied',
   Dismissed = 'dismissed',
@@ -128,7 +130,7 @@ export interface MachineDraftGridItem {
   readonly machineName: string | null;
 }
 
-export type MachineDraftsPage = GridPage<MachineDraftGridItem>;
+export type MachineDraftsPage = KeysetPage<MachineDraftGridItem>;
 
 export type MachineDraftSort = GridSort<DraftSortColumn>;
 
@@ -144,4 +146,4 @@ export interface MachineDraftFilterBody {
   readonly states?: SetFilterBody<DraftState>;
 }
 
-export type SearchMachineDraftsBody = GridRequestBody<MachineDraftFilterBody, DraftSortColumn>;
+export type SearchMachineDraftsBody = KeysetGridRequestBody<MachineDraftFilterBody, DraftSortColumn>;

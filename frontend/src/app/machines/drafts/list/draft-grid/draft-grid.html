@@ -11,7 +11,10 @@
   [lazyLoadOnInit]="false"
   [paginator]="true"
   [rows]="limit()"
-  [first]="offset()"
+  [first]="grid.paginator().first ?? 0"
+  [showPageLinks]="grid.paginator().showPageLinks"
+  [showFirstLastIcon]="grid.paginator().showFirstLastIcon"
+  [showJumpToPageDropdown]="grid.paginator().showJumpToPageDropdown"
   [totalRecords]="totalCount()"
   [rowsPerPageOptions]="pageSizes"
   [showCurrentPageReport]="true"
@@ -189,7 +192,7 @@
       <td>
         @if (grid.showSkeleton()) {
           <p-skeleton />
-        } @else if (canWrite() && isPending(draft)) {
+        } @else if (canWrite() && isOpen(draft)) {
           <button
             pButton
             [pTooltip]="'ACTIONS.ROW_ACTIONS' | translate"

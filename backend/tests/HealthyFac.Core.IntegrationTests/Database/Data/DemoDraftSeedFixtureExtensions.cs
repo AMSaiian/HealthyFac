@@ -63,12 +63,6 @@ public static class DemoDraftSeedFixtureExtensions
                 Machines = await dbContext.MachineDrafts.AsNoTracking()
                     .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                     .ToListAsync(),
-                Metrics = await dbContext.MetricDefinitionDrafts.AsNoTracking()
-                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-                    .ToListAsync(),
-                Statuses = await dbContext.StatusDefinitionDrafts.AsNoTracking()
-                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-                    .ToListAsync(),
             };
         }
 
@@ -94,6 +88,4 @@ public static class DemoDraftSeedFixtureExtensions
 public sealed record DemoDrafts
 {
     public required IReadOnlyList<MachineDraft> Machines { get; init; }
-    public required IReadOnlyList<MetricDefinitionDraft> Metrics { get; init; }
-    public required IReadOnlyList<StatusDefinitionDraft> Statuses { get; init; }
 }

@@ -2,7 +2,7 @@ using HealthyFac.Core.Application.Drafts;
 using HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,7 +12,6 @@ using ApplicationDismissDraftRequest = HealthyFac.Core.Application.Drafts.Dismis
 using ApplicationDismissMachineDraftsRequest = HealthyFac.Core.Application.Drafts.DismissMachineDraftsRequest;
 using ApplicationGetAttemptDraftsRequest = HealthyFac.Core.Application.Drafts.GetAttemptDraftsRequest;
 using ApplicationGetMachineDraftRequest = HealthyFac.Core.Application.Drafts.GetMachineDraftRequest;
-using ApplicationMarkDraftsAppliedRequest = HealthyFac.Core.Application.Drafts.MarkDraftsAppliedRequest;
 using ApplicationSearchMachineDraftsRequest =
     HealthyFac.Core.Application.Drafts.SearchMachineDrafts.SearchMachineDraftsRequest;
 
@@ -57,18 +56,16 @@ public static class DraftEndpoints
             var drafts = app.MapGroup(DraftRoutes.DraftBaseRoute);
             drafts.MapPost(DraftRoutes.Dismiss, DismissAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Write);
-            drafts.MapPost(DraftRoutes.MarkApplied, MarkAppliedAsync)
-                .RequireAuthorization(CorePermissions.Drafts.Write);
 
             return app;
         }
     }
 
-    private static async Task<Ok<GridResponse<MachineDraftGridItem>>> SearchMachineDraftsAsync(
+    private static async Task<Ok<KeysetGridResponse<MachineDraftGridItem>>> SearchMachineDraftsAsync(
         [FromRoute(Name = DraftRoutes.MachineIdParameter)] string machineId,
         SearchMachineDraftsRequest request,
         ICurrentUserProvider currentUser,
-        IRequestHandler<ApplicationSearchMachineDraftsRequest, GridResponse<MachineDraftGridItem>> handler,
+        IRequestHandler<ApplicationSearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )
@@ -80,11 +77,11 @@ public static class DraftEndpoints
         return TypedResults.Ok(response);
     }
 
-    private static async Task<Ok<GridResponse<MachineDraftGridItem>>> SearchAttemptDraftsAsync(
+    private static async Task<Ok<KeysetGridResponse<MachineDraftGridItem>>> SearchAttemptDraftsAsync(
         [FromRoute(Name = DraftRoutes.AttemptIdParameter)] string attemptId,
         SearchMachineDraftsRequest request,
         ICurrentUserProvider currentUser,
-        IRequestHandler<ApplicationSearchMachineDraftsRequest, GridResponse<MachineDraftGridItem>> handler,
+        IRequestHandler<ApplicationSearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )
@@ -175,18 +172,6 @@ public static class DraftEndpoints
         await handler.HandleAsync(
             request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
             cancellationToken);
-
-        return TypedResults.NoContent();
-    }
-
-    private static async Task<NoContent> MarkAppliedAsync(
-        MarkDraftsAppliedRequest request,
-        ICurrentUserProvider currentUser,
-        IRequestHandler<ApplicationMarkDraftsAppliedRequest> handler,
-        CancellationToken cancellationToken
-    )
-    {
-        await handler.HandleAsync(request.ToApplicationRequest(currentUser.GetCompanyId()), cancellationToken);
 
         return TypedResults.NoContent();
     }

@@ -15,7 +15,7 @@ import { MetricDefinitionsApi } from '@machines/metrics/metric-definitions-api';
 import { MetricUnitsApi } from '@machines/metrics/metric-units-api';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 
-const EMPTY_PAGE: MachineDraftsPage = { items: [], totalCount: 0 };
+const EMPTY_PAGE: MachineDraftsPage = { items: [], totalCount: 0, nextPosition: null };
 
 @Component({
   imports: [ActionDialog, ButtonDirective, DraftGrid, Tooltip, TranslatePipe],

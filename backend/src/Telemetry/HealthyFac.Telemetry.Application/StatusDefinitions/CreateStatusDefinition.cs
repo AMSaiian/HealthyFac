@@ -5,8 +5,10 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Telemetry.Application.StatusDefinitions;
 
@@ -21,6 +23,9 @@ public record CreateStatusDefinitionRequest : IRequest<CreateStatusDefinitionRes
     public required StatusSeverity? Severity { get; init; }
 
     public string? Description { get; init; }
+
+    /// <summary>The status draft that this definition applies, or <see langword="null"/>.</summary>
+    public Guid? DraftId { get; init; }
 }
 
 public record CreateStatusDefinitionResponse
@@ -84,10 +89,12 @@ public sealed class CreateStatusDefinitionPreHandlerCheck(
 /// unique index on the machine and the code is the only guard, and the handler maps its failure to the conflict.
 /// </remarks>
 /// <param name="dbContext">Saves the status definition.</param>
-public class CreateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext)
+/// <param name="draftMarker">Marks the named draft as applied in the same save.</param>
+public class CreateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext, AppliedDraftMarker draftMarker)
     : IRequestHandler<CreateStatusDefinitionRequest, CreateStatusDefinitionResponse>
 {
     private readonly ITelemetryDbContext _dbContext = dbContext;
+    private readonly AppliedDraftMarker _draftMarker = draftMarker;
 
     public async Task<CreateStatusDefinitionResponse> HandleAsync(
         CreateStatusDefinitionRequest request,
@@ -98,6 +105,15 @@ public class CreateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext)
 
         _dbContext.StatusDefinitions.Add(status);
 
+        if (request.DraftId is { } draftId)
+        {
+            await _draftMarker.MarkStatusDraftsAsync(
+                request.CompanyId,
+                request.MachineId,
+                [new DraftReference { Path = AppliedDraftMarker.SingleDraftPath, DraftId = draftId }],
+                cancellationToken);
+        }
+
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -105,6 +121,10 @@ public class CreateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext)
         catch (UniqueConstraintException exception)
         {
             throw new ConflictException(StatusDefinitionErrors.CodeTaken, exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException(DefinitionDraftErrors.DraftChanged, exception);
         }
 
         return new CreateStatusDefinitionResponse { Id = status.Id };

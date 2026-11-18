@@ -20,6 +20,12 @@ public static class GatewayProblemDetailsConstants
         public const string Detail = "The request body is larger than the limit of the route.";
     }
 
+    public static class ValidationFailed
+    {
+        public const string Title = "One or more validation errors occurred.";
+        public const string TypeUrl = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+    }
+
     public static class Unauthorized
     {
         public const string Title = "Unauthorized";

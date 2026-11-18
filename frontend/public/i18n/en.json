@@ -567,6 +567,7 @@
       "STATUS": "Status"
     },
     "STATES": {
+      "AWAITING_TARGET": "Awaiting machine check",
       "PENDING": "Pending",
       "APPLIED": "Applied",
       "DISMISSED": "Dismissed"
@@ -584,6 +585,7 @@
     "DISMISS_SELECTED_MESSAGE": "Dismiss the {{count}} selected drafts? It cannot be undone",
     "DISMISS_ALL_MESSAGE": "Dismiss all {{count}} pending drafts of this machine? It cannot be undone",
     "REVIEW_AFTER_MACHINE": "Review the machine draft first",
+    "REVIEW_AWAITING_TARGET": "The machine check of this proposal is not done yet",
     "TOOLTIPS": {
       "REVIEW": "Review the draft",
       "APPLY": "Apply the draft",
@@ -646,15 +648,10 @@
       "MISSING": "The draft does not exist any more",
       "CREATED": "The status is created",
       "UPDATED": "The status is updated",
-      "CODE_TAKEN": "A status with this code exists already",
-      "MARK_FAILED": "The status is saved, but the draft stays pending. Review it again"
-    },
-    "METRICS": {
-      "MARK_FAILED": "The metrics are saved, but the drafts stay pending. Review them again"
+      "CODE_TAKEN": "A status with this code exists already"
     },
     "CONFLICTS": {
       "DRAFT_NOT_PENDING": "The draft is not pending any more. The list is loaded again",
-      "MACHINE_DRAFT_NOT_APPLIED": "Apply the machine draft first",
       "DRAFT_CHANGED": "The draft or the machine changed. Reload it and try again"
     },
     "QUICK": {

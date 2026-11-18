@@ -15,6 +15,11 @@ public static class MachineErrors
     public const string MachineNotFound = "The machine does not exist.";
     public const string SerialNumberTaken = "A machine with this serial number already exists.";
     public const string MachineChanged = "The machine changed. Reload it and try again.";
+    public const string MachineIdsRequired = "The list of machine IDs is required.";
+    public const string MachineDraftIdsRequired = "The list of machine draft IDs is required.";
+
+    public static readonly string NameLookupTooManyIds =
+        $"A name lookup accepts at most {MachineValidationConstants.NameLookupMaxIds} IDs of one kind.";
 
     public const string ExpectedGoLiveOnBeforeToday =
         "The expected go-live date must be today or later in the company time zone.";

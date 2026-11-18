@@ -61,6 +61,7 @@
     <Project Path="tests/HealthyFac.Document.IntegrationTests/HealthyFac.Document.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Document.UnitTests/HealthyFac.Document.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Gateway.IntegrationTests/HealthyFac.Gateway.IntegrationTests.csproj" />
+    <Project Path="tests/HealthyFac.Gateway.UnitTests/HealthyFac.Gateway.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Core.IntegrationTests/HealthyFac.Core.IntegrationTests.csproj" />
     <Project Path="tests/HealthyFac.Core.UnitTests/HealthyFac.Core.UnitTests.csproj" />
     <Project Path="tests/HealthyFac.Identity.IntegrationTests/HealthyFac.Identity.IntegrationTests.csproj" />

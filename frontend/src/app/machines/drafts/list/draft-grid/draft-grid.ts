@@ -50,12 +50,14 @@ const KIND_KEYS: Readonly<Record<DraftKind, string>> = {
 };
 
 const STATE_KEYS: Readonly<Record<DraftState, string>> = {
+  [DraftState.AwaitingTarget]: 'DRAFTS.STATES.AWAITING_TARGET',
   [DraftState.Pending]: 'DRAFTS.STATES.PENDING',
   [DraftState.Applied]: 'DRAFTS.STATES.APPLIED',
   [DraftState.Dismissed]: 'DRAFTS.STATES.DISMISSED',
 };
 
-const STATE_SEVERITIES: Readonly<Record<DraftState, 'info' | 'success' | 'secondary'>> = {
+const STATE_SEVERITIES: Readonly<Record<DraftState, 'info' | 'success' | 'secondary' | 'warn'>> = {
+  [DraftState.AwaitingTarget]: 'warn',
   [DraftState.Pending]: 'info',
   [DraftState.Applied]: 'success',
   [DraftState.Dismissed]: 'secondary',
@@ -106,7 +108,8 @@ export class DraftGrid {
   readonly totalCount = input(0);
   readonly isLoading = input(false);
   readonly hasLoaded = input(false);
-  readonly offset = input(0);
+  /** The 0-based page that the store shows. A keyset grid has no offset. */
+  readonly pageIndex = input(0);
   readonly limit = input(DEFAULT_PAGE_SIZE);
   readonly sort = input<MachineDraftSort | null>(null);
   readonly filter = input<MachineDraftFilter>({ kinds: [], states: [] });
@@ -122,7 +125,9 @@ export class DraftGrid {
   readonly applyRequested = output<MachineDraftGridItem>();
   readonly filterChange = output<Partial<MachineDraftFilter>>();
   readonly sortChange = output<MachineDraftSort | null>();
-  readonly pageChange = output<{ offset: number; limit: number }>();
+  readonly nextPageRequested = output();
+  readonly previousPageRequested = output();
+  readonly limitChange = output<number>();
   readonly reviewRequested = output<MachineDraftGridItem>();
   readonly dismissRequested = output<MachineDraftGridItem>();
   readonly selectionToggled = output<{ item: MachineDraftGridItem; isChecked: boolean }>();
@@ -162,7 +167,13 @@ export class DraftGrid {
     labelKeys: COLUMN_LABEL_KEYS,
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
-    pageChange: (page) => this.pageChange.emit(page),
+    pageChange: () => undefined,
+    keyset: {
+      pageIndex: this.pageIndex,
+      next: () => this.nextPageRequested.emit(),
+      previous: () => this.previousPageRequested.emit(),
+      limitChange: (limit) => this.limitChange.emit(limit),
+    },
     columnsChange: () => undefined,
     columnsReorder: () => undefined,
   });
@@ -187,8 +198,12 @@ export class DraftGrid {
   }));
 
   protected readonly stateKey = (state: DraftState): string => STATE_KEYS[state];
-  protected readonly stateSeverity = (state: DraftState): 'info' | 'success' | 'secondary' => STATE_SEVERITIES[state];
+  protected readonly stateSeverity = (state: DraftState): 'info' | 'success' | 'secondary' | 'warn' =>
+    STATE_SEVERITIES[state];
   protected readonly isPending = (row: MachineDraftGridItem): boolean => row.state === DraftState.Pending;
+  /** A pending or awaiting draft has a row menu: a draft that is applied or dismissed has nothing left to do. */
+  protected readonly isOpen = (row: MachineDraftGridItem): boolean =>
+    row.state === DraftState.Pending || row.state === DraftState.AwaitingTarget;
   protected readonly isSelected = (row: MachineDraftGridItem): boolean => this.selectedIds().includes(row.id);
   protected readonly hasPendingRows = computed(() => this._pendingRows().length > 0);
   private readonly _pendingRows = computed(() => this.rows().filter(this.isPending));
@@ -211,6 +226,7 @@ export class DraftGrid {
         translate: (key) => this._translate.instant(key),
         isReviewDisabled: isReviewDisabledOf(draft),
         applyReasonKey: this.reasons()[draft.id],
+        isAwaitingTarget: draft.state === DraftState.AwaitingTarget,
         isBusy: this.isBusy(),
         onReview: () => this.reviewRequested.emit(draft),
         onApply: () => this.applyRequested.emit(draft),

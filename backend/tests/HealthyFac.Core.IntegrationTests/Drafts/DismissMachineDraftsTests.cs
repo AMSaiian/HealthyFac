@@ -2,8 +2,10 @@ using HealthyFac.Core.Application.Drafts;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
+using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
+using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.ErrorHandling;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
@@ -11,12 +13,10 @@ namespace HealthyFac.Core.IntegrationTests.Drafts;
 [Collection(CoreMachinesCollection.Name)]
 public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
 {
-    private const int PendingDraftsOfAMachine = 3;
-
     private readonly CoreDatabaseFixture _fixture = fixture;
 
     [Fact]
-    public async Task DismissMachineDrafts_WithPendingDraftsOfAllKinds_DismissesThemAndKeepsTheOthers()
+    public async Task DismissMachineDrafts_WithPendingDrafts_DismissesThemAndKeepsTheOthers()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
@@ -27,21 +27,10 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var response = await _fixture.DismissMachineDraftsAsync(tenant.CompanyId, machineId);
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
-        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
-        response.DismissedCount.Should().Be(PendingDraftsOfAMachine);
+
+        response.DismissedCount.Should().Be(expected: 1);
         machineDrafts.Single(draft => draft.TargetMachineId == machineId).State.Should().Be(DraftState.Dismissed);
-        statusDrafts.Single(draft => draft.TargetMachineId == machineId).State.Should().Be(DraftState.Dismissed);
-        metricDrafts.Where(draft => draft.TargetMachineId == machineId)
-            .Select(draft => draft.State)
-            .Should()
-            .BeEquivalentTo([DraftState.Dismissed, DraftState.Applied]);
         machineDrafts.Single(draft => draft.TargetMachineId == otherMachineId).State.Should().Be(DraftState.Pending);
-        statusDrafts.Single(draft => draft.TargetMachineId == otherMachineId).State.Should().Be(DraftState.Pending);
-        metricDrafts.Where(draft => draft.TargetMachineId == otherMachineId)
-            .Select(draft => draft.State)
-            .Should()
-            .BeEquivalentTo([DraftState.Pending, DraftState.Applied]);
     }
 
     [Fact]
@@ -56,15 +45,9 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var response = await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, DraftTestData.AttemptId);
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
-        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
-        var states = machineDrafts.Select(draft => draft.State)
-            .Concat(metricDrafts.Select(draft => draft.State))
-            .Concat(statusDrafts.Select(draft => draft.State))
-            .ToList();
 
-        response.DismissedCount.Should().Be(PendingDraftsOfAMachine * 2);
-        states.Should().NotContain(DraftState.Pending);
+        response.DismissedCount.Should().Be(expected: 2);
+        machineDrafts.Select(draft => draft.State).Should().NotContain(DraftState.Pending);
     }
 
     [Fact]
@@ -82,20 +65,30 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var response = await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, attemptId);
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
-        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
         var pendingCompanies = machineDrafts.Where(draft => draft.State == DraftState.Pending)
             .Select(draft => (draft.CompanyId, draft.AttemptId))
-            .Concat(metricDrafts.Where(draft => draft.State == DraftState.Pending)
-                .Select(draft => (draft.CompanyId, draft.AttemptId)))
-            .Concat(statusDrafts.Where(draft => draft.State == DraftState.Pending)
-                .Select(draft => (draft.CompanyId, draft.AttemptId)))
-            .Distinct()
             .ToList();
 
-        response.DismissedCount.Should().Be(PendingDraftsOfAMachine);
-        pendingCompanies.Should().BeEquivalentTo(
-            [(tenant.CompanyId, DraftTestData.AttemptId), (otherTenant.CompanyId, attemptId)]);
+        response.DismissedCount.Should().Be(expected: 1);
+        pendingCompanies.Should()
+            .BeEquivalentTo(
+                [(tenant.CompanyId, DraftTestData.AttemptId), (otherTenant.CompanyId, attemptId)]);
+    }
+
+    [Fact]
+    public async Task DismissMachineDrafts_ForAnAttemptWithTwoCreateDraftsAndAnUpdateDraft_SendsTwoMessages()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var firstId = await _fixture.AddMachineDraftAsync(tenant.CompanyId);
+        var secondId = await _fixture.AddMachineDraftAsync(tenant.CompanyId);
+        await _fixture.AddMachineDraftAsync(tenant.CompanyId, machineId);
+
+        await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, DraftTestData.AttemptId);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineDraftDismissed>();
+
+        messages.Select(message => message.DraftId).Should().BeEquivalentTo([firstId, secondId]);
     }
 
     [Fact]
@@ -141,54 +134,19 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
-            race.RunAsync(
-                async () => responses.Add(await _fixture.DismissMachineDraftsAsync(tenant.CompanyId, machineId))),
-            race.RunAsync(
-                async () => responses.Add(await _fixture.DismissMachineDraftsAsync(tenant.CompanyId, machineId))));
+            race.RunAsync(async () =>
+                responses.Add(await _fixture.DismissMachineDraftsAsync(tenant.CompanyId, machineId))),
+            race.RunAsync(async () =>
+                responses.Add(await _fixture.DismissMachineDraftsAsync(tenant.CompanyId, machineId))));
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
-        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
         race.SaveCounts.Should().Equal(1, 1);
-        responses.Should().ContainSingle().Which.DismissedCount.Should().Be(PendingDraftsOfAMachine);
+        responses.Should().ContainSingle().Which.DismissedCount.Should().Be(expected: 1);
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(DraftErrors.DraftChanged);
         machineDrafts.Should().OnlyContain(draft => draft.State == DraftState.Dismissed);
-        statusDrafts.Should().OnlyContain(draft => draft.State == DraftState.Dismissed);
-        metricDrafts.Select(draft => draft.State).Should().BeEquivalentTo([DraftState.Dismissed, DraftState.Applied]);
-    }
-
-    [Fact]
-    public async Task DismissMachineDrafts_InParallelWithMarkAppliedOfOneDraft_ConflictsAndChangesNothing()
-    {
-        var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
-        await _fixture.AddDraftsForMachineAsync(tenant.CompanyId, machineId);
-        var pendingMetric = (await _fixture.LoadMetricDraftsAsync()).Single(draft => draft.State == DraftState.Pending);
-        using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
-
-        var failures = await Task.WhenAll(
-            race.RunAsync(() => _fixture.MarkDraftsAppliedAsync(tenant.CompanyId, pendingMetric.Id)),
-            race.RunAsync(() => _fixture.DismissMachineDraftsAsync(tenant.CompanyId, machineId)));
-
-        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metricDrafts = await _fixture.LoadMetricDraftsAsync();
-        var statusDrafts = await _fixture.LoadStatusDraftsAsync();
-        race.SaveCounts.Should().Equal(1, 1);
-        failures.Count(failure => failure is null).Should().Be(expected: 1);
-        failures.Single(failure => failure is not null)
-            .Should()
-            .BeOfType<ConflictException>()
-            .Which.Message.Should()
-            .Be(DraftErrors.DraftChanged);
-        var dismissedCount = machineDrafts.Count(draft => draft.State == DraftState.Dismissed)
-            + metricDrafts.Count(draft => draft.State == DraftState.Dismissed)
-            + statusDrafts.Count(draft => draft.State == DraftState.Dismissed);
-        var isDismissWinner = failures[1] is null;
-        dismissedCount.Should().Be(isDismissWinner ? PendingDraftsOfAMachine : 0);
-        metricDrafts.Count(draft => draft.State == DraftState.Applied).Should().Be(isDismissWinner ? 1 : 2);
     }
 }

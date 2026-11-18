@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids;
 
-public sealed class GridQueryTests(GridDatabaseFixture fixture) : IClassFixture<GridDatabaseFixture>
+[Collection(GridDatabaseCollection.Name)]
+public sealed class GridQueryTests(GridDatabaseFixture fixture)
 {
     private readonly GridDatabaseFixture _fixture = fixture;
 

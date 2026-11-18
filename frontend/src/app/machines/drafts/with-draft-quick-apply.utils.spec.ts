@@ -11,6 +11,7 @@ import type { MetricUnitsResponse } from '@machines/metrics/metric-definition';
 
 import {
   applicableMetrics,
+  applicableStatuses,
   chunk,
   groupReason,
   machineReason,
@@ -106,6 +107,23 @@ describe('statusReason', () => {
 });
 
 describe('needsReviewReasons', () => {
+  it('needsReviewReasons_ForAwaitingTargetDrafts_GiveTheAwaitingReasonAndNeverApplyThem', () => {
+    const drafts = {
+      groups: [
+        group({
+          metrics: [{ ...METRIC, state: DraftState.AwaitingTarget }],
+          statuses: [{ ...STATUS, state: DraftState.AwaitingTarget }],
+        }),
+      ],
+    };
+
+    const reasons = needsReviewReasons(drafts, CATALOG);
+
+    expect(reasons).toEqual({ mt: QuickReason.AwaitingTarget, st: QuickReason.AwaitingTarget });
+    expect(applicableMetrics(drafts.groups[0], CATALOG)).toEqual([]);
+    expect(applicableStatuses(drafts.groups[0])).toEqual([]);
+  });
+
   it('needsReviewReasons_ForChildrenOfAPendingCreateDraft_WaitForTheMachine', () => {
     const drafts = {
       groups: [group({ machineId: null, machineDraft: MACHINE, metrics: [METRIC], statuses: [STATUS] })],

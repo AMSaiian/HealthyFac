@@ -1,3 +1,4 @@
+using HealthyFac.Gateway.Web.Composition;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace HealthyFac.Gateway.Web.Proxy;
@@ -19,6 +20,20 @@ internal sealed class GatewayExceptionHandler(ILogger<GatewayExceptionHandler> l
         if (exception is OperationCanceledException && httpContext.RequestAborted.IsCancellationRequested)
         {
             httpContext.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+
+            return true;
+        }
+
+        if (exception is CompositionException)
+        {
+            _logger.LogError(exception, message: "A service returned data that the gateway cannot compose");
+
+            await httpContext.Response.WriteGatewayProblemAsync(
+                StatusCodes.Status503ServiceUnavailable,
+                GatewayProblemDetailsConstants.ServiceUnavailable.Title,
+                GatewayProblemDetailsConstants.ServiceUnavailable.TypeUrl,
+                CompositionErrors.DownstreamUnavailable,
+                cancellationToken);
 
             return true;
         }

@@ -9,68 +9,95 @@ namespace HealthyFac.Core.ApiTests.Drafts;
 [Collection(CoreApiCollection.Name)]
 public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
 {
-    private const string SearchBody = "{\"offset\":0,\"limit\":25,\"filter\":{}}";
+    private const string SearchBody = "{\"limit\":25,\"filter\":{}}";
 
     private const string NewestFirstBody =
-        "{\"offset\":0,\"limit\":25,\"sort\":{\"column\":\"proposedAt\",\"direction\":\"desc\"},\"filter\":{}}";
+        "{\"limit\":25,\"sort\":{\"column\":\"proposedAt\",\"direction\":\"desc\"},\"filter\":{}}";
 
     private const string DismissedOnlyBody =
-        "{\"offset\":0,\"limit\":25,\"filter\":{\"states\":{\"values\":[\"dismissed\"]}}}";
-
-    private const string MetricOnlyBody =
-        "{\"offset\":0,\"limit\":25,\"filter\":{\"kinds\":{\"values\":[\"metric\"]}}}";
+        "{\"limit\":25,\"filter\":{\"states\":{\"values\":[\"dismissed\"]}}}";
 
     private readonly CoreApiFixture _fixture = fixture;
-
-    [Fact]
-    public async Task Search_WithKindFilter_ReturnsOnlyThatKind()
-    {
-        var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "SEARCH-KIND"));
-        await _fixture.ArrangeMachineDraftAsync(machineId);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-
-        var items = await SearchAsync(machineId, MetricOnlyBody);
-
-        items.Select(item => item.GetProperty(propertyName: "kind").GetString()).Should().Equal("metric");
-    }
 
     [Fact]
     public async Task Search_WithSortOnProposedAt_ReturnsTheNewestProposalFirst()
     {
         var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "SEARCH-ORDER"));
-        await _fixture.ArrangeMachineDraftAsync(machineId);
+        var older = await _fixture.ArrangeMachineDraftAsync(machineId);
         await Task.Delay(millisecondsDelay: 20, TestContext.Current.CancellationToken);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
+        var newer = await _fixture.ArrangeMachineDraftAsync(machineId);
 
         var items = await SearchAsync(machineId, NewestFirstBody);
 
-        items.Select(item => item.GetProperty(propertyName: "kind").GetString()).Should().Equal("metric", "machine");
+        items.Select(item => item.GetProperty(propertyName: "id").GetString())
+            .Should()
+            .Equal(newer.EncryptedId, older.EncryptedId);
     }
 
     [Fact]
     public async Task Search_Default_ReturnsAllStatesWithPendingFirst()
     {
         var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "SEARCH-STATE"));
-        var dismissed = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        var applied = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        var pending = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
+        var dismissed = await _fixture.ArrangeMachineDraftAsync(machineId);
+        var pending = await _fixture.ArrangeMachineDraftAsync(machineId);
         await SendWriteAsync(DraftApiTestData.DismissPath(dismissed.EncryptedId));
-        await SendWriteAsync(DraftApiTestData.MarkAppliedPath, DraftApiTestData.MarkBody(applied.EncryptedId));
 
         var items = await SearchAsync(machineId, SearchBody);
 
         items.Select(item => item.GetProperty(propertyName: "id").GetString())
-            .Should().Equal(pending.EncryptedId, applied.EncryptedId, dismissed.EncryptedId);
+            .Should()
+            .Equal(pending.EncryptedId, dismissed.EncryptedId);
         items.Select(item => item.GetProperty(propertyName: "state").GetString())
-            .Should().Equal("pending", "applied", "dismissed");
+            .Should()
+            .Equal("pending", "dismissed");
+    }
+
+    [Fact]
+    public async Task Search_WithLimitOne_PagesThroughEveryDraftOnceWithTheNextPosition()
+    {
+        var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "SEARCH-PAGES"));
+        var first = await _fixture.ArrangeMachineDraftAsync(machineId);
+        var second = await _fixture.ArrangeMachineDraftAsync(machineId);
+        var third = await _fixture.ArrangeMachineDraftAsync(machineId);
+        var seenIds = new List<string?>();
+        var body = LimitOneBody(after: null);
+
+        for (var page = 0; page < 3; page++)
+        {
+            var response = await SearchResponseAsync(machineId, body);
+            using var document = JsonDocument.Parse(response);
+            var items = document.RootElement.GetProperty(propertyName: "items").EnumerateArray().ToList();
+            var next = document.RootElement.GetProperty(propertyName: "nextPosition");
+            seenIds.Add(items.Single().GetProperty(propertyName: "id").GetString());
+            body = LimitOneBody(next.ValueKind == JsonValueKind.Null ? null : next.GetRawText());
+        }
+
+        seenIds.Should().BeEquivalentTo([first.EncryptedId, second.EncryptedId, third.EncryptedId]);
+        body.Should().Be(LimitOneBody(after: null));
+    }
+
+    [Fact]
+    public async Task Search_WithAPositionThatDoesNotFitTheSortColumn_Returns400()
+    {
+        var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "SEARCH-BADPOS"));
+        await _fixture.ArrangeMachineDraftAsync(machineId);
+        var position = $"{{\"sortValue\":\"abc\",\"id\":\"{_fixture.IdEncryptor.Encrypt(Guid.CreateVersion7())}\"}}";
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            SearchPath(_fixture.IdEncryptor.Encrypt(machineId)),
+            _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
+            LimitOneBody(position));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task Search_WithStateFilter_ReturnsOnlyThoseStates()
     {
         var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "SEARCH-FILTER"));
-        var dismissed = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
+        var dismissed = await _fixture.ArrangeMachineDraftAsync(machineId);
+        await _fixture.ArrangeMachineDraftAsync(machineId);
         await SendWriteAsync(DraftApiTestData.DismissPath(dismissed.EncryptedId));
 
         var items = await SearchAsync(machineId, DismissedOnlyBody);
@@ -84,18 +111,24 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         var attemptId = Guid.CreateVersion7();
         var firstId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "ATTEMPT-1"));
         var secondId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "ATTEMPT-2"));
-        var first = await _fixture.ArrangeMetricDraftAsync(firstId, targetMachineDraftId: null, attemptId);
-        var second = await _fixture.ArrangeMetricDraftAsync(secondId, targetMachineDraftId: null, attemptId);
+        var first = await _fixture.ArrangeMachineDraftAsync(firstId, attemptId: attemptId);
+        var second = await _fixture.ArrangeMachineDraftAsync(secondId, attemptId: attemptId);
 
         var items = await SearchAttemptAsync(attemptId, SearchBody);
 
         var byId = items.ToDictionary(item => item.GetProperty(propertyName: "id").GetString()!);
 
         byId.Keys.Should().BeEquivalentTo(first.EncryptedId, second.EncryptedId);
-        byId[first.EncryptedId].GetProperty(propertyName: "machineName").GetString()
-            .Should().Be(MachineApiTestData.MachineName);
-        byId[second.EncryptedId].GetProperty(propertyName: "machineId").GetString()
-            .Should().Be(_fixture.IdEncryptor.Encrypt(secondId));
+        byId[first.EncryptedId]
+            .GetProperty(propertyName: "machineName")
+            .GetString()
+            .Should()
+            .Be(MachineApiTestData.MachineName);
+        byId[second.EncryptedId]
+            .GetProperty(propertyName: "machineId")
+            .GetString()
+            .Should()
+            .Be(_fixture.IdEncryptor.Encrypt(secondId));
     }
 
     [Fact]
@@ -103,13 +136,9 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
     {
         var attemptId = Guid.CreateVersion7();
         var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "ATTEMPT-SCOPE"));
-        var inScope = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null, attemptId);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        await _fixture.ArrangeMetricDraftAsync(
-            machineId,
-            targetMachineDraftId: null,
-            attemptId,
-            companyId: Guid.CreateVersion7());
+        var inScope = await _fixture.ArrangeMachineDraftAsync(machineId, attemptId: attemptId);
+        await _fixture.ArrangeMachineDraftAsync(machineId);
+        await _fixture.ArrangeMachineDraftAsync(machineId, Guid.CreateVersion7(), attemptId);
 
         var items = await SearchAttemptAsync(attemptId, SearchBody);
 
@@ -183,12 +212,12 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
     }
 
     [Fact]
-    public async Task GetAttemptDrafts_GroupsChildrenWithoutAMachineDraftUnderTheirMachine()
+    public async Task GetAttemptDrafts_GroupsTheUpdateDraftUnderItsMachineAndTheCreateDraftAlone()
     {
         var machineId =
             _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "ATTEMPT-GROUPS"));
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        await _fixture.ArrangeMachineDraftAsync(hasChildren: true);
+        await _fixture.ArrangeMachineDraftAsync(machineId);
+        await _fixture.ArrangeMachineDraftAsync();
 
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Get,
@@ -198,17 +227,15 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         var groups = document.RootElement.GetProperty(propertyName: "groups").EnumerateArray().ToList();
         var existing = groups.Single(group =>
-            group.GetProperty(propertyName: "machineDraft").ValueKind == JsonValueKind.Null);
+            group.GetProperty(propertyName: "machineId").ValueKind == JsonValueKind.String);
         var proposed = groups.Single(group =>
-            group.GetProperty(propertyName: "machineDraft").ValueKind == JsonValueKind.Object);
+            group.GetProperty(propertyName: "machineId").ValueKind == JsonValueKind.Null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         groups.Should().HaveCount(expected: 2);
         existing.GetProperty(propertyName: "machineName").GetString().Should().Be(MachineApiTestData.MachineName);
-        existing.GetProperty(propertyName: "metrics").GetArrayLength().Should().Be(expected: 1);
-        proposed.GetProperty(propertyName: "machineId").ValueKind.Should().Be(JsonValueKind.Null);
-        proposed.GetProperty(propertyName: "metrics").GetArrayLength().Should().Be(expected: 1);
-        proposed.GetProperty(propertyName: "statuses").GetArrayLength().Should().Be(expected: 1);
+        existing.GetProperty(propertyName: "machineDraft").ValueKind.Should().Be(JsonValueKind.Object);
+        proposed.GetProperty(propertyName: "machineDraft").ValueKind.Should().Be(JsonValueKind.Object);
     }
 
     [Fact]
@@ -225,8 +252,26 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         document.RootElement.GetProperty(propertyName: "groups").GetArrayLength().Should().Be(expected: 0);
     }
 
+    private static string LimitOneBody(string? after) =>
+        after is null
+            ? "{\"limit\":1,\"filter\":{}}"
+            : "{\"limit\":1,\"filter\":{},\"after\":" + after + "}";
+
     private static string SearchPath(string encryptedMachineId) =>
         $"v1/machines/{encryptedMachineId}/drafts/search";
+
+    private async Task<string> SearchResponseAsync(Guid machineId, string body)
+    {
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            SearchPath(_fixture.IdEncryptor.Encrypt(machineId)),
+            _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
+            body);
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        return content;
+    }
 
     private async Task<List<JsonElement>> SearchAsync(Guid machineId, string body)
     {

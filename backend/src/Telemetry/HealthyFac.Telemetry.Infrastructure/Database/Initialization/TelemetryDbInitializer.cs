@@ -16,6 +16,7 @@ public class TelemetryDbInitializer(
     TelemetryDbContext dbContext,
     IHostEnvironment environment,
     TelemetryDevelopmentDataSeeder developmentDataSeeder,
+    DemoDefinitionDraftSeeder demoDefinitionDraftSeeder,
     IOutbox outbox,
     TimeProvider timeProvider
 ) : ITelemetryDbInitializer
@@ -24,6 +25,7 @@ public class TelemetryDbInitializer(
     private readonly TelemetryDbContext _dbContext = dbContext;
     private readonly IHostEnvironment _environment = environment;
     private readonly TelemetryDevelopmentDataSeeder _developmentDataSeeder = developmentDataSeeder;
+    private readonly DemoDefinitionDraftSeeder _demoDefinitionDraftSeeder = demoDefinitionDraftSeeder;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
 
@@ -80,8 +82,15 @@ public class TelemetryDbInitializer(
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
-        => _developmentDataSeeder.SeedAsync(cancellationToken);
+    public async Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
+    {
+        await _developmentDataSeeder.SeedAsync(cancellationToken);
+
+        if (_environment.IsDevelopment())
+        {
+            await _demoDefinitionDraftSeeder.SeedAsync(cancellationToken);
+        }
+    }
 
     private async Task SeedCatalogAsync(CancellationToken cancellationToken)
     {

@@ -68,6 +68,12 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("received_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -79,12 +85,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -140,6 +140,12 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -152,12 +158,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
 
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id");
 
                     b.HasIndex("NextAttemptOn")
@@ -166,6 +166,344 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.ToTable("outbox_messages", null, t =>
                         {
                             t.HasCheckConstraint("ck_outbox_message_actor_id_not_empty", "\"actor_id\" <> '00000000-0000-0000-0000-000000000000'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDefinitionDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("attempt_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("key")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<double?>("Max")
+                        .HasColumnType("double precision")
+                        .HasColumnName("max");
+
+                    b.Property<double?>("Min")
+                        .HasColumnType("double precision")
+                        .HasColumnName("min");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<Guid>("ProposalEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_entry_id");
+
+                    b.Property<string>("QuantityKindName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("quantity_kind_name")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("SourceLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("source_location")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("state");
+
+                    b.PrimitiveCollection<string[]>("States")
+                        .HasColumnType("text[]")
+                        .HasColumnName("states");
+
+                    b.Property<Guid?>("TargetMachineDraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_machine_draft_id");
+
+                    b.Property<Guid?>("TargetMachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_machine_id");
+
+                    b.Property<string>("UnitName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("unit_name")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("ValueKind")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("value_kind")
+                        .UseCollation("case_insensitive");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposalEntryId")
+                        .HasDatabaseName("ix_metric_definition_drafts_proposal_entry_id");
+
+                    b.HasIndex("CompanyId", "AttemptId")
+                        .HasDatabaseName("ix_metric_definition_drafts_company_id_attempt_id");
+
+                    b.HasIndex("CompanyId", "TargetMachineId", "State")
+                        .HasDatabaseName("ix_metric_definition_drafts_company_id_target_machine_id_state")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("metric_definition_drafts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_metric_definition_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_key_length", "char_length(\"key\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
+
+                            t.HasCheckConstraint("ck_metric_definition_drafts_min_below_max", "min IS NULL OR max IS NULL OR min < max");
+
+                            t.HasCheckConstraint("ck_metric_definition_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
+
+                            t.HasCheckConstraint("ck_metric_definition_drafts_value_kind_allowed", "\"value_kind\" IN ('boolean', 'numeric', 'stateSet')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("character varying(21)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("proposal_entries", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_proposal_entries_machine_only_on_machine", "(machine_id IS NOT NULL) = (state = 'onMachine')");
+
+                            t.HasCheckConstraint("ck_proposal_entry_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_proposal_entry_state_allowed", "\"state\" IN ('awaiting', 'machineDraftDismissed', 'onMachine', 'onMachineDraft', 'rejected')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDefinitionDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("attempt_id");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<Guid>("ProposalEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_entry_id");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Severity")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("severity")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<string>("SourceLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("source_location")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("state");
+
+                    b.Property<Guid?>("TargetMachineDraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_machine_draft_id");
+
+                    b.Property<Guid?>("TargetMachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_machine_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProposalEntryId")
+                        .HasDatabaseName("ix_status_definition_drafts_proposal_entry_id");
+
+                    b.HasIndex("CompanyId", "AttemptId")
+                        .HasDatabaseName("ix_status_definition_drafts_company_id_attempt_id");
+
+                    b.HasIndex("CompanyId", "TargetMachineId", "State")
+                        .HasDatabaseName("ix_status_definition_drafts_company_id_target_machine_id_state")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("status_definition_drafts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_status_definition_draft_code_length", "char_length(\"code\") BETWEEN 1 AND 50");
+
+                            t.HasCheckConstraint("ck_status_definition_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_status_definition_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
+
+                            t.HasCheckConstraint("ck_status_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_status_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
+
+                            t.HasCheckConstraint("ck_status_definition_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
+
+                            t.HasCheckConstraint("ck_status_definition_drafts_severity_allowed", "\"severity\" IN ('error', 'info', 'warning')");
+
+                            t.HasCheckConstraint("ck_status_definition_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
                         });
                 });
 
@@ -316,7 +654,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("metric_schema_revision");
 
-                    b.Property<uint>("xmin")
+                    b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")

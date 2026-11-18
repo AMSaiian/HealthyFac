@@ -44,6 +44,9 @@ public static class SimulatorTestData
     private static readonly string DemoFile = Path.Combine(
         AppContext.BaseDirectory, path2: "demo-ingest", path3: "core.json");
 
+    private static readonly string DemoTelemetryFile = Path.Combine(
+        AppContext.BaseDirectory, path2: "demo-ingest", path3: "telemetry.json");
+
     public static TheoryData<string, ScenarioKind> DemoMachines =>
         new()
         {
@@ -81,7 +84,9 @@ public static class SimulatorTestData
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(DemoFile));
+        using var telemetryDocument = JsonDocument.Parse(File.ReadAllText(DemoTelemetryFile));
         var root = document.RootElement;
+        var telemetryRoot = telemetryDocument.RootElement;
         var machine = root.GetProperty(propertyName: "machineDrafts")
             .EnumerateArray()
             .Single(draft => draft.GetProperty(propertyName: "serial_number").GetString() == serialNumber);
@@ -95,12 +100,12 @@ public static class SimulatorTestData
                     && draft.GetProperty(propertyName: "target_machine_id").GetString() == targetMachineId);
         }
 
-        var metrics = root.GetProperty(propertyName: "metricDefinitionDrafts")
+        var metrics = telemetryRoot.GetProperty(propertyName: "metricDefinitionDrafts")
             .EnumerateArray()
             .Where(IsOfMachine)
             .Select(ToMetric)
             .ToList();
-        var statuses = root.GetProperty(propertyName: "statusDefinitionDrafts")
+        var statuses = telemetryRoot.GetProperty(propertyName: "statusDefinitionDrafts")
             .EnumerateArray()
             .Where(IsOfMachine)
             .Select(draft => (

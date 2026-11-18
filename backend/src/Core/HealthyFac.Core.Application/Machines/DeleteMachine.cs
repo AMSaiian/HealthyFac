@@ -84,22 +84,8 @@ public sealed class DeleteMachineRequestHandler(ICoreDbContext dbContext, IOutbo
         var machineDrafts = await _dbContext.MachineDrafts
             .Where(draft => draft.TargetMachineId == machineId && draft.State == DraftState.Pending)
             .ToListAsync(cancellationToken);
-        var metricDrafts = await _dbContext.MetricDefinitionDrafts
-            .Where(draft => draft.TargetMachineId == machineId && draft.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
-        var statusDrafts = await _dbContext.StatusDefinitionDrafts
-            .Where(draft => draft.TargetMachineId == machineId && draft.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
 
         foreach (var draft in machineDrafts)
-        {
-            draft.Dismiss();
-        }
-        foreach (var draft in metricDrafts)
-        {
-            draft.Dismiss();
-        }
-        foreach (var draft in statusDrafts)
         {
             draft.Dismiss();
         }

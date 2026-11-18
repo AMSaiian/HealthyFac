@@ -878,7 +878,9 @@
               "metric-definitions:write",
               "status-definitions:read",
               "status-definitions:write",
-              "status-definitions:delete"
+              "status-definitions:delete",
+              "definition-drafts:read",
+              "definition-drafts:write"
             ],
             "healthyfac-document": [
               "files:read",
@@ -915,7 +917,9 @@
               "metric-definitions:write",
               "status-definitions:read",
               "status-definitions:write",
-              "status-definitions:delete"
+              "status-definitions:delete",
+              "definition-drafts:read",
+              "definition-drafts:write"
             ],
             "healthyfac-document": [
               "files:read",
@@ -1023,6 +1027,14 @@
         {
           "name": "status-definitions:delete",
           "description": "Delete status definitions"
+        },
+        {
+          "name": "definition-drafts:read",
+          "description": "View and search the metric and status drafts of the file ingest"
+        },
+        {
+          "name": "definition-drafts:write",
+          "description": "Dismiss the metric and status drafts of the file ingest"
         }
       ],
       "healthyfac-document": [

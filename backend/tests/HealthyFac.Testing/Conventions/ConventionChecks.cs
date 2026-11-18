@@ -302,6 +302,47 @@ public static class ConventionChecks
         UseCasePartInspection.FindViolations(assemblies);
 
     /// <summary>
+    /// Finds the keyset sort maps (<c>static readonly</c> fields of type
+    /// <c>FrozenDictionary&lt;TKey, IKeysetSortKey&lt;T&gt;&gt;</c>) that cannot be built. Reading a field runs the
+    /// <c>KeysetSortKey</c> constructors, and a constructor throws for an unsupported key type.
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>The names of the map fields whose read throws.</returns>
+    public static IReadOnlyList<string> KeysetSortMapsUseSupportedKeys(Assembly assembly) =>
+        KeysetSortMapsUseSupportedKeys(assembly.GetSourceTypes());
+
+    /// <inheritdoc cref="KeysetSortMapsUseSupportedKeys(Assembly)"/>
+    /// <param name="types">The types to inspect.</param>
+    public static IReadOnlyList<string> KeysetSortMapsUseSupportedKeys(IEnumerable<Type> types) =>
+        types
+            .SelectMany(type => type.GetFields(
+                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            .Where(field => field.IsInitOnly && IsKeysetSortMap(field.FieldType))
+            .Where(ThrowsOnRead)
+            .Select(field => $"{field.DeclaringType?.FullName}.{field.Name}")
+            .ToList();
+
+    private static bool IsKeysetSortMap(Type type) =>
+        type.IsGenericType
+        && type.GetGenericTypeDefinition() == typeof(System.Collections.Frozen.FrozenDictionary<,>)
+        && type.GetGenericArguments()[1] is { IsGenericType: true } valueType
+        && valueType.GetGenericTypeDefinition() == typeof(Shared.Application.Grids.Keyset.IKeysetSortKey<>);
+
+    private static bool ThrowsOnRead(FieldInfo field)
+    {
+        try
+        {
+            field.GetValue(obj: null);
+
+            return false;
+        }
+        catch (Exception exception) when (exception is TargetInvocationException or TypeInitializationException)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Lists each namespace of the assembly with its folders below the assembly root. A namespace outside the
     /// assembly name (e.g., an extension class in <c>Microsoft.Extensions.DependencyInjection</c>) has no folder in
     /// the project, so the method skips it.

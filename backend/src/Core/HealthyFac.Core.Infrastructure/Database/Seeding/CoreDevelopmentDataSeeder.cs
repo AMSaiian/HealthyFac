@@ -268,10 +268,6 @@ public sealed class CoreDevelopmentDataSeeder(
             {
                 await _dbContext.OutboxMessages.ExecuteDeleteAsync(token);
                 await _dbContext.InboxMessages.ExecuteDeleteAsync(token);
-                await _dbContext.MetricDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-                    .ExecuteDeleteAsync(token);
-                await _dbContext.StatusDefinitionDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-                    .ExecuteDeleteAsync(token);
                 await _dbContext.MachineDrafts.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                     .ExecuteDeleteAsync(token);
                 await _dbContext.WorkOrderFiles.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])

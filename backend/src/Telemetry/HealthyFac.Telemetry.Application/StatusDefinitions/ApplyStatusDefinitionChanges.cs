@@ -5,6 +5,7 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,9 @@ public record StatusDefinitionChange
     public StatusSeverity? Severity { get; init; }
 
     public string? Description { get; init; }
+
+    /// <summary>The status draft that this item applies, or <see langword="null"/>.</summary>
+    public Guid? DraftId { get; init; }
 }
 
 public record ApplyStatusDefinitionChangesResponse
@@ -139,10 +143,11 @@ public sealed class ApplyStatusDefinitionChangesPreHandlerCheck(
 /// code is the only guard against a parallel create of the same code, and the handler maps its failure to the conflict.
 /// </remarks>
 /// <param name="dbContext">Loads and saves the status definitions.</param>
-public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbContext)
+public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbContext, AppliedDraftMarker draftMarker)
     : IRequestHandler<ApplyStatusDefinitionChangesRequest, ApplyStatusDefinitionChangesResponse>
 {
     private readonly ITelemetryDbContext _dbContext = dbContext;
+    private readonly AppliedDraftMarker _draftMarker = draftMarker;
 
     public async Task<ApplyStatusDefinitionChangesResponse> HandleAsync(
         ApplyStatusDefinitionChangesRequest request,
@@ -179,6 +184,16 @@ public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbCo
             applied.Add(new AppliedStatusDefinition { Code = created.Code, Id = created.Id, IsCreated = true });
         }
 
+        await _draftMarker.MarkStatusDraftsAsync(
+            request.CompanyId,
+            request.MachineId,
+            request.Items
+                .Select((item, index) => (item.DraftId, Path: $"items[{index}].draftId"))
+                .Where(reference => reference.DraftId is not null)
+                .Select(reference => new DraftReference { Path = reference.Path, DraftId = reference.DraftId!.Value })
+                .ToList(),
+            cancellationToken);
+
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -186,6 +201,10 @@ public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbCo
         catch (UniqueConstraintException exception)
         {
             throw new ConflictException(StatusDefinitionErrors.CodeTaken, exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException(DefinitionDraftErrors.DraftChanged, exception);
         }
 
         return new ApplyStatusDefinitionChangesResponse { Items = applied };

@@ -11,7 +11,10 @@ namespace HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 /// </summary>
 public sealed record MachineDraftGridFilter : IFilter<MachineDraftGridItem>
 {
-    /// <summary>The kinds to show: <c>machine</c>, <c>metric</c>, <c>status</c>.</summary>
+    /// <summary>
+    /// The kinds to show. Core holds only <c>machine</c> drafts, so a client never sends another kind to Core: the
+    /// Gateway splits the kind filter between Core and Telemetry.
+    /// </summary>
     public SetFilter<string>? Kinds { get; init; }
 
     /// <summary>The states to show: pending, applied, dismissed.</summary>

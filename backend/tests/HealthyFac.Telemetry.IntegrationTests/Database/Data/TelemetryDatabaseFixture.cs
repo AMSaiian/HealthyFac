@@ -44,6 +44,9 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachT
 
     public ConcurrentSaveGate SaveGate { get; } = new();
 
+    /// <summary>The connection string of the test database, for a test that reads <c>pg_stat_activity</c>.</summary>
+    public string ConnectionString => _database.ConnectionString;
+
     public IServiceScopeFactory ScopeFactory =>
         new InitializationActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
 

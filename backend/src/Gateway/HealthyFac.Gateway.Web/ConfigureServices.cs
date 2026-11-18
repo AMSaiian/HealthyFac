@@ -1,3 +1,6 @@
+using HealthyFac.Gateway.Web.Composition;
+using HealthyFac.Gateway.Web.Composition.Drafts;
+using HealthyFac.Gateway.Web.Composition.Machines;
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Gateway.Web.Revocation;
@@ -51,6 +54,12 @@ public static class ConfigureServices
                 .AddTransforms(RemoveActorHeaders);
             services.AddSingleton<IAvailableDestinationsPolicy, HealthyOnlyDestinationsPolicy>();
             services.AddSingleton<ProxyErrorMiddleware>();
+            services.AddSingleton<DownstreamClient>();
+            services.AddSingleton<MachineNameFiller>();
+            services.AddSingleton<DraftSearchComposer>();
+            services.AddSingleton<AttemptDraftsComposer>();
+            services.AddSingleton<DraftDismissComposer>();
+            services.AddSingleton<MachineSearchComposer>();
             services.AddGatewayObservability(configuration);
 
             return services;
@@ -115,6 +124,8 @@ public static class ConfigureServices
         /// <returns>The <see cref="IEndpointRouteBuilder"/> instance for chained configuration.</returns>
         public IEndpointRouteBuilder MapGatewayEndpoints()
         {
+            app.MapDraftCompositionEndpoints();
+            app.MapMachineCompositionEndpoints();
             app.MapReverseProxy(proxy =>
             {
                 proxy.UseMiddleware<ProxyErrorMiddleware>();

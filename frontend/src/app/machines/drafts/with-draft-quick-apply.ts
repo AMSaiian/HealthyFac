@@ -15,15 +15,13 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import {
-  concat,
   concatMap,
-  concatWith,
   defer,
   EMPTY,
   exhaustMap,
+  expand,
   finalize,
   from,
-  ignoreElements,
   map,
   type MonoTypeOperatorFunction,
   type Observable,
@@ -39,7 +37,7 @@ import {
 import { catchError } from 'rxjs/operators';
 
 import { setFilter } from '@shared/grid/requests/grid-filters';
-import { SortDirection } from '@shared/grid/requests/grid-request';
+import { type KeysetPosition, SortDirection } from '@shared/grid/requests/grid-request';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 
 import {
@@ -148,8 +146,6 @@ type RunRequest =
 interface Progress {
   applied: number;
   skipped: number;
-  /** The metric and status drafts that a call applied. One `mark-applied` call at the end of the run marks them. */
-  readonly appliedIds: string[];
 }
 
 function notFound(): HttpErrorResponse {
@@ -168,8 +164,12 @@ function failureKey(error: unknown): string {
   if (error instanceof RateLimitedError) {
     return 'DRAFTS.QUICK.RATE_LIMITED';
   }
+  const conflictKey = draftConflictKey(error);
+  if (conflictKey !== null) {
+    return conflictKey;
+  }
   return httpErrorKey(error, {
-    [HttpStatusCode.Conflict]: draftConflictKey(error) ?? 'DRAFTS.QUICK.CONFLICT',
+    [HttpStatusCode.Conflict]: 'DRAFTS.QUICK.CONFLICT',
     [HttpStatusCode.BadRequest]: 'DRAFTS.QUICK.INVALID',
   });
 }
@@ -276,31 +276,6 @@ export function withDraftQuickApply(): SignalStoreFeature<
       const fresh$ = (attemptId: string): Observable<AttemptDrafts> =>
         rateLimited$(() => store._quickDraftsApi.listForAttempt(attemptId, options));
 
-      const mark$ = (ids: readonly string[]): Observable<void> =>
-        ids.length === 0 ? of(undefined) : rateLimited$(() => store._quickDraftsApi.markApplied(ids, options));
-
-      /**
-       * Runs the steps, then sends one `mark-applied` call with the drafts that the steps applied. A failed step still
-       * marks the drafts that an earlier step applied, so no applied draft stays pending.
-       */
-      const withMark$ = (run$: Observable<void>, progress: Progress): Observable<void> => {
-        const markApplied$ = defer(() => mark$(progress.appliedIds.splice(0)));
-
-        return concat(
-          run$.pipe(
-            ignoreElements(),
-            catchError((error: unknown) =>
-              markApplied$.pipe(
-                catchError(() => EMPTY),
-                ignoreElements(),
-                concatWith(throwError(() => error)),
-              ),
-            ),
-          ),
-          markApplied$,
-        );
-      };
-
       /** Applies a machine draft. The result is the ID of the machine that the draft made or changed. */
       const machineStep$ = (draft: MachineDraftDetail, progress: Progress): Observable<string> => {
         const apply$ = draft.isCreate
@@ -337,7 +312,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
         );
       };
 
-      /** Stages the drafts on the saved definitions and sends one apply call. The run marks the drafts at its end. */
+      /** Stages the drafts on the saved definitions and sends one apply call. The call marks the drafts applied. */
       const metricsStep$ = (
         machineId: string,
         drafts: readonly MetricDraftDetail[],
@@ -347,7 +322,11 @@ export function withDraftQuickApply(): SignalStoreFeature<
           retryWhileMachineUnknown(),
           switchMap((response) => {
             const staged = stageMetricDrafts(itemsFromDefinitions(response.definitions), 0, drafts, catalog());
-            const changes = netChanges(staged.items);
+            const net = netChanges(staged.items);
+            const changes = {
+              ...net,
+              updated: staged.items.filter((item) => item.draftId !== null && item.saved !== null),
+            };
             const hasChanges = changes.created.length + changes.updated.length > 0;
             const apply$: Observable<unknown> = hasChanges
               ? rateLimited$(() =>
@@ -357,7 +336,6 @@ export function withDraftQuickApply(): SignalStoreFeature<
             return apply$.pipe(
               tap(() => {
                 progress.applied += drafts.length;
-                progress.appliedIds.push(...drafts.map((draft) => draft.id));
               }),
               map(() => undefined),
             );
@@ -378,7 +356,6 @@ export function withDraftQuickApply(): SignalStoreFeature<
               retryWhileMachineUnknown(),
               tap(() => {
                 progress.applied += part.length;
-                progress.appliedIds.push(...part.map((draft) => draft.id));
               }),
             ),
           ),
@@ -387,30 +364,27 @@ export function withDraftQuickApply(): SignalStoreFeature<
         );
 
       const draftRun$ = (attemptId: string, draftId: string, progress: Progress): Observable<void> =>
-        withMark$(
-          fresh$(attemptId).pipe(
-            switchMap((drafts) => {
-              for (const group of drafts.groups) {
-                const machine = group.machineDraft?.id === draftId ? group.machineDraft : null;
-                const metric = group.metrics.find((candidate) => candidate.id === draftId);
-                const status = group.statuses.find((candidate) => candidate.id === draftId);
-                if (machine !== null) {
-                  return machineStep$(machine, progress).pipe(map(() => undefined));
-                }
-                if (group.machineId === null) {
-                  continue;
-                }
-                if (metric !== undefined) {
-                  return metricsStep$(group.machineId, [metric], progress);
-                }
-                if (status !== undefined) {
-                  return statusesStep$(group.machineId, [status], progress);
-                }
+        fresh$(attemptId).pipe(
+          switchMap((drafts) => {
+            for (const group of drafts.groups) {
+              const machine = group.machineDraft?.id === draftId ? group.machineDraft : null;
+              const metric = group.metrics.find((candidate) => candidate.id === draftId);
+              const status = group.statuses.find((candidate) => candidate.id === draftId);
+              if (machine !== null) {
+                return machineStep$(machine, progress).pipe(map(() => undefined));
               }
-              return throwError(notFound);
-            }),
-          ),
-          progress,
+              if (group.machineId === null) {
+                continue;
+              }
+              if (metric !== undefined) {
+                return metricsStep$(group.machineId, [metric], progress);
+              }
+              if (status !== undefined) {
+                return statusesStep$(group.machineId, [status], progress);
+              }
+            }
+            return throwError(notFound);
+          }),
         );
 
       const findGroup = (drafts: AttemptDrafts, ref: GroupRef): AttemptDraftGroup | null =>
@@ -459,26 +433,23 @@ export function withDraftQuickApply(): SignalStoreFeature<
       };
 
       const groupRun$ = (attemptId: string, ref: GroupRef, progress: Progress): Observable<void> =>
-        withMark$(
-          fresh$(attemptId).pipe(
-            switchMap((drafts) => {
-              const group = findGroup(drafts, ref);
-              return group === null ? throwError(notFound) : machineOfGroup$(attemptId, group, progress);
-            }),
-            switchMap((group) => childrenOfGroup$(group, progress)),
-          ),
-          progress,
+        fresh$(attemptId).pipe(
+          switchMap((drafts) => {
+            const group = findGroup(drafts, ref);
+            return group === null ? throwError(notFound) : machineOfGroup$(attemptId, group, progress);
+          }),
+          switchMap((group) => childrenOfGroup$(group, progress)),
         );
 
-      const pendingPage$ = (machineId: string, offset: number): Observable<MachineDraftsPage> =>
+      const pendingPage$ = (machineId: string, after: KeysetPosition | null): Observable<MachineDraftsPage> =>
         rateLimited$(() =>
           store._quickDraftsApi.searchForMachine(
             machineId,
             {
-              offset,
               limit: SEARCH_PAGE_SIZE,
               sort: { column: DraftSortColumn.ProposedAt, direction: SortDirection.Ascending },
               filter: { states: setFilter([DraftState.Pending]) },
+              ...(after === null ? {} : { after }),
             },
             options,
           ),
@@ -486,19 +457,9 @@ export function withDraftQuickApply(): SignalStoreFeature<
 
       /** Reads every page of the pending drafts of the machine. The IDs of the attempts come oldest first. */
       const pendingAttemptIds$ = (machineId: string): Observable<readonly string[]> =>
-        pendingPage$(machineId, 0).pipe(
-          switchMap((first) => {
-            const pageCount = Math.ceil(first.totalCount / SEARCH_PAGE_SIZE);
-            const offsets = Array.from(
-              { length: Math.max(pageCount - 1, 0) },
-              (_, index) => (index + 1) * SEARCH_PAGE_SIZE,
-            );
-            return from(offsets).pipe(
-              concatMap((offset) => pendingPage$(machineId, offset)),
-              toArray(),
-              map((rest) => [first, ...rest]),
-            );
-          }),
+        pendingPage$(machineId, null).pipe(
+          expand((page) => (page.nextPosition === null ? EMPTY : pendingPage$(machineId, page.nextPosition))),
+          toArray(),
           map((pages) => [...new Set(pages.flatMap((page) => page.items.map((item) => item.attemptId)))]),
         );
 
@@ -576,7 +537,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
       const run = rxMethod<RunRequest>(
         pipe(
           exhaustMap((request) => {
-            const progress: Progress = { applied: 0, skipped: 0, appliedIds: [] };
+            const progress: Progress = { applied: 0, skipped: 0 };
             patchState(store, { applyingIds: idsOf(request) });
             const run$ =
               request.kind === 'draft'

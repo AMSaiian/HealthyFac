@@ -63,7 +63,10 @@ public sealed class SearchMachinesRequestHandler(ICoreDbContext dbContext)
             .AsNoTracking()
             .Where(machine => machine.CompanyId == request.CompanyId)
             .ApplyFilter(request.Filter)
-            .ApplyPendingDraftsFilter(_dbContext, request.Filter.HasPendingDrafts)
+            .ApplyPendingDraftsFilter(
+                _dbContext,
+                request.Filter.HasPendingDrafts,
+                request.Filter.PendingDefinitionDraftMachineIds)
             .ApplySort(request.Sort, MachineSortMap.Instance)
             .ToGridResponseAsync(
                 request.Offset,
@@ -79,7 +82,13 @@ internal static class MachineGridQueryExtensions
 {
     extension(IQueryable<Machine> query)
     {
-        public IQueryable<Machine> ApplyPendingDraftsFilter(ICoreDbContext dbContext, bool? hasPendingDrafts) =>
-            hasPendingDrafts is { } flag ? query.Where(MachinePendingDrafts.Predicate(dbContext, flag)) : query;
+        public IQueryable<Machine> ApplyPendingDraftsFilter(
+            ICoreDbContext dbContext,
+            bool? hasPendingDrafts,
+            IReadOnlyList<Guid>? pendingDefinitionDraftMachineIds
+        ) =>
+            hasPendingDrafts is { } flag
+                ? query.Where(MachinePendingDrafts.Predicate(dbContext, flag, pendingDefinitionDraftMachineIds))
+                : query;
     }
 }

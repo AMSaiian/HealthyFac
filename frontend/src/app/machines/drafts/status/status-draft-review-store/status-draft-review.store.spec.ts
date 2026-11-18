@@ -16,7 +16,6 @@ import { StatusDraftReviewStore } from './status-draft-review.store';
 
 const DRAFTS_URL = '/api/core/v1/ingest-attempts/attempt-1/drafts';
 const SEARCH_URL = '/api/telemetry/v1/machines/machine-1/status-definitions/search';
-const MARK_URL = '/api/core/v1/drafts/mark-applied';
 
 const DRAFTS = {
   groups: [
@@ -138,22 +137,34 @@ describe('StatusDraftReviewStore', () => {
     expect(store.updateDisabledReason()).toBe('DRAFTS.STATUS.NO_CHANGES');
   });
 
-  it('saveCreate_AfterSuccess_MarksTheDraftAppliedAndCompletesChanged', async () => {
+  it('saveCreate_AfterSuccess_SendsTheDraftIdAndCompletesChanged', async () => {
     const { store, http, actions } = setup();
     await load(http, null);
 
     store.saveCreate({ code: ' e12 ', severity: 'error' as never, description: null });
-    http
-      .expectOne('/api/telemetry/v1/machines/machine-1/status-definitions')
-      .flush({ id: 'new' }, { status: HttpStatusCode.Created, statusText: 'Created' });
-    const mark = http.expectOne(MARK_URL);
-    mark.flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
+    const create = http.expectOne('/api/telemetry/v1/machines/machine-1/status-definitions');
+    create.flush({ id: 'new' }, { status: HttpStatusCode.Created, statusText: 'Created' });
 
-    expect(mark.request.body).toEqual({ ids: ['draft-1'] });
+    expect(create.request.body).toEqual({ code: 'e12', severity: 'error', description: null, draftId: 'draft-1' });
     expect(actions.complete).toHaveBeenCalledWith(DraftActionType.Changed);
   });
 
-  it('saveCreate_WhenTheSaveFails_MarksNothing', async () => {
+  it('saveCreate_WhenTheDraftIsNotPendingAnyMore_ShowsTheDraftConflictText', async () => {
+    const { store, http, actions, messages } = setup();
+    await load(http, null);
+
+    store.saveCreate({ code: 'e12', severity: 'error' as never, description: null });
+    http
+      .expectOne('/api/telemetry/v1/machines/machine-1/status-definitions')
+      .flush({ detail: 'draftNotPending' }, { status: HttpStatusCode.UnprocessableEntity, statusText: 'Conflict' });
+
+    expect(messages.add).toHaveBeenCalledWith(
+      expect.objectContaining({ detail: 'DRAFTS.CONFLICTS.DRAFT_NOT_PENDING' }),
+    );
+    expect(actions.complete).not.toHaveBeenCalled();
+  });
+
+  it('saveCreate_WhenTheSaveFails_CompletesNothing', async () => {
     const { store, http, actions } = setup();
     await load(http, null);
 
@@ -162,25 +173,10 @@ describe('StatusDraftReviewStore', () => {
       .expectOne('/api/telemetry/v1/machines/machine-1/status-definitions')
       .flush(null, { status: HttpStatusCode.Conflict, statusText: 'Conflict' });
 
-    http.expectNone(MARK_URL);
     expect(actions.complete).not.toHaveBeenCalled();
   });
 
-  it('saveCreate_WhenTheMarkFails_ShowsAToastAndStillCompletesChanged', async () => {
-    const { store, http, actions, messages } = setup();
-    await load(http, null);
-
-    store.saveCreate({ code: 'e12', severity: 'error' as never, description: null });
-    http
-      .expectOne('/api/telemetry/v1/machines/machine-1/status-definitions')
-      .flush({ id: 'new' }, { status: HttpStatusCode.Created, statusText: 'Created' });
-    http.expectOne(MARK_URL).flush(null, { status: HttpStatusCode.InternalServerError, statusText: 'Error' });
-
-    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'DRAFTS.STATUS.MARK_FAILED' }));
-    expect(actions.complete).toHaveBeenCalledWith(DraftActionType.Changed);
-  });
-
-  it('saveUpdate_WithSeverityTaken_UpdatesTheExistingStatusKeepingTheCodeThenMarks', async () => {
+  it('saveUpdate_WithSeverityTaken_UpdatesTheExistingStatusKeepingTheCodeAndSendsTheDraftId', async () => {
     const { store, http } = setup();
     await load(http, EXISTING);
     store.take(StatusCompareField.Severity, true);
@@ -188,9 +184,13 @@ describe('StatusDraftReviewStore', () => {
     store.saveUpdate();
     const update = http.expectOne('/api/telemetry/v1/machines/machine-1/status-definitions/status-1');
     update.flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
-    http.expectOne(MARK_URL).flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
 
     expect(update.request.method).toBe('PUT');
-    expect(update.request.body).toEqual({ code: 'E12', severity: 'error', description: '<p>old</p>' });
+    expect(update.request.body).toEqual({
+      code: 'E12',
+      severity: 'error',
+      description: '<p>old</p>',
+      draftId: 'draft-1',
+    });
   });
 });

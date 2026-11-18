@@ -12,7 +12,8 @@ public static class TelemetryPermissions
     /// Holds every permission of the Telemetry API. The service registers the policies from this set, so a
     /// permission that is missing here has no policy, and its endpoint fails with status 500.
     /// </summary>
-    public static readonly FrozenSet<string> All = [.. MetricDefinitions.All, .. StatusDefinitions.All];
+    public static readonly FrozenSet<string> All =
+        [.. MetricDefinitions.All, .. StatusDefinitions.All, .. DefinitionDrafts.All];
 
     public static class MetricDefinitions
     {
@@ -37,5 +38,17 @@ public static class TelemetryPermissions
         /// this set, so a permission that is missing here has no policy.
         /// </summary>
         public static readonly FrozenSet<string> All = [Read, Write, Delete];
+    }
+
+    public static class DefinitionDrafts
+    {
+        public const string Read = "definition-drafts:read";
+        public const string Write = "definition-drafts:write";
+
+        /// <summary>
+        /// Holds every permission of the definition drafts feature. <see cref="TelemetryPermissions.All"/> spreads
+        /// this set, so a permission that is missing here has no policy.
+        /// </summary>
+        public static readonly FrozenSet<string> All = [Read, Write];
     }
 }

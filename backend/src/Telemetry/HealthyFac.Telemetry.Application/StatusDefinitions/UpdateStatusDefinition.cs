@@ -5,6 +5,7 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,9 @@ public record UpdateStatusDefinitionRequest : IRequest
     public required StatusSeverity? Severity { get; init; }
 
     public string? Description { get; init; }
+
+    /// <summary>The status draft that this change applies, or <see langword="null"/>.</summary>
+    public Guid? DraftId { get; init; }
 }
 
 public class UpdateStatusDefinitionRequestValidator : AbstractValidator<UpdateStatusDefinitionRequest>
@@ -86,10 +90,12 @@ public sealed class UpdateStatusDefinitionPreHandlerCheck(
 /// code is the only guard, and the handler maps its failure to the conflict.
 /// </remarks>
 /// <param name="dbContext">Loads and saves the status definition.</param>
-public sealed class UpdateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext)
+/// <param name="draftMarker">Marks the named draft as applied in the same save.</param>
+public sealed class UpdateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext, AppliedDraftMarker draftMarker)
     : RequestHandler<UpdateStatusDefinitionRequest>
 {
     private readonly ITelemetryDbContext _dbContext = dbContext;
+    private readonly AppliedDraftMarker _draftMarker = draftMarker;
 
     protected override async Task HandleInternalAsync(
         UpdateStatusDefinitionRequest request,
@@ -104,6 +110,15 @@ public sealed class UpdateStatusDefinitionRequestHandler(ITelemetryDbContext dbC
 
         status.Update(request.Code, request.Severity!, request.Description);
 
+        if (request.DraftId is { } draftId)
+        {
+            await _draftMarker.MarkStatusDraftsAsync(
+                request.CompanyId,
+                request.MachineId,
+                [new DraftReference { Path = AppliedDraftMarker.SingleDraftPath, DraftId = draftId }],
+                cancellationToken);
+        }
+
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -111,6 +126,10 @@ public sealed class UpdateStatusDefinitionRequestHandler(ITelemetryDbContext dbC
         catch (UniqueConstraintException exception)
         {
             throw new ConflictException(StatusDefinitionErrors.CodeTaken, exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException(DefinitionDraftErrors.DraftChanged, exception);
         }
     }
 }
