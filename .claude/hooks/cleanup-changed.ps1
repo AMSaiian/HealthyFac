@@ -19,6 +19,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'command-line-batches.ps1')
 
 $repo = if ($Repo) { $Repo } else { git -C $PSScriptRoot rev-parse --show-toplevel 2>$null }
 if (-not $repo) { exit 0 }
@@ -99,8 +100,9 @@ try {
   $copied = @{}
   foreach ($target in $targets) { $copied[$target] = Get-FileHashText (Join-Path $shadow $target) }
 
-  # --include paths are relative to the solution directory (backend/).
-  $include = (@($targets) | ForEach-Object { $_ -replace '^backend/', '' }) -join ';'
+  # --include paths are relative to the solution directory (backend/). A long list runs in several jb calls, because one
+  # command line holds at most 32767 characters (command-line-batches.ps1).
+  $includes = @($targets | ForEach-Object { $_ -replace '^backend/', '' })
 
   # The "HealthyFac" profile (backend/HealthyFac.sln.DotSettings, also the Rider team-shared layer) holds the tasks
   # of "Built-in: Reformat & Apply Syntax Style" plus "Optimize using directives": it applies the layout and the
@@ -108,9 +110,11 @@ try {
   # the using directives (System first), and removes the unused ones. Do not use the default Full Cleanup profile:
   # it drops `private set`, reorders members and strips XML doc indents. --settings names the file explicitly, so
   # the run does not depend on how JetBrains maps HealthyFac.slnx to its settings file.
-  & $jb cleanupcode --no-build --verbosity=WARN --settings="$shadowSettings" --profile="HealthyFac" `
-      --include="$include" $shadowSolution 2>&1 |
-    Select-Object -Last 5
+  foreach ($batch in Split-ArgumentBatches $includes (Get-ArgumentBudget $jb)) {
+    & $jb cleanupcode --no-build --verbosity=WARN --settings="$shadowSettings" --profile="HealthyFac" `
+        --include="$($batch -join ';')" $shadowSolution 2>&1 |
+      Select-Object -Last 5
+  }
 
   foreach ($target in $targets) {
     $live = Join-Path $repo $target

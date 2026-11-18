@@ -28,6 +28,7 @@
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'worktree-fingerprint.ps1')
+. (Join-Path $PSScriptRoot 'command-line-batches.ps1')
 
 $hookInput = try { [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { $null }
 if ($env:HEALTHYFAC_SESSION_ROLE -eq 'reviewer') { exit 0 }
@@ -60,10 +61,12 @@ function Get-ChangedBackendFiles([string] $repo) {
     Where-Object { Test-Path (Join-Path $repo $_) }
 }
 
+# The git content hash of each file. The paths go through stdin, so the command line stays short for any number of
+# files (command-line-batches.ps1).
 function Get-ContentHashes([string[]] $files) {
   $hashes = @{}
   if ($files.Count -eq 0) { return $hashes }
-  $values = @(git hash-object -- $files)
+  $values = @($files | git hash-object --stdin-paths)
   for ($i = 0; $i -lt $files.Count; $i++) { $hashes[$files[$i]] = $values[$i] }
   $hashes
 }
@@ -103,8 +106,10 @@ function Invoke-FrontendVerification([string] $repo, [string] $project = 'fronte
 
     Push-Location $frontend
     try {
-      $relative = $touched | ForEach-Object { $_.Substring("$project/".Length) }
-      & npx prettier --write --ignore-unknown @relative 2>&1 | Out-Null
+      $relative = @($touched | ForEach-Object { $_.Substring("$project/".Length) })
+      foreach ($batch in Split-ArgumentBatches $relative (Get-ArgumentBudget 'npx.cmd')) {
+        & npx prettier --write --ignore-unknown @batch 2>&1 | Out-Null
+      }
       $output = & npm run lint 2>&1 | ForEach-Object { "$_" }
       $lintFailed = $LASTEXITCODE -ne 0
     }

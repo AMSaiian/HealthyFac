@@ -14,6 +14,8 @@
 # - Skipped cleanup: a failed restore of the private copy prints a "Cleanup skipped" line and cleans nothing.
 # - Frontend: the step formats changed files, including .webmanifest.
 #   A lint line without a capital S reaches the output. A turn fingerprint file older than 1 day goes.
+# - Long file lists: with 400 changed files in each area (longer than one command line), the hook passes, and the
+#   cleanup and Prettier change every file. The proofs pass the whole list on one command line.
 # - Lock: two cleanups of one checkout run one after the other; cleanups of two checkouts run at the same time.
 #   The cases compare the order of logged events, never durations.
 # - Proof: the turn skip case, the checkout case, and the two guard cases run once more with the skip, the script
@@ -363,6 +365,47 @@ try {
   $result = Invoke-Hook $repo 'test' $oldFilter
   Remove-Item Env:FAKE_LINT_OUTPUT
   Assert-That (-not $result.Output.Contains($lintLine)) 'Proof: with the old pattern S, the same lint line is lost'
+
+  Write-Host 'Long file lists'
+  function New-LongListRepo([string] $name) {
+    $repo = New-FrontendRepo $name
+    $folder = 'generated_with_a_long_folder_name_so_that_the_file_list_passes_the_command_line_limit'
+    $backend = New-Item -ItemType Directory -Force (Join-Path $repo "backend/App/$folder")
+    $frontend = New-Item -ItemType Directory -Force (Join-Path $repo "frontend/src/$folder")
+    foreach ($index in 0..399) {
+      $number = $index.ToString('000')
+      "namespace Test; public class C$number { }" | Set-Content (Join-Path $backend "Class$number.cs")
+      "export const c$number = 1;" | Set-Content (Join-Path $frontend "file-$number.ts")
+    }
+    $repo
+  }
+  function Get-UnmarkedCount([string] $repo, [string] $pattern, [string] $mark) {
+    @(Get-ChildItem (Join-Path $repo $pattern) | Where-Object { (Get-Content $_.FullName -Raw) -notmatch [regex]::Escape($mark) }).Count
+  }
+
+  $repo = New-LongListRepo 'long-lists'
+  $result = Invoke-Hook $repo
+  Assert-That ($result.ExitCode -eq 0) "The hook passes with 400 changed files in each area (output: $($result.Output))"
+  Assert-That ((Get-UnmarkedCount $repo 'backend/App/generated*/*.cs' $marker) -eq 0) 'The cleanup cleans each of 400 changed C# files'
+  Assert-That ((Get-UnmarkedCount $repo 'frontend/src/generated*/*.ts' '// PRETTIER') -eq 0) 'Prettier formats each of 400 changed frontend files'
+
+  $oneHashCall = New-ModifiedHooks 'one-hash-call' 'verify-changed.ps1' `
+    '@($files | git hash-object --stdin-paths)' '@(git hash-object -- $files)'
+  $repo = New-LongListRepo 'proof-one-hash-call'
+  $result = Invoke-Hook $repo 'test' $oneHashCall
+  Assert-That ($result.ExitCode -ne 0 -and $result.Output -match 'StandardOutputEncoding|too long') 'Proof: with the file list on the git command line, the hook fails'
+
+  $oneJbCall = New-ModifiedHooks 'one-jb-call' 'cleanup-changed.ps1' `
+    'Split-ArgumentBatches $includes (Get-ArgumentBudget $jb)' ', $includes'
+  $repo = New-LongListRepo 'proof-one-jb-call'
+  [void](Invoke-Hook $repo 'test' $oneJbCall)
+  Assert-That ((Get-UnmarkedCount $repo 'backend/App/generated*/*.cs' $marker) -eq 400) 'Proof: with one jb call for all files, no file is cleaned'
+
+  $onePrettierCall = New-ModifiedHooks 'one-prettier-call' 'verify-changed.ps1' `
+    "Split-ArgumentBatches `$relative (Get-ArgumentBudget 'npx.cmd')" ', $relative'
+  $repo = New-LongListRepo 'proof-one-prettier-call'
+  [void](Invoke-Hook $repo 'test' $onePrettierCall)
+  Assert-That ((Get-UnmarkedCount $repo 'frontend/src/generated*/*.ts' '// PRETTIER') -eq 400) 'Proof: with one Prettier call for all files, no file is formatted'
 
   Write-Host 'Stale turn fingerprints'
   $repo = New-TestRepo 'stale-turns'

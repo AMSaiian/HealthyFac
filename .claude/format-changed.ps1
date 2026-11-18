@@ -12,6 +12,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'hooks/command-line-batches.ps1')
 $WebProjects = @('frontend', 'keycloak-theme')
 $WebPattern = '\.(ts|html|css|json|webmanifest)$'
 
@@ -25,6 +26,11 @@ foreach ($project in $WebProjects) {
   $folder = Join-Path $Repo $project
   if ($web.Count -eq 0 -or -not (Test-Path (Join-Path $folder 'node_modules'))) { continue }
   Push-Location $folder
-  try { & npx prettier --write --ignore-unknown @($web | ForEach-Object { $_.Substring($project.Length + 1) }) 2>&1 | Out-Null }
+  try {
+    $relative = @($web | ForEach-Object { $_.Substring($project.Length + 1) })
+    foreach ($batch in Split-ArgumentBatches $relative (Get-ArgumentBudget 'npx.cmd')) {
+      & npx prettier --write --ignore-unknown @batch 2>&1 | Out-Null
+    }
+  }
   finally { Pop-Location }
 }
