@@ -5,6 +5,7 @@ using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.Enumerations;
 using HealthyFac.Telemetry.Application;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
@@ -30,6 +31,12 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
     public DbSet<MetricSchemaRevision> MetricSchemaRevisions => Set<MetricSchemaRevision>();
 
     public DbSet<StatusDefinition> StatusDefinitions => Set<StatusDefinition>();
+
+    public DbSet<ProposalEntry> ProposalEntries => Set<ProposalEntry>();
+
+    public DbSet<MetricDefinitionDraft> MetricDefinitionDrafts => Set<MetricDefinitionDraft>();
+
+    public DbSet<StatusDefinitionDraft> StatusDefinitionDrafts => Set<StatusDefinitionDraft>();
 
     public DbSet<ReceivedMessage> ReceivedMessages => Set<ReceivedMessage>();
 
@@ -96,6 +103,8 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
     {
         configurationBuilder.HaveEnumerationConversion<StatusSeverity>();
         configurationBuilder.HaveEnumerationConversion<MetricValueKind>();
+        configurationBuilder.HaveEnumerationConversion<DefinitionDraftState>();
+        configurationBuilder.HaveEnumerationConversion<ProposalEntryState>();
         configurationBuilder.IgnoreAny<IntakeError>();
     }
 

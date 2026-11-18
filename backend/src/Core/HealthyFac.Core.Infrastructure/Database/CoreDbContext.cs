@@ -39,10 +39,6 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     public DbSet<MachineDraft> MachineDrafts => Set<MachineDraft>();
 
-    public DbSet<MetricDefinitionDraft> MetricDefinitionDrafts => Set<MetricDefinitionDraft>();
-
-    public DbSet<StatusDefinitionDraft> StatusDefinitionDrafts => Set<StatusDefinitionDraft>();
-
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
 
     public DbSet<WorkOrderHistory> WorkOrderHistories => Set<WorkOrderHistory>();

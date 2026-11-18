@@ -17,7 +17,7 @@ public static class DraftApiFixtureExtensions
         public async Task<ArrangedDraft> ArrangeMachineDraftAsync(
             Guid? targetMachineId = null,
             Guid? companyId = null,
-            bool hasChildren = false
+            Guid? attemptId = null
         )
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -26,7 +26,7 @@ public static class DraftApiFixtureExtensions
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 owner,
-                DraftApiTestData.AttemptId,
+                attemptId ?? DraftApiTestData.AttemptId,
                 DraftApiTestData.FileId,
                 DraftApiTestData.QueuedAt,
                 targetMachineId,
@@ -34,59 +34,9 @@ public static class DraftApiFixtureExtensions
                 DraftApiTestData.ProposedSerialNumber,
                 description: null);
             dbContext.MachineDrafts.Add(draft);
-
-            if (hasChildren)
-            {
-                dbContext.MetricDefinitionDrafts.Add(
-                    MetricDefinitionDraft.ForMachineDraft(
-                        Guid.CreateVersion7(),
-                        owner,
-                        DraftApiTestData.AttemptId,
-                        DraftApiTestData.FileId,
-                        draft.Id,
-                        new MetricDraftValues { Key = DraftApiTestData.MetricKey }));
-                dbContext.StatusDefinitionDrafts.Add(
-                    StatusDefinitionDraft.ForMachineDraft(
-                        Guid.CreateVersion7(),
-                        owner,
-                        DraftApiTestData.AttemptId,
-                        DraftApiTestData.FileId,
-                        draft.Id,
-                        new StatusDraftValues { Code = DraftApiTestData.StatusCode }));
-            }
-
             await dbContext.SaveChangesAsync();
 
             return new ArrangedDraft(draft.Id, fixture.IdEncryptor.Encrypt(draft.Id));
-        }
-
-        public async Task<ArrangedDraft> ArrangeMetricDraftAsync(
-            Guid? targetMachineId,
-            Guid? targetMachineDraftId,
-            Guid? attemptId = null,
-            Guid? companyId = null
-        )
-        {
-            using var scope = fixture.ScopeFactory.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var values = new MetricDraftValues { Key = DraftApiTestData.MetricKey };
-            var id = Guid.CreateVersion7();
-            var owner = companyId ?? fixture.CompanyId;
-            var attempt = attemptId ?? DraftApiTestData.AttemptId;
-            dbContext.MetricDefinitionDrafts.Add(
-                targetMachineId is { } machineId
-                    ? MetricDefinitionDraft.ForMachine(
-                        id, owner, attempt, DraftApiTestData.FileId, machineId, values)
-                    : MetricDefinitionDraft.ForMachineDraft(
-                        id,
-                        owner,
-                        attempt,
-                        DraftApiTestData.FileId,
-                        targetMachineDraftId!.Value,
-                        values));
-            await dbContext.SaveChangesAsync();
-
-            return new ArrangedDraft(id, fixture.IdEncryptor.Encrypt(id));
         }
 
         public async Task<uint> LoadMachineRowVersionAsync(Guid machineId)
@@ -106,28 +56,6 @@ public static class DraftApiFixtureExtensions
 
             return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .MachineDrafts
-                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
-        public async Task<IReadOnlyList<MetricDefinitionDraft>> LoadMetricDraftsAsync()
-        {
-            using var scope = fixture.ScopeFactory.CreateScope();
-
-            return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
-                .MetricDefinitionDrafts
-                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
-        public async Task<IReadOnlyList<StatusDefinitionDraft>> LoadStatusDraftsAsync()
-        {
-            using var scope = fixture.ScopeFactory.CreateScope();
-
-            return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
-                .StatusDefinitionDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
                 .ToListAsync();

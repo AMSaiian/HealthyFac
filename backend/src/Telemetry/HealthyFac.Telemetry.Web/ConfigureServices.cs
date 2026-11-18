@@ -17,6 +17,7 @@ using HealthyFac.Shared.Web.Versioning;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.Web.Authorization;
+using HealthyFac.Telemetry.Web.DefinitionDrafts;
 using HealthyFac.Telemetry.Web.MetricDefinitions;
 using HealthyFac.Telemetry.Web.MetricUnits;
 using HealthyFac.Telemetry.Web.StatusDefinitions;
@@ -94,10 +95,10 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
-            services.ConfigureOpenTelemetryTracerProvider(
-                tracing => tracing.AddSource(ObservabilityConstants.Intake.Source));
-            services.ConfigureOpenTelemetryMeterProvider(
-                metrics => metrics.AddMeter(ObservabilityConstants.Intake.Meter));
+            services.ConfigureOpenTelemetryTracerProvider(tracing =>
+                tracing.AddSource(ObservabilityConstants.Intake.Source));
+            services.ConfigureOpenTelemetryMeterProvider(metrics =>
+                metrics.AddMeter(ObservabilityConstants.Intake.Meter));
 
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<TelemetryDbContext>(
@@ -153,6 +154,7 @@ public static class ConfigureServices
             versionedGroup.MapMetricUnitEndpoints();
             versionedGroup.MapMetricDefinitionEndpoints();
             versionedGroup.MapStatusDefinitionEndpoints();
+            versionedGroup.MapDefinitionDraftEndpoints();
 
             return app;
         }

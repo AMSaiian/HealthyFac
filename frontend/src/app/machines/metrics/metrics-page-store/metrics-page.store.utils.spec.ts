@@ -2,7 +2,6 @@ import { DraftState, type MetricDraftDetail } from '@machines/drafts/draft';
 import { MetricValueKind } from '@machines/metrics/metric-definition';
 import type { MetricFormValue } from '@machines/metrics/metric-form/metric-form-schema';
 import {
-  appliedDraftIds,
   buildExamplePayload,
   EMPTY_METRIC_VALUE,
   mapServerErrors,
@@ -107,6 +106,7 @@ describe('toApplyBody', () => {
         min: null,
         max: null,
         states: ['open', 'closed'],
+        draftId: null,
       },
     ]);
   });
@@ -292,13 +292,5 @@ describe('stageMetricDrafts', () => {
 
     expect(staged.items[0].localId).toBe('new-2');
     expect(staged.items[0].value).toMatchObject({ name: '', unit: '' });
-  });
-
-  it('appliedDraftIds_WithStagedAndPlainChanges_ListsOnlyTheStagedDraftsThatAreNotDeleted', () => {
-    const staged = stageMetricDrafts([savedItem('a', { key: 'one.key' }), savedItem('b')], 0, [DRAFT], CATALOG);
-
-    const ids = appliedDraftIds(netChanges(staged.items));
-
-    expect(ids).toEqual(['draft-1']);
   });
 });

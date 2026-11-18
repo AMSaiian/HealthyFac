@@ -51,6 +51,16 @@ public static class MachineTestData
 
     public static string TooLongDescription => new(c: 'a', DescriptionLimit + 1);
 
+    /// <summary>
+    /// The case name, the value of the pending drafts filter, and the positions of the expected machines. Machine 0
+    /// has a pending machine draft, machine 1 is in the Telemetry list, and machine 2 has neither.
+    /// </summary>
+    public static TheoryData<string, bool, int[]> PendingDraftsFilters => new()
+    {
+        { "with pending drafts", true, [0, 1] },
+        { "without pending drafts", false, [2] },
+    };
+
     public static TheoryData<string, string, string> DescriptionsOutsideTheRules => new()
     {
         { "TooLong", TooLongDescription, MachineErrors.DescriptionTooLong },

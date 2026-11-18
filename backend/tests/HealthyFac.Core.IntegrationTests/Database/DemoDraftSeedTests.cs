@@ -18,15 +18,9 @@ public sealed class DemoDraftSeedTests(CoreDatabaseFixture fixture)
         var drafts = await _fixture.LoadDemoDraftsAsync();
 
         drafts.Machines.Should().HaveCount(DemoDraftSeedTestData.MachineDraftCount);
-        drafts.Metrics.Should().HaveCount(DemoDraftSeedTestData.MetricDraftCount);
-        drafts.Statuses.Should().HaveCount(DemoDraftSeedTestData.StatusDraftCount);
         drafts.Machines.Should().OnlyContain(draft => draft.State == DraftState.Pending);
-        drafts.Metrics.Should().OnlyContain(draft => draft.State == DraftState.Pending);
-        drafts.Statuses.Should().OnlyContain(draft => draft.State == DraftState.Pending);
         drafts.Machines.Should().OnlyContain(draft => draft.CompanyId == DatabaseTestData.TestTenantCompanyId);
         drafts.Machines.Should().OnlyContain(draft => draft.CreatedBy == DatabaseTestData.TestSupervisorIdentityId);
-        drafts.Metrics.Should().OnlyContain(draft => draft.CreatedBy == DatabaseTestData.TestSupervisorIdentityId);
-        drafts.Statuses.Should().OnlyContain(draft => draft.CreatedBy == DatabaseTestData.TestSupervisorIdentityId);
     }
 
     [Fact]
@@ -43,12 +37,6 @@ public sealed class DemoDraftSeedTests(CoreDatabaseFixture fixture)
         cncDraft.Name.Should().Be(DemoDraftSeedTestData.CncMachineName);
         cncDraft.SerialNumber.Should().Be(DemoDraftSeedTestData.CncSerialNumber);
         createIds.Should().HaveCount(DemoDraftSeedTestData.MachineDraftCount - 1);
-        drafts.Metrics.Where(draft => draft.TargetMachineDraftId != null)
-            .Should().OnlyContain(draft => createIds.Contains(draft.TargetMachineDraftId!.Value));
-        drafts.Statuses.Where(draft => draft.TargetMachineDraftId != null)
-            .Should().OnlyContain(draft => createIds.Contains(draft.TargetMachineDraftId!.Value));
-        drafts.Metrics.Where(draft => draft.TargetMachineId != null)
-            .Should().OnlyContain(draft => draft.TargetMachineId == DatabaseTestData.FirstSeedMachineId);
     }
 
     [Fact]
@@ -86,10 +74,8 @@ public sealed class DemoDraftSeedTests(CoreDatabaseFixture fixture)
         var drafts = await _fixture.LoadDemoDraftsAsync();
         var companyCount = await _fixture.CountCompaniesAsync(DatabaseTestData.TestTenantCompanyId);
 
-        companyCount.Should().Be(1);
+        companyCount.Should().Be(expected: 1);
         drafts.Machines.Should().BeEmpty();
-        drafts.Metrics.Should().BeEmpty();
-        drafts.Statuses.Should().BeEmpty();
     }
 
     [Fact]
@@ -103,8 +89,6 @@ public sealed class DemoDraftSeedTests(CoreDatabaseFixture fixture)
         var drafts = await _fixture.LoadDemoDraftsAsync();
 
         drafts.Machines.Should().HaveCount(DemoDraftSeedTestData.MachineDraftCount);
-        drafts.Metrics.Should().HaveCount(DemoDraftSeedTestData.MetricDraftCount);
-        drafts.Statuses.Should().HaveCount(DemoDraftSeedTestData.StatusDraftCount);
     }
 
     [Fact]
@@ -131,7 +115,5 @@ public sealed class DemoDraftSeedTests(CoreDatabaseFixture fixture)
         var drafts = await _fixture.LoadDemoDraftsAsync();
 
         drafts.Machines.Should().BeEmpty();
-        drafts.Metrics.Should().BeEmpty();
-        drafts.Statuses.Should().BeEmpty();
     }
 }

@@ -6,6 +6,8 @@ public static class MachineApiTestData
     public const string MachinesPath = "v1/machines";
     public const string SearchPath = "v1/machines/search";
     public const string LookupPath = "v1/machines/lookup";
+    public const string NamesPath = "v1/machines/names";
+    public const int NameLookupTooManyIds = 101;
     public const string LookupEmptyBody = "{}";
     public const string ReadPermission = "machines:read";
     public const string WritePermission = "machines:write";

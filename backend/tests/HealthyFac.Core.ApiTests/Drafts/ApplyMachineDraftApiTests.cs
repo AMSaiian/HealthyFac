@@ -18,9 +18,9 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
     private readonly CoreApiFixture _fixture = fixture;
 
     [Fact]
-    public async Task Apply_CreateDraft_CreatesTheMachineAndMovesTheChildren()
+    public async Task Apply_CreateDraft_CreatesTheMachineAndQueuesTheMessages()
     {
-        var draft = await _fixture.ArrangeMachineDraftAsync(hasChildren: true);
+        var draft = await _fixture.ArrangeMachineDraftAsync();
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
 
@@ -32,17 +32,12 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
 
         var machineId = await ReadMachineIdAsync(response);
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metrics = await _fixture.LoadMetricDraftsAsync();
-        var statuses = await _fixture.LoadStatusDraftsAsync();
         var created = await _fixture.ReadOutboxMessagesAsync<MachineCreated>();
         var applied = await _fixture.ReadOutboxMessagesAsync<MachineDraftApplied>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Applied);
         machineDrafts[index: 0].AppliedMachineId.Should().Be(machineId);
-        metrics.Should().ContainSingle().Which.TargetMachineId.Should().Be(machineId);
-        metrics[index: 0].TargetMachineDraftId.Should().BeNull();
-        statuses.Should().ContainSingle().Which.TargetMachineId.Should().Be(machineId);
         created.Should().ContainSingle().Which.Name.Should().Be(DraftApiTestData.ProposedName);
         applied.Should().ContainSingle();
         applied[index: 0].FileId.Should().Be(DraftApiTestData.FileId);
@@ -122,7 +117,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
     }
 
     [Fact]
-    public async Task Apply_Twice_Returns409ForTheSecondCall()
+    public async Task Apply_Twice_Returns422ForTheSecondCall()
     {
         var draft = await _fixture.ArrangeMachineDraftAsync();
         var claims = _fixture.CreateMachineClaims(
@@ -135,7 +130,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
             HttpMethod.Post, DraftApiTestData.ApplyPath(draft.EncryptedId), claims, body);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         content.Should().Contain(DraftApiTestData.DraftNotPendingKey);
     }
 

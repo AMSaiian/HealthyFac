@@ -28,7 +28,16 @@ public static class GridErrors
         public const string IdSetFilterIdsRequired = "An ID set filter needs its IDs.";
 
         public const string IdSetFilterIdEmpty = "An ID set filter must not hold an empty ID.";
+
+        public const string PositionSortValueKey = "after.sortValue";
+
+        public const string PositionSortValueInvalid = "The position does not fit the sort column.";
     }
+
+    public static ArgumentException KeysetKeyTypeNotSupported(Type keyType, IEnumerable<Type> supportedTypes) =>
+        new(
+            $"The keyset sort key type '{keyType}' is not supported. "
+            + $"Use one of: {string.Join(separator: ", ", supportedTypes.Select(type => type.Name).Order())}.");
 
     public static InvalidOperationException SortColumnNotMapped(object column) =>
         new($"The sort column '{column}' has no entry in the sort map. Each sort column maps to one key expression.");

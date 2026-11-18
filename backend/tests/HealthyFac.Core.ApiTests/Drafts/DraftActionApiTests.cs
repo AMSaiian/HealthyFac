@@ -12,117 +12,56 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
     private readonly CoreApiFixture _fixture = fixture;
 
     [Fact]
-    public async Task Dismiss_CreateDraft_DismissesItsChildren()
+    public async Task Dismiss_CreateDraft_DismissesIt()
     {
-        var draft = await _fixture.ArrangeMachineDraftAsync(hasChildren: true);
+        var draft = await _fixture.ArrangeMachineDraftAsync();
 
         var response = await DismissAsync(draft.EncryptedId);
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metrics = await _fixture.LoadMetricDraftsAsync();
-        var statuses = await _fixture.LoadStatusDraftsAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
-        metrics.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
-        statuses.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
     }
 
     [Fact]
-    public async Task Dismiss_UpdateDraft_LeavesTheChildrenPending()
+    public async Task Dismiss_UpdateDraft_DismissesOnlyThatDraft()
     {
         var machineId =
             _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "DISMISS-UPDATE"));
         var draft = await _fixture.ArrangeMachineDraftAsync(machineId);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
+        await _fixture.ArrangeMachineDraftAsync(machineId);
 
         var response = await DismissAsync(draft.EncryptedId);
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
-        var metrics = await _fixture.LoadMetricDraftsAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
-        metrics.Should().ContainSingle().Which.State.Should().Be(DraftState.Pending);
+        machineDrafts.Single(stored => stored.Id == draft.Id).State.Should().Be(DraftState.Dismissed);
+        machineDrafts.Count(stored => stored.State == DraftState.Pending).Should().Be(expected: 1);
     }
 
     [Fact]
-    public async Task MarkApplied_ForChildOfPendingCreateDraft_Returns409ButDismissWorks()
-    {
-        var machineDraft = await _fixture.ArrangeMachineDraftAsync();
-        var child = await _fixture.ArrangeMetricDraftAsync(targetMachineId: null, machineDraft.Id);
-
-        var mark = await MarkAsync(child.EncryptedId);
-        var markContent = await mark.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        var dismiss = await DismissAsync(child.EncryptedId);
-
-        mark.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        markContent.Should().Contain(DraftApiTestData.MachineDraftNotAppliedKey);
-        dismiss.StatusCode.Should().Be(HttpStatusCode.NoContent);
-    }
-
-    [Fact]
-    public async Task MarkApplied_Twice_Returns204ForBothCalls()
-    {
-        var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "MARK-TWICE"));
-        var child = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-
-        var first = await MarkAsync(child.EncryptedId);
-        var second = await MarkAsync(child.EncryptedId);
-        var metrics = await _fixture.LoadMetricDraftsAsync();
-
-        first.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        second.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        metrics.Should().ContainSingle().Which.State.Should().Be(DraftState.Applied);
-    }
-
-    [Fact]
-    public async Task MarkApplied_ForDismissedDraft_Returns409()
-    {
-        var machineId =
-            _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "MARK-DISMISSED"));
-        var child = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        await DismissAsync(child.EncryptedId);
-
-        var response = await MarkAsync(child.EncryptedId);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-    }
-
-    [Fact]
-    public async Task MarkApplied_WithOneUnmarkableDraft_ChangesNone()
-    {
-        var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "MARK-ATOMIC"));
-        var machineDraft = await _fixture.ArrangeMachineDraftAsync();
-        var markable = await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
-        var waiting = await _fixture.ArrangeMetricDraftAsync(targetMachineId: null, machineDraft.Id);
-
-        var response = await MarkAsync(markable.EncryptedId, waiting.EncryptedId);
-        var metrics = await _fixture.LoadMetricDraftsAsync();
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        metrics.Should().OnlyContain(draft => draft.State == DraftState.Pending);
-    }
-
-    [Fact]
-    public async Task MarkApplied_WithNullIds_Returns400()
+    public async Task MarkApplied_Route_Returns404()
     {
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post,
             DraftApiTestData.MarkAppliedPath,
             _fixture.CreateMachineClaims(DraftApiTestData.DraftWritePermission),
-            DraftApiTestData.MarkBodyWithNullIds);
+            jsonBody: "{\"ids\":[]}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
-    public async Task Dismiss_Twice_Returns409ForTheSecondCall()
+    public async Task Dismiss_Twice_Returns422ForTheSecondCall()
     {
         var draft = await _fixture.ArrangeMachineDraftAsync();
         await DismissAsync(draft.EncryptedId);
 
         var response = await DismissAsync(draft.EncryptedId);
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        content.Should().Contain(DraftApiTestData.DraftNotPendingKey);
     }
 
     [Fact]
@@ -145,10 +84,11 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
 
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post,
-            pathTemplate.Replace("{draftId}", draft.EncryptedId).Replace("{machineId}", encryptedMachineId),
+            pathTemplate.Replace(oldValue: "{draftId}", draft.EncryptedId)
+                .Replace(oldValue: "{machineId}", encryptedMachineId),
             claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Fact]
@@ -157,18 +97,17 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
         var encryptedMachineId = await _fixture.ArrangeMachineAsync(serialNumber: "DISMISS-ALL");
         var machineId = _fixture.IdEncryptor.Decrypt(encryptedMachineId);
         await _fixture.ArrangeMachineDraftAsync(machineId);
-        await _fixture.ArrangeMetricDraftAsync(machineId, targetMachineDraftId: null);
 
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post,
             DraftApiTestData.DismissMachineDraftsPath(encryptedMachineId),
             _fixture.CreateMachineClaims(DraftApiTestData.DraftWritePermission));
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        var metrics = await _fixture.LoadMetricDraftsAsync();
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        content.Should().Contain("\"dismissedCount\":2");
-        metrics.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
+        content.Should().Contain(expected: "\"dismissedCount\":1");
+        machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Dismissed);
     }
 
     [Fact]
@@ -189,11 +128,4 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
             HttpMethod.Post,
             DraftApiTestData.DismissPath(encryptedId),
             _fixture.CreateMachineClaims(DraftApiTestData.DraftWritePermission));
-
-    private Task<HttpResponseMessage> MarkAsync(params string[] encryptedIds) =>
-        _fixture.SendMachineRequestAsync(
-            HttpMethod.Post,
-            DraftApiTestData.MarkAppliedPath,
-            _fixture.CreateMachineClaims(DraftApiTestData.DraftWritePermission),
-            DraftApiTestData.MarkBody(encryptedIds));
 }

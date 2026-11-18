@@ -20,7 +20,7 @@ public record AttemptDraftsResponse
 }
 
 /// <summary>
-/// The drafts of one attempt that belong to one machine: an existing machine (the target, or the machine that a create
+/// The machine draft of one attempt for one machine: an existing machine (the target, or the machine that a create
 /// draft made), or the machine that a pending create draft proposes.
 /// </summary>
 public record AttemptDraftGroup
@@ -34,10 +34,6 @@ public record AttemptDraftGroup
     public string? MachineName { get; init; }
 
     public MachineDraftDetail? MachineDraft { get; init; }
-
-    public required IReadOnlyList<MetricDraftDetail> Metrics { get; init; }
-
-    public required IReadOnlyList<StatusDraftDetail> Statuses { get; init; }
 }
 
 public class GetAttemptDraftsRequestValidator : AbstractValidator<GetAttemptDraftsRequest>
@@ -67,10 +63,10 @@ public sealed class GetAttemptDraftsPreHandlerCheck(ICurrentUserProvider current
 }
 
 /// <summary>
-/// Reads every draft of one ingest attempt (all states) and groups them by machine. A group shows the machine draft
-/// when one exists, and the metric and status drafts of the machine. The group key is the machine (the target, or the
-/// machine that a create draft made) or, for a pending create draft, the draft itself. An attempt that Core does not
-/// know gives an empty list, because Core does not own attempts.
+/// Reads every machine draft of one ingest attempt (all states) and groups them by machine. The group key is the
+/// machine (the target, or the machine that a create draft made) or, for a pending create draft, the draft itself.
+/// The metric and status drafts live in Telemetry. An attempt that Core does not know gives an empty list, because Core
+/// does not own attempts.
 /// </summary>
 /// <param name="dbContext">Reads the drafts and the machine names.</param>
 public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
@@ -87,19 +83,9 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
             .AsNoTracking()
             .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
-        var metrics = await _dbContext.MetricDefinitionDrafts
-            .AsNoTracking()
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
-            .ToListAsync(cancellationToken);
-        var statuses = await _dbContext.StatusDefinitionDrafts
-            .AsNoTracking()
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
-            .ToListAsync(cancellationToken);
 
         var machineIds = machineDrafts
             .Select(MachineIdOf)
-            .Concat(metrics.Select(draft => draft.TargetMachineId))
-            .Concat(statuses.Select(draft => draft.TargetMachineId))
             .OfType<Guid>()
             .Distinct()
             .ToList();
@@ -108,12 +94,10 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
             .Where(machine => machineIds.Contains(machine.Id) && machine.CompanyId == request.CompanyId)
             .ToDictionaryAsync(machine => machine.Id, machine => machine.Name, cancellationToken);
 
-        var keys = machineDrafts.Select(KeyOf)
-            .Concat(metrics.Select(draft => KeyOf(draft.TargetMachineId, draft.TargetMachineDraftId)))
-            .Concat(statuses.Select(draft => KeyOf(draft.TargetMachineId, draft.TargetMachineDraftId)))
-            .Distinct();
-        var groups = keys
-            .Select(key => ToGroup(key, machineDrafts, metrics, statuses, machineNames))
+        var groups = machineDrafts
+            .Select(KeyOf)
+            .Distinct()
+            .Select(key => ToGroup(key, machineDrafts, machineNames))
             .ToList();
 
         return new AttemptDraftsResponse { Groups = groups };
@@ -123,14 +107,9 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
 
     private static Guid KeyOf(MachineDraft draft) => MachineIdOf(draft) ?? draft.Id;
 
-    private static Guid KeyOf(Guid? targetMachineId, Guid? targetMachineDraftId) =>
-        targetMachineId ?? targetMachineDraftId!.Value;
-
     private static AttemptDraftGroup ToGroup(
         Guid key,
         List<MachineDraft> machineDrafts,
-        List<MetricDefinitionDraft> metrics,
-        List<StatusDefinitionDraft> statuses,
         Dictionary<Guid, string> machineNames
     )
     {
@@ -142,16 +121,6 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
             MachineId = isPendingCreate ? null : key,
             MachineName = isPendingCreate ? null : machineNames.GetValueOrDefault(key),
             MachineDraft = machineDraft is null ? null : MachineDraftDetail.From(machineDraft),
-            Metrics =
-            [
-                .. metrics.Where(draft => KeyOf(draft.TargetMachineId, draft.TargetMachineDraftId) == key)
-                    .Select(MetricDraftDetail.From),
-            ],
-            Statuses =
-            [
-                .. statuses.Where(draft => KeyOf(draft.TargetMachineId, draft.TargetMachineDraftId) == key)
-                    .Select(StatusDraftDetail.From),
-            ],
         };
     }
 }

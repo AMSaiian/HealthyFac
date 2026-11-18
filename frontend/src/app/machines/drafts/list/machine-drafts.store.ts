@@ -126,10 +126,11 @@ export const MachineDraftsStore = signalStore(
           return undefined;
         }
         const sort = store.sort();
+        const after = store.after();
         const body: SearchMachineDraftsBody = {
-          offset: store.offset(),
           limit: store.limit(),
           ...(sort === null ? {} : { sort }),
+          ...(after === null ? {} : { after }),
           filter: { kinds: setFilter(store.filter().kinds), states: setFilter(store.filter().states) },
         };
         return { scope, body };
@@ -143,7 +144,7 @@ export const MachineDraftsStore = signalStore(
       pending: rxResource({
         params: () => store.scope(),
         stream: ({ params }) =>
-          search(params, { offset: 0, limit: 1, filter: { kinds: setFilter([]), ...PENDING_ONLY } }, skipErrorToast()),
+          search(params, { limit: 1, filter: { kinds: setFilter([]), ...PENDING_ONLY } }, skipErrorToast()),
       }),
       /** The drafts of the attempts on the page, to tell which draft applies as it is. */
       attempts: rxResource({
@@ -169,11 +170,20 @@ export const MachineDraftsStore = signalStore(
     pendingCount: computed(() => (store.pending.hasValue() ? store.pending.value().totalCount : 0)),
     selectedIds: computed(() => Object.keys(store.selection())),
     selectedCount: computed(() => Object.keys(store.selection()).length),
+    /** The position that reads the page after the current one, or `null` on the last page. */
+    nextPosition: computed(() => (store.drafts.hasValue() ? store.drafts.value().nextPosition : null)),
   })),
   withMethods((store) => ({
     start(action: AppAction): void {
       patchState(store, { action, hasChanged: false, isDismissing: false, selection: {} });
       store.resetGrid();
+    },
+    /** Shows the page after the current one. It does nothing on the last page. */
+    showNextPage(): void {
+      const position = store.nextPosition();
+      if (position !== null) {
+        store.nextPage(position);
+      }
     },
     /** Loads the list again after a failed load. */
     retryLoad(): void {
@@ -195,7 +205,7 @@ export const MachineDraftsStore = signalStore(
     const dismissDraft = rxMethod<MachineDraftGridItem>(
       pipe(
         exhaustMap((item) =>
-          api.dismiss(item.id, skipErrorToast()).pipe(
+          api.dismiss(item, skipErrorToast()).pipe(
             tap(() => {
               patchState(store, (state) => ({
                 hasChanged: true,
@@ -214,15 +224,15 @@ export const MachineDraftsStore = signalStore(
       ),
     );
 
-    const dismissSelected = rxMethod<readonly string[]>(
+    const dismissSelected = rxMethod<readonly MachineDraftGridItem[]>(
       pipe(
         tap(() => patchState(store, { isDismissing: true })),
-        exhaustMap((ids) => {
+        exhaustMap((items) => {
           const doneIds: string[] = [];
           const withoutDone = (): Readonly<Record<string, MachineDraftGridItem>> =>
             Object.fromEntries(Object.entries(store.selection()).filter(([id]) => !doneIds.includes(id)));
-          return from(ids).pipe(
-            concatMap((id) => api.dismiss(id, skipErrorToast()).pipe(tap(() => doneIds.push(id)))),
+          return from(items).pipe(
+            concatMap((item) => api.dismiss(item, skipErrorToast()).pipe(tap(() => doneIds.push(item.id)))),
             toArray(),
             tap(() => {
               patchState(store, { hasChanged: true, isDismissing: false, selection: {} });
@@ -286,14 +296,14 @@ export const MachineDraftsStore = signalStore(
       /** Asks for a confirmation, then dismisses every pending draft in the scope in one call. */
       requestDismissAll(): void {
         if (store.selectedCount() > 0) {
-          const ids = store.selectedIds();
+          const items = Object.values(store.selection());
           store._confirmDestructive({
             headerKey: 'DRAFTS.DISMISS_SELECTED_HEADER',
             messageKey: 'DRAFTS.DISMISS_SELECTED_MESSAGE',
-            params: { count: ids.length },
+            params: { count: items.length },
             acceptKey: 'DRAFTS.DISMISS',
             onAccept: () => {
-              dismissSelected(ids);
+              dismissSelected(items);
             },
           });
           return;

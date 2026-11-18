@@ -28,7 +28,8 @@ public static class StatusDefinitionFixtureExtensions
             Guid machineId,
             string code,
             string? description = null,
-            StatusSeverity? severity = null
+            StatusSeverity? severity = null,
+            Guid? draftId = null
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
@@ -43,6 +44,7 @@ public static class StatusDefinitionFixtureExtensions
                     Code = code,
                     Severity = severity ?? StatusSeverity.Info,
                     Description = description,
+                    DraftId = draftId,
                 });
 
             return response.Id;
@@ -88,7 +90,8 @@ public static class StatusDefinitionFixtureExtensions
             Guid statusId,
             string code,
             string? description = null,
-            StatusSeverity? severity = null
+            StatusSeverity? severity = null,
+            Guid? draftId = null
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
@@ -104,6 +107,7 @@ public static class StatusDefinitionFixtureExtensions
                     Code = code,
                     Severity = severity ?? StatusSeverity.Info,
                     Description = description,
+                    DraftId = draftId,
                 });
         }
 

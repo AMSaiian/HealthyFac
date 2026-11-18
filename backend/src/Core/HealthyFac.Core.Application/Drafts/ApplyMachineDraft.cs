@@ -75,11 +75,11 @@ public sealed class ApplyMachineDraftPreHandlerCheck(ICurrentUserProvider curren
 }
 
 /// <summary>
-/// Applies a pending machine draft with the values that the user confirmed. A create draft makes a new machine, moves
-/// the pending metric and status drafts of the draft to it, and queues <see cref="MachineCreated"/> and
-/// <see cref="MachineDraftApplied"/>. An update draft changes the target machine, checks its row version, and queues
+/// Applies a pending machine draft with the values that the user confirmed. A create draft makes a new machine and
+/// queues <see cref="MachineCreated"/> and <see cref="MachineDraftApplied"/> (Telemetry moves the metric and status
+/// drafts of the draft to the machine). An update draft changes the target machine, checks its row version, and queues
 /// <see cref="MachineRenamed"/> when the name changes. One save stores everything. A draft of another company is "not
-/// found", and a draft that is not pending is a conflict.
+/// found", and a draft that is not pending is unprocessable (422).
 /// </summary>
 /// <param name="dbContext">Loads the draft and the machines, and saves the change.</param>
 /// <param name="outbox">Stores the messages with the change.</param>
@@ -112,7 +112,7 @@ public sealed class ApplyMachineDraftRequestHandler(
 
         if (draft.State != DraftState.Pending)
         {
-            throw new ConflictException(DraftErrors.DraftNotPending);
+            throw new UnprocessableException(DraftErrors.DraftNotPending);
         }
 
         var machineId = draft.IsCreate
@@ -168,15 +168,6 @@ public sealed class ApplyMachineDraftRequestHandler(
             });
 
         draft.MarkApplied(machine.Id);
-
-        var metrics = await _dbContext.MetricDefinitionDrafts
-            .Where(child => child.TargetMachineDraftId == draft.Id && child.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
-        var statuses = await _dbContext.StatusDefinitionDrafts
-            .Where(child => child.TargetMachineDraftId == draft.Id && child.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
-        metrics.ForEach(child => child.RetargetToMachine(machine.Id));
-        statuses.ForEach(child => child.RetargetToMachine(machine.Id));
 
         _outbox.Add(
             new MachineDraftApplied

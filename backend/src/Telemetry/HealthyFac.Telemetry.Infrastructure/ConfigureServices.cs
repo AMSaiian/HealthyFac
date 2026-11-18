@@ -1,5 +1,7 @@
 using EntityFramework.Exceptions.PostgreSQL;
+using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -7,15 +9,19 @@ using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.RichText;
+using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Shared.Infrastructure.Time;
 using HealthyFac.Telemetry.Application;
+using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Application.Intake;
+using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Application.MetricSchemas;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Initialization;
 using HealthyFac.Telemetry.Infrastructure.Database.Seeding;
 using HealthyFac.Telemetry.Infrastructure.Intake;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+using HealthyFac.Telemetry.Infrastructure.MachineRegistrations;
 using HealthyFac.Telemetry.Infrastructure.MetricSchemas;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -86,6 +92,13 @@ public static class ConfigureServices
 
             services.AddIntegrationMessage<MachineCreated>();
             services.AddIntegrationMessage<MachineDeleted>();
+            services.AddIntegrationMessage<DraftsProposed>();
+            services.AddIntegrationMessage<DraftsResolved>();
+            services.AddIntegrationMessage<MachineDraftApplied>();
+            services.AddIntegrationMessage<MachineDraftDismissed>();
+            services.AddScoped<IMachineRegistrationLock, MachineRegistrationLock>();
+            services.AddScoped<ProposalEntries>();
+            services.AddScoped<AppliedDraftMarker>();
 
             services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
                 SeedingOptions.SectionName, configuration);
@@ -99,6 +112,8 @@ public static class ConfigureServices
             services.AddHostedService(provider => provider.GetRequiredService<MqttIntakeService>());
 
             services.AddScoped<TelemetryDevelopmentDataSeeder>();
+            services.AddSingleton(DemoIngestSeedLocation.FromApplicationBase());
+            services.AddScoped<DemoDefinitionDraftSeeder>();
             services.AddScoped<ITelemetryDbInitializer, TelemetryDbInitializer>();
 
             return services;

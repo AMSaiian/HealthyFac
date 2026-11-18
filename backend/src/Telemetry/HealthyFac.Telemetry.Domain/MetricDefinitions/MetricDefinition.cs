@@ -122,13 +122,26 @@ public class MetricDefinition : IEntity, IAuditable, ISoftDeletable
     /// <param name="min">The lower bound of a numeric metric, or <see langword="null"/>.</param>
     /// <param name="max">The upper bound of a numeric metric, or <see langword="null"/>.</param>
     /// <param name="states">The state codes of a state set, otherwise <see langword="null"/>.</param>
+    /// <returns>
+    /// <see langword="true"/> when at least 1 value differs from the stored one; <see langword="false"/> when the call
+    /// changes nothing.
+    /// </returns>
     /// <exception cref="InvalidOperationException">The fields do not fit the value kind.</exception>
     [MemberNotNull(nameof(Name))]
-    public void Update(string name, string? description, double? min, double? max, IReadOnlyList<string>? states)
+    public bool Update(string name, string? description, double? min, double? max, IReadOnlyList<string>? states)
     {
+        var isChanged = !string.Equals(Name, name, StringComparison.Ordinal)
+            || !string.Equals(Description, description, StringComparison.Ordinal)
+            || Min != min
+            || Max != max
+            || !(_states ?? []).SequenceEqual(states ?? [], StringComparer.Ordinal)
+            || _states is null != states is null;
+
         Name = name;
         Description = description;
         ApplyValues(min, max, states);
+
+        return isChanged;
     }
 
     private void ApplyValues(double? min, double? max, IReadOnlyList<string>? states)

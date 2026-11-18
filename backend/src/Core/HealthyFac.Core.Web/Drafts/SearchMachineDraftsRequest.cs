@@ -1,13 +1,13 @@
 using HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 using HealthyFac.Core.Web.Machines;
-using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.Application.IdEncryption;
 using ApplicationSearchMachineDraftsRequest =
     HealthyFac.Core.Application.Drafts.SearchMachineDrafts.SearchMachineDraftsRequest;
 
 namespace HealthyFac.Core.Web.Drafts;
 
-public record SearchMachineDraftsRequest : GridRequest<MachineDraftGridFilter, MachineDraftSortColumn>;
+public record SearchMachineDraftsRequest : KeysetGridRequest<MachineDraftGridFilter, MachineDraftSortColumn>;
 
 public static class SearchMachineDraftsRequestExtensions
 {
@@ -22,10 +22,10 @@ public static class SearchMachineDraftsRequestExtensions
             {
                 CompanyId = companyId,
                 MachineId = MachineRouteIds.Decrypt(encryptedMachineId, idEncryptor),
-                Offset = request.Offset,
                 Limit = request.Limit,
                 Sort = request.Sort,
                 Filter = request.Filter,
+                After = request.After,
             };
 
         public ApplicationSearchMachineDraftsRequest ToApplicationAttemptRequest(
@@ -37,10 +37,10 @@ public static class SearchMachineDraftsRequestExtensions
             {
                 CompanyId = companyId,
                 AttemptId = DraftRouteIds.Decrypt(encryptedAttemptId, idEncryptor),
-                Offset = request.Offset,
                 Limit = request.Limit,
                 Sort = request.Sort,
                 Filter = request.Filter,
+                After = request.After,
             };
     }
 }

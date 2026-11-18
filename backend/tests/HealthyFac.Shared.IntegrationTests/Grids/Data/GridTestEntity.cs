@@ -10,7 +10,7 @@ public sealed class GridTestEntity : IEntity
 
     public required string Text { get; init; }
 
-    public required int Number { get; init; }
+    public required int Number { get; set; }
 
     public required decimal Amount { get; init; }
 
@@ -19,4 +19,8 @@ public sealed class GridTestEntity : IEntity
     public DateTime? OptionalAt { get; init; }
 
     public required Guid Key { get; init; }
+
+    public long Big { get; init; }
+
+    public double Ratio { get; init; }
 }

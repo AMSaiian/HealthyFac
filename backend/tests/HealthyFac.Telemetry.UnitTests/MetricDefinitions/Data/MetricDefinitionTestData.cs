@@ -50,6 +50,27 @@ public static class MetricDefinitionTestData
     ) =>
         new(RegistrationId, key: "spindle.mode", Name, description: null, kind, unit, min, max, states);
 
+    /// <summary>Updates of a numeric metric (name "Spindle temperature", no description, range 0 to 100).</summary>
+    public static TheoryData<string, string, string?, double?, double?, bool> NumericUpdates => new()
+    {
+        { "all values equal", Name, null, 0, 100, false },
+        { "a new name", "Other", null, 0, 100, true },
+        { "a name that differs by case", Name.ToUpperInvariant(), null, 0, 100, true },
+        { "a new description", Name, "<p>text</p>", 0, 100, true },
+        { "a new minimum", Name, null, 5, 100, true },
+        { "a new maximum", Name, null, 0, 90, true },
+        { "a removed minimum", Name, null, null, 100, true },
+    };
+
+    /// <summary>Updates of a state set metric (states "auto", "manual", "off").</summary>
+    public static TheoryData<string, string[], bool> StateSetUpdates => new()
+    {
+        { "the same states", ["auto", "manual", "off"], false },
+        { "a reordered list", ["manual", "auto", "off"], true },
+        { "a new state", ["auto", "manual", "off", "idle"], true },
+        { "a renamed state", ["auto", "manual", "stop"], true },
+    };
+
     public static TheoryData<string> ValidKeys =>
     [
         "a",

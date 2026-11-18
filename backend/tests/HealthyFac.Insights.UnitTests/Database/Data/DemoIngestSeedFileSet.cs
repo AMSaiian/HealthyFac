@@ -13,6 +13,7 @@ public sealed class DemoIngestSeedFileSet : IDisposable
     private const string FilesFolderName = "files";
 
     private readonly JsonDocument _core;
+    private readonly JsonDocument _telemetry;
     private readonly JsonDocument _document;
     private readonly JsonDocument _insights;
     private readonly JsonDocument _embeddings;
@@ -20,15 +21,18 @@ public sealed class DemoIngestSeedFileSet : IDisposable
     public DemoIngestSeedFileSet()
     {
         Folder = Path.Combine(Path.GetDirectoryName(SeedDataFile.Find())!, FolderName);
-        _core = Read("core.json");
-        _document = Read("document.json");
-        _insights = Read("insights.json");
-        _embeddings = Read("insights-embeddings.json");
+        _core = Read(fileName: "core.json");
+        _telemetry = Read(fileName: "telemetry.json");
+        _document = Read(fileName: "document.json");
+        _insights = Read(fileName: "insights.json");
+        _embeddings = Read(fileName: "insights-embeddings.json");
     }
 
     public string Folder { get; }
 
     public JsonElement Core => _core.RootElement;
+
+    public JsonElement Telemetry => _telemetry.RootElement;
 
     public JsonElement Document => _document.RootElement;
 
@@ -36,7 +40,7 @@ public sealed class DemoIngestSeedFileSet : IDisposable
 
     public JsonElement Embeddings => _embeddings.RootElement;
 
-    public IReadOnlyList<JsonElement> AllRoots => [Core, Document, Insights, Embeddings];
+    public IReadOnlyList<JsonElement> AllRoots => [Core, Telemetry, Document, Insights, Embeddings];
 
     public IReadOnlyList<JsonElement> Rows(JsonElement root, string name) =>
         root.GetProperty(name).EnumerateArray().ToList();
@@ -47,6 +51,7 @@ public sealed class DemoIngestSeedFileSet : IDisposable
     public void Dispose()
     {
         _core.Dispose();
+        _telemetry.Dispose();
         _document.Dispose();
         _insights.Dispose();
         _embeddings.Dispose();

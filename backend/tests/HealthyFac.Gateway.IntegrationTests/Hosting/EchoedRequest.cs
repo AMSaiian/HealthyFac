@@ -15,4 +15,7 @@ public sealed class EchoedRequest
 
     /// <summary>The number of body bytes that the server read.</summary>
     public required long BodyLength { get; init; }
+
+    /// <summary>The body text. Only the <see cref="StubApiServer"/> records it.</summary>
+    public string Body { get; init; } = string.Empty;
 }

@@ -8,6 +8,7 @@ public static class GridTestData
     public const string PagingGroup = "paging";
     public const string TextGroup = "text";
     public const string DatesGroup = "dates";
+    public const string KeysetGroup = "keyset";
 
     public const int PagingRowCount = 5000;
     public const int PagedRowCount = 30;
@@ -121,6 +122,8 @@ public static class GridTestData
                     Key = faker.Random.Guid(),
                 });
         }
+
+        rows.AddRange(KeysetTestData.CreateRows());
 
         return rows;
     }

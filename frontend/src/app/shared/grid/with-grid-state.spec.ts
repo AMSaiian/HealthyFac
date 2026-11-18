@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { signalStore } from '@ngrx/signals';
 
-import { SortDirection } from '@shared/grid/requests/grid-request';
+import { SortDirection, toKeysetPosition } from '@shared/grid/requests/grid-request';
 import { withGridState } from './with-grid-state';
 
 interface TestFilter {
@@ -95,5 +95,74 @@ describe('withGridState', () => {
     expect(store.sort()).toEqual({ column: 'name', direction: SortDirection.Descending });
     expect(store.filter()).toEqual({ name: '' });
     expect(store.visibleColumns()).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('withGridState keyset paging', () => {
+  const FIRST = toKeysetPosition({ sortValue: 1, id: 'a' });
+  const SECOND = toKeysetPosition({ sortValue: 2, id: 'b' });
+
+  it('nextPage_Twice_PushesPositionsAndRaisesThePageIndex', () => {
+    const store = setup();
+
+    store.nextPage(FIRST);
+    store.nextPage(SECOND);
+
+    expect(store.positions()).toEqual([FIRST, SECOND]);
+    expect(store.pageIndex()).toBe(2);
+    expect(store.after()).toBe(SECOND);
+  });
+
+  it('previousPage_AfterTwoNextPages_PopsTheLastPosition', () => {
+    const store = setup();
+    store.nextPage(FIRST);
+    store.nextPage(SECOND);
+
+    store.previousPage();
+
+    expect(store.positions()).toEqual([FIRST]);
+    expect(store.pageIndex()).toBe(1);
+  });
+
+  it('previousPage_OnTheFirstPage_StaysOnTheFirstPage', () => {
+    const store = setup();
+
+    store.previousPage();
+
+    expect(store.pageIndex()).toBe(0);
+    expect(store.after()).toBeNull();
+  });
+
+  it.each([
+    ['setFilter', (store: InstanceType<typeof TestStore>) => store.setFilter({ name: 'la' })],
+    ['setSort', (store: InstanceType<typeof TestStore>) => store.setSort(null)],
+    ['setLimit', (store: InstanceType<typeof TestStore>) => store.setLimit(PAGE_LIMIT)],
+  ])('%s_OnALaterPage_ClearsThePositions', (_name, change) => {
+    const store = setup();
+    store.nextPage(FIRST);
+
+    change(store);
+
+    expect(store.positions()).toEqual([]);
+    expect(store.pageIndex()).toBe(0);
+  });
+
+  it('setLimit_Always_KeepsTheFilterAndSetsTheLimit', () => {
+    const store = setup();
+    store.setFilter({ name: 'la' });
+
+    store.setLimit(PAGE_LIMIT);
+
+    expect(store.limit()).toBe(PAGE_LIMIT);
+    expect(store.filter()).toEqual({ name: 'la' });
+  });
+
+  it('resetGrid_AfterNextPage_ClearsThePositions', () => {
+    const store = setup();
+    store.nextPage(FIRST);
+
+    store.resetGrid();
+
+    expect(store.positions()).toEqual([]);
   });
 });

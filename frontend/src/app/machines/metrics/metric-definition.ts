@@ -41,6 +41,8 @@ export interface CreatedMetricDefinition {
   readonly min: number | null;
   readonly max: number | null;
   readonly states: readonly string[] | null;
+  /** The metric draft that proposed this change. Telemetry marks it applied in the same save. */
+  readonly draftId: string | null;
 }
 
 export interface UpdatedMetricDefinition {
@@ -50,6 +52,8 @@ export interface UpdatedMetricDefinition {
   readonly min: number | null;
   readonly max: number | null;
   readonly states: readonly string[] | null;
+  /** The metric draft that proposed this change. Telemetry marks it applied in the same save. */
+  readonly draftId: string | null;
 }
 
 export interface ApplyMetricDefinitionsBody {

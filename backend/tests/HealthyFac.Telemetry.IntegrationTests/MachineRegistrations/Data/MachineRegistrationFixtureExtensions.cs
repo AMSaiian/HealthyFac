@@ -2,11 +2,14 @@ using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
+using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 
@@ -31,6 +34,61 @@ public static class MachineRegistrationFixtureExtensions
             await fixture.RegisterMachineAsync(message);
 
             return message.MachineId;
+        }
+
+        /// <summary>
+        /// Runs <paramref name="holdingMessage"/> in one open transaction, so the registration lock stays held. It then
+        /// starts <paramref name="waitingMessage"/> on another connection, waits until a session of the database waits
+        /// for a lock, and commits the first transaction.
+        /// </summary>
+        /// <param name="holdingMessage">The handler call that takes the lock first.</param>
+        /// <param name="waitingMessage">The handler call that must wait for the lock.</param>
+        /// <returns>A task that completes when both calls ended.</returns>
+        public async Task RunWithRegistrationLockHeldAsync(
+            Func<IServiceProvider, Task> holdingMessage,
+            Func<Task> waitingMessage
+        )
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+            var holdingTask = new TaskCompletionSource();
+            Task? waiting = null;
+
+            var holding = dbContext.RunInTransactionAsync(
+                async token =>
+                {
+                    await holdingMessage(scope.ServiceProvider);
+                    holdingTask.SetResult();
+                    await fixture.WaitForLockWaitAsync(token);
+                },
+                TestContext.Current.CancellationToken);
+
+            await holdingTask.Task;
+            waiting = waitingMessage();
+
+            await Task.WhenAll(holding, waiting);
+        }
+
+        /// <summary>Waits up to 10 seconds until a session waits for a lock; returns when none did.</summary>
+        public async Task WaitForLockWaitAsync(CancellationToken cancellationToken)
+        {
+            await using var connection = new NpgsqlConnection(fixture.ConnectionString);
+            await connection.OpenAsync(cancellationToken);
+            await using var command = new NpgsqlCommand(
+                cmdText: "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'", connection);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(seconds: 10));
+
+            try
+            {
+                while (Convert.ToInt32(await command.ExecuteScalarAsync(timeout.Token)) == 0)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(milliseconds: 50), timeout.Token);
+                }
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+            }
         }
 
         public Task DeleteMachineAsync(Guid companyId, Guid machineId) =>
@@ -75,6 +133,58 @@ public static class MachineRegistrationFixtureExtensions
             await dbContext.SaveChangesAsync();
 
             return metric.Id;
+        }
+
+        public async Task<Guid> StoreMetricDraftOnMachineAsync(Guid companyId, Guid machineId, bool isApplied)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+            var entry = new ProposalEntry(Guid.CreateVersion7(), companyId);
+            var draft = DefinitionDraftTestData.CreateMetric(Guid.CreateVersion7(), entry.Id, machineId, companyId);
+
+            entry.AcceptOnMachine(machineId);
+            draft.Follow(entry, isTargetRegistrationDeleted: false);
+
+            if (isApplied)
+            {
+                draft.MarkApplied();
+            }
+
+            dbContext.ProposalEntries.Add(entry);
+            dbContext.MetricDefinitionDrafts.Add(draft);
+            await dbContext.SaveChangesAsync();
+
+            return draft.Id;
+        }
+
+        public async Task<Guid> StoreAwaitingStatusDraftOnMachineAsync(Guid companyId, Guid machineId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+            var entry = new ProposalEntry(Guid.CreateVersion7(), companyId);
+            var draft = DefinitionDraftTestData.CreateStatus(Guid.CreateVersion7(), entry.Id, machineId, companyId);
+
+            dbContext.ProposalEntries.Add(entry);
+            dbContext.StatusDefinitionDrafts.Add(draft);
+            await dbContext.SaveChangesAsync();
+
+            return draft.Id;
+        }
+
+        public async Task<Guid> StorePendingStatusDraftOnMachineAsync(Guid companyId, Guid machineId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+            var entry = new ProposalEntry(Guid.CreateVersion7(), companyId);
+            var draft = DefinitionDraftTestData.CreateStatus(Guid.CreateVersion7(), entry.Id, machineId, companyId);
+
+            entry.AcceptOnMachine(machineId);
+            draft.Follow(entry, isTargetRegistrationDeleted: false);
+            dbContext.ProposalEntries.Add(entry);
+            dbContext.StatusDefinitionDrafts.Add(draft);
+            await dbContext.SaveChangesAsync();
+
+            return draft.Id;
         }
 
         public async Task<MetricDefinition> LoadMetricDefinitionRowAsync(Guid metricId)

@@ -5,8 +5,8 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, exhaustMap, type Observable, of, pipe, tap } from 'rxjs';
-import { catchError, concatMap } from 'rxjs/operators';
+import { EMPTY, exhaustMap, type Observable, pipe, tap } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { withConfirm } from '@shared/confirm/with-confirm';
@@ -26,7 +26,6 @@ import { MachinesApi } from '@machines/machines-api';
 import { MetricDefinitionsApi } from '@machines/metrics/metric-definitions-api';
 import { metricFormSchema, type MetricFormValue } from '@machines/metrics/metric-form/metric-form-schema';
 import {
-  appliedDraftIds,
   buildExamplePayload,
   EMPTY_METRIC_VALUE,
   hasNetChanges,
@@ -140,20 +139,6 @@ export const MetricsPageStore = signalStore(
       }
     };
 
-    /** Marks the drafts of the applied items. A failed mark shows a toast and leaves those drafts pending. */
-    const markApplied$ = (draftIds: readonly string[]): Observable<void> => {
-      if (draftIds.length === 0) {
-        return of(undefined);
-      }
-      return store._draftsApi.markApplied(draftIds, skipErrorToast()).pipe(
-        tap(() => store._actions.complete(DraftActionType.Changed)),
-        catchError(() => {
-          store._toastError('DRAFTS.METRICS.MARK_FAILED');
-          return of(undefined);
-        }),
-      );
-    };
-
     /**
      * Goes back to the page and the dialog that opened this review. The user has already decided (an apply or a
      * confirmed discard), so `isLeaving` lets the leave guard pass: the pending drafts are staged again after a
@@ -177,8 +162,10 @@ export const MetricsPageStore = signalStore(
           patchState(store, { isApplying: true });
           store._setItemErrors({});
           return store._api.apply(machineId, toApplyBody(store.revision(), changes), skipErrorToast()).pipe(
-            concatMap(() => markApplied$(appliedDraftIds(changes))),
             tap(() => {
+              if ([...changes.created, ...changes.updated].some((item) => item.draftId !== null)) {
+                store._actions.complete(DraftActionType.Changed);
+              }
               store._toastSuccess('METRICS.TOASTS.APPLIED');
               patchState(store, { isApplying: false });
               store.reload();

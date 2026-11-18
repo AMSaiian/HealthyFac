@@ -31,6 +31,12 @@ public sealed record MachineGridFilter : IFilter<Machine>
     /// </summary>
     public bool? HasPendingDrafts { get; init; }
 
+    /// <summary>
+    /// Set only by the Gateway: the company machines with pending metric or status drafts in Telemetry. The Gateway
+    /// overwrites a client value.
+    /// </summary>
+    public IReadOnlyList<Guid>? PendingDefinitionDraftMachineIds { get; init; }
+
     public Expression<Func<Machine, bool>>? ToPredicate() =>
         Predicates.From(Name?.ToPredicate<Machine>(machine => machine.Name))
             .And(SerialNumber?.ToPredicate<Machine>(machine => machine.SerialNumber))

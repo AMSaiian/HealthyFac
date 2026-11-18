@@ -10,6 +10,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { toKeysetPosition } from '@shared/grid/requests/grid-request';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 
@@ -47,6 +48,8 @@ const ITEM: MachineDraftGridItem = {
 };
 
 const ALL_PENDING_PAGE_SIZE = 100;
+const NEXT_POSITION = toKeysetPosition({ sortValue: 0, id: 'draft-9' });
+const MACHINE_ITEM: MachineDraftGridItem = { ...ITEM, id: 'draft-m', kind: DraftKind.Machine, isCreate: true };
 const OPEN_DIALOG = { type: MachineActionType.Drafts, payload: { machineId: 'machine-1' } };
 
 interface SetupOptions {
@@ -160,12 +163,56 @@ describe('MachineDraftsStore', () => {
     const request = http.expectOne((candidate) => candidate.url === SEARCH_URL && candidate.body.limit === LIST_LIMIT);
 
     expect(request.request.body).toEqual({
-      offset: 0,
       limit: 25,
       sort: { column: 'state', direction: 'asc' },
       filter: { kinds: { values: ['status'] }, states: { values: ['dismissed'] } },
     });
     request.flush({ items: [], totalCount: 0 });
+  });
+
+  it('showNextPage_AfterALoadWithANextPosition_SendsThePositionAsAfterAndPreviousPageDropsIt', async () => {
+    const { store, http } = setup();
+    TestBed.tick();
+    const list = http.match((candidate) => candidate.url === SEARCH_URL);
+    list
+      .find((request) => request.request.body.limit === LIST_LIMIT)
+      ?.flush({
+        items: [],
+        totalCount: 60,
+        nextPosition: NEXT_POSITION,
+      });
+    list.find((request) => request.request.body.limit === PENDING_PROBE_LIMIT)?.flush({ items: [], totalCount: 0 });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    store.showNextPage();
+    TestBed.tick();
+    const second = http.expectOne((candidate) => candidate.url === SEARCH_URL && candidate.body.limit === LIST_LIMIT);
+    second.flush({ items: [], totalCount: 60, nextPosition: null });
+    await TestBed.inject(ApplicationRef).whenStable();
+    store.previousPage();
+    TestBed.tick();
+
+    expect(second.request.body.after).toEqual(NEXT_POSITION);
+    expect(store.pageIndex()).toBe(0);
+    http
+      .expectOne((candidate) => candidate.url === SEARCH_URL && candidate.body.limit === LIST_LIMIT)
+      .flush({ items: [], totalCount: 60, nextPosition: NEXT_POSITION });
+  });
+
+  it('requestDismiss_ForAMachineDraft_PostsToCoreAndForAMetricDraftToTelemetry', async () => {
+    const { store, http } = setup({ isConfirmed: true });
+    await load(http, store);
+
+    store.requestDismiss(MACHINE_ITEM);
+    http
+      .expectOne('/api/core/v1/drafts/draft-m/dismiss')
+      .flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
+    TestBed.tick();
+    answerSearches(http, [], 0);
+    store.requestDismiss(ITEM);
+
+    http.expectOne('/api/telemetry/v1/definition-drafts/draft-1/dismiss');
   });
 
   it('search_ForAnAttempt_UsesTheAttemptRouteForTheListAndForThePendingCount', async () => {
@@ -189,7 +236,7 @@ describe('MachineDraftsStore', () => {
     const { store, http } = await setup_loaded();
 
     store.toggleSelected(ITEM, true);
-    store.setPage(LIST_LIMIT, LIST_LIMIT);
+    store.nextPage(NEXT_POSITION);
     TestBed.tick();
     http
       .expectOne((candidate) => candidate.url === SEARCH_URL && candidate.body.limit === LIST_LIMIT)
@@ -206,9 +253,13 @@ describe('MachineDraftsStore', () => {
     store.toggleSelected(second, true);
 
     store.requestDismissAll();
-    http.expectOne('/api/core/v1/drafts/draft-1/dismiss').flush(null, { status: 204, statusText: 'No Content' });
+    http
+      .expectOne('/api/telemetry/v1/definition-drafts/draft-1/dismiss')
+      .flush(null, { status: 204, statusText: 'No Content' });
     await vi.waitFor(() => {
-      http.expectOne('/api/core/v1/drafts/draft-2/dismiss').flush(null, { status: 204, statusText: 'No Content' });
+      http
+        .expectOne('/api/telemetry/v1/definition-drafts/draft-2/dismiss')
+        .flush(null, { status: 204, statusText: 'No Content' });
     });
     TestBed.tick();
 
@@ -224,10 +275,12 @@ describe('MachineDraftsStore', () => {
     store.toggleSelected(second, true);
 
     store.requestDismissAll();
-    http.expectOne('/api/core/v1/drafts/draft-1/dismiss').flush(null, { status: 204, statusText: 'No Content' });
+    http
+      .expectOne('/api/telemetry/v1/definition-drafts/draft-1/dismiss')
+      .flush(null, { status: 204, statusText: 'No Content' });
     await vi.waitFor(() => {
       http
-        .expectOne('/api/core/v1/drafts/draft-2/dismiss')
+        .expectOne('/api/telemetry/v1/definition-drafts/draft-2/dismiss')
         .flush(null, { status: HttpStatusCode.Conflict, statusText: 'Conflict' });
     });
     TestBed.tick();
@@ -242,7 +295,7 @@ describe('MachineDraftsStore', () => {
 
     store.requestDismiss(ITEM);
     http
-      .expectOne('/api/core/v1/drafts/draft-1/dismiss')
+      .expectOne('/api/telemetry/v1/definition-drafts/draft-1/dismiss')
       .flush(null, { status: HttpStatusCode.NoContent, statusText: 'No Content' });
     TestBed.tick();
     answerSearches(http, [], 0);
@@ -408,7 +461,7 @@ describe('MachineDraftsStore', () => {
     const search = http.expectOne(
       (candidate) => candidate.url === SEARCH_URL && candidate.body.limit === ALL_PENDING_PAGE_SIZE,
     );
-    expect(search.request.body.offset).toBe(0);
+    expect(search.request.body.after).toBeUndefined();
     expect(search.request.body.filter.states).toEqual({ values: ['pending'] });
     search.flush({ items: [], totalCount: 0 });
   });

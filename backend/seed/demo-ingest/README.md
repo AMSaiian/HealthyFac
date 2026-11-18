@@ -19,7 +19,8 @@ The three documents in `files/` are fictional demo data. The products, the compa
 | `document.json` | Document | The three file rows. |
 | `insights.json` | Insights | The attempts, the ingested documents, and the chunks (without vectors). |
 | `insights-embeddings.json` | Insights | One vector for each chunk: base64 of 1536 little-endian float32 values. |
-| `core.json` | Core | The machine, metric, and status drafts. All drafts are pending. |
+| `core.json` | Core | The machine drafts. All drafts are pending. |
+| `telemetry.json` | Telemetry | The metric and status drafts with the ID of their proposal entry (the ID of the machine draft in `core.json`). All drafts are pending. |
 
 Each JSON file holds `referenceTime`: the newest finish time of the attempts. The seeders move every business timestamp by one offset, so the newest attempt finished 1 hour before the seed time.
 
@@ -37,7 +38,7 @@ Repeat these steps when a migration renames a column or the embedding model chan
 2.  Upload the three files as the test supervisor.
 3.  Tie the PDF to seed machine 1.
 4.  Ingest each file.
-5.  Export these tables as JSON with the database column names: `file_refs`, `ingest_attempts`, `ingested_documents`, `document_chunks`, `machine_drafts`, `metric_definition_drafts`, and `status_definition_drafts`.
+5.  Export these tables as JSON with the database column names: `file_refs`, `ingest_attempts`, `ingested_documents`, `document_chunks`, `machine_drafts` (Core), `metric_definition_drafts`, and `status_definition_drafts` (Telemetry, with `proposal_entry_id`).
 6.  Write the vectors of the chunks into `insights-embeddings.json`, keyed by chunk ID.
 7.  Remove `company_id` and every user and audit column (`created_by`, `updated_by`, `deleted_by`, `created_at`, `updated_at`, `deleted_at`).
 8.  Set `trace_parent` to null. Write `sha256` as plain hex.

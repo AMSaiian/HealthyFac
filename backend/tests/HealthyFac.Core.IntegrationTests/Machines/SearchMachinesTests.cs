@@ -1,6 +1,7 @@
 using HealthyFac.Core.Application.Machines.SearchMachines;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
@@ -245,6 +246,35 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             expectedGoLiveOn: MachineTestData.FutureGoLiveOn);
+    }
+
+    [Theory]
+    [MemberData(nameof(MachineTestData.PendingDraftsFilters), MemberType = typeof(MachineTestData))]
+    public async Task SearchMachines_WithPendingDraftsFilter_CountsMachineDraftsAndTheTelemetryList(
+        string caseName,
+        bool hasPendingDrafts,
+        int[] expectedPositions
+    )
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var withMachineDraft = await ArrangeMachineAsync(tenant, MachineTestData.SerialNumber);
+        var inTelemetryList = await ArrangeMachineAsync(tenant, MachineTestData.OtherSerialNumber);
+        var withNeither = await ArrangeMachineAsync(tenant, MachineTestData.ThirdSerialNumber);
+        await _fixture.AddMachineDraftAsync(tenant.CompanyId, withMachineDraft);
+        var filter = new MachineGridFilter
+        {
+            HasPendingDrafts = hasPendingDrafts,
+            PendingDefinitionDraftMachineIds = [inTelemetryList],
+        };
+        Guid[] machineIds = [withMachineDraft, inTelemetryList, withNeither];
+
+        var response = await _fixture.SearchMachinesAsync(
+            tenant.CompanyId,
+            MachineTestData.CreateSearch(tenant.CompanyId, filter));
+
+        response.Items.Select(item => item.Id)
+            .Should()
+            .BeEquivalentTo(expectedPositions.Select(position => machineIds[position]), caseName);
     }
 
     private Task<Guid> ArrangeMachineAsync(MachineTenant tenant, string serialNumber) =>

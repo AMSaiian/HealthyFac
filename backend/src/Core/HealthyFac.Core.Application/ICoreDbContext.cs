@@ -32,10 +32,6 @@ public interface ICoreDbContext : ITransactionalDbContext
 
     DbSet<MachineDraft> MachineDrafts { get; }
 
-    DbSet<MetricDefinitionDraft> MetricDefinitionDrafts { get; }
-
-    DbSet<StatusDefinitionDraft> StatusDefinitionDrafts { get; }
-
     DbSet<WorkOrder> WorkOrders { get; }
 
     DbSet<WorkOrderHistory> WorkOrderHistories { get; }

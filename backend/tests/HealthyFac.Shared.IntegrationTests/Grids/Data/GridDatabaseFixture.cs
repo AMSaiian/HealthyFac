@@ -1,9 +1,10 @@
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids.Data;
 
-public sealed class GridDatabaseFixture : IAsyncLifetime
+public sealed class GridDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 {
     private readonly PostgreSqlTestDatabase _database = new();
 
@@ -21,6 +22,8 @@ public sealed class GridDatabaseFixture : IAsyncLifetime
     }
 
     public async ValueTask DisposeAsync() => await _database.DisposeAsync();
+
+    public ValueTask ResetAsync() => ValueTask.CompletedTask;
 
     public GridTestDbContext CreateDbContext()
     {

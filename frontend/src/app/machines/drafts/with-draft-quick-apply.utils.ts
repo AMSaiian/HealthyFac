@@ -20,6 +20,7 @@ export enum QuickReason {
   MachinePending = 'DRAFTS.QUICK.MACHINE_PENDING',
   UnitsLoading = 'DRAFTS.QUICK.UNITS_LOADING',
   NothingToApply = 'DRAFTS.QUICK.ALL_NEED_REVIEW',
+  AwaitingTarget = 'DRAFTS.REVIEW_AWAITING_TARGET',
 }
 
 /** The first wait for a new machine to reach Telemetry. Each retry waits twice as long as the one before. */
@@ -122,12 +123,16 @@ export function needsReviewReasons(
     }
     const childWait = isMachineMissing(group) ? QuickReason.MachinePending : null;
     for (const metric of group.metrics) {
-      if (metric.state === DraftState.Pending) {
+      if (metric.state === DraftState.AwaitingTarget) {
+        reasons[metric.id] = QuickReason.AwaitingTarget;
+      } else if (metric.state === DraftState.Pending) {
         reasons[metric.id] = childWait ?? metricReason(metric, catalog);
       }
     }
     for (const status of group.statuses) {
-      if (status.state === DraftState.Pending) {
+      if (status.state === DraftState.AwaitingTarget) {
+        reasons[status.id] = QuickReason.AwaitingTarget;
+      } else if (status.state === DraftState.Pending) {
         reasons[status.id] = childWait ?? statusReason(status);
       }
     }

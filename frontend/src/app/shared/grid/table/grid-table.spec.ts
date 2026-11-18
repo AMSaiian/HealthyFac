@@ -31,12 +31,14 @@ interface GridTableHarness {
   readonly table: GridTable<Column>;
   readonly sort: WritableSignal<GridSort<'name'> | null>;
   readonly filterChange: Mock;
+  readonly pageChange: Mock;
 }
 
 function setup(nameWriter: (current: Filter) => unknown = (current) => current.name || null): GridTableHarness {
   const filter = signal<Filter>(INITIAL_FILTER);
   const sort = signal<GridSort<'name'> | null>(null);
   const filterChange = vi.fn();
+  const pageChange = vi.fn();
   TestBed.configureTestingModule({
     providers: [{ provide: TranslateService, useValue: { stream: () => of({}) } }],
   });
@@ -66,13 +68,13 @@ function setup(nameWriter: (current: Filter) => unknown = (current) => current.n
       labelKeys: LABEL_KEYS,
       filterChange,
       sortChange: vi.fn(),
-      pageChange: vi.fn(),
+      pageChange,
       columnsChange: vi.fn(),
       columnsReorder: vi.fn(),
     }),
   );
 
-  return { table, sort, filterChange };
+  return { table, sort, filterChange, pageChange };
 }
 
 describe('createGridTable', () => {
@@ -129,5 +131,93 @@ describe('createGridTable', () => {
     table.tableFilters();
 
     expect(nameWriter).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('createGridTable keyset paging', () => {
+  interface KeysetHarness {
+    readonly table: GridTable<'name'>;
+    readonly next: Mock;
+    readonly previous: Mock;
+    readonly limitChange: Mock;
+    readonly pageChange: Mock;
+  }
+
+  function setupKeyset(pageIndex: number): KeysetHarness {
+    const next = vi.fn();
+    const previous = vi.fn();
+    const limitChange = vi.fn();
+    const pageChange = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [{ provide: TranslateService, useValue: { stream: () => of({}) } }],
+    });
+    const table = TestBed.runInInjectionContext(() =>
+      createGridTable<unknown, 'name', { readonly name: string }, 'name'>({
+        allColumns: ['name'],
+        columns: signal<readonly 'name'[]>(['name']),
+        filter: signal({ name: '' }),
+        sort: signal<GridSort<'name'> | null>(null),
+        limit: signal(25),
+        isLoading: signal(false),
+        rows: signal<readonly unknown[]>([]),
+        hasLoaded: signal(true),
+        filterReaders: { name: (value) => ({ name: asText(value) }) },
+        filterWriters: { name: (current) => current.name || null },
+        sortableColumns: ['name'],
+        labelKeys: { name: 'GRID.NAME' },
+        filterChange: vi.fn(),
+        sortChange: vi.fn(),
+        pageChange,
+        keyset: { pageIndex: signal(pageIndex), next, previous, limitChange },
+        columnsChange: vi.fn(),
+        columnsReorder: vi.fn(),
+      }),
+    );
+    return { table, next, previous, limitChange, pageChange };
+  }
+
+  it('onPage_ToThePageAfterTheCurrentOne_CallsNext', () => {
+    const { table, next, pageChange } = setupKeyset(1);
+
+    table.onPage({ first: 50, rows: 25 });
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(pageChange).not.toHaveBeenCalled();
+  });
+
+  it('onPage_ToThePageBeforeTheCurrentOne_CallsPrevious', () => {
+    const { table, previous } = setupKeyset(1);
+
+    table.onPage({ first: 0, rows: 25 });
+
+    expect(previous).toHaveBeenCalledTimes(1);
+  });
+
+  it('onPage_WithANewPageSize_CallsLimitChangeWithTheRows', () => {
+    const { table, limitChange, next } = setupKeyset(2);
+
+    table.onPage({ first: 0, rows: 50 });
+
+    expect(limitChange).toHaveBeenCalledWith(50);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('paginator_OnPageThree_HoldsTheReportOffsetAndNoPageLinks', () => {
+    const { table } = setupKeyset(3);
+
+    expect(table.paginator()).toEqual({
+      first: 75,
+      showPageLinks: false,
+      showFirstLastIcon: false,
+      showJumpToPageDropdown: false,
+    });
+  });
+
+  it('onPage_WithoutKeysetOptions_KeepsTheOffsetMapping', () => {
+    const { table, pageChange } = setup();
+
+    table.onPage({ first: 50, rows: 25 });
+
+    expect(pageChange).toHaveBeenCalledWith({ offset: 50, limit: 25 });
   });
 });

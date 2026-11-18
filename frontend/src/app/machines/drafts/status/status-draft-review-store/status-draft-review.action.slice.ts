@@ -3,8 +3,8 @@ import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStoreFeature, type, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, exhaustMap, finalize, type Observable, of, pipe, tap } from 'rxjs';
-import { catchError, concatMap, map } from 'rxjs/operators';
+import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
@@ -12,6 +12,7 @@ import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 
 import type { StatusDraftReviewActionPayload } from '@machines/drafts/draft-action-payloads';
 import { DraftActionType } from '@machines/drafts/draft-actions';
+import { draftConflictKey } from '@machines/drafts/draft-conflict';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import {
   codeSearchBody,
@@ -135,18 +136,8 @@ export function withStatusDraftAction() {
       },
     })),
     withMethods((store) => {
-      const draftsApi = inject(DraftsApi);
       const statusesApi = inject(StatusDefinitionsApi);
       const actions = inject(ActionStore);
-
-      /** Marks the draft applied. A failed mark shows a toast and leaves the draft pending. */
-      const mark$ = (draftId: string): Observable<void> =>
-        draftsApi.markApplied([draftId], skipErrorToast()).pipe(
-          catchError(() => {
-            store._toastError('DRAFTS.STATUS.MARK_FAILED');
-            return of(undefined);
-          }),
-        );
 
       const save = rxMethod<SaveRequest>(
         pipe(
@@ -158,21 +149,28 @@ export function withStatusDraftAction() {
               store._setSaving(false);
               return EMPTY;
             }
-            const body = { code: value.code.trim(), severity: value.severity, description: value.description };
+            const body = {
+              code: value.code.trim(),
+              severity: value.severity,
+              description: value.description,
+              draftId: payload.draftId,
+            };
             const options = skipErrorToast();
             const write$: Observable<unknown> =
               existing === null
                 ? statusesApi.create(payload.machineId, body, options)
                 : statusesApi.update(payload.machineId, existing.id, body, options);
             return write$.pipe(
-              concatMap(() => mark$(payload.draftId)),
               map(() => undefined),
               tap(() => {
                 store._toastSuccess(existing === null ? 'DRAFTS.STATUS.CREATED' : 'DRAFTS.STATUS.UPDATED');
                 actions.complete(DraftActionType.Changed);
               }),
               catchError((error: unknown) => {
-                store._toastError(httpErrorKey(error, { [HttpStatusCode.Conflict]: 'DRAFTS.STATUS.CODE_TAKEN' }));
+                store._toastError(
+                  draftConflictKey(error) ??
+                    httpErrorKey(error, { [HttpStatusCode.Conflict]: 'DRAFTS.STATUS.CODE_TAKEN' }),
+                );
                 return EMPTY;
               }),
               finalize(() => store._setSaving(false)),

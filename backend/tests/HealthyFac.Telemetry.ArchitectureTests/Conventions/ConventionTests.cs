@@ -140,6 +140,17 @@ public sealed class ConventionTests
         violations.Should().BeEmpty();
     }
 
+    [Theory]
+    [MemberData(nameof(ConventionTestData.AllAssemblies), MemberType = typeof(ConventionTestData))]
+    public void KeysetSortMaps_InAssembly_UseSupportedKeys(string assemblyName)
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.KeysetSortMapsUseSupportedKeys(LayerDependencyTestData.Resolve(assemblyName)));
+
+        violations.Should().BeEmpty();
+    }
+
     [Fact]
     public void ApplicationStrings_InAssemblies_HaveTextRule()
     {

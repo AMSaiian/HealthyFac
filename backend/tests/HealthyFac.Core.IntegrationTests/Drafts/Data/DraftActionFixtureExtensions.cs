@@ -1,6 +1,9 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Drafts;
+using HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,12 +67,37 @@ public static class DraftActionFixtureExtensions
                 new DismissMachineDraftsRequest { CompanyId = companyId, AttemptId = attemptId });
         }
 
-        public async Task MarkDraftsAppliedAsync(Guid companyId, params Guid[] ids)
+        public async Task<IReadOnlyList<Guid>> ReadAllDraftPagesAsync(
+            Guid companyId,
+            Guid machineId,
+            GridSort<MachineDraftSortColumn> sort
+        )
         {
-            using var scope = fixture.CreateUserScope(companyId);
-            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<MarkDraftsAppliedRequest>>();
+            var seenIds = new List<Guid>();
+            KeysetPosition? after = null;
 
-            await handler.HandleAsync(new MarkDraftsAppliedRequest { CompanyId = companyId, Ids = ids });
+            do
+            {
+                using var scope = fixture.CreateUserScope(companyId);
+                var handler = scope.ServiceProvider
+                    .GetRequiredService<
+                        IRequestHandler<SearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>>>();
+                var page = await handler.HandleAsync(
+                    new SearchMachineDraftsRequest
+                    {
+                        CompanyId = companyId,
+                        MachineId = machineId,
+                        Limit = DraftSearchTestData.PageLimit,
+                        Sort = sort,
+                        Filter = new MachineDraftGridFilter(),
+                        After = after,
+                    });
+                seenIds.AddRange(page.Items.Select(item => item.Id));
+                after = page.NextPosition;
+            }
+            while (after is not null && seenIds.Count <= DraftSearchTestData.DraftCount);
+
+            return seenIds;
         }
 
         public async Task DismissDraftAsync(Guid companyId, Guid draftId)

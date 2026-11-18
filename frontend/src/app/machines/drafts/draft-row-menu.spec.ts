@@ -1,4 +1,4 @@
-import { draftRowMenuItems, type DraftRowMenuOptions } from './draft-row-menu';
+import { DRAFT_MENU_KEYS, draftRowMenuItems, type DraftRowMenuOptions } from './draft-row-menu';
 
 const NEEDS_REVIEW_KEY = 'DRAFTS.REASONS.NEEDS_REVIEW';
 
@@ -7,6 +7,7 @@ function options(overrides: Partial<DraftRowMenuOptions> = {}): DraftRowMenuOpti
     translate: (key) => `t:${key}`,
     isReviewDisabled: false,
     applyReasonKey: null,
+    isAwaitingTarget: false,
     isBusy: false,
     onReview: vi.fn(),
     onApply: vi.fn(),
@@ -34,6 +35,14 @@ describe('draftRowMenuItems', () => {
     expect(items[1].disabled).toBe(true);
     expect(items[1].tooltip).toBe(`t:${NEEDS_REVIEW_KEY}`);
     expect(items[0].disabled).toBe(false);
+  });
+
+  it('draftRowMenuItems_ForADraftThatAwaitsItsTarget_DisablesApplyWithTheReasonAndKeepsDismiss', () => {
+    const items = draftRowMenuItems(options({ isAwaitingTarget: true }));
+
+    expect(items[1].disabled).toBe(true);
+    expect(items[1].tooltip).toBe(`t:${DRAFT_MENU_KEYS.awaitingTarget}`);
+    expect(items[2].disabled).toBe(false);
   });
 
   it('draftRowMenuItems_ForAChildOfAPendingMachineDraft_DisablesReviewWithTheReason', () => {

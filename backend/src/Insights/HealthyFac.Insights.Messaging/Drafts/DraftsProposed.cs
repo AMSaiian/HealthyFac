@@ -7,9 +7,9 @@ using HealthyFac.Shared.Application.UseCases;
 namespace HealthyFac.Insights.Messaging.Drafts;
 
 /// <summary>
-/// Tells Core which machines, metrics, and statuses the extraction of one file proposed. Core stores them as drafts
-/// that a user reviews. A machine with a <see cref="ProposedMachine.TargetMachineId"/> updates that machine. A machine
-/// without one proposes a new machine.
+/// Tells Core and Telemetry which machines, metrics, and statuses the extraction of one file proposed. Core stores the
+/// machine drafts; Telemetry stores the metric and status drafts. A user reviews them. A machine with a
+/// <see cref="ProposedMachine.TargetMachineId"/> updates that machine. A machine without one proposes a new machine.
 /// </summary>
 public sealed record DraftsProposed : IIntegrationMessage, IRequest
 {

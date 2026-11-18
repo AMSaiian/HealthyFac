@@ -1,7 +1,9 @@
 using FluentValidation;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -42,29 +44,36 @@ public sealed class DismissDraftPreHandlerCheck(ICurrentUserProvider currentUser
 }
 
 /// <summary>
-/// Dismisses one pending draft of the company: a machine draft, a metric draft, or a status draft. A create machine
-/// draft also dismisses its pending metric and status drafts, because they have no machine without it. An update
-/// machine draft dismisses only itself. A draft of another company is "not found", and a draft that is not pending
-/// is a conflict.
+/// Dismisses one pending machine draft of the company. A draft of another company, or an ID that is not a machine
+/// draft (a metric or status draft lives in Telemetry), is "not found". A draft that is not pending is unprocessable
+/// (422). A create draft also queues <see cref="MachineDraftDismissed"/> in the same save, so Telemetry dismisses the
+/// metric and status drafts that wait on it.
 /// </summary>
-/// <param name="dbContext">Loads the drafts and saves the change.</param>
-public sealed class DismissDraftRequestHandler(ICoreDbContext dbContext) : RequestHandler<DismissDraftRequest>
+/// <param name="dbContext">Loads the draft and saves the change.</param>
+/// <param name="outbox">Stores the message with the change.</param>
+public sealed class DismissDraftRequestHandler(ICoreDbContext dbContext, IOutbox outbox)
+    : RequestHandler<DismissDraftRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IOutbox _outbox = outbox;
 
     protected override async Task HandleInternalAsync(DismissDraftRequest request, CancellationToken cancellationToken)
     {
         var machineDraft = await _dbContext.MachineDrafts.SingleOrDefaultAsync(
-            candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-            cancellationToken);
+                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
+                cancellationToken)
+            ?? throw new NotFoundException(DraftErrors.DraftNotFound);
 
-        if (machineDraft is not null)
+        if (machineDraft.State != DraftState.Pending)
         {
-            await DismissMachineDraftAsync(machineDraft, cancellationToken);
+            throw new UnprocessableException(DraftErrors.DraftNotPending);
         }
-        else
+
+        machineDraft.Dismiss();
+
+        if (machineDraft.IsCreate)
         {
-            await DismissChildDraftAsync(request, cancellationToken);
+            _outbox.Add(new MachineDraftDismissed { DraftId = machineDraft.Id, CompanyId = machineDraft.CompanyId });
         }
 
         try
@@ -74,56 +83,6 @@ public sealed class DismissDraftRequestHandler(ICoreDbContext dbContext) : Reque
         catch (DbUpdateConcurrencyException exception)
         {
             throw new ConflictException(DraftErrors.DraftChanged, exception);
-        }
-    }
-
-    private async Task DismissMachineDraftAsync(MachineDraft draft, CancellationToken cancellationToken)
-    {
-        EnsurePending(draft.State);
-        draft.Dismiss();
-
-        if (!draft.IsCreate)
-        {
-            return;
-        }
-
-        var metrics = await _dbContext.MetricDefinitionDrafts
-            .Where(child => child.TargetMachineDraftId == draft.Id && child.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
-        var statuses = await _dbContext.StatusDefinitionDrafts
-            .Where(child => child.TargetMachineDraftId == draft.Id && child.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
-        metrics.ForEach(child => child.Dismiss());
-        statuses.ForEach(child => child.Dismiss());
-    }
-
-    private async Task DismissChildDraftAsync(DismissDraftRequest request, CancellationToken cancellationToken)
-    {
-        var metric = await _dbContext.MetricDefinitionDrafts.SingleOrDefaultAsync(
-            candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-            cancellationToken);
-
-        if (metric is not null)
-        {
-            EnsurePending(metric.State);
-            metric.Dismiss();
-
-            return;
-        }
-
-        var status = await _dbContext.StatusDefinitionDrafts.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-                cancellationToken)
-            ?? throw new NotFoundException(DraftErrors.DraftNotFound);
-        EnsurePending(status.State);
-        status.Dismiss();
-    }
-
-    private static void EnsurePending(DraftState state)
-    {
-        if (state != DraftState.Pending)
-        {
-            throw new ConflictException(DraftErrors.DraftNotPending);
         }
     }
 }

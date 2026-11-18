@@ -4,9 +4,8 @@ public static class DraftAuthorizationTestData
 {
     private const string AnyId = "not-checked-before-authorization";
     private const string EmptyBody = "{}";
-    private const string SearchBody = "{\"offset\":0,\"limit\":25,\"filter\":{}}";
+    private const string SearchBody = "{\"limit\":25,\"filter\":{}}";
     private const string ApplyBody = "{\"name\":\"n\",\"serialNumber\":\"s\"}";
-    private const string MarkBody = "{\"ids\":[]}";
 
     /// <summary>
     /// Every draft endpoint: the method, the path, and a body. Authorization runs before the handler, so the IDs and
@@ -21,7 +20,6 @@ public static class DraftAuthorizationTestData
         { "POST", $"v1/ingest-attempts/{AnyId}/drafts/search", SearchBody },
         { "POST", $"v1/ingest-attempts/{AnyId}/drafts/dismiss", EmptyBody },
         { "POST", $"v1/drafts/{AnyId}/dismiss", EmptyBody },
-        { "POST", "v1/drafts/mark-applied", MarkBody },
         { "POST", $"v1/machines/{AnyId}/drafts/dismiss", EmptyBody },
     };
 }

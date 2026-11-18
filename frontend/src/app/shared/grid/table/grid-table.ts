@@ -9,9 +9,18 @@ import { toggleColumn } from '@shared/grid/table/grid-columns';
 import { isFilterValueChanged } from '@shared/grid/table/filter-changes';
 import { filterPassThrough, GRID_TOOLTIP_KEYS, tablePassThrough } from '@shared/grid/table/grid-tooltips';
 import { isEmptyResult, keepWhileLoading, skeletonRows as skeletonRowCount } from '@shared/grid/table/grid-display';
+import { type GridPaginator, toKeysetMove, toPaginator } from '@shared/grid/table/grid-paginator';
 import { toSortDirection, toSortOrder } from '@shared/grid/table/grid-sort-order';
 import { readTableFilters, type TableFilters, toConstraint, toTableFilters } from '@shared/grid/table/table-filters';
 import { delayedLoading } from '@shared/loading/delayed-loading';
+
+/** The paging of a keyset grid. The store keeps the positions; the table maps paginator events to these calls. */
+export interface GridTableKeyset {
+  readonly pageIndex: Signal<number>;
+  readonly next: () => void;
+  readonly previous: () => void;
+  readonly limitChange: (limit: number) => void;
+}
 
 export interface GridTableOptions<TRow, TColumn extends string, TFilter extends object, TSortColumn extends string> {
   readonly allColumns: readonly TColumn[];
@@ -30,6 +39,8 @@ export interface GridTableOptions<TRow, TColumn extends string, TFilter extends 
   readonly filterChange: (patch: Partial<TFilter>) => void;
   readonly sortChange: (sort: GridSort<TSortColumn> | null) => void;
   readonly pageChange: (page: { offset: number; limit: number }) => void;
+  /** Set only by a keyset grid: the position stack of its store. */
+  readonly keyset?: GridTableKeyset;
   readonly columnsChange: (columns: readonly TColumn[]) => void;
   readonly columnsReorder: (columns: readonly TColumn[]) => void;
 }
@@ -39,6 +50,7 @@ export interface GridTable<TColumn extends string> {
   readonly showSkeleton: Signal<boolean>;
   readonly showEmpty: Signal<boolean>;
   readonly tableFilters: Signal<TableFilters>;
+  readonly paginator: Signal<GridPaginator>;
   readonly skeletonRows: Signal<number[]>;
   readonly tableRows: Signal<unknown[]>;
   readonly tableColumns: Signal<TColumn[]>;
@@ -76,6 +88,7 @@ export function createGridTable<TRow, TColumn extends string, TFilter extends ob
     isEmptyResult({ rows: options.rows(), isLoading: options.isLoading(), hasLoaded: options.hasLoaded() }),
   );
   const tableColumns = computed(() => [...options.columns()]);
+  const paginator = computed((): GridPaginator => toPaginator(options.keyset?.pageIndex() ?? null, options.limit()));
   const labels = toSignal(inject(TranslateService).stream(Object.values(GRID_TOOLTIP_KEYS)), {
     initialValue: {} as Record<string, string>,
   });
@@ -102,7 +115,23 @@ export function createGridTable<TRow, TColumn extends string, TFilter extends ob
   }
 
   function onPage(event: TablePageEvent): void {
-    options.pageChange({ offset: event.first, limit: event.rows });
+    if (options.keyset === undefined) {
+      options.pageChange({ offset: event.first, limit: event.rows });
+      return;
+    }
+    const move = toKeysetMove({
+      page: Math.floor(event.first / event.rows),
+      rows: event.rows,
+      pageIndex: options.keyset.pageIndex(),
+      limit: options.limit(),
+    });
+    if (move === 'limit') {
+      options.keyset.limitChange(event.rows);
+    } else if (move === 'next') {
+      options.keyset.next();
+    } else if (move === 'previous') {
+      options.keyset.previous();
+    }
   }
 
   function onSort(event: { field?: string | null; order?: number | null }): void {
@@ -123,6 +152,7 @@ export function createGridTable<TRow, TColumn extends string, TFilter extends ob
     showSkeleton,
     showEmpty,
     tableFilters,
+    paginator,
     skeletonRows,
     tableRows,
     tableColumns,

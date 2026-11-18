@@ -36,6 +36,8 @@ export interface StatusDefinitionBody {
   readonly code: string;
   readonly severity: StatusSeverity;
   readonly description: string | null;
+  /** The status draft that proposed this write. Telemetry marks it applied in the same save. */
+  readonly draftId?: string;
 }
 
 /** The batch of status definitions: each item creates the status with its code or changes the one that has it. */
@@ -48,6 +50,8 @@ export interface StatusDefinitionBatchItem {
   readonly code: string;
   readonly severity: StatusSeverity | null;
   readonly description: string | null;
+  /** The status draft that proposed this item. Telemetry marks it applied in the same save. */
+  readonly draftId: string;
 }
 
 export interface CreateStatusDefinitionResponse {

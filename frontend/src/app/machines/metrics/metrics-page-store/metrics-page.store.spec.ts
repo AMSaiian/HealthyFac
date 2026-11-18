@@ -131,7 +131,7 @@ type Spy = ReturnType<typeof vi.fn>;
 interface Setup {
   store: InstanceType<typeof MetricsPageStore>;
   api: { getDefinitions: Spy; apply: Spy; getSchema: Spy };
-  draftsApi: { listForAttempt: Spy; markApplied: Spy };
+  draftsApi: { listForAttempt: Spy };
   actions: { complete: Spy; returnPath: WritableSignal<{ url: string } | null> };
   resolveLinks: Spy;
   messages: { add: Spy };
@@ -141,7 +141,6 @@ interface Setup {
 async function setup(
   definitions: MetricDefinitionsResponse = LOADED,
   apply?: Spy,
-  markApplied?: Spy,
   overrides: { getDefinitions?: Spy; listForAttempt?: Spy } = {},
 ): Promise<Setup> {
   const messages = { add: vi.fn() };
@@ -154,7 +153,6 @@ async function setup(
   };
   const draftsApi = {
     listForAttempt: overrides.listForAttempt ?? vi.fn(() => of(DRAFTS)),
-    markApplied: markApplied ?? vi.fn(() => of(undefined)),
   };
   const actions = { complete: vi.fn(), returnPath: signal<{ url: string } | null>(null) };
   TestBed.configureTestingModule({
@@ -392,8 +390,8 @@ describe('MetricsPageStore', () => {
     expect(store.hasChanges()).toBe(true);
   });
 
-  it('apply_WithStagedDrafts_MarksTheirDraftsAfterTheApplyAndCompletesChanged', async () => {
-    const { store, draftsApi, actions } = await setup();
+  it('apply_WithStagedDrafts_SendsTheirDraftIdsAndCompletesChanged', async () => {
+    const { store, api, actions } = await setup();
     store.loadDrafts('attempt-1');
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
@@ -401,37 +399,13 @@ describe('MetricsPageStore', () => {
 
     store.apply();
 
-    expect(draftsApi.markApplied).toHaveBeenCalledWith(['draft-new', 'draft-key'], expect.anything());
+    const body = api.apply.mock.calls[0][1] as {
+      created: { draftId: string | null }[];
+      updated: { draftId: string | null }[];
+    };
+
+    expect([...body.created, ...body.updated].map((item) => item.draftId)).toEqual(['draft-new', 'draft-key']);
     expect(actions.complete).toHaveBeenCalledWith(DraftActionType.Changed);
-  });
-
-  it('apply_WhenTheApplyFails_MarksNoDraft', async () => {
-    const apply = vi.fn(() =>
-      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict, statusText: 'Conflict' })),
-    );
-    const { store, draftsApi } = await setup(LOADED, apply);
-    store.loadDrafts('attempt-1');
-    TestBed.tick();
-    await TestBed.inject(ApplicationRef).whenStable();
-    TestBed.tick();
-
-    store.apply();
-
-    expect(draftsApi.markApplied).not.toHaveBeenCalled();
-  });
-
-  it('apply_WhenTheMarkFails_ShowsAToastAndKeepsTheApplyResult', async () => {
-    const markApplied = vi.fn(() => throwError(() => new HttpErrorResponse({ status: 500 })));
-    const { store, messages } = await setup(LOADED, undefined, markApplied);
-    store.loadDrafts('attempt-1');
-    TestBed.tick();
-    await TestBed.inject(ApplicationRef).whenStable();
-    TestBed.tick();
-
-    store.apply();
-
-    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'DRAFTS.METRICS.MARK_FAILED' }));
-    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
   });
 
   it('apply_WhenTheDefinitionsReloadBeforeTheDrafts_DoesNotStageTheAppliedDraftsAgain', async () => {
@@ -439,7 +413,7 @@ describe('MetricsPageStore', () => {
     const reloadedDrafts = new Subject<typeof DRAFTS>();
     const getDefinitions = vi.fn().mockReturnValueOnce(of(LOADED)).mockReturnValue(reloadedDefinitions);
     const listForAttempt = vi.fn().mockReturnValueOnce(of(DRAFTS)).mockReturnValue(reloadedDrafts);
-    const { store } = await setup(LOADED, undefined, undefined, { getDefinitions, listForAttempt });
+    const { store } = await setup(LOADED, undefined, { getDefinitions, listForAttempt });
     store.loadDrafts('attempt-1');
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();

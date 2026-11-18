@@ -1,7 +1,11 @@
+using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Application.MetricSchemas;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Seeding;
+using HealthyFac.Testing.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +27,40 @@ public static class DevelopmentSeedFixtureExtensions
             await seeder.SeedAsync(CancellationToken.None);
         }
 
+        public async Task RunDemoDefinitionDraftSeedAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var seeder = new DemoDefinitionDraftSeeder(
+                scope.ServiceProvider.GetRequiredService<TelemetryDbContext>(),
+                DevelopmentSeedTestData.CreateOptions(),
+                new DemoIngestSeedLocation(
+                    Path.Combine(Path.GetDirectoryName(SeedDataFile.Find())!, path2: "demo-ingest")));
+
+            await seeder.SeedAsync(CancellationToken.None);
+        }
+
+        public async Task<DemoDefinitionDrafts> LoadDemoDefinitionDraftsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
+            return new DemoDefinitionDrafts
+            {
+                Metrics = await dbContext.MetricDefinitionDrafts
+                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .AsNoTracking()
+                    .ToListAsync(),
+                Statuses = await dbContext.StatusDefinitionDrafts
+                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .AsNoTracking()
+                    .ToListAsync(),
+                Entries = await dbContext.ProposalEntries
+                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .AsNoTracking()
+                    .ToListAsync(),
+            };
+        }
+
         public async Task<IReadOnlyList<SeededRegistration>> LoadSeededRegistrationsAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -42,6 +80,13 @@ public static class DevelopmentSeedFixtureExtensions
                 .ToListAsync();
         }
     }
+}
+
+public sealed record DemoDefinitionDrafts
+{
+    public required IReadOnlyList<MetricDefinitionDraft> Metrics { get; init; }
+    public required IReadOnlyList<StatusDefinitionDraft> Statuses { get; init; }
+    public required IReadOnlyList<ProposalEntry> Entries { get; init; }
 }
 
 public sealed record SeededRegistration

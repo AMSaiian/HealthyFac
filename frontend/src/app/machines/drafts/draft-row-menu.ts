@@ -7,6 +7,7 @@ export const DRAFT_MENU_KEYS = {
   apply: 'DRAFTS.APPLY',
   dismiss: 'DRAFTS.DISMISS',
   reviewAfterMachine: 'DRAFTS.REVIEW_AFTER_MACHINE',
+  awaitingTarget: 'DRAFTS.REVIEW_AWAITING_TARGET',
   reviewTooltip: 'DRAFTS.TOOLTIPS.REVIEW',
   applyTooltip: 'DRAFTS.TOOLTIPS.APPLY',
   dismissTooltip: 'DRAFTS.TOOLTIPS.DISMISS',
@@ -19,6 +20,8 @@ export interface DraftRowMenuOptions {
   readonly isReviewDisabled: boolean;
   /** The translation key of the reason that **Apply** is off, or `null` when the draft applies as it is. */
   readonly applyReasonKey: string | null | undefined;
+  /** True for a draft that waits for the machine check: **Apply** is off with its own reason, **Dismiss** stays on. */
+  readonly isAwaitingTarget: boolean;
   /** True while an apply runs: **Apply** and **Dismiss** are off. */
   readonly isBusy: boolean;
   readonly onReview: () => void;
@@ -34,7 +37,7 @@ export function draftRowMenuItems(options: DraftRowMenuOptions): MenuItem[] {
   const rowMenu = createRowMenu<boolean>();
   rowMenu.activeRow = true;
   const labels = translatedLabels(options);
-  const applyReason = options.applyReasonKey ?? null;
+  const applyReason = options.isAwaitingTarget ? DRAFT_MENU_KEYS.awaitingTarget : (options.applyReasonKey ?? null);
   return [
     {
       ...rowMenu.menuItem(
@@ -83,6 +86,7 @@ function translatedLabels(options: DraftRowMenuOptions): Record<string, string> 
     DRAFT_MENU_KEYS.apply,
     DRAFT_MENU_KEYS.dismiss,
     DRAFT_MENU_KEYS.reviewAfterMachine,
+    DRAFT_MENU_KEYS.awaitingTarget,
     DRAFT_MENU_KEYS.reviewTooltip,
     DRAFT_MENU_KEYS.applyTooltip,
     DRAFT_MENU_KEYS.dismissTooltip,

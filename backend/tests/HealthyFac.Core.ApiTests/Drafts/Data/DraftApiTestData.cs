@@ -7,15 +7,12 @@ public static class DraftApiTestData
 {
     public const string MachineDraftsPath = "v1/machine-drafts";
     public const string DraftsPath = "v1/drafts";
-    public const string MachineDraftNotAppliedKey = "machineDraftNotApplied";
     public const string DraftWritePermission = "drafts:write";
     public const string DraftReadPermission = "drafts:read";
     public const string MachineWritePermission = "machines:write";
     public const string MachineReadPermission = "machines:read";
     public const string ProposedName = "AX-200 Rotary Pump";
     public const string ProposedSerialNumber = "AX-200-001";
-    public const string MetricKey = "motor.temperature";
-    public const string StatusCode = "E104";
     public const string DraftNotPendingKey = "draftNotPending";
 
     public static readonly Guid AttemptId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000a01");
@@ -38,12 +35,6 @@ public static class DraftApiTestData
         { "DismissDraft", DismissPath(encryptedDraftId: "{draftId}") },
         { "DismissMachineDrafts", DismissMachineDraftsPath(encryptedMachineId: "{machineId}") },
     };
-
-    public const string MarkBodyWithNullIds = "{\"ids\": null}";
-
-    public static string MarkBody(params string[] encryptedIds) =>
-        new JsonObject { [propertyName: "ids"] = new JsonArray([.. encryptedIds.Select(id => JsonValue.Create(id))]) }
-            .ToJsonString();
 
     public static string MachineUpdateBody(string name, string serialNumber) =>
         new JsonObject

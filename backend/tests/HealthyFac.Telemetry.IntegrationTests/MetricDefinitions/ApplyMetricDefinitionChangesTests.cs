@@ -59,6 +59,28 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     }
 
     [Fact]
+    public async Task Apply_WithAnEqualUpdateOnly_KeepsTheRevisionAndStoresNoSchemaRevision()
+    {
+        var (tenant, machineId) = await ArrangeAsync();
+        await _fixture.ApplyMetricChangesAsync(
+            tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewBoolean()]);
+        var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
+
+        var response = await _fixture.ApplyMetricChangesAsync(
+            tenant,
+            machineId,
+            expectedRevision: 1,
+            updated: [MetricDefinitionTestData.Update(existing.Id, existing.Name)]);
+
+        var revisions = await _fixture.LoadSchemaRevisionsAsync(machineId);
+        var registrationRevision = await _fixture.LoadMetricSchemaRevisionAsync(machineId);
+
+        response.Revision.Should().Be(expected: 1);
+        registrationRevision.Should().Be(expected: 1);
+        revisions.Select(revision => revision.Revision).Should().Equal(0, 1);
+    }
+
+    [Fact]
     public async Task Apply_WithBooleanAndStateSet_SetsDiscreteUnits()
     {
         var (tenant, machineId) = await ArrangeAsync();

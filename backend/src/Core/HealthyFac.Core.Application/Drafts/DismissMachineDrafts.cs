@@ -1,8 +1,10 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -28,12 +30,16 @@ public class DismissMachineDraftsRequestValidator : AbstractValidator<DismissMac
     public DismissMachineDraftsRequestValidator()
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DraftErrors.CompanyIdRequired);
-        RuleFor(request => request.MachineId).NotEmpty().WithMessage(MachineErrors.MachineIdRequired)
+        RuleFor(request => request.MachineId)
+            .NotEmpty()
+            .WithMessage(MachineErrors.MachineIdRequired)
             .When(request => request.MachineId is not null);
-        RuleFor(request => request.AttemptId).NotEmpty().WithMessage(DraftErrors.AttemptIdRequired)
+        RuleFor(request => request.AttemptId)
+            .NotEmpty()
+            .WithMessage(DraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
         RuleFor(request => request)
-            .Must(request => request.MachineId is null != (request.AttemptId is null))
+            .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DraftErrors.SearchScopeRequired);
     }
 }
@@ -71,16 +77,18 @@ public sealed class DismissMachineDraftsPreHandlerCheck(ICoreDbContext dbContext
 }
 
 /// <summary>
-/// Dismisses every pending draft in the scope: the update machine drafts, the create machine drafts, the metric drafts,
-/// and the status drafts. The machine scope holds the drafts that target the machine; the drafts that wait for a create
-/// machine draft belong to a new machine and are not touched. The attempt scope holds every draft of the attempt. One
-/// save stores all changes, so a draft that changed in parallel is a conflict and nothing is dismissed.
+/// Dismisses every pending machine draft in the scope (the metric and status drafts live in Telemetry). The machine
+/// scope holds the drafts that target the machine. The attempt scope holds every machine draft of the attempt. One
+/// save stores all changes, so a draft that changed in parallel is a conflict and nothing is dismissed. Each create
+/// draft that it dismisses also queues <see cref="MachineDraftDismissed"/> in the same save.
 /// </summary>
 /// <param name="dbContext">Loads the drafts and saves the change.</param>
-public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext)
+/// <param name="outbox">Stores the messages with the change.</param>
+public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext, IOutbox outbox)
     : IRequestHandler<DismissMachineDraftsRequest, DismissMachineDraftsResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IOutbox _outbox = outbox;
 
     /// <summary>
     /// Loads the pending drafts of the machine, dismisses them, and saves once.
@@ -101,22 +109,13 @@ public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext)
                 && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
                 && draft.State == DraftState.Pending)
             .ToListAsync(cancellationToken);
-        var metricDrafts = await _dbContext.MetricDefinitionDrafts
-            .Where(draft => draft.CompanyId == request.CompanyId
-                && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
-                && draft.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
-        var statusDrafts = await _dbContext.StatusDefinitionDrafts
-            .Where(draft => draft.CompanyId == request.CompanyId
-                && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
-                && draft.State == DraftState.Pending)
-            .ToListAsync(cancellationToken);
 
         machineDrafts.ForEach(draft => draft.Dismiss());
-        metricDrafts.ForEach(draft => draft.Dismiss());
-        statusDrafts.ForEach(draft => draft.Dismiss());
+
+        foreach (var draft in machineDrafts.Where(draft => draft.IsCreate))
+        {
+            _outbox.Add(new MachineDraftDismissed { DraftId = draft.Id, CompanyId = draft.CompanyId });
+        }
 
         try
         {
@@ -127,9 +126,6 @@ public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext)
             throw new ConflictException(DraftErrors.DraftChanged, exception);
         }
 
-        return new DismissMachineDraftsResponse
-        {
-            DismissedCount = machineDrafts.Count + metricDrafts.Count + statusDrafts.Count,
-        };
+        return new DismissMachineDraftsResponse { DismissedCount = machineDrafts.Count };
     }
 }

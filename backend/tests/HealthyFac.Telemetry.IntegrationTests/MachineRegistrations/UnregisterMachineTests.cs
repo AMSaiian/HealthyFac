@@ -1,7 +1,9 @@
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
+using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
@@ -67,6 +69,29 @@ public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture)
         metric.DeletedAt.Should().NotBeNull();
         metric.DeletedBy.Should().NotBeNull();
         otherMetric.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnregisterMachine_WithOpenDefinitionDrafts_DismissesOnlyThoseOfTheMachine()
+    {
+        var tenant = _fixture.ArrangeMachineTenant();
+        var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+        var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+        var pendingId = await _fixture.StoreMetricDraftOnMachineAsync(tenant.CompanyId, machineId, isApplied: false);
+        var appliedId = await _fixture.StoreMetricDraftOnMachineAsync(tenant.CompanyId, machineId, isApplied: true);
+        var awaitingId = await _fixture.StoreAwaitingStatusDraftOnMachineAsync(tenant.CompanyId, machineId);
+        var otherId = await _fixture.StoreMetricDraftOnMachineAsync(tenant.CompanyId, otherMachineId, isApplied: false);
+
+        await _fixture.UnregisterMachineAsync(
+            new MachineDeleted { MachineId = machineId, CompanyId = tenant.CompanyId });
+
+        var metrics = (await _fixture.LoadMetricDraftsAsync()).ToDictionary(draft => draft.Id);
+        var statuses = (await _fixture.LoadStatusDraftsAsync()).ToDictionary(draft => draft.Id);
+
+        metrics[pendingId].State.Should().Be(DefinitionDraftState.Dismissed);
+        statuses[awaitingId].State.Should().Be(DefinitionDraftState.Dismissed);
+        metrics[appliedId].State.Should().Be(DefinitionDraftState.Applied);
+        metrics[otherId].State.Should().Be(DefinitionDraftState.Pending);
     }
 
     [Fact]
