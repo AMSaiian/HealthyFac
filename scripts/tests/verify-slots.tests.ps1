@@ -11,6 +11,8 @@
 # - Settings split (docker/config/README.md): each .NET service of docker-compose.yml mounts its docker/config file,
 #   has no fixed "__" entry in its environment, and its file names no secret.
 # - Compose: slot 2 renders slot 2 names, ports, and URLs; no VERIFY_SLOT fails with the ":?" message.
+# - SPA build: spa builds the Angular development configuration by default, and production with
+#   HEALTHYFAC_SPA_BUILD=production.
 # Run:  pwsh scripts/tests/verify-slots.tests.ps1
 # It exits 1 when a check fails.
 
@@ -193,10 +195,11 @@ $composeArgs = @(
   'config', '--format', 'json'
 )
 $saved = @{}
-foreach ($name in 'VERIFY_SLOT', 'HEALTHYFAC_DOMAIN', 'GATEWAY_PORT', 'MAILPIT_UI_PORT', 'GRAFANA_PORT', 'RABBITMQ_MANAGEMENT_PORT', 'KEYCLOAK_PORT', 'SIMULATOR_PORT') {
+foreach ($name in 'VERIFY_SLOT', 'HEALTHYFAC_DOMAIN', 'GATEWAY_PORT', 'MAILPIT_UI_PORT', 'GRAFANA_PORT', 'RABBITMQ_MANAGEMENT_PORT', 'KEYCLOAK_PORT', 'SIMULATOR_PORT', 'HEALTHYFAC_SPA_BUILD') {
   $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 try {
+  [Environment]::SetEnvironmentVariable('HEALTHYFAC_SPA_BUILD', $null)
   $s = Get-VerifySlotValues -Slot 2
   $env:VERIFY_SLOT = '2'
   $env:HEALTHYFAC_DOMAIN = $s.Domain
@@ -226,6 +229,12 @@ try {
   Assert-That ($c.services.core.environment.InviteLinks__SpaBaseUrl -like 'https://app.s2.hfverify.test:9445*') 'InviteLinks__SpaBaseUrl uses slot 2'
   Assert-That ($c.services.gateway.environment.Cors__AllowedOrigins__0 -like 'https://app.s2.hfverify.test:9445*') 'Cors__AllowedOrigins__0 uses slot 2'
   Assert-That (($c.services.gateway.environment.PSObject.Properties | Where-Object { $_.Name -like '*Match__Hosts*' -and $_.Value -like '*s2.hfverify.test*' }).Count -ge 1) 'gateway Match__Hosts uses slot 2'
+  Assert-That ($c.services.spa.build.args.SPA_BUILD_CONFIGURATION -eq 'development') 'spa builds the development configuration without HEALTHYFAC_SPA_BUILD'
+
+  $env:HEALTHYFAC_SPA_BUILD = 'production'
+  $production = (& docker @composeArgs 2>&1) -join "`n" | ConvertFrom-Json
+  Assert-That ($production.services.spa.build.args.SPA_BUILD_CONFIGURATION -eq 'production') 'spa builds the production configuration with HEALTHYFAC_SPA_BUILD=production'
+  [Environment]::SetEnvironmentVariable('HEALTHYFAC_SPA_BUILD', $null)
 
   Remove-Item Env:VERIFY_SLOT
   $out = & docker @composeArgs 2>&1

@@ -15,7 +15,10 @@ COPY --from=frontend package.json package-lock.json ./
 RUN npm ci
 
 COPY --from=frontend . ./
-RUN npx ng build --configuration production
+# The Angular configuration (frontend/angular.json). "development" keeps the Redux DevTools and the Angular
+# development checks. Compose passes HEALTHYFAC_SPA_BUILD (default development); a plain docker build is production.
+ARG SPA_BUILD_CONFIGURATION=production
+RUN npx ng build --configuration ${SPA_BUILD_CONFIGURATION}
 
 # ---------- restore ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0.401-noble AS restore

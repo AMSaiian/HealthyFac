@@ -720,6 +720,9 @@ services:
       # The frontend folder is a named extra context, so the image build stays under the backend context.
       additional_contexts:
         frontend: ./frontend
+      # Compose runs only local stacks, so the app is the development build (Redux DevTools on).
+      args:
+        SPA_BUILD_CONFIGURATION: ${HEALTHYFAC_SPA_BUILD:-development}
     image: healthyfac/spa:local
     restart: unless-stopped
     read_only: true

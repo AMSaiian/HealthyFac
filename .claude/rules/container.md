@@ -9,6 +9,7 @@ paths:
 # Container Rules
 *   **Multi-Stage Builds:** Build in a separate stage from the final stage. The final stage copies only the published output from the build stage.
 *   **Runtime-Only Final Image:** The final image holds the runtime and the files the app needs. It must not hold an SDK, compiler, build tool, package manager, shell, or source code. Use a chiseled or distroless base image for .NET services.
+    *   **Local Exception:** The development build of the spa image (`SPA_BUILD_CONFIGURATION=development`, the Compose default for local stacks) may keep the source maps of the web app. The production build (the Dockerfile default) must not.
 *   **Image Verification:** Prove the final image is clean. Inspect its layers or run `docker history` and `docker run --entrypoint` checks. Do not assume. Repeat the check after you change the base image or the Dockerfile.
 *   **No Root User:** Never run our own services as root. Set a numeric `USER` in the Dockerfile (for .NET, `USER $APP_UID`). For third-party images, set a non-root `user:` in Compose only when it works without errors. Test the change. If the image breaks, keep its default user and add a Compose comment with the reason.
 *   **Least Privilege:** Set `cap_drop: [ALL]`, `security_opt: [no-new-privileges:true]`, `read_only: true`, and `tmpfs` for writable paths on every service that we build. Apply the same settings to a third-party image only when it works without errors. Add a capability back only with a written reason.
