@@ -22,6 +22,12 @@ public static class DraftFilterSplitterTestData
             false, """{"kinds":{"values":["metric","status"]}}"""
         },
         {
+            "phase kind only",
+            """{"kinds":{"values":["phase"]}}""",
+            true, """{"kinds":{"values":[]}}""",
+            false, """{"kinds":{"values":["phase"]}}"""
+        },
+        {
             "machine and metric kinds",
             """{"kinds":{"values":["machine","metric"]}}""",
             false, """{"kinds":{"values":["machine"]}}""",

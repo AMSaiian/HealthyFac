@@ -1,3 +1,5 @@
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Infrastructure.Database;
@@ -93,6 +95,28 @@ public static class DemoIngestSeedFixtureExtensions
                 .IngestedDocuments
                 .AsNoTracking()
                 .OrderBy(document => document.Id)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<AgentRun>> LoadSeededRunsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<InsightsDbContext>()
+                .AgentRuns
+                .AsNoTracking()
+                .OrderBy(run => run.Id)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<AgentToolCall>> LoadSeededToolCallsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<InsightsDbContext>()
+                .AgentToolCalls
+                .AsNoTracking()
+                .OrderBy(call => call.Id)
                 .ToListAsync();
         }
 

@@ -37,6 +37,21 @@ public static class DraftMessageLimits
         public const int StateMaxLength = 100;
     }
 
+    public static class Phase
+    {
+        public const int CodeMaxLength = 50;
+        public const int NameMaxLength = 100;
+    }
+
+    public static class PhaseOperators
+    {
+        public static readonly string[] All =
+        [
+            "active", "inactive", "greaterThan", "greaterOrEqual", "lessThan", "lessOrEqual", "between", "isTrue",
+            "isFalse", "in",
+        ];
+    }
+
     public static class Status
     {
         public const int CodeMaxLength = 50;
@@ -49,6 +64,14 @@ public static class DraftMessageLimits
         public const string StateSet = "stateSet";
 
         public static readonly string[] All = [Numeric, Boolean, StateSet];
+    }
+
+    public static class Behaviors
+    {
+        public const string Level = "level";
+        public const string Counter = "counter";
+
+        public static readonly string[] All = [Level, Counter];
     }
 
     public static class Severities

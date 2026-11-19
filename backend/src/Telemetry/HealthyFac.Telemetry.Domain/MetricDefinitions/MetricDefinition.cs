@@ -107,6 +107,15 @@ public class MetricDefinition : IEntity, IAuditable, ISoftDeletable
     /// <summary>The state codes of a state set. A change affects only the readings received after it.</summary>
     public IReadOnlyList<string>? States => _states;
 
+    /// <summary>
+    /// The warning and alarm limits of a numeric metric, in its unit. The limits outside a phase apply to every
+    /// sample.
+    /// </summary>
+    public MetricLimits Limits { get; private set; } = MetricLimits.None;
+
+    /// <summary>How the readings behave. A new metric is a <see cref="MetricBehavior.Level"/>.</summary>
+    public MetricBehavior Behavior { get; private set; } = MetricBehavior.Level;
+
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
@@ -142,6 +151,19 @@ public class MetricDefinition : IEntity, IAuditable, ISoftDeletable
         ApplyValues(min, max, states);
 
         return isChanged;
+    }
+
+    /// <summary>
+    /// Changes the limits and the behavior of the metric.
+    /// </summary>
+    /// <param name="limits">The new limits. <see cref="MetricLimits.None"/> removes every limit.</param>
+    /// <param name="behavior">The new behavior.</param>
+    /// <exception cref="InvalidOperationException">The limits break a rule of <see cref="MetricLimits"/>.</exception>
+    public void ChangeLimits(MetricLimits limits, MetricBehavior behavior)
+    {
+        limits.EnsureValid(ValueKind);
+        Limits = limits;
+        Behavior = behavior;
     }
 
     private void ApplyValues(double? min, double? max, IReadOnlyList<string>? states)

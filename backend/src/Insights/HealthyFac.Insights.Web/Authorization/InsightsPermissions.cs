@@ -12,7 +12,7 @@ public static class InsightsPermissions
     /// Holds every permission of the Insights API. The service registers the policies from this set, so a
     /// permission that is missing here has no policy, and its endpoint fails with status 500.
     /// </summary>
-    public static readonly FrozenSet<string> All = [.. Ingest.All];
+    public static readonly FrozenSet<string> All = [.. Ingest.All, .. Cases.All];
 
     public static class Ingest
     {
@@ -22,6 +22,18 @@ public static class InsightsPermissions
         /// <summary>
         /// Holds every permission of the ingest feature. <see cref="InsightsPermissions.All"/> spreads this set, so
         /// a permission that is missing here has no policy.
+        /// </summary>
+        public static readonly FrozenSet<string> All = [Read, Write];
+    }
+
+    public static class Cases
+    {
+        public const string Read = "cases:read";
+        public const string Write = "cases:write";
+
+        /// <summary>
+        /// Holds every permission of the case feature. <see cref="InsightsPermissions.All"/> spreads this set, so a
+        /// permission that is missing here has no policy.
         /// </summary>
         public static readonly FrozenSet<string> All = [Read, Write];
     }

@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\HealthyFac.Telemetry.Application\HealthyFac.Telemetry.Application.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Telemetry.Contracts\HealthyFac.Telemetry.Contracts.csproj"/>
         <ProjectReference Include="..\HealthyFac.Telemetry.Infrastructure\HealthyFac.Telemetry.Infrastructure.csproj"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj"/>
     </ItemGroup>

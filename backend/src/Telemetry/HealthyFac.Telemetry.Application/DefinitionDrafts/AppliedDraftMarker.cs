@@ -12,6 +12,9 @@ public sealed record DraftReference
     public required string Path { get; init; }
 
     public required Guid DraftId { get; init; }
+
+    /// <summary>The definition that the draft became, or the definition that the draft changed.</summary>
+    public required Guid DefinitionId { get; init; }
 }
 
 /// <summary>
@@ -46,7 +49,8 @@ public sealed class AppliedDraftMarker(ITelemetryDbContext dbContext)
         IReadOnlyList<DraftReference> references,
         CancellationToken cancellationToken
     ) =>
-        MarkAsync(_dbContext.MetricDefinitionDrafts, companyId, machineId, references, cancellationToken);
+        MarkAndRetargetAsync(
+            _dbContext.MetricDefinitionDrafts, isMetric: true, companyId, machineId, references, cancellationToken);
 
     /// <summary>
     /// Marks status drafts as applied.
@@ -67,7 +71,43 @@ public sealed class AppliedDraftMarker(ITelemetryDbContext dbContext)
         IReadOnlyList<DraftReference> references,
         CancellationToken cancellationToken
     ) =>
-        MarkAsync(_dbContext.StatusDefinitionDrafts, companyId, machineId, references, cancellationToken);
+        MarkAndRetargetAsync(
+            _dbContext.StatusDefinitionDrafts, isMetric: false, companyId, machineId, references, cancellationToken);
+
+    private async Task MarkAndRetargetAsync<TDraft>(
+        DbSet<TDraft> drafts,
+        bool isMetric,
+        Guid companyId,
+        Guid machineId,
+        IReadOnlyList<DraftReference> references,
+        CancellationToken cancellationToken
+    )
+        where TDraft : class, IDefinitionDraft
+    {
+        await MarkAsync(drafts, companyId, machineId, references, cancellationToken);
+
+        if (references.Count == 0)
+        {
+            return;
+        }
+
+        var phaseDrafts = await _dbContext.OperatingPhaseDrafts
+            .Include(phase => phase.Conditions)
+            .Include(phase => phase.Limits)
+            .Where(phase => phase.CompanyId == companyId && phase.TargetMachineId == machineId)
+            .Where(OpenDefinitionDrafts.Predicate<OperatingPhaseDraft>())
+            .ToListAsync(cancellationToken);
+
+        foreach (var reference in references)
+        {
+            foreach (var phase in phaseDrafts)
+            {
+                _ = isMetric
+                    ? phase.RetargetMetric(reference.DraftId, reference.DefinitionId)
+                    : phase.RetargetStatus(reference.DraftId, reference.DefinitionId);
+            }
+        }
+    }
 
     private static async Task MarkAsync<TDraft>(
         DbSet<TDraft> drafts,

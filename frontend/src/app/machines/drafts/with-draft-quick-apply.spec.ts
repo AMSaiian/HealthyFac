@@ -50,6 +50,11 @@ const METRIC_DRAFT = {
   min: null,
   max: null,
   states: null,
+  warningLow: null,
+  warningHigh: null,
+  alarmLow: null,
+  alarmHigh: null,
+  behavior: null,
 };
 const STATUS_DRAFT = {
   id: 'st',
@@ -60,12 +65,41 @@ const STATUS_DRAFT = {
   description: null,
 };
 
+const PHASE_APPLY_URL = '/api/telemetry/v1/machines/m1/definition-drafts/operating-phases/ph/apply';
+const PHASE_CONDITION = {
+  metricDefinitionId: 'def',
+  metricDraftId: null,
+  statusDefinitionId: null,
+  statusDraftId: null,
+  operator: 'greaterThan',
+  value: 5,
+  upperValue: null,
+  states: null,
+};
+const PHASE_DRAFT = {
+  id: 'ph',
+  state: DraftState.Pending,
+  sourceLocation: null,
+  code: 'cutting',
+  name: 'Cutting',
+  description: null,
+  priority: 1,
+  isTracked: true,
+  conditions: [PHASE_CONDITION],
+  limits: [],
+};
+const PHASE_WAITING = {
+  ...PHASE_DRAFT,
+  conditions: [{ ...PHASE_CONDITION, metricDefinitionId: null, metricDraftId: 'mt' }],
+};
+
 const CREATE_GROUP = {
   machineId: null,
   machineName: null,
   machineDraft: MACHINE_DRAFT,
   metrics: [METRIC_DRAFT],
   statuses: [STATUS_DRAFT],
+  phases: [],
 };
 const MOVED_GROUP = {
   machineId: 'm1',
@@ -73,6 +107,7 @@ const MOVED_GROUP = {
   machineDraft: { ...MACHINE_DRAFT, state: DraftState.Applied },
   metrics: [METRIC_DRAFT],
   statuses: [STATUS_DRAFT],
+  phases: [],
 };
 const EXISTING_GROUP = { ...MOVED_GROUP, machineDraft: null };
 
@@ -142,6 +177,60 @@ async function setup(entries: readonly AttemptDraftsEntry[]): Promise<Setup> {
 }
 
 describe('withDraftQuickApply', () => {
+  it('applyDraft_ForAPhaseDraftThatNamesOnlyDefinitions_SendsTheApplyToTelemetryWithTheDraftValues', async () => {
+    const group = { ...EXISTING_GROUP, metrics: [], statuses: [], phases: [PHASE_DRAFT] };
+    const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [group] } }]);
+
+    store.applyDraft('a1', 'ph');
+    await until(http, DRAFTS_URL, 'GET', { groups: [group] });
+    const body = await until(http, PHASE_APPLY_URL, 'POST', { id: 'p1' });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    http.verify();
+    expect(body).toEqual(
+      expect.objectContaining({ code: 'cutting', name: 'Cutting', priority: 1, isTracked: true, limits: [] }),
+    );
+    expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success' }));
+  });
+
+  it('applyGroup_WithAPhaseThatNamesAMetricDraft_AppliesThePhaseLastAfterAFreshRead', async () => {
+    const waiting = { ...EXISTING_GROUP, statuses: [], phases: [PHASE_WAITING] };
+    const moved = { ...EXISTING_GROUP, metrics: [], statuses: [], phases: [PHASE_DRAFT] };
+    const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [waiting] } }]);
+
+    store.applyGroup('a1', { machineDraftId: null, machineId: 'm1' });
+    await until(http, DRAFTS_URL, 'GET', { groups: [waiting] });
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 });
+    await until(http, DRAFTS_URL, 'GET', { groups: [moved] });
+    const body = await until(http, PHASE_APPLY_URL, 'POST', { id: 'p1' });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    http.verify();
+    expect(body).toEqual(expect.objectContaining({ code: 'cutting' }));
+    expect(messages.add).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'success', detail: 'DRAFTS.QUICK.APPLIED' }),
+    );
+  });
+
+  it('applyGroup_WhenThePhaseStillNamesAPendingDraftAfterTheFreshRead_SkipsItAndReportsTheCount', async () => {
+    const waiting = { ...EXISTING_GROUP, statuses: [], phases: [PHASE_WAITING] };
+    const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [waiting] } }]);
+
+    store.applyGroup('a1', { machineDraftId: null, machineId: 'm1' });
+    await until(http, DRAFTS_URL, 'GET', { groups: [waiting] });
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 });
+    await until(http, DRAFTS_URL, 'GET', { groups: [waiting] });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    http.verify();
+    expect(messages.add).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'success', detail: 'DRAFTS.QUICK.APPLIED_SKIPPED' }),
+    );
+  });
+
   it('applyDraft_ForAStatusDraft_SendsABatchOfOneItemWithTheDraftId', async () => {
     const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [EXISTING_GROUP] } }]);
 
@@ -282,15 +371,14 @@ describe('withDraftQuickApply', () => {
 
   it('applyGroup_ForACreateGroupWhenTelemetryDoesNotKnowTheMachineYet_AsksAgainAndThenApplies', async () => {
     const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [CREATE_GROUP] } }]);
-    const metricsOnly = { ...MOVED_GROUP, statuses: [] };
-
     store.applyGroup('a1', { machineDraftId: 'md', machineId: null });
     await until(http, DRAFTS_URL, 'GET', { groups: [CREATE_GROUP] });
     await until(http, MACHINE_APPLY_URL, 'POST', { machineId: 'm1' });
-    await until(http, DRAFTS_URL, 'GET', { groups: [metricsOnly] });
+    await until(http, DRAFTS_URL, 'GET', { groups: [MOVED_GROUP] });
     await until(http, DEFINITIONS_URL, 'GET', new Error('not known yet'), HttpStatusCode.NotFound);
     await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
     await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 });
+    await until(http, STATUSES_APPLY_URL, 'POST');
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
@@ -408,21 +496,90 @@ describe('withDraftQuickApply', () => {
     }
   });
 
-  it('applyGroup_WhenTheMetricApplyConflicts_StopsAndSendsNoStatus', async () => {
-    const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [EXISTING_GROUP] } }]);
+  it('applyGroup_WhenTheMetricApplyConflicts_AppliesTheMetricsOneByOneSkipsTheConflictAndStillSendsTheStatuses', async () => {
+    const second = { ...METRIC_DRAFT, id: 'mt2', key: 'spindle.load', name: 'Spindle load' };
+    const group = { ...EXISTING_GROUP, metrics: [METRIC_DRAFT, second] };
+    const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [group] } }]);
 
     store.applyGroup('a1', { machineDraftId: null, machineId: 'm1' });
-    await until(http, DRAFTS_URL, 'GET', { groups: [EXISTING_GROUP] });
+    await until(http, DRAFTS_URL, 'GET', { groups: [group] });
     await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
     await until(http, DEFINITIONS_URL, 'PUT', new Error('conflict'));
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    await until(http, DEFINITIONS_URL, 'PUT', new Error('conflict'));
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    const saved = (await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 })) as { created: { draftId: string }[] };
+    const statuses = (await until(http, STATUSES_APPLY_URL, 'POST')) as { items: { draftId: string }[] };
     await TestBed.inject(ApplicationRef).whenStable();
 
-    http.expectNone(STATUSES_APPLY_URL);
+    http.verify();
+    expect(saved.created.map((item) => item.draftId)).toEqual(['mt2']);
+    expect(statuses.items.map((item) => item.draftId)).toEqual(['st']);
+    expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
     expect(messages.add).toHaveBeenCalledWith(
-      expect.objectContaining({ severity: 'error', detail: 'DRAFTS.QUICK.FAILED' }),
+      expect.objectContaining({ severity: 'success', detail: 'DRAFTS.QUICK.APPLIED_SKIPPED' }),
     );
-    expect(store.quickRun()).toEqual({ count: 1, hasApplied: false });
-    expect(store.applyingIds()).toEqual([]);
+  });
+
+  it('applyGroup_ForACreateGroupWhenTheChildDraftsStillAwaitTheirTarget_ReadsAgainAndThenAppliesThem', async () => {
+    const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [CREATE_GROUP] } }]);
+    const awaiting = {
+      ...MOVED_GROUP,
+      metrics: [{ ...METRIC_DRAFT, state: DraftState.AwaitingTarget }],
+      statuses: [{ ...STATUS_DRAFT, state: DraftState.AwaitingTarget }],
+    };
+
+    store.applyGroup('a1', { machineDraftId: 'md', machineId: null });
+    await until(http, DRAFTS_URL, 'GET', { groups: [CREATE_GROUP] });
+    await until(http, MACHINE_APPLY_URL, 'POST', { machineId: 'm1' });
+    await until(http, DRAFTS_URL, 'GET', { groups: [awaiting] });
+    await until(http, DRAFTS_URL, 'GET', { groups: [MOVED_GROUP] });
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    const metrics = (await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 })) as { created: { draftId: string }[] };
+    const statuses = (await until(http, STATUSES_APPLY_URL, 'POST')) as { items: { draftId: string }[] };
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(metrics.created.map((item) => item.draftId)).toEqual(['mt']);
+    expect(statuses.items.map((item) => item.draftId)).toEqual(['st']);
+    expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
+  });
+
+  it('applyGroup_ForACreateGroupWhenTheFirstReadHoldsOnlyTheMachineDraft_ReadsAgainUntilTheChildrenMoved', async () => {
+    const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [CREATE_GROUP] } }]);
+    const machineOnly = { ...MOVED_GROUP, metrics: [], statuses: [] };
+
+    store.applyGroup('a1', { machineDraftId: 'md', machineId: null });
+    await until(http, DRAFTS_URL, 'GET', { groups: [CREATE_GROUP] });
+    await until(http, MACHINE_APPLY_URL, 'POST', { machineId: 'm1' });
+    await until(http, DRAFTS_URL, 'GET', { groups: [machineOnly] });
+    await until(http, DRAFTS_URL, 'GET', { groups: [MOVED_GROUP] });
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    const metrics = (await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 })) as { created: { draftId: string }[] };
+    const statuses = (await until(http, STATUSES_APPLY_URL, 'POST')) as { items: { draftId: string }[] };
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(metrics.created.map((item) => item.draftId)).toEqual(['mt']);
+    expect(statuses.items.map((item) => item.draftId)).toEqual(['st']);
+    expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
+  });
+
+  it('applyAttempt_WhenALaterGroupIsGoneAfterTheFirstGroupMovedItsDrafts_EndsWithoutAnError', async () => {
+    const orphan = { ...CREATE_GROUP, machineDraft: null };
+    const drafts = { groups: [CREATE_GROUP, orphan] };
+    const { store, http, messages } = await setup([{ attemptId: 'a1', drafts }]);
+
+    store.applyAttempt('a1');
+    await until(http, DRAFTS_URL, 'GET', drafts);
+    await until(http, MACHINE_APPLY_URL, 'POST', { machineId: 'm1' });
+    await until(http, DRAFTS_URL, 'GET', { groups: [MOVED_GROUP] });
+    await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
+    await until(http, DEFINITIONS_URL, 'PUT', { revision: 4 });
+    await until(http, STATUSES_APPLY_URL, 'POST');
+    await until(http, DRAFTS_URL, 'GET', { groups: [MOVED_GROUP] });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
+    expect(messages.add).not.toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
   });
 
   it('applyGroup_WhenTheMetricApplyAnswers422DraftNotPending_ShowsTheDraftNotPendingReason', async () => {
@@ -571,6 +728,48 @@ describe('withDraftQuickApply', () => {
     expect(batch.context.get(SKIP_ERROR_TOAST)).toBe(true);
   });
 
+  describe('isQuickBusy', () => {
+    it('applyMachine_WithNoCachedDrafts_IsBusyUntilTheRunEnds', async () => {
+      const { store, http } = await setup([]);
+
+      store.applyMachine('m1');
+      const busyWhileRunning = store.isQuickBusy();
+      await until(http, '/api/core/v1/machines/m1/drafts/search', 'POST', {
+        items: [],
+        totalCount: 0,
+        nextPosition: null,
+      });
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(busyWhileRunning).toBe(true);
+      expect(store.isQuickBusy()).toBe(false);
+    });
+
+    it('applyAttempt_WhenTheCachedGroupHasNoPendingDraft_IsBusyUntilTheRunEnds', async () => {
+      const applied = { ...EXISTING_GROUP, metrics: [{ ...METRIC_DRAFT, state: DraftState.Applied }], statuses: [] };
+      const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [applied] } }]);
+
+      store.applyAttempt('a1');
+      const busyWhileRunning = store.isQuickBusy();
+      await until(http, DRAFTS_URL, 'GET', { groups: [] });
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(busyWhileRunning).toBe(true);
+      expect(store.isQuickBusy()).toBe(false);
+    });
+
+    it('applyDraft_WhenTheRunFails_IsNotBusyAfterTheFailure', async () => {
+      const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [EXISTING_GROUP] } }]);
+
+      store.applyDraft('a1', 'st');
+      const busyWhileRunning = store.isQuickBusy();
+      await until(http, DRAFTS_URL, 'GET', new Error('server error'), HttpStatusCode.InternalServerError);
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(busyWhileRunning).toBe(true);
+      expect(store.isQuickBusy()).toBe(false);
+    });
+  });
   describe('applyMachine', () => {
     const SEARCH_URL = '/api/core/v1/machines/m1/drafts/search';
     const NEXT_POSITION = { sortValue: 'd-a1', id: 'a1' };
@@ -629,7 +828,7 @@ describe('withDraftQuickApply', () => {
       });
       await until(http, '/api/core/v1/ingest-attempts/a1/drafts', 'GET', { groups: [group('m-a1')] });
       await until(http, DEFINITIONS_URL, 'GET', { revision: 3, definitions: [] });
-      await until(http, DEFINITIONS_URL, 'PUT', new Error('conflict'));
+      await until(http, DEFINITIONS_URL, 'PUT', new Error('server error'), HttpStatusCode.InternalServerError);
       await TestBed.inject(ApplicationRef).whenStable();
 
       http.expectNone('/api/core/v1/ingest-attempts/a2/drafts');

@@ -56,6 +56,10 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     public long SizeBytes { get; private set; }
     public IngestState State { get; private set; }
     public IngestErrorCode? ErrorCode { get; private set; }
+
+    /// <summary>Where and why the attempt failed, or <see langword="null"/> when the error code says enough.</summary>
+    public IngestErrorDetail? ErrorDetail { get; private set; }
+
     public IngestInterruptReason? InterruptReason { get; private set; }
 
     /// <summary>A translation key with values (JSON) that tells the user about a partial result, or null.</summary>
@@ -130,16 +134,18 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// </summary>
     /// <param name="now">The end time (UTC).</param>
     /// <param name="code">Why the run failed.</param>
+    /// <param name="detail">Where and why it failed, or <see langword="null"/>.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown by <see cref="IngestInvariantErrors"/> when the attempt is not in process.
     /// </exception>
-    public void Fail(DateTime now, IngestErrorCode code)
+    public void Fail(DateTime now, IngestErrorCode code, IngestErrorDetail? detail = null)
     {
         EnsureState(IngestState.InProcess, action: "fail");
         State = IngestState.Failed;
         FinishedAt = now;
         LeaseUntil = null;
         ErrorCode = code;
+        ErrorDetail = detail;
     }
 
     /// <summary>

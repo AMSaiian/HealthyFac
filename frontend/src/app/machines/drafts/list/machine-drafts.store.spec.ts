@@ -449,6 +449,7 @@ describe('MachineDraftsStore', () => {
               },
             ],
             statuses: [],
+            phases: [],
           },
         ],
       });

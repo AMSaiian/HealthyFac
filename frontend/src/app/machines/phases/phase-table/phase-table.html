@@ -1,0 +1,84 @@
+<p-table
+  [value]="[...rows()]"
+  [scrollable]="true"
+  scrollHeight="flex"
+  [rowHover]="true"
+  [stripedRows]="true"
+  (onRowReorder)="onRowReorder($event)"
+>
+  <ng-template #header>
+    <tr>
+      @if (canWrite()) {
+        <th class="w-12"></th>
+      }
+      <th>{{ 'PHASES.COLUMNS.NAME' | translate }}</th>
+      <th>{{ 'PHASES.COLUMNS.CODE' | translate }}</th>
+      <th>{{ 'PHASES.COLUMNS.TRACKED' | translate }}</th>
+      <th>{{ 'PHASES.COLUMNS.CONDITIONS' | translate }}</th>
+      <th>{{ 'PHASES.COLUMNS.LIMITS' | translate }}</th>
+      @if (canWrite()) {
+        <th class="w-28"></th>
+      }
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-phase
+    let-index="rowIndex"
+  >
+    <tr [pReorderableRow]="index">
+      @if (canWrite()) {
+        <td>
+          <span
+            pReorderableRowHandle
+            class="pi pi-bars cursor-grab"
+            [pTooltip]="'PHASES.TOOLTIPS.DRAG' | translate"
+            tooltipPosition="bottom"
+          ></span>
+        </td>
+      }
+      <td>{{ phase.name }}</td>
+      <td>{{ phase.code }}</td>
+      <td>
+        <p-tag
+          [severity]="phase.isTracked ? 'success' : 'secondary'"
+          [value]="(phase.isTracked ? 'PHASES.TRACKED_YES' : 'PHASES.TRACKED_NO') | translate"
+        />
+      </td>
+      <td>{{ phase.conditions.length }}</td>
+      <td>{{ phase.limits.length }}</td>
+      @if (canWrite()) {
+        <td>
+          <div class="flex justify-end gap-1">
+            <button
+              pButton
+              [pTooltip]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+              tooltipPosition="bottom"
+              type="button"
+              severity="secondary"
+              iconOnly
+              [text]="true"
+              [attr.aria-label]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+              (click)="updateRequested.emit(phase.id)"
+            >
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button
+              pButton
+              [pTooltip]="'ACTIONS.TOOLTIPS.DELETE' | translate"
+              tooltipPosition="bottom"
+              type="button"
+              severity="secondary"
+              iconOnly
+              [text]="true"
+              [attr.aria-label]="'ACTIONS.TOOLTIPS.DELETE' | translate"
+              (click)="deleteRequested.emit(phase)"
+            >
+              <i class="pi pi-trash"></i>
+            </button>
+          </div>
+        </td>
+      }
+    </tr>
+  </ng-template>
+</p-table>

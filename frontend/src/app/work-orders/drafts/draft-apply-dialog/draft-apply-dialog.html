@@ -1,0 +1,77 @@
+<hf-action-dialog
+  title="WORK_ORDER_DRAFTS.APPLY_DIALOG.TITLE"
+  [isSaveDisabled]="saveDisabledReason() !== null"
+  [saveDisabledReason]="saveDisabledReason()"
+  [isSaving]="isSaving()"
+  (save)="onSave()"
+  (cancelled)="cancelled.emit()"
+>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1">
+      <label for="draft-title">{{ 'WORK_ORDERS.FORM.TITLE' | translate }}</label>
+      @for (error of applyForm.title().errors(); track $index) {
+        @if (isShown(applyForm.title)) {
+          <small class="text-red-500">{{ error.message | translate }}</small>
+        }
+      }
+      <input
+        pInputText
+        id="draft-title"
+        autocomplete="off"
+        [attr.data-hf-calm]="isShown(applyForm.title) ? null : ''"
+        [formField]="applyForm.title"
+      />
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <label for="draft-priority">{{ 'WORK_ORDERS.FORM.PRIORITY' | translate }}</label>
+        <p-select
+          inputId="draft-priority"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          [options]="priorityOptions()"
+          [formField]="applyForm.priority"
+        >
+        </p-select>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="draft-category">{{ 'WORK_ORDERS.FORM.CATEGORY' | translate }}</label>
+        <p-select
+          inputId="draft-category"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          [options]="categoryOptions()"
+          [formField]="applyForm.category"
+        >
+        </p-select>
+      </div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="draft-estimate">{{ 'WORK_ORDERS.FORM.ESTIMATE' | translate }}</label>
+      @for (error of applyForm.estimateMinutes().errors(); track $index) {
+        @if (isShown(applyForm.estimateMinutes)) {
+          <small class="text-red-500">{{ error.message | translate }}</small>
+        }
+      }
+      <p-inputnumber
+        inputId="draft-estimate"
+        suffix=" min"
+        [min]="estimateMin"
+        [max]="estimateMax"
+        [step]="estimateStep"
+        [showButtons]="true"
+        [attr.data-hf-calm]="isShown(applyForm.estimateMinutes) ? null : ''"
+        [formField]="applyForm.estimateMinutes"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <span>{{ 'WORK_ORDERS.FORM.DESCRIPTION' | translate }}</span>
+      <hf-rich-text-editor
+        [formField]="applyForm.description"
+        [characterLimit]="descriptionMaxLength"
+      />
+    </div>
+  </div>
+</hf-action-dialog>

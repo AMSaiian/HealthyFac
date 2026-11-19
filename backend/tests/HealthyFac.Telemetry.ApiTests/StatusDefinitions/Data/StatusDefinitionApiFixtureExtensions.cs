@@ -48,7 +48,11 @@ public static class StatusDefinitionApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
             var registration = new MachineRegistration(
-                Guid.CreateVersion7(), GatewayIds.Create(), fixture.CompanyId);
+                Guid.CreateVersion7(),
+                GatewayIds.Create(),
+                fixture.CompanyId,
+                new DateOnly(year: 2020, month: 1, day: 1),
+                new DateTime(year: 2019, month: 12, day: 31, hour: 22, minute: 0, second: 0, DateTimeKind.Utc));
 
             dbContext.MachineRegistrations.Add(registration);
             await dbContext.SaveChangesAsync();

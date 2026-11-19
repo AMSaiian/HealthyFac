@@ -228,6 +228,36 @@ public static class ObservabilityConstants
     }
 
     /// <summary>
+    /// The names of the Telemetry signal evaluation. The meter is named after the .NET namespace of the evaluation and
+    /// is registered by the Telemetry service itself. No ID enters a metric tag.
+    /// </summary>
+    public static class Evaluation
+    {
+        public const string Meter = "HealthyFac.Telemetry.Evaluation";
+
+        public static class Instruments
+        {
+            public const string LateReadings = "healthyfac.telemetry.evaluation.late_readings";
+            public const string FleetSilences = "healthyfac.telemetry.evaluation.fleet_silences";
+            public const string Runs = "healthyfac.telemetry.evaluation.runs";
+            public const string RunDuration = "healthyfac.telemetry.evaluation.run.duration";
+            public const string DueMachines = "healthyfac.telemetry.evaluation.due_machines";
+        }
+
+        public static class Tags
+        {
+            /// <summary>The result of a machine run, from <see cref="Results"/>.</summary>
+            public const string Result = "healthyfac.evaluation.result";
+        }
+
+        public static class Results
+        {
+            public const string Completed = "completed";
+            public const string Failed = "failed";
+        }
+    }
+
+    /// <summary>
     /// The names of the machine simulator (a development and demo tool). The source and the meter are named after the
     /// .NET namespace of the tool and are registered by the tool itself. No ID enters a span name or a metric tag.
     /// </summary>
@@ -332,6 +362,7 @@ public static class ObservabilityConstants
         {
             public const string Convert = "convert";
             public const string Embed = "embed";
+            public const string Screen = "screen";
             public const string Extract = "extract";
             public const string Store = "store";
         }
@@ -356,6 +387,39 @@ public static class ObservabilityConstants
         }
     }
 
+    /// <summary>
+    /// The meter and the instruments of the agent worker of Insights. No ID, prompt, or model output enters a tag.
+    /// </summary>
+    public static class Agents
+    {
+        /// <summary>The name of the meter of the agent worker.</summary>
+        public const string Source = "HealthyFac.Insights.Agents";
+
+        public static class Tags
+        {
+            /// <summary>The role of the run (triage, planner, screener, extractor).</summary>
+            public const string Role = "healthyfac.agent.role";
+
+            /// <summary>The final state of the run, from <see cref="Results"/>.</summary>
+            public const string Result = "healthyfac.agent.result";
+        }
+
+        public static class Results
+        {
+            public const string Completed = "completed";
+            public const string Failed = "failed";
+            public const string Interrupted = "interrupted";
+        }
+
+        /// <summary>The instrument names of the <see cref="Source"/> meter. The instrument declares the unit.</summary>
+        public static class Instruments
+        {
+            public const string Runs = "healthyfac.agent.runs";
+            public const string RunDuration = "healthyfac.agent.run.duration";
+            public const string QueuedRuns = "healthyfac.agent.queued_runs";
+        }
+    }
+
     /// <summary>The UCUM units of the instruments.</summary>
     public static class Units
     {
@@ -367,6 +431,9 @@ public static class ObservabilityConstants
         public const string Pages = "{page}";
         public const string Chunks = "{chunk}";
         public const string Drafts = "{draft}";
+        public const string Readings = "{reading}";
+        public const string Silences = "{silence}";
+        public const string Runs = "{run}";
     }
 
     public static class Outcomes

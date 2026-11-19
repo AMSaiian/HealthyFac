@@ -1,5 +1,5 @@
 import { DraftState, type MetricDraftDetail } from '@machines/drafts/draft';
-import { MetricValueKind } from '@machines/metrics/metric-definition';
+import { MetricBehavior, MetricValueKind } from '@machines/metrics/metric-definition';
 import type { MetricFormValue } from '@machines/metrics/metric-form/metric-form-schema';
 import {
   buildExamplePayload,
@@ -22,6 +22,11 @@ const SAVED: MetricFormValue = {
   unit: 'Temperature|Celsius',
   min: 0,
   max: 100,
+  warningLow: null,
+  warningHigh: null,
+  alarmLow: null,
+  alarmHigh: null,
+  behavior: MetricBehavior.Level,
   states: [],
 };
 
@@ -105,10 +110,51 @@ describe('toApplyBody', () => {
         unit: null,
         min: null,
         max: null,
+        warningLow: null,
+        warningHigh: null,
+        alarmLow: null,
+        alarmHigh: null,
+        behavior: null,
         states: ['open', 'closed'],
         draftId: null,
       },
     ]);
+  });
+
+  it('toApplyBody_WithNumericItems_SendsTheLimitsAndTheBehavior', () => {
+    const limits = { warningLow: 10, warningHigh: 70, alarmLow: 5, alarmHigh: 80, behavior: MetricBehavior.Counter };
+    const items = [
+      savedItem('a', { name: 'Renamed', ...limits }),
+      newItem('new-0', { key: 'a.b', name: 'A', unit: 'Length|Metre', ...limits }),
+    ];
+
+    const body = toApplyBody(0, netChanges(items));
+
+    expect(body.created[0]).toMatchObject(limits);
+    expect(body.updated[0]).toMatchObject(limits);
+  });
+
+  it('toApplyBody_WithBooleanItemThatHasStaleLimits_SendsNoLimitsAndNoBehavior', () => {
+    const items = [
+      newItem('new-0', {
+        key: 'a.b',
+        name: 'A',
+        valueKind: MetricValueKind.Boolean,
+        warningLow: 1,
+        alarmHigh: 9,
+        behavior: MetricBehavior.Counter,
+      }),
+    ];
+
+    const body = toApplyBody(0, netChanges(items));
+
+    expect(body.created[0]).toMatchObject({
+      warningLow: null,
+      warningHigh: null,
+      alarmLow: null,
+      alarmHigh: null,
+      behavior: null,
+    });
   });
 
   it('toApplyBody_WithNewNumericItem_SendsUnitReferenceAndRange', () => {
@@ -258,6 +304,11 @@ describe('stageMetricDrafts', () => {
     min: null,
     max: 6,
     states: null,
+    warningLow: null,
+    warningHigh: 5,
+    alarmLow: null,
+    alarmHigh: 6,
+    behavior: 'counter',
   };
 
   it('stageMetricDrafts_WithKeyOfAnActiveItem_StagesAChangeOfThatItemOnly', () => {
@@ -266,7 +317,15 @@ describe('stageMetricDrafts', () => {
     const staged = stageMetricDrafts(items, 0, [DRAFT], CATALOG);
 
     expect(staged.items).toHaveLength(1);
-    expect(staged.items[0].value).toEqual({ ...SAVED, key: 'one.key', name: 'Proposed name', max: 6 });
+    expect(staged.items[0].value).toEqual({
+      ...SAVED,
+      key: 'one.key',
+      name: 'Proposed name',
+      max: 6,
+      warningHigh: 5,
+      alarmHigh: 6,
+      behavior: MetricBehavior.Counter,
+    });
     expect(staged.items[0]).toMatchObject({ savedId: 'a', draftId: 'draft-1', sourceLocation: 'page 1' });
     expect(staged.newCount).toBe(0);
   });
@@ -281,6 +340,9 @@ describe('stageMetricDrafts', () => {
       name: 'Proposed name',
       unit: 'Pressure|Bar',
       max: 6,
+      warningHigh: 5,
+      alarmHigh: 6,
+      behavior: MetricBehavior.Counter,
     });
     expect(staged.newCount).toBe(1);
   });

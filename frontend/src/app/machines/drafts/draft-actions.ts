@@ -3,4 +3,5 @@ export const DraftActionType = {
   Changed: 'drafts.changed',
   CompareMachine: 'drafts.compareMachine',
   ReviewStatus: 'drafts.reviewStatus',
+  ReviewPhase: 'drafts.reviewPhase',
 } as const;

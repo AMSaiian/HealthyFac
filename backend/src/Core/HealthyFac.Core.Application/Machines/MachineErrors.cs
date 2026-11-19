@@ -13,6 +13,7 @@ public static class MachineErrors
     public const string MachineIdRequired = "MachineId is required.";
     public const string StateRequired = "The state is required.";
     public const string MachineNotFound = "The machine does not exist.";
+    public const string RangeInvalid = "The end of the range must be after its start.";
     public const string SerialNumberTaken = "A machine with this serial number already exists.";
     public const string MachineChanged = "The machine changed. Reload it and try again.";
     public const string MachineIdsRequired = "The list of machine IDs is required.";

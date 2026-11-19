@@ -16,7 +16,8 @@ public sealed record AttemptGroup
 }
 
 /// <summary>
-/// Puts the Telemetry metric and status drafts of one ingest attempt into the groups that Core built from the machine
+/// Puts the Telemetry metric, status, and phase drafts of one ingest attempt into the groups that Core built from the
+/// machine
 /// drafts. A draft joins the group of its target machine, else the group of the create draft that it waits on, else a
 /// group of its proposal entry. The entry ID is the ID of the create draft, so a draft without a target joins that
 /// group.
@@ -28,6 +29,7 @@ public static class AttemptDraftGrouper
     private const string MachineDraftProperty = "machineDraft";
     private const string MetricsProperty = "metrics";
     private const string StatusesProperty = "statuses";
+    private const string PhasesProperty = "phases";
     private const string IdProperty = "id";
     private const string TargetMachineIdProperty = "targetMachineId";
     private const string TargetMachineDraftIdProperty = "targetMachineDraftId";
@@ -42,11 +44,13 @@ public static class AttemptDraftGrouper
     /// <param name="coreGroups">The groups of Core (<c>machineId</c>, <c>machineName</c>, <c>machineDraft</c>).</param>
     /// <param name="metrics">The Telemetry metric drafts of the attempt.</param>
     /// <param name="statuses">The Telemetry status drafts of the attempt.</param>
-    /// <returns>The groups, each with its <c>metrics</c> and <c>statuses</c>.</returns>
+    /// <param name="phases">The Telemetry phase drafts of the attempt.</param>
+    /// <returns>The groups, each with its <c>metrics</c>, <c>statuses</c>, and <c>phases</c>.</returns>
     public static IReadOnlyList<AttemptGroup> Group(
         IReadOnlyList<JsonObject> coreGroups,
         IReadOnlyList<JsonObject> metrics,
-        IReadOnlyList<JsonObject> statuses
+        IReadOnlyList<JsonObject> statuses,
+        IReadOnlyList<JsonObject> phases
     )
     {
         var groups = new List<AttemptGroup>();
@@ -57,6 +61,7 @@ public static class AttemptDraftGrouper
             var group = (JsonObject)coreGroup.DeepClone();
             group[MetricsProperty] = new JsonArray();
             group[StatusesProperty] = new JsonArray();
+            group[PhasesProperty] = new JsonArray();
             var entry = new AttemptGroup { Group = group };
             groups.Add(entry);
             byKey.TryAdd(KeyOfCoreGroup(group), entry);
@@ -70,6 +75,11 @@ public static class AttemptDraftGrouper
         foreach (var status in statuses)
         {
             Add(groups, byKey, status, StatusesProperty);
+        }
+
+        foreach (var phase in phases)
+        {
+            Add(groups, byKey, phase, PhasesProperty);
         }
 
         return groups;
@@ -99,6 +109,7 @@ public static class AttemptDraftGrouper
                     [MachineDraftProperty] = null,
                     [MetricsProperty] = new JsonArray(),
                     [StatusesProperty] = new JsonArray(),
+                    [PhasesProperty] = new JsonArray(),
                 },
                 LookupMachineId = machineId,
                 LookupDraftId = draftId,

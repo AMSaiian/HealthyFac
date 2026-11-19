@@ -14,6 +14,7 @@ export enum IngestErrorCode {
   ConversionTimeout = 'conversionTimeout',
   InvalidExtraction = 'invalidExtraction',
   ProviderUnavailable = 'providerUnavailable',
+  UnsafeContent = 'unsafeContent',
 }
 
 export enum IngestInterruptReason {
@@ -21,6 +22,12 @@ export enum IngestInterruptReason {
   LeaseExpired = 'leaseExpired',
   ServiceStopped = 'serviceStopped',
   FileDeleted = 'fileDeleted',
+}
+
+/** Where the screener found the unsafe part, and why it judged the part unsafe. */
+export interface IngestErrorDetail {
+  readonly location: string;
+  readonly reason: string;
 }
 
 export interface IngestAttempt {
@@ -32,6 +39,7 @@ export interface IngestAttempt {
   readonly sizeBytes: number;
   readonly state: IngestState;
   readonly errorCode: IngestErrorCode | null;
+  readonly errorDetail?: IngestErrorDetail | null;
   readonly interruptReason: IngestInterruptReason | null;
   readonly warning: string | null;
   readonly queuedAt: string;

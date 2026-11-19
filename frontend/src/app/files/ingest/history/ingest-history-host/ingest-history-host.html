@@ -39,8 +39,8 @@
                 · {{ 'INGEST.HISTORY.FINISHED_AT' | translate }}: {{ attempt.finishedAt | localDateTime }}
               }
             </span>
-            @if (attemptReasonKey(attempt); as reasonKey) {
-              <span class="text-sm">{{ reasonKey | translate }}</span>
+            @if (attemptReason(attempt); as reason) {
+              <span class="text-sm">{{ reason.key | translate: reason.values }}</span>
             }
           </div>
           <button

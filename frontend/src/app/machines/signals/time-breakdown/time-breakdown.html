@@ -1,0 +1,48 @@
+<div class="h-12 flex-none">
+  <p-chart
+    type="bar"
+    height="100%"
+    [data]="data()"
+    [options]="options()"
+  />
+</div>
+<p-table
+  class="flex min-h-0 flex-1 flex-col"
+  styleClass="p-datatable-sm"
+  scrollHeight="flex"
+  [value]="rowList()"
+  [stripedRows]="true"
+>
+  <ng-template #header>
+    <tr>
+      <th>{{ 'SIGNALS.TIME.COLUMNS.NAME' | translate }}</th>
+      <th class="text-right">{{ 'SIGNALS.TIME.COLUMNS.DURATION' | translate }}</th>
+      <th class="text-right">{{ 'SIGNALS.TIME.COLUMNS.SHARE' | translate }}</th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-row
+    let-index="rowIndex"
+  >
+    <tr>
+      <td>
+        <span class="flex items-center gap-2">
+          <span
+            class="inline-block size-3 flex-none rounded-full"
+            [style.background-color]="swatch(index)"
+          ></span>
+          <span>{{ row.label }}</span>
+          @if (row.isUntracked) {
+            <p-tag
+              severity="secondary"
+              [value]="'PHASES.TRACKED_NO' | translate"
+            />
+          }
+        </span>
+      </td>
+      <td class="text-right">{{ durationText(row.seconds) }}</td>
+      <td class="text-right">{{ row.share }} %</td>
+    </tr>
+  </ng-template>
+</p-table>

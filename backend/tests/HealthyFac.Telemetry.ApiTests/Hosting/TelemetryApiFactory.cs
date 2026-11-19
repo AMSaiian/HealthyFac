@@ -17,13 +17,15 @@ namespace HealthyFac.Telemetry.ApiTests.Hosting;
 /// </remarks>
 public sealed class TelemetryApiFactory(
     IReadOnlyDictionary<string, string?> settings,
-    TestTokenFactory tokens
+    TestTokenFactory tokens,
+    Action<IServiceCollection>? configureServices = null
 ) : WebApplicationFactory<Program>
 {
     private const string TestEnvironment = "Test";
 
     private readonly IReadOnlyDictionary<string, string?> _settings = settings;
     private readonly TestTokenFactory _tokens = tokens;
+    private readonly Action<IServiceCollection>? _configureServices = configureServices;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -39,6 +41,7 @@ public sealed class TelemetryApiFactory(
         builder.ConfigureServices(services =>
         {
             services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, _tokens.TrustTestKey);
+            _configureServices?.Invoke(services);
         });
     }
 }

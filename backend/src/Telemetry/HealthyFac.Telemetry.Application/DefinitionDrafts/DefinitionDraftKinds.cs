@@ -7,6 +7,7 @@ public static class DefinitionDraftKinds
 {
     public const string Metric = "metric";
     public const string Status = "status";
+    public const string Phase = "phase";
 
-    public static readonly string[] All = [Metric, Status];
+    public static readonly string[] All = [Metric, Status, Phase];
 }

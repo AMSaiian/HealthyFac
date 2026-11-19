@@ -7,7 +7,7 @@ import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image
 
 import { RichTextEditor } from './rich-text-editor';
 
-const FILE_ID = 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const FILE_ID = 'v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const HTML = `<p>text</p><p><img data-file-id="${FILE_ID}" alt="pump"></p>`;
 const LINK = 'https://api/blob?sig=x';
 

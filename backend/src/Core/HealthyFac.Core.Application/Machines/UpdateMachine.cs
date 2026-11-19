@@ -71,7 +71,8 @@ public sealed class UpdateMachinePreHandlerCheck(ICurrentUserProvider currentUse
 /// <summary>
 /// Changes the name, serial number, description, go-live date, and state of a machine, and queues
 /// <see cref="MachineRenamed"/> in the same save when the name changes. Another state adds one state row that starts
-/// now, and queues <see cref="MachineStateChanged"/>, in the same save. The current state adds no row. A machine
+/// now, and queues <see cref="MachineStateChanged"/>, in the same save. The current state adds no row. A new
+/// go-live date queues <see cref="MachineGoLiveDateChanged"/> in the same save. A machine
 /// outside the company is "not found". The serial number must stay unique among the machines of the company that
 /// are not deleted, ignoring case.
 /// </summary>
@@ -114,6 +115,7 @@ public sealed class UpdateMachineRequestHandler(
         MachineGoLiveRules.EnsureNotBeforeCreation(request.ExpectedGoLiveOn, machine.CreatedAt, zone);
 
         var isRenamed = machine.Name != request.Name;
+        var isGoLiveChanged = machine.ExpectedGoLiveOn != request.ExpectedGoLiveOn;
         machine.Update(request.Name, request.SerialNumber, request.Description, request.ExpectedGoLiveOn);
         MachineStateChanges.Apply(_dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
 
@@ -137,6 +139,19 @@ public sealed class UpdateMachineRequestHandler(
                     CompanyId = machine.CompanyId,
                     Name = machine.Name,
                     RenamedAt = _timeProvider.GetUtcNow().UtcDateTime,
+                });
+        }
+
+        if (isGoLiveChanged)
+        {
+            _outbox.Add(
+                new MachineGoLiveDateChanged
+                {
+                    MachineId = machine.Id,
+                    CompanyId = machine.CompanyId,
+                    ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
+                    GoLiveStartsAt = MachineGoLiveRules.StartOfDayUtc(machine.ExpectedGoLiveOn, zone),
+                    ChangedAt = _timeProvider.GetUtcNow().UtcDateTime,
                 });
         }
 

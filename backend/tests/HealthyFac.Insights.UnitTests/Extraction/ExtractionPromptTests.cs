@@ -1,5 +1,5 @@
-using System.Reflection;
 using HealthyFac.Insights.Application.Conversion;
+using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 
@@ -27,11 +27,11 @@ public sealed class ExtractionPromptTests
     {
         var prompt = ExtractionPrompt.BuildSystemPrompt(ExtractionTestData.CreateInput());
 
-        prompt.Should().NotContain("{{");
-        prompt.Should().Contain("temperature | celsius | C");
-        prompt.Should().Contain("pressure | bar | bar");
-        prompt.Should().Contain("motor.temperature");
-        prompt.Should().Contain("E13");
+        prompt.Should().NotContain(unexpected: "{{");
+        prompt.Should().Contain(expected: "temperature | celsius | C");
+        prompt.Should().Contain(expected: "pressure | bar | bar");
+        prompt.Should().Contain(expected: "motor.temperature");
+        prompt.Should().Contain(expected: "E13");
     }
 
     [Fact]
@@ -39,17 +39,20 @@ public sealed class ExtractionPromptTests
     {
         var prompt = ExtractionPrompt.BuildSystemPrompt(ExtractionTestData.CreateInput());
 
-        prompt.Should().NotContain("Discrete | count");
+        prompt.Should().NotContain(unexpected: "Discrete | count");
     }
 
     [Fact]
     public void BuildSystemPrompt_WithoutExistingKeysAndCodes_WritesNoneForEach()
     {
-        var input = ExtractionTestData.CreateInput() with { ExistingMetricKeys = [], ExistingStatusCodes = [] };
+        var input = ExtractionTestData.CreateInput() with
+        {
+            Signals = new MachineSignals { Metrics = [], Statuses = [] },
+        };
 
         var prompt = ExtractionPrompt.BuildSystemPrompt(input);
 
-        prompt.Split("(none)").Length.Should().Be(expected: 3);
+        prompt.Split(separator: "(none)").Length.Should().Be(expected: 3);
     }
 
     [Fact]
@@ -58,7 +61,7 @@ public sealed class ExtractionPromptTests
         var message = ExtractionPrompt.BuildUserMessage(ExtractionTestData.CreateInput(isMachineFile: true));
 
         message.Should().StartWith(ExtractionPrompt.MachineFileLine);
-        message.Should().Contain("<document>").And.EndWith("</document>");
+        message.Should().Contain(expected: "<document>").And.EndWith(expected: "</document>");
     }
 
     [Fact]
@@ -67,7 +70,7 @@ public sealed class ExtractionPromptTests
         var message = ExtractionPrompt.BuildUserMessage(ExtractionTestData.CreateInput(isMachineFile: false));
 
         message.Should().NotContain(ExtractionPrompt.MachineFileLine);
-        message.Should().StartWith("<document>");
+        message.Should().StartWith(expected: "<document>");
     }
 
     [Fact]
@@ -79,9 +82,9 @@ public sealed class ExtractionPromptTests
 
         var message = ExtractionPrompt.BuildUserMessage(input);
 
-        message.Should().Contain("&lt;/document&gt;").And.Contain("&lt;DOCUMENT&gt;");
-        message.Split("</document>").Length.Should().Be(expected: 2);
-        message.Split("<document>").Length.Should().Be(expected: 2);
+        message.Should().Contain(expected: "&lt;/document&gt;").And.Contain(expected: "&lt;DOCUMENT&gt;");
+        message.Split(separator: "</document>").Length.Should().Be(expected: 2);
+        message.Split(separator: "<document>").Length.Should().Be(expected: 2);
     }
 
     [Fact]
@@ -94,7 +97,7 @@ public sealed class ExtractionPromptTests
 
         var message = ExtractionPrompt.BuildUserMessage(input);
 
-        message.Should().Contain("[page 2: Limits] Max 80 C.");
+        message.Should().Contain(expected: "[page 2: Limits] Max 80 C.");
         message.Should().Contain($"{Environment.NewLine}No location.");
     }
 }

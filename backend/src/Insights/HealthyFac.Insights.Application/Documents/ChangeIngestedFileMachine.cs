@@ -15,7 +15,8 @@ public sealed class ChangeIngestedFileMachinePreHandlerCheck : PassThroughPreHan
 /// Stores the new machine of a file where Insights holds the machine: on the ingested document when it exists,
 /// else on the active attempt, which the worker reads when it stores the document. Both entities ignore a change that
 /// is not newer than the stored one, so messages in another order do no harm. The change runs under the lock of the
-/// active attempt, so the worker cannot finish between the read and the write.
+/// active attempt, which lives inside the transaction of the inbox runner until the inbox commits, so the worker cannot
+/// finish between the read and the write. The handler opens no transaction of its own.
 /// </summary>
 /// <param name="dbContext">Loads and changes the document.</param>
 /// <param name="attemptLock">Locks the active attempt.</param>
@@ -28,12 +29,10 @@ public sealed class ChangeIngestedFileMachineRequestHandler(
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly IIngestAttemptLock _attemptLock = attemptLock;
 
-    protected override Task HandleInternalAsync(FileMachineChanged request, CancellationToken cancellationToken) =>
-        _dbContext.RunInTransactionAsync(
-            token => ChangeAsync(request, token),
-            cancellationToken);
-
-    private async Task ChangeAsync(FileMachineChanged request, CancellationToken cancellationToken)
+    protected override async Task HandleInternalAsync(
+        FileMachineChanged request,
+        CancellationToken cancellationToken
+    )
     {
         var attempt = await _attemptLock.LockActiveAttemptAsync(request.FileId, request.CompanyId, cancellationToken);
         var document = await _dbContext.IngestedDocuments.SingleOrDefaultAsync(

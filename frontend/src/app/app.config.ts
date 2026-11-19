@@ -159,6 +159,16 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
           },
         },
         {
+          type: DraftActionType.ReviewPhase,
+          load: async () => {
+            const [host, payloads] = await Promise.all([
+              import('@machines/drafts/phase/phase-draft-review-host/phase-draft-review-host'),
+              import('@machines/drafts/draft-action-payloads'),
+            ]);
+            return { component: host.PhaseDraftReviewHost, schema: payloads.phaseDraftReviewActionPayloadSchema };
+          },
+        },
+        {
           type: FileActionType.Tie,
           load: async () => {
             const [host, payloads] = await Promise.all([

@@ -52,6 +52,10 @@ import {
   MENU_METRICS_TOOLTIP_KEY,
   MENU_OPEN_KEY,
   MENU_OPEN_TOOLTIP_KEY,
+  MENU_PHASES_KEY,
+  MENU_PHASES_TOOLTIP_KEY,
+  MENU_SIGNALS_KEY,
+  MENU_SIGNALS_TOOLTIP_KEY,
   MENU_STATUSES_KEY,
   MENU_STATUSES_TOOLTIP_KEY,
   SORTABLE_COLUMNS,
@@ -98,6 +102,8 @@ export class MachineGrid {
   readonly canReadStatuses = input(false);
   readonly canReadFiles = input(false);
   readonly canReadMetrics = input(false);
+  readonly canReadPhases = input(false);
+  readonly canReadSignals = input(false);
   readonly canReadDrafts = input(false);
 
   readonly filterChange = output<Partial<MachineFilter>>();
@@ -110,6 +116,8 @@ export class MachineGrid {
   readonly statusesRequested = output<string>();
   readonly filesRequested = output<string>();
   readonly metricsRequested = output<string>();
+  readonly phasesRequested = output<string>();
+  readonly signalsRequested = output<string>();
   readonly draftsRequested = output<string>();
   readonly stateChangeRequested = output<string>();
 
@@ -128,6 +136,10 @@ export class MachineGrid {
       MENU_CHANGE_STATE_TOOLTIP_KEY,
       MENU_OPEN_KEY,
       MENU_METRICS_KEY,
+      MENU_PHASES_KEY,
+      MENU_PHASES_TOOLTIP_KEY,
+      MENU_SIGNALS_KEY,
+      MENU_SIGNALS_TOOLTIP_KEY,
       MENU_DRAFTS_KEY,
       DRAFTS_YES_KEY,
       DRAFTS_NO_KEY,
@@ -187,6 +199,8 @@ export class MachineGrid {
       this.canReadStatuses() ||
       this.canReadFiles() ||
       this.canReadMetrics() ||
+      this.canReadPhases() ||
+      this.canReadSignals() ||
       this.canReadDrafts(),
   );
 
@@ -223,6 +237,32 @@ export class MachineGrid {
                 tooltipKey: MENU_METRICS_TOOLTIP_KEY,
                 icon: 'pi pi-chart-line',
                 onSelect: (machine) => this.metricsRequested.emit(machine.id),
+              },
+              labels,
+            ),
+          ]
+        : []),
+      ...(this.canReadSignals()
+        ? [
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_SIGNALS_KEY,
+                tooltipKey: MENU_SIGNALS_TOOLTIP_KEY,
+                icon: 'pi pi-wave-pulse',
+                onSelect: (machine) => this.signalsRequested.emit(machine.id),
+              },
+              labels,
+            ),
+          ]
+        : []),
+      ...(this.canReadPhases()
+        ? [
+            this.rowMenu.menuItem(
+              {
+                labelKey: MENU_PHASES_KEY,
+                tooltipKey: MENU_PHASES_TOOLTIP_KEY,
+                icon: 'pi pi-sitemap',
+                onSelect: (machine) => this.phasesRequested.emit(machine.id),
               },
               labels,
             ),

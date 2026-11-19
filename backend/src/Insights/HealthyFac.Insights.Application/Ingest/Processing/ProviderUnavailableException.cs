@@ -19,4 +19,10 @@ public sealed class ProviderUnavailableException : Exception
         : base(message, innerException)
     {
     }
+
+    /// <summary>
+    /// What the screening did before it failed, or <see langword="null"/> for another stage. The ingest handler stores
+    /// it as a failed <c>screener</c> run.
+    /// </summary>
+    public Screening.ScreeningRunLog? ScreeningRun { get; set; }
 }

@@ -47,6 +47,7 @@ const KIND_KEYS: Readonly<Record<DraftKind, string>> = {
   [DraftKind.Machine]: 'DRAFTS.KINDS.MACHINE',
   [DraftKind.Metric]: 'DRAFTS.KINDS.METRIC',
   [DraftKind.Status]: 'DRAFTS.KINDS.STATUS',
+  [DraftKind.Phase]: 'DRAFTS.KINDS.PHASE',
 };
 
 const STATE_KEYS: Readonly<Record<DraftState, string>> = {
@@ -118,7 +119,10 @@ export class DraftGrid {
   readonly canWrite = input(false);
   /** The reason that **Apply** is off for each draft ID. A draft without a reason applies as it is. */
   readonly reasons = input<Readonly<Record<string, string | null>>>({});
+  /** The drafts that a run applies now: only their rows show the spinner. */
   readonly applyingIds = input<readonly string[]>([]);
+  /** A draft run or a dismiss is in progress: the row actions are off, whatever rows the page shows. */
+  readonly isBusy = input(false);
   /** The IDs of the checked drafts, on every page. */
   readonly selectedIds = input<readonly string[]>([]);
 
@@ -135,8 +139,8 @@ export class DraftGrid {
   readonly pageSelectionToggled = output<boolean>();
 
   protected readonly squareFilterButtonProps = SQUARE_FILTER_BUTTON_PROPS;
-  protected readonly isBusy = computed(() => this.applyingIds().length > 0);
-  protected readonly showBusy = delayedLoading(this.isBusy);
+  protected readonly hasApplyingIds = computed(() => this.applyingIds().length > 0);
+  protected readonly showBusy = delayedLoading(this.hasApplyingIds);
   protected readonly menuItems = signal<MenuItem[]>([]);
   protected readonly DraftColumn = DraftColumn;
   protected readonly allColumns = Object.values(DraftColumn);

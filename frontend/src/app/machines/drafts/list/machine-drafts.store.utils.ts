@@ -6,6 +6,7 @@ const APPLY_ORDER: Readonly<Record<DraftKind, number>> = {
   [DraftKind.Machine]: 0,
   [DraftKind.Metric]: 1,
   [DraftKind.Status]: 2,
+  [DraftKind.Phase]: 3,
 };
 
 /** Checks or unchecks the given drafts. The input stays as it is. */

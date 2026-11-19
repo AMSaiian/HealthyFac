@@ -65,7 +65,8 @@ public sealed class DeleteStatusDefinitionPreHandlerCheck(
 /// <summary>
 /// Removes a status definition. The save interceptor turns the removal into a soft delete, so the row stays and the
 /// query filter hides it. The pre-handler check has already checked the machine scope. A status definition of another
-/// machine and a status definition that is already deleted are "not found".
+/// machine and a status definition that is already deleted are "not found". A status that a condition of an active
+/// phase uses stays, and the answer is <see cref="UnprocessableException"/>.
 /// </summary>
 /// <param name="dbContext">Loads the status definition and saves the removal.</param>
 public sealed class DeleteStatusDefinitionRequestHandler(ITelemetryDbContext dbContext)
@@ -83,6 +84,16 @@ public sealed class DeleteStatusDefinitionRequestHandler(ITelemetryDbContext dbC
                     candidate => candidate.Id == request.Id && candidate.MachineRegistrationId == request.MachineId,
                     cancellationToken)
             ?? throw new NotFoundException(StatusDefinitionErrors.StatusDefinitionNotFound);
+
+        var isUsedByPhase = await _dbContext.OperatingPhases.AnyAsync(
+            phase => phase.MachineRegistrationId == request.MachineId
+                && phase.Conditions.Any(condition => condition.StatusDefinitionId == status.Id),
+            cancellationToken);
+
+        if (isUsedByPhase)
+        {
+            throw new UnprocessableException(StatusDefinitionErrors.UsedByPhase);
+        }
 
         _dbContext.StatusDefinitions.Remove(status);
         await _dbContext.SaveChangesAsync(cancellationToken);

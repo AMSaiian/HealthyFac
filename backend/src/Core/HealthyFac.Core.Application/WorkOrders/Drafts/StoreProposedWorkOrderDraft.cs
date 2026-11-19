@@ -1,0 +1,78 @@
+using HealthyFac.Core.Domain.WorkOrders;
+using HealthyFac.Core.Domain.WorkOrders.Drafts;
+using HealthyFac.Insights.Messaging.WorkOrders;
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using Microsoft.EntityFrameworkCore;
+
+namespace HealthyFac.Core.Application.WorkOrders.Drafts;
+
+/// <summary>
+/// Checks that the proposal belongs to the company of the restored actor (a mismatch is a <c>403</c>), and that the
+/// machine of the message is an active machine of that company (a miss is a <c>404</c>), so the output of the agent
+/// never reaches another company, even when the message holds a wrong ID.
+/// </summary>
+/// <param name="dbContext">Reads the machine.</param>
+/// <param name="currentUser">Provides the company of the actor.</param>
+public sealed class WorkOrderDraftProposedPreHandlerCheck(ICoreDbContext dbContext, ICurrentUserProvider currentUser)
+    : IPreHandlerCheck<WorkOrderDraftProposed>
+{
+    private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly ICurrentUserProvider _currentUser = currentUser;
+
+    public async Task CheckAsync(WorkOrderDraftProposed request, CancellationToken cancellationToken)
+    {
+        _currentUser.GetActor().EnsureCompany(request.CompanyId);
+
+        var isMachineOfCompany = await _dbContext.Machines.AnyAsync(
+            machine => machine.Id == request.MachineId && machine.CompanyId == request.CompanyId,
+            cancellationToken);
+
+        if (!isMachineOfCompany)
+        {
+            throw new NotFoundException(WorkOrderDraftErrors.MachineNotFound);
+        }
+    }
+}
+
+/// <summary>
+/// Stores the work order that the planner proposed, as a pending draft. The draft ID is the ID of the agent action, so
+/// a repeat delivery finds the draft and stores nothing new ("find, else create").
+/// </summary>
+/// <param name="dbContext">Finds the draft and saves the new one.</param>
+public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbContext)
+    : RequestHandler<WorkOrderDraftProposed>
+{
+    private readonly ICoreDbContext _dbContext = dbContext;
+
+    protected override async Task HandleInternalAsync(
+        WorkOrderDraftProposed request,
+        CancellationToken cancellationToken
+    )
+    {
+        var isKnown = await _dbContext.WorkOrderDrafts.AnyAsync(
+            draft => draft.Id == request.DraftId && draft.CompanyId == request.CompanyId,
+            cancellationToken);
+
+        if (isKnown)
+        {
+            return;
+        }
+
+        _dbContext.WorkOrderDrafts.Add(
+            new WorkOrderDraft(
+                request.DraftId,
+                request.CompanyId,
+                request.MachineId,
+                request.CaseId,
+                request.RunId,
+                request.Title,
+                request.Description,
+                WorkOrderPriority.FromValue(request.Priority),
+                WorkOrderCategory.FromValue(request.Category),
+                request.EstimateMinutes));
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+}

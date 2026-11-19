@@ -3,7 +3,8 @@ using System.Text.Json.Nodes;
 namespace HealthyFac.Gateway.Web.Composition.Drafts;
 
 /// <summary>
-/// Composes the view of one ingest attempt: the machine drafts of Core and the metric and status drafts of Telemetry,
+/// Composes the view of one ingest attempt: the machine drafts of Core and the metric, status, and phase drafts of
+/// Telemetry,
 /// in one group for each machine.
 /// </summary>
 /// <param name="downstreamClient">Calls Core and Telemetry.</param>
@@ -13,6 +14,7 @@ public sealed class AttemptDraftsComposer(DownstreamClient downstreamClient, Mac
     private const string GroupsProperty = "groups";
     private const string MetricsProperty = "metrics";
     private const string StatusesProperty = "statuses";
+    private const string PhasesProperty = "phases";
     private const string MachineNameProperty = "machineName";
 
     private readonly DownstreamClient _downstreamClient = downstreamClient;
@@ -57,7 +59,8 @@ public sealed class AttemptDraftsComposer(DownstreamClient downstreamClient, Mac
         var groups = AttemptDraftGrouper.Group(
             ReadObjects(results[0], GroupsProperty),
             ReadObjects(results[1], MetricsProperty),
-            ReadObjects(results[1], StatusesProperty));
+            ReadObjects(results[1], StatusesProperty),
+            ReadObjects(results[1], PhasesProperty));
         var unnamed = groups
             .Where(group => group.LookupMachineId is not null || group.LookupDraftId is not null)
             .ToList();

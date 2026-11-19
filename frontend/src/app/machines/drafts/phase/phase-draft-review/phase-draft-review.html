@@ -1,0 +1,78 @@
+@if (blockKey(); as key) {
+  <p-message severity="warn">{{ key | translate }}</p-message>
+}
+@if (isEditable() && initialValue(); as initial) {
+  <div class="flex flex-col gap-1">
+    <label for="phase-draft-priority">{{ 'PHASES.FORM.PRIORITY' | translate }}</label>
+    <p-inputnumber
+      inputId="phase-draft-priority"
+      [min]="0"
+      [useGrouping]="false"
+      [ngModel]="priority()"
+      (ngModelChange)="priorityChange.emit($event)"
+    />
+  </div>
+  <hf-phase-form
+    [initialValue]="initial"
+    [sourceOptions]="sourceOptions()"
+    [metrics]="metrics()"
+    (valueChange)="valueChange.emit($event)"
+    (validityChange)="validityChange.emit($event)"
+  />
+} @else {
+  <p class="flex flex-wrap items-center gap-2">
+    <span class="font-semibold">{{ draft().name ?? '' }}</span>
+    <span class="text-sm text-muted-color">{{ draft().code ?? '' }}</span>
+    @if (draft().isTracked === false) {
+      <p-tag
+        severity="secondary"
+        [value]="'PHASES.TRACKED_NO' | translate"
+      />
+    }
+  </p>
+  @if (draft().description; as description) {
+    <hf-rich-text-view [html]="description" />
+  }
+  <section class="flex flex-col gap-2 rounded-border border border-surface p-3">
+    <h3 class="font-semibold">{{ 'PHASES.FORM.CONDITIONS' | translate }}</h3>
+    @for (row of conditions(); track $index) {
+      <div class="flex flex-wrap items-center gap-2">
+        <span>{{ row.source }}</span>
+        @if (row.operatorKey; as operatorKey) {
+          <span class="text-muted-color">{{ row.operatorSign }} {{ operatorKey | translate }}</span>
+        }
+        <span>{{ row.valueText }}</span>
+        @if (row.isWaiting) {
+          <p-tag
+            severity="warn"
+            [value]="'DRAFTS.PHASE.WAITS_FOR_DRAFT' | translate"
+          />
+        }
+      </div>
+    }
+  </section>
+  @if (limits().length > 0) {
+    <section class="flex flex-col gap-2 rounded-border border border-surface p-3">
+      <h3 class="font-semibold">{{ 'PHASES.FORM.LIMITS' | translate }}</h3>
+      @for (row of limits(); track $index) {
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span class="font-semibold">{{ row.metric }}</span>
+          @if (row.hasNoLimits) {
+            <span class="text-muted-color">{{ 'PHASES.FORM.NO_LIMITS' | translate }}</span>
+          } @else {
+            <span>{{ 'PHASES.FORM.ALARM_LOW' | translate }}: {{ row.alarmLow ?? '–' }}</span>
+            <span>{{ 'PHASES.FORM.WARNING_LOW' | translate }}: {{ row.warningLow ?? '–' }}</span>
+            <span>{{ 'PHASES.FORM.WARNING_HIGH' | translate }}: {{ row.warningHigh ?? '–' }}</span>
+            <span>{{ 'PHASES.FORM.ALARM_HIGH' | translate }}: {{ row.alarmHigh ?? '–' }}</span>
+          }
+          @if (row.isWaiting) {
+            <p-tag
+              severity="warn"
+              [value]="'DRAFTS.PHASE.WAITS_FOR_DRAFT' | translate"
+            />
+          }
+        </div>
+      }
+    </section>
+  }
+}

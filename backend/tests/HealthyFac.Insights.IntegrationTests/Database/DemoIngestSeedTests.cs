@@ -1,3 +1,5 @@
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
@@ -30,9 +32,28 @@ public sealed class DemoIngestSeedTests(InsightsFixture fixture)
         chunks.Should().HaveCount(DemoIngestSeedTestData.ChunkCount);
 
         var cncAttempt = attempts.Single(attempt => attempt.FileId == DemoIngestSeedTestData.CncFileId);
-        (cncAttempt.PageCount, cncAttempt.ChunkCount, cncAttempt.ProposedDraftCount).Should().Be((23, 61, 52));
-        documents.Single(document => document.Id == DemoIngestSeedTestData.CncFileId).ChunkCount.Should().Be(
-            chunks.Count(chunk => chunk.DocumentId == DemoIngestSeedTestData.CncFileId));
+        (cncAttempt.PageCount, cncAttempt.ChunkCount, cncAttempt.ProposedDraftCount).Should().Be((24, 62, 55));
+        documents.Single(document => document.Id == DemoIngestSeedTestData.CncFileId)
+            .ChunkCount.Should()
+            .Be(
+                chunks.Count(chunk => chunk.DocumentId == DemoIngestSeedTestData.CncFileId));
+    }
+
+    [Fact]
+    public async Task SeedAsync_WithATestTenant_CreatesTheScreenerAndExtractorRunsWithTheirToolCalls()
+    {
+        await _fixture.RunDemoIngestSeedAsync();
+
+        var runs = await _fixture.LoadSeededRunsAsync();
+        var calls = await _fixture.LoadSeededToolCallsAsync();
+
+        runs.Should().HaveCount(DemoIngestSeedTestData.RunCount);
+        runs.Should().OnlyContain(run => run.State == AgentRunState.Completed && run.IngestAttemptId != null);
+        runs.Count(run => run.Role == AgentRole.Extractor).Should().Be(DemoIngestSeedTestData.AttemptCount);
+        runs.Count(run => run.Role == AgentRole.Screener).Should().Be(DemoIngestSeedTestData.AttemptCount);
+        calls.Should().HaveCount(DemoIngestSeedTestData.ToolCallCount);
+        calls.Should().OnlyContain(call => call.Outcome == ToolCallOutcome.Succeeded);
+        calls.Select(call => call.RunId).Distinct().Should().OnlyContain(id => runs.Any(run => run.Id == id));
     }
 
     [Fact]
@@ -43,8 +64,8 @@ public sealed class DemoIngestSeedTests(InsightsFixture fixture)
         var chunks = await _fixture.LoadSeededChunksAsync();
 
         chunks.Should().OnlyContain(chunk => chunk.Embedding.Length == DemoIngestSeedTestData.EmbeddingDimensions);
-        chunks.Should().OnlyContain(
-            chunk => Math.Abs(Math.Sqrt(chunk.Embedding.Sum(value => (double)value * value)) - 1)
+        chunks.Should()
+            .OnlyContain(chunk => Math.Abs(Math.Sqrt(chunk.Embedding.Sum(value => (double)value * value)) - 1)
                 < DemoIngestSeedTestData.NormTolerance);
     }
 
@@ -55,8 +76,10 @@ public sealed class DemoIngestSeedTests(InsightsFixture fixture)
 
         var attempts = await _fixture.LoadSeededAttemptsAsync();
 
-        attempts.Max(attempt => attempt.FinishedAt).Should().Be(
-            (DemoIngestSeedFixtureExtensions.SeedTime - SeedTimeShift.NewestAge).UtcDateTime);
+        attempts.Max(attempt => attempt.FinishedAt)
+            .Should()
+            .Be(
+                (DemoIngestSeedFixtureExtensions.SeedTime - SeedTimeShift.NewestAge).UtcDateTime);
     }
 
     [Fact]
@@ -69,8 +92,11 @@ public sealed class DemoIngestSeedTests(InsightsFixture fixture)
         var attempts = await _fixture.LoadSeededAttemptsAsync();
         var chunks = await _fixture.LoadSeededChunksAsync();
 
+        var runs = await _fixture.LoadSeededRunsAsync();
+
         attempts.Should().HaveCount(DemoIngestSeedTestData.AttemptCount);
         chunks.Should().HaveCount(DemoIngestSeedTestData.ChunkCount);
+        runs.Should().HaveCount(DemoIngestSeedTestData.RunCount);
     }
 
     [Fact]

@@ -16,4 +16,5 @@ public static class DefinitionDraftRoutes
     public const string PendingCounts = "/pending-counts";
     public const string Dismiss = "/{" + IdParameter + "}/dismiss";
     public const string DismissAll = "/dismiss";
+    public const string ApplyPhase = "/operating-phases/{" + IdParameter + "}/apply";
 }

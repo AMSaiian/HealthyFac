@@ -24,6 +24,11 @@ export const Permission = {
   WorkOrdersManage: 'work-orders:manage',
   ShiftsRead: 'shifts:read',
   ShiftsManage: 'shifts:manage',
+  OperatingPhasesRead: 'operating-phases:read',
+  OperatingPhasesWrite: 'operating-phases:write',
+  SignalsRead: 'signals:read',
+  CasesRead: 'cases:read',
+  CasesWrite: 'cases:write',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

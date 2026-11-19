@@ -124,6 +124,7 @@ public static class TestTenantFixtureExtensions
                     (machine, company) => new SeededGoLiveRow
                     {
                         MachineId = machine.Id,
+                        CompanyId = machine.CompanyId,
                         ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
                         CreatedAt = machine.CreatedAt,
                         TimeZoneId = company.TimeZoneId,
@@ -215,6 +216,7 @@ public sealed record SeededStateRow
 public sealed record SeededGoLiveRow
 {
     public required Guid MachineId { get; init; }
+    public required Guid CompanyId { get; init; }
     public required DateOnly ExpectedGoLiveOn { get; init; }
     public required DateTime CreatedAt { get; init; }
     public required string TimeZoneId { get; init; }

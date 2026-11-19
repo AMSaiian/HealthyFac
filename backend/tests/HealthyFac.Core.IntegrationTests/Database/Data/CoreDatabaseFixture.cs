@@ -20,6 +20,8 @@ namespace HealthyFac.Core.IntegrationTests.Database.Data;
 
 public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 {
+    private const string InboxProcessorTypeName = "InboxProcessor";
+
     private readonly PostgreSqlTestDatabase _database = new();
 
     private DatabaseResetter _resetter = null!;
@@ -75,6 +77,11 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddInfrastructureServices(configuration, environment);
         services.ConfigureDbContext<CoreDbContext>(options => options.AddInterceptors(SaveGate, Transactions));
         services.AddSingleton<IEmailSender>(EmailSender);
+        var otherHostedServices = services
+            .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
+                && descriptor.ImplementationType?.Name != InboxProcessorTypeName)
+            .ToList();
+        otherHostedServices.ForEach(descriptor => services.Remove(descriptor));
         services.AddScoped<IEmployeeInviteEmailBuilder, PlainEmployeeInviteEmailBuilder>();
 
         _services = services.BuildServiceProvider(validateScopes: true);

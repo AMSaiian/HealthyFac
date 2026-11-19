@@ -18,3 +18,12 @@ export const statusDraftReviewActionPayloadSchema = object({
 });
 
 export type StatusDraftReviewActionPayload = Infer<typeof statusDraftReviewActionPayloadSchema>;
+
+/** The payload of the action `drafts.reviewPhase`: the phase draft, its attempt, and the target machine. */
+export const phaseDraftReviewActionPayloadSchema = object({
+  machineId: string(),
+  attemptId: string(),
+  draftId: string(),
+});
+
+export type PhaseDraftReviewActionPayload = Infer<typeof phaseDraftReviewActionPayloadSchema>;

@@ -13,6 +13,15 @@ public sealed record DemoDefinitionDraftSeedFile
 
     [JsonPropertyName(name: "statusDefinitionDrafts")]
     public required IReadOnlyList<DemoStatusDraftRow> StatusDefinitionDrafts { get; init; }
+
+    [JsonPropertyName(name: "operatingPhaseDrafts")]
+    public required IReadOnlyList<DemoPhaseDraftRow> OperatingPhaseDrafts { get; init; }
+
+    [JsonPropertyName(name: "operatingPhaseDraftConditions")]
+    public required IReadOnlyList<DemoPhaseConditionRow> OperatingPhaseDraftConditions { get; init; }
+
+    [JsonPropertyName(name: "operatingPhaseDraftLimits")]
+    public required IReadOnlyList<DemoPhaseLimitRow> OperatingPhaseDraftLimits { get; init; }
 }
 
 public sealed record DemoMetricDraftRow
@@ -64,6 +73,21 @@ public sealed record DemoMetricDraftRow
 
     [JsonPropertyName(name: "states")]
     public IReadOnlyList<string>? States { get; init; }
+
+    [JsonPropertyName(name: "warning_low")]
+    public double? WarningLow { get; init; }
+
+    [JsonPropertyName(name: "warning_high")]
+    public double? WarningHigh { get; init; }
+
+    [JsonPropertyName(name: "alarm_low")]
+    public double? AlarmLow { get; init; }
+
+    [JsonPropertyName(name: "alarm_high")]
+    public double? AlarmHigh { get; init; }
+
+    [JsonPropertyName(name: "behavior")]
+    public string? Behavior { get; init; }
 }
 
 public sealed record DemoStatusDraftRow
@@ -97,4 +121,94 @@ public sealed record DemoStatusDraftRow
 
     [JsonPropertyName(name: "description")]
     public string? Description { get; init; }
+}
+
+public sealed record DemoPhaseDraftRow
+{
+    [JsonPropertyName(name: "id")]
+    public required Guid Id { get; init; }
+
+    [JsonPropertyName(name: "attempt_id")]
+    public required Guid AttemptId { get; init; }
+
+    [JsonPropertyName(name: "file_id")]
+    public required Guid FileId { get; init; }
+
+    [JsonPropertyName(name: "proposal_entry_id")]
+    public required Guid ProposalEntryId { get; init; }
+
+    [JsonPropertyName(name: "target_machine_id")]
+    public Guid? TargetMachineId { get; init; }
+
+    [JsonPropertyName(name: "source_location")]
+    public string? SourceLocation { get; init; }
+
+    [JsonPropertyName(name: "code")]
+    public string? Code { get; init; }
+
+    [JsonPropertyName(name: "name")]
+    public string? Name { get; init; }
+
+    [JsonPropertyName(name: "description")]
+    public string? Description { get; init; }
+
+    [JsonPropertyName(name: "priority")]
+    public int? Priority { get; init; }
+
+    [JsonPropertyName(name: "is_tracked")]
+    public bool? IsTracked { get; init; }
+}
+
+public sealed record DemoPhaseConditionRow
+{
+    [JsonPropertyName(name: "draft_id")]
+    public required Guid DraftId { get; init; }
+
+    [JsonPropertyName(name: "metric_definition_id")]
+    public Guid? MetricDefinitionId { get; init; }
+
+    [JsonPropertyName(name: "metric_draft_id")]
+    public Guid? MetricDraftId { get; init; }
+
+    [JsonPropertyName(name: "status_definition_id")]
+    public Guid? StatusDefinitionId { get; init; }
+
+    [JsonPropertyName(name: "status_draft_id")]
+    public Guid? StatusDraftId { get; init; }
+
+    [JsonPropertyName(name: "operator")]
+    public string? Operator { get; init; }
+
+    [JsonPropertyName(name: "value")]
+    public double? Value { get; init; }
+
+    [JsonPropertyName(name: "upper_value")]
+    public double? UpperValue { get; init; }
+
+    [JsonPropertyName(name: "states")]
+    public IReadOnlyList<string>? States { get; init; }
+}
+
+public sealed record DemoPhaseLimitRow
+{
+    [JsonPropertyName(name: "draft_id")]
+    public required Guid DraftId { get; init; }
+
+    [JsonPropertyName(name: "metric_definition_id")]
+    public Guid? MetricDefinitionId { get; init; }
+
+    [JsonPropertyName(name: "metric_draft_id")]
+    public Guid? MetricDraftId { get; init; }
+
+    [JsonPropertyName(name: "warning_low")]
+    public double? WarningLow { get; init; }
+
+    [JsonPropertyName(name: "warning_high")]
+    public double? WarningHigh { get; init; }
+
+    [JsonPropertyName(name: "alarm_low")]
+    public double? AlarmLow { get; init; }
+
+    [JsonPropertyName(name: "alarm_high")]
+    public double? AlarmHigh { get; init; }
 }

@@ -29,6 +29,7 @@ import {
   buildExamplePayload,
   EMPTY_METRIC_VALUE,
   hasNetChanges,
+  isNewItem,
   mapServerErrors,
   type MetricItem,
   netChanges,
@@ -93,6 +94,14 @@ export const MetricsPageStore = signalStore(
     };
   }),
   withComputed((store) => ({
+    isEditedItemUnsaved: computed((): boolean => {
+      const edit = store.edit();
+      if (edit === null) {
+        return false;
+      }
+      const item = store.items().find((candidate) => candidate.localId === edit.localId);
+      return edit.localId === null || (item !== undefined && isNewItem(item));
+    }),
     isFormChanged: computed(() => {
       const initial = store.editInitial();
       const current = store.formValue();

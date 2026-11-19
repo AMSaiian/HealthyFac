@@ -21,6 +21,15 @@ public sealed record MachineCreated : IIntegrationMessage, IRequest
     public required Guid CompanyId { get; init; }
 
     public required string Name { get; init; }
+
+    /// <summary>The expected go-live day in the company time zone.</summary>
+    public required DateOnly ExpectedGoLiveOn { get; init; }
+
+    /// <summary>
+    /// The UTC instant of the local midnight of <see cref="ExpectedGoLiveOn"/> in the company time zone. A midnight
+    /// in a skipped hour moves forward by the gap length.
+    /// </summary>
+    public required DateTime GoLiveStartsAt { get; init; }
 }
 
 public class MachineCreatedValidator : AbstractValidator<MachineCreated>

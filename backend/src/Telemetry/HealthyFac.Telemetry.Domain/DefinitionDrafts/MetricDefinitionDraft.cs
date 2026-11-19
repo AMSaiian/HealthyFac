@@ -43,6 +43,14 @@ public class MetricDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
     /// <summary>The proposed state codes of a state set, or <see langword="null"/>.</summary>
     public IReadOnlyList<string>? States { get; private set; }
 
+    public double? WarningLow { get; private set; }
+    public double? WarningHigh { get; private set; }
+    public double? AlarmLow { get; private set; }
+    public double? AlarmHigh { get; private set; }
+
+    /// <summary>One of <c>level</c>, <c>counter</c>, or <see langword="null"/>. Missing means <c>level</c>.</summary>
+    public string? Behavior { get; private set; }
+
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
@@ -90,6 +98,11 @@ public class MetricDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
             Min = values.Min,
             Max = values.Max,
             States = values.States is null ? null : [.. values.States],
+            WarningLow = values.WarningLow,
+            WarningHigh = values.WarningHigh,
+            AlarmLow = values.AlarmLow,
+            AlarmHigh = values.AlarmHigh,
+            Behavior = values.Behavior,
         };
 
     /// <inheritdoc/>

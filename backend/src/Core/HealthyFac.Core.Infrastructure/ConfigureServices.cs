@@ -9,6 +9,7 @@ using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Insights.Messaging.Drafts;
+using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Email;
@@ -97,6 +98,7 @@ public static class ConfigureServices
             services.AddIntegrationMessage<IdentityProvisioned>();
             services.AddIntegrationMessage<IdentityProvisioningFailed>();
             services.AddIntegrationMessage<DraftsProposed>();
+            services.AddIntegrationMessage<WorkOrderDraftProposed>();
 
             services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
                 SeedingOptions.SectionName, configuration);

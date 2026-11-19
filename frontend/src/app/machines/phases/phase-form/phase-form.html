@@ -1,0 +1,263 @@
+<section class="flex flex-col gap-4">
+  <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.GENERAL' | translate }}</h2>
+  <div class="flex flex-col gap-1">
+    <label for="phase-code">{{ 'PHASES.FORM.CODE' | translate }}</label>
+    @for (error of phaseForm.code().errors(); track $index) {
+      @if (isShown(phaseForm.code)) {
+        <small class="text-red-500">{{ error.message | translate }}</small>
+      }
+    }
+    <input
+      pInputText
+      id="phase-code"
+      autocomplete="off"
+      [placeholder]="'PHASES.FORM.CODE_PLACEHOLDER' | translate"
+      [attr.data-hf-calm]="isShown(phaseForm.code) ? null : ''"
+      [formField]="phaseForm.code"
+    />
+  </div>
+  <div class="flex flex-col gap-1">
+    <label for="phase-name">{{ 'PHASES.FORM.NAME' | translate }}</label>
+    @for (error of phaseForm.name().errors(); track $index) {
+      @if (isShown(phaseForm.name)) {
+        <small class="text-red-500">{{ error.message | translate }}</small>
+      }
+    }
+    <input
+      pInputText
+      id="phase-name"
+      autocomplete="off"
+      [attr.data-hf-calm]="isShown(phaseForm.name) ? null : ''"
+      [formField]="phaseForm.name"
+    />
+  </div>
+  <div class="flex flex-col gap-1">
+    <span>{{ 'PHASES.FORM.DESCRIPTION' | translate }}</span>
+    @for (error of phaseForm.description().errors(); track $index) {
+      @if (isShown(phaseForm.description)) {
+        <small class="text-red-500">{{ error.message | translate }}</small>
+      }
+    }
+    <hf-rich-text-editor
+      [formField]="phaseForm.description"
+      [characterLimit]="descriptionMaxLength"
+      [placeholder]="'PHASES.FORM.DESCRIPTION_PLACEHOLDER' | translate"
+    />
+  </div>
+  <div class="flex items-center gap-2">
+    <p-checkbox
+      inputId="phase-tracked"
+      [binary]="true"
+      [formField]="phaseForm.isTracked"
+    />
+    <label for="phase-tracked">{{ 'PHASES.FORM.IS_TRACKED' | translate }}</label>
+  </div>
+</section>
+<p-divider />
+
+<section class="flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.CONDITIONS' | translate }}</h2>
+    <button
+      pButton
+      [pTooltip]="'PHASES.TOOLTIPS.ADD_CONDITION' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      severity="secondary"
+      (click)="addCondition()"
+    >
+      <i class="pi pi-plus"></i>
+      {{ 'PHASES.FORM.ADD_CONDITION' | translate }}
+    </button>
+  </div>
+  <small class="text-muted-color">{{ 'PHASES.FORM.CONDITIONS_HINT' | translate }}</small>
+  @for (condition of phaseForm.conditions; track $index; let i = $index) {
+    <div class="flex flex-col gap-2 rounded border border-surface p-2">
+      <div class="flex items-start gap-2">
+        <p-select
+          class="min-w-0 flex-1"
+          optionLabel="label"
+          optionValue="id"
+          appendTo="body"
+          [options]="sourceOptionList()"
+          [formField]="condition.sourceId"
+        />
+        <p-select
+          class="min-w-0 flex-1"
+          appendTo="body"
+          [options]="operatorsAt(i)"
+          [ariaLabel]="'PHASES.FORM.OPERATOR_LABEL' | translate"
+          [formField]="condition.operator"
+        >
+          <ng-template
+            #selectedItem
+            let-option
+          >
+            {{ operatorSign(option) }} {{ operatorLabel(option) | translate }}
+          </ng-template>
+          <ng-template
+            #item
+            let-option
+          >
+            {{ operatorSign(option) }} {{ operatorLabel(option) | translate }}
+          </ng-template>
+        </p-select>
+        <button
+          pButton
+          [pTooltip]="'PHASES.TOOLTIPS.REMOVE_CONDITION' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          severity="secondary"
+          iconOnly
+          [text]="true"
+          [attr.aria-label]="'PHASES.TOOLTIPS.REMOVE_CONDITION' | translate"
+          (click)="removeCondition(i)"
+        >
+          <i class="pi pi-trash"></i>
+        </button>
+      </div>
+      @if (kindAt(i) === ConditionSourceKind.Numeric) {
+        <div class="flex items-start gap-2">
+          <div class="flex min-w-0 flex-1 flex-col gap-1">
+            @for (error of condition.value().errors(); track $index) {
+              @if (isShown(condition.value)) {
+                <small class="text-red-500">{{ error.message | translate }}</small>
+              }
+            }
+            <p-inputnumber
+              [maxFractionDigits]="6"
+              [formField]="condition.value"
+            />
+          </div>
+          @if (condition.operator().value() === PhaseConditionOperator.Between) {
+            <div class="flex min-w-0 flex-1 flex-col gap-1">
+              @for (error of condition.upperValue().errors(); track $index) {
+                @if (isShown(condition.upperValue)) {
+                  <small class="text-red-500">{{ error.message | translate }}</small>
+                }
+              }
+              <p-inputnumber
+                [maxFractionDigits]="6"
+                [formField]="condition.upperValue"
+              />
+            </div>
+          }
+        </div>
+      }
+      @if (condition.operator().value() === PhaseConditionOperator.In) {
+        @for (error of condition.states().errors(); track $index) {
+          @if (isShown(condition.states)) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+        }
+        <p-select
+          appendTo="body"
+          [multiple]="true"
+          [options]="statesAt(i)"
+          [formField]="condition.states"
+        />
+      }
+    </div>
+  }
+  @if (maskedNames() !== '') {
+    <p-message
+      severity="warn"
+      size="small"
+    >
+      {{ 'PHASES.FORM.MASKING_WARNING' | translate: { names: maskedNames() } }}
+    </p-message>
+  }
+</section>
+<p-divider />
+
+<section class="flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.LIMITS' | translate }}</h2>
+    <span
+      [pTooltip]="canAddLimit() ? '' : ('PHASES.FORM.NO_LIMIT_METRIC' | translate)"
+      [tooltipDisabled]="canAddLimit()"
+    >
+      <button
+        pButton
+        [pTooltip]="'PHASES.TOOLTIPS.ADD_LIMIT' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        [disabled]="!canAddLimit()"
+        (click)="addLimit()"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'PHASES.FORM.ADD_LIMIT' | translate }}
+      </button>
+    </span>
+  </div>
+  @for (error of phaseForm.limits().errors(); track $index) {
+    <small class="text-red-500">{{ error.message | translate }}</small>
+  }
+  @for (limit of phaseForm.limits; track $index; let i = $index) {
+    <div class="flex flex-col gap-2 rounded border border-surface p-2">
+      <div class="flex items-start gap-2">
+        <p-select
+          class="min-w-0 flex-1"
+          optionLabel="name"
+          optionValue="id"
+          appendTo="body"
+          [options]="metricList()"
+          [formField]="limit.metricDefinitionId"
+        />
+        <button
+          pButton
+          [pTooltip]="'PHASES.TOOLTIPS.REMOVE_LIMIT' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          severity="secondary"
+          iconOnly
+          [text]="true"
+          [attr.aria-label]="'PHASES.TOOLTIPS.REMOVE_LIMIT' | translate"
+          (click)="removeLimit(i)"
+        >
+          <i class="pi pi-trash"></i>
+        </button>
+      </div>
+      @if (hasNoLimits(i)) {
+        <small class="text-muted-color">{{ 'PHASES.FORM.NO_LIMITS' | translate }}</small>
+      }
+      <div class="grid grid-cols-2 gap-2">
+        <div class="flex flex-col gap-1">
+          <span>{{ 'PHASES.FORM.ALARM_LOW' | translate }}</span>
+          <p-inputnumber
+            [maxFractionDigits]="6"
+            [formField]="limit.alarmLow"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <span>{{ 'PHASES.FORM.ALARM_HIGH' | translate }}</span>
+          <p-inputnumber
+            [maxFractionDigits]="6"
+            [formField]="limit.alarmHigh"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <span>{{ 'PHASES.FORM.WARNING_LOW' | translate }}</span>
+          @for (error of limit.warningLow().errors(); track $index) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+          <p-inputnumber
+            [maxFractionDigits]="6"
+            [formField]="limit.warningLow"
+          />
+        </div>
+        <div class="flex flex-col gap-1">
+          <span>{{ 'PHASES.FORM.WARNING_HIGH' | translate }}</span>
+          @for (error of limit.warningHigh().errors(); track $index) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+          <p-inputnumber
+            [maxFractionDigits]="6"
+            [formField]="limit.warningHigh"
+          />
+        </div>
+      </div>
+    </div>
+  }
+</section>

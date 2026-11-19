@@ -28,6 +28,15 @@ public static class MetricDefinitionInvariantErrors
     public static InvalidOperationException StateSetNeedsStates(int minCount) =>
         new($"A state set needs at least {minCount} unique states.");
 
+    public static InvalidOperationException LimitsOnlyForNumeric(MetricValueKind kind) =>
+        new($"A metric of the kind '{kind.Value}' has no limits.");
+
+    public static InvalidOperationException WarningLowBelowAlarmLow(double warningLow, double alarmLow) =>
+        new($"The warning low limit '{warningLow}' must not be below the alarm low limit '{alarmLow}'.");
+
+    public static InvalidOperationException WarningHighAboveAlarmHigh(double warningHigh, double alarmHigh) =>
+        new($"The warning high limit '{warningHigh}' must not be above the alarm high limit '{alarmHigh}'.");
+
     public static InvalidOperationException InvalidState(string state) =>
         new($"'{state}' is not a valid state code.");
 }

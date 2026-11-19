@@ -1,4 +1,9 @@
 {
+  "ServiceActors": {
+    "AllowedClients": [
+      "healthyfac-insights"
+    ]
+  },
   "Smtp": {
     "Host": "mailpit",
     "Port": 1025,

@@ -12,7 +12,8 @@ namespace HealthyFac.Telemetry.Application.MachineRegistrations;
 public sealed class UnregisterMachinePreHandlerCheck : PassThroughPreHandlerCheck<MachineDeleted>;
 
 /// <summary>
-/// Removes the registration of a machine that Core deleted, with its status and metric definitions. The pending and
+/// Removes the registration of a machine that Core deleted, with its operating phases (and their conditions and limit
+/// rows), its status definitions, and its metric definitions. The pending and
 /// awaiting definition drafts of the machine become dismissed (an applied draft stays). One save stores all changes.
 /// A registration that does not exist yet makes the handler throw <see cref="NotFoundException"/>, because the message
 /// order is not guaranteed and the inbox retries the message until <c>MachineCreated</c> arrives. A registration that
@@ -54,6 +55,12 @@ public sealed class UnregisterMachineRequestHandler(
             .Where(metric => metric.MachineRegistrationId == registration.Id)
             .ToListAsync(cancellationToken);
 
+        var phases = await _dbContext.OperatingPhases
+            .Include(phase => phase.Conditions)
+            .Include(phase => phase.Limits)
+            .Where(phase => phase.MachineRegistrationId == registration.Id)
+            .ToListAsync(cancellationToken);
+
         var metricDrafts = await _dbContext.MetricDefinitionDrafts
             .Where(draft => draft.TargetMachineId == registration.Id)
             .Where(OpenDefinitionDrafts.Predicate<MetricDefinitionDraft>())
@@ -64,8 +71,15 @@ public sealed class UnregisterMachineRequestHandler(
             .Where(OpenDefinitionDrafts.Predicate<StatusDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
+        var phaseDrafts = await _dbContext.OperatingPhaseDrafts
+            .Where(draft => draft.TargetMachineId == registration.Id)
+            .Where(OpenDefinitionDrafts.Predicate<OperatingPhaseDraft>())
+            .ToListAsync(cancellationToken);
+
         metricDrafts.ForEach(draft => draft.Dismiss());
         statusDrafts.ForEach(draft => draft.Dismiss());
+        phaseDrafts.ForEach(draft => draft.Dismiss());
+        _dbContext.OperatingPhases.RemoveRange(phases);
         _dbContext.StatusDefinitions.RemoveRange(statusDefinitions);
         _dbContext.MetricDefinitions.RemoveRange(metricDefinitions);
         _dbContext.MachineRegistrations.Remove(registration);

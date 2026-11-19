@@ -28,11 +28,15 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         var metric = (await _fixture.LoadMetricDraftsAsync()).Single();
         var status = (await _fixture.LoadStatusDraftsAsync()).Single();
 
+        var phase = (await _fixture.LoadPhaseDraftsAsync()).Single();
+
         metric.State.Should().Be(DefinitionDraftState.Pending, caseName);
         metric.TargetMachineId.Should().Be(ids.MachineId);
         metric.TargetMachineDraftId.Should().BeNull();
         status.State.Should().Be(DefinitionDraftState.Pending, caseName);
         status.TargetMachineId.Should().Be(ids.MachineId);
+        phase.State.Should().Be(DefinitionDraftState.Pending, caseName);
+        phase.TargetMachineId.Should().Be(ids.MachineId);
     }
 
     [Theory]
@@ -52,8 +56,11 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         var metric = (await _fixture.LoadMetricDraftsAsync()).Single();
         var status = (await _fixture.LoadStatusDraftsAsync()).Single();
 
+        var phase = (await _fixture.LoadPhaseDraftsAsync()).Single();
+
         metric.State.Should().Be(DefinitionDraftState.Dismissed, caseName);
         status.State.Should().Be(DefinitionDraftState.Dismissed, caseName);
+        phase.State.Should().Be(DefinitionDraftState.Dismissed, caseName);
     }
 
     [Theory]
@@ -74,9 +81,15 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         var metrics = await _fixture.LoadMetricDraftsAsync();
         var statuses = await _fixture.LoadStatusDraftsAsync();
 
+        var phases = await _fixture.LoadPhaseDraftsAsync();
+
         metrics.Should().HaveCount(expectedRows, caseName);
         statuses.Should().HaveCount(expectedRows, caseName);
-        metrics.Concat<IDefinitionDraft>(statuses).Should().NotContain(draft => !IsRemoved(draft));
+        phases.Should().HaveCount(expectedRows, caseName);
+        metrics.Concat<IDefinitionDraft>(statuses)
+            .Concat(phases)
+            .Should()
+            .NotContain(draft => !IsRemoved(draft));
     }
 
     [Theory]
@@ -202,6 +215,7 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         {
             MetricDefinitionDraft metric => metric.DeletedAt is not null,
             StatusDefinitionDraft status => status.DeletedAt is not null,
+            OperatingPhaseDraft phase => phase.DeletedAt is not null,
             _ => false,
         };
 }

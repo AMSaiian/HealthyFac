@@ -22,17 +22,18 @@ public static class IngestWorkerTestData
         { RejectionOfChat(status: 404) },
         {
             new ProviderRejectionCase(
-                "embedding service answers 404",
+                name: "embedding service answers 404",
                 fixture => fixture.Ingest.Embeddings.Failure =
-                    new ClientError("Model not found", 404, "NOT_FOUND", null),
+                    new ClientError(
+                        message: "Model not found", statusCode: 404, status: "NOT_FOUND", innerException: null),
                 fixture => fixture.Ingest.Embeddings.CallCount,
-                expectedCalls: FakeDocumentConverter.DefaultDocument.Chunks.Count)
+                FakeDocumentConverter.DefaultDocument.Chunks.Count)
         },
         {
             new ProviderRejectionCase(
-                "document answers PermissionDenied",
+                name: "document answers PermissionDenied",
                 fixture => fixture.Files.Failure =
-                    new RpcException(new Status(StatusCode.PermissionDenied, "No access")),
+                    new RpcException(new Status(StatusCode.PermissionDenied, detail: "No access")),
                 fixture => fixture.Files.CallCount,
                 expectedCalls: 1)
         },
@@ -42,24 +43,25 @@ public static class IngestWorkerTestData
     {
         {
             new ProviderRejectionCase(
-                "docling body is not json",
-                fixture => fixture.Ingest.Converter.Behavior = _ => throw new JsonException("Bad body"),
+                name: "docling body is not json",
+                fixture => fixture.Ingest.Converter.Behavior = _ => throw new JsonException(message: "Bad body"),
                 fixture => fixture.Ingest.Converter.CallCount,
                 expectedCalls: 1)
         },
         {
             new ProviderRejectionCase(
-                "embedder gets a wrong vector size",
-                fixture => fixture.Ingest.Embeddings.Failure = new InvalidOperationException("Wrong size"),
+                name: "embedder gets a wrong vector size",
+                fixture => fixture.Ingest.Embeddings.Failure = new InvalidOperationException(message: "Wrong size"),
                 fixture => fixture.Ingest.Embeddings.CallCount,
-                expectedCalls: FakeDocumentConverter.DefaultDocument.Chunks.Count)
+                FakeDocumentConverter.DefaultDocument.Chunks.Count)
         },
     };
 
     private static ProviderRejectionCase RejectionOfChat(int status) =>
         new(
             $"gemini answers {status}",
-            fixture => fixture.Ingest.Chat.Failure = new ClientError("Model not found", status, "NOT_FOUND", null),
+            fixture => fixture.Ingest.Chat.Failure = new ClientError(
+                message: "Model not found", status, status: "NOT_FOUND", innerException: null),
             fixture => fixture.Ingest.Chat.CallCount,
             expectedCalls: 1);
 
@@ -67,44 +69,52 @@ public static class IngestWorkerTestData
     {
         {
             new IngestFailureCase(
-                "file link is missing",
+                name: "file link is missing",
                 IngestErrorCode.FileNotFound,
                 fixture => fixture.Files.Clear())
         },
         {
             new IngestFailureCase(
-                "document has no text",
+                name: "document has no text",
                 IngestErrorCode.NoText,
                 fixture => fixture.Ingest.Converter.Behavior = _ =>
                     Task.FromResult(new ConvertedDocument { PageCount = 1, Chunks = [] }))
         },
         {
             new IngestFailureCase(
-                "document has too many pages",
+                name: "document has too many pages",
                 IngestErrorCode.TooManyPages,
                 fixture => fixture.Ingest.Converter.Behavior = _ =>
                     Task.FromResult(FakeDocumentConverter.DefaultDocument with { PageCount = TooManyPages }))
         },
         {
             new IngestFailureCase(
-                "conversion fails",
+                name: "conversion fails",
                 IngestErrorCode.ConversionFailed,
                 fixture => fixture.Ingest.Converter.Behavior = _ =>
-                    throw new ConversionFailedException("Unsupported layout"))
+                    throw new ConversionFailedException(message: "Unsupported layout"))
         },
         {
             new IngestFailureCase(
-                "model answers twice with invalid json",
+                name: "model makes invalid tool calls in a row",
                 IngestErrorCode.InvalidExtraction,
-                fixture => fixture.Ingest.Chat.Script(
-                    ScriptedChatClient.InvalidAnswer, ScriptedChatClient.InvalidAnswer))
+                fixture => fixture.Ingest.Chat.ScriptInvalidToolCalls(count: 3))
         },
         {
             new IngestFailureCase(
-                "embedding service stays unavailable",
+                name: "embedding service stays unavailable",
                 IngestErrorCode.ProviderUnavailable,
                 fixture => fixture.Ingest.Embeddings.Failure =
-                    new HttpRequestException("Embedding is down", inner: null, HttpStatusCode.ServiceUnavailable))
+                    new HttpRequestException(
+                        message: "Embedding is down", inner: null, HttpStatusCode.ServiceUnavailable))
+        },
+        {
+            new IngestFailureCase(
+                name: "screener stays unavailable",
+                IngestErrorCode.ProviderUnavailable,
+                fixture => fixture.Ingest.ScreenerChat.Failure =
+                    new HttpRequestException(
+                        message: "Screener is down", inner: null, HttpStatusCode.ServiceUnavailable))
         },
     };
 }

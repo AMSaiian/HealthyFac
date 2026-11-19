@@ -14,6 +14,7 @@ import { DraftActionType } from '@machines/drafts/draft-actions';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachinesApi } from '@machines/machines-api';
 import {
+  MetricBehavior,
   type MetricDefinition,
   type MetricDefinitionsResponse,
   MetricValueKind,
@@ -47,6 +48,11 @@ function definition(id: string, key: string): MetricDefinition {
     min: 0,
     max: 100,
     states: null,
+    warningLow: null,
+    warningHigh: null,
+    alarmLow: null,
+    alarmHigh: null,
+    behavior: MetricBehavior.Level,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: null,
   };
@@ -65,6 +71,11 @@ const NEW_VALUE: MetricFormValue = {
   unit: '',
   min: null,
   max: null,
+  warningLow: null,
+  warningHigh: null,
+  alarmLow: null,
+  alarmHigh: null,
+  behavior: MetricBehavior.Level,
   states: [],
 };
 
@@ -124,7 +135,7 @@ const DRAFTS = {
   ],
 };
 
-const IMAGE_ID = 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const IMAGE_ID = 'v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 type Spy = ReturnType<typeof vi.fn>;
 
@@ -370,6 +381,36 @@ describe('MetricsPageStore', () => {
     store.apply();
 
     expect(api.apply).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, (store: Setup['store']) => Promise<void> | void, boolean]>([
+    ['ABlankNewForm', (store) => store.startAdd(), true],
+    [
+      'AProposedDraftItem',
+      async (store) => {
+        store.loadDrafts('attempt-1');
+        TestBed.tick();
+        await TestBed.inject(ApplicationRef).whenStable();
+        TestBed.tick();
+        store.select('new-0');
+        store.startEdit();
+      },
+      true,
+    ],
+    [
+      'ASavedMetric',
+      (store) => {
+        store.select('a');
+        store.startEdit();
+      },
+      false,
+    ],
+    ['NoOpenForm', () => undefined, false],
+  ])('isEditedItemUnsaved_With%s_ReturnsTheExpectedFlag', async (_name, open, expected) => {
+    const { store } = await setup();
+    await open(store);
+
+    expect(store.isEditedItemUnsaved()).toBe(expected);
   });
 
   it('loadDrafts_WithAttempt_StagesTheChangeAndTheNewItemOfThatMachineOnly', async () => {

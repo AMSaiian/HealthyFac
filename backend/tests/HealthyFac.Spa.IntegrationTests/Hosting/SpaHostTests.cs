@@ -63,6 +63,21 @@ public sealed partial class SpaHostTests
     }
 
     [Fact]
+    public async Task GetCaseDeepLinkWithAnEncryptedId_ReturnsIndex()
+    {
+        await using var spa = new SpaFactory();
+        using var client = spa.CreateClient();
+
+        var response = await client.GetAsync(
+            requestUri: "/maintenance/cases/v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            TestContext.Current.CancellationToken);
+        var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        html.Should().Contain(expected: "hf-root");
+    }
+
+    [Fact]
     public async Task GetMissingFileWithExtension_Returns404()
     {
         await using var spa = new SpaFactory();

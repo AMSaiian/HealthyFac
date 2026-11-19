@@ -67,7 +67,7 @@ export function withWorkOrderDrawerForm() {
         return mergeLookupOptions(
           current?.machineId == null
             ? []
-            : [{ id: current.machineId, displayName: current.machineName ?? current.machineId }],
+            : [{ id: current.machineId, displayName: current.machineName ?? current.machineId, isDeleted: false }],
           store.machineLookup.options(),
         );
       }),

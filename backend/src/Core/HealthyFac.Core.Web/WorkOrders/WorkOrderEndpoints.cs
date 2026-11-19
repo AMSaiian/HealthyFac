@@ -64,8 +64,26 @@ public static class WorkOrderEndpoints
             group.MapDelete(WorkOrderRoutes.ById, DeleteAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
 
+            app.MapGet(WorkOrderRoutes.OpenForMachine, ListOpenForMachineAsync)
+                .RequireAuthorization(CorePermissions.WorkOrders.Read);
+
             return app;
         }
+    }
+
+    private static async Task<Ok<IReadOnlyList<OpenWorkOrderResponse>>> ListOpenForMachineAsync(
+        [AsParameters] ListOpenMachineWorkOrdersWebRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ListOpenMachineWorkOrdersRequest, IReadOnlyList<OpenWorkOrderResponse>> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
     }
 
     private static async Task<IResult> CreateAsync(

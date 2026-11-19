@@ -97,6 +97,26 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     _dbContext.StatusDefinitionDrafts.Add(draft);
                 }
             }
+
+            foreach (var phase in proposed.Phases.Where(phase => !existingIds.Contains(phase.DraftId)))
+            {
+                var draft = OperatingPhaseDraft.Propose(
+                    phase.DraftId,
+                    request.CompanyId,
+                    request.AttemptId,
+                    request.FileId,
+                    entry.Id,
+                    proposed.TargetMachineId,
+                    ToValues(phase),
+                    [.. phase.Conditions.Select(ToValues)],
+                    [.. phase.Limits.Select(ToValues)]);
+                var isRemovalRequired = ProposalEntries.FollowNewDraft(draft, entry, isTargetRegistrationDeleted);
+
+                if (!isRemovalRequired)
+                {
+                    _dbContext.OperatingPhaseDrafts.Add(draft);
+                }
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -113,7 +133,18 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
             .Select(status => status.DraftId)
             .ToList();
 
+        var phaseIds = request.Machines
+            .SelectMany(machine => machine.Phases)
+            .Select(phase => phase.DraftId)
+            .ToList();
+
         var existing = new HashSet<Guid>();
+        existing.UnionWith(
+            await _dbContext.OperatingPhaseDrafts
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .Where(draft => phaseIds.Contains(draft.Id))
+                .Select(draft => draft.Id)
+                .ToListAsync(cancellationToken));
         existing.UnionWith(
             await _dbContext.MetricDefinitionDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
@@ -143,6 +174,46 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
             Min = metric.Min,
             Max = metric.Max,
             States = metric.States,
+            WarningLow = metric.WarningLow,
+            WarningHigh = metric.WarningHigh,
+            AlarmLow = metric.AlarmLow,
+            AlarmHigh = metric.AlarmHigh,
+            Behavior = metric.Behavior,
+        };
+
+    private static PhaseDraftValues ToValues(ProposedPhase phase) =>
+        new()
+        {
+            SourceLocation = phase.SourceLocation,
+            Code = phase.Code,
+            Name = phase.Name,
+            Description = phase.Description,
+            Priority = phase.Priority,
+            IsTracked = phase.IsTracked,
+        };
+
+    private static PhaseDraftConditionValues ToValues(ProposedPhaseCondition condition) =>
+        new()
+        {
+            MetricDefinitionId = condition.MetricId,
+            MetricDraftId = condition.MetricDraftId,
+            StatusDefinitionId = condition.StatusId,
+            StatusDraftId = condition.StatusDraftId,
+            Operator = condition.Operator,
+            Value = condition.Value,
+            UpperValue = condition.UpperValue,
+            States = condition.States,
+        };
+
+    private static PhaseDraftLimitValues ToValues(ProposedPhaseLimit limit) =>
+        new()
+        {
+            MetricDefinitionId = limit.MetricId,
+            MetricDraftId = limit.MetricDraftId,
+            WarningLow = limit.WarningLow,
+            WarningHigh = limit.WarningHigh,
+            AlarmLow = limit.AlarmLow,
+            AlarmHigh = limit.AlarmHigh,
         };
 
     private static StatusDraftValues ToValues(ProposedStatus status) =>

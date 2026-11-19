@@ -1,0 +1,101 @@
+<p-accordion
+  class="min-h-0 flex-1 overflow-y-auto"
+  [multiple]="true"
+  [value]="[]"
+  (valueChange)="onValueChange($event)"
+>
+  @for (run of runs(); track run.id) {
+    <p-accordion-panel [value]="run.id">
+      <p-accordion-header class="rounded-none">
+        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <span class="font-semibold">{{ roleLabel(run.role) }}</span>
+          <span class="text-muted-color">{{ runStateLabel(run.state) }}</span>
+          @if (run.verdict) {
+            <p-tag
+              severity="info"
+              [value]="verdictLabel(run.verdict)"
+            />
+          }
+          @if (run.errorCode) {
+            <p-tag
+              severity="danger"
+              [value]="errorLabel(run.errorCode)"
+            />
+          }
+          @if (run.startedAt) {
+            <span class="text-muted-color">{{ run.startedAt | localDateTime }}</span>
+          }
+        </div>
+      </p-accordion-header>
+      <p-accordion-content class="overflow-hidden">
+        <div class="flex min-w-0 flex-col gap-3">
+          @if (run.verdictReason) {
+            @if (run.role === AgentRole.Planner) {
+              <span class="text-muted-color">{{ 'MAINTENANCE.RUN_DECISION' | translate }}</span>
+            }
+            <p [class]="finalTextClasses">{{ run.verdictReason }}</p>
+          }
+          @if (run.state === AgentRunState.Skipped) {
+            @if (run.skipReason) {
+              <p>{{ skipReasonLabel(run.skipReason) }}</p>
+            }
+          } @else {
+            <small class="text-muted-color">
+              {{
+                'MAINTENANCE.RUN_META'
+                  | translate: { model: run.model ?? '-', input: run.inputTokens, output: run.outputTokens }
+              }}
+            </small>
+            @for (call of toolCalls()[run.id] ?? []; track call.sequence) {
+              <div class="flex min-w-0 flex-col gap-1 rounded border border-surface p-2">
+                <div class="flex min-w-0 flex-wrap items-center gap-2">
+                  <span class="font-semibold">{{ call.sequence }}. {{ toolLabel(call.toolName) }}</span>
+                  <p-tag
+                    [severity]="call.outcome === ToolCallOutcome.Succeeded ? 'success' : 'danger'"
+                    [value]="outcomeLabel(call.outcome)"
+                  />
+                  <span class="text-muted-color">
+                    {{ call.durationMilliseconds }} {{ 'MAINTENANCE.MILLISECONDS' | translate }}
+                  </span>
+                </div>
+                @for (line of summaryLines(call); track $index) {
+                  <span class="min-w-0 break-words">{{ line }}</span>
+                }
+                <p-panel
+                  class="min-w-0"
+                  [header]="'MAINTENANCE.TECHNICAL_DETAILS' | translate"
+                  [toggleable]="true"
+                  [collapsed]="true"
+                >
+                  <div class="flex min-w-0 flex-col gap-1">
+                    <span class="text-muted-color">{{ 'MAINTENANCE.ARGUMENTS' | translate }}</span>
+                    <pre class="m-0 min-w-0 text-sm break-words whitespace-pre-wrap">{{
+                      formatPayload(call.arguments)
+                    }}</pre>
+                    <span class="text-muted-color">{{ 'MAINTENANCE.RESULT' | translate }}</span>
+                    <pre class="m-0 min-w-0 text-sm break-words whitespace-pre-wrap">{{
+                      formatPayload(call.result)
+                    }}</pre>
+                  </div>
+                </p-panel>
+              </div>
+            } @empty {
+              <small class="text-muted-color">
+                {{ (toolCalls()[run.id] ? 'MAINTENANCE.NO_TOOL_CALLS' : 'MAINTENANCE.LOADING_TOOL_CALLS') | translate }}
+              </small>
+            }
+          }
+        </div>
+      </p-accordion-content>
+    </p-accordion-panel>
+  }
+</p-accordion>
+<p-paginator
+  class="flex-none"
+  [first]="offset()"
+  [rows]="limit()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="false"
+  (onPageChange)="onPage($event)"
+/>

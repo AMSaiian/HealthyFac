@@ -52,6 +52,11 @@ const METRIC: MetricDraftDetail = {
   min: null,
   max: null,
   states: null,
+  warningLow: null,
+  warningHigh: null,
+  alarmLow: null,
+  alarmHigh: null,
+  behavior: null,
 };
 
 const STATUS: StatusDraftDetail = {
@@ -64,7 +69,15 @@ const STATUS: StatusDraftDetail = {
 };
 
 function group(overrides: Partial<AttemptDraftGroup> = {}): AttemptDraftGroup {
-  return { machineId: 'm1', machineName: 'Lathe', machineDraft: null, metrics: [], statuses: [], ...overrides };
+  return {
+    machineId: 'm1',
+    machineName: 'Lathe',
+    machineDraft: null,
+    metrics: [],
+    statuses: [],
+    phases: [],
+    ...overrides,
+  };
 }
 
 describe('machineReason', () => {
@@ -235,5 +248,78 @@ describe('chunk', () => {
 
   it('chunk_WithNoItems_ReturnsNoParts', () => {
     expect(chunk([], 200)).toEqual([]);
+  });
+});
+
+describe('needsReviewReasons phase drafts', () => {
+  const PHASE = {
+    id: 'ph',
+    state: DraftState.Pending,
+    sourceLocation: null,
+    code: 'idle',
+    name: 'Idle',
+    description: null,
+    priority: 1,
+    isTracked: true,
+    conditions: [],
+    limits: [],
+  };
+
+  const CONDITION = {
+    metricDefinitionId: 'def',
+    metricDraftId: null,
+    statusDefinitionId: null,
+    statusDraftId: null,
+    operator: 'greaterThan',
+    value: 1,
+    upperValue: null,
+    states: null,
+  };
+  const COMPLETE = { ...PHASE, conditions: [CONDITION] };
+  const WAITING = { ...PHASE, conditions: [{ ...CONDITION, metricDefinitionId: null, metricDraftId: 'mt' }] };
+
+  it.each([
+    ['definitions only', COMPLETE, null],
+    ['a pending metric draft', WAITING, QuickReason.PhaseWaitsForDrafts],
+    ['no condition', PHASE, QuickReason.PhaseValues],
+    ['no priority', { ...COMPLETE, priority: null }, QuickReason.PhaseValues],
+  ])('needsReviewReasons_PhaseDraftWith_%s_GivesItsReason', (_name, phase, reason) => {
+    const reasons = needsReviewReasons({ groups: [group({ phases: [phase] })] }, undefined);
+
+    expect(reasons['ph']).toBe(reason);
+  });
+
+  it('groupReason_ForAGroupWithOnlyAnApplicablePhase_AllowsApplyAll', () => {
+    const reason = groupReason(group({ metrics: [], statuses: [], phases: [COMPLETE] }), undefined);
+
+    expect(reason).toBeNull();
+  });
+
+  it('groupReason_ForAGroupWithOnlyAWaitingPhase_HasNothingToApply', () => {
+    const reason = groupReason(group({ metrics: [], statuses: [], phases: [WAITING] }), undefined);
+
+    expect(reason).toBe(QuickReason.NothingToApply);
+  });
+
+  it('needsReviewReasons_PhaseDraftOfAPendingCreateMachine_WaitsForTheMachine', () => {
+    const reasons = needsReviewReasons({ groups: [group({ machineId: null, phases: [PHASE] })] }, undefined);
+
+    expect(reasons['ph']).toBe(QuickReason.MachinePending);
+  });
+
+  it('needsReviewReasons_PhaseDraftAwaitingItsTarget_ReturnsTheAwaitingReason', () => {
+    const phase = { ...PHASE, state: DraftState.AwaitingTarget };
+
+    const reasons = needsReviewReasons({ groups: [group({ phases: [phase] })] }, undefined);
+
+    expect(reasons['ph']).toBe(QuickReason.AwaitingTarget);
+  });
+
+  it('needsReviewReasons_AppliedPhaseDraft_HasNoReason', () => {
+    const phase = { ...PHASE, state: DraftState.Applied };
+
+    const reasons = needsReviewReasons({ groups: [group({ phases: [phase] })] }, undefined);
+
+    expect(reasons['ph']).toBeUndefined();
   });
 });

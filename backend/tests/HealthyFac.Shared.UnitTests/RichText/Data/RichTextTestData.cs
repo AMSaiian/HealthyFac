@@ -2,7 +2,7 @@ namespace HealthyFac.Shared.UnitTests.RichText.Data;
 
 public static class RichTextTestData
 {
-    public const string FileId = "v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    public const string FileId = "v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
     public static TheoryData<string> FileImageSamples => new()
     {

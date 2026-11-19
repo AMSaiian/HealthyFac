@@ -11,7 +11,7 @@ public sealed class AttemptDraftGrouperTests
         var metrics = new[] { Draft(id: "t1", targetMachineId: "m1", targetMachineDraftId: null, entryId: "e1") };
         var statuses = new[] { Draft(id: "t2", targetMachineId: null, targetMachineDraftId: "d2", entryId: "e2") };
 
-        var groups = AttemptDraftGrouper.Group([MachineGroup, CreateGroup], metrics, statuses);
+        var groups = AttemptDraftGrouper.Group([MachineGroup, CreateGroup], metrics, statuses, []);
 
         groups.Should().HaveCount(expected: 2);
         Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
@@ -24,7 +24,7 @@ public sealed class AttemptDraftGrouperTests
     {
         var metrics = new[] { Draft(id: "t1", targetMachineId: "m9", targetMachineDraftId: null, entryId: "e1") };
 
-        var groups = AttemptDraftGrouper.Group([MachineGroup], metrics, []);
+        var groups = AttemptDraftGrouper.Group([MachineGroup], metrics, [], []);
 
         groups.Should().HaveCount(expected: 2);
         groups[index: 1].LookupMachineId.Should().Be(expected: "m9");
@@ -42,7 +42,7 @@ public sealed class AttemptDraftGrouperTests
             Draft(id: "t3", targetMachineId: null, targetMachineDraftId: null, entryId: "e6"),
         };
 
-        var groups = AttemptDraftGrouper.Group([], metrics, statuses);
+        var groups = AttemptDraftGrouper.Group([], metrics, statuses, []);
 
         groups.Should().HaveCount(expected: 2);
         Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
@@ -57,10 +57,22 @@ public sealed class AttemptDraftGrouperTests
     {
         var metrics = new[] { Draft(id: "t1", targetMachineId: null, targetMachineDraftId: null, entryId: "d2") };
 
-        var groups = AttemptDraftGrouper.Group([CreateGroup], metrics, []);
+        var groups = AttemptDraftGrouper.Group([CreateGroup], metrics, [], []);
 
         groups.Should().ContainSingle();
         Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
+    }
+
+    [Fact]
+    public void Group_WithAPhaseDraftOfATargetMachine_PutsItInThePhasesOfTheGroupOfTheMachine()
+    {
+        var phases = new[] { Draft(id: "p1", targetMachineId: "m1", targetMachineDraftId: null, entryId: "e1") };
+
+        var groups = AttemptDraftGrouper.Group([MachineGroup], [], [], phases);
+
+        groups.Should().ContainSingle();
+        Ids(groups[index: 0], list: "phases").Should().Equal("p1");
+        Ids(groups[index: 0], list: "metrics").Should().BeEmpty();
     }
 
     private static string[] Ids(AttemptGroup group, string list) =>

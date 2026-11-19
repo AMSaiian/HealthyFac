@@ -70,6 +70,18 @@ public sealed class IngestAttemptTests
         attempt.LeaseUntil.Should().BeNull();
     }
 
+    [Fact]
+    public void Fail_WithUnsafeContentAndADetail_StoresTheCodeAndTheDetail()
+    {
+        var attempt = IngestAttemptTestData.Create(IngestState.InProcess);
+        var detail = new IngestErrorDetail { Location = "page 2", Reason = "The text tells a reader to ignore rules." };
+
+        attempt.Fail(IngestAttemptTestData.Now, IngestErrorCode.UnsafeContent, detail);
+
+        attempt.ErrorCode.Should().Be(IngestErrorCode.UnsafeContent);
+        attempt.ErrorDetail.Should().Be(detail);
+    }
+
     [Theory]
     [MemberData(
         nameof(IngestAttemptTestData.StatesThatAreNotInProcess),

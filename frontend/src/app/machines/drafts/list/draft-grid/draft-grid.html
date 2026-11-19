@@ -85,6 +85,7 @@
                       >
                         <ng-template #selectedItem>
                           <hf-chip-summary
+                            appearance="text"
                             [chips]="labelChips(value ?? [], kindOptions())"
                             [placeholder]="'DRAFTS.LIST.FILTERS.KIND_PLACEHOLDER' | translate"
                           />

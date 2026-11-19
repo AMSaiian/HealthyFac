@@ -22,6 +22,13 @@ export class LookupsApi {
     return this._lookup(MACHINES_LOOKUP_URL, search);
   }
 
+  /** The names of the machines with the IDs, also deleted ones. Send at most 100 IDs. */
+  machinesByIds(ids: readonly string[]): Observable<LookupOption[]> {
+    return this._http
+      .post<{ items: LookupOption[] }>(MACHINES_LOOKUP_URL, { ids })
+      .pipe(map((response) => response.items));
+  }
+
   private _lookup(url: string, search: string): Observable<LookupOption[]> {
     return this._http.post<{ items: LookupOption[] }>(url, { search }).pipe(map((response) => response.items));
   }

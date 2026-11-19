@@ -6,10 +6,16 @@ using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.Enumerations;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.Evaluation;
+using HealthyFac.Telemetry.Domain.Evaluation.Phases;
+using HealthyFac.Telemetry.Domain.Evaluation.Rules;
+using HealthyFac.Telemetry.Domain.Evaluation.Statistics;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.MetricUnits;
+using HealthyFac.Telemetry.Domain.OperatingPhases;
+using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +32,18 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
 {
     public DbSet<MachineRegistration> MachineRegistrations => Set<MachineRegistration>();
 
+    public DbSet<OperatingPhase> OperatingPhases => Set<OperatingPhase>();
+
+    public DbSet<MachineEvaluation> MachineEvaluations => Set<MachineEvaluation>();
+
+    public DbSet<MetricStatistics> MetricStatistics => Set<MetricStatistics>();
+
+    public DbSet<RuleStreak> RuleStreaks => Set<RuleStreak>();
+
+    public DbSet<PhaseInterval> PhaseIntervals => Set<PhaseInterval>();
+
+    public DbSet<SignalEpisode> SignalEpisodes => Set<SignalEpisode>();
+
     public DbSet<MetricDefinition> MetricDefinitions => Set<MetricDefinition>();
 
     public DbSet<MetricSchemaRevision> MetricSchemaRevisions => Set<MetricSchemaRevision>();
@@ -37,6 +55,8 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
     public DbSet<MetricDefinitionDraft> MetricDefinitionDrafts => Set<MetricDefinitionDraft>();
 
     public DbSet<StatusDefinitionDraft> StatusDefinitionDrafts => Set<StatusDefinitionDraft>();
+
+    public DbSet<OperatingPhaseDraft> OperatingPhaseDrafts => Set<OperatingPhaseDraft>();
 
     public DbSet<ReceivedMessage> ReceivedMessages => Set<ReceivedMessage>();
 
@@ -101,6 +121,15 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
+        configurationBuilder.HaveEnumerationConversion<MachineRegistrationState>();
+        configurationBuilder.HaveEnumerationConversion<MetricBehavior>();
+        configurationBuilder.HaveEnumerationConversion<PhaseConditionOperator>();
+        configurationBuilder.HaveEnumerationConversion<SignalRule>();
+        configurationBuilder.HaveEnumerationConversion<SignalSeverity>();
+        configurationBuilder.HaveEnumerationConversion<SignalEpisodeState>();
+        configurationBuilder.ComplexProperties<MetricLimits>();
+        configurationBuilder.ComplexProperties<SignalSnapshot>();
+        configurationBuilder.ComplexProperties<PhaseTracking>();
         configurationBuilder.HaveEnumerationConversion<StatusSeverity>();
         configurationBuilder.HaveEnumerationConversion<MetricValueKind>();
         configurationBuilder.HaveEnumerationConversion<DefinitionDraftState>();

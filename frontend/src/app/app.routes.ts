@@ -24,6 +24,11 @@ export const routes: Routes = [
     loadChildren: () => import('@work-orders/work-orders.routes').then((m) => m.WORK_ORDERS_ROUTES),
   },
   {
+    path: 'maintenance',
+    canActivate: [authGuard, companyGuard, permissionGuard(Permission.CasesRead)],
+    loadChildren: () => import('@maintenance/maintenance.routes').then((m) => m.MAINTENANCE_ROUTES),
+  },
+  {
     path: 'employees',
     canActivate: [authGuard, companyGuard],
     loadChildren: () => import('@employees/employees.routes').then((m) => m.EMPLOYEES_ROUTES),

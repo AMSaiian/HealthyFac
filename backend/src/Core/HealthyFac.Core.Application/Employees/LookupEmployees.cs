@@ -74,6 +74,7 @@ public sealed class LookupEmployeesRequestHandler(ICoreDbContext dbContext)
             {
                 Id = employee.Id,
                 DisplayName = employee.FirstName + " " + employee.LastName,
+                IsDeleted = employee.DeletedAt != null,
             })
             .ToListAsync(cancellationToken);
 

@@ -28,6 +28,12 @@ export const SHELL_NAV_ITEMS: readonly ShellNavItem[] = [
     path: '/work-orders',
     permission: Permission.WorkOrdersRead,
   },
+  {
+    labelKey: 'TITLES.MAINTENANCE',
+    icon: 'pi pi-wrench',
+    path: '/maintenance/cases',
+    permission: Permission.CasesRead,
+  },
   { labelKey: 'TITLES.EMPLOYEES', icon: 'pi pi-users', path: '/employees', permission: Permission.EmployeesRead },
   {
     labelKey: 'TITLES.COMPANY_SCHEDULE',

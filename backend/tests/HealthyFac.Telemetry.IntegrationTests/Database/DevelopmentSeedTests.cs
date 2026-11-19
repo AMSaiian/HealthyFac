@@ -27,6 +27,7 @@ public sealed class DevelopmentSeedTests(TelemetryDatabaseFixture fixture)
                 {
                     GatewayId = DevelopmentSeedTestData.FirstGatewayId,
                     StatusDefinitionCount = DevelopmentSeedTestData.StatusDefinitionsPerMachine,
+                    HasEvaluation = true,
                 });
     }
 

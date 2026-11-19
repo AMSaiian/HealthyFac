@@ -74,7 +74,8 @@ public sealed class SearchDefinitionDraftsPreHandlerCheck(
 }
 
 /// <summary>
-/// Reads one page of the metric and status drafts in the scope, in one query. The pending drafts come first unless
+/// Reads one page of the metric, status, and phase drafts in the scope, in one query. The pending drafts come first
+/// unless
 /// the request names a sort.
 /// </summary>
 /// <param name="dbContext">Reads the drafts.</param>
@@ -92,6 +93,7 @@ public sealed class SearchDefinitionDraftsRequestHandler(ITelemetryDbContext dbC
             .Union(
                 _dbContext.MetricDefinitionDrafts.AsNoTracking(),
                 _dbContext.StatusDefinitionDrafts.AsNoTracking(),
+                _dbContext.OperatingPhaseDrafts.AsNoTracking(),
                 request.CompanyId,
                 request.MachineId,
                 request.AttemptId)

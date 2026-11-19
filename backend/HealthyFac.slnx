@@ -42,6 +42,7 @@
   </Folder>
   <Folder Name="/src/Telemetry/">
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Application/HealthyFac.Telemetry.Application.csproj" />
+    <Project Path="src/Telemetry/HealthyFac.Telemetry.Contracts/HealthyFac.Telemetry.Contracts.csproj" />
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Domain/HealthyFac.Telemetry.Domain.csproj" />
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Infrastructure/HealthyFac.Telemetry.Infrastructure.csproj" />
     <Project Path="src/Telemetry/HealthyFac.Telemetry.Messaging/HealthyFac.Telemetry.Messaging.csproj" />

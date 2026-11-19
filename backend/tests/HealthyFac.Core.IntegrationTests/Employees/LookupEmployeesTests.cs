@@ -35,6 +35,7 @@ public sealed class LookupEmployeesTests(CoreDatabaseFixture fixture)
                 {
                     Id = ann.EmployeeId,
                     DisplayName = $"{LookupEmployeesTestData.AnnFirstName} {LookupEmployeesTestData.LastName}",
+                    IsDeleted = false,
                 });
     }
 

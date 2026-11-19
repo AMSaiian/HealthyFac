@@ -1,4 +1,4 @@
-import { type MetricUnitsResponse, MetricValueKind } from '@machines/metrics/metric-definition';
+import { MetricBehavior, type MetricUnitsResponse, MetricValueKind } from '@machines/metrics/metric-definition';
 import { unitValue } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 
 export const KIND_LABEL_KEYS: Readonly<Record<MetricValueKind, string>> = {
@@ -10,6 +10,15 @@ export const KIND_LABEL_KEYS: Readonly<Record<MetricValueKind, string>> = {
 export const KIND_OPTIONS: { readonly value: MetricValueKind; readonly labelKey: string }[] = Object.values(
   MetricValueKind,
 ).map((value) => ({ value, labelKey: KIND_LABEL_KEYS[value] }));
+
+export const BEHAVIOR_LABEL_KEYS: Readonly<Record<MetricBehavior, string>> = {
+  [MetricBehavior.Level]: 'METRICS.BEHAVIORS.LEVEL',
+  [MetricBehavior.Counter]: 'METRICS.BEHAVIORS.COUNTER',
+};
+
+export const BEHAVIOR_OPTIONS: { readonly value: MetricBehavior; readonly labelKey: string }[] = Object.values(
+  MetricBehavior,
+).map((value) => ({ value, labelKey: BEHAVIOR_LABEL_KEYS[value] }));
 
 export interface UnitOption {
   /** The abbreviation. It is empty for a unit without one, and the view shows a translated label then. */

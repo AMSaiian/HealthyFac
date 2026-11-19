@@ -7,7 +7,9 @@ import type { MetricDraftDetail } from '@machines/drafts/draft';
 import {
   type ApplyMetricDefinitionsBody,
   type CreatedMetricDefinition,
+  MetricBehavior,
   type MetricDefinition,
+  type MetricLimitValues,
   type MetricUnitReference,
   type MetricUnitsResponse,
   MetricValueKind,
@@ -45,6 +47,11 @@ export const EMPTY_METRIC_VALUE: MetricFormValue = {
   unit: '',
   min: null,
   max: null,
+  warningLow: null,
+  warningHigh: null,
+  alarmLow: null,
+  alarmHigh: null,
+  behavior: MetricBehavior.Level,
   states: [],
 };
 
@@ -66,6 +73,11 @@ export function toFormValue(definition: MetricDefinition): MetricFormValue {
     unit: unitValue(definition.unit),
     min: definition.min,
     max: definition.max,
+    warningLow: definition.warningLow,
+    warningHigh: definition.warningHigh,
+    alarmLow: definition.alarmLow,
+    alarmHigh: definition.alarmHigh,
+    behavior: definition.behavior,
     states: [...(definition.states ?? [])],
   };
 }
@@ -117,6 +129,18 @@ function isStateSet(value: MetricFormValue): boolean {
   return value.valueKind === MetricValueKind.StateSet;
 }
 
+/** The limits and the behavior go to the API for a numeric metric only. */
+function limitsOf(value: MetricFormValue): MetricLimitValues & { readonly behavior: MetricBehavior | null } {
+  const isLimited = isNumeric(value);
+  return {
+    warningLow: isLimited ? value.warningLow : null,
+    warningHigh: isLimited ? value.warningHigh : null,
+    alarmLow: isLimited ? value.alarmLow : null,
+    alarmHigh: isLimited ? value.alarmHigh : null,
+    behavior: isLimited ? value.behavior : null,
+  };
+}
+
 function toCreated(item: MetricItem): CreatedMetricDefinition {
   const value = item.value;
   return {
@@ -127,6 +151,7 @@ function toCreated(item: MetricItem): CreatedMetricDefinition {
     unit: isNumeric(value) ? parseUnitValue(value.unit) : null,
     min: isNumeric(value) ? value.min : null,
     max: isNumeric(value) ? value.max : null,
+    ...limitsOf(value),
     states: isStateSet(value) ? value.states : null,
     draftId: item.draftId,
   };
@@ -139,6 +164,7 @@ function toUpdated(item: MetricItem): UpdatedMetricDefinition {
     description: item.value.description,
     min: isNumeric(item.value) ? item.value.min : null,
     max: isNumeric(item.value) ? item.value.max : null,
+    ...limitsOf(item.value),
     states: isStateSet(item.value) ? item.value.states : null,
     draftId: item.draftId,
   };
@@ -239,6 +265,10 @@ export function buildExamplePayload(items: readonly MetricItem[], sampledAt: str
   return JSON.stringify({ sampledAt, metrics, statuses: [] }, null, 2);
 }
 
+function parseBehavior(value: string | null): MetricBehavior | null {
+  return (Object.values(MetricBehavior) as string[]).includes(value ?? '') ? (value as MetricBehavior) : null;
+}
+
 function parseValueKind(value: string | null): MetricValueKind {
   return (Object.values(MetricValueKind) as string[]).includes(value ?? '')
     ? (value as MetricValueKind)
@@ -293,6 +323,11 @@ export function stageMetricDrafts(
           description: draft.description ?? item.value.description,
           min: draft.min ?? item.value.min,
           max: draft.max ?? item.value.max,
+          warningLow: draft.warningLow ?? item.value.warningLow,
+          warningHigh: draft.warningHigh ?? item.value.warningHigh,
+          alarmLow: draft.alarmLow ?? item.value.alarmLow,
+          alarmHigh: draft.alarmHigh ?? item.value.alarmHigh,
+          behavior: parseBehavior(draft.behavior) ?? item.value.behavior,
           states: draft.states === null ? item.value.states : [...draft.states],
         },
         draftId: draft.id,
@@ -313,6 +348,11 @@ export function stageMetricDrafts(
             unit: unitFromCatalog(draft.quantityKindName, draft.unitName, catalog),
             min: draft.min,
             max: draft.max,
+            warningLow: draft.warningLow,
+            warningHigh: draft.warningHigh,
+            alarmLow: draft.alarmLow,
+            alarmHigh: draft.alarmHigh,
+            behavior: parseBehavior(draft.behavior) ?? MetricBehavior.Level,
             states: draft.states === null ? [] : [...draft.states],
           },
           isDeleted: false,

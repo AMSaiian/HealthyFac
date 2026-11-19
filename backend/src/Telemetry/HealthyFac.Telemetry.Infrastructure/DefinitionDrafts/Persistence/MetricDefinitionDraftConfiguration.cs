@@ -42,6 +42,9 @@ public class MetricDefinitionDraftConfiguration : IEntityTypeConfiguration<Metri
         builder.Property(draft => draft.ValueKind)
             .HasMaxLength(DraftMessageLimits.ValueKinds.All.Max(kind => kind.Length));
 
+        builder.Property(draft => draft.Behavior)
+            .HasMaxLength(DraftMessageLimits.Behaviors.All.Max(behavior => behavior.Length));
+
         builder.Property(draft => draft.QuantityKindName)
             .HasMaxLength(DraftMessageLimits.Metric.UnitNameMaxLength);
 
@@ -72,6 +75,14 @@ public class MetricDefinitionDraftConfiguration : IEntityTypeConfiguration<Metri
         {
             table.HasCheckConstraint(DefinitionDraftCheckNames.MetricTarget, DefinitionDraftCheckNames.TargetSql);
             table.HasCheckConstraint(DefinitionDraftCheckNames.MetricRange, DefinitionDraftCheckNames.RangeSql);
+            table.HasCheckConstraint(
+                DefinitionDraftCheckNames.MetricWarningLow, DefinitionDraftCheckNames.WarningLowSql);
+            table.HasCheckConstraint(
+                DefinitionDraftCheckNames.MetricWarningHigh,
+                DefinitionDraftCheckNames.WarningHighSql);
+            table.HasCheckConstraint(
+                DefinitionDraftCheckNames.MetricBehavior,
+                CheckConstraintSql.AllowedValues(column: "behavior", DraftMessageLimits.Behaviors.All));
             table.HasCheckConstraint(
                 DefinitionDraftCheckNames.MetricValueKind,
                 CheckConstraintSql.AllowedValues(column: "value_kind", DraftMessageLimits.ValueKinds.All));

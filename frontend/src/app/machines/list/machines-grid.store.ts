@@ -27,6 +27,8 @@ import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const MACHINES_PATH = '/machines';
 const STATUSES_PATH = 'statuses';
+const PHASES_PATH = 'phases';
+const SIGNALS_PATH = 'signals';
 const METRICS_PATH = 'metrics';
 const FILES_PATH = 'files';
 
@@ -47,6 +49,8 @@ export const MachinesGridStore = signalStore(
     canReadStatuses: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsRead)),
     canReadFiles: computed(() => store._auth.hasPermission(Permission.FilesRead)),
     canReadMetrics: computed(() => store._auth.hasPermission(Permission.MetricDefinitionsRead)),
+    canReadSignals: computed(() => store._auth.hasPermission(Permission.SignalsRead)),
+    canReadPhases: computed(() => store._auth.hasPermission(Permission.OperatingPhasesRead)),
     canReadDrafts: computed(() => store._auth.hasPermission(Permission.DraftsRead)),
   })),
   withProps((store) => ({
@@ -89,6 +93,12 @@ export const MachinesGridStore = signalStore(
       },
       openMetrics(id: string): void {
         void store._router.navigate([MACHINES_PATH, id, METRICS_PATH]);
+      },
+      openSignals(id: string): void {
+        void store._router.navigate([MACHINES_PATH, id, SIGNALS_PATH]);
+      },
+      openPhases(id: string): void {
+        void store._router.navigate([MACHINES_PATH, id, PHASES_PATH]);
       },
       openFiles(id: string): void {
         void store._router.navigate([MACHINES_PATH, id, FILES_PATH]);

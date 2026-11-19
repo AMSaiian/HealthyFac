@@ -1,7 +1,7 @@
 import { collectFileIds, imageAltOf, MISSING_IMAGE_CLASS, toDisplayHtml } from './rich-text-images';
 
-const ID_A = 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-const ID_B = 'v1.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+const ID_A = 'v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const ID_B = 'v1_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
 
 describe('collectFileIds', () => {
   it('collectFileIds_WithNoImages_ReturnsNothing', () => {

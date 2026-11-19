@@ -11,6 +11,7 @@ public static class WorkOrderErrors
     {
         public const string CompanyIdRequired = "CompanyId is required.";
         public const string WorkOrderIdRequired = "WorkOrderId is required.";
+        public const string MachineIdRequired = "MachineId is required.";
         public const string TitleRequired = "The title is required.";
         public const string AssigneeIdRequired = "AssigneeId is required.";
         public const string FileIdsRequired = "The file list is required.";

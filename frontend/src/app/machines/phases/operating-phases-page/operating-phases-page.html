@@ -1,0 +1,57 @@
+<header class="flex flex-none items-center justify-between">
+  <div class="flex items-center gap-2">
+    <a
+      pButton
+      [pTooltip]="'ACTIONS.BACK_TO_MACHINES' | translate"
+      tooltipPosition="bottom"
+      routerLink="/machines"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [attr.aria-label]="'ACTIONS.BACK_TO_MACHINES' | translate"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h1 class="text-2xl font-bold">{{ 'PHASES.TITLE' | translate }} {{ store.machine()?.name }}</h1>
+  </div>
+  <div class="flex items-center gap-2">
+    @if (store.canWrite()) {
+      <button
+        pButton
+        [pTooltip]="'PHASES.TOOLTIPS.ADD_NEW' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        (click)="store.requestCreate()"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'PHASES.ADD_NEW' | translate }}
+      </button>
+    }
+  </div>
+</header>
+@if (store.canWrite() && store.items().length > 1) {
+  <small class="flex-none text-muted-color">{{ 'PHASES.ORDER_HINT' | translate }}</small>
+}
+@if (showEmpty()) {
+  <hf-empty-state
+    icon="pi pi-sitemap"
+    messageKey="PHASES.EMPTY"
+  />
+} @else if (store.items().length === 0) {
+  <div class="flex min-h-48 flex-1">
+    @if (showSpinner()) {
+      <hf-loading-spinner />
+    }
+  </div>
+} @else {
+  <hf-phase-table
+    [rows]="store.items()"
+    [canWrite]="store.canWrite()"
+    (reordered)="store.reorder($event.from, $event.to)"
+    (updateRequested)="store.requestUpdate($event)"
+    (deleteRequested)="store.requestDelete($event)"
+  />
+}
+@if (store.editor()) {
+  <hf-phase-dialog-host />
+}

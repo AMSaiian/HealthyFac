@@ -51,7 +51,7 @@ describe('WorkOrdersGridStore', () => {
   const machines = vi.fn();
 
   async function setup(
-    options: { canManage?: boolean; isListHidden?: boolean } = {},
+    options: { canManage?: boolean; canReadDrafts?: boolean; isListHidden?: boolean } = {},
   ): Promise<InstanceType<typeof WorkOrdersGridStore>> {
     TestBed.configureTestingModule({
       providers: [
@@ -61,7 +61,11 @@ describe('WorkOrdersGridStore', () => {
         { provide: ActionStore, useValue: { dispatch, lastResult } },
         {
           provide: AuthStore,
-          useValue: { hasPermission: (permission: string) => permission !== 'work-orders:manage' || options.canManage },
+          useValue: {
+            hasPermission: (permission: string) =>
+              (permission !== 'work-orders:manage' || options.canManage === true) &&
+              (permission !== 'drafts:read' || options.canReadDrafts === true),
+          },
         },
         {
           provide: CLOCK,
@@ -96,6 +100,15 @@ describe('WorkOrdersGridStore', () => {
 
     return search.mock.calls.length - callsBefore;
   }
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])('canReadDrafts_WithTheDraftsReadPermission%s_Is%s', async (hasPermission, expected) => {
+    const store = await setup({ canReadDrafts: hasPermission });
+
+    expect(store.canReadDrafts()).toBe(expected);
+  });
 
   it('workOrders_WhileTheListIsHidden_SendsNoSearchAndSendsOneWhenItShows', async () => {
     const store = await setup({ isListHidden: true });

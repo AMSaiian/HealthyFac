@@ -165,6 +165,8 @@ public sealed class ApplyMachineDraftRequestHandler(
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
                 Name = machine.Name,
+                ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
+                GoLiveStartsAt = MachineGoLiveRules.StartOfDayUtc(machine.ExpectedGoLiveOn, zone),
             });
 
         draft.MarkApplied(machine.Id);

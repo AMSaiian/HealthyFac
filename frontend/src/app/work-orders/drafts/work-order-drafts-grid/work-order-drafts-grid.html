@@ -1,0 +1,167 @@
+<p-table
+  [pt]="grid.tablePt()"
+  dataKey="id"
+  sortMode="single"
+  scrollHeight="flex"
+  [stripedRows]="true"
+  [value]="grid.tableRows()"
+  [columns]="grid.tableColumns()"
+  [lazy]="true"
+  [lazyLoadOnInit]="false"
+  [paginator]="true"
+  [rows]="limit()"
+  [first]="offset()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="{first} - {last} / {totalRecords}"
+  [scrollable]="true"
+  [reorderableColumns]="true"
+  [sortField]="sort()?.column"
+  [sortOrder]="grid.sortOrder()"
+  [tableStyle]="tableStyle()"
+  [filters]="grid.tableFilters()"
+  (onPage)="grid.onPage($event)"
+  (onSort)="grid.onSort($event)"
+  (onColReorder)="grid.onColumnReorder($event)"
+>
+  <ng-template
+    #header
+    let-columns
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <th
+          pReorderableColumn
+          [pSortableColumn]="column"
+          [pSortableColumnDisabled]="!grid.isSortable(column)"
+        >
+          <div class="flex items-center gap-1">
+            <span>{{ grid.columnLabelKey(column) | translate }}</span>
+            @if (grid.isSortable(column)) {
+              <p-sort-icon [field]="column" />
+            }
+          </div>
+        </th>
+      }
+      <th
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        <hf-column-chooser
+          [columns]="allColumns"
+          [visible]="grid.tableColumns()"
+          [labelKeys]="columnLabelKeys"
+          (toggled)="grid.onColumnToggle($any($event.column), $event.isVisible)"
+        />
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-draft
+    let-columns="columns"
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <td>
+          @if (grid.showSkeleton()) {
+            <p-skeleton />
+          } @else {
+            @switch (column) {
+              @case (WorkOrderDraftColumn.Title) {
+                {{ draft.title }}
+              }
+              @case (WorkOrderDraftColumn.Machine) {
+                @let machine = machineLabel(draft);
+                {{ machine.name }}
+                @if (machine.isDeleted) {
+                  <span class="text-muted-color">{{ 'MACHINES.DELETED_SUFFIX' | translate }}</span>
+                }
+              }
+              @case (WorkOrderDraftColumn.Priority) {
+                {{ priorityLabel(draft.priority) }}
+              }
+              @case (WorkOrderDraftColumn.Category) {
+                {{ categoryLabel(draft.category) }}
+              }
+              @case (WorkOrderDraftColumn.Estimate) {
+                {{ draft.estimateMinutes }} {{ 'WORK_ORDER_DRAFTS.MINUTES' | translate }}
+              }
+              @case (WorkOrderDraftColumn.Case) {
+                <a
+                  class="text-primary"
+                  [routerLink]="['/maintenance/cases', draft.caseId]"
+                >
+                  {{ 'WORK_ORDER_DRAFTS.OPEN_CASE' | translate }}
+                </a>
+              }
+              @case (WorkOrderDraftColumn.ProposedAt) {
+                {{ draft.proposedAt | localDateTime }}
+              }
+            }
+          }
+        </td>
+      }
+      <td
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        @if (grid.showSkeleton()) {
+          <p-skeleton />
+        } @else if (hasRowActions()) {
+          <button
+            pButton
+            [pTooltip]="'ACTIONS.ROW_ACTIONS' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [attr.aria-label]="'ACTIONS.ROW_ACTIONS' | translate"
+            (click)="rowMenu.open($event, draft, menu)"
+          >
+            <i class="pi pi-ellipsis-v"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr class="h-full">
+      <td
+        class="h-full"
+        [attr.colspan]="columns().length + 1"
+      >
+        @if (grid.showEmpty()) {
+          <hf-empty-state
+            icon="pi pi-inbox"
+            messageKey="WORK_ORDER_DRAFTS.EMPTY"
+          />
+        }
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-menu
+  #menu
+  appendTo="body"
+  [popup]="true"
+  [model]="menuItems()"
+>
+  <ng-template
+    #item
+    let-item
+  >
+    <div
+      class="p-menu-item-link flex items-center gap-2 px-3 py-2"
+      [pTooltip]="item.tooltip"
+      [tooltipOptions]="item.tooltipOptions"
+    >
+      <span [class]="item.icon"></span>
+      <span>{{ item.label }}</span>
+    </div>
+  </ng-template>
+</p-menu>

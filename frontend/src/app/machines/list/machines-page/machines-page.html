@@ -30,6 +30,8 @@
   [canReadStatuses]="store.canReadStatuses()"
   [canReadFiles]="store.canReadFiles()"
   [canReadMetrics]="store.canReadMetrics()"
+  [canReadPhases]="store.canReadPhases()"
+  [canReadSignals]="store.canReadSignals()"
   [canReadDrafts]="store.canReadDrafts()"
   (filterChange)="store.setFilter($event)"
   (sortChange)="store.setSort($event)"
@@ -41,6 +43,8 @@
   (statusesRequested)="store.openStatuses($event)"
   (filesRequested)="store.openFiles($event)"
   (metricsRequested)="store.openMetrics($event)"
+  (phasesRequested)="store.openPhases($event)"
+  (signalsRequested)="store.openSignals($event)"
   (draftsRequested)="store.requestDrafts($event)"
   (stateChangeRequested)="store.requestStateChange($event)"
 />

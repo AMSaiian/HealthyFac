@@ -29,8 +29,11 @@ public sealed class IdEncryptionOptionsValidator : AbstractValidator<IdEncryptio
             .ChildRules(key =>
             {
                 key.RuleFor(k => k.Prefix)
+                    .Cascade(CascadeMode.Stop)
                     .NotEmpty()
-                    .WithMessage(IdEncryptionValidationMessages.Prefix.Required);
+                    .WithMessage(IdEncryptionValidationMessages.Prefix.Required)
+                    .Must(prefix => !prefix.Contains(value: '.'))
+                    .WithMessage(IdEncryptionValidationMessages.Prefix.DotNotAllowed);
 
                 key.RuleFor(k => k.Key)
                     .Cascade(CascadeMode.Stop)

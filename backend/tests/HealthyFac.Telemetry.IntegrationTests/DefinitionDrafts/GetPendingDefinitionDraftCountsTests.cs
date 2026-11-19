@@ -1,6 +1,7 @@
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
@@ -25,6 +26,18 @@ public sealed class GetPendingDefinitionDraftCountsTests(TelemetryDatabaseFixtur
         response.Counts.Should().ContainSingle().Which.MachineId.Should().Be(machineId);
         response.Counts[index: 0].Count.Should().Be(expected: 2);
         response.Counts.Select(count => count.MachineId).Should().NotContain(emptyMachineId);
+    }
+
+    [Fact]
+    public async Task GetPendingCounts_WithAMetricDraftAndAPhaseDraft_CountsThePhaseDraftToo()
+    {
+        var tenant = _fixture.ArrangeMachineTenant();
+        var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+        await _fixture.StorePendingPhaseProposalAsync(tenant, machineId);
+
+        var response = await _fixture.GetPendingDefinitionDraftCountsAsync(tenant.CompanyId);
+
+        response.Counts.Should().ContainSingle().Which.Count.Should().Be(expected: 3);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
@@ -17,6 +18,8 @@ public class IngestAttemptConfiguration : IEntityTypeConfiguration<IngestAttempt
     private const int ExtensionMaxLength = 8;
     private const int TraceParentMaxLength = 55;
     private const int WarningMaxLength = 1000;
+
+    private static readonly JsonSerializerOptions ErrorDetailJson = new(JsonSerializerDefaults.Web);
 
     private const string NotNegativeRule = "not_negative";
     private const string ErrorCodeRule = "only_when_failed";
@@ -45,6 +48,12 @@ public class IngestAttemptConfiguration : IEntityTypeConfiguration<IngestAttempt
 
         builder.Property(attempt => attempt.Warning)
             .HasMaxLength(WarningMaxLength);
+
+        builder.Property(attempt => attempt.ErrorDetail)
+            .HasColumnType(typeName: "jsonb")
+            .HasConversion(
+                detail => JsonSerializer.Serialize(detail, ErrorDetailJson),
+                json => JsonSerializer.Deserialize<IngestErrorDetail>(json, ErrorDetailJson));
 
         builder.ConfigureVersioned();
 

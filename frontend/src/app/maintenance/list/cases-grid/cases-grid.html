@@ -1,0 +1,290 @@
+<p-table
+  [pt]="grid.tablePt()"
+  #table
+  dataKey="id"
+  sortMode="single"
+  scrollHeight="flex"
+  [stripedRows]="true"
+  [value]="grid.tableRows()"
+  [columns]="grid.tableColumns()"
+  [lazy]="true"
+  [lazyLoadOnInit]="false"
+  [paginator]="true"
+  [rows]="limit()"
+  [first]="offset()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="{first} - {last} / {totalRecords}"
+  [scrollable]="true"
+  [reorderableColumns]="true"
+  [sortField]="sort()?.column"
+  [sortOrder]="grid.sortOrder()"
+  [tableStyle]="tableStyle()"
+  [filters]="grid.tableFilters()"
+  (onPage)="grid.onPage($event)"
+  (onSort)="grid.onSort($event)"
+  (onColReorder)="grid.onColumnReorder($event)"
+>
+  <ng-template
+    #header
+    let-columns
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <th
+          pReorderableColumn
+          [pSortableColumn]="column"
+          [pSortableColumnDisabled]="!grid.isSortable(column)"
+        >
+          <div class="flex items-center gap-1">
+            <span>{{ grid.columnLabelKey(column) | translate }}</span>
+            @if (grid.isSortable(column)) {
+              <p-sort-icon [field]="column" />
+            }
+            @if (isFilterable(column)) {
+              <p-column-filter
+                [pt]="grid.filterPt()"
+                [filterButtonProps]="squareFilterButtonProps"
+                display="menu"
+                [field]="column"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+                [showApplyButton]="false"
+                [showClearButton]="true"
+                (onHide)="grid.onFilterHidden(column, $any(table.filters[column])?.[0]?.value)"
+              >
+                <ng-template
+                  #filter
+                  let-value
+                  let-filterConstraint="filterConstraint"
+                >
+                  @switch (column) {
+                    @case (CaseColumn.Machine) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="displayName"
+                        optionValue="id"
+                        appendTo="self"
+                        panelStyleClass="hf-option-list"
+                        [filter]="true"
+                        [loading]="showMachinesLoading()"
+                        [options]="machines()"
+                        (onShow)="machineLookupRequested.emit({ text: '', isImmediate: true })"
+                        (onFilter)="machineLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
+                        [placeholder]="'MAINTENANCE.FILTERS.MACHINE_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      >
+                        <ng-template #selectedItem>
+                          <hf-chip-summary
+                            appearance="text"
+                            [chips]="machineChips(value ?? [])"
+                            [placeholder]="'MAINTENANCE.FILTERS.MACHINE_PLACEHOLDER' | translate"
+                          />
+                        </ng-template>
+                      </p-select>
+                    }
+                    @case (CaseColumn.State) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        panelStyleClass="hf-option-list"
+                        [options]="stateOptions()"
+                        [placeholder]="'MAINTENANCE.FILTERS.STATE_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      >
+                        <ng-template #selectedItem>
+                          <hf-chip-summary
+                            appearance="text"
+                            [chips]="labelChips(value ?? [], stateOptions())"
+                            [placeholder]="'MAINTENANCE.FILTERS.STATE_PLACEHOLDER' | translate"
+                          />
+                        </ng-template>
+                      </p-select>
+                    }
+                    @case (CaseColumn.Severity) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        panelStyleClass="hf-option-list"
+                        [options]="severityOptions()"
+                        [placeholder]="'MAINTENANCE.FILTERS.SEVERITY_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      >
+                        <ng-template
+                          #item
+                          let-option
+                        >
+                          <p-tag
+                            [severity]="option.severity"
+                            [value]="option.label"
+                          />
+                        </ng-template>
+                        <ng-template #selectedItem>
+                          <hf-chip-summary
+                            [chips]="labelChips(value ?? [], severityOptions())"
+                            [placeholder]="'MAINTENANCE.FILTERS.SEVERITY_PLACEHOLDER' | translate"
+                          />
+                        </ng-template>
+                      </p-select>
+                    }
+                    @case (CaseColumn.LastRun) {
+                      <p-select
+                        class="w-full"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="self"
+                        panelStyleClass="hf-option-list"
+                        [options]="aiOptions()"
+                        [placeholder]="'MAINTENANCE.FILTERS.AI_PLACEHOLDER' | translate"
+                        [ngModel]="value ?? []"
+                        [multiple]="true"
+                        [checkmark]="true"
+                        (ngModelChange)="filterConstraint.value = $event"
+                      >
+                        <ng-template
+                          #item
+                          let-option
+                        >
+                          <p-tag
+                            [severity]="option.severity"
+                            [value]="option.label"
+                          />
+                        </ng-template>
+                        <ng-template #selectedItem>
+                          <hf-chip-summary
+                            [chips]="labelChips(value ?? [], aiOptions())"
+                            [placeholder]="'MAINTENANCE.FILTERS.AI_PLACEHOLDER' | translate"
+                          />
+                        </ng-template>
+                      </p-select>
+                    }
+                  }
+                </ng-template>
+              </p-column-filter>
+            }
+          </div>
+        </th>
+      }
+      <th
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        <hf-column-chooser
+          [columns]="allColumns"
+          [visible]="grid.tableColumns()"
+          [labelKeys]="columnLabelKeys"
+          (toggled)="grid.onColumnToggle($any($event.column), $event.isVisible)"
+        />
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-item
+    let-columns="columns"
+  >
+    <tr>
+      @for (column of columns; track column) {
+        <td>
+          @if (grid.showSkeleton()) {
+            <p-skeleton />
+          } @else {
+            @switch (column) {
+              @case (CaseColumn.Machine) {
+                @let machine = machineLabel(item.machineId);
+                {{ machine.name }}
+                @if (machine.isDeleted) {
+                  <span class="text-muted-color">{{ 'MACHINES.DELETED_SUFFIX' | translate }}</span>
+                }
+              }
+              @case (CaseColumn.State) {
+                {{ stateLabel(item.state) }}
+              }
+              @case (CaseColumn.Severity) {
+                @if (item.highestOpenSeverity) {
+                  <p-tag
+                    [severity]="severityTag(item.highestOpenSeverity)"
+                    [value]="severityLabel(item.highestOpenSeverity)"
+                  />
+                }
+              }
+              @case (CaseColumn.Signals) {
+                {{ item.signalCount }}
+              }
+              @case (CaseColumn.LastRun) {
+                <div class="flex items-center gap-2">
+                  @if (item.lastRunState) {
+                    <span>{{ runStateLabel(item.lastRunState) }}</span>
+                  }
+                  @if (item.isAiUnavailable) {
+                    <p-tag
+                      severity="warn"
+                      [value]="aiUnavailableKey | translate"
+                    />
+                  }
+                </div>
+              }
+              @case (CaseColumn.OpenedAt) {
+                {{ item.openedAt | localDateTime }}
+              }
+            }
+          }
+        </td>
+      }
+      <td
+        pFrozenColumn
+        alignFrozen="right"
+        [frozen]="true"
+      >
+        @if (grid.showSkeleton()) {
+          <p-skeleton />
+        } @else {
+          <button
+            pButton
+            [pTooltip]="openTooltipKey | translate"
+            tooltipPosition="bottom"
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [attr.aria-label]="openTooltipKey | translate"
+            (click)="openRequested.emit(item.id)"
+          >
+            <i class="pi pi-external-link"></i>
+          </button>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr class="h-full">
+      <td
+        class="h-full"
+        [attr.colspan]="columns().length + 1"
+      >
+        @if (grid.showEmpty()) {
+          <hf-empty-state
+            icon="pi pi-wrench"
+            messageKey="MAINTENANCE.EMPTY"
+          />
+        }
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

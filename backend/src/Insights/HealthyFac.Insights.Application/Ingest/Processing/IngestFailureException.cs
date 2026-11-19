@@ -20,4 +20,7 @@ public sealed class IngestFailureException : Exception
     }
 
     public IngestErrorCode Code { get; }
+
+    /// <summary>Where and why the run failed, or <see langword="null"/>.</summary>
+    public IngestErrorDetail? Detail { get; init; }
 }

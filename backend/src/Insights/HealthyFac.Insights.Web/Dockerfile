@@ -9,13 +9,15 @@ ENV DOTNET_NOLOGO=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Copy only the files that affect restore, so this layer caches across source edits.
-COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac.slnx ./
+COPY Directory.Build.props Directory.Packages.props BannedSymbols*.txt HealthyFac.slnx ./
 COPY src/Insights/HealthyFac.Insights.Domain/*.csproj          src/Insights/HealthyFac.Insights.Domain/
 COPY src/Insights/HealthyFac.Insights.Application/*.csproj     src/Insights/HealthyFac.Insights.Application/
 COPY src/Insights/HealthyFac.Insights.Messaging/*.csproj       src/Insights/HealthyFac.Insights.Messaging/
 COPY src/Document/HealthyFac.Document.Messaging/*.csproj       src/Document/HealthyFac.Document.Messaging/
 COPY src/Document/HealthyFac.Document.Contracts/*.csproj       src/Document/HealthyFac.Document.Contracts/
 COPY src/Telemetry/HealthyFac.Telemetry.Messaging/*.csproj     src/Telemetry/HealthyFac.Telemetry.Messaging/
+COPY src/Core/HealthyFac.Core.Messaging/*.csproj               src/Core/HealthyFac.Core.Messaging/
+COPY src/Telemetry/HealthyFac.Telemetry.Contracts/*.csproj     src/Telemetry/HealthyFac.Telemetry.Contracts/
 COPY src/Insights/HealthyFac.Insights.Infrastructure/*.csproj  src/Insights/HealthyFac.Insights.Infrastructure/
 COPY src/Insights/HealthyFac.Insights.Web/*.csproj             src/Insights/HealthyFac.Insights.Web/
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj          src/Shared/HealthyFac.Shared.Domain/

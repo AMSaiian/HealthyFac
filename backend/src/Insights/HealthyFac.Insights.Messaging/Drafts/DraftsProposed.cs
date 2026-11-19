@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FluentValidation;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.RichText;
@@ -44,6 +45,8 @@ public sealed record ProposedMachine
     public required IReadOnlyList<ProposedMetric> Metrics { get; init; }
 
     public required IReadOnlyList<ProposedStatus> Statuses { get; init; }
+
+    public IReadOnlyList<ProposedPhase> Phases { get; init; } = [];
 }
 
 public sealed record ProposedMetric
@@ -70,6 +73,92 @@ public sealed record ProposedMetric
     public double? Max { get; init; }
 
     public IReadOnlyList<string>? States { get; init; }
+
+    public double? WarningLow { get; init; }
+
+    public double? WarningHigh { get; init; }
+
+    public double? AlarmLow { get; init; }
+
+    public double? AlarmHigh { get; init; }
+
+    /// <summary>One of <see cref="DraftMessageLimits.Behaviors.All"/>. Missing means <c>level</c>.</summary>
+    public string? Behavior { get; init; }
+
+    /// <summary>Tells whether the proposal sets at least one limit.</summary>
+    [JsonIgnore]
+    public bool HasLimits => WarningLow is not null
+        || WarningHigh is not null
+        || AlarmLow is not null
+        || AlarmHigh is not null;
+}
+
+/// <summary>
+/// An operating phase of a machine. A condition names its source and a limit row names its metric either as a
+/// definition that exists or as a draft of the same message (exactly one of the two).
+/// </summary>
+public sealed record ProposedPhase
+{
+    public required Guid DraftId { get; init; }
+
+    public string? SourceLocation { get; init; }
+
+    public string? Code { get; init; }
+
+    public string? Name { get; init; }
+
+    public string? Description { get; init; }
+
+    public int? Priority { get; init; }
+
+    public bool? IsTracked { get; init; }
+
+    public IReadOnlyList<ProposedPhaseCondition> Conditions { get; init; } = [];
+
+    public IReadOnlyList<ProposedPhaseLimit> Limits { get; init; } = [];
+}
+
+public sealed record ProposedPhaseCondition
+{
+    public Guid? MetricId { get; init; }
+
+    public Guid? MetricDraftId { get; init; }
+
+    public Guid? StatusId { get; init; }
+
+    public Guid? StatusDraftId { get; init; }
+
+    /// <summary>One of <see cref="DraftMessageLimits.PhaseOperators.All"/>.</summary>
+    public string? Operator { get; init; }
+
+    public double? Value { get; init; }
+
+    public double? UpperValue { get; init; }
+
+    public IReadOnlyList<string>? States { get; init; }
+
+    /// <summary>Tells how many sources the condition names. A valid condition names exactly one.</summary>
+    [JsonIgnore]
+    public int SourceCount => new[] { MetricId, MetricDraftId, StatusId, StatusDraftId }.Count(id => id is not null);
+}
+
+public sealed record ProposedPhaseLimit
+{
+    public Guid? MetricId { get; init; }
+
+    public Guid? MetricDraftId { get; init; }
+
+    public double? WarningLow { get; init; }
+
+    public double? WarningHigh { get; init; }
+
+    public double? AlarmLow { get; init; }
+
+    public double? AlarmHigh { get; init; }
+
+    /// <summary>Tells how many metrics the row names. A valid row names exactly one.</summary>
+    [JsonIgnore]
+    public int MetricCount => new[] { MetricId, MetricDraftId }.Count(id => id is not null);
 }
 
 public sealed record ProposedStatus
@@ -142,11 +231,13 @@ public class ProposedMachineValidator : AbstractValidator<ProposedMachine>
                 || machine.SerialNumber is not null
                 || machine.Description is not null
                 || machine.Metrics.Count > 0
-                || machine.Statuses.Count > 0)
+                || machine.Statuses.Count > 0
+                || machine.Phases.Count > 0)
             .WithMessage(DraftMessageErrors.Validation.MachineWithoutContent);
 
         RuleForEach(machine => machine.Metrics).SetValidator(new ProposedMetricValidator(richTextPolicy));
         RuleForEach(machine => machine.Statuses).SetValidator(new ProposedStatusValidator(richTextPolicy));
+        RuleForEach(machine => machine.Phases).SetValidator(new ProposedPhaseValidator(richTextPolicy));
     }
 }
 
@@ -190,6 +281,26 @@ public class ProposedMetricValidator : AbstractValidator<ProposedMetric>
             .When(metric => metric.Min is not null && metric.Max is not null)
             .WithMessage(DraftMessageErrors.Validation.RangeInvalid);
 
+        RuleFor(metric => metric.WarningLow)
+            .GreaterThanOrEqualTo(metric => metric.AlarmLow!.Value)
+            .When(metric => metric.WarningLow is not null && metric.AlarmLow is not null)
+            .WithMessage(DraftMessageErrors.Validation.WarningLowBelowAlarmLow);
+
+        RuleFor(metric => metric.WarningHigh)
+            .LessThanOrEqualTo(metric => metric.AlarmHigh!.Value)
+            .When(metric => metric.WarningHigh is not null && metric.AlarmHigh is not null)
+            .WithMessage(DraftMessageErrors.Validation.WarningHighAboveAlarmHigh);
+
+        RuleFor(metric => metric)
+            .Must(metric => !metric.HasLimits)
+            .When(metric => metric.ValueKind is not null && metric.ValueKind != DraftMessageLimits.ValueKinds.Numeric)
+            .WithMessage(DraftMessageErrors.Validation.LimitsOnlyForNumeric);
+
+        RuleFor(metric => metric.Behavior)
+            .SingleLineText()
+            .Must(behavior => behavior is null || DraftMessageLimits.Behaviors.All.Contains(behavior))
+            .WithMessage(DraftMessageErrors.Validation.BehaviorInvalid);
+
         RuleFor(metric => metric.States)
             .Must(states => states!.Distinct(StringComparer.OrdinalIgnoreCase).Count() >= DraftMessageLimits.MinStates)
             .When(metric => metric.States is not null)
@@ -208,8 +319,82 @@ public class ProposedMetricValidator : AbstractValidator<ProposedMetric>
                 || metric.Unit is not null
                 || metric.Min is not null
                 || metric.Max is not null
-                || metric.States is not null)
+                || metric.States is not null
+                || metric.HasLimits
+                || metric.Behavior is not null)
             .WithMessage(DraftMessageErrors.Validation.MetricWithoutContent);
+    }
+}
+
+public class ProposedPhaseValidator : AbstractValidator<ProposedPhase>
+{
+    public ProposedPhaseValidator(IRichTextPolicy richTextPolicy)
+    {
+        RuleFor(phase => phase.DraftId).NotEmpty().WithMessage(DraftMessageErrors.Validation.IdRequired);
+
+        RuleFor(phase => phase.SourceLocation)
+            .SingleLineText()
+            .MaximumLength(DraftMessageLimits.SourceLocationMaxLength);
+
+        RuleFor(phase => phase.Code)
+            .SingleLineText()
+            .MaximumLength(DraftMessageLimits.Phase.CodeMaxLength)
+            .Matches(DraftMessageLimits.KeyPattern)
+            .WithMessage(DraftMessageErrors.Validation.KeyInvalid);
+
+        RuleFor(phase => phase.Name)
+            .SingleLineText()
+            .MaximumLength(DraftMessageLimits.Phase.NameMaxLength);
+
+        RuleFor(phase => phase.Description).IsProposedDescription(richTextPolicy);
+
+        RuleFor(phase => phase.Priority)
+            .GreaterThanOrEqualTo(valueToCompare: 0)
+            .When(phase => phase.Priority is not null)
+            .WithMessage(DraftMessageErrors.Validation.PriorityNegative);
+
+        RuleForEach(phase => phase.Conditions).SetValidator(new ProposedPhaseConditionValidator());
+        RuleForEach(phase => phase.Limits).SetValidator(new ProposedPhaseLimitValidator());
+    }
+}
+
+public class ProposedPhaseConditionValidator : AbstractValidator<ProposedPhaseCondition>
+{
+    public ProposedPhaseConditionValidator()
+    {
+        RuleFor(condition => condition.SourceCount)
+            .Equal(toCompare: 1)
+            .WithMessage(DraftMessageErrors.Validation.ConditionSourceInvalid);
+
+        RuleFor(condition => condition.Operator)
+            .SingleLineText()
+            .Must(conditionOperator => conditionOperator is null
+                || DraftMessageLimits.PhaseOperators.All.Contains(conditionOperator))
+            .WithMessage(DraftMessageErrors.Validation.OperatorInvalid);
+
+        RuleForEach(condition => condition.States)
+            .SingleLineText()
+            .MaximumLength(DraftMessageLimits.Metric.StateMaxLength);
+    }
+}
+
+public class ProposedPhaseLimitValidator : AbstractValidator<ProposedPhaseLimit>
+{
+    public ProposedPhaseLimitValidator()
+    {
+        RuleFor(limit => limit.MetricCount)
+            .Equal(toCompare: 1)
+            .WithMessage(DraftMessageErrors.Validation.LimitMetricInvalid);
+
+        RuleFor(limit => limit.WarningLow)
+            .GreaterThanOrEqualTo(limit => limit.AlarmLow!.Value)
+            .When(limit => limit.WarningLow is not null && limit.AlarmLow is not null)
+            .WithMessage(DraftMessageErrors.Validation.WarningLowBelowAlarmLow);
+
+        RuleFor(limit => limit.WarningHigh)
+            .LessThanOrEqualTo(limit => limit.AlarmHigh!.Value)
+            .When(limit => limit.WarningHigh is not null && limit.AlarmHigh is not null)
+            .WithMessage(DraftMessageErrors.Validation.WarningHighAboveAlarmHigh);
     }
 }
 

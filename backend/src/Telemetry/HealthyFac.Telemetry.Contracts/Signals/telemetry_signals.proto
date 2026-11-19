@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package healthyfac.telemetry.v1;
+
+option csharp_namespace = "HealthyFac.Telemetry.Contracts.Signals";
+
+// Serves the metric history and the signal episodes of a machine to the services that read them (Insights). The caller
+// sends plain GUIDs as text, never the encrypted IDs of the public API.
+service TelemetrySignals {
+  rpc GetMetricHistory(GetMetricHistoryRequest) returns (MetricHistoryReply);
+  rpc GetSignalEpisodes(GetSignalEpisodesRequest) returns (SignalEpisodesReply);
+}
+
+message GetMetricHistoryRequest {
+  string machine_id = 1;
+  string metric_definition_id = 2;
+  google.protobuf.Timestamp from = 3;
+  google.protobuf.Timestamp to = 4;
+  int32 bucket_count = 5;
+}
+
+message GetSignalEpisodesRequest {
+  string machine_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+message MetricHistoryReply {
+  repeated MetricBucket buckets = 1;
+}
+
+// One non-empty bucket of the readings. The buckets are in time order.
+message MetricBucket {
+  google.protobuf.Timestamp start = 1;
+  double avg = 2;
+  double min = 3;
+  double max = 4;
+  int64 count = 5;
+}
+
+message SignalEpisodesReply {
+  repeated SignalEpisode episodes = 1;
+}
+
+// The fields of the SignalEpisodeChanged message without its change time. The rule, the severity, and the state use the
+// text values of the message (for example "silentMachine", "alarm", "open").
+message SignalEpisode {
+  string episode_id = 1;
+  string machine_id = 2;
+  string company_id = 3;
+  string rule = 4;
+  string severity = 5;
+  string state = 6;
+  optional string metric_definition_id = 7;
+  optional string metric_key = 8;
+  optional string status_definition_id = 9;
+  optional string status_code = 10;
+  optional string phase_code = 11;
+  optional double value = 12;
+  optional double limit = 13;
+  optional double z = 14;
+  optional double forecast_seconds = 15;
+  google.protobuf.Timestamp opened_at = 16;
+  optional google.protobuf.Timestamp resolved_at = 17;
+  int32 sequence = 18;
+}

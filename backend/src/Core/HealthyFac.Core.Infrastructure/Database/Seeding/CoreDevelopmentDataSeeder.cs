@@ -1,6 +1,7 @@
 using System.Globalization;
 using Bogus;
 using HealthyFac.Core.Application.Employees.InviteTokens;
+using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Machines;
@@ -34,7 +35,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 /// <param name="seedingOptions">The validated seeding options.</param>
 /// <param name="logger">The logger for the forced recreation warning.</param>
 /// <param name="inviteTokenService">The service that creates the salt of the test tenant invite.</param>
-/// <param name="outbox">Queues a <see cref="MachineCreated"/> message for each seeded machine.</param>
+/// <param name="outbox">Queues a <see cref="MachineCreated"/> and a <see cref="MachineStateChanged"/> message for
+/// each seeded machine.</param>
 public sealed class CoreDevelopmentDataSeeder(
     CoreDbContext dbContext,
     TimeProvider timeProvider,
@@ -308,7 +310,11 @@ public sealed class CoreDevelopmentDataSeeder(
                 NextSeed())
             .Generate(_options.MachinesPerCompany);
         _dbContext.Machines.AddRange(machines);
-        machines.ForEach(AddMachineCreated);
+        foreach (var machine in machines)
+        {
+            AddMachineCreated(machine, timeZoneId);
+            AddMachineStateChanged(machine);
+        }
     }
 
     private void AddSeedMachines(TestTenantOptions tenant, DateTime now)
@@ -337,11 +343,12 @@ public sealed class CoreDevelopmentDataSeeder(
                     TimeZoneInfo.ConvertTimeFromUtc(now, TimeZoneInfo.FindSystemTimeZoneById(tenant.TimeZoneId))),
                 startedAt);
             _dbContext.Machines.Add(machine);
-            AddMachineCreated(machine);
+            AddMachineCreated(machine, tenant.TimeZoneId);
+            AddMachineStateChanged(machine);
         }
     }
 
-    private void AddMachineCreated(Machine machine) =>
+    private void AddMachineCreated(Machine machine, string timeZoneId) =>
         _outbox.Add(
             new MachineCreated
             {
@@ -349,7 +356,24 @@ public sealed class CoreDevelopmentDataSeeder(
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
                 Name = machine.Name,
+                ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
+                GoLiveStartsAt = MachineGoLiveRules.StartOfDayUtc(
+                    machine.ExpectedGoLiveOn,
+                    TimeZoneInfo.FindSystemTimeZoneById(timeZoneId)),
             });
+
+    private void AddMachineStateChanged(Machine machine)
+    {
+        var current = machine.StateHistory.MaxBy(row => row.StartedAt)!;
+        _outbox.Add(
+            new MachineStateChanged
+            {
+                MachineId = machine.Id,
+                CompanyId = machine.CompanyId,
+                State = MachineStateValue.FromValue(current.State.Value),
+                StartedAt = current.StartedAt,
+            });
+    }
 
     private void AddEmployees(
         EmployeeInviteFaker inviteFaker,

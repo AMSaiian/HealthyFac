@@ -13,6 +13,13 @@ describe('draftConflictKey', () => {
     );
   });
 
+  it.each([
+    ['draftUsesDrafts', 'DRAFTS.CONFLICTS.DRAFT_USES_DRAFTS'],
+    ['draftUsedByPhaseDraft', 'DRAFTS.CONFLICTS.DRAFT_USED_BY_PHASE_DRAFT'],
+  ])('draftConflictKey_With422Reason_%s_ReturnsItsKey', (reason, key) => {
+    expect(draftConflictKey(failure(HttpStatusCode.UnprocessableEntity, reason))).toBe(key);
+  });
+
   it('draftConflictKey_With409ChangedTextOfCore_ReturnsDraftChanged', () => {
     const changed = 'The draft or the machine changed since you read it. Reload it and try again.';
 

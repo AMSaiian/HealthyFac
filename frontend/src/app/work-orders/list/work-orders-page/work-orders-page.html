@@ -1,6 +1,7 @@
 <hf-work-orders-view-header
   activeView="grid"
   [canCreate]="store.canWrite()"
+  [canOpenDrafts]="store.canReadDrafts()"
   (createRequested)="store.requestCreate()"
 >
   <hf-work-order-grid

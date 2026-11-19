@@ -16,7 +16,12 @@
     "SHIFTS": "Shifts",
     "EMPLOYEES": "Employees",
     "MY_SCHEDULE": "My schedule",
-    "INVITE": "Invite"
+    "INVITE": "Invite",
+    "OPERATING_PHASES": "Operating phases",
+    "SIGNALS": "Dashboards",
+    "MAINTENANCE": "Maintenance",
+    "CASE": "Case",
+    "WORK_ORDER_DRAFTS": "Work order drafts"
   },
   "SHELL": {
     "TITLE": "HealthyFac",
@@ -88,6 +93,7 @@
       "DELETE": "Delete this item",
       "EDIT": "Change the details of this item",
       "RELOAD": "Load the data again",
+      "RELOAD_WAIT": "Wait {{seconds}} s before the next reload",
       "RETRY": "Try the load again",
       "COPY": "Copy to the clipboard",
       "FILTER": "Filter this column",
@@ -140,7 +146,9 @@
       "FILES": "Show the files of the machine",
       "DELETE": "Delete the machine",
       "CHANGE_STATE": "Change the state of the machine",
-      "ADD_NEW": "Add a machine to the company"
+      "ADD_NEW": "Add a machine to the company",
+      "PHASES": "Show the operating phases of the machine",
+      "SIGNALS": "Show the dashboards of the machine: metric charts and signals"
     },
     "METRICS": "Metrics",
     "STATUSES": "Statuses",
@@ -198,7 +206,10 @@
       "DESCRIPTION_PLACEHOLDER": "Describe the machine"
     },
     "FILES": "Files",
-    "DRAFTS": "Drafts"
+    "DRAFTS": "Drafts",
+    "PHASES": "Operating phases",
+    "SIGNALS": "Dashboards",
+    "DELETED_SUFFIX": "(deleted)"
   },
   "STATUS_DEFINITIONS": {
     "TITLE": "Statuses of",
@@ -271,6 +282,10 @@
       "BOOLEAN": "Yes / no",
       "STATE_SET": "State set"
     },
+    "BEHAVIORS": {
+      "LEVEL": "Level",
+      "COUNTER": "Counter"
+    },
     "DETAIL": {
       "KEY": "Key",
       "KIND": "Kind",
@@ -280,6 +295,12 @@
       "DESCRIPTION": "Description"
     },
     "FORM": {
+      "SECTIONS": {
+        "GENERAL": "General",
+        "MEASUREMENT": "Measurement",
+        "MONITORING": "Monitoring",
+        "STATES": "States"
+      },
       "NAME": "Name",
       "NAME_PLACEHOLDER": "Enter a name",
       "KEY": "Key",
@@ -295,6 +316,13 @@
       "REMOVE_STATE": "Remove the state",
       "DESCRIPTION": "Description",
       "DESCRIPTION_PLACEHOLDER": "Describe the metric",
+      "ALARM_LOW": "Alarm below",
+      "ALARM_HIGH": "Alarm above",
+      "WARNING_LOW": "Warning below",
+      "WARNING_HIGH": "Warning above",
+      "ALARM_ROW": "Alarm",
+      "WARNING_ROW": "Warning",
+      "BEHAVIOR": "Behavior",
       "DONE": "Done",
       "INVALID": "The form has errors",
       "ERRORS": {
@@ -303,7 +331,9 @@
         "UNIT_REQUIRED": "A numeric metric needs a unit",
         "RANGE": "The minimum must be below the maximum",
         "STATES_TOO_FEW": "A state set needs at least 2 states",
-        "STATES_DUPLICATED": "The states must be unique"
+        "STATES_DUPLICATED": "The states must be unique",
+        "WARNING_LOW": "The warning must not be below the alarm",
+        "WARNING_HIGH": "The warning must not be above the alarm"
       }
     },
     "EXAMPLE": {
@@ -534,7 +564,8 @@
       "CONVERSION_FAILED": "The service could not read the file",
       "CONVERSION_TIMEOUT": "The reading of the file took too long",
       "INVALID_EXTRACTION": "The model gave an answer that the service could not use",
-      "PROVIDER_UNAVAILABLE": "An external service is not available. Try again later"
+      "PROVIDER_UNAVAILABLE": "An external service is not available. Try again later",
+      "UNSAFE_CONTENT": "The document was rejected because a part of it looks unsafe ({{location}}): {{reason}}"
     },
     "INTERRUPTED": {
       "CANCELLED": "The processing was cancelled",
@@ -564,7 +595,8 @@
     "KINDS": {
       "MACHINE": "Machine",
       "METRIC": "Metric",
-      "STATUS": "Status"
+      "STATUS": "Status",
+      "PHASE": "Phase"
     },
     "STATES": {
       "AWAITING_TARGET": "Awaiting machine check",
@@ -650,9 +682,19 @@
       "UPDATED": "The status is updated",
       "CODE_TAKEN": "A status with this code exists already"
     },
+    "PHASE": {
+      "TITLE": "Phase draft",
+      "WAITS_FOR_DRAFTS": "The phase waits for its metric or status drafts. Apply them first",
+      "NEEDS_VALUES": "The phase draft needs a code, a name, a priority, a tracking flag, and a condition with an operator",
+      "WAITS_FOR_DRAFT": "Waits for its draft",
+      "MISSING": "The draft does not exist any more",
+      "APPLIED": "The phase is created"
+    },
     "CONFLICTS": {
       "DRAFT_NOT_PENDING": "The draft is not pending any more. The list is loaded again",
-      "DRAFT_CHANGED": "The draft or the machine changed. Reload it and try again"
+      "DRAFT_CHANGED": "The draft or the machine changed. Reload it and try again",
+      "DRAFT_USES_DRAFTS": "Apply the metric and status drafts of the phase first",
+      "DRAFT_USED_BY_PHASE_DRAFT": "An open phase draft uses this draft. Dismiss or apply the phase draft first"
     },
     "QUICK": {
       "APPLIED": "Applied drafts: {{count}}",
@@ -668,6 +710,8 @@
       "MACHINE_PENDING": "Apply the machine draft first, or use Apply all",
       "UNITS_LOADING": "The unit catalog is loading",
       "ALL_NEED_REVIEW": "Every pending draft of the group needs review",
+      "PHASE_WAITS_FOR_DRAFTS": "Apply its metric and status drafts first",
+      "NEEDS_PHASE_VALUES": "The phase draft needs a code, a name, a priority, a tracking flag, and a condition. Use Review",
       "MACHINE_NOT_READY": "The machine is not ready yet. Try again in a moment",
       "WAITING_TITLE": "Request limit",
       "WAITING": "Waiting {{seconds}} s for the request limit",
@@ -746,7 +790,8 @@
       "ATTACH_NEW": "Upload a new file and attach it",
       "ATTACH_EXISTING": "Attach a file that is stored already",
       "USE_SUGGESTION": "Fill the start with the suggested time",
-      "ADD_NEW": "Create a work order"
+      "ADD_NEW": "Create a work order",
+      "DRAFTS": "Show the work order drafts of the maintenance cases"
     },
     "COLUMNS": {
       "TITLE": "Title",
@@ -832,7 +877,8 @@
       "CHANGE_STATUS": "Change status",
       "EMPTY_COLUMN": "No work orders in this column",
       "CHANGE_STATUS_UNSAVED": "Save or discard the changes first"
-    }
+    },
+    "DRAFTS": "Drafts"
   },
   "SCHEDULE": {
     "EMPLOYEE_TITLE": "Schedule",
@@ -1019,6 +1065,354 @@
       "ACCEPT": "Accept the invite and create your account",
       "SIGN_OUT_AND_CONTINUE": "Sign out and continue with the invite",
       "SIGN_IN": "Sign in to accept the invite"
+    }
+  },
+  "PHASES": {
+    "TITLE": "Phases of",
+    "ADD_NEW": "Add phase",
+    "EMPTY": "No operating phases yet",
+    "ORDER_HINT": "Drag a row to change the priority. The first phase that matches wins",
+    "DELETE_HEADER": "Delete phase",
+    "DELETE_MESSAGE": "Delete the phase {{name}}?",
+    "TRACKED_YES": "Tracked",
+    "TRACKED_NO": "Not tracked",
+    "COLUMNS": {
+      "NAME": "Name",
+      "CODE": "Code",
+      "TRACKED": "Tracking",
+      "CONDITIONS": "Conditions",
+      "LIMITS": "Limits"
+    },
+    "TOOLTIPS": {
+      "ADD_NEW": "Add an operating phase to the machine",
+      "DRAG": "Drag to change the priority",
+      "ADD_CONDITION": "Add a condition to the phase",
+      "REMOVE_CONDITION": "Remove the condition",
+      "ADD_LIMIT": "Add the limits of a metric",
+      "REMOVE_LIMIT": "Remove the limits"
+    },
+    "TOASTS": {
+      "CREATED": "The phase is created",
+      "UPDATED": "The phase is saved",
+      "DELETED": "The phase is deleted",
+      "REORDERED": "The order is saved",
+      "CODE_TAKEN": "A phase with this code or priority exists"
+    },
+    "FORM": {
+      "CREATE_TITLE": "New phase",
+      "UPDATE_TITLE": "Edit phase",
+      "CODE": "Code",
+      "NAME": "Name",
+      "DESCRIPTION": "Description",
+      "IS_TRACKED": "Track the metrics in this phase",
+      "CODE_PLACEHOLDER": "part_change",
+      "SECTIONS": {
+        "GENERAL": "General",
+        "CONDITIONS": "Conditions",
+        "LIMITS": "Limits"
+      },
+      "CONDITIONS": "Conditions",
+      "CONDITIONS_HINT": "The phase matches when all conditions are true",
+      "ADD_CONDITION": "Add condition",
+      "LIMITS": "Limits",
+      "ADD_LIMIT": "Add limits",
+      "NO_LIMIT_METRIC": "Every numeric metric is used by a condition or already has limits",
+      "DESCRIPTION_PLACEHOLDER": "Describe the phase",
+      "NO_LIMITS": "No limits in this phase",
+      "PRIORITY": "Priority",
+      "ALARM_LOW": "Alarm below",
+      "ALARM_HIGH": "Alarm above",
+      "WARNING_LOW": "Warning below",
+      "WARNING_HIGH": "Warning above",
+      "MASKING_WARNING": "A condition reads {{names}}. A drift of these metrics hides itself inside this phase",
+      "ERRORS": {
+        "CODE_INVALID": "Use lower case words with dots, for example cutting.fast",
+        "VALUE_REQUIRED": "Enter a value",
+        "UPPER_VALUE": "The upper value must be above the lower value",
+        "STATES_REQUIRED": "Pick at least 1 state",
+        "WARNING_LOW": "The warning must not be below the alarm",
+        "WARNING_HIGH": "The warning must not be above the alarm",
+        "LIMIT_METRIC_DUPLICATED": "A metric has one set of limits",
+        "LIMIT_METRIC_IN_CONDITION": "A metric that a condition reads has no limits",
+        "CONDITIONS_REQUIRED": "Add at least 1 condition"
+      },
+      "OPERATOR_LABEL": "Operator"
+    },
+    "OPERATORS": {
+      "ACTIVE": "is active",
+      "INACTIVE": "is not active",
+      "GREATER_THAN": "above",
+      "GREATER_OR_EQUAL": "at least",
+      "LESS_THAN": "below",
+      "LESS_OR_EQUAL": "at most",
+      "BETWEEN": "between",
+      "IS_TRUE": "is true",
+      "IS_FALSE": "is false",
+      "IN": "is one of"
+    }
+  },
+  "SIGNALS": {
+    "TABS": {
+      "CHART": "Chart"
+    },
+    "TAB_TOOLTIPS": {
+      "CHART": "Show the history of the selected metric",
+      "PHASES": "Show the time in each operating phase",
+      "STATES": "Show the time in each machine state"
+    },
+    "TITLE": "Dashboards of",
+    "NO_METRIC": "The machine has no numeric metric",
+    "NO_DATA": "No readings in this range",
+    "RANGES": {
+      "HOUR": "Last hour",
+      "SIX_HOURS": "Last 6 hours",
+      "DAY": "Last 24 hours"
+    },
+    "CHART": {
+      "AVG": "Average",
+      "RANGE": "Range (minimum to maximum)",
+      "WARNING_LIMITS": "Warning limits",
+      "ALARM_LIMITS": "Alarm limits",
+      "SIGNALS": "Signals",
+      "EPISODE_OPEN": "open"
+    },
+    "TIME": {
+      "PHASES_TITLE": "Time in phases",
+      "STATES_TITLE": "Time in machine states",
+      "NO_PHASES": "This machine has no operating phases",
+      "UNKNOWN_MODE": "Unknown mode",
+      "NO_DATA": "No data",
+      "BEFORE_CREATION": "Before creation",
+      "DELETED": "deleted",
+      "DURATION": "{{hours}} h {{minutes}} min",
+      "COLUMNS": {
+        "NAME": "Name",
+        "DURATION": "Duration",
+        "SHARE": "Share of the range"
+      }
+    },
+    "RANGE_LABEL": "Time range",
+    "CUSTOM_RANGE": "Custom range",
+    "RANGE_PLACEHOLDER": "Pick a from-to range",
+    "RESET_ZOOM": "Reset zoom",
+    "HOW_TO_READ": {
+      "TITLE": "How to read this chart",
+      "AVG": "The line is the average of the readings in each time step",
+      "RANGE": "The shaded band shows the lowest and the highest reading in each time step",
+      "LIMITS": "The dashed lines are the limits of the metric. The alarm limits are shown, and a click on the legend shows or hides the warning limits",
+      "SIGNALS": "Colored areas behind the plot mark the signals. Signals that overlap share one area in the color of the highest severity. Point at an area to read the rules and times of its signals",
+      "ZOOM": "Drag over the plot or use the mouse wheel to zoom into the time axis. Hold Shift and drag to move. Use Reset zoom to go back"
+    }
+  },
+  "MAINTENANCE": {
+    "TITLE": "Maintenance cases",
+    "EMPTY": "No maintenance cases",
+    "UNKNOWN_MACHINE": "Unknown machine",
+    "AI_UNAVAILABLE": "AI unavailable",
+    "CASE_TITLE": "Case of",
+    "CLOSE_CASE": "Close case",
+    "RUN_AGAIN": "Run again",
+    "CLOSE_REASON": "Close reason",
+    "SUMMARY_TITLE": "Summary",
+    "SIGNALS_TITLE": "Signals",
+    "RUNS_TITLE": "AI log",
+    "OPENED_AT": "Opened",
+    "CLOSED_AT": "Ended",
+    "LOADING_TOOL_CALLS": "Loading the tool calls",
+    "OUTCOME": {
+      "TITLE": "Outcome",
+      "WHY": "Why",
+      "OPEN_DRAFT": "Open draft",
+      "OPEN_WORK_ORDER": "Open work order",
+      "PROPOSED_WORK_ORDER": "The AI proposed the work order \"{{title}}\". Review the draft",
+      "WORK_ORDER_CREATED": "Work order created: {{title}}",
+      "PROPOSAL_DISMISSED": "The proposal was dismissed",
+      "LINKED_WORK_ORDER": "The AI linked the signals to an open work order",
+      "CLOSED": "The case is closed: {{reason}}",
+      "WATCHED": "The AI decided to watch the signals",
+      "DISMISSED": "The AI dismissed the signals",
+      "ESCALATED": "The AI escalated the case. The planner has not decided yet",
+      "NO_DECISION": "The AI made no decision",
+      "AI_UNAVAILABLE": "The AI was not available",
+      "NONE": "No agent has reviewed this case yet",
+      "TOOLTIPS": {
+        "OPEN_DRAFT": "Open the work order drafts",
+        "OPEN_WORK_ORDER": "Open the work orders"
+      }
+    },
+    "SIGNAL_TABLE": {
+      "SEVERITY": "Severity",
+      "RULE": "Rule",
+      "SUBJECT": "Metric or status",
+      "VALUE": "Value against limit",
+      "STARTED": "Started",
+      "ENDED": "Ended",
+      "DURATION_COLUMN": "Duration",
+      "DURATION": "{{hours}} h {{minutes}} min",
+      "COVERAGE": "Coverage",
+      "STILL_OPEN": "Still open",
+      "EMPTY": "This case has no signals"
+    },
+    "RUN_META": "Model {{model}}, {{input}} input tokens, {{output}} output tokens",
+    "MILLISECONDS": "ms",
+    "ARGUMENTS": "Arguments",
+    "RUN_DECISION": "What the AI decided",
+    "TECHNICAL_DETAILS": "Technical details",
+    "RESULT": "Result",
+    "NO_TOOL_CALLS": "This run made no tool calls",
+    "SIGNAL_VALUE": "Value {{value}}",
+    "DRAFT_LINK": "Open the work order drafts",
+    "WORK_ORDER_LINK": "Open the work orders",
+    "COLUMNS": {
+      "MACHINE": "Machine",
+      "STATE": "State",
+      "SEVERITY": "Severity",
+      "SIGNALS": "Signals",
+      "LAST_RUN": "Last run",
+      "OPENED_AT": "Opened"
+    },
+    "STATES": {
+      "OPEN": "Active",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    },
+    "SEVERITIES": {
+      "WARNING": "Warning",
+      "ALARM": "Alarm"
+    },
+    "TOOLS": {
+      "SEARCH_MANUAL": "Search the manual",
+      "GET_METRIC_HISTORY": "Read the metric history",
+      "GET_SIGNAL_EPISODES": "Read the signals of the machine",
+      "LIST_OPEN_WORK_ORDERS": "List the open work orders",
+      "PROPOSE_WORK_ORDER": "Propose a work order",
+      "LINK_WORK_ORDER": "Link a work order",
+      "CLOSE_CASE": "Close the case"
+    },
+    "TOOL_SUMMARIES": {
+      "MANUAL_PASSAGES": "Manual passages found: {{count}}",
+      "MANUAL_PASSAGES_REPEATED": "Manual passages found: {{count}} ({{repeated}} already read)",
+      "METRIC_HISTORY": "Metric history: {{count}} time slices from {{from}} to {{to}}",
+      "OPEN_SIGNALS": "Open signals: {{count}}",
+      "OPEN_SIGNAL": "{{rule}}, {{severity}}, {{subject}}, since {{openedAt}}",
+      "OPEN_WORK_ORDERS": "Open work orders found: {{count}}",
+      "PROPOSED_WORK_ORDER": "Proposed work order: {{title}}",
+      "LINKED_WORK_ORDER": "Linked a work order to {{count}} signals",
+      "CLOSE_REASON": "Close reason: {{reason}}"
+    },
+    "RUN_STATES": {
+      "QUEUED": "Queued",
+      "RUNNING": "Running",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "INTERRUPTED": "Interrupted",
+      "SKIPPED": "Skipped"
+    },
+    "RUN_SKIP_REASONS": {
+      "CASE_NOT_OPEN": "The case was resolved before the run started",
+      "NOTHING_TO_REVIEW": "No open signal needed a review"
+    },
+    "FILTERS": {
+      "MACHINE_PLACEHOLDER": "Select machines",
+      "STATE_PLACEHOLDER": "Any state",
+      "SEVERITY_PLACEHOLDER": "Any severity",
+      "AI_PLACEHOLDER": "Any run state"
+    },
+    "TOOLTIPS": {
+      "TAB_SUMMARY": "Show the outcome of the case",
+      "TAB_SIGNALS": "Show the signals of the case",
+      "TAB_AI_LOG": "Show the AI log of the case",
+      "SHOW_ON_CHART": "Show on the dashboards chart",
+      "OPEN_DASHBOARDS": "Open the dashboards of the machine",
+      "OPEN": "Open the case",
+      "BACK": "Back to the cases",
+      "CLOSE_CASE": "Close the case with a reason",
+      "RUN_AGAIN": "Queue a new AI run for the case"
+    },
+    "COVERAGE": {
+      "NEW": "Not yet reviewed",
+      "DRAFTED": "Work order drafted",
+      "LINKED": "Linked to a work order",
+      "WATCHED": "Watched",
+      "DISMISSED": "Dismissed",
+      "RESOLVED_BEFORE_REVIEW": "Resolved before review"
+    },
+    "VERDICTS": {
+      "DISMISS": "Dismiss",
+      "WATCH": "Watch",
+      "ESCALATE": "Escalate",
+      "SAFE": "Safe",
+      "UNSAFE": "Unsafe"
+    },
+    "RUN_ERRORS": {
+      "PROVIDER_UNAVAILABLE": "The AI provider was unavailable",
+      "UNEXPECTED_ERROR": "The run failed unexpectedly",
+      "CASE_CHANGED": "The case changed during the run",
+      "NO_DECISION": "The AI did not reach a decision"
+    },
+    "OUTCOMES": {
+      "SUCCEEDED": "Succeeded",
+      "REJECTED": "Rejected",
+      "FAILED": "Failed"
+    },
+    "ROLES": {
+      "TRIAGE": "Triage",
+      "PLANNER": "Planner",
+      "EXTRACTOR": "Extractor",
+      "SCREENER": "Screener"
+    },
+    "RULES": {
+      "THRESHOLD": "Limit crossed",
+      "DRIFT": "Drift",
+      "TREND": "Trend",
+      "STATUS": "Status",
+      "SILENT_MACHINE": "Silent machine",
+      "UNKNOWN_MODE": "Unknown mode"
+    },
+    "TOASTS": {
+      "RUN_QUEUED": "A new run is queued",
+      "CLOSED": "The case is closed",
+      "NOT_OPEN": "The case is not open any more"
+    },
+    "CLOSE_DIALOG": {
+      "TITLE": "Close case",
+      "REASON": "Reason"
+    },
+    "SIGNAL_VALUE_LIMIT": "Value {{value}}, limit {{limit}}"
+  },
+  "WORK_ORDER_DRAFTS": {
+    "TITLE": "Work order drafts",
+    "EMPTY": "No pending work order drafts",
+    "UNKNOWN_MACHINE": "Unknown machine",
+    "MINUTES": "min",
+    "OPEN_CASE": "Open the case",
+    "APPLY": "Create work order",
+    "DISMISS": "Dismiss draft",
+    "DISMISS_HEADER": "Dismiss draft",
+    "DISMISS_MESSAGE": "Dismiss the draft {{title}}?",
+    "COLUMNS": {
+      "TITLE": "Title",
+      "MACHINE": "Machine",
+      "PRIORITY": "Priority",
+      "CATEGORY": "Category",
+      "ESTIMATE": "Estimate",
+      "CASE": "Case",
+      "PROPOSED_AT": "Proposed"
+    },
+    "TOOLTIPS": {
+      "APPLY": "Create a work order from the draft",
+      "DISMISS": "Dismiss the draft without a work order",
+      "BACK": "Back to the work orders"
+    },
+    "APPLY_DIALOG": {
+      "TITLE": "Create work order from draft"
+    },
+    "TOASTS": {
+      "APPLIED": "The work order is created",
+      "DISMISSED": "The draft is dismissed"
+    },
+    "CONFLICTS": {
+      "CHANGED": "The draft changed. The list is loaded again"
     }
   }
 }

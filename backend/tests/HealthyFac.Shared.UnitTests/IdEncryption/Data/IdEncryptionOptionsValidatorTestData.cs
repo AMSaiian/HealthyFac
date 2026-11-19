@@ -12,8 +12,9 @@ public static class IdEncryptionOptionsValidatorTestData
     private static readonly string Long512BitKey = Convert.ToBase64String(new byte[64]);
     private const string NotBase64Key = "not-a-valid-base64-string!@#$";
 
-    public const string DefaultPrefix = "v1.";
-    public const string SecondPrefix = "v2.";
+    public const string DefaultPrefix = "v1_";
+    public const string SecondPrefix = "v2_";
+    public const string PrefixWithDot = "v1.";
 
     public static TheoryData<string> ValidKeys => new()
     {
@@ -40,6 +41,14 @@ public static class IdEncryptionOptionsValidatorTestData
         {
             CreateOptions(CreateKey(DefaultPrefix, isDefault: true), CreateKey(DefaultPrefix, isDefault: false)),
             IdEncryptionValidationMessages.Prefix.DuplicatesNotAllowed
+        },
+        {
+            CreateOptions(CreateKey(PrefixWithDot, isDefault: true)),
+            IdEncryptionValidationMessages.Prefix.DotNotAllowed
+        },
+        {
+            CreateOptions(CreateKey(null!, isDefault: true)),
+            IdEncryptionValidationMessages.Prefix.Required
         },
     };
 

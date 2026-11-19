@@ -5,8 +5,8 @@
   @if (store.isNotFound()) {
     <p class="text-muted-color">{{ 'INGEST.SUMMARY.NOT_FOUND' | translate }}</p>
   }
-  @if (store.reasonKey(); as reasonKey) {
-    <p class="text-red-500">{{ reasonKey | translate }}</p>
+  @if (store.reason(); as reason) {
+    <p class="text-red-500">{{ reason.key | translate: reason.values }}</p>
   }
   @if (store.warning(); as warning) {
     <p class="text-orange-500">{{ warning.key | translate: warningValues() }}</p>

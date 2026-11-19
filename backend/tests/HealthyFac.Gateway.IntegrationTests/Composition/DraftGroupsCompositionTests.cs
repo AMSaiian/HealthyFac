@@ -24,7 +24,10 @@ public sealed class DraftGroupsCompositionTests(GatewayEnvironment environment) 
                                            {"id":"t2","targetMachineId":null,
                                             "targetMachineDraftId":"d2","proposalEntryId":"e2"},
                                            {"id":"t4","targetMachineId":null,
-                                            "targetMachineDraftId":null,"proposalEntryId":"e5"}]}
+                                            "targetMachineDraftId":null,"proposalEntryId":"e5"}],
+                                          "phases":[
+                                           {"id":"p1","targetMachineId":"m1",
+                                            "targetMachineDraftId":null,"proposalEntryId":"e1"}]}
                                          """;
 
     private const string NamesJson = """{"machines":[{"id":"m9","name":"Mill"}],"machineDrafts":[]}""";
@@ -55,6 +58,7 @@ public sealed class DraftGroupsCompositionTests(GatewayEnvironment environment) 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         groups.Should().HaveCount(expected: 4);
         Ids(groups[index: 0], list: "metrics").Should().Equal("t1");
+        Ids(groups[index: 0], list: "phases").Should().Equal("p1");
         Ids(groups[index: 1], list: "statuses").Should().Equal("t2");
         groups[index: 2]![propertyName: "machineName"]!.GetValue<string>().Should().Be(expected: "Mill");
         Ids(groups[index: 2], list: "metrics").Should().Equal("t3");

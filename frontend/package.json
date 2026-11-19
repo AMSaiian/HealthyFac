@@ -28,6 +28,8 @@
     "@ngx-translate/http-loader": "^18.1.0",
     "@primeuix/themes": "^3.1.0",
     "@tailwindcss/postcss": "^4.3.4",
+    "chart.js": "4.6.1",
+    "chartjs-plugin-zoom": "2.2.0",
     "fast-equals": "6.2.2",
     "flag-icons": "7.6.0",
     "keycloak-js": "^26.2.5",

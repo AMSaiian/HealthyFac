@@ -1,0 +1,6 @@
+F:System.Reflection.BindingFlags.NonPublic;Never read non-public members by reflection. Reach them through an internal member and InternalsVisibleTo. See testing.md, Test Seams.
+T:System.Runtime.CompilerServices.UnsafeAccessorAttribute;Never read non-public members by reflection. Reach them through an internal member and InternalsVisibleTo. See testing.md, Test Seams.
+M:System.Activator.CreateInstance(System.Type,System.Boolean);Never read non-public members by reflection. Reach them through an internal member and InternalsVisibleTo. See testing.md, Test Seams.
+M:System.Reflection.PropertyInfo.GetGetMethod(System.Boolean);Never read non-public members by reflection. Reach them through an internal member and InternalsVisibleTo. See testing.md, Test Seams.
+M:System.Reflection.PropertyInfo.GetSetMethod(System.Boolean);Never read non-public members by reflection. Reach them through an internal member and InternalsVisibleTo. See testing.md, Test Seams.
+M:System.Reflection.PropertyInfo.GetAccessors(System.Boolean);Never read non-public members by reflection. Reach them through an internal member and InternalsVisibleTo. See testing.md, Test Seams.

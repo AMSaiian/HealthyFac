@@ -1,6 +1,7 @@
 using HealthyFac.Insights.Application.Conversion;
-using HealthyFac.Insights.Application.Extraction;
+using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Infrastructure.Ai;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,8 @@ public sealed class IngestFakes
 
     public ScriptedChatClient Chat { get; } = new();
 
+    public ScreeningChatClient ScreenerChat { get; } = new();
+
     public TestIngestOptions Options { get; } = new();
 
     public void Reset()
@@ -33,6 +36,7 @@ public sealed class IngestFakes
         Embeddings.Reset();
         Signals.Reset();
         Chat.Reset();
+        ScreenerChat.Reset();
         Options.Reset();
     }
 
@@ -43,6 +47,7 @@ public sealed class IngestFakes
         services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(Embeddings);
         services.AddSingleton<IMachineSignalCatalog>(Signals);
         services.AddSingleton<IChatClient>(Chat);
+        services.AddKeyedSingleton<IChatClient>(AiClientKeys.Triage, ScreenerChat);
         services.AddSingleton<IOptions<IngestProcessingOptions>>(Options);
     }
 }

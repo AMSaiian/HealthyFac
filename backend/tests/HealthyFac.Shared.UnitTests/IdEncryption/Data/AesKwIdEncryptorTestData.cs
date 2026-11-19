@@ -2,7 +2,7 @@ namespace HealthyFac.Shared.UnitTests.IdEncryption.Data;
 
 public static class AesKwIdEncryptorTestData
 {
-    public const string VersionPrefix = "v1.";
+    public const string VersionPrefix = "v1_";
     public const int VersionPrefixLength = 3;
 
     public static readonly byte[] PrimaryKey =
@@ -40,7 +40,7 @@ public static class AesKwIdEncryptorTestData
 
     public static TheoryData<string> InvalidBase64UrlPayloadsData =>
     [
-        "v1.!!!NotValidBase64Url$$$",
+        "v1_!!!NotValidBase64Url$$$",
     ];
 
     public static TheoryData<string> InvalidVersionPrefixedTokensData =>
@@ -56,8 +56,8 @@ public static class AesKwIdEncryptorTestData
 
     public static TheoryData<string> WrongLengthBase64UrlPayloadsData =>
     [
-        "v1.AQID",
-        "v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "v1_AQID",
+        "v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     ];
 
     internal static readonly Rfc3394TestVector Rfc3394Section43Vector = new()

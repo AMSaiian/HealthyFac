@@ -32,6 +32,16 @@ export function orderByOptions<T extends string>(values: readonly T[], optionVal
   return [...values].sort((first, second) => placeOf(first) - placeOf(second));
 }
 
+/** Builds the chips of the picked IDs of a lookup: the label of the option, else the ID when no option has it. */
+export function lookupChips(ids: readonly string[], options: readonly { id: string; displayName: string }[]): Chip[] {
+  return toChips(
+    ids,
+    '',
+    (id) => options.find((option) => option.id === id)?.displayName ?? id,
+    options.map((option) => option.id),
+  );
+}
+
 /**
  * Builds the chips of the values, in the order of the options: the style class is the prefix plus the value.
  */

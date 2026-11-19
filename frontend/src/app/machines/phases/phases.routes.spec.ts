@@ -1,0 +1,216 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef, Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter, withAutoCleanupInjectors, withComponentInputBinding } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
+import { provideTranslateService } from '@ngx-translate/core';
+import { ConfirmationService, MessageService } from 'primeng/api';
+
+import { CompanyStore } from '@shared/company/company.store';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
+
+import { MachineState } from '@machines/machine';
+import { MACHINES_ROUTES } from '@machines/machines.routes';
+import { PhaseConditionOperator } from '@machines/phases/operating-phase';
+import { OperatingPhasesPage } from '@machines/phases/operating-phases-page/operating-phases-page';
+import { OperatingPhasesPageStore } from '@machines/phases/operating-phases-page-store/operating-phases-page.store';
+import { EMPTY_FORM_VALUE } from '@machines/phases/phase-form/phase-form.utils';
+
+const MACHINE_URL = '/api/core/v1/machines/m1';
+const PHASES_URL = '/api/telemetry/v1/machines/m1/operating-phases';
+const ORDER_URL = `${PHASES_URL}/order`;
+const DEFINITIONS_URL = '/api/telemetry/v1/machines/m1/metric-definitions';
+const STATUS_SEARCH_URL = '/api/telemetry/v1/machines/m1/status-definitions/search';
+const LARGEST_API_PAGE = 100;
+let statusSearchLimit = 0;
+
+const MACHINE = {
+  id: 'm1',
+  name: 'Lathe',
+  serialNumber: 'S1',
+  gatewayId: 'abcdefghijklmnop',
+  state: MachineState.Operational,
+  description: null,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: null,
+};
+
+function phase(id: string, priority: number): object {
+  return {
+    id,
+    code: `code.${id}`,
+    name: `Phase ${id}`,
+    description: null,
+    priority,
+    isTracked: true,
+    conditions: [],
+    limits: [],
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: null,
+  };
+}
+
+@Component({ template: '', selector: 'hf-not-found-stub', host: { class: 'contents' } })
+class NotFoundStub {}
+
+function setup(): HttpTestingController {
+  TestBed.configureTestingModule({
+    providers: [
+      provideRouter(
+        [
+          { path: 'machines', children: MACHINES_ROUTES },
+          { path: 'not-found', component: NotFoundStub },
+        ],
+        withComponentInputBinding(),
+        withAutoCleanupInjectors(),
+      ),
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      provideTranslateService(),
+      { provide: AuthStore, useValue: { hasPermission: () => true } },
+      { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
+      { provide: MessageService, useValue: { add: vi.fn() } },
+      { provide: ConfirmationService, useValue: { confirm: vi.fn() } },
+    ],
+  });
+  return TestBed.inject(HttpTestingController);
+}
+
+async function flushWhenRequested(http: HttpTestingController, url: string, body: object): Promise<void> {
+  await vi.waitFor(() => {
+    http.expectOne(url).flush(body);
+  });
+}
+
+async function openPhases(http: HttpTestingController): Promise<RouterTestingHarness> {
+  const harness = await RouterTestingHarness.create();
+  const navigation = harness.navigateByUrl('/machines/m1/phases');
+  await flushWhenRequested(http, MACHINE_URL, MACHINE);
+  await navigation;
+  TestBed.tick();
+  await flushWhenRequested(http, PHASES_URL, { items: [phase('a', 1), phase('b', 3), phase('c', 2)] });
+  await flushWhenRequested(http, DEFINITIONS_URL, { revision: 1, definitions: [] });
+  await vi.waitFor(() => {
+    const search = http.expectOne(STATUS_SEARCH_URL);
+    statusSearchLimit = search.request.body.limit;
+    search.flush({ items: [], totalCount: 0 });
+  });
+  await TestBed.inject(ApplicationRef).whenStable();
+  return harness;
+}
+
+describe('phases route', () => {
+  it('phasesRoute_AfterOpening_AsksForTheStatusesWithAPageThatTheApiAccepts', async () => {
+    const http = setup();
+
+    await openPhases(http);
+
+    expect(statusSearchLimit).toBeGreaterThan(0);
+    expect(statusSearchLimit).toBeLessThanOrEqual(LARGEST_API_PAGE);
+  });
+
+  it('phasesRoute_AfterOpening_ListsThePhasesWithTheLowestPriorityFirst', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(OperatingPhasesPage);
+    const store = TestBed.runInInjectionContext(() =>
+      harness.routeDebugElement?.injector.get(OperatingPhasesPageStore),
+    );
+    expect(store?.items().map((item: { id: string }) => item.id)).toEqual(['a', 'c', 'b']);
+  });
+
+  it('phasesRoute_ReorderOfTheFirstRowToTheLast_SendsTheIdsInTheNewOrderAndShowsThatOrderAfterTheReload', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+
+    store?.reorder(0, 2);
+
+    await vi.waitFor(() => {
+      const request = http.expectOne(ORDER_URL);
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toEqual({ phaseIds: ['c', 'b', 'a'] });
+      request.flush(null);
+    });
+    await flushWhenRequested(http, PHASES_URL, { items: [phase('c', 0), phase('b', 1), phase('a', 2)] });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store?.items().map((item: { id: string }) => item.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('phasesRoute_SaveOfANewPhase_SendsThePriorityAboveTheHighestStoredOne', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+
+    store?.requestCreate();
+    store?.save({
+      value: { ...EMPTY_FORM_VALUE, code: 'idle', name: 'Idle', conditions: [] },
+      onSaved: vi.fn(),
+    });
+
+    await vi.waitFor(() => {
+      const request = http.expectOne(PHASES_URL);
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toMatchObject({ code: 'idle', priority: 4, description: null, conditions: [] });
+      request.flush({ id: 'new' });
+    });
+  });
+
+  it('phasesRoute_ConditionOfAStatus_SendsTheStatusIdAndNoMetricId', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/machines/m1/phases');
+    await flushWhenRequested(http, MACHINE_URL, MACHINE);
+    await navigation;
+    TestBed.tick();
+    await flushWhenRequested(http, PHASES_URL, { items: [] });
+    await flushWhenRequested(http, DEFINITIONS_URL, { revision: 1, definitions: [] });
+    await vi.waitFor(() => {
+      http.expectOne(STATUS_SEARCH_URL).flush({ items: [{ id: 's1', code: 'RUN' }], totalCount: 1 });
+    });
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+
+    store?.requestCreate();
+    store?.save({
+      value: {
+        ...EMPTY_FORM_VALUE,
+        code: 'run',
+        name: 'Run',
+        conditions: [
+          { sourceId: 's1', operator: PhaseConditionOperator.Active, value: null, upperValue: null, states: [] },
+        ],
+      },
+      onSaved: vi.fn(),
+    });
+
+    await vi.waitFor(() => {
+      const request = http.expectOne(PHASES_URL);
+      expect(request.request.body.conditions).toEqual([
+        {
+          metricDefinitionId: null,
+          statusDefinitionId: 's1',
+          operator: 'active',
+          value: null,
+          upperValue: null,
+          states: null,
+        },
+      ]);
+      request.flush({ id: 'new' });
+    });
+  });
+
+  it('phasesRoute_MissingMachine_LeadsToTheNotFoundPage', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/machines/m1/phases');
+    await vi.waitFor(() => {
+      http.expectOne(MACHINE_URL).flush(null, { status: 404, statusText: 'Not Found' });
+    });
+    await navigation;
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(NotFoundStub);
+  });
+});

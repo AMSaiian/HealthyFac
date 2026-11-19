@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner'
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 
 import { IngestApi } from '@files/ingest/ingest-api';
-import { attemptReasonKey } from '@files/ingest/ingest-attempt.utils';
+import { attemptReason } from '@files/ingest/ingest-attempt.utils';
 import { IngestHistoryStore } from '@files/ingest/history/ingest-history.store';
 import { ingestLabelKey, ingestSeverity } from '@files/list/file-grid/file-grid.utils';
 
@@ -38,7 +38,7 @@ export class IngestHistoryHost {
   );
   protected readonly ingestLabelKey = ingestLabelKey;
   protected readonly ingestSeverity = ingestSeverity;
-  protected readonly attemptReasonKey = attemptReasonKey;
+  protected readonly attemptReason = attemptReason;
 
   constructor() {
     effect(() => {

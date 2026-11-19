@@ -1,7 +1,12 @@
-using HealthyFac.Insights.Application.Extraction;
+using HealthyFac.Insights.Application.Agents;
+using HealthyFac.Insights.Application.Agents.Runs;
+using HealthyFac.Insights.Application.Agents.Tools;
+using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Extraction.Mapping;
 using HealthyFac.Insights.Application.Ingest.Processing;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Insights.Application;
 
@@ -22,6 +27,13 @@ public static class ConfigureServices
             services.AddScoped<IngestPipeline>();
             services.AddSingleton<IngestMetrics>();
             services.AddSingleton<DraftProposalMapper>();
+            services.AddScoped<RunCommit>();
+            services.AddSingleton<AgentMetrics>();
+            services.AddSingleton(provider => new ToolRegistry(
+                provider.GetRequiredService<IAdvisorScopes>(),
+                ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance),
+                provider.GetRequiredService<ILogger<ToolRegistry>>(),
+                provider.GetRequiredService<IAgentJson>()));
 
             return services;
         }

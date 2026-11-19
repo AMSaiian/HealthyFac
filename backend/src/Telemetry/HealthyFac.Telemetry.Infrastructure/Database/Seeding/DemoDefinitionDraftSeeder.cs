@@ -8,9 +8,9 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding;
 
 /// <summary>
-/// Creates the demo metric and status drafts of the ingest snapshot from <c>telemetry.json</c>, all pending, with one
-/// proposal entry for each proposed machine. The rows belong to the test company. The seeder skips a draft or an entry
-/// whose ID exists, a deleted one too, so a restart adds nothing.
+/// Creates the demo metric, status, and phase drafts of the ingest snapshot from <c>telemetry.json</c>, all pending,
+/// with one proposal entry for each proposed machine. The rows belong to the test company. The seeder skips a draft
+/// or an entry whose ID exists, a deleted one too, so a restart adds nothing.
 /// </summary>
 /// <remarks>
 /// One <c>SaveChangesAsync</c> stores every row. The seeder adds no outbox row: the drafts come from the ingest in
@@ -53,6 +53,7 @@ public sealed class DemoDefinitionDraftSeeder(
         var statusIds = seedFile.StatusDefinitionDrafts.Select(row => row.Id).ToList();
         var entryIds = seedFile.MetricDefinitionDrafts.Select(row => row.ProposalEntryId)
             .Concat(seedFile.StatusDefinitionDrafts.Select(row => row.ProposalEntryId))
+            .Concat(seedFile.OperatingPhaseDrafts.Select(row => row.ProposalEntryId))
             .Distinct()
             .ToList();
 
@@ -99,6 +100,11 @@ public sealed class DemoDefinitionDraftSeeder(
                     Min = row.Min,
                     Max = row.Max,
                     States = row.States,
+                    WarningLow = row.WarningLow,
+                    WarningHigh = row.WarningHigh,
+                    AlarmLow = row.AlarmLow,
+                    AlarmHigh = row.AlarmHigh,
+                    Behavior = row.Behavior,
                 });
             draft.Follow(entries[row.ProposalEntryId], isTargetRegistrationDeleted: false);
             _dbContext.MetricDefinitionDrafts.Add(draft);
@@ -124,8 +130,67 @@ public sealed class DemoDefinitionDraftSeeder(
             _dbContext.StatusDefinitionDrafts.Add(draft);
         }
 
+        var phaseIds = seedFile.OperatingPhaseDrafts.Select(row => row.Id).ToList();
+        var existingPhaseIds = await _dbContext.OperatingPhaseDrafts
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .Where(draft => phaseIds.Contains(draft.Id))
+            .Select(draft => draft.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var row in seedFile.OperatingPhaseDrafts.Where(row => !existingPhaseIds.Contains(row.Id)))
+        {
+            var draft = OperatingPhaseDraft.Propose(
+                row.Id,
+                tenant.CompanyId,
+                row.AttemptId,
+                row.FileId,
+                row.ProposalEntryId,
+                row.TargetMachineId,
+                new PhaseDraftValues
+                {
+                    SourceLocation = row.SourceLocation,
+                    Code = row.Code,
+                    Name = row.Name,
+                    Description = row.Description,
+                    Priority = row.Priority,
+                    IsTracked = row.IsTracked,
+                },
+                seedFile.OperatingPhaseDraftConditions.Where(condition => condition.DraftId == row.Id)
+                    .Select(ToConditionValues)
+                    .ToList(),
+                seedFile.OperatingPhaseDraftLimits.Where(limit => limit.DraftId == row.Id)
+                    .Select(ToLimitValues)
+                    .ToList());
+            draft.Follow(entries[row.ProposalEntryId], isTargetRegistrationDeleted: false);
+            _dbContext.OperatingPhaseDrafts.Add(draft);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static PhaseDraftConditionValues ToConditionValues(DemoPhaseConditionRow row) =>
+        new()
+        {
+            MetricDefinitionId = row.MetricDefinitionId,
+            MetricDraftId = row.MetricDraftId,
+            StatusDefinitionId = row.StatusDefinitionId,
+            StatusDraftId = row.StatusDraftId,
+            Operator = row.Operator,
+            Value = row.Value,
+            UpperValue = row.UpperValue,
+            States = row.States,
+        };
+
+    private static PhaseDraftLimitValues ToLimitValues(DemoPhaseLimitRow row) =>
+        new()
+        {
+            MetricDefinitionId = row.MetricDefinitionId,
+            MetricDraftId = row.MetricDraftId,
+            WarningLow = row.WarningLow,
+            WarningHigh = row.WarningHigh,
+            AlarmLow = row.AlarmLow,
+            AlarmHigh = row.AlarmHigh,
+        };
 
     private static ProposalEntry CreateEntry(Guid entryId, Guid companyId, DemoDefinitionDraftSeedFile seedFile)
     {

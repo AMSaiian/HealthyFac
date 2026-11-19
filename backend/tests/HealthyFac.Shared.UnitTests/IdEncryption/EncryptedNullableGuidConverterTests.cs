@@ -1,8 +1,8 @@
 using System.Text.Json;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
+using HealthyFac.Shared.Infrastructure.IdEncryption.Json;
 using HealthyFac.Shared.UnitTests.IdEncryption.Data;
-using HealthyFac.Shared.Web.IdEncryption.Converters;
 
 namespace HealthyFac.Shared.UnitTests.IdEncryption;
 

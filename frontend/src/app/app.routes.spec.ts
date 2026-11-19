@@ -11,6 +11,7 @@ import { CompanyStore } from '@shared/company/company.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { CompanyFilesPage } from '@files/list/company-files-page/company-files-page';
+import { CasesPage } from '@maintenance/list/cases-page/cases-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
 
 import { routes } from './app.routes';
@@ -19,6 +20,7 @@ const ROUTE_LOAD_TIMEOUT = 10_000;
 const COMPANY_URL = '/api/core/v1/company';
 const MACHINES_SEARCH_URL = '/api/core/v1/machines/search';
 const MACHINES_LOOKUP_URL = '/api/core/v1/machines/lookup';
+const CASES_SEARCH_URL = '/api/insights/v1/cases/search';
 const FILES_SEARCH_URL = '/api/document/v1/files/search';
 const COMPANY = { name: 'Test Company', timeZoneId: 'Europe/Kyiv' };
 const SERVER_ERROR = { status: 500, statusText: 'Server Error' };
@@ -83,6 +85,30 @@ describe('app routes', { timeout: ROUTE_LOAD_TIMEOUT * 2 }, () => {
     expect(harness.routeDebugElement?.componentInstance instanceof MachinesPage).toBe(true);
     expect(TestBed.inject(CompanyStore).timeZoneId()).toBe('Europe/Kyiv');
     http.verify();
+  });
+
+  it('maintenanceRoute_WithTheCasesPermission_ActivatesTheCasesPageAndSearchesTheCases', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+
+    const navigation = harness.navigateByUrl('/maintenance/cases');
+    await vi.waitFor(
+      () => {
+        http.expectOne(COMPANY_URL).flush(COMPANY);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
+    await navigation;
+    TestBed.tick();
+    await vi.waitFor(
+      () => {
+        TestBed.tick();
+        expect(http.match((request) => request.url === CASES_SEARCH_URL).length).toBeGreaterThan(0);
+      },
+      { timeout: ROUTE_LOAD_TIMEOUT },
+    );
+
+    expect(harness.routeDebugElement?.componentInstance instanceof CasesPage).toBe(true);
   });
 
   it('machinesRoute_AfterCompanyError_ActivatesNoPageAndAsksOnce', async () => {

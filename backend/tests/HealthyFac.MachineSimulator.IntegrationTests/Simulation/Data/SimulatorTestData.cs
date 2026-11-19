@@ -19,6 +19,12 @@ public static class SimulatorTestData
     public const string ReadOnlySqlState = "25006";
     public const string CompanyName = "Simulator Company";
     public const string CompanyTimeZoneId = "Europe/Kyiv";
+
+    public static readonly DateOnly GoLiveDay = new(year: 2026, month: 12, day: 1);
+
+    public static readonly DateTime GoLiveStart = new(
+        year: 2026, month: 11, day: 30, hour: 22, minute: 0, second: 0, DateTimeKind.Utc);
+
     public const string GenericSerialNumber = "GEN-0001";
     public const string GenericMetricKey = "level";
     public const string TopicFilter = "healthyfac/gateways/+/messages";
@@ -103,6 +109,7 @@ public static class SimulatorTestData
         var metrics = telemetryRoot.GetProperty(propertyName: "metricDefinitionDrafts")
             .EnumerateArray()
             .Where(IsOfMachine)
+            .Where(IsAppliedWithoutReview)
             .Select(ToMetric)
             .ToList();
         var statuses = telemetryRoot.GetProperty(propertyName: "statusDefinitionDrafts")
@@ -115,6 +122,11 @@ public static class SimulatorTestData
 
         return new DemoDefinitions(metrics, statuses);
     }
+
+    private static bool IsAppliedWithoutReview(JsonElement draft) =>
+        draft.GetProperty(propertyName: "value_kind").GetString() is { } valueKind
+        && (valueKind != MetricValueKind.Numeric.Value
+            || draft.GetProperty(propertyName: "quantity_kind_name").GetString() is not null);
 
     private static CreatedMetricDefinition ToMetric(JsonElement draft)
     {

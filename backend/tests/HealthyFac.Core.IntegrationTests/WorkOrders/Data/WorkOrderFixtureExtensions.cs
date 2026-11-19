@@ -1,4 +1,3 @@
-using System.Reflection;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Application.WorkOrders;
@@ -50,14 +49,14 @@ public static class WorkOrderFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-            var row = (WorkOrderHistory)Activator.CreateInstance(
-                typeof(WorkOrderHistory),
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                binder: null,
-                [workOrderId, revision, WorkOrderStatus.Backlog, null, null, null],
-                culture: null)!;
-
-            dbContext.WorkOrderHistories.Add(row);
+            dbContext.WorkOrderHistories.Add(
+                new WorkOrderHistory(
+                    workOrderId,
+                    revision,
+                    WorkOrderStatus.Backlog,
+                    assigneeId: null,
+                    plannedStartLocal: null,
+                    plannedStartUtc: null));
             await dbContext.SaveChangesAsync();
         }
 

@@ -23,8 +23,8 @@ public static class ConverterTestData
     {
         "not-an-encrypted-id",
         "00000000-0000-0000-0000-000000000000",
-        "v1.",
-        "v1.!!!not-base64!!!",
+        "v1_",
+        "v1_!!!not-base64!!!",
         "v9.KL01SonK1QYdAtRfguqJTWwxJBoE_J1U",
     };
 }

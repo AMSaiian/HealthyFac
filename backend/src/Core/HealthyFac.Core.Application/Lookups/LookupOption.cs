@@ -6,6 +6,11 @@ public record LookupOption
     public required Guid Id { get; init; }
 
     public required string DisplayName { get; init; }
+
+    /// <summary>
+    /// Tells that the row is soft deleted. A picker never lists a deleted row, so it is always false there.
+    /// </summary>
+    public required bool IsDeleted { get; init; }
 }
 
 public record LookupResponse

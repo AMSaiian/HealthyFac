@@ -54,6 +54,12 @@ public static class DevelopmentSeedFixtureExtensions
                     .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                     .AsNoTracking()
                     .ToListAsync(),
+                Phases = await dbContext.OperatingPhaseDrafts
+                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .Include(draft => draft.Conditions)
+                    .Include(draft => draft.Limits)
+                    .AsNoTracking()
+                    .ToListAsync(),
                 Entries = await dbContext.ProposalEntries
                     .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                     .AsNoTracking()
@@ -76,6 +82,7 @@ public static class DevelopmentSeedFixtureExtensions
                     GatewayId = registration.GatewayId,
                     StatusDefinitionCount =
                         dbContext.StatusDefinitions.Count(status => status.MachineRegistrationId == registration.Id),
+                    HasEvaluation = dbContext.MachineEvaluations.Any(evaluation => evaluation.Id == registration.Id),
                 })
                 .ToListAsync();
         }
@@ -86,6 +93,7 @@ public sealed record DemoDefinitionDrafts
 {
     public required IReadOnlyList<MetricDefinitionDraft> Metrics { get; init; }
     public required IReadOnlyList<StatusDefinitionDraft> Statuses { get; init; }
+    public required IReadOnlyList<OperatingPhaseDraft> Phases { get; init; }
     public required IReadOnlyList<ProposalEntry> Entries { get; init; }
 }
 
@@ -94,4 +102,5 @@ public sealed record SeededRegistration
     public required Guid Id { get; init; }
     public required string GatewayId { get; init; }
     public required int StatusDefinitionCount { get; init; }
+    public required bool HasEvaluation { get; init; }
 }

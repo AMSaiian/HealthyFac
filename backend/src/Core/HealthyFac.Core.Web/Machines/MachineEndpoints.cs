@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using ApplicationChangeMachineStateRequest = HealthyFac.Core.Application.Machines.ChangeMachineStateRequest;
 using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachineRequest;
 using ApplicationDeleteMachineRequest = HealthyFac.Core.Application.Machines.DeleteMachineRequest;
+using ApplicationGetMachineStateTimesRequest = HealthyFac.Core.Application.Machines.GetMachineStateTimesRequest;
 using ApplicationGetMachineRequest = HealthyFac.Core.Application.Machines.GetMachineRequest;
 using ApplicationLookupMachineNamesRequest = HealthyFac.Core.Application.Machines.LookupMachineNamesRequest;
 using ApplicationLookupMachinesRequest = HealthyFac.Core.Application.Machines.LookupMachinesRequest;
@@ -42,6 +43,8 @@ public static class MachineEndpoints
             group.MapPost(MachineRoutes.Lookup, LookupAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
             group.MapGet(MachineRoutes.ById, GetAsync)
+                .RequireAuthorization(CorePermissions.Machines.Read);
+            group.MapGet(MachineRoutes.StateTimes, GetStateTimesAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
             group.MapPut(MachineRoutes.ById, UpdateAsync)
                 .RequireAuthorization(CorePermissions.Machines.Write);
@@ -112,6 +115,21 @@ public static class MachineEndpoints
     {
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<MachineStateTimesResponse>> GetStateTimesAsync(
+        [AsParameters] GetMachineStateTimesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetMachineStateTimesRequest, MachineStateTimesResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
             cancellationToken);
 
         return TypedResults.Ok(response);

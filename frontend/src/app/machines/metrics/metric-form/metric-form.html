@@ -1,195 +1,274 @@
 <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1 pe-4">
-  <div class="flex flex-col gap-1">
-    <label for="metric-name">{{ 'METRICS.FORM.NAME' | translate }}</label>
-    @for (error of metricForm.name().errors(); track $index) {
-      @if (isShown(metricForm.name)) {
-        <small class="text-red-500">{{ error.message | translate }}</small>
-      }
-    }
-    <input
-      pInputText
-      id="metric-name"
-      autocomplete="off"
-      [placeholder]="'METRICS.FORM.NAME_PLACEHOLDER' | translate"
-      [attr.data-hf-calm]="isShown(metricForm.name) ? null : ''"
-      [formField]="metricForm.name"
-    />
-  </div>
-  <div class="flex flex-col gap-1">
-    <label for="metric-key">{{ 'METRICS.FORM.KEY' | translate }}</label>
-    @for (error of metricForm.key().errors(); track $index) {
-      @if (isShown(metricForm.key)) {
-        <small class="text-red-500">{{ error.message | translate }}</small>
-      }
-    }
-    <input
-      pInputText
-      id="metric-key"
-      autocomplete="off"
-      [placeholder]="'METRICS.FORM.KEY_PLACEHOLDER' | translate"
-      [attr.data-hf-calm]="isShown(metricForm.key) ? null : ''"
-      [formField]="metricForm.key"
-    />
-  </div>
-  <div class="flex flex-col gap-1">
-    <label for="metric-kind">{{ 'METRICS.FORM.KIND' | translate }}</label>
-    <p-select
-      inputId="metric-kind"
-      optionLabel="labelKey"
-      optionValue="value"
-      appendTo="body"
-      [options]="kindOptions"
-      [formField]="metricForm.valueKind"
-    >
-      <ng-template
-        #selectedItem
-        let-option
-      >
-        {{ option.labelKey | translate }}
-      </ng-template>
-      <ng-template
-        #item
-        let-option
-      >
-        {{ option.labelKey | translate }}
-      </ng-template>
-    </p-select>
-  </div>
-  @if (isNumeric()) {
+  <section class="flex flex-col gap-4">
+    <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.GENERAL' | translate }}</h2>
     <div class="flex flex-col gap-1">
-      <label for="metric-unit">{{ 'METRICS.FORM.UNIT' | translate }}</label>
-      @for (error of metricForm.unit().errors(); track $index) {
-        @if (isShown(metricForm.unit)) {
+      <label for="metric-name">{{ 'METRICS.FORM.NAME' | translate }}</label>
+      @for (error of metricForm.name().errors(); track $index) {
+        @if (isShown(metricForm.name)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
         }
       }
+      <input
+        pInputText
+        id="metric-name"
+        autocomplete="off"
+        [placeholder]="'METRICS.FORM.NAME_PLACEHOLDER' | translate"
+        [attr.data-hf-calm]="isShown(metricForm.name) ? null : ''"
+        [formField]="metricForm.name"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="metric-key">{{ 'METRICS.FORM.KEY' | translate }}</label>
+      @for (error of metricForm.key().errors(); track $index) {
+        @if (isShown(metricForm.key)) {
+          <small class="text-red-500">{{ error.message | translate }}</small>
+        }
+      }
+      <input
+        pInputText
+        id="metric-key"
+        autocomplete="off"
+        [placeholder]="'METRICS.FORM.KEY_PLACEHOLDER' | translate"
+        [attr.data-hf-calm]="isShown(metricForm.key) ? null : ''"
+        [formField]="metricForm.key"
+      />
+    </div>
+    <div class="flex flex-col gap-1">
+      <label for="metric-kind">{{ 'METRICS.FORM.KIND' | translate }}</label>
       <p-select
-        inputId="metric-unit"
-        optionLabel="label"
+        inputId="metric-kind"
+        optionLabel="labelKey"
         optionValue="value"
-        optionGroupLabel="label"
-        optionGroupChildren="items"
         appendTo="body"
-        [filter]="true"
-        [group]="true"
-        [options]="unitGroupList()"
-        [loading]="showUnitsLoading()"
-        [placeholder]="'METRICS.FORM.UNIT_PLACEHOLDER' | translate"
-        [attr.data-hf-calm]="isShown(metricForm.unit) ? null : ''"
-        [formField]="metricForm.unit"
+        [options]="kindOptions"
+        [formField]="metricForm.valueKind"
       >
-        <ng-template
-          #group
-          let-group
-        >
-          {{ quantityKindKey(group.label) | translate }}
-        </ng-template>
         <ng-template
           #selectedItem
           let-option
         >
-          {{ option.isUnitless ? ('METRICS.UNIT_WITHOUT_ABBREVIATION' | translate) : option.label }}
+          {{ option.labelKey | translate }}
         </ng-template>
         <ng-template
           #item
           let-option
         >
-          {{ option.isUnitless ? ('METRICS.UNIT_WITHOUT_ABBREVIATION' | translate) : option.label }}
+          {{ option.labelKey | translate }}
         </ng-template>
       </p-select>
     </div>
-    <div class="flex gap-4">
-      <div class="flex min-w-0 flex-1 flex-col gap-1">
-        <label for="metric-min">{{ 'METRICS.FORM.MIN' | translate }}</label>
-        <p-inputnumber
-          inputId="metric-min"
-          [maxFractionDigits]="maxFractionDigits"
-          [useGrouping]="false"
-          [formField]="metricForm.min"
-        />
-      </div>
-      <div class="flex min-w-0 flex-1 flex-col gap-1">
-        <label for="metric-max">{{ 'METRICS.FORM.MAX' | translate }}</label>
-        @for (error of metricForm.max().errors(); track $index) {
+    <div class="flex flex-col gap-1">
+      <span>{{ 'METRICS.FORM.DESCRIPTION' | translate }}</span>
+      @for (error of metricForm.description().errors(); track $index) {
+        @if (isShown(metricForm.description)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
         }
-        <p-inputnumber
-          inputId="metric-max"
-          [maxFractionDigits]="maxFractionDigits"
-          [useGrouping]="false"
-          [formField]="metricForm.max"
-        />
-      </div>
+      }
+      <hf-rich-text-editor
+        [formField]="metricForm.description"
+        [characterLimit]="descriptionMaxLength"
+        [placeholder]="'METRICS.FORM.DESCRIPTION_PLACEHOLDER' | translate"
+      />
     </div>
+  </section>
+  @if (isNumeric()) {
+    <p-divider />
+    <section class="flex flex-col gap-4">
+      <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.MEASUREMENT' | translate }}</h2>
+      <div class="flex flex-col gap-1">
+        <label for="metric-unit">{{ 'METRICS.FORM.UNIT' | translate }}</label>
+        @for (error of metricForm.unit().errors(); track $index) {
+          @if (isShown(metricForm.unit)) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+        }
+        <p-select
+          inputId="metric-unit"
+          optionLabel="label"
+          optionValue="value"
+          optionGroupLabel="label"
+          optionGroupChildren="items"
+          appendTo="body"
+          [filter]="true"
+          [group]="true"
+          [options]="unitGroupList()"
+          [loading]="showUnitsLoading()"
+          [placeholder]="'METRICS.FORM.UNIT_PLACEHOLDER' | translate"
+          [attr.data-hf-calm]="isShown(metricForm.unit) ? null : ''"
+          [formField]="metricForm.unit"
+        >
+          <ng-template
+            #group
+            let-group
+          >
+            {{ quantityKindKey(group.label) | translate }}
+          </ng-template>
+          <ng-template
+            #selectedItem
+            let-option
+          >
+            {{ option.isUnitless ? ('METRICS.UNIT_WITHOUT_ABBREVIATION' | translate) : option.label }}
+          </ng-template>
+          <ng-template
+            #item
+            let-option
+          >
+            {{ option.isUnitless ? ('METRICS.UNIT_WITHOUT_ABBREVIATION' | translate) : option.label }}
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="flex gap-4">
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+          <label for="metric-min">{{ 'METRICS.FORM.MIN' | translate }}</label>
+          <p-inputnumber
+            inputId="metric-min"
+            [maxFractionDigits]="maxFractionDigits"
+            [useGrouping]="false"
+            [formField]="metricForm.min"
+          />
+        </div>
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+          <label for="metric-max">{{ 'METRICS.FORM.MAX' | translate }}</label>
+          @for (error of metricForm.max().errors(); track $index) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+          <p-inputnumber
+            inputId="metric-max"
+            [maxFractionDigits]="maxFractionDigits"
+            [useGrouping]="false"
+            [formField]="metricForm.max"
+          />
+        </div>
+      </div>
+    </section>
+    <p-divider />
+    <section class="flex flex-col gap-4">
+      <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.MONITORING' | translate }}</h2>
+      <div class="flex flex-col gap-2">
+        <span class="font-semibold">{{ 'METRICS.FORM.ALARM_ROW' | translate }}</span>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex min-w-0 flex-col gap-1">
+            <label for="metric-alarm-low">{{ 'METRICS.FORM.ALARM_LOW' | translate }}</label>
+            <p-inputnumber
+              inputId="metric-alarm-low"
+              [maxFractionDigits]="maxFractionDigits"
+              [useGrouping]="false"
+              [formField]="metricForm.alarmLow"
+            />
+          </div>
+          <div class="flex min-w-0 flex-col gap-1">
+            <label for="metric-alarm-high">{{ 'METRICS.FORM.ALARM_HIGH' | translate }}</label>
+            <p-inputnumber
+              inputId="metric-alarm-high"
+              [maxFractionDigits]="maxFractionDigits"
+              [useGrouping]="false"
+              [formField]="metricForm.alarmHigh"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <span class="font-semibold">{{ 'METRICS.FORM.WARNING_ROW' | translate }}</span>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex min-w-0 flex-col gap-1">
+            <label for="metric-warning-low">{{ 'METRICS.FORM.WARNING_LOW' | translate }}</label>
+            @for (error of metricForm.warningLow().errors(); track $index) {
+              <small class="text-red-500">{{ error.message | translate }}</small>
+            }
+            <p-inputnumber
+              inputId="metric-warning-low"
+              [maxFractionDigits]="maxFractionDigits"
+              [useGrouping]="false"
+              [formField]="metricForm.warningLow"
+            />
+          </div>
+          <div class="flex min-w-0 flex-col gap-1">
+            <label for="metric-warning-high">{{ 'METRICS.FORM.WARNING_HIGH' | translate }}</label>
+            @for (error of metricForm.warningHigh().errors(); track $index) {
+              <small class="text-red-500">{{ error.message | translate }}</small>
+            }
+            <p-inputnumber
+              inputId="metric-warning-high"
+              [maxFractionDigits]="maxFractionDigits"
+              [useGrouping]="false"
+              [formField]="metricForm.warningHigh"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="metric-behavior">{{ 'METRICS.FORM.BEHAVIOR' | translate }}</label>
+        <p-select
+          inputId="metric-behavior"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          [options]="behaviorOptions()"
+          [formField]="metricForm.behavior"
+        >
+        </p-select>
+      </div>
+    </section>
   }
   @if (isStateSet()) {
-    <div class="flex flex-col gap-1">
-      <label for="metric-new-state">{{ 'METRICS.FORM.STATES' | translate }}</label>
-      @for (error of metricForm.states().errors(); track $index) {
-        <small class="text-red-500">{{ error.message | translate }}</small>
-      }
-      <div class="flex gap-2">
-        <input
-          pInputText
-          #stateInput
-          id="metric-new-state"
-          class="min-w-0 flex-1"
-          autocomplete="off"
-          [placeholder]="'METRICS.FORM.STATE_PLACEHOLDER' | translate"
-          (input)="newState.set($any($event.target).value)"
-          (keydown.enter)="addState(); $event.preventDefault()"
-        />
-        <button
-          pButton
-          [pTooltip]="'METRICS.TOOLTIPS.ADD_STATE' | translate"
-          tooltipPosition="bottom"
-          type="button"
-          class="flex-none"
-          severity="secondary"
-          [disabled]="!hasStateInput()"
-          (click)="addState()"
-        >
-          {{ 'METRICS.FORM.ADD_STATE' | translate }}
-        </button>
-      </div>
-      <div class="mt-1 flex flex-wrap gap-1">
-        @for (state of model().states; track $index) {
-          <div class="flex items-center gap-2">
-            <p-tag
-              severity="secondary"
-              [value]="state"
-            />
-            <button
-              pButton
-              type="button"
-              iconOnly
-              size="small"
-              severity="secondary"
-              [text]="true"
-              [pTooltip]="'METRICS.FORM.REMOVE_STATE' | translate"
-              [attr.aria-label]="'METRICS.FORM.REMOVE_STATE' | translate"
-              (click)="removeState($index)"
-            >
-              <i class="pi pi-times"></i>
-            </button>
-          </div>
+    <p-divider />
+    <section class="flex flex-col gap-4">
+      <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.STATES' | translate }}</h2>
+      <div class="flex flex-col gap-1">
+        <label for="metric-new-state">{{ 'METRICS.FORM.STATES' | translate }}</label>
+        @for (error of metricForm.states().errors(); track $index) {
+          <small class="text-red-500">{{ error.message | translate }}</small>
         }
+        <div class="flex gap-2">
+          <input
+            pInputText
+            #stateInput
+            id="metric-new-state"
+            class="min-w-0 flex-1"
+            autocomplete="off"
+            [placeholder]="'METRICS.FORM.STATE_PLACEHOLDER' | translate"
+            (input)="newState.set($any($event.target).value)"
+            (keydown.enter)="addState(); $event.preventDefault()"
+          />
+          <button
+            pButton
+            [pTooltip]="'METRICS.TOOLTIPS.ADD_STATE' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            class="flex-none"
+            severity="secondary"
+            [disabled]="!hasStateInput()"
+            (click)="addState()"
+          >
+            {{ 'METRICS.FORM.ADD_STATE' | translate }}
+          </button>
+        </div>
+        <div class="mt-1 flex flex-wrap gap-1">
+          @for (state of model().states; track $index) {
+            <div class="flex items-center gap-2">
+              <p-tag
+                severity="secondary"
+                [value]="state"
+              />
+              <button
+                pButton
+                type="button"
+                iconOnly
+                size="small"
+                severity="secondary"
+                [text]="true"
+                [pTooltip]="'METRICS.FORM.REMOVE_STATE' | translate"
+                [attr.aria-label]="'METRICS.FORM.REMOVE_STATE' | translate"
+                (click)="removeState($index)"
+              >
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+          }
+        </div>
       </div>
-    </div>
+    </section>
   }
-  <div class="flex flex-col gap-1">
-    <span>{{ 'METRICS.FORM.DESCRIPTION' | translate }}</span>
-    @for (error of metricForm.description().errors(); track $index) {
-      @if (isShown(metricForm.description)) {
-        <small class="text-red-500">{{ error.message | translate }}</small>
-      }
-    }
-    <hf-rich-text-editor
-      [formField]="metricForm.description"
-      [characterLimit]="descriptionMaxLength"
-      [placeholder]="'METRICS.FORM.DESCRIPTION_PLACEHOLDER' | translate"
-    />
-  </div>
 </div>
 <div class="flex flex-none justify-end gap-2">
   <button

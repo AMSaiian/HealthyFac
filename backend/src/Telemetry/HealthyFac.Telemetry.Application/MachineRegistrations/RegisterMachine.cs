@@ -4,6 +4,7 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application.MetricSchemas;
+using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,7 @@ public sealed class RegisterMachinePreHandlerCheck : PassThroughPreHandlerCheck<
 
 /// <summary>
 /// Creates the registration of a machine that Core created. When the registration already exists (for example from
-/// the development seed, or after a deleted machine), the handler changes nothing and succeeds.
+/// the development seed, or after a deleted machine), the handler only fills a missing go-live and succeeds.
 /// </summary>
 /// <remarks>
 /// The handler follows the form <b>Resume</b> (rule <b>Cancellation Tokens</b>): it finds the registration first, and
@@ -44,8 +45,15 @@ public sealed class RegisterMachineRequestHandler(
         }
 
         var registration = new MachineRegistration(
-            request.MachineId, request.GatewayId, request.CompanyId);
+            request.MachineId,
+            request.GatewayId,
+            request.CompanyId,
+            request.ExpectedGoLiveOn,
+            request.GoLiveStartsAt);
+
         _dbContext.MachineRegistrations.Add(registration);
+        _dbContext.MachineEvaluations.Add(
+            new MachineEvaluation(registration.Id, _timeProvider.GetUtcNow().UtcDateTime));
         _dbContext.MetricSchemaRevisions.Add(
             new MetricSchemaRevision(
                 registration.Id,

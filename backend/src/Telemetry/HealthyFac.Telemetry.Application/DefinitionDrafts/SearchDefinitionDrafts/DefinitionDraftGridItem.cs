@@ -5,8 +5,8 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
 
 /// <summary>
-/// A row of the definition draft grid: one metric or status draft in any state. The row implements
-/// <see cref="IEntity{TId}"/> so the shared grid helpers (filter, sort, page) work on the union of the two tables.
+/// A row of the definition draft grid: one metric, status, or phase draft in any state. The row implements
+/// <see cref="IEntity{TId}"/> so the shared grid helpers (filter, sort, page) work on the union of the three tables.
 /// </summary>
 public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<DefinitionDraftGridItem>
 {
@@ -49,13 +49,15 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
     /// </summary>
     /// <param name="metricDrafts">The metric drafts.</param>
     /// <param name="statusDrafts">The status drafts.</param>
+    /// <param name="phaseDrafts">The phase drafts.</param>
     /// <param name="companyId">The company of the actor.</param>
     /// <param name="machineId">The target machine, or <see langword="null"/> to scope by the attempt.</param>
     /// <param name="attemptId">The ingest attempt, or <see langword="null"/> to scope by the machine.</param>
-    /// <returns>The query over the two tables.</returns>
+    /// <returns>The query over the three tables.</returns>
     public static IQueryable<DefinitionDraftGridItem> Union(
         IQueryable<MetricDefinitionDraft> metricDrafts,
         IQueryable<StatusDefinitionDraft> statusDrafts,
+        IQueryable<OperatingPhaseDraft> phaseDrafts,
         Guid companyId,
         Guid? machineId,
         Guid? attemptId
@@ -98,6 +100,25 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
                 TargetMachineDraftId = draft.TargetMachineDraftId,
             });
 
-        return metricRows.Concat(statusRows);
+        var phaseRows = phaseDrafts
+            .Where(draft => draft.CompanyId == companyId
+                && (machineId == null || draft.TargetMachineId == machineId)
+                && (attemptId == null || draft.AttemptId == attemptId))
+            .Select(draft => new DefinitionDraftGridItem
+            {
+                Id = draft.Id,
+                Kind = DefinitionDraftKinds.Phase,
+                State = draft.State,
+                AttemptId = draft.AttemptId,
+                FileId = draft.FileId,
+                ProposedAt = draft.CreatedAt,
+                SourceLocation = draft.SourceLocation,
+                Label = draft.Name ?? draft.Code,
+                RowVersion = draft.RowVersion,
+                MachineId = draft.TargetMachineId,
+                TargetMachineDraftId = draft.TargetMachineDraftId,
+            });
+
+        return metricRows.Concat(statusRows).Concat(phaseRows);
     }
 }

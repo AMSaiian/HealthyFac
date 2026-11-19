@@ -52,7 +52,7 @@ describe('IngestSummaryStore', () => {
     http.expectOne(ATTEMPT_URL).flush(ATTEMPT);
     await settle();
 
-    expect(store.reasonKey()).toBe('INGEST.ERRORS.NO_TEXT');
+    expect(store.reason()?.key).toBe('INGEST.ERRORS.NO_TEXT');
     expect(store.isNotFound()).toBe(false);
   });
 

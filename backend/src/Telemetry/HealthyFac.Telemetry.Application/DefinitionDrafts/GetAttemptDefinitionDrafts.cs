@@ -18,6 +18,8 @@ public record AttemptDefinitionDraftsResponse
     public required IReadOnlyList<MetricDraftDetail> Metrics { get; init; }
 
     public required IReadOnlyList<StatusDraftDetail> Statuses { get; init; }
+
+    public IReadOnlyList<PhaseDraftDetail> Phases { get; init; } = [];
 }
 
 public sealed class GetAttemptDefinitionDraftsRequestValidator : AbstractValidator<GetAttemptDefinitionDraftsRequest>
@@ -47,7 +49,8 @@ public sealed class GetAttemptDefinitionDraftsPreHandlerCheck(ICurrentUserProvid
 }
 
 /// <summary>
-/// Reads every metric and status draft of one ingest attempt (all states) with all their values. The Gateway groups
+/// Reads every metric, status, and phase draft of one ingest attempt (all states) with all their values. The
+/// Gateway groups
 /// them by machine. An attempt that Telemetry does not know gives empty lists, because Telemetry does not own attempts.
 /// </summary>
 /// <param name="dbContext">Reads the drafts.</param>
@@ -70,8 +73,16 @@ public sealed class GetAttemptDefinitionDraftsRequestHandler(ITelemetryDbContext
             .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
 
+        var phases = await _dbContext.OperatingPhaseDrafts
+            .AsNoTracking()
+            .Include(draft => draft.Conditions)
+            .Include(draft => draft.Limits)
+            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
+            .ToListAsync(cancellationToken);
+
         return new AttemptDefinitionDraftsResponse
         {
+            Phases = [.. phases.Select(PhaseDraftDetail.From)],
             Metrics = [.. metrics.Select(MetricDraftDetail.From)],
             Statuses = [.. statuses.Select(StatusDraftDetail.From)],
         };

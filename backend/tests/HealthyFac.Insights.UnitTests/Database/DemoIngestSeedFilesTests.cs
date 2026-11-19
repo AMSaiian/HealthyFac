@@ -14,10 +14,13 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     private const int FileRefCount = 3;
     private const int AttemptCount = 3;
     private const int IngestedDocumentCount = 3;
-    private const int ChunkCount = 101;
+    private const int ChunkCount = 103;
     private const int MachineDraftCount = 3;
     private const int MetricDraftCount = 40;
     private const int StatusDraftCount = 84;
+    private const int PhaseDraftCount = 7;
+    private const int AgentRunCount = 6;
+    private const int ToolCallCount = 134;
     private const int VectorDimensions = 1536;
     private const double NormTolerance = 1e-5;
 
@@ -38,6 +41,9 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
             _files.Rows(_files.Core, name: "machineDrafts").Count,
             _files.Rows(_files.Telemetry, name: "metricDefinitionDrafts").Count,
             _files.Rows(_files.Telemetry, name: "statusDefinitionDrafts").Count,
+            _files.Rows(_files.Telemetry, name: "operatingPhaseDrafts").Count,
+            _files.Rows(_files.Insights, name: "agentRuns").Count,
+            _files.Rows(_files.Insights, name: "agentToolCalls").Count,
         };
 
         counts.Should()
@@ -48,7 +54,10 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
                 ChunkCount,
                 MachineDraftCount,
                 MetricDraftCount,
-                StatusDraftCount);
+                StatusDraftCount,
+                PhaseDraftCount,
+                AgentRunCount,
+                ToolCallCount);
     }
 
     [Fact]
@@ -59,6 +68,7 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
         var drafts = _files.Rows(_files.Core, name: "machineDrafts")
             .Concat(_files.Rows(_files.Telemetry, name: "metricDefinitionDrafts"))
             .Concat(_files.Rows(_files.Telemetry, name: "statusDefinitionDrafts"))
+            .Concat(_files.Rows(_files.Telemetry, name: "operatingPhaseDrafts"))
             .ToList();
 
         var unknownAttempts = drafts.Select(draft => Text(draft, name: "attempt_id"))
@@ -83,9 +93,49 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
         var machineDraftIds = Ids(_files.Rows(_files.Core, name: "machineDrafts"));
         var entryIds = _files.Rows(_files.Telemetry, name: "metricDefinitionDrafts")
             .Concat(_files.Rows(_files.Telemetry, name: "statusDefinitionDrafts"))
+            .Concat(_files.Rows(_files.Telemetry, name: "operatingPhaseDrafts"))
             .Select(draft => Text(draft, name: "proposal_entry_id"));
 
         entryIds.Where(id => !machineDraftIds.Contains(id)).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void PhaseRows_Always_ReferenceAnExistingPhaseDraftAndMetricOrStatusDraft()
+    {
+        var phaseIds = Ids(_files.Rows(_files.Telemetry, name: "operatingPhaseDrafts"));
+        var metricIds = Ids(_files.Rows(_files.Telemetry, name: "metricDefinitionDrafts"));
+        var statusIds = Ids(_files.Rows(_files.Telemetry, name: "statusDefinitionDrafts"));
+        var conditions = _files.Rows(_files.Telemetry, name: "operatingPhaseDraftConditions");
+        var limits = _files.Rows(_files.Telemetry, name: "operatingPhaseDraftLimits");
+
+        var unknownPhases = conditions.Concat(limits)
+            .Select(row => Text(row, name: "draft_id"))
+            .Where(id => !phaseIds.Contains(id));
+        var unknownMetricDrafts = conditions.Concat(limits)
+            .Select(row => TextOrNull(row, name: "metric_draft_id"))
+            .Where(id => id is not null && !metricIds.Contains(id));
+        var unknownStatusDrafts = conditions.Select(row => TextOrNull(row, name: "status_draft_id"))
+            .Where(id => id is not null && !statusIds.Contains(id));
+
+        unknownPhases.Should().BeEmpty();
+        unknownMetricDrafts.Should().BeEmpty();
+        unknownStatusDrafts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AgentRows_Always_ReferenceAnExistingAttemptAndRun()
+    {
+        var attemptIds = Ids(_files.Rows(_files.Insights, name: "ingestAttempts"));
+        var runs = _files.Rows(_files.Insights, name: "agentRuns");
+        var runIds = Ids(runs);
+        var calls = _files.Rows(_files.Insights, name: "agentToolCalls");
+
+        var unknownAttempts = runs.Select(run => Text(run, name: "ingest_attempt_id"))
+            .Where(id => !attemptIds.Contains(id));
+        var unknownRuns = calls.Select(call => Text(call, name: "run_id")).Where(id => !runIds.Contains(id));
+
+        unknownAttempts.Should().BeEmpty();
+        unknownRuns.Should().BeEmpty();
     }
 
     [Fact]
@@ -172,6 +222,8 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
         rows.Select(row => Text(row, name: "id")).ToHashSet();
 
     private static string Text(JsonElement row, string name) => row.GetProperty(name).GetString()!;
+
+    private static string? TextOrNull(JsonElement row, string name) => row.GetProperty(name).GetString();
 
     private static (int Length, double Norm) Describe(string base64)
     {

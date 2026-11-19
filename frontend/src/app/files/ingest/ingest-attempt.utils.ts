@@ -11,6 +11,7 @@ const INGEST_ERROR_KEYS: Readonly<Record<IngestErrorCode, string>> = {
   [IngestErrorCode.ConversionTimeout]: 'INGEST.ERRORS.CONVERSION_TIMEOUT',
   [IngestErrorCode.InvalidExtraction]: 'INGEST.ERRORS.INVALID_EXTRACTION',
   [IngestErrorCode.ProviderUnavailable]: 'INGEST.ERRORS.PROVIDER_UNAVAILABLE',
+  [IngestErrorCode.UnsafeContent]: 'INGEST.ERRORS.UNSAFE_CONTENT',
 };
 
 /** The translation key of each reason of an interrupted attempt. Literal keys, so the translation check finds each one. */
@@ -30,15 +31,35 @@ export function ingestErrorKey(code: IngestErrorCode): string {
   return INGEST_ERROR_KEYS[code];
 }
 
-/** The translation key of the reason that a `failed` or `interrupted` attempt shows. Other states have none. */
-export function attemptReasonKey(attempt: IngestAttempt): string | null {
+export interface AttemptReason {
+  readonly key: string;
+  readonly values: Readonly<Record<string, string>>;
+}
+
+const NO_VALUES: Readonly<Record<string, string>> = {};
+
+/**
+ * The reason that a `failed` or `interrupted` attempt shows: its translation key and the values of the key. An
+ * `unsafeContent` failure carries the location and the reason of the screener. Other states have no reason.
+ */
+export function attemptReason(attempt: IngestAttempt): AttemptReason | null {
   if (attempt.state === IngestState.Failed && attempt.errorCode !== null) {
-    return ingestErrorKey(attempt.errorCode);
+    const detail = attempt.errorDetail;
+    const values =
+      attempt.errorCode === IngestErrorCode.UnsafeContent && detail
+        ? { location: detail.location, reason: detail.reason }
+        : NO_VALUES;
+    return { key: ingestErrorKey(attempt.errorCode), values };
   }
   if (attempt.state === IngestState.Interrupted && attempt.interruptReason !== null) {
-    return INGEST_INTERRUPT_KEYS[attempt.interruptReason];
+    return { key: INGEST_INTERRUPT_KEYS[attempt.interruptReason], values: NO_VALUES };
   }
   return null;
+}
+
+/** The translation key of the reason of an attempt, or `null` when it has none. */
+export function attemptReasonKey(attempt: IngestAttempt): string | null {
+  return attemptReason(attempt)?.key ?? null;
 }
 
 export interface AttemptWarning {

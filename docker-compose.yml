@@ -586,6 +586,7 @@ services:
       Gemini__ProjectId: ${GEMINI_PROJECT_ID:?set GEMINI_PROJECT_ID in .env}
       Gemini__Location: ${GEMINI_LOCATION:?set GEMINI_LOCATION in .env}
       Gemini__ChatModel: ${GEMINI_CHAT_MODEL:?set GEMINI_CHAT_MODEL in .env}
+      Gemini__TriageModel: ${GEMINI_TRIAGE_MODEL:?set GEMINI_TRIAGE_MODEL in .env}
       Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
       Docling__ApiKey: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
       # The test company and supervisor of Core. The demo ingest results belong to them.

@@ -3,7 +3,7 @@ namespace HealthyFac.Shared.Application.IdEncryption;
 /// <summary>
 /// Provides deterministic authenticated encryption and decryption for identifiers.
 /// Uses canonical 16-byte big-endian UUID representation and deterministic AEAD (NIST SP 800-38F / RFC 3394).
-/// Formatted as versioned Base64Url strings (e.g., "v1.XYZ...").
+/// Formatted as versioned Base64Url strings (e.g., "v1_XYZ...").
 /// </summary>
 public interface IIdEncryptor
 {

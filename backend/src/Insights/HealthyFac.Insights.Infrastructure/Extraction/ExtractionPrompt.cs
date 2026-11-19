@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using HealthyFac.Insights.Application.Extraction;
@@ -15,10 +16,12 @@ public static partial class ExtractionPrompt
     public const string ResourceName =
         "HealthyFac.Insights.Infrastructure.Extraction.Prompts.ExtractionSystemPrompt.md";
 
+    public const string Version = "extractor-v4";
+
     public const string UnitCatalogPlaceholder = "{{unit_catalog}}";
     public const string ExistingKeysPlaceholder = "{{existing_metric_keys}}";
     public const string ExistingCodesPlaceholder = "{{existing_status_codes}}";
-    public const string MachineFileLine = "The document belongs to one machine. Return exactly 1 machine.";
+    public const string MachineFileLine = "The document belongs to one machine. Propose exactly 1 machine.";
 
     private const string NoneText = "(none)";
     private const string UnitSeparator = " | ";
@@ -40,8 +43,8 @@ public static partial class ExtractionPrompt
         var template = ReadTemplate();
         var prompt = template
             .Replace(UnitCatalogPlaceholder, FormatUnits(input.Units), StringComparison.Ordinal)
-            .Replace(ExistingKeysPlaceholder, FormatLines(input.ExistingMetricKeys), StringComparison.Ordinal)
-            .Replace(ExistingCodesPlaceholder, FormatLines(input.ExistingStatusCodes), StringComparison.Ordinal);
+            .Replace(ExistingKeysPlaceholder, FormatLines(input.Signals.MetricKeys), StringComparison.Ordinal)
+            .Replace(ExistingCodesPlaceholder, FormatLines(input.Signals.StatusCodes), StringComparison.Ordinal);
 
         var left = PlaceholderPattern().Match(prompt);
         if (left.Success)
@@ -79,7 +82,10 @@ public static partial class ExtractionPrompt
     }
 
     private static string Escape(string text) =>
-        DocumentTagPattern().Replace(text, match => match.Value.Replace("<", "&lt;").Replace(">", "&gt;"));
+        DocumentTagPattern()
+            .Replace(
+                text,
+                match => match.Value.Replace(oldValue: "<", newValue: "&lt;").Replace(oldValue: ">", newValue: "&gt;"));
 
     private static string FormatUnits(IReadOnlyList<MetricUnit> units)
     {
@@ -91,8 +97,19 @@ public static partial class ExtractionPrompt
         return lines.Count == 0 ? NoneText : string.Join(Environment.NewLine, lines);
     }
 
-    private static string FormatLines(IReadOnlyList<string> values) =>
-        values.Count == 0 ? NoneText : string.Join(Environment.NewLine, values);
+    private static string FormatLines(IEnumerable<string> values)
+    {
+        var lines = values.ToList();
+
+        return lines.Count == 0 ? NoneText : string.Join(Environment.NewLine, lines);
+    }
+
+    /// <summary>
+    /// Hashes the template text, so the run stores the version of the wording and not the filled prompt.
+    /// </summary>
+    /// <returns>The SHA-256 hash as lower case hex.</returns>
+    public static string HashTemplate() =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(ReadTemplate())));
 
     private static string ReadTemplate()
     {
@@ -104,9 +121,9 @@ public static partial class ExtractionPrompt
         return reader.ReadToEnd();
     }
 
-    [GeneratedRegex(@"\{\{[a-z_]+\}\}")]
+    [GeneratedRegex(pattern: @"\{\{[a-z_]+\}\}")]
     private static partial Regex PlaceholderPattern();
 
-    [GeneratedRegex(@"</?document>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(pattern: @"</?document>", RegexOptions.IgnoreCase)]
     private static partial Regex DocumentTagPattern();
 }

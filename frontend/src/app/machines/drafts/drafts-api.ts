@@ -2,9 +2,11 @@ import { HttpClient, type HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
+import type { OperatingPhaseBody } from '@machines/phases/operating-phase';
 import {
   type ApplyMachineDraftBody,
   type ApplyMachineDraftResponse,
+  type ApplyPhaseDraftResponse,
   type AttemptDrafts,
   type DismissMachineDraftsResponse,
   DraftKind,
@@ -19,6 +21,7 @@ const DEFINITION_DRAFTS_URL = `${TELEMETRY_URL}/definition-drafts`;
 const MACHINE_DRAFTS_URL = `${CORE_URL}/machine-drafts`;
 const DRAFTS_URL = `${CORE_URL}/drafts`;
 const MACHINES_URL = `${CORE_URL}/machines`;
+const TELEMETRY_MACHINES_URL = `${TELEMETRY_URL}/machines`;
 const ATTEMPTS_URL = `${CORE_URL}/ingest-attempts`;
 const DRAFTS_SEGMENT = 'drafts';
 const SEARCH_SEGMENT = 'search';
@@ -88,6 +91,20 @@ export class DraftsApi {
   ): Observable<ApplyMachineDraftResponse> {
     return this._http.post<ApplyMachineDraftResponse>(
       `${MACHINE_DRAFTS_URL}/${encodeURIComponent(draftId)}/${APPLY_SEGMENT}`,
+      body,
+      options,
+    );
+  }
+
+  /** Applies a phase draft with the reviewed values. The phase is created in the same save that marks the draft applied. */
+  applyPhaseDraft(
+    machineId: string,
+    draftId: string,
+    body: OperatingPhaseBody,
+    options?: WriteOptions,
+  ): Observable<ApplyPhaseDraftResponse> {
+    return this._http.post<ApplyPhaseDraftResponse>(
+      `${TELEMETRY_MACHINES_URL}/${encodeURIComponent(machineId)}/definition-drafts/operating-phases/${encodeURIComponent(draftId)}/${APPLY_SEGMENT}`,
       body,
       options,
     );

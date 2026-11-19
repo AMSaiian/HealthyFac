@@ -1,6 +1,7 @@
 <hf-work-orders-view-header
   activeView="board"
   [canCreate]="store.canWrite()"
+  [canOpenDrafts]="grid.canReadDrafts()"
   (createRequested)="grid.requestCreate()"
 >
   <div class="flex min-h-0 flex-1 flex-col gap-4">

@@ -1,57 +1,44 @@
 using HealthyFac.Insights.Application.Conversion;
 using HealthyFac.Insights.Application.Extraction;
+using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Application.MetricUnits;
 
 namespace HealthyFac.Insights.UnitTests.Extraction.Data;
 
 public static class ExtractionTestData
 {
-    public const string ValidAnswer = """
-        {
-          "machines": [
-            {
-              "name": "AX-200 Rotary Pump",
-              "serialNumber": null,
-              "description": "A rotary pump.",
-              "metrics": [
-                {
-                  "key": "motor.temperature", "name": "Motor temperature", "description": null,
-                  "valueKind": "numeric", "quantityKind": "temperature", "unit": "celsius",
-                  "min": 0, "max": 80, "states": null, "sourceLocation": "page 2"
-                }
-              ],
-              "statuses": [
-                { "code": "E12", "severity": "error", "description": "Overheating.", "sourceLocation": "page 3" }
-              ]
-            }
-          ]
-        }
-        """;
+    public const string EmptyAnswer = "Nothing to propose.";
 
-    public const string EmptyAnswer = """{ "machines": [] }""";
+    public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
 
-    public const string UnknownEnumAnswer = """
-        { "machines": [ { "metrics": [ { "valueKind": "sideways" } ], "statuses": [] } ] }
-        """;
+    public static readonly Guid ExistingMetricId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000301");
 
-    public const string ExtraPropertyAnswer = """
-        { "machines": [], "comment": "extra" }
-        """;
+    public static readonly Guid ExistingStatusId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000302");
 
-    public const string NotJsonAnswer = "I found one pump.";
+    public static readonly IReadOnlyList<MetricUnit> Units =
+    [
+        new() { QuantityKind = "temperature", Name = "celsius", Abbreviation = "C" },
+        new() { QuantityKind = "pressure", Name = "bar", Abbreviation = "bar" },
+        new() { QuantityKind = "Discrete", Name = "count", Abbreviation = "#" },
+    ];
+
+    public static readonly MachineSignals Signals = new()
+    {
+        Metrics = [new SignalReference { Id = ExistingMetricId, Key = "motor.temperature" }],
+        Statuses =
+        [
+            new SignalReference { Id = ExistingStatusId, Key = "E12" },
+            new SignalReference { Id = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000303"), Key = "E13" },
+        ],
+    };
 
     public static ExtractionInput CreateInput(bool isMachineFile = false, params ConvertedChunk[] chunks) =>
         new()
         {
+            CompanyId = CompanyId,
             Chunks = chunks.Length > 0 ? chunks : [new ConvertedChunk { Location = "page 1", Text = "Pump manual." }],
-            Units =
-            [
-                new MetricUnit { QuantityKind = "temperature", Name = "celsius", Abbreviation = "C" },
-                new MetricUnit { QuantityKind = "pressure", Name = "bar", Abbreviation = "bar" },
-                new MetricUnit { QuantityKind = "Discrete", Name = "count", Abbreviation = "#" },
-            ],
-            ExistingMetricKeys = ["motor.temperature"],
-            ExistingStatusCodes = ["E12", "E13"],
+            Units = Units,
+            Signals = Signals,
             IsMachineFile = isMachineFile,
         };
 }

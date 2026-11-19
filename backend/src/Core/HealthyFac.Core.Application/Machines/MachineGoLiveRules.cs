@@ -1,5 +1,6 @@
 using FluentValidation.Results;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Domain.Time;
 
 namespace HealthyFac.Core.Application.Machines;
 
@@ -19,6 +20,16 @@ public static class MachineGoLiveRules
     /// <returns>The company day of the instant.</returns>
     public static DateOnly DayOf(DateTime instantUtc, TimeZoneInfo zone) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(instantUtc, zone));
+
+    /// <summary>
+    /// Converts the start of a company day to a UTC instant. A start in a skipped hour moves forward by the gap
+    /// length, and a start in a repeated hour is the earlier instant (<see cref="LocalTimes.ToUtc"/>).
+    /// </summary>
+    /// <param name="day">The day in the company zone.</param>
+    /// <param name="zone">The time zone of the company.</param>
+    /// <returns>The UTC instant of the local midnight of <paramref name="day"/>.</returns>
+    public static DateTime StartOfDayUtc(DateOnly day, TimeZoneInfo zone) =>
+        LocalTimes.ToUtc(day.ToDateTime(TimeOnly.MinValue), zone);
 
     /// <summary>
     /// Requires a day that is today or later in the company zone.

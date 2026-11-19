@@ -129,6 +129,21 @@ public static class MachineFixtureExtensions
             await handler.HandleAsync(new DeleteMachineRequest { CompanyId = companyId, Id = machineId });
         }
 
+        public async Task<MachineStateTimesResponse> GetMachineStateTimesAsync(
+            Guid companyId,
+            Guid machineId,
+            DateTime from,
+            DateTime to
+        )
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<IRequestHandler<GetMachineStateTimesRequest, MachineStateTimesResponse>>();
+
+            return await handler.HandleAsync(
+                new GetMachineStateTimesRequest { CompanyId = companyId, MachineId = machineId, From = from, To = to });
+        }
+
         public async Task<MachineResponse> GetMachineAsync(
             Guid companyId,
             Guid machineId

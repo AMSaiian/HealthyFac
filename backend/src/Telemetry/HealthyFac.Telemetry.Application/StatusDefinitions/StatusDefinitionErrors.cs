@@ -16,6 +16,8 @@ public static class StatusDefinitionErrors
     public const string CodeTaken = "A status definition with this code already exists for this machine.";
     public const string DescriptionNotAllowed = "The description contains formatting that is not allowed.";
 
+    public const string UsedByPhase = "An operating phase condition uses this status. Remove the condition first.";
+
     public const string CodeDuplicatedInRequest = "A code appears more than once in the batch.";
 
     public static readonly string ApplyItemCountInvalid =

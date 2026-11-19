@@ -64,6 +64,83 @@ public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<S
         rowCount.Should().Be(expected: 0);
     }
 
+    [Fact]
+    public async Task Remove_ParentWithLoadedChildren_SoftDeletesTheChildrenToo()
+    {
+        var parentId = await ArrangeParentAsync(childCount: 2);
+
+        await using (var act = _fixture.CreateDbContext())
+        {
+            var parent = await act.Parents.Include(entity => entity.Children)
+                .SingleAsync(entity => entity.Id == parentId, TestContext.Current.CancellationToken);
+            act.Parents.Remove(parent);
+            await act.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var dbContext = _fixture.CreateDbContext();
+        var children = await dbContext.Children.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .Where(child => child.ParentId == parentId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        children.Should().HaveCount(expected: 2);
+        children.Should().OnlyContain(child => child.DeletedAt == SoftDeleteTestData.Now.UtcDateTime);
+        children.Should().OnlyContain(child => child.DeletedBy == SoftDeleteTestData.ActorId);
+    }
+
+    [Fact]
+    public async Task Save_ChildRemovedFromTheCollectionOfItsParent_SoftDeletesTheOrphanOnly()
+    {
+        var parentId = await ArrangeParentAsync(childCount: 2);
+
+        await using (var act = _fixture.CreateDbContext())
+        {
+            var parent = await act.Parents.Include(entity => entity.Children)
+                .SingleAsync(entity => entity.Id == parentId, TestContext.Current.CancellationToken);
+            parent.Children.RemoveAt(index: 0);
+            await act.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var dbContext = _fixture.CreateDbContext();
+        var rows = await dbContext.Children.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .Where(child => child.ParentId == parentId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        rows.Should().HaveCount(expected: 2);
+        rows.Count(child => child.DeletedAt is not null).Should().Be(expected: 1);
+    }
+
+    [Fact]
+    public async Task ExecuteDelete_ParentWithChildren_RemovesTheChildren()
+    {
+        var parentId = await ArrangeParentAsync(childCount: 1);
+        await using (var act = _fixture.CreateDbContext())
+        {
+            await act.Parents.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .Where(entity => entity.Id == parentId)
+                .ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var dbContext = _fixture.CreateDbContext();
+        var rows = await dbContext.Children.IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .Where(child => child.ParentId == parentId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        rows.Should().BeEmpty();
+    }
+
+    private async Task<Guid> ArrangeParentAsync(int childCount)
+    {
+        var parent = new SoftDeleteParentEntity { Name = SoftDeleteTestData.EntityName };
+        parent.Children.AddRange(
+            Enumerable.Range(start: 0, childCount)
+                .Select(index => new SoftDeleteChildEntity { Name = $"child {index}" }));
+        await using var dbContext = _fixture.CreateDbContext();
+        dbContext.Parents.Add(parent);
+        await dbContext.SaveChangesAsync();
+
+        return parent.Id;
+    }
+
     private async Task<Guid> ArrangeSoftDeletableAsync()
     {
         var entity = new SoftDeleteTestEntity { Name = SoftDeleteTestData.EntityName };

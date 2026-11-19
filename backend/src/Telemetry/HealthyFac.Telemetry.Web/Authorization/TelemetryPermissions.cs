@@ -13,7 +13,10 @@ public static class TelemetryPermissions
     /// permission that is missing here has no policy, and its endpoint fails with status 500.
     /// </summary>
     public static readonly FrozenSet<string> All =
-        [.. MetricDefinitions.All, .. StatusDefinitions.All, .. DefinitionDrafts.All];
+    [
+        .. MetricDefinitions.All, .. StatusDefinitions.All, .. DefinitionDrafts.All, .. OperatingPhases.All,
+        .. Signals.All,
+    ];
 
     public static class MetricDefinitions
     {
@@ -25,6 +28,29 @@ public static class TelemetryPermissions
         /// this set, so a permission that is missing here has no policy.
         /// </summary>
         public static readonly FrozenSet<string> All = [Read, Write];
+    }
+
+    public static class OperatingPhases
+    {
+        public const string Read = "operating-phases:read";
+        public const string Write = "operating-phases:write";
+
+        /// <summary>
+        /// Holds every permission of the operating phases feature. <see cref="TelemetryPermissions.All"/> spreads
+        /// this set, so a permission that is missing here has no policy.
+        /// </summary>
+        public static readonly FrozenSet<string> All = [Read, Write];
+    }
+
+    public static class Signals
+    {
+        public const string Read = "signals:read";
+
+        /// <summary>
+        /// Holds every permission of the signals feature. <see cref="TelemetryPermissions.All"/> spreads this set, so
+        /// a permission that is missing here has no policy.
+        /// </summary>
+        public static readonly FrozenSet<string> All = [Read];
     }
 
     public static class StatusDefinitions

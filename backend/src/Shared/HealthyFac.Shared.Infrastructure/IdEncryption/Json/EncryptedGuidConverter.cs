@@ -1,0 +1,48 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using HealthyFac.Shared.Application.IdEncryption;
+
+namespace HealthyFac.Shared.Infrastructure.IdEncryption.Json;
+
+/// <summary>
+/// Reads and writes a <see cref="Guid"/> as an encrypted identifier token.
+/// An absent or empty token reads as <see cref="Guid.Empty"/>, which request validation then rejects.
+/// </summary>
+public sealed class EncryptedGuidConverter(IIdEncryptor encryptor) : JsonConverter<Guid>
+{
+    private readonly IIdEncryptor _encryptor = encryptor;
+
+    /// <inheritdoc/>
+    /// <exception cref="JsonException">Thrown when the token is not a valid encrypted identifier.</exception>
+    public override Guid Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    )
+    {
+        var encrypted = reader.GetString();
+        if (string.IsNullOrEmpty(encrypted))
+        {
+            return Guid.Empty;
+        }
+
+        try
+        {
+            return _encryptor.Decrypt(encrypted);
+        }
+        catch (Exception exception) when (exception is FormatException
+            or CryptographicException
+            or ArgumentException)
+        {
+            throw SerializationErrors.InvalidEncryptedIdentifier(exception);
+        }
+    }
+
+    /// <inheritdoc/>
+    public override void Write(
+        Utf8JsonWriter writer,
+        Guid value,
+        JsonSerializerOptions options
+    ) => writer.WriteStringValue(_encryptor.Encrypt(value));
+}

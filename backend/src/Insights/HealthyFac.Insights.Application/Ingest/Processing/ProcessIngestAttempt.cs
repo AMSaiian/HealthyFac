@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using FluentValidation;
+using HealthyFac.Insights.Application.Extraction.Runs;
+using HealthyFac.Insights.Application.Ingest.Screening;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -115,13 +117,18 @@ public sealed class ProcessIngestAttemptRequestHandler(
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(_options.TimeoutSeconds), _timeProvider);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
 
+        var screening = new ScreeningRunHolder();
+        var extraction = new ExtractionRunHolder();
+
         try
         {
             var result = await _pipeline.RunAsync(
                 snapshot,
                 token => IsNoLongerActiveAsync(snapshot.AttemptId, token),
+                screening,
+                extraction,
                 linked.Token);
-            var state = await CompleteAsync(snapshot, result, cancellationToken);
+            var state = await CompleteAsync(snapshot, result, screening.Log, extraction.Log, cancellationToken);
             if (state == IngestState.Completed)
             {
                 await FinishAsync(snapshot, new IngestOutcome { State = state }, startedAt, result);
@@ -137,11 +144,17 @@ public sealed class ProcessIngestAttemptRequestHandler(
         }
         catch (IngestFailureException exception)
         {
-            await FailAsync(snapshot, exception.Code, startedAt);
+            await FailAsync(snapshot, exception.Code, exception.Detail, screening.Log, extraction.Log, startedAt);
         }
         catch (ProviderUnavailableException)
         {
-            await FailAsync(snapshot, IngestErrorCode.ProviderUnavailable, startedAt);
+            await FailAsync(
+                snapshot,
+                IngestErrorCode.ProviderUnavailable,
+                detail: null,
+                screening.Log,
+                extraction.Log,
+                startedAt);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -159,7 +172,13 @@ public sealed class ProcessIngestAttemptRequestHandler(
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
         {
-            await FailAsync(snapshot, IngestErrorCode.ConversionTimeout, startedAt);
+            await FailAsync(
+                snapshot,
+                IngestErrorCode.ConversionTimeout,
+                detail: null,
+                screening.Log,
+                extraction.Log,
+                startedAt);
         }
         catch (OperationCanceledException)
         {
@@ -177,7 +196,13 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 exception,
                 message: "Ingest attempt {AttemptId} failed with an unexpected error.",
                 snapshot.AttemptId);
-            await FailAsync(snapshot, IngestErrorCode.ProviderUnavailable, startedAt);
+            await FailAsync(
+                snapshot,
+                IngestErrorCode.ProviderUnavailable,
+                detail: null,
+                screening.Log,
+                extraction.Log,
+                startedAt);
         }
     }
 
@@ -220,6 +245,8 @@ public sealed class ProcessIngestAttemptRequestHandler(
     private async Task<IngestState> CompleteAsync(
         IngestAttemptSnapshot snapshot,
         IngestPipelineResult result,
+        ScreeningRunLog? screening,
+        ExtractionRunLog? extraction,
         CancellationToken cancellationToken
     )
     {
@@ -253,6 +280,13 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 }
 
                 _dbContext.IngestedDocuments.Add(document);
+                if (screening is not null)
+                {
+                    _dbContext.AgentRuns.Add(screening.ToRun(snapshot.AttemptId));
+                }
+
+                extraction?.AddTo(_dbContext, now);
+
                 locked.Complete(
                     now,
                     result.PageCount,
@@ -274,7 +308,14 @@ public sealed class ProcessIngestAttemptRequestHandler(
         return state;
     }
 
-    private async Task FailAsync(IngestAttemptSnapshot snapshot, IngestErrorCode code, long startedAt)
+    private async Task FailAsync(
+        IngestAttemptSnapshot snapshot,
+        IngestErrorCode code,
+        IngestErrorDetail? detail,
+        ScreeningRunLog? screening,
+        ExtractionRunLog? extraction,
+        long startedAt
+    )
     {
         var isFailed = false;
 
@@ -288,7 +329,23 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 }
 
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
-                locked.Fail(now, code);
+
+                if (code == IngestErrorCode.UnsafeContent)
+                {
+                    await _dbContext.IngestedDocuments
+                        .Where(document => document.Id == snapshot.FileId && document.CompanyId == snapshot.CompanyId)
+                        .ExecuteDeleteAsync(token);
+                }
+
+                locked.Fail(now, code, detail);
+
+                if (screening is not null)
+                {
+                    _dbContext.AgentRuns.Add(screening.ToRun(snapshot.AttemptId));
+                }
+
+                extraction?.AddTo(_dbContext, now);
+
                 var failedCount = await CountFailedAsync(snapshot, token) + 1;
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
@@ -361,9 +418,9 @@ public sealed class ProcessIngestAttemptRequestHandler(
         return IngestActivitySource.Instance.StartActivity(
             ObservabilityConstants.Ingest.Spans.Process,
             ActivityKind.Internal,
-            parentContext: default,
-            tags: [new KeyValuePair<string, object?>(ObservabilityConstants.Ingest.Tags.FileType, snapshot.Extension)],
-            links: links);
+            default(ActivityContext),
+            [new KeyValuePair<string, object?>(ObservabilityConstants.Ingest.Tags.FileType, snapshot.Extension)],
+            links);
     }
 
     private async Task FinishInterruptedAsync(IngestAttemptSnapshot snapshot, long startedAt)

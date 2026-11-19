@@ -1,5 +1,5 @@
 using HealthyFac.Insights.Application.Conversion;
-using HealthyFac.Insights.Application.Extraction;
+using HealthyFac.Insights.Application.Extraction.Mapping;
 
 namespace HealthyFac.Insights.Application.Ingest.Processing;
 

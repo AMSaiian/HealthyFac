@@ -1,0 +1,30 @@
+<hf-action-dialog
+  [title]="isNew() ? 'PHASES.FORM.CREATE_TITLE' : 'PHASES.FORM.UPDATE_TITLE'"
+  widthClass="w-[48rem] max-w-[95vw]"
+  [isSaveDisabled]="saveDisabledReason() !== null"
+  [saveDisabledReason]="saveDisabledReason()"
+  [isSaving]="store.isSaving()"
+  (save)="onSave()"
+  (cancelled)="store.closeEditor()"
+>
+  @if (isReady() && initialValue(); as initial) {
+    <hf-phase-form
+      [initialValue]="initial"
+      [sourceOptions]="store.sourceOptions()"
+      [metrics]="metricList()"
+      (valueChange)="onValueChange($event)"
+      (validityChange)="onValidityChange($event)"
+    />
+  } @else {
+    <div class="flex min-h-48">
+      @if (showSpinner()) {
+        <hf-loading-spinner />
+      }
+    </div>
+  }
+  @if (showSaving()) {
+    <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+      <hf-loading-spinner />
+    </div>
+  }
+</hf-action-dialog>
