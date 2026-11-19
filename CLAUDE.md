@@ -10,7 +10,8 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 *   `backend/tests/` — unit and integration test projects.
 *   `docs/` — architecture and design documents.
 *   `frontend/` — Angular 22 app (PrimeNG, Tailwind, ngx-translate, SignalStore).
-*   `.claude/` — rules, commands, hooks, and the flow scripts. `scripts/` — the verify stack.
+*   `.claude/` — rules, commands, agents, hooks, and the flow scripts. `scripts/` — the verify stack.
+*   Feature flow: `/spec <feature>` (`.claude/commands/spec.md`) is the only session of a feature. It runs the executor and the reviewer subagents (`.claude/agents/`) and routes their handoffs; `/fix` stays in that session.
 
 ## Build and Test
 The repo has two test areas. A change in one area needs only the full commands of that area.
@@ -55,12 +56,13 @@ Claude Code matches the paths against the path relative to the repository root.
 To add a rule: add `.claude/rules/<name>.md` with its `paths` frontmatter and its text, then add a row to the table.
 
 ## Rules Override Skills
-Repository rules override plugin skills and their workflows. This includes the TDD, planning, and brainstorming skills. When a skill conflicts with a rule, follow the rule. When you dispatch a subagent, copy the rules that apply to its files into its prompt.
+Repository rules override plugin skills and their workflows. This includes the TDD, planning, and brainstorming skills. When a skill conflicts with a rule, follow the rule. When you dispatch a subagent, copy the rules that apply to its files into its prompt. The executor and the reviewer (`.claude/agents/`) are the exception: they load CLAUDE.md and the rules themselves, so their task messages carry no rule text.
 
 ## Verification Hook
 The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) reformat the changed files, build the solution, and lint the web projects. Fix every reported item before you finish the turn.
 
 *   The hooks check only the checkout (the main one or a worktree) that holds the hook script: the project root in which the session started. Git resolves it; the current folder of the session plays no part. Start each feature session in its feature worktree (`.claude/start-feature.ps1`), or the hooks never see its files.
 *   The flow scripts (`tree-id.ps1`, `check-handoff.ps1`, `scripts/verify-stack.ps1`) act on the checkout that holds the script file too. Run the copy of the worktree that you work in.
-*   The hooks do nothing when the turn changed no file, and in a reviewer session (`HEALTHYFAC_SESSION_ROLE=reviewer`).
+*   The hooks do nothing when the turn changed no file, at the stop of the reviewer subagent (or a session with `HEALTHYFAC_SESSION_ROLE=reviewer`), and at a stop of the main session while the executor subagent runs: the executor verifies its own files.
+*   The reviewer subagent writes only `review.md` outside the repo: its `PreToolUse` hook (`.claude/hooks/reviewer-write-scope.ps1`) denies every other file.
 *   Sessions that share one checkout share its changed files. The script headers explain the lock, the skips, and the guard against other writers. `.claude/hooks/tests/hook-scope.tests.ps1` checks them.

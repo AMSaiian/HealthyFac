@@ -1,5 +1,5 @@
 ---
-description: Inline fix - the planning session judges the blast radius of each fix, makes the small ones in the feature worktree, logs them, and rebuilds the verify slot. No plan step, no commit.
+description: Inline fix - the spec writer session judges the blast radius of each fix, makes the small ones in the feature worktree, logs them, and rebuilds the verify slot. No plan step, no commit.
 argument-hint: [<feature-name>] <what to change>
 ---
 Fix: $ARGUMENTS
@@ -13,9 +13,12 @@ other work.
   the feature, and the rest is the fix text. Otherwise use the feature of this session.
 - The worktree is the checkout of branch `feature/<feature-name>` (`git worktree list`).
   When it does not exist, stop and ask me.
+- When the executor or the reviewer subagent of the feature runs (a task sent, no
+  completion notice yet), it works in the same worktree. Stop and ask me before you edit:
+  the Stop hook of this session also skips its verification while the executor runs.
 - When the open cycle of `plan.md` has an unticked step (`- [ ]`), or `review.md` routes an
-  open finding to the executor, the executor can be working in the same worktree. Stop and
-  ask me before you edit.
+  open finding to the executor, the executor has work left that can touch the same lines.
+  Say so in the verdict line of each item that it touches.
 
 ## Items
 - Split the fix text into items. Restate each item in one line. Quote my words.
@@ -73,8 +76,9 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - Run `pwsh <worktree>/.claude/check-plan.ps1 <feature folder>` and fix each line it prints.
 
 ## Review
-- Do not message the reviewer. When I ask for a review of the fixes, relay my words to
-  `<feature-name>-reviewer`, marked as a relay, with the list of changed files.
+- Do not send the fixes to the reviewer on your own. When I ask for a review of the fixes,
+  send the reviewer subagent of `agents.md` (`spec.md`, **Subagents**) the task
+  `relay from Artur: "<my words>". Inline fix files: <files>`, and route its report.
 
 ## Report
 - One table: item, verdict, files, check result. Then the plan items, each with the failed

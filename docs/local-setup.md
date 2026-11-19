@@ -2,9 +2,9 @@
 
 ## Feature Worktree
 
-The sessions of a feature run in its own worktree. Claude Code takes the Stop hook and the rules from the checkout in which a session starts, and the hook verifies the checkout of its own script file. A session that starts in the main checkout never formats, builds, or lints the files of a worktree.
+The session of a feature runs in its own worktree. Claude Code takes the Stop hook and the rules from the checkout in which a session starts, and the hook verifies the checkout of its own script file. A session that starts in the main checkout never formats, builds, or lints the files of a worktree.
 
-1.  Start the feature: `pwsh .claude/start-feature.ps1 <feature>`. It creates the worktree `../HealthyFac-worktrees/<feature>` on the branch `feature/<feature>` from `develop`, and opens the spec, executor, and reviewer sessions there. `-Resume` opens the sessions of an existing feature again.
+1.  Start the feature: `pwsh .claude/start-feature.ps1 <feature>`. It creates the worktree `../HealthyFac-worktrees/<feature>` on the branch `feature/<feature>` from `develop`, and opens the spec writer session `<feature>-spec` there (`/spec <feature>`). The spec writer runs the executor and the reviewer as subagents. `-Resume` opens the session of an existing feature again.
 2.  Install the frontend packages in the worktree: `cd frontend && npm ci`.
 3.  Start nothing else. A worktree needs no `.env`: `scripts/verify-stack.ps1` uses the `.env` of the main checkout. A `.env` in the worktree takes precedence.
 

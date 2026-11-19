@@ -23,8 +23,11 @@
 # The hook blocks once per stop attempt. When stop_hook_active is set, it reports and lets the turn end,
 # so a warning Claude cannot fix does not loop. Files with diagnostics stay out of the saved state,
 # so the next stop checks them again.
-# A reviewer session (HEALTHYFAC_SESSION_ROLE=reviewer, set by start-feature.ps1) never edits the repo, so the hook
-# does nothing there: the executor session verifies its own files.
+# The reviewer never edits the repo, so the hook does nothing at the SubagentStop of the reviewer subagent (agent_type
+# "reviewer", .claude/agents/reviewer.md) and in a session started by hand with HEALTHYFAC_SESSION_ROLE=reviewer.
+# The Stop of the main session does nothing while an executor subagent is in flight (an entry of background_tasks with
+# type "subagent" and agent_type "executor"): the executor verifies its own files at its SubagentStop, and a build of
+# its half-done edits would report them to the spec writer, which must not fix them.
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'worktree-fingerprint.ps1')
@@ -32,6 +35,10 @@ $ErrorActionPreference = 'Stop'
 
 $hookInput = try { [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { $null }
 if ($env:HEALTHYFAC_SESSION_ROLE -eq 'reviewer') { exit 0 }
+if ($hookInput.hook_event_name -eq 'SubagentStop' -and $hookInput.agent_type -eq 'reviewer') { exit 0 }
+$isExecutorInFlight = $hookInput.hook_event_name -eq 'Stop' -and
+  @($hookInput.background_tasks | Where-Object { $_.type -eq 'subagent' -and $_.agent_type -eq 'executor' }).Count -gt 0
+if ($isExecutorInFlight) { exit 0 }
 $solutionPath = 'backend/HealthyFac.slnx'
 
 # The checkout (main or worktree) that holds the directory, in the backslash form that the build diagnostics use,
