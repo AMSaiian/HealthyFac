@@ -65,6 +65,13 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
 - If the spec introduces a new convention, add a step for a deterministic check that
   enforces it (analyzer, architecture test, hook).
 - Start with `Cycle: 1` as the first line.
+- Split the feature into functional cycles. Each cycle is one review and one commit group.
+  Plan every cycle before the handoff when you can; my approval of plan.md covers every
+  planned cycle. The `Cycle:` line names the open cycle; the scripts read it.
+- After the `Spec:` line of each cycle, write one line per group that its files touch:
+  `Commit tooling: <subject>` (`.claude/`, `scripts/`, `CLAUDE.md`; category `setup`),
+  `Commit docs: <subject>` (`docs/`, `README.md`; category `docs`), `Commit code: <subject>`
+  (every other path). The subject follows `git-commits.md`. `check-plan.ps1` checks the lines.
 - Start each cycle section (`### Cycle N`) with a line `Spec: **<spec section>**,
   **<spec section>**, AC<a>-AC<b>.` (the exact spec headings and the AC range), so the
   sessions read only those parts. For a cycle with more than 6 steps, add the line
@@ -85,8 +92,8 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   shared fixtures.
 - Write only facts in a step (names, paths, values, cases, the order). The reasons stay in
   spec.md. Never ask the executor for a log that the diff shows (e.g., the changed members).
-- Run `pwsh .claude/check-plan.ps1 <feature folder>` before the handoff and fix each line
-  it prints. Hand off only when it passes.
+- Run `pwsh .claude/check-plan.ps1 <feature folder> -Cycle <N>` once for each planned cycle
+  before the handoff and fix each line it prints. Hand off only when it passes.
 - Add a `## Review Focus` table: one row for each question below that the feature
   touches, with the answer and the test that proves it, then one line "Other questions:
   not affected".
@@ -146,7 +153,7 @@ Sessions are named `<feature-name>-spec`, `<feature-name>-executor`, `<feature-n
     cycle, before its `#### Deviations`, so the executor only has to pick up unticked steps.
   - When you add steps after an APPROVE verdict, start a new cycle: raise the `Cycle: N`
     line at the top of plan.md by 1 (add `Cycle: 1` if it is missing), and put the new
-    steps under a heading `### Cycle N`.
+    steps under a heading `### Cycle N`. The new cycle gets its `Commit` lines.
   - Mark each superseded step as
     `- [~] ~~<original text>~~ CANCELLED: <reason>; see step N`.
   - If a cancelled step was already done, add a new step that changes or reverts its code.
@@ -160,9 +167,10 @@ Sessions are named `<feature-name>-spec`, `<feature-name>-executor`, `<feature-n
     summary table, then message the executor again as above.
   - When I decide to keep the code of a finding, move it to `## Closed` as
     `ACCEPTED (Artur, <date>)` and update the summary table. It never routes again.
-- When a message arrives that the feature is APPROVED, tell me and summarize: what was
-  built, deviations, remaining concerns.
+- When a message arrives that the feature is APPROVED (the executor sends it after its
+  last cycle commit, with the SHAs), tell me and summarize: what was built, deviations,
+  remaining concerns.
 - The reviewer stops the verify slot after each round (`stop` keeps its data); `up`
-  starts it again for my test, and `/fix` starts it. After the commit that I ask for, ask
-  me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On yes, run
+  starts it again for my test, and `/fix` starts it. After the APPROVED message of the
+  executor, or after a commit that I ask for, ask me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On yes, run
   `pwsh scripts/verify-stack.ps1 stop` in the worktree. Run `down` only when I ask for it.

@@ -19,6 +19,9 @@
 # - check-review-routing: a checkpoint section after the final verdict does not change the route (old layout); the
 #   "## Open" layout routes, counts REOPENED only in ## Open, and fails on a wrong table, a wrong heading, or APPROVE
 #   with an open MAJOR.
+# - commit-cycle: an approved cycle is committed as one commit for each group (tooling, docs, code) with the subject
+#   only, nothing is pushed, a rerun makes no commit; each refusal (no APPROVE, another cycle, a changed tree, a changed
+#   file without a Commit line, a Commit line without a changed file, a bad subject) changes nothing.
 # Red: run it with -ScriptsDir <folder of empty stubs> to see each case fail first.
 # Run:  pwsh .claude/tests/flow-scripts.tests.ps1 [-ScriptsDir <folder>]
 # It exits 1 when a check fails.
@@ -149,10 +152,17 @@ function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
   $specLine2 = if ($change.Cycle2Spec) { $change.Cycle2Spec } else { 'Spec: **Feature B**, AC3.' }
   $step2 = if ($change.Step2Text) { $change.Step2Text } else { 'Step 2: Do the second thing with the value 5.' }
   $step2Files = if ($change.Step2Files) { $change.Step2Files } else { '`src/b.cs`' }
-  $planLines = @('Cycle: 2', '', '# Plan', '', '### Cycle 1', '')
-  $planLines += $specLine1, '', '- [x] Step 1: Do the first thing.', '    *   Files: `src/a.cs`', '', '#### Deviations', ''
+  $cycle1Commits = if ($null -ne $change.Cycle1Commits) { $change.Cycle1Commits } else { @('Commit code: feature(sample): added a') }
+  $cycle2Commits = if ($null -ne $change.Cycle2Commits) { $change.Cycle2Commits } else { @('Commit code: feature(sample): added b') }
+  $firstLine = if ($change.FirstLine) { $change.FirstLine } else { 'Cycle: 2' }
+  $planLines = @($firstLine, '', '# Plan', '', '### Cycle 1', '')
+  $planLines += $specLine1
+  $planLines += $cycle1Commits
+  $planLines += '', '- [x] Step 1: Do the first thing.', '    *   Files: `src/a.cs`', '', '#### Deviations', ''
   $planLines += '### Cycle 2', ''
-  if (-not $change.NoCycle2Spec) { $planLines += $specLine2, '' }
+  if (-not $change.NoCycle2Spec) { $planLines += $specLine2 }
+  $planLines += $cycle2Commits
+  $planLines += ''
   $planLines += "- [ ] $step2", "    *   Files: $step2Files", ''
   if (-not $change.NoCycle2Deviations) { $planLines += '#### Deviations', '' }
   $planLines += '## Acceptance Criteria Map', '', '| AC | Steps |', '| --- | --- |', '| AC1, AC2 | 1 |'
@@ -165,7 +175,7 @@ function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
 $clean = New-PlanFolder 'plan-clean'
 $cleanDefault = Invoke-Script 'check-plan.ps1' @($clean)
 $cleanOne = Invoke-Script 'check-plan.ps1' @($clean, '-Cycle', '1')
-Assert-That ($cleanDefault.Exit -eq 0 -and $cleanDefault.Output.Count -eq 0) 'a sample plan passes (highest cycle by default)'
+Assert-That ($cleanDefault.Exit -eq 0 -and $cleanDefault.Output.Count -eq 0) 'a sample plan passes (the Cycle: line by default)'
 Assert-That ($cleanOne.Exit -eq 0 -and $cleanOne.Output.Count -eq 0) 'a sample plan passes (cycle 1)'
 
 $noSpecLine = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-nospec' @{ NoCycle2Spec = $true }))
@@ -187,6 +197,29 @@ Assert-That ($noAcRow.Exit -eq 1 -and $noAcRow.Output.Count -eq 1 -and $noAcRow.
 $specRef = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-specref' @{ Step2Text = 'Step 2: Do it as in spec.md.' }))
 Assert-That ($specRef.Exit -eq 1 -and $specRef.Output.Count -eq 1 -and $specRef.Output[0] -match 'Step 2 names the spec') `
   'a step that names spec.md fails with its line'
+
+$specCommand = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-speccommand' @{ Step2Files = '`.claude/commands/spec.md`' }))
+Assert-That ($specCommand.Exit -eq 0 -and $specCommand.Output.Count -eq 0) `
+  'a step that names the path .claude/commands/spec.md passes'
+
+foreach ($case in @(
+    @('no commit line', @{ Cycle2Commits = @() }, 'Cycle 2: no Commit line.'),
+    @('an unknown commit group', @{ Cycle2Commits = @('Commit tests: feature(sample): added b') }, "unknown Commit group 'tests'"),
+    @('two lines of one group', @{ Cycle2Commits = @('Commit code: feature(sample): added b', 'Commit code: feature(sample): added c') },
+      "2 Commit lines for the group 'code'"),
+    @('a subject in upper case', @{ Cycle2Commits = @('Commit code: Feature(sample): Added b') }, "is not '<feature|bug>"),
+    @('a tooling subject without setup', @{ Cycle2Commits = @('Commit tooling: feature(sample): added b') }, 'needs the category setup'))) {
+  $commitCase = Invoke-Script 'check-plan.ps1' @((New-PlanFolder "plan-commit-$($case[0].Length)" $case[1]))
+  Assert-That ($commitCase.Exit -eq 1 -and $commitCase.Output.Count -eq 1 -and $commitCase.Output[0] -like "*$($case[2])*") `
+    "a cycle with $($case[0]) fails with its line"
+}
+
+$openCycleOne = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-open1-ok' @{ FirstLine = 'Cycle: 1'; Cycle2Commits = @() }))
+Assert-That ($openCycleOne.Exit -eq 0 -and $openCycleOne.Output.Count -eq 0) `
+  'with Cycle: 1 as the first line, a problem only in cycle 2 does not fail the default check'
+$openCycleOneBroken = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-open1-bad' @{ FirstLine = 'Cycle: 1'; Cycle1Commits = @() }))
+Assert-That ($openCycleOneBroken.Exit -eq 1 -and $openCycleOneBroken.Output[0] -like 'Cycle 1: no Commit line.*') `
+  'with Cycle: 1 as the first line, a problem in cycle 1 fails the default check'
 
 $cycleOneBroken = New-PlanFolder 'plan-cycle1' @{ Cycle1Spec = 'Spec: **Nope**, AC1-AC2.' }
 $brokenOne = Invoke-Script 'check-plan.ps1' @($cycleOneBroken, '-Cycle', '1')
@@ -213,6 +246,43 @@ Assert-That ($noDeviations.Exit -eq 1 -and $noDeviations.Output.Count -eq 1 -and
 $duplicateAc = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-dupac' @{ DuplicateAc2 = $true }))
 Assert-That ($duplicateAc.Exit -eq 1 -and $duplicateAc.Output.Count -eq 1 -and $duplicateAc.Output[0] -match '2 lines for AC2') `
   'an AC number with two lines in spec.md fails with its line'
+
+# --- plan-sections ---------------------------------------------------------------------------------------------
+Write-Host 'plan-sections'
+. (Join-Path $ScriptsDir 'plan-sections.ps1')
+
+foreach ($case in @(
+    @('.claude/check-plan.ps1', 'tooling'), @('scripts/verify-stack.ps1', 'tooling'), @('CLAUDE.md', 'tooling'),
+    @('docs/architecture.md', 'docs'), @('README.md', 'docs'), @('backend/src/a.cs', 'code'),
+    @('frontend/src/app.ts', 'code'))) {
+  Assert-That ((Get-CommitGroup $case[0]) -eq $case[1]) "the commit group of $($case[0]) is $($case[1])"
+}
+
+$cycleLines = @('Cycle: 1', '', '### Cycle 1', 'Spec: a', '', '### Cycle 2', 'Spec: b')
+Assert-That ((Get-PlanCycle $cycleLines 0).Number -eq 1) 'cycle 0 reads the Cycle: line of plan.md'
+Assert-That ((Get-PlanCycle ($cycleLines | Select-Object -Skip 1) 0).Number -eq 2) 'cycle 0 without a Cycle: line takes the highest cycle'
+
+$commitSection = @('Spec: a', 'Commit code: bug(machines): fixed a', 'Commit docs: feature(docs): described a', '', '- [ ] Step 1: x',
+  '#### Deviations', 'Commit tooling: feature(setup): not a commit line')
+$commits = @(Get-CycleCommits $commitSection)
+Assert-That ($commits.Count -eq 2 -and $commits[0].Group -eq 'code' -and $commits[0].Subject -eq 'bug(machines): fixed a' -and
+  $commits[1].Group -eq 'docs') 'the commit lines of a cycle are read before its first #### heading'
+
+function New-Commit([string] $group, [string] $subject) { [pscustomobject]@{ Group = $group; Subject = $subject } }
+$goodCommits = @((New-Commit 'tooling' 'feature(setup): added a'), (New-Commit 'docs' 'feature(docs): described a'),
+  (New-Commit 'code' 'bug(machines): fixed a'))
+Assert-That (@(Get-CommitProblems $goodCommits).Count -eq 0) 'three valid commit lines give no commit problem'
+foreach ($case in @(
+    @('no commit line', @(), 'no Commit line.'),
+    @('an unknown group', @((New-Commit 'tests' 'feature(sample): added b')), "unknown Commit group 'tests'"),
+    @('two lines of one group', @((New-Commit 'code' 'feature(sample): a'), (New-Commit 'code' 'feature(sample): b')),
+      "2 Commit lines for the group 'code'"),
+    @('a subject in upper case', @((New-Commit 'code' 'Feature(sample): Added b')), 'is not ''<feature|bug>'),
+    @('a tooling subject without setup', @((New-Commit 'tooling' 'feature(sample): added b')), 'needs the category setup'),
+    @('a docs subject without docs', @((New-Commit 'docs' 'feature(sample): added b')), 'needs the category docs'))) {
+  $problems = @(Get-CommitProblems $case[1])
+  Assert-That ($problems.Count -eq 1 -and $problems[0] -like "*$($case[2])*") "Get-CommitProblems reports $($case[0])"
+}
 
 # --- check-handoff ---------------------------------------------------------------------------------------------
 Write-Host 'check-handoff'
@@ -281,6 +351,9 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
     if ($change.DeviationFile) { $lines += "*   Steps 1-2: Added $($change.DeviationFile) because the helper was missing." }
     if ($change.DeviationProof) { $lines += '*   Step 1: Proof: ATest -> Expected 1, found 0; restored, checked with git diff' }
     if ($change.DeviationDone) { $lines += '*   Step 2: done. Files and tests as planned.' }
+    if ($change.PlannedCycle2) {
+      $lines += '', '### Cycle 2', '', 'Spec: **Feature A**, AC1.', '', '- [ ] Step 3: Plan the next thing.', '    *   Files: `src/c.cs`'
+    }
     $lines += '', '## Acceptance Criteria Map', ''
   } else {
     if (-not $change.NoFullRun) { $lines += "*   Full run: tree $tree; dotnet test -> 12 passed, 0 failed" }
@@ -332,6 +405,10 @@ Assert-That ($stale.Exit -eq 1 -and $stale.Output.Count -eq 1 -and $stale.Output
 $areaClean = Invoke-Handoff (New-HandoffCase 'ho-area' @{ AreaRuns = $true })
 Assert-That ($areaClean.Exit -eq 0 -and $areaClean.Output.Count -eq 0) `
   'a backend-only change with a current Full run backend line passes (no frontend run needed)'
+
+$plannedCycle = Invoke-Handoff (New-HandoffCase 'ho-planned' @{ AreaRuns = $true; PlannedCycle2 = $true })
+Assert-That ($plannedCycle.Exit -eq 0 -and $plannedCycle.Output.Count -eq 0) `
+  'a planned cycle 2 below the open cycle 1 does not fail the handoff of cycle 1'
 
 $areaStale = Invoke-Handoff (New-HandoffCase 'ho-area-stale' @{ AreaRuns = $true; StaleTree = $true })
 Assert-That ($areaStale.Exit -eq 1 -and $areaStale.Output.Count -eq 1 -and $areaStale.Output[0] -match 'not the current backend tree') `
@@ -426,11 +503,11 @@ function New-OpenReviewFile([string] $name, [hashtable] $change = @{}) {
   $path = Join-Path $work "$name.md"
   $heading = if ($change.BadHeading) { '### F1 — MAJOR — The save ignores the row version' } else { '### F1 MAJOR [CODE] The save ignores the row version' }
   $status = if ($change.OpenReopened) { '*   Status: REOPENED (2)' } else { '*   Status: NEW' }
-  $majorCode = if ($change.WrongTable) { 2 } else { 1 }
+  $majorCode = if ($change.WrongTable) { 2 } elseif ($change.NoOpen) { 0 } else { 1 }
   $verdict = if ($change.Approve) { 'APPROVE' } else { 'CHANGES_REQUESTED' }
   $lines = @(
     'Cycle: 1', 'Round: 2', 'Reviewed tree: 0123456789abcdef0123456789abcdef01234567', '', '# Review', '',
-    '## Open', '', $heading, $status, '*   Where: `src/a.cs:10`', '',
+    '## Open', '') + $(if ($change.NoOpen) { @() } else { @($heading, $status, '*   Where: `src/a.cs:10`', '') }) + @(
     '## Closed', '', '*   F2 MINOR [SPEC] An old spec gap: REOPENED (2), then ACCEPTED (Artur, 2026-11-13).', '',
     '## Rounds', '', '*   Cycle 1, round 1: tree 0123456789abcdef0123456789abcdef01234567.', '',
     '## Summary', '', '| Severity | [CODE] | [SPEC] |', '|---|---|---|',
@@ -458,6 +535,110 @@ Assert-That ($badHeading.Exit -eq 1 -and ($badHeading.Output -join ' ') -match '
 $badApprove = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-approve' @{ Approve = $true }))
 Assert-That ($badApprove.Exit -eq 1 -and ($badApprove.Output -join ' ') -match 'APPROVE with 1 open') `
   'APPROVE with an open MAJOR finding fails'
+
+$approved = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-routes-approve' @{ Approve = $true; NoOpen = $true }))
+Assert-That ($approved.Exit -eq 0 -and ($approved.Output -join '') -match '^executor approved \(cycle 1, round 2\)') `
+  'an APPROVE routes to the executor'
+
+# --- commit-cycle ----------------------------------------------------------------------------------------------
+Write-Host 'commit-cycle'
+
+# A repo with the base commit on main, a branch develop at the base, and a bare remote origin with the base pushed.
+# The change: an edited tooling file, a new docs file, an edited, a deleted, and a new code file. The folder holds the
+# plan.md and the review.md of an approved cycle 1; the options change one fact for each failure case.
+function New-CommitCase([string] $name, [hashtable] $change = @{}) {
+  $repoDir = New-Repo "$name-repo"
+  foreach ($dir in @('.claude', 'docs', 'src')) { New-Item -ItemType Directory -Force (Join-Path $repoDir $dir) | Out-Null }
+  Set-Content (Join-Path $repoDir '.claude/x.ps1') '# x'
+  Set-Content (Join-Path $repoDir 'docs/a.md') '# a'
+  Set-Content (Join-Path $repoDir 'src/a.cs') 'class A {}'
+  Set-Content (Join-Path $repoDir 'src/b.cs') 'class B {}'
+  Save-Commit $repoDir 'base'
+  git -C $repoDir branch develop
+  $remote = Join-Path $work "$name-remote"
+  git init -q --bare $remote
+  git -C $repoDir remote add origin $remote
+  git -C $repoDir push -q origin main
+  $base = git -C $repoDir rev-parse HEAD
+
+  Add-Content (Join-Path $repoDir '.claude/x.ps1') '# changed'
+  if (-not $change.NoDocsChange) { Set-Content (Join-Path $repoDir 'docs/b.md') '# b' }
+  Add-Content (Join-Path $repoDir 'src/a.cs') '// changed'
+  if ($change.MoveFile) { git -C $repoDir mv src/b.cs src/d.cs } else { Remove-Item (Join-Path $repoDir 'src/b.cs') }
+  Set-Content (Join-Path $repoDir 'src/c.cs') 'class C {}'
+
+  $folder = Join-Path $work "$name-folder"
+  New-Item -ItemType Directory -Force $folder | Out-Null
+  $docsLine = if ($change.NoDocsCommit) { @() } else { @('Commit docs: feature(docs): described b') }
+  $codeSubject = if ($change.BadSubject) { 'Feature(sample): Changed a' } else { 'feature(sample): changed a and b' }
+  Set-Content (Join-Path $folder 'plan.md') (@('Cycle: 1', '', '# Plan', '', '### Cycle 1', '', 'Spec: **Feature A**, AC1.',
+      'Commit tooling: feature(setup): changed x') + $docsLine + @("Commit code: $codeSubject", '',
+      '- [x] Step 1: Change the code.', '    *   Files: `src/a.cs`', '', '#### Deviations', ''))
+  $verdict = if ($change.ChangesRequested) { 'CHANGES_REQUESTED' } else { 'APPROVE' }
+  $reviewCycle = if ($change.ReviewCycle) { $change.ReviewCycle } else { 1 }
+  Set-Content (Join-Path $folder 'review.md') @("Cycle: $reviewCycle", 'Round: 1', "Reviewed tree: $(Get-TreeId $repoDir)", '',
+    '## Open', '', '## Closed', '', '## Summary', '', '| Severity | [CODE] | [SPEC] |', '|---|---|---|',
+    '| BLOCKER | 0 | 0 |', '| MAJOR | 0 | 0 |', '| MINOR | 0 | 0 |', '', "Verdict: $verdict")
+  if ($change.LateChange) { Add-Content (Join-Path $repoDir 'src/a.cs') '// late' }
+  return @{ Folder = $folder; Repo = $repoDir; Remote = $remote; Base = $base }
+}
+
+function Invoke-Commit($case) {
+  return Invoke-Script 'commit-cycle.ps1' @($case.Folder, '-Repo', $case.Repo)
+}
+
+$commitCase = New-CommitCase 'cc-ok'
+$committed = Invoke-Commit $commitCase
+$subjects = @(git -C $commitCase.Repo log --format=%s "$($commitCase.Base)..HEAD")
+Assert-That ($committed.Exit -eq 0 -and $subjects.Count -eq 3 -and $subjects[0] -eq 'feature(sample): changed a and b' -and
+  $subjects[1] -eq 'feature(docs): described b' -and $subjects[2] -eq 'feature(setup): changed x') `
+  'a commit group is committed in the order tooling, docs, code (newest first: code, docs, tooling)'
+$shas = @(git -C $commitCase.Repo log --format=%H "$($commitCase.Base)..HEAD")
+$expectedFiles = @('src/a.cs src/b.cs src/c.cs', 'docs/b.md', '.claude/x.ps1')
+$isEachCommitRight = $shas.Count -eq 3
+for ($i = 0; $i -lt $shas.Count -and $isEachCommitRight; $i++) {
+  $files = (git -C $commitCase.Repo show --name-only --format= $shas[$i]) -join ' '
+  if ($files -ne $expectedFiles[$i]) { $isEachCommitRight = $false }
+}
+Assert-That $isEachCommitRight 'each commit holds exactly the files of its group'
+$isBodyClean = $shas.Count -eq 3
+foreach ($sha in $shas) {
+  $subject = (git -C $commitCase.Repo log -1 --format=%s $sha)
+  if (((git -C $commitCase.Repo log -1 --format=%B $sha) -join "`n").Trim() -ne $subject) { $isBodyClean = $false }
+  if ((git -C $commitCase.Repo log -1 --format=%an $sha) -ne 'Test') { $isBodyClean = $false }
+}
+Assert-That $isBodyClean 'each commit message is the subject only, and the author is the git identity of the repo'
+Assert-That ((git -C $commitCase.Repo status --porcelain).Count -eq 0) 'the checkout is clean after the commits'
+Assert-That ((git -C $commitCase.Remote rev-parse main) -eq $commitCase.Base) 'the script pushes nothing'
+
+$beforeRerun = git -C $commitCase.Repo rev-parse HEAD
+$rerun = Invoke-Commit $commitCase
+Assert-That ($rerun.Exit -eq 0 -and $rerun.Output.Count -eq 0 -and (git -C $commitCase.Repo rev-parse HEAD) -eq $beforeRerun) `
+  'a second run prints no SHA and makes no commit'
+
+$renameCase = New-CommitCase 'cc-rename' @{ MoveFile = $true }
+$renamed = Invoke-Commit $renameCase
+$renameShas = @(git -C $renameCase.Repo log --format=%H "$($renameCase.Base)..HEAD")
+$codeFiles = if ($renameShas.Count -eq 3) { (git -C $renameCase.Repo show --name-only --no-renames --format= $renameShas[0]) -join ' ' } else { '' }
+Assert-That ($renamed.Exit -eq 0 -and $codeFiles -eq 'src/a.cs src/b.cs src/c.cs src/d.cs' -and
+  (git -C $renameCase.Repo status --porcelain).Count -eq 0) `
+  'a file moved with git mv is committed with its old and its new path, and the checkout is clean'
+
+foreach ($case in @(
+    @('cc-verdict', @{ ChangesRequested = $true }, 'no Verdict: APPROVE'),
+    @('cc-cycle', @{ ReviewCycle = 2 }, 'is for cycle 2'),
+    @('cc-late', @{ LateChange = $true }, 'is not the Reviewed tree'),
+    @('cc-nodocscommit', @{ NoDocsCommit = $true }, 'docs/b.md needs a Commit docs line'),
+    @('cc-nodocschange', @{ NoDocsChange = $true }, 'the Commit docs line has no changed files'),
+    @('cc-subject', @{ BadSubject = $true }, "is not '<feature|bug>"))) {
+  $failCase = New-CommitCase $case[0] $case[1]
+  $headBefore = git -C $failCase.Repo rev-parse HEAD
+  $statusBefore = (git -C $failCase.Repo status --porcelain) -join '|'
+  $failed = Invoke-Commit $failCase
+  Assert-That ($failed.Exit -eq 1 -and ($failed.Output -join ' ') -like "*$($case[2])*" -and
+    (git -C $failCase.Repo rev-parse HEAD) -eq $headBefore -and ((git -C $failCase.Repo status --porcelain) -join '|') -eq $statusBefore) `
+    "commit-cycle refuses with its reason and changes nothing: $($case[2])"
+}
 
 Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 if ($failures.Count -gt 0) {

@@ -1,16 +1,21 @@
 #Requires -Version 7
 # check-plan.ps1 - checks the one thing about a cycle that a model cannot check reliably: that the sessions can find
 # every part of the cycle, and that each step holds its own facts (.claude/commands/spec.md, Handoff).
-# Usage: pwsh .claude/check-plan.ps1 <feature folder> [-Cycle <N>]    (default: the highest cycle of plan.md)
+# Usage: pwsh .claude/check-plan.ps1 <feature folder> [-Cycle <N>]
+#        (default: the "Cycle:" line of plan.md; the highest cycle when plan.md has none)
 # Output: one line for each problem. Exit code 1 when there is one.
 # Problems:
 # - the cycle has no "Spec:" line;
 # - a section name of the Spec line (in **bold**) is no heading of spec.md;
 # - an AC of the Spec line has no "*   **AC<n>:**" line in spec.md, or no row in "## Acceptance Criteria Map";
-# - a step names "spec.md" or "the spec" outside the Spec line (the step is not self-contained);
+# - a step names "spec.md" or "the spec" outside the Spec line (the step is not self-contained); the repo path
+#   ".claude/commands/spec.md" is exempt;
 # - a step whose Files: line names a test file, without "TDD", "Proof required", or "No proof: <reason>" in its block;
 # - the cycle has no "#### Deviations" heading (the cycle keeps its own Deviations, so one range read holds them);
-# - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused).
+# - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused);
+# - the Commit lines of the cycle ("Commit <tooling|docs|code>: <subject>"): none, an unknown group, 2 lines for one
+#   group, a subject that is not "<feature|bug>(<category>): <message in lower case>", a tooling subject without the
+#   category setup, or a docs subject without the category docs.
 param(
   [Parameter(Mandatory = $true)][string]$Folder,
   [int]$Cycle = 0
@@ -74,7 +79,8 @@ $steps = @(Get-CycleSteps $section)
 $TestFilePattern = '(?i)(^|[/`\s])tests?/|\.spec\.ts\b|Tests?\.cs\b|\.tests\.ps1\b'
 foreach ($step in $steps) {
   $text = $step.Lines -join "`n"
-  if ($text -match '(?i)spec\.md|\bthe spec\b') {
+  $textWithoutCommand = $text -replace '(?i)\.claude/commands/spec\.md', ''
+  if ($textWithoutCommand -match '(?i)spec\.md|\bthe spec\b') {
     $problems.Add("Cycle ${Cycle}: Step $($step.Number) names the spec. Copy the facts into the step.")
   }
   $filesText = ($step.Lines | Where-Object { $_ -match 'Files:' }) -join "`n"
@@ -86,6 +92,8 @@ foreach ($step in $steps) {
 if (-not ($section | Where-Object { $_ -match '^#### Deviations\s*$' })) {
   $problems.Add("Cycle ${Cycle}: no '#### Deviations' heading. End the cycle section with it.")
 }
+
+foreach ($text in @(Get-CommitProblems @(Get-CycleCommits $section))) { $problems.Add("Cycle ${Cycle}: $text") }
 
 $acLines = $specLines | ForEach-Object {
   $match = [regex]::Match($_, '^\*\s+\*\*AC(\d+[a-z]*):\*\*')

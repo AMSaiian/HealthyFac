@@ -1,7 +1,8 @@
 # check-review-routing.ps1 - prints the one allowed handoff target for a review.md, so the
 # reviewer routes by a fixed rule (.claude/commands/review.md, Handoff).
 # Usage: pwsh .claude/check-review-routing.ps1 <path to review.md>
-# Output: one line "<target> <reason>", where target is "spec" or "executor".
+# Output: one line "<target> <reason>", where target is "spec" or "executor". An APPROVE goes to the executor
+# ("executor approved (...)"): it commits the cycle (.claude/commit-cycle.ps1).
 # Exit code 1 when review.md lacks the Cycle line, the Round line, the verdict, or the summary table.
 # A review.md with a "## Open" section (the current layout of review.md) is also checked:
 # - every "### " heading in "## Open" has the form "### F<n> <BLOCKER|MAJOR|MINOR> [<CODE|SPEC>] <title>";
@@ -77,7 +78,7 @@ $r = [int]$round.Groups[1].Value
 $c = [int]$cycle.Groups[1].Value
 
 if ($verdict.Groups[1].Value -eq 'APPROVE') {
-  "spec approved (cycle $c, round $r)"
+  "executor approved (cycle $c, round $r)"
 } elseif ($maxReopened -ge $ReopenLimit -or $r -ge $NotConvergingRound) {
   "spec not-converging (cycle $c, round $r, max REOPENED $maxReopened)"
 } elseif ($openSpec -gt 0) {
