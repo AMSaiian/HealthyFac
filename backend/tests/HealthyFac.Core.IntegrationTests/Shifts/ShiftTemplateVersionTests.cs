@@ -23,7 +23,7 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
             ShiftTestData.Today.AddDays(dayOffset),
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
 
-        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
+        await act.Should().ThrowAsync<AppValidationException>(caseName);
     }
 
     [Fact]
@@ -155,6 +155,47 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<UnprocessableException>()
             .WithMessage(ShiftErrors.Rejections.VersionInEffect);
+    }
+
+    [Fact]
+    public async Task UpdateVersion_Always_SoftDeletesTheReplacedBlocks()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        var versionId = await _fixture.CreateVersionAsync(
+            tenant,
+            ShiftTestData.InTwoDays,
+            ShiftTestData.WorkWeek(ShiftTestData.Morning, ShiftTestData.Afternoon));
+        var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
+
+        await _fixture.UpdateVersionAsync(
+            tenant,
+            versionId,
+            ShiftTestData.WorkWeek(ShiftTestData.ShortMorning),
+            rowVersion);
+
+        var blocks = await _fixture.LoadTemplateBlockRowsAsync(versionId);
+
+        blocks.Should().HaveCount(expected: 15);
+        blocks.Count(block => block.DeletedAt != null).Should().Be(expected: 10);
+    }
+
+    [Fact]
+    public async Task DeleteVersion_ThatHasNotTakenEffect_SoftDeletesItsBlocks()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        var versionId = await _fixture.CreateVersionAsync(
+            tenant,
+            ShiftTestData.InTwoDays,
+            ShiftTestData.WorkWeek(ShiftTestData.Morning));
+        var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
+
+        await _fixture.DeleteVersionAsync(tenant, versionId, rowVersion);
+
+        var blocks = await _fixture.LoadTemplateBlockRowsAsync(versionId);
+
+        blocks.Should().HaveCount(expected: 5).And.OnlyContain(block => block.DeletedAt != null);
     }
 
     [Fact]

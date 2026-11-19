@@ -26,7 +26,7 @@ public class ShiftTemplateBlockConfiguration : IEntityTypeConfiguration<ShiftTem
         builder.HasOne<ShiftTemplateVersion>()
             .WithMany(version => version.Blocks)
             .HasForeignKey(block => block.ShiftTemplateVersionId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasEnumerationCheck(block => block.Weekday)
             .HasNotEmptyGuidCheck(block => block.ShiftTemplateVersionId);

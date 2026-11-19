@@ -23,7 +23,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
             ShiftTestData.Today.AddDays(dayOffset),
             ShiftTestData.Blocks(ShiftTestData.Morning));
 
-        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
+        await act.Should().ThrowAsync<AppValidationException>(caseName);
     }
 
     [Fact]
@@ -85,6 +85,47 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
         var day = await _fixture.ResolveDayAsync(tenant, ShiftTestData.Tomorrow);
 
         day.Blocks.Should().ContainSingle().Which.Start.Should().Be(ShiftTestData.ParseTime(time: "09:00"));
+    }
+
+    [Fact]
+    public async Task SetOverride_ReplacingBlocksOfExistingDate_SoftDeletesTheOldBlocks()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        await _fixture.SetOverrideAsync(
+            tenant,
+            ShiftTestData.Tomorrow,
+            ShiftTestData.Blocks(ShiftTestData.Morning, ShiftTestData.Afternoon));
+        var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
+
+        await _fixture.SetOverrideAsync(
+            tenant,
+            ShiftTestData.Tomorrow,
+            ShiftTestData.Blocks(ShiftTestData.ShortMorning),
+            rowVersion);
+
+        var blocks = await _fixture.LoadOverrideBlockRowsAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
+
+        blocks.Should().HaveCount(expected: 3);
+        blocks.Count(block => block.DeletedAt != null).Should().Be(expected: 2);
+    }
+
+    [Fact]
+    public async Task DeleteOverride_Always_SoftDeletesItsBlocks()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        await _fixture.SetOverrideAsync(
+            tenant,
+            ShiftTestData.Tomorrow,
+            ShiftTestData.Blocks(ShiftTestData.Morning, ShiftTestData.Afternoon));
+        var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
+
+        await _fixture.DeleteOverrideAsync(tenant, ShiftTestData.Tomorrow, rowVersion);
+
+        var blocks = await _fixture.LoadOverrideBlockRowsAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
+
+        blocks.Should().HaveCount(expected: 2).And.OnlyContain(block => block.DeletedAt != null);
     }
 
     [Fact]

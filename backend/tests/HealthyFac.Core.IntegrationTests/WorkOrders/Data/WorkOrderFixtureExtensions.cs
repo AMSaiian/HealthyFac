@@ -170,6 +170,30 @@ public static class WorkOrderFixtureExtensions
                 .CountAsync(link => link.WorkOrderId == workOrderId);
         }
 
+        public async Task<IReadOnlyList<WorkOrderFile>> LoadFileLinkRowsAsync(Guid workOrderId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.WorkOrderFiles
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Where(link => link.WorkOrderId == workOrderId)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<WorkOrderHistory>> LoadHistoryRowsAsync(Guid workOrderId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.WorkOrderHistories
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Where(row => row.WorkOrderId == workOrderId)
+                .ToListAsync();
+        }
+
         public async Task<WorkOrder> LoadWorkOrderAsync(Guid workOrderId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();

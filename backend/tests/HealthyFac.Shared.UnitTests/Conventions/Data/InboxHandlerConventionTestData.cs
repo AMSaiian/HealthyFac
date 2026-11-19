@@ -15,10 +15,15 @@ public sealed class PlantedInboxHandler(ITransactionalDbContext dbContext) : Req
 {
     private readonly ITransactionalDbContext _dbContext = dbContext;
 
-    protected override Task HandleInternalAsync(PlantedInboxMessage request, CancellationToken cancellationToken) =>
-        _dbContext.RunInTransactionAsync(
+    protected override async Task HandleInternalAsync(
+        PlantedInboxMessage request,
+        CancellationToken cancellationToken
+    )
+    {
+        await _dbContext.RunInTransactionAsync(
             async token => { await Task.Delay(TimeSpan.Zero, token); },
             cancellationToken);
+    }
 }
 
 public sealed class PlantedRequestHandler(ITransactionalDbContext dbContext) : RequestHandler<PlantedPlainRequest>

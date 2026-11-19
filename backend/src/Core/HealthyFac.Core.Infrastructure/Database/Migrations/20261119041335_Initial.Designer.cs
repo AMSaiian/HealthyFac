@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Core.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20261118145129_Initial")]
+    [Migration("20261119041335_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1380,7 +1380,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
                         .WithMany("StateHistory")
                         .HasForeignKey("MachineId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -1398,7 +1398,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.Shifts.ShiftOverride", null)
                         .WithMany("Blocks")
                         .HasForeignKey("ShiftOverrideId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -1407,7 +1407,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.Shifts.ShiftTemplateVersion", null)
                         .WithMany("Blocks")
                         .HasForeignKey("ShiftTemplateVersionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -1448,7 +1448,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.WorkOrders.WorkOrder", null)
                         .WithMany("Files")
                         .HasForeignKey("WorkOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -1462,7 +1462,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.WorkOrders.WorkOrder", null)
                         .WithMany("History")
                         .HasForeignKey("WorkOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

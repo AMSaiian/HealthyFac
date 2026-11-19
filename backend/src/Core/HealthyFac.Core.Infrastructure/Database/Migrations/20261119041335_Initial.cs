@@ -305,7 +305,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         column: x => x.machine_id,
                         principalTable: "machines",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -475,7 +475,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         column: x => x.work_order_id,
                         principalTable: "work_orders",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -514,7 +514,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         column: x => x.work_order_id,
                         principalTable: "work_orders",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -542,7 +542,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         column: x => x.shift_override_id,
                         principalTable: "shift_overrides",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -572,7 +572,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         column: x => x.shift_template_version_id,
                         principalTable: "shift_template_versions",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(

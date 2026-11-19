@@ -163,8 +163,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         _dbContext.Entry(workOrder).State = EntityState.Modified;
         await SaveAsync(cancellationToken);
 
-        var removedLinks = workOrder.ReplaceFiles(request.FileIds);
-        _dbContext.WorkOrderFiles.RemoveRange(removedLinks);
+        workOrder.ReplaceFiles(request.FileIds);
         _dbContext.WorkOrderFiles.AddRange(
             workOrder.Files.Where(link => _dbContext.Entry(link).State == EntityState.Detached));
         await SaveAsync(cancellationToken);

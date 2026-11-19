@@ -52,6 +52,44 @@ public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Delete_WorkOrderWithFilesAndHistory_SoftDeletesLinksAndHistory()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
+
+        await DeleteAsync(tenant, scheduled.Id, await _fixture.LoadWorkOrderRowVersionAsync(scheduled.Id));
+
+        var links = await _fixture.LoadFileLinkRowsAsync(scheduled.Id);
+        var history = await _fixture.LoadHistoryRowsAsync(scheduled.Id);
+
+        links.Should().HaveCount(WorkOrderTestData.FileCount).And.OnlyContain(link => link.DeletedAt != null);
+        history.Should().HaveCount(expected: 2).And.OnlyContain(row => row.DeletedAt != null);
+    }
+
+    [Fact]
+    public async Task Delete_WithStaleRowVersion_LeavesHistoryUnchanged()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
+        var staleRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(scheduled.Id);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            scheduled.Id,
+            Domain.WorkOrders.WorkOrderStatus.InProgress);
+
+        var act = () => DeleteAsync(tenant, scheduled.Id, staleRowVersion);
+
+        await act.Should().ThrowAsync<ConflictException>();
+
+        var history = await _fixture.LoadHistoryRowsAsync(scheduled.Id);
+        var links = await _fixture.LoadFileLinkRowsAsync(scheduled.Id);
+
+        history.Should().OnlyContain(row => row.DeletedAt == null);
+        links.Should().OnlyContain(link => link.DeletedAt == null);
+    }
+
+    [Fact]
     public async Task DeleteWorkOrder_WithStaleRowVersion_ThrowsConflictAndDeletesNothing()
     {
         var tenant = await ArrangeTenantAsync();

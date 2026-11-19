@@ -156,8 +156,7 @@ public sealed class SetShiftOverrideRequestHandler(
         }
 
         _dbContext.Entry(existing).Property(stored => stored.RowVersion).OriginalValue = rowVersion;
-        var removedBlocks = existing.ReplaceBlocks(times);
-        _dbContext.ShiftOverrideBlocks.RemoveRange(removedBlocks);
+        existing.ReplaceBlocks(times);
         _dbContext.ShiftOverrideBlocks.AddRange(existing.Blocks);
         _dbContext.Entry(existing).State = EntityState.Modified;
     }

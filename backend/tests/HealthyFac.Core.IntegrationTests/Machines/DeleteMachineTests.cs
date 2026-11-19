@@ -1,12 +1,17 @@
+using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.UseCases;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Machines;
 
@@ -110,6 +115,66 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
 
         history.Should().HaveCount(expected: 2).And.OnlyContain(row => row.DeletedAt != null);
         otherHistory.Should().ContainSingle().Which.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Delete_MachineWithStateHistory_SoftDeletesHistoryWithoutLoadingIt()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+        var firstHistory = await _fixture.LoadStateHistoryAsync(machineId);
+        await _fixture.AddStateRowAsync(
+            machineId,
+            MachineState.InMaintenance,
+            firstHistory[index: 0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
+        _fixture.Clock.Freeze(SoftDeleteQueryTestData.FirstDeleteAt);
+        using var scope = _fixture.CreateUserScope(tenant.CompanyId);
+
+        await scope.ServiceProvider
+            .GetRequiredService<IRequestHandler<DeleteMachineRequest>>()
+            .HandleAsync(
+                new DeleteMachineRequest { CompanyId = tenant.CompanyId, Id = machineId },
+                TestContext.Current.CancellationToken);
+
+        var actorId = scope.ServiceProvider.GetRequiredService<ICurrentUserProvider>().TryGetUserId();
+        var trackedHistory = scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+            .ChangeTracker
+            .Entries<MachineStateHistory>()
+            .ToList();
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        trackedHistory.Should().BeEmpty();
+        history.Should()
+            .HaveCount(expected: 2)
+            .And.OnlyContain(row => row.DeletedAt == SoftDeleteQueryTestData.FirstDeleteAt.UtcDateTime
+                && row.DeletedBy == actorId);
+    }
+
+    [Fact]
+    public async Task Delete_WhenOuterTransactionRollsBack_LeavesHistoryUnchanged()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await ArrangeMachineAsync(tenant);
+        using var scope = _fixture.CreateUserScope(tenant.CompanyId);
+        var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+        var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<DeleteMachineRequest>>();
+
+        var act = () => dbContext.RunInTransactionAsync(
+            async token =>
+            {
+                await handler.HandleAsync(
+                    new DeleteMachineRequest { CompanyId = tenant.CompanyId, Id = machineId }, token);
+
+                throw new TransactionTestException();
+            }, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<TransactionTestException>();
+
+        var machine = await _fixture.LoadMachineRowAsync(machineId);
+        var history = await _fixture.LoadStateHistoryAsync(machineId);
+
+        machine.DeletedAt.Should().BeNull();
+        history.Should().OnlyContain(row => row.DeletedAt == null);
     }
 
     [Fact]

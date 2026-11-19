@@ -42,6 +42,30 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Update_DroppingLink_SoftDeletesThatLink()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        var workOrderId = await CreateBacklogAsync(tenant, WorkOrderTestData.FileA, WorkOrderTestData.FileB);
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+
+        await _fixture.UpdateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.UpdateRequest(
+                tenant.CompanyId,
+                AccessScope.Company,
+                workOrderId,
+                rowVersion,
+                [WorkOrderTestData.FileB]));
+
+        var links = await _fixture.LoadFileLinkRowsAsync(workOrderId);
+
+        links.Should().HaveCount(expected: 2);
+        links.Single(link => link.FileId == WorkOrderTestData.FileA).DeletedAt.Should().NotBeNull();
+        links.Single(link => link.FileId == WorkOrderTestData.FileB).DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
     public async Task UpdateWorkOrder_WithUnchangedFiles_AddsNoLinkRow()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();

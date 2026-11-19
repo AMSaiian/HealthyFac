@@ -54,7 +54,9 @@ public sealed class UpdateShiftTemplateVersionPreHandlerCheck(
 /// <summary>
 /// Replaces the blocks of a version that has not taken effect yet. The handler sets the original row version from the
 /// request and marks the version row modified, so the save checks and changes <c>xmin</c>: a parallel change ends in
-/// the conflict (409). The change runs in one serializable transaction with the same guard as the create.
+/// the conflict (409). The blocks that leave the version are orphans: the cascade removes them, and the save
+/// interceptor turns each removal into a soft delete. The change runs in one serializable transaction with the same
+/// guard as the create.
 /// </summary>
 /// <param name="dbContext">Saves the change.</param>
 /// <param name="reader">Loads the shift data.</param>
@@ -110,8 +112,7 @@ public sealed class UpdateShiftTemplateVersionRequestHandler(
         var before = shifts.Resolve(version.EffectiveFrom, lastDate);
 
         _dbContext.Entry(version).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
-        var removedBlocks = version.ReplaceBlocks(ShiftTemplateDayInput.ToTemplateBlocks(request.Days));
-        _dbContext.ShiftTemplateBlocks.RemoveRange(removedBlocks);
+        version.ReplaceBlocks(ShiftTemplateDayInput.ToTemplateBlocks(request.Days));
         _dbContext.ShiftTemplateBlocks.AddRange(version.Blocks);
         _dbContext.Entry(version).State = EntityState.Modified;
         var after = shifts.Resolve(version.EffectiveFrom, lastDate);

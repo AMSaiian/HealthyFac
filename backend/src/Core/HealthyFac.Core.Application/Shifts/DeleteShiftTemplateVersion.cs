@@ -49,6 +49,7 @@ public sealed class DeleteShiftTemplateVersionPreHandlerCheck(
 
 /// <summary>
 /// Deletes a version that has not taken effect yet, with its blocks, in one save inside a serializable transaction.
+/// The cascade removes the loaded blocks, and the save interceptor turns each removal into a soft delete.
 /// The guard checks the day schedules without the version, like the update does.
 /// </summary>
 /// <param name="dbContext">Saves the change.</param>
@@ -105,7 +106,6 @@ public sealed class DeleteShiftTemplateVersionRequestHandler(
         var before = shifts.Resolve(version.EffectiveFrom, lastDate);
 
         _dbContext.Entry(version).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
-        _dbContext.ShiftTemplateBlocks.RemoveRange(version.Blocks);
         _dbContext.ShiftTemplateVersions.Remove(version);
         shifts.Versions.Remove(version);
         var after = shifts.Resolve(version.EffectiveFrom, lastDate);

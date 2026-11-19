@@ -27,7 +27,7 @@ public class WorkOrderFileConfiguration : IEntityTypeConfiguration<WorkOrderFile
         builder.HasOne<WorkOrder>()
             .WithMany(workOrder => workOrder.Files)
             .HasForeignKey(link => link.WorkOrderId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasNotEmptyGuidCheck(link => link.WorkOrderId)
             .HasNotEmptyGuidCheck(link => link.FileId);

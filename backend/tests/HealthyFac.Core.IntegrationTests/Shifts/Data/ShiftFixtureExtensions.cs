@@ -6,6 +6,7 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Domain.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -246,6 +247,36 @@ public static class ShiftFixtureExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
             return await dbContext.ShiftTemplateBlocks.CountAsync(block => block.ShiftTemplateVersionId == versionId);
+        }
+
+        public async Task<IReadOnlyList<ShiftTemplateBlock>> LoadTemplateBlockRowsAsync(Guid versionId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.ShiftTemplateBlocks
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Where(block => block.ShiftTemplateVersionId == versionId)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<ShiftOverrideBlock>> LoadOverrideBlockRowsAsync(Guid employeeId, DateOnly date)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            var overrideIds = await dbContext.ShiftOverrides
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .Where(shiftOverride => shiftOverride.EmployeeId == employeeId && shiftOverride.Date == date)
+                .Select(shiftOverride => shiftOverride.Id)
+                .ToListAsync();
+
+            return await dbContext.ShiftOverrideBlocks
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Where(block => overrideIds.Contains(block.ShiftOverrideId))
+                .ToListAsync();
         }
 
         public async Task<Guid> ArrangeStagedWorkOrderAsync(
