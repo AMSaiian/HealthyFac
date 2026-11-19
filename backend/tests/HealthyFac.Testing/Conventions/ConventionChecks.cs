@@ -350,8 +350,9 @@ public static class ConventionChecks
 
     /// <summary>
     /// Finds the service contexts (a concrete <see cref="DbContext"/> that implements
-    /// <see cref="ITransactionalDbContext"/>) whose <c>SaveChangesAsync(bool, CancellationToken)</c> is not an override
-    /// that calls <c>TransactionRunner.SaveAsync</c>. A save with a soft delete cascade needs the transaction of the
+    /// <see cref="ITransactionalDbContext"/>) whose <c>SaveChangesAsync(bool, CancellationToken)</c> and
+    /// <c>SaveChanges(bool)</c> are not overrides that call <c>TransactionRunner.SaveAsync</c> and
+    /// <c>TransactionRunner.Save</c>. A save with a soft delete cascade needs the transaction of the
     /// runner, and a context without the override would throw at the first cascade.
     /// </summary>
     /// <param name="assembly">The assembly to inspect.</param>
@@ -366,27 +367,47 @@ public static class ConventionChecks
             .Where(type => type is { IsClass: true, IsAbstract: false }
                 && typeof(DbContext).IsAssignableFrom(type)
                 && typeof(ITransactionalDbContext).IsAssignableFrom(type))
-            .Where(type => !CallsRunnerSave(type))
-            .Select(type =>
-                $"{type.DisplayName}: {ConventionConstants.Transactions.SaveMethod}(bool, CancellationToken) "
-                + $"does not call TransactionRunner.{ConventionConstants.Transactions.RunnerSaveMethod}")
+            .SelectMany(FindMissingSaveOverrides)
             .Order(StringComparer.Ordinal)
             .ToList();
 
-    private static bool CallsRunnerSave(Type type)
+    private static IEnumerable<string> FindMissingSaveOverrides(Type type)
+    {
+        if (!CallsRunnerSave(
+            type,
+            ConventionConstants.Transactions.SaveMethod,
+            ConventionConstants.Transactions.RunnerSaveMethod,
+            [typeof(bool), typeof(CancellationToken)]))
+        {
+            yield return $"{type.DisplayName}: {ConventionConstants.Transactions.SaveMethod}(bool, CancellationToken) "
+                + $"does not call TransactionRunner.{ConventionConstants.Transactions.RunnerSaveMethod}";
+        }
+
+        if (!CallsRunnerSave(
+            type,
+            ConventionConstants.Transactions.SyncSaveMethod,
+            ConventionConstants.Transactions.RunnerSyncSaveMethod,
+            [typeof(bool)]))
+        {
+            yield return $"{type.DisplayName}: {ConventionConstants.Transactions.SyncSaveMethod}(bool) "
+                + $"does not call TransactionRunner.{ConventionConstants.Transactions.RunnerSyncSaveMethod}";
+        }
+    }
+
+    private static bool CallsRunnerSave(Type type, string saveMethod, string runnerMethod, Type[] parameterTypes)
     {
         var save = type.GetMethod(
-            ConventionConstants.Transactions.SaveMethod,
+            saveMethod,
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
-            [typeof(bool), typeof(CancellationToken)]);
+            parameterTypes);
 
         return save is not null
-            && MethodCallInspection.FindCalls(type, IsRunnerSave)
+            && MethodCallInspection.FindCalls(type, method => IsRunnerMethod(method, runnerMethod))
                 .Any(call => call.Caller == save || call.Caller.DeclaringType != type);
     }
 
-    private static bool IsRunnerSave(MethodBase method) =>
-        method.Name == ConventionConstants.Transactions.RunnerSaveMethod
+    private static bool IsRunnerMethod(MethodBase method, string runnerMethod) =>
+        method.Name == runnerMethod
         && method.DeclaringType?.FullName == ConventionConstants.Transactions.RunnerType;
 
     /// <summary>

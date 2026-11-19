@@ -28,6 +28,9 @@ public sealed class SoftDeleteDbContext(DbContextOptions<SoftDeleteDbContext> op
         CancellationToken cancellationToken = default(CancellationToken)
     ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        TransactionRunner.Save(this, base.SaveChanges, acceptAllChangesOnSuccess);
+
     internal static void ConfigureModel(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<SoftDeleteTestEntity>().ConfigureEntity().ConfigureSoftDeletable();

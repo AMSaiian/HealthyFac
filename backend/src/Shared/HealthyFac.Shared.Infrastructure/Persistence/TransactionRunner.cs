@@ -74,7 +74,7 @@ public static class TransactionRunner
         CancellationToken cancellationToken
     )
     {
-        if (dbContext.Database.CurrentTransaction is not null || !SoftDeleteCascade.HasCascadeWork(dbContext))
+        if (dbContext.Database.CurrentTransaction is not null || !SoftDeleteInterceptor.HasCascadeWork(dbContext))
         {
             return await save(isAcceptingAllChanges, cancellationToken);
         }
@@ -92,6 +92,40 @@ public static class TransactionRunner
                     return attemptCount;
                 },
                 cancellationToken);
+        if (isAcceptingAllChanges)
+        {
+            dbContext.ChangeTracker.AcceptAllChanges();
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Saves the changes of <paramref name="dbContext"/> with the synchronous calls. It follows
+    /// <see cref="SaveAsync"/>: a save with a soft delete cascade runs in one transaction inside the execution
+    /// strategy, and a save inside an open transaction, or without a cascade, runs as EF Core runs it.
+    /// </summary>
+    /// <param name="dbContext">The context to save.</param>
+    /// <param name="save">The base <c>SaveChanges</c> of the context.</param>
+    /// <param name="isAcceptingAllChanges">Whether to accept the changes in the tracker after the save.</param>
+    /// <returns>The number of state entries that the save wrote.</returns>
+    public static int Save(DbContext dbContext, Func<bool, int> save, bool isAcceptingAllChanges)
+    {
+        if (dbContext.Database.CurrentTransaction is not null || !SoftDeleteInterceptor.HasCascadeWork(dbContext))
+        {
+            return save(isAcceptingAllChanges);
+        }
+
+        var count = dbContext.Database
+            .CreateExecutionStrategy()
+            .Execute(() =>
+            {
+                using var transaction = dbContext.Database.BeginTransaction(IsolationLevel.ReadCommitted);
+                var attemptCount = save(arg: false);
+                transaction.Commit();
+
+                return attemptCount;
+            });
         if (isAcceptingAllChanges)
         {
             dbContext.ChangeTracker.AcceptAllChanges();

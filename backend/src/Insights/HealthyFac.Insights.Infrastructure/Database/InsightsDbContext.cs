@@ -50,6 +50,9 @@ public class InsightsDbContext(DbContextOptions<InsightsDbContext> options)
         CancellationToken cancellationToken = default(CancellationToken)
     ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        TransactionRunner.Save(this, base.SaveChanges, acceptAllChangesOnSuccess);
+
     public Task RunInTransactionAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken = default(CancellationToken)

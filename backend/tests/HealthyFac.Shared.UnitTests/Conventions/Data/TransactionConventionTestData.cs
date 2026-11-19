@@ -97,4 +97,16 @@ public sealed class PlantedContextWithSaveOverride(DbContextOptions options) : P
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default(CancellationToken)
     ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        TransactionRunner.Save(this, base.SaveChanges, acceptAllChangesOnSuccess);
+}
+
+public sealed class PlantedContextWithoutSyncSaveOverride(DbContextOptions options)
+    : PlantedTransactionalContextBase(options)
+{
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
 }
