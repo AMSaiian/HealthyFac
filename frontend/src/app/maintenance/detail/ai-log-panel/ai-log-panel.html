@@ -1,11 +1,12 @@
 <p-accordion
+  class="min-h-0 flex-1 overflow-y-auto"
   [multiple]="true"
   [value]="[]"
   (valueChange)="onValueChange($event)"
 >
   @for (run of runs(); track run.id) {
     <p-accordion-panel [value]="run.id">
-      <p-accordion-header>
+      <p-accordion-header class="rounded-none">
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <span class="font-semibold">{{ roleLabel(run.role) }}</span>
           <span class="text-muted-color">{{ runStateLabel(run.state) }}</span>
@@ -26,7 +27,7 @@
           }
         </div>
       </p-accordion-header>
-      <p-accordion-content>
+      <p-accordion-content class="overflow-hidden">
         <div class="flex min-w-0 flex-col gap-3">
           @if (run.verdictReason) {
             @if (run.role === AgentRole.Planner) {
@@ -90,6 +91,7 @@
   }
 </p-accordion>
 <p-paginator
+  class="flex-none"
   [first]="offset()"
   [rows]="limit()"
   [totalRecords]="totalCount()"

@@ -37,6 +37,7 @@
       [canWrite]="store.canWrite()"
       [reasons]="store.quickReasons()"
       [applyingIds]="store.applyingIds()"
+      [isBusy]="store.isQuickBusy() || store.isDismissing()"
       [selectedIds]="store.selectedIds()"
       (applyRequested)="store.requestApply($event)"
       (filterChange)="store.setFilter($event)"

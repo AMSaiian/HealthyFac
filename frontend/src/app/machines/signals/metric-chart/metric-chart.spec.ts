@@ -6,11 +6,20 @@ import {
   DEFAULT_HIDDEN_GROUPS,
   episodeBucketRange,
   groupIndexes,
+  hasTooltipLines,
   isLegendEntry,
+  isTooltipEntry,
   limitsOf,
+  scaleRange,
+  signalAreas,
+  tickLabel,
+  timeTicks,
   toChartData,
   toggledGroups,
+  tooltipLabel,
+  tooltipSwatch,
   withAlpha,
+  zoomLimits,
 } from '@machines/signals/metric-chart/metric-chart.utils';
 
 const COLORS: ChartColors = { avg: 'avg', band: 'band', warning: 'warning', alarm: 'alarm', muted: 'muted' };
@@ -53,11 +62,17 @@ function input(overrides: Partial<ChartInput>): ChartInput {
     colors: COLORS,
     labels: LABELS,
     hiddenGroups: DEFAULT_HIDDEN_GROUPS,
-    formatTime: (iso) => iso,
+    viewEnd: END,
     episodeText: (item) => `${item.rule}|${item.severity}|${item.openedAt}`,
     ...overrides,
   };
 }
+
+const ys = (set: { readonly data: readonly { readonly y: number | null }[] }): (number | null)[] =>
+  set.data.map((point) => point.y);
+
+const END = Date.parse('2026-01-01T10:03:00Z');
+const at = (iso: string): number => Date.parse(iso);
 
 const ALL_LIMITS = { warningLow: 1, warningHigh: 25, alarmLow: 0, alarmHigh: 30 };
 
@@ -118,7 +133,7 @@ describe('metric chart', () => {
     const result = toChartData(input({ limits: { warningLow: null, warningHigh: 25, alarmLow: 5, alarmHigh: null } }));
 
     const lines = result.datasets.filter((set) => set['borderDash'] !== undefined);
-    expect(lines.map((line) => [line.hfGroup, line.data, line['borderColor']])).toEqual([
+    expect(lines.map((line) => [line.hfGroup, ys(line), line['borderColor']])).toEqual([
       [ChartGroup.WarningLimits, [25, 25, 25], 'warning'],
       [ChartGroup.AlarmLimits, [5, 5, 5], 'alarm'],
     ]);
@@ -135,40 +150,188 @@ describe('metric chart', () => {
 
     const average = result.datasets.find((set) => set.hfGroup === ChartGroup.Avg);
     const band = result.datasets.filter((set) => set.hfGroup === ChartGroup.Range);
-    expect(average?.data).toEqual([10, 20, 30]);
-    expect(band.map((set) => set.data)).toEqual([
+    expect(ys(average!)).toEqual([10, 20, 30]);
+    expect(band.map(ys)).toEqual([
       [12, 22, 32],
       [8, 18, 28],
     ]);
     expect(band.map((set) => set['borderWidth'])).toEqual([0, 0]);
     expect(band[1]['fill']).toBe('-1');
-    expect(result.labels).toEqual(BUCKETS.map((bucket) => bucket.start));
   });
 
-  it('toChartData_TwoEpisodes_MakesOneStripSegmentForEachWithItsTooltipAndSeverityColor', () => {
-    const warning = episode(SignalSeverity.Warning, '2026-01-01T10:00:00Z', '2026-01-01T10:01:00Z');
-    const alarm = episode(SignalSeverity.Alarm, '2026-01-01T10:02:00Z', null);
+  it('toChartData_Buckets_PutsEachPointAtTheEpochMillisecondsOfItsBucketStart', () => {
+    const result = toChartData(input({ limits: ALL_LIMITS }));
 
-    const result = toChartData(input({ episodes: [warning, alarm] }));
-
-    const segments = result.datasets.filter((set) => set.hfTooltip !== undefined);
-    expect(segments.map((set) => [set.hfTooltip, set['borderColor']])).toEqual([
-      ['threshold|warning|2026-01-01T10:00:00Z', 'warning'],
-      ['threshold|alarm|2026-01-01T10:02:00Z', 'alarm'],
-    ]);
-    expect(segments.map((set) => set.data.map((value) => value !== null))).toEqual([
-      [true, false, false],
-      [false, false, true],
-    ]);
-    expect(segments.every((set) => !isLegendEntry(set) && set.hfGroup === ChartGroup.Signals)).toBe(true);
+    const starts = BUCKETS.map((bucket) => Date.parse(bucket.start));
+    const average = result.datasets.find((set) => set.hfGroup === ChartGroup.Avg);
+    const alarmLine = result.datasets.find((set) => set.hfGroup === ChartGroup.AlarmLimits);
+    expect(average?.data.map((point) => point.x)).toEqual(starts);
+    expect(alarmLine?.data.map((point) => point.x)).toEqual(starts);
   });
 
-  it('toChartData_EpisodeOutsideTheBuckets_MakesNoSegment', () => {
+  it('scaleRange_MinAndMaxBetweenTwoBuckets_GivesTheExactInstantsWithoutRounding', () => {
+    const min = Date.parse('2026-01-01T10:00:17.250Z');
+    const max = Date.parse('2026-01-01T10:01:42.500Z');
+
+    const result = scaleRange(min, max);
+
+    expect(result).toEqual({ from: '2026-01-01T10:00:17.25Z', to: '2026-01-01T10:01:42.5Z' });
+  });
+
+  it('zoomLimits_BoundsOfOneHourWith60Buckets_KeepsTheBoundsAndAMinimumOfTwoBuckets', () => {
+    const result = zoomLimits({ from: '2026-01-01T10:00:00Z', to: '2026-01-01T11:00:00Z' }, 60);
+
+    expect(result).toEqual({
+      min: Date.parse('2026-01-01T10:00:00Z'),
+      max: Date.parse('2026-01-01T11:00:00Z'),
+      minRange: 2 * 60_000,
+    });
+  });
+
+  it('zoomLimits_WithoutBuckets_StillKeepsAMinimumRangeOfTwoBucketsOfOne', () => {
+    const result = zoomLimits({ from: '2026-01-01T10:00:00Z', to: '2026-01-01T10:01:00Z' }, 0);
+
+    expect(result.minRange).toBe(2 * 60_000);
+  });
+
+  it('tickLabel_ValueInTheZone_GivesTheLocalDayMonthHourAndMinute', () => {
+    const value = Date.parse('2026-01-15T08:30:00Z');
+
+    const label = tickLabel(value, 'Europe/Kyiv', 3_600_000);
+
+    expect(label).toContain('10:30');
+    expect(label).toContain('15');
+  });
+
+  it('tickLabel_ViewOfLessThanTenMinutes_AddsTheSeconds', () => {
+    const value = Date.parse('2026-01-15T08:30:00Z');
+
+    const longView = tickLabel(value, 'Europe/Kyiv', 3_600_000);
+    const shortView = tickLabel(value, 'Europe/Kyiv', 60_000);
+
+    expect(shortView).toContain('10:30:00');
+    expect(longView).not.toContain('10:30:00');
+  });
+
+  it('toChartData_TwoOverlappingEpisodes_MakesOneAreaFilledToTheAxisWithTheTintOfTheHighestSeverity', () => {
+    const warning = episode(SignalSeverity.Warning, '2026-01-01T10:00:10Z', '2026-01-01T10:01:30Z');
+    const alarm = episode(SignalSeverity.Alarm, '2026-01-01T10:01:00Z', '2026-01-01T10:01:50Z');
+    const colors = { ...COLORS, alarm: 'rgb(255, 0, 0)' };
+
+    const result = toChartData(input({ episodes: [warning, alarm], colors }));
+
+    const areas = result.datasets.filter((set) => set.hfSignals !== undefined);
+    expect(areas).toHaveLength(1);
+    expect(ys(areas[0])).toEqual([1, 1, 1]);
+    expect(areas[0]['fill']).toBe('origin');
+    expect(areas[0]['borderWidth']).toBe(0);
+    expect(areas[0]['backgroundColor']).toBe('rgba(255, 0, 0, 0.18)');
+    expect(areas[0].hfGroup).toBe(ChartGroup.Signals);
+    expect(isLegendEntry(areas[0])).toBe(false);
+  });
+
+  it('toChartData_OpenEpisode_MakesAnAreaToTheEndOfTheView', () => {
+    const open = episode(SignalSeverity.Warning, '2026-01-01T10:01:10Z', null);
+
+    const result = toChartData(input({ episodes: [open] }));
+
+    const areas = result.datasets.filter((set) => set.hfSignals !== undefined);
+    expect(areas.map(ys)).toEqual([[null, 1, 1, 1]]);
+  });
+
+  it('toChartData_EpisodeInsideOneBucket_ClosesTheAreaAtTheStartOfTheNextBucket', () => {
+    const inside = episode(SignalSeverity.Alarm, '2026-01-01T10:01:10Z', '2026-01-01T10:01:40Z');
+
+    const result = toChartData(input({ episodes: [inside] }));
+
+    const area = result.datasets.find((set) => set.hfSignals !== undefined);
+    expect(area?.data).toEqual([
+      { x: at('2026-01-01T10:00:00Z'), y: null },
+      { x: at('2026-01-01T10:01:00Z'), y: 1 },
+      { x: at('2026-01-01T10:02:00Z'), y: 1 },
+    ]);
+  });
+
+  it('toChartData_EpisodeInTheLastBucket_ClosesTheAreaAtTheEndOfTheView', () => {
+    const last = episode(SignalSeverity.Alarm, '2026-01-01T10:02:10Z', '2026-01-01T10:02:40Z');
+
+    const result = toChartData(input({ episodes: [last] }));
+
+    const area = result.datasets.find((set) => set.hfSignals !== undefined);
+    expect(area?.data.slice(-2)).toEqual([
+      { x: at('2026-01-01T10:02:00Z'), y: 1 },
+      { x: END, y: 1 },
+    ]);
+  });
+
+  it('toChartData_EpisodeOutsideTheBuckets_MakesNoArea', () => {
     const outside = episode(SignalSeverity.Alarm, '2026-01-01T07:00:00Z', '2026-01-01T08:00:00Z');
 
     const result = toChartData(input({ episodes: [outside] }));
 
-    expect(result.datasets.filter((set) => set.hfTooltip !== undefined)).toEqual([]);
+    expect(result.datasets.filter((set) => set.hfSignals !== undefined)).toEqual([]);
+  });
+
+  it('tooltipLabel_AreaDataset_ListsExactlyTheSignalsThatCoverTheBucket', () => {
+    const warning = episode(SignalSeverity.Warning, '2026-01-01T10:00:10Z', '2026-01-01T10:01:30Z');
+    const alarm = episode(SignalSeverity.Alarm, '2026-01-01T10:01:00Z', '2026-01-01T10:01:50Z');
+    const datasets = toChartData(input({ episodes: [warning, alarm] })).datasets;
+    const area = datasets.findIndex((set) => set.hfSignals !== undefined);
+
+    const first = tooltipLabel(datasets, area, 0, String);
+    const second = tooltipLabel(datasets, area, 1, String);
+    const outside = tooltipLabel(datasets, area, 2, String);
+
+    expect(first).toEqual(['threshold|warning|2026-01-01T10:00:10Z']);
+    expect(second).toEqual(['threshold|warning|2026-01-01T10:00:10Z', 'threshold|alarm|2026-01-01T10:01:00Z']);
+    expect(outside).toEqual([]);
+  });
+
+  it('signalAreas_TwoOverlappingSignals_GivesOneAreaWithBothAndTheHighestSeverity', () => {
+    const warning = episode(SignalSeverity.Warning, '2026-01-01T10:00:00Z', '2026-01-01T10:03:00Z');
+    const alarm = episode(SignalSeverity.Alarm, '2026-01-01T10:02:00Z', '2026-01-01T10:05:00Z');
+
+    const areas = signalAreas([alarm, warning], END);
+
+    expect(areas).toEqual([
+      {
+        from: at('2026-01-01T10:00:00Z'),
+        to: at('2026-01-01T10:05:00Z'),
+        severity: SignalSeverity.Alarm,
+        episodes: [warning, alarm],
+      },
+    ]);
+  });
+
+  it('signalAreas_TwoTouchingSignals_GivesOneArea', () => {
+    const first = episode(SignalSeverity.Warning, '2026-01-01T10:00:00Z', '2026-01-01T10:02:00Z');
+    const second = episode(SignalSeverity.Warning, '2026-01-01T10:02:00Z', '2026-01-01T10:04:00Z');
+
+    const areas = signalAreas([first, second], END);
+
+    expect(areas.map((area) => [area.from, area.to])).toEqual([
+      [at('2026-01-01T10:00:00Z'), at('2026-01-01T10:04:00Z')],
+    ]);
+  });
+
+  it('signalAreas_TwoSignalsWithAGap_GivesTwoAreas', () => {
+    const first = episode(SignalSeverity.Warning, '2026-01-01T10:00:00Z', '2026-01-01T10:01:00Z');
+    const second = episode(SignalSeverity.Alarm, '2026-01-01T10:02:00Z', '2026-01-01T10:03:00Z');
+
+    const areas = signalAreas([first, second], END);
+
+    expect(areas.map((area) => [area.severity, area.episodes.length])).toEqual([
+      [SignalSeverity.Warning, 1],
+      [SignalSeverity.Alarm, 1],
+    ]);
+  });
+
+  it('signalAreas_OpenSignal_EndsAtTheEndOfTheView', () => {
+    const open = episode(SignalSeverity.Warning, '2026-01-01T10:01:00Z', null);
+
+    const areas = signalAreas([open], END);
+
+    expect(areas.map((area) => area.to)).toEqual([END]);
   });
 
   it('toChartData_AfterAClickOnTheWarningLimits_ShowsThemAgain', () => {
@@ -208,7 +371,153 @@ describe('metric chart', () => {
     expect(withAlpha('rgb(255, 128, 0)', 0.5)).toBe('rgba(255, 128, 0, 0.5)');
   });
 
+  it('tooltipLabel_RangeBand_GivesTheMinimumAndTheMaximumInOneLine', () => {
+    const { datasets } = toChartData(input({}));
+    const lower = datasets.findIndex((dataset) => dataset.hfGroup === ChartGroup.Range && isTooltipEntry(dataset));
+
+    expect(tooltipLabel(datasets, lower, 1, String)).toBe('Range: 18 – 22');
+  });
+
+  it('isTooltipEntry_UpperEdgeOfTheRangeBand_IsFalse', () => {
+    const { datasets } = toChartData(input({}));
+
+    expect(datasets.filter((dataset) => dataset.hfGroup === ChartGroup.Range).map(isTooltipEntry)).toEqual([
+      false,
+      true,
+    ]);
+  });
+
+  it('tooltipLabel_AverageLine_GivesTheLabelAndTheValue', () => {
+    const { datasets } = toChartData(input({}));
+    const average = datasets.findIndex((dataset) => dataset.hfGroup === ChartGroup.Avg);
+
+    expect(tooltipLabel(datasets, average, 2, String)).toBe('Average: 30');
+  });
+
+  it('tooltipSwatch_DatasetWithAWideLine_GivesASolidBoxInTheLineColorWithoutAFrame', () => {
+    expect(tooltipSwatch({ borderColor: 'warning', backgroundColor: 'muted', borderWidth: 6 })).toEqual({
+      borderColor: 'warning',
+      backgroundColor: 'warning',
+      borderWidth: 0,
+    });
+  });
+
+  it('tooltipSwatch_DatasetWithoutALine_GivesItsFillColor', () => {
+    expect(tooltipSwatch({ backgroundColor: 'band', borderWidth: 0 })).toEqual({
+      borderColor: 'band',
+      backgroundColor: 'band',
+      borderWidth: 0,
+    });
+  });
+
   it('withAlpha_ColorThatIsNotLongHex_StaysAsItIs', () => {
     expect(withAlpha('light-dark(#111111, #222222)', 0.5)).toBe('light-dark(#111111, #222222)');
+  });
+});
+
+describe('metric chart time axis', () => {
+  const ZONE = 'Europe/Kyiv';
+
+  it('timeTicks_ViewOfOneHour_PutsTheInnerTicksOnLocalTenMinutes', () => {
+    const min = at('2026-01-15T10:00:17Z');
+    const max = at('2026-01-15T11:00:17Z');
+
+    const ticks = timeTicks(min, max, ZONE, 8);
+
+    expect(ticks).toEqual([
+      min,
+      at('2026-01-15T10:10:00Z'),
+      at('2026-01-15T10:20:00Z'),
+      at('2026-01-15T10:30:00Z'),
+      at('2026-01-15T10:40:00Z'),
+      at('2026-01-15T10:50:00Z'),
+      max,
+    ]);
+  });
+
+  it('timeTicks_ViewOf90Seconds_PutsTheInnerTicksOnLocalThirtySeconds', () => {
+    const min = at('2026-01-15T10:00:07Z');
+    const max = at('2026-01-15T10:01:37Z');
+
+    const ticks = timeTicks(min, max, ZONE, 8);
+
+    expect(ticks).toEqual([
+      min,
+      at('2026-01-15T10:00:30Z'),
+      at('2026-01-15T10:01:00Z'),
+      at('2026-01-15T10:01:30Z'),
+      max,
+    ]);
+  });
+
+  it('timeTicks_ViewOfOneDay_PutsTheInnerTicksOnLocalSixHours', () => {
+    const min = at('2026-01-14T22:00:00Z');
+    const max = at('2026-01-15T22:00:00Z');
+
+    const ticks = timeTicks(min, max, ZONE, 8);
+
+    expect(ticks).toEqual([
+      min,
+      at('2026-01-15T04:00:00Z'),
+      at('2026-01-15T10:00:00Z'),
+      at('2026-01-15T16:00:00Z'),
+      max,
+    ]);
+  });
+
+  it('timeTicks_ViewOf365Days_KeepsTheTickCountWithinTheLimitAndKeepsTheEnds', () => {
+    const min = at('2026-01-01T00:00:00Z');
+    const max = at('2027-01-01T00:00:00Z');
+
+    const ticks = timeTicks(min, max, ZONE, 8);
+
+    expect(ticks.length).toBeLessThanOrEqual(8);
+    expect(ticks[0]).toBe(min);
+    expect(ticks.at(-1)).toBe(max);
+  });
+
+  it('timeTicks_ViewOfManyDays_PutsTheInnerTicksOnLocalMidnights', () => {
+    const min = at('2026-01-01T10:00:00Z');
+    const max = at('2026-01-06T10:00:00Z');
+
+    const ticks = timeTicks(min, max, ZONE, 8);
+
+    expect(ticks).toEqual([
+      min,
+      at('2026-01-01T22:00:00Z'),
+      at('2026-01-02T22:00:00Z'),
+      at('2026-01-03T22:00:00Z'),
+      at('2026-01-04T22:00:00Z'),
+      at('2026-01-05T22:00:00Z'),
+      max,
+    ]);
+  });
+
+  it('tickLabel_TimeThatIsNotOnAWholeMinute_ShowsTheSecondsInALongView', () => {
+    const odd = tickLabel(at('2026-01-15T08:30:17Z'), ZONE, 3_600_000);
+    const whole = tickLabel(at('2026-01-15T08:30:00Z'), ZONE, 3_600_000);
+
+    expect(odd).toContain('10:30:17');
+    expect(whole).not.toContain('10:30:00');
+  });
+
+  it('tooltipSwatch_DatasetWithATranslucentFill_GivesAnOpaqueBox', () => {
+    const swatch = tooltipSwatch({ backgroundColor: 'rgba(255, 128, 0, 0.18)', borderWidth: 0 });
+
+    expect(swatch).toEqual({
+      borderColor: 'rgb(255, 128, 0)',
+      backgroundColor: 'rgb(255, 128, 0)',
+      borderWidth: 0,
+    });
+  });
+});
+
+describe('metric chart tooltip lines', () => {
+  it('hasTooltipLines_ClosingPointOfAnArea_IsFalseAndABucketOfASignalIsTrue', () => {
+    const inside = episode(SignalSeverity.Alarm, '2026-01-01T10:01:10Z', '2026-01-01T10:01:40Z');
+    const area = toChartData(input({ episodes: [inside] })).datasets.find((set) => set.hfSignals !== undefined)!;
+
+    expect([hasTooltipLines(area, 1), hasTooltipLines(area, 2)]).toEqual([true, false]);
+    expect(hasTooltipLines({}, 2)).toBe(true);
   });
 });

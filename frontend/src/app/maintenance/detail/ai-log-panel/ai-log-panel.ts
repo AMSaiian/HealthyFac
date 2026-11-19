@@ -38,7 +38,7 @@ import { RUN_STATE_LABEL_KEYS } from '@maintenance/list/cases-grid/cases-grid.ut
     Tag,
     TranslatePipe,
   ],
-  host: { class: 'flex min-w-0 flex-col gap-2' },
+  host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-2' },
   selector: 'hf-ai-log-panel',
   templateUrl: './ai-log-panel.html',
 })

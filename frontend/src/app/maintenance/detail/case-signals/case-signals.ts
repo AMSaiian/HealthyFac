@@ -44,7 +44,7 @@ const MINUTES_PER_HOUR = 60;
     Tooltip,
     TranslatePipe,
   ],
-  host: { class: 'flex min-w-0 flex-col gap-2' },
+  host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-2' },
   selector: 'hf-case-signals',
   templateUrl: './case-signals.html',
 })

@@ -21,6 +21,7 @@ import {
   STATE_LABEL_KEYS,
 } from '@maintenance/list/cases-grid/cases-grid.utils';
 
+const SUMMARY_TAB = 'summary';
 const SIGNALS_TAB = 'signals';
 const AI_LOG_TAB = 'aiLog';
 
@@ -42,16 +43,17 @@ const AI_LOG_TAB = 'aiLog';
     Tooltip,
     TranslatePipe,
   ],
-  host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-4' },
+  host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4' },
   selector: 'hf-case-page',
   templateUrl: './case-page.html',
 })
 export class CasePage {
   protected readonly store = inject(CasePageStore);
   protected readonly aiUnavailableKey = AI_UNAVAILABLE_KEY;
+  protected readonly SUMMARY_TAB = SUMMARY_TAB;
   protected readonly SIGNALS_TAB = SIGNALS_TAB;
   protected readonly AI_LOG_TAB = AI_LOG_TAB;
-  protected readonly tab = signal<string | number>(SIGNALS_TAB);
+  protected readonly tab = signal<string | number>(SUMMARY_TAB);
 
   private readonly _translate = inject(TranslateService);
   private readonly _labels = toSignal(

@@ -9,7 +9,12 @@ import { Tag } from 'primeng/tag';
 
 import { cssColor } from '@shared/theme/css-color';
 
-import { colorTokensOf, durationParts, type TimeRow } from '@machines/signals/time-breakdown/time-breakdown.utils';
+import {
+  barTotal,
+  colorTokensOf,
+  durationParts,
+  type TimeRow,
+} from '@machines/signals/time-breakdown/time-breakdown.utils';
 
 const DURATION_KEY = 'SIGNALS.TIME.DURATION';
 
@@ -18,7 +23,7 @@ const DURATION_KEY = 'SIGNALS.TIME.DURATION';
  * each row. It reads no store: the page passes the rows.
  */
 @Component({
-  host: { class: 'flex min-w-0 flex-col gap-2' },
+  host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-2' },
   imports: [ChartModule, TableModule, Tag, TranslatePipe],
   selector: 'hf-time-breakdown',
   templateUrl: './time-breakdown.html',
@@ -72,7 +77,7 @@ export class TimeBreakdown {
         },
       },
       scales: {
-        x: { stacked: true, display: false },
+        x: { stacked: true, display: false, min: 0, max: barTotal(this.rows()) },
         y: { stacked: true, display: false, ticks: { color: muted } },
       },
     };

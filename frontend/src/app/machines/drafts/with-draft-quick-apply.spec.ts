@@ -728,6 +728,48 @@ describe('withDraftQuickApply', () => {
     expect(batch.context.get(SKIP_ERROR_TOAST)).toBe(true);
   });
 
+  describe('isQuickBusy', () => {
+    it('applyMachine_WithNoCachedDrafts_IsBusyUntilTheRunEnds', async () => {
+      const { store, http } = await setup([]);
+
+      store.applyMachine('m1');
+      const busyWhileRunning = store.isQuickBusy();
+      await until(http, '/api/core/v1/machines/m1/drafts/search', 'POST', {
+        items: [],
+        totalCount: 0,
+        nextPosition: null,
+      });
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(busyWhileRunning).toBe(true);
+      expect(store.isQuickBusy()).toBe(false);
+    });
+
+    it('applyAttempt_WhenTheCachedGroupHasNoPendingDraft_IsBusyUntilTheRunEnds', async () => {
+      const applied = { ...EXISTING_GROUP, metrics: [{ ...METRIC_DRAFT, state: DraftState.Applied }], statuses: [] };
+      const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [applied] } }]);
+
+      store.applyAttempt('a1');
+      const busyWhileRunning = store.isQuickBusy();
+      await until(http, DRAFTS_URL, 'GET', { groups: [] });
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(busyWhileRunning).toBe(true);
+      expect(store.isQuickBusy()).toBe(false);
+    });
+
+    it('applyDraft_WhenTheRunFails_IsNotBusyAfterTheFailure', async () => {
+      const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [EXISTING_GROUP] } }]);
+
+      store.applyDraft('a1', 'st');
+      const busyWhileRunning = store.isQuickBusy();
+      await until(http, DRAFTS_URL, 'GET', new Error('server error'), HttpStatusCode.InternalServerError);
+      await TestBed.inject(ApplicationRef).whenStable();
+
+      expect(busyWhileRunning).toBe(true);
+      expect(store.isQuickBusy()).toBe(false);
+    });
+  });
   describe('applyMachine', () => {
     const SEARCH_URL = '/api/core/v1/machines/m1/drafts/search';
     const NEXT_POSITION = { sortValue: 'd-a1', id: 'a1' };

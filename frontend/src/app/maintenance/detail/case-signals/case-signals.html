@@ -1,5 +1,7 @@
 <p-table
+  class="flex min-h-0 flex-1 flex-col"
   styleClass="p-datatable-sm"
+  scrollHeight="flex"
   [value]="rows()"
   [stripedRows]="true"
 >
@@ -81,6 +83,7 @@
   </ng-template>
 </p-table>
 <p-paginator
+  class="flex-none"
   [first]="offset()"
   [rows]="limit()"
   [totalRecords]="totalCount()"

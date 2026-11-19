@@ -1,5 +1,5 @@
 import { type MetricDefinition, MetricValueKind } from '@machines/metrics/metric-definition';
-import { ChartRange } from '@machines/signals/signal-episode';
+import { ChartRange, type MetricHistoryResponse } from '@machines/signals/signal-episode';
 import type { PlainDateTimeRange } from '@shared/time/plain-date-time-range';
 import { Temporal } from '@shared/time/temporal';
 
@@ -66,31 +66,13 @@ export function toPlainRange(selection: RangeSelection, timeZoneId: string): Pla
   return { from: local(selection.from), to: local(selection.to) };
 }
 
-/**
- * The from-to that a zoom or pan on the category axis shows. The axis indexes are the bucket places; the end of the
- * shown range is the end of its last bucket, which is as long as the last two buckets are apart. `null` when fewer
- * than 2 buckets exist.
- */
-export function zoomedBounds(
-  buckets: readonly { readonly start: string }[],
-  minIndex: number,
-  maxIndex: number,
-): { from: string; to: string } | null {
-  if (buckets.length < 2) {
-    return null;
-  }
-  const last = buckets.length - 1;
-  const starts = buckets.map((bucket) => Temporal.Instant.from(bucket.start));
-  const width = starts[last].epochMilliseconds - starts[last - 1].epochMilliseconds;
-  const first = Math.min(last, Math.max(0, Math.round(minIndex)));
-  const end = Math.min(last, Math.max(first, Math.round(maxIndex)));
-  return {
-    from: starts[first].toString(),
-    to: starts[end].add({ milliseconds: width }).toString(),
-  };
-}
-
 /** The metrics that the chart can draw: the numeric ones. */
 export function chartableMetrics(metrics: readonly MetricDefinition[]): readonly MetricDefinition[] {
   return metrics.filter((metric) => metric.valueKind === MetricValueKind.Numeric);
+}
+
+/** The buckets of a history with the times that the load asked for, so the chart axis shows exactly that view. */
+export interface LoadedHistory extends MetricHistoryResponse {
+  readonly from: string;
+  readonly to: string;
 }

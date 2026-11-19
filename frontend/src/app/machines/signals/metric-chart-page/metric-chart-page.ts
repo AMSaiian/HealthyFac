@@ -1,4 +1,4 @@
-import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tooltip } from 'primeng/tooltip';
 
 import { isEmptyResult } from '@shared/grid/table/grid-display';
@@ -23,19 +24,20 @@ import { limitsOf } from '@machines/signals/metric-chart/metric-chart.utils';
 import { MetricChartPageStore } from '@machines/signals/metric-chart-page-store/metric-chart-page.store';
 import {
   customBounds,
+  type LoadedHistory,
   RANGE_LABEL_KEYS,
+  selectionBounds,
   toPlainRange,
 } from '@machines/signals/metric-chart-page-store/metric-chart-page.store.utils';
-import {
-  ChartRange,
-  type MachineStateTimesResponse,
-  type MetricBucket,
-  type PhaseTimesResponse,
-} from '@machines/signals/signal-episode';
+import { ChartRange, type MachineStateTimesResponse, type PhaseTimesResponse } from '@machines/signals/signal-episode';
 import { TimeBreakdown } from '@machines/signals/time-breakdown/time-breakdown';
 import { toPhaseRows, toStateRows } from '@machines/signals/time-breakdown/time-breakdown.utils';
 import { STATE_LABEL_KEYS } from '@machines/list/machine-grid/machine-grid.utils';
 import type { MachineState } from '@machines/machine';
+
+const CHART_TAB = 'chart';
+const PHASES_TAB = 'phases';
+const STATES_TAB = 'states';
 
 @Component({
   imports: [
@@ -48,6 +50,11 @@ import type { MachineState } from '@machines/machine';
     Popover,
     RouterLink,
     Select,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
     TimeBreakdown,
     Tooltip,
     TranslatePipe,
@@ -57,6 +64,9 @@ import type { MachineState } from '@machines/machine';
   templateUrl: './metric-chart-page.html',
 })
 export class MetricChartPage {
+  protected readonly CHART_TAB = CHART_TAB;
+  protected readonly PHASES_TAB = PHASES_TAB;
+  protected readonly STATES_TAB = STATES_TAB;
   protected readonly store = inject(MetricChartPageStore);
   protected readonly theme = inject(ThemeStore);
   private readonly _clock = inject(CLOCK);
@@ -77,11 +87,21 @@ export class MetricChartPage {
     labelKey: RANGE_LABEL_KEYS[value],
   }));
   protected readonly metricOptions = computed(() => [...this.store.metrics()]);
-  /** The buckets of the last finished load: a new load keeps them on the chart until its own buckets arrive. */
-  protected readonly buckets = linkedSignal<readonly MetricBucket[] | null, readonly MetricBucket[]>({
-    source: () => (this.store.history.hasValue() ? this.store.history.value().buckets : null),
-    computation: (next, previous) => next ?? previous?.value ?? [],
+  /** The last finished history: a new load keeps it on the chart until its own buckets arrive. */
+  private readonly _shown = linkedSignal<LoadedHistory | null, LoadedHistory | null>({
+    source: () => (this.store.history.hasValue() ? this.store.history.value() : null),
+    computation: (next, previous) => next ?? previous?.value ?? null,
   });
+  protected readonly buckets = computed(() => this._shown()?.buckets ?? []);
+  /** The times that the buckets cover. Before the first load, the times of the selected range. */
+  protected readonly view = computed(() => {
+    const shown = this._shown();
+    return shown === null
+      ? selectionBounds(this._clock.now(), this.store.loadedRange())
+      : { from: shown.from, to: shown.to };
+  });
+  /** The times that a zoom and a pan may not leave: the view before the first zoom. */
+  protected readonly bounds = computed(() => this.store.zoomBounds() ?? this.view());
   protected readonly selectedPreset = computed(() => {
     const range = this.store.range();
     return range.kind === 'preset' ? range.preset : null;
@@ -90,6 +110,9 @@ export class MetricChartPage {
   protected readonly pickedRange = linkedSignal<PlainDateTimeRange>(() =>
     toPlainRange(this.store.range(), this._clock.timeZoneId()),
   );
+  protected readonly tab = signal<string | number>(CHART_TAB);
+  /** The metric select, Reset zoom, and the reading help belong to the chart; the range and Reload serve all tabs. */
+  protected readonly isChartTab = computed(() => this.tab() === CHART_TAB);
   protected readonly isZoomed = computed(() => this.store.zoomBase() !== null);
 
   /** The last finished reads: a new load keeps them on the page until its own answer arrives. */
@@ -120,7 +143,16 @@ export class MetricChartPage {
           beforeCreation: this._text('SIGNALS.TIME.BEFORE_CREATION'),
         });
   });
-  protected readonly hasNoPhases = computed(() => this._phaseTimes()?.phases.length === 0);
+  /** The time in phases: its empty state shows only after a finished load without phases. */
+  protected readonly phaseTimes = {
+    showEmpty: computed(() =>
+      isEmptyResult({
+        rows: this._phaseTimes()?.phases ?? [],
+        isLoading: this.store.phaseTimes.isLoading(),
+        hasLoaded: this._phaseTimes() !== null,
+      }),
+    ),
+  };
   protected readonly showTimesSpinner = delayedLoading(
     computed(() => this.store.phaseTimes.isLoading() || this.store.stateTimes.isLoading()),
   );

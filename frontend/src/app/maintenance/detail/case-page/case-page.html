@@ -77,15 +77,14 @@
       [pTooltip]="
         store.isRefreshCoolingDown()
           ? ('ACTIONS.TOOLTIPS.RELOAD_WAIT' | translate: { seconds: store.refreshSecondsLeft() })
-          : ''
+          : ('ACTIONS.TOOLTIPS.RELOAD' | translate)
       "
       tooltipPosition="bottom"
-      [tooltipDisabled]="!store.isRefreshCoolingDown()"
     >
       <button
         pButton
-        [pTooltip]="'ACTIONS.TOOLTIPS.RELOAD' | translate"
-        tooltipPosition="bottom"
+        [pTooltip]="''"
+        [tooltipDisabled]="true"
         type="button"
         severity="secondary"
         [disabled]="store.isRefreshCoolingDown()"
@@ -104,17 +103,18 @@
       <span>{{ 'MAINTENANCE.CLOSED_AT' | translate }}: {{ detail.closedAt | localDateTime }}</span>
     }
   </p>
-  <hf-case-outcome
-    [outcome]="detail.outcome"
-    [canRunAgain]="store.canAct()"
-    (runAgain)="store.runAgain()"
-  />
   <p-tabs
-    class="flex min-h-0 flex-none flex-col"
+    class="flex min-h-0 flex-1 flex-col"
     [lazy]="true"
     [(value)]="tab"
   >
     <p-tablist>
+      <p-tab
+        [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_SUMMARY' | translate"
+        tooltipPosition="bottom"
+        [value]="SUMMARY_TAB"
+        >{{ 'MAINTENANCE.SUMMARY_TITLE' | translate }}</p-tab
+      >
       <p-tab
         [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_SIGNALS' | translate"
         tooltipPosition="bottom"
@@ -128,8 +128,23 @@
         >{{ 'MAINTENANCE.RUNS_TITLE' | translate }}</p-tab
       >
     </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel [value]="SIGNALS_TAB">
+    <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+      <p-tabpanel
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto"
+        [value]="SUMMARY_TAB"
+      >
+        <ng-template #content>
+          <hf-case-outcome
+            [outcome]="detail.outcome"
+            [canRunAgain]="store.canAct()"
+            (runAgain)="store.runAgain()"
+          />
+        </ng-template>
+      </p-tabpanel>
+      <p-tabpanel
+        class="flex min-h-0 flex-1 flex-col"
+        [value]="SIGNALS_TAB"
+      >
         <ng-template #content>
           @if (store.signals.hasValue()) {
             <hf-case-signals
@@ -143,7 +158,10 @@
           }
         </ng-template>
       </p-tabpanel>
-      <p-tabpanel [value]="AI_LOG_TAB">
+      <p-tabpanel
+        class="flex min-h-0 flex-1 flex-col"
+        [value]="AI_LOG_TAB"
+      >
         <ng-template #content>
           @if (store.runs.hasValue()) {
             <hf-ai-log-panel

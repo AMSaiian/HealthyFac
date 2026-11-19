@@ -1,5 +1,6 @@
 import type { MachineStateTimesResponse, PhaseTimesResponse } from '@machines/signals/signal-episode';
 import {
+  barTotal,
   colorTokensOf,
   durationParts,
   SEGMENT_COLOR_TOKENS,
@@ -43,6 +44,10 @@ describe('time breakdown utils', () => {
     [7199, 2, 0],
   ])('durationParts_Of%fSeconds_Gives%iHoursAnd%iMinutes', (seconds, hours, minutes) => {
     expect(durationParts(seconds)).toEqual({ hours, minutes });
+  });
+
+  it('barTotal_Rows_GivesTheSumOfTheirSeconds', () => {
+    expect(barTotal([{ seconds: 3600 }, { seconds: 0 }, { seconds: 120 }])).toBe(3720);
   });
 
   it('toPhaseRows_WithPhasesUnknownModeAndNoData_GivesTheRowsWithSharesThatAddUpTo100', () => {

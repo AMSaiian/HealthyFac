@@ -2,7 +2,7 @@ import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { debounceTime, type Observable, pipe, tap } from 'rxjs';
+import { debounceTime, map, type Observable, pipe, tap } from 'rxjs';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { skipErrorToast } from '@shared/http/http-error-key';
@@ -17,6 +17,7 @@ import {
   bucketCountForWidth,
   chartableMetrics,
   DEFAULT_RANGE,
+  type LoadedHistory,
   RANGE_DEBOUNCE_MS,
   type RangeSelection,
   selectionBounds,
@@ -39,6 +40,8 @@ interface ScopeState {
   loadedRange: RangeSelection;
   /** The range before the first zoom, for **Reset zoom**; `null` while the chart is not zoomed. */
   zoomBase: RangeSelection | null;
+  /** The times of the view before the first zoom: the limits of the zoom and the pan; `null` while the chart is not zoomed. */
+  zoomBounds: { from: string; to: string } | null;
   /** The range of the time in phases and states: it follows `loadedRange`, but a zoom of the chart does not move it. */
   statsRange: RangeSelection;
   bucketCount: number | null;
@@ -54,6 +57,7 @@ export const MetricChartPageStore = signalStore(
     range: DEFAULT_RANGE,
     loadedRange: DEFAULT_RANGE,
     zoomBase: null,
+    zoomBounds: null,
     statsRange: DEFAULT_RANGE,
     bucketCount: null,
     refreshCount: 0,
@@ -98,13 +102,15 @@ export const MetricChartPageStore = signalStore(
           ? undefined
           : { machineId, metricDefinitionId: metric.id, range: store.loadedRange(), bucketCount };
       },
-      stream: ({ params }) => {
+      stream: ({ params }): Observable<LoadedHistory> => {
         const bounds = selectionBounds(store._clock.now(), params.range);
-        return store._api.getHistory(params.machineId, {
-          metricDefinitionId: params.metricDefinitionId,
-          ...bounds,
-          bucketCount: params.bucketCount,
-        });
+        return store._api
+          .getHistory(params.machineId, {
+            metricDefinitionId: params.metricDefinitionId,
+            ...bounds,
+            bucketCount: params.bucketCount,
+          })
+          .pipe(map((history) => ({ ...history, ...bounds })));
       },
     }),
     phaseTimes: rxResource({
@@ -158,9 +164,20 @@ export const MetricChartPageStore = signalStore(
         ),
       ),
     );
-    const showRange = (range: RangeSelection, zoomBase: RangeSelection | null): void => {
-      patchState(store, { range, zoomBase });
+    const showRange = (
+      range: RangeSelection,
+      zoomBase: RangeSelection | null,
+      zoomBounds: { from: string; to: string } | null,
+    ): void => {
+      patchState(store, { range, zoomBase, zoomBounds });
       applyRange(range);
+    };
+    /** The times that the chart shows now: the last finished history, or else the range of the selection. */
+    const shownBounds = (): { from: string; to: string } => {
+      const history = store.history.hasValue() ? store.history.value() : null;
+      return history === null
+        ? selectionBounds(store._clock.now(), store.loadedRange())
+        : { from: history.from, to: history.to };
     };
     return {
       /**
@@ -179,6 +196,7 @@ export const MetricChartPageStore = signalStore(
               loadedRange: DEFAULT_RANGE,
               statsRange: DEFAULT_RANGE,
               zoomBase: null,
+              zoomBounds: null,
             }),
           ),
         );
@@ -191,21 +209,21 @@ export const MetricChartPageStore = signalStore(
         patchState(store, { metricId });
       },
       selectRange(preset: ChartRange): void {
-        showRange({ kind: 'preset', preset }, null);
+        showRange({ kind: 'preset', preset }, null, null);
       },
       /** Shows a custom from-to range (ISO instants). The history loads after the pause. */
       selectCustomRange(from: string, to: string): void {
-        showRange({ kind: 'custom', from, to }, null);
+        showRange({ kind: 'custom', from, to }, null, null);
       },
       /** A zoom or a pan of the chart: shows the from-to of the view and keeps the range before the first zoom. */
       zoomTo(from: string, to: string): void {
-        showRange({ kind: 'custom', from, to }, store.zoomBase() ?? store.range());
+        showRange({ kind: 'custom', from, to }, store.zoomBase() ?? store.range(), store.zoomBounds() ?? shownBounds());
       },
       /** Returns to the range before the zoom. */
       resetZoom(): void {
         const base = store.zoomBase();
         if (base !== null) {
-          showRange(base, null);
+          showRange(base, null, null);
         }
       },
       /** Takes the chart width in CSS pixels. The first width counts at once; later ones follow after a pause. */

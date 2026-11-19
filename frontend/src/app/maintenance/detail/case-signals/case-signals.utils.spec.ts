@@ -96,6 +96,30 @@ describe('case signals utils', () => {
     );
   });
 
+  it('chartQueryOf_OfASignalWhoseTenPercentIsNotAWholeMillisecond_RoundsTheRangeToMilliseconds', () => {
+    const query = chartQueryOf(
+      signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: '2026-01-01T19:09:07.003Z' }),
+      NOW,
+    );
+
+    expect(query).toEqual({ from: '2026-01-01T09:05:05.3Z', to: '2026-01-01T20:04:01.703Z' });
+  });
+
+  it('chartQueryOf_OfAnOpenSignalAndAnOddNow_RoundsTheRangeToMilliseconds', () => {
+    const query = chartQueryOf(signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: null }), NOW + 7_003);
+
+    expect(query).toEqual({ from: '2026-01-01T09:47:59.3Z', to: '2026-01-01T12:12:07.703Z' });
+  });
+
+  it('chartQueryOf_OfAShortSignalWithAnOddCenter_RoundsTheHourToMilliseconds', () => {
+    const query = chartQueryOf(
+      signal('a', SignalCoverage.New, { openedAt: '2026-01-01T10:00:00.001Z', resolvedAt: '2026-01-01T10:00:00.004Z' }),
+      NOW,
+    );
+
+    expect(query).toEqual({ from: '2026-01-01T09:30:00.003Z', to: '2026-01-01T10:30:00.003Z' });
+  });
+
   it('chartQueryOf_OfASignalWithAMetric_CarriesTheMetricKey', () => {
     const query = chartQueryOf(
       signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: T12, metricKey: 'temp' }),

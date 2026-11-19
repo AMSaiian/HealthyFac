@@ -93,6 +93,8 @@ export interface GroupRef {
 
 export interface QuickApplyState {
   applyingIds: readonly string[];
+  /** Tells that a run is in progress, whatever drafts the page holds: the rows that the run touches may not be loaded. */
+  isQuickRunning: boolean;
   quickDrafts: readonly AttemptDraftsEntry[];
   /** Counts the finished runs. The host reloads its lists when the count changes. */
   quickRun: { readonly count: number; readonly hasApplied: boolean };
@@ -238,7 +240,12 @@ export function withDraftQuickApply(): SignalStoreFeature<
   }
 > {
   return signalStoreFeature(
-    withState<QuickApplyState>({ applyingIds: [], quickDrafts: [], quickRun: { count: 0, hasApplied: false } }),
+    withState<QuickApplyState>({
+      applyingIds: [],
+      isQuickRunning: false,
+      quickDrafts: [],
+      quickRun: { count: 0, hasApplied: false },
+    }),
     withProps(() => ({
       _quickDraftsApi: inject(DraftsApi),
       _quickMetricsApi: inject(MetricDefinitionsApi),
@@ -253,7 +260,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
     withComputed((store) => {
       const catalog = computed(() => (store.units.hasValue() ? store.units.value() : undefined));
       return {
-        isQuickBusy: computed(() => store.applyingIds().length > 0),
+        isQuickBusy: computed(() => store.isQuickRunning()),
         quickReasons: computed(() => {
           const reasons: Record<string, string | null> = {};
           for (const entry of store.quickDrafts()) {
@@ -691,7 +698,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
         pipe(
           exhaustMap((request) => {
             const progress: Progress = { applied: 0, skipped: 0 };
-            patchState(store, { applyingIds: idsOf(request) });
+            patchState(store, { applyingIds: idsOf(request), isQuickRunning: true });
             const run$ =
               request.kind === 'draft'
                 ? draftRun$(request.attemptId, request.draftId, progress)
@@ -723,7 +730,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
                 return EMPTY;
               }),
               finalize(() => {
-                patchState(store, { applyingIds: [] });
+                patchState(store, { applyingIds: [], isQuickRunning: false });
                 patchState(store, (state) => ({
                   quickRun: { count: state.quickRun.count + 1, hasApplied: progress.applied > 0 },
                 }));

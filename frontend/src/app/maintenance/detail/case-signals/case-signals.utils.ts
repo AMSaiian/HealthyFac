@@ -82,8 +82,8 @@ export function chartQueryOf(
   const from = isShort ? center - MIN_RANGE_MS / 2 : start - margin;
   const to = isShort ? center + MIN_RANGE_MS / 2 : end + margin;
   const range = {
-    from: Temporal.Instant.fromEpochMilliseconds(from).toString(),
-    to: Temporal.Instant.fromEpochMilliseconds(to).toString(),
+    from: Temporal.Instant.fromEpochMilliseconds(Math.round(from)).toString(),
+    to: Temporal.Instant.fromEpochMilliseconds(Math.round(to)).toString(),
   };
   return signal.metricKey === null ? range : { ...range, metricKey: signal.metricKey };
 }

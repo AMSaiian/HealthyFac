@@ -1152,6 +1152,14 @@
     }
   },
   "SIGNALS": {
+    "TABS": {
+      "CHART": "Chart"
+    },
+    "TAB_TOOLTIPS": {
+      "CHART": "Show the history of the selected metric",
+      "PHASES": "Show the time in each operating phase",
+      "STATES": "Show the time in each machine state"
+    },
     "TITLE": "Dashboards of",
     "NO_METRIC": "The machine has no numeric metric",
     "NO_DATA": "No readings in this range",
@@ -1169,7 +1177,6 @@
       "EPISODE_OPEN": "open"
     },
     "TIME": {
-      "TITLE": "Time in phases and states",
       "PHASES_TITLE": "Time in phases",
       "STATES_TITLE": "Time in machine states",
       "NO_PHASES": "This machine has no operating phases",
@@ -1193,7 +1200,7 @@
       "AVG": "The line is the average of the readings in each time step",
       "RANGE": "The shaded band shows the lowest and the highest reading in each time step",
       "LIMITS": "The dashed lines are the limits of the metric. The alarm limits are shown, and a click on the legend shows or hides the warning limits",
-      "SIGNALS": "The strip under the plot has one segment for each signal, in the color of its severity. Point at a segment to read its rule and times",
+      "SIGNALS": "Colored areas behind the plot mark the signals. Signals that overlap share one area in the color of the highest severity. Point at an area to read the rules and times of its signals",
       "ZOOM": "Drag over the plot or use the mouse wheel to zoom into the time axis. Hold Shift and drag to move. Use Reset zoom to go back"
     }
   },
@@ -1206,6 +1213,7 @@
     "CLOSE_CASE": "Close case",
     "RUN_AGAIN": "Run again",
     "CLOSE_REASON": "Close reason",
+    "SUMMARY_TITLE": "Summary",
     "SIGNALS_TITLE": "Signals",
     "RUNS_TITLE": "AI log",
     "OPENED_AT": "Opened",
@@ -1311,6 +1319,7 @@
       "AI_PLACEHOLDER": "Any run state"
     },
     "TOOLTIPS": {
+      "TAB_SUMMARY": "Show the outcome of the case",
       "TAB_SIGNALS": "Show the signals of the case",
       "TAB_AI_LOG": "Show the AI log of the case",
       "SHOW_ON_CHART": "Show on the dashboards chart",

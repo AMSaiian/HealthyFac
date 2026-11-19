@@ -102,7 +102,7 @@ function setup(): HttpTestingController {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: () => true } },
+      { provide: AuthStore, useValue: { hasPermission: () => true, setUiLocale: vi.fn(), signInLocale: () => null } },
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
     ],
@@ -241,6 +241,48 @@ describe('signals route', () => {
     });
     await flushWhenRequested(http, EPISODES_URL, { items: [] });
     expect(store.zoomBase()).toEqual({ kind: 'preset', preset: ChartRange.Hour });
+  });
+
+  it('signalsRoute_BurstOfZoomRanges_AsksForTheHistoryOnceWithTheLastRange', async () => {
+    const http = setup();
+    const store = await openSignals(http);
+    store.setWidth(100);
+    await flushWhenRequested(http, HISTORY_URL, { buckets: [] });
+
+    store.zoomTo('2026-01-15T08:00:00.000Z', '2026-01-15T10:00:00.000Z');
+    store.zoomTo('2026-01-15T08:10:00.000Z', '2026-01-15T09:50:00.000Z');
+    store.zoomTo('2026-01-15T08:20:00.000Z', '2026-01-15T09:40:00.000Z');
+
+    await vi.waitFor(() => {
+      const history = http.expectOne((candidate) => candidate.url === HISTORY_URL);
+      expect(history.request.params.get('from')).toBe('2026-01-15T08:20:00.000Z');
+      expect(history.request.params.get('to')).toBe('2026-01-15T09:40:00.000Z');
+      history.flush({ buckets: [] });
+    });
+    await flushWhenRequested(http, EPISODES_URL, { items: [] });
+    http.expectNone(HISTORY_URL);
+  });
+
+  it('signalsRoute_Zoom_KeepsTheTimesOfTheFirstViewAsTheLimitsUntilTheReset', async () => {
+    const http = setup();
+    const store = await openSignals(http);
+    store.setWidth(100);
+    await flushWhenRequested(http, HISTORY_URL, { buckets: [] });
+    const firstView = store.history.value();
+
+    store.zoomTo('2026-01-15T08:00:00.000Z', '2026-01-15T10:00:00.000Z');
+    await flushWhenRequested(http, HISTORY_URL, { buckets: [] });
+    await flushWhenRequested(http, EPISODES_URL, { items: [] });
+    store.zoomTo('2026-01-15T08:20:00.000Z', '2026-01-15T09:40:00.000Z');
+    await flushWhenRequested(http, HISTORY_URL, { buckets: [] });
+    await flushWhenRequested(http, EPISODES_URL, { items: [] });
+
+    expect(store.zoomBounds()).toEqual({ from: firstView?.from, to: firstView?.to });
+    expect(store.history.value()?.from).toBe('2026-01-15T08:20:00.000Z');
+    store.resetZoom();
+    expect(store.zoomBounds()).toBeNull();
+    await flushWhenRequested(http, HISTORY_URL, { buckets: [] });
+    await flushWhenRequested(http, EPISODES_URL, { items: [] });
   });
 
   it('signalsRoute_ResetZoom_ReturnsToTheRangeBeforeTheZoom', async () => {

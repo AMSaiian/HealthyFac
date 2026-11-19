@@ -59,6 +59,11 @@ export function sharesOf(values: readonly number[]): number[] {
   return shares;
 }
 
+/** The length of the bar axis: the sum of all rows, so the rows that hold 100 % fill the whole width. */
+export function barTotal(rows: readonly Pick<TimeRow, 'seconds'>[]): number {
+  return rows.reduce((sum, row) => sum + row.seconds, 0);
+}
+
 /** Splits seconds into whole hours and the minutes that remain. */
 export function durationParts(seconds: number): { hours: number; minutes: number } {
   const totalMinutes = Math.round(seconds / SECONDS_PER_MINUTE);

@@ -14,17 +14,21 @@
     </a>
     <h1 class="min-w-0 truncate text-2xl font-bold">{{ 'SIGNALS.TITLE' | translate }} {{ store.machine()?.name }}</h1>
   </div>
-  <div class="flex flex-none items-center gap-2">
-    <p-select
-      class="w-56"
-      optionLabel="name"
-      optionValue="id"
-      appendTo="body"
-      [options]="metricOptions()"
-      [loading]="showSpinner() && store.definitions.isLoading()"
-      [ngModel]="store.selectedMetric()?.id"
-      (ngModelChange)="store.selectMetric($event)"
-    />
+</header>
+<div class="flex flex-none flex-wrap items-center justify-between gap-2">
+  <div class="flex flex-wrap items-center gap-2">
+    @if (isChartTab()) {
+      <p-select
+        class="w-56"
+        optionLabel="name"
+        optionValue="id"
+        appendTo="body"
+        [options]="metricOptions()"
+        [loading]="showSpinner() && store.definitions.isLoading()"
+        [ngModel]="store.selectedMetric()?.id"
+        (ngModelChange)="store.selectMetric($event)"
+      />
+    }
     <p-select
       class="w-40"
       optionValue="value"
@@ -54,7 +58,9 @@
       [value]="pickedRange()"
       (valueChange)="onRangePicked($event)"
     />
-    @if (isZoomed()) {
+  </div>
+  <div class="flex flex-none items-center gap-2">
+    @if (isChartTab() && isZoomed()) {
       <button
         pButton
         [pTooltip]="'SIGNALS.RESET_ZOOM' | translate"
@@ -69,46 +75,48 @@
         <i class="pi pi-search-minus"></i>
       </button>
     }
-    <button
-      pButton
-      [pTooltip]="'SIGNALS.HOW_TO_READ.TITLE' | translate"
-      tooltipPosition="bottom"
-      type="button"
-      severity="secondary"
-      iconOnly
-      [text]="true"
-      [attr.aria-label]="'SIGNALS.HOW_TO_READ.TITLE' | translate"
-      (click)="howToRead.toggle($event)"
-    >
-      <i class="pi pi-info-circle"></i>
-    </button>
-    <p-popover
-      #howToRead
-      appendTo="body"
-    >
-      <div class="flex w-96 max-w-[90vw] flex-col gap-2">
-        <h2 class="font-semibold">{{ 'SIGNALS.HOW_TO_READ.TITLE' | translate }}</h2>
-        <ul class="flex list-disc flex-col gap-1 pl-4">
-          <li>{{ 'SIGNALS.HOW_TO_READ.AVG' | translate }}</li>
-          <li>{{ 'SIGNALS.HOW_TO_READ.RANGE' | translate }}</li>
-          <li>{{ 'SIGNALS.HOW_TO_READ.LIMITS' | translate }}</li>
-          <li>{{ 'SIGNALS.HOW_TO_READ.SIGNALS' | translate }}</li>
-          <li>{{ 'SIGNALS.HOW_TO_READ.ZOOM' | translate }}</li>
-        </ul>
-      </div>
-    </p-popover>
+    @if (isChartTab()) {
+      <button
+        pButton
+        [pTooltip]="'SIGNALS.HOW_TO_READ.TITLE' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'SIGNALS.HOW_TO_READ.TITLE' | translate"
+        (click)="howToRead.toggle($event)"
+      >
+        <i class="pi pi-info-circle"></i>
+      </button>
+      <p-popover
+        #howToRead
+        appendTo="body"
+      >
+        <div class="flex w-96 max-w-[90vw] flex-col gap-2">
+          <h2 class="font-semibold">{{ 'SIGNALS.HOW_TO_READ.TITLE' | translate }}</h2>
+          <ul class="flex list-disc flex-col gap-1 pl-4">
+            <li>{{ 'SIGNALS.HOW_TO_READ.AVG' | translate }}</li>
+            <li>{{ 'SIGNALS.HOW_TO_READ.RANGE' | translate }}</li>
+            <li>{{ 'SIGNALS.HOW_TO_READ.LIMITS' | translate }}</li>
+            <li>{{ 'SIGNALS.HOW_TO_READ.SIGNALS' | translate }}</li>
+            <li>{{ 'SIGNALS.HOW_TO_READ.ZOOM' | translate }}</li>
+          </ul>
+        </div>
+      </p-popover>
+    }
     <span
       [pTooltip]="
         store.isRefreshCoolingDown()
           ? ('ACTIONS.TOOLTIPS.RELOAD_WAIT' | translate: { seconds: store.refreshSecondsLeft() })
-          : ''
+          : ('ACTIONS.TOOLTIPS.RELOAD' | translate)
       "
       tooltipPosition="bottom"
-      [tooltipDisabled]="!store.isRefreshCoolingDown()"
     >
       <button
         pButton
-        [pTooltip]="'ACTIONS.TOOLTIPS.RELOAD' | translate"
+        [pTooltip]="''"
+        [tooltipDisabled]="true"
         tooltipPosition="bottom"
         type="button"
         severity="secondary"
@@ -120,55 +128,97 @@
       </button>
     </span>
   </div>
-</header>
-<div class="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
-  @if (showEmpty()) {
-    <hf-empty-state
-      icon="pi pi-chart-line"
-      [messageKey]="hasNoMetric() ? 'SIGNALS.NO_METRIC' : 'SIGNALS.NO_DATA'"
-    />
-  } @else {
-    <div class="relative flex h-[28rem] flex-none flex-col">
-      <hf-metric-chart
-        [buckets]="buckets()"
-        [limits]="limits()"
-        [episodes]="store.metricEpisodes()"
-        [unit]="unit()"
-        [isDark]="theme.isDark()"
-        (widthChange)="store.setWidth($event)"
-        (zoomed)="store.zoomTo($event.from, $event.to)"
-      />
-      @if (showSpinner()) {
-        <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
-          <hf-loading-spinner />
+</div>
+<p-tabs
+  class="flex min-h-0 flex-1 flex-col"
+  [(value)]="tab"
+>
+  <p-tablist>
+    <p-tab
+      [value]="CHART_TAB"
+      [pTooltip]="'SIGNALS.TAB_TOOLTIPS.CHART' | translate"
+      tooltipPosition="bottom"
+      >{{ 'SIGNALS.TABS.CHART' | translate }}</p-tab
+    >
+    <p-tab
+      [value]="PHASES_TAB"
+      [pTooltip]="'SIGNALS.TAB_TOOLTIPS.PHASES' | translate"
+      tooltipPosition="bottom"
+      >{{ 'SIGNALS.TIME.PHASES_TITLE' | translate }}</p-tab
+    >
+    <p-tab
+      [value]="STATES_TAB"
+      [pTooltip]="'SIGNALS.TAB_TOOLTIPS.STATES' | translate"
+      tooltipPosition="bottom"
+      >{{ 'SIGNALS.TIME.STATES_TITLE' | translate }}</p-tab
+    >
+  </p-tablist>
+  <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+    <p-tabpanel
+      class="flex min-h-0 flex-1 flex-col"
+      [value]="CHART_TAB"
+    >
+      @if (showEmpty()) {
+        <hf-empty-state
+          icon="pi pi-chart-line"
+          [messageKey]="hasNoMetric() ? 'SIGNALS.NO_METRIC' : 'SIGNALS.NO_DATA'"
+        />
+      } @else {
+        <div class="relative flex min-h-0 flex-1 flex-col">
+          <hf-metric-chart
+            [buckets]="buckets()"
+            [limits]="limits()"
+            [episodes]="store.metricEpisodes()"
+            [view]="view()"
+            [bounds]="bounds()"
+            [bucketCount]="store.bucketCount() ?? 1"
+            [unit]="unit()"
+            [isDark]="theme.isDark()"
+            (widthChange)="store.setWidth($event)"
+            (zoomed)="store.zoomTo($event.from, $event.to)"
+          />
+          @if (showSpinner()) {
+            <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+              <hf-loading-spinner />
+            </div>
+          }
         </div>
       }
-    </div>
-  }
-  <section class="relative flex flex-none flex-col gap-4">
-    <h2 class="text-lg font-semibold">{{ 'SIGNALS.TIME.TITLE' | translate }}</h2>
-    <div class="flex flex-col gap-2">
-      <h3 class="font-semibold">{{ 'SIGNALS.TIME.PHASES_TITLE' | translate }}</h3>
-      @if (hasNoPhases()) {
-        <p class="text-muted-color">{{ 'SIGNALS.TIME.NO_PHASES' | translate }}</p>
+    </p-tabpanel>
+    <p-tabpanel
+      class="relative flex min-h-0 flex-1 flex-col"
+      [value]="PHASES_TAB"
+    >
+      @if (phaseTimes.showEmpty()) {
+        <hf-empty-state
+          icon="pi pi-sitemap"
+          messageKey="SIGNALS.TIME.NO_PHASES"
+        />
       } @else {
         <hf-time-breakdown
           [rows]="phaseRows()"
           [isDark]="theme.isDark()"
         />
       }
-    </div>
-    <div class="flex flex-col gap-2">
-      <h3 class="font-semibold">{{ 'SIGNALS.TIME.STATES_TITLE' | translate }}</h3>
+      @if (showTimesSpinner()) {
+        <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+          <hf-loading-spinner />
+        </div>
+      }
+    </p-tabpanel>
+    <p-tabpanel
+      class="relative flex min-h-0 flex-1 flex-col"
+      [value]="STATES_TAB"
+    >
       <hf-time-breakdown
         [rows]="stateRows()"
         [isDark]="theme.isDark()"
       />
-    </div>
-    @if (showTimesSpinner()) {
-      <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
-        <hf-loading-spinner />
-      </div>
-    }
-  </section>
-</div>
+      @if (showTimesSpinner()) {
+        <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+          <hf-loading-spinner />
+        </div>
+      }
+    </p-tabpanel>
+  </p-tabpanels>
+</p-tabs>
