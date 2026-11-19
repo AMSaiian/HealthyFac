@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -6,7 +7,8 @@ namespace HealthyFac.Testing.Persistence;
 /// <summary>
 /// Checks that every relation of a model follows the aggregate rule: a collection of a root is a child entity with
 /// a required foreign key and <see cref="DeleteBehavior.Cascade"/>, and every other relation is
-/// <see cref="DeleteBehavior.Restrict"/>. A wrong behavior shows no error until a delete, so only a model check
+/// <see cref="DeleteBehavior.Restrict"/>. A soft-deletable child of a cascade relation has a single <see cref="Guid"/>
+/// key, which the soft delete cascade needs. A wrong behavior shows no error until a delete, so only a model check
 /// finds it.
 /// </summary>
 public static class AggregateRelationModelChecks
@@ -39,14 +41,19 @@ public static class AggregateRelationModelChecks
         var expected = foreignKey is { PrincipalToDependent.IsCollection: true, IsRequired: true }
             ? DeleteBehavior.Cascade
             : DeleteBehavior.Restrict;
-        if (foreignKey.DeleteBehavior == expected)
+        var properties = string.Join(separator: ", ", foreignKey.Properties.Select(property => property.Name));
+        var relation = $"{foreignKey.DeclaringEntityType.DisplayName()}.{properties} -> "
+            + foreignKey.PrincipalEntityType.DisplayName();
+        if (foreignKey.DeleteBehavior != expected)
         {
-            return null;
+            return $"{relation}: {foreignKey.DeleteBehavior}, expected {expected}";
         }
 
-        var properties = string.Join(separator: ", ", foreignKey.Properties.Select(property => property.Name));
+        var isUnsupportedCascade = SoftDeleteInterceptor.IsCascadeRelation(foreignKey)
+            && !SoftDeleteInterceptor.HasSupportedKeys(foreignKey);
 
-        return $"{foreignKey.DeclaringEntityType.DisplayName()}.{properties} -> "
-            + $"{foreignKey.PrincipalEntityType.DisplayName()}: {foreignKey.DeleteBehavior}, expected {expected}";
+        return isUnsupportedCascade
+            ? $"{relation}: soft delete cascade needs a single Guid key"
+            : null;
     }
 }

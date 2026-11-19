@@ -66,8 +66,8 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
     {
         var foreignKeyName = deletion.Relation.Properties[index: 0].Name;
         var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
-        var principals = deletion.PrincipalKeys.ToArray();
-        var tracked = deletion.TrackedKeys.ToArray();
+        var principals = deletion.PrincipalKeys.ToList();
+        var tracked = deletion.TrackedKeys.ToList();
 
         return dbContext.Set<TDependent>()
             .Where(row => principals.Contains(EF.Property<Guid>(row, foreignKeyName))

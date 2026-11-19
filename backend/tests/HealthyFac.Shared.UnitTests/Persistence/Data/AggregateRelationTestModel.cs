@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.UnitTests.Persistence.Data;
@@ -7,6 +8,8 @@ public sealed class PlantedRoot
     public Guid Id { get; set; }
 
     public List<PlantedCascadedChild> CascadedChildren { get; set; } = [];
+
+    public List<PlantedCompositeCascadedChild> CompositeCascadedChildren { get; set; } = [];
 
     public List<PlantedRestrictedChild> RestrictedChildren { get; set; } = [];
 
@@ -22,6 +25,17 @@ public sealed class PlantedCascadedChild
     public Guid Id { get; set; }
 
     public Guid RootId { get; set; }
+}
+
+public sealed class PlantedCompositeCascadedChild : ISoftDeletable
+{
+    public Guid RootId { get; set; }
+
+    public int Position { get; set; }
+
+    public DateTime? DeletedAt { get; private set; }
+
+    public Guid? DeletedBy { get; private set; }
 }
 
 public sealed class PlantedRestrictedChild
@@ -87,6 +101,10 @@ public sealed class AggregateRelationTestModel(DbContextOptions<AggregateRelatio
                 .WithOne()
                 .HasForeignKey(child => child.RootId)
                 .OnDelete(DeleteBehavior.Cascade);
+            root.HasMany(candidate => candidate.CompositeCascadedChildren)
+                .WithOne()
+                .HasForeignKey(child => child.RootId)
+                .OnDelete(DeleteBehavior.Cascade);
             root.HasMany(candidate => candidate.RestrictedChildren)
                 .WithOne()
                 .HasForeignKey(child => child.RootId)
@@ -99,6 +117,8 @@ public sealed class AggregateRelationTestModel(DbContextOptions<AggregateRelatio
             root.OwnsMany(candidate => candidate.OwnedItems);
             root.OwnsOne(candidate => candidate.OwnedValue);
         });
+        modelBuilder.Entity<PlantedCompositeCascadedChild>()
+            .HasKey(child => new { child.RootId, child.Position });
         modelBuilder.Entity<PlantedRestrictedReference>()
             .HasOne<PlantedOtherRoot>()
             .WithMany()

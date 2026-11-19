@@ -63,6 +63,29 @@ public sealed class SoftDeleteInterceptor(
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
+    /// <summary>
+    /// Tells whether the cascade reads the relation: a <c>Cascade</c> foreign key, not an ownership, whose dependent
+    /// type is <see cref="ISoftDeletable"/>. The model test of the aggregate relations uses the same condition.
+    /// </summary>
+    /// <param name="relation">The foreign key to check.</param>
+    /// <returns><see langword="true"/> when the interceptor soft-deletes the rows of the relation.</returns>
+    internal static bool IsCascadeRelation(IForeignKey relation) =>
+        relation is { DeleteBehavior: DeleteBehavior.Cascade, IsOwnership: false }
+        && typeof(ISoftDeletable).IsAssignableFrom(relation.DeclaringEntityType.ClrType);
+
+    /// <summary>
+    /// Tells whether the cascade supports the keys of the relation: the foreign key, the principal key, and the
+    /// primary key of the dependent are each 1 <see cref="Guid"/> property, and the principal key is the primary key
+    /// of the principal.
+    /// </summary>
+    /// <param name="relation">The foreign key to check.</param>
+    /// <returns><see langword="true"/> when the statements of the cascade can use the keys.</returns>
+    internal static bool HasSupportedKeys(IForeignKey relation) =>
+        IsSingleGuid(relation.Properties)
+        && IsSingleGuid(relation.PrincipalKey.Properties)
+        && relation.PrincipalKey == relation.PrincipalEntityType.FindPrimaryKey()
+        && IsSingleGuid(relation.DeclaringEntityType.FindPrimaryKey()?.Properties);
+
     /// <summary>Tells whether a tracked entry is a soft-deleted principal with at least one cascade relation.</summary>
     /// <param name="dbContext">The context that is about to save.</param>
     /// <returns><see langword="true"/> when the cascade has work to do.</returns>
@@ -177,9 +200,7 @@ public sealed class SoftDeleteInterceptor(
     }
 
     private static IEnumerable<IForeignKey> FindCascadeRelations(IEntityType principal) =>
-        principal.GetReferencingForeignKeys()
-            .Where(relation => relation is { DeleteBehavior: DeleteBehavior.Cascade, IsOwnership: false }
-                && typeof(ISoftDeletable).IsAssignableFrom(relation.DeclaringEntityType.ClrType));
+        principal.GetReferencingForeignKeys().Where(IsCascadeRelation);
 
     private static Dictionary<IForeignKey, List<Guid>> CollectPrincipalKeys(DbContext dbContext)
     {
@@ -205,15 +226,10 @@ public sealed class SoftDeleteInterceptor(
 
     private static void EnsureSupportedKeys(IForeignKey relation)
     {
-        var dependent = relation.DeclaringEntityType;
-        var isSupported = IsSingleGuid(relation.Properties)
-            && IsSingleGuid(relation.PrincipalKey.Properties)
-            && relation.PrincipalKey == relation.PrincipalEntityType.FindPrimaryKey()
-            && IsSingleGuid(dependent.FindPrimaryKey()?.Properties);
-        if (!isSupported)
+        if (!HasSupportedKeys(relation))
         {
             throw SoftDeleteCascadeErrors.UnsupportedKey(
-                $"{dependent.ClrType.Name}.{relation.Properties[index: 0].Name}");
+                $"{relation.DeclaringEntityType.ClrType.Name}.{relation.Properties[index: 0].Name}");
         }
     }
 
@@ -242,7 +258,7 @@ public sealed class SoftDeleteInterceptor(
             TrackedKeys = dbContext.ChangeTracker.Entries()
                 .Where(entry => dependent.IsAssignableFrom(entry.Metadata))
                 .Select(entry => (Guid)entry.Property(primaryKeyName).CurrentValue!)
-                .ToArray(),
+                .ToList(),
             HasOwnCascade = FindCascadeRelations(dependent).Any(),
             DeletedAt = deletedAt,
             DeletedBy = deletedBy,

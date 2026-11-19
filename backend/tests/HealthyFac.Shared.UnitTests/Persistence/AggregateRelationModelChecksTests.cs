@@ -22,6 +22,7 @@ public sealed class AggregateRelationModelChecksTests
         wrongRelations.Should()
             .BeEquivalentTo(
                 "PlantedCascadedReference.OtherRootId -> PlantedOtherRoot: Cascade, expected Restrict",
+                "PlantedCompositeCascadedChild.RootId -> PlantedRoot: soft delete cascade needs a single Guid key",
                 "PlantedRestrictedChild.RootId -> PlantedRoot: Restrict, expected Cascade",
                 "PlantedRoot.OwnedItems: OwnsMany",
                 "PlantedSetNullReference.OtherRootId -> PlantedOtherRoot: SetNull, expected Restrict");
