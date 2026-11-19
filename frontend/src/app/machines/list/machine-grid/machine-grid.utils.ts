@@ -25,11 +25,11 @@ export const MENU_PHASES_KEY = 'MACHINES.PHASES';
 export const MENU_SIGNALS_KEY = 'MACHINES.SIGNALS';
 export const MENU_STATUSES_KEY = 'MACHINES.STATUSES';
 export const MENU_FILES_KEY = 'MACHINES.FILES';
-export const MENU_OPEN_KEY = 'ACTIONS.OPEN';
+export const MENU_SHOW_DETAILS_KEY = 'ACTIONS.SHOW_DETAILS';
 export const MENU_CHANGE_STATE_KEY = 'MACHINES.CHANGE_STATE';
 export const MENU_CHANGE_STATE_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.CHANGE_STATE';
 
-export const MENU_OPEN_TOOLTIP_KEY = 'ACTIONS.TOOLTIPS.OPEN';
+export const MENU_SHOW_DETAILS_TOOLTIP_KEY = 'ACTIONS.TOOLTIPS.SHOW_DETAILS';
 export const MENU_METRICS_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.METRICS';
 export const MENU_PHASES_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.PHASES';
 export const MENU_SIGNALS_TOOLTIP_KEY = 'MACHINES.TOOLTIPS.SIGNALS';
@@ -68,3 +68,6 @@ export const FILTER_WRITERS: Readonly<Record<MachineColumn, (filter: MachineFilt
   [MachineColumn.UpdatedAt]: (filter) => (isRangeEmpty(filter.updatedAt) ? null : filter.updatedAt),
   [MachineColumn.Drafts]: (filter) => filter.hasPendingDrafts,
 };
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly MachineColumn[] = [MachineColumn.Name];

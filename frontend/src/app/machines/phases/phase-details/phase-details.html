@@ -1,0 +1,149 @@
+<section class="flex flex-col gap-4">
+  <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.GENERAL' | translate }}</h2>
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'PHASES.FORM.CODE' | translate }}</span>
+    <span class="hf-field-text">{{ value().code || emptyCell }}</span>
+  </div>
+  <p-divider />
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'PHASES.FORM.NAME' | translate }}</span>
+    <span class="hf-field-text">{{ value().name || emptyCell }}</span>
+  </div>
+  <p-divider />
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'PHASES.FORM.DESCRIPTION' | translate }}</span>
+    @if (value().description; as description) {
+      <div class="hf-field-text">
+        <hf-rich-text-view
+          [html]="description"
+          [links]="descriptionLinks()"
+        />
+      </div>
+    } @else {
+      <span class="hf-field-text">{{ emptyCell }}</span>
+    }
+  </div>
+  <p-divider />
+  <div class="flex items-center gap-2">
+    <span class="hf-field-label">{{ 'PHASES.FORM.IS_TRACKED' | translate }}</span>
+    <p-tag
+      [severity]="value().isTracked ? 'success' : 'secondary'"
+      [value]="(value().isTracked ? 'PHASES.TRACKED_YES' : 'PHASES.TRACKED_NO') | translate"
+    />
+  </div>
+</section>
+<p-divider />
+
+<section class="flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.CONDITIONS' | translate }}</h2>
+  </div>
+  @for (condition of value().conditions; track $index) {
+    <div class="flex flex-col gap-2 rounded border border-surface p-2">
+      <div class="flex items-start gap-2">
+        <span class="hf-field-text min-w-0 flex-1">{{ sourceLabel(condition.sourceId, sourceOptions()) }}</span>
+        <span class="hf-field-text min-w-0 flex-1">
+          {{ operatorSign(condition.operator) }} {{ operatorLabelKeys[condition.operator] | translate }}
+        </span>
+        <span
+          class="invisible"
+          aria-hidden="true"
+        >
+          <button
+            pButton
+            [pTooltip]="'PHASES.TOOLTIPS.REMOVE_CONDITION' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            severity="secondary"
+            iconOnly
+            [text]="true"
+            tabindex="-1"
+            disabled
+          >
+            <i class="pi pi-trash"></i>
+          </button>
+        </span>
+      </div>
+      @if (kindOfSource(condition.sourceId, sourceOptions()) === ConditionSourceKind.Numeric) {
+        <div class="flex items-start gap-2">
+          <span class="hf-field-text min-w-0 flex-1">{{ numberText(condition.value) }}</span>
+          @if (condition.operator === PhaseConditionOperator.Between) {
+            <span class="hf-field-text min-w-0 flex-1">{{ numberText(condition.upperValue) }}</span>
+          }
+        </div>
+      }
+      @if (condition.operator === PhaseConditionOperator.In) {
+        <span class="hf-field-text">{{ statesText(condition.states) }}</span>
+      }
+    </div>
+  }
+  @if (maskedNames() !== '') {
+    <p-message
+      severity="warn"
+      size="small"
+    >
+      {{ 'PHASES.FORM.MASKING_WARNING' | translate: { names: maskedNames() } }}
+    </p-message>
+  }
+</section>
+<p-divider />
+
+<section class="flex flex-col gap-4">
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.LIMITS' | translate }}</h2>
+  </div>
+  @for (limit of value().limits; track $index) {
+    @if (!$first) {
+      <p-divider />
+    }
+    <div class="flex flex-col gap-4 rounded border border-surface p-2">
+      <div class="flex items-start gap-2">
+        <span class="hf-field-text min-w-0 flex-1">{{ metricName(limit.metricDefinitionId, metrics()) }}</span>
+        <span
+          class="invisible"
+          aria-hidden="true"
+        >
+          <button
+            pButton
+            [pTooltip]="'PHASES.TOOLTIPS.REMOVE_LIMIT' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            severity="secondary"
+            iconOnly
+            [text]="true"
+            tabindex="-1"
+            disabled
+          >
+            <i class="pi pi-trash"></i>
+          </button>
+        </span>
+      </div>
+      @if (hasNoLimitValues(limit)) {
+        <small class="text-muted-color">{{ 'PHASES.FORM.NO_LIMITS' | translate }}</small>
+      }
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
+        <div class="flex flex-col gap-1">
+          <span class="hf-field-label">{{ 'PHASES.FORM.ALARM_LOW' | translate }}</span>
+          <span class="hf-field-text">{{ numberText(limit.alarmLow) }}</span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="hf-field-label">{{ 'PHASES.FORM.ALARM_HIGH' | translate }}</span>
+          <span class="hf-field-text">{{ numberText(limit.alarmHigh) }}</span>
+        </div>
+      </div>
+      <p-divider />
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
+        <div class="flex flex-col gap-1">
+          <span class="hf-field-label">{{ 'PHASES.FORM.WARNING_LOW' | translate }}</span>
+          <span class="hf-field-text">{{ numberText(limit.warningLow) }}</span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="hf-field-label">{{ 'PHASES.FORM.WARNING_HIGH' | translate }}</span>
+          <span class="hf-field-text">{{ numberText(limit.warningHigh) }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</section>

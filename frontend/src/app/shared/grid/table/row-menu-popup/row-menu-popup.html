@@ -1,0 +1,24 @@
+<p-menu
+  appendTo="body"
+  [popup]="true"
+  [model]="model()"
+>
+  <ng-template
+    #item
+    let-item
+  >
+    <a
+      class="p-menu-item-link"
+      [pTooltip]="item.tooltip ?? ''"
+      [tooltipOptions]="item.tooltipOptions"
+      [style.pointer-events]="'auto'"
+      [style.cursor]="item.disabled ? 'not-allowed' : null"
+    >
+      <span
+        class="p-menu-item-icon"
+        [class]="item.icon"
+      ></span>
+      <span class="p-menu-item-label">{{ item.label }}</span>
+    </a>
+  </ng-template>
+</p-menu>

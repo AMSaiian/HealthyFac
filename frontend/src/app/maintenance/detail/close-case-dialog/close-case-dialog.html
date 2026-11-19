@@ -7,7 +7,11 @@
   (cancelled)="cancelled.emit()"
 >
   <div class="flex flex-col gap-1">
-    <label for="close-reason">{{ 'MAINTENANCE.CLOSE_DIALOG.REASON' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="close-reason"
+      >{{ 'MAINTENANCE.CLOSE_DIALOG.REASON' | translate }}</label
+    >
     @for (error of closeForm.reason().errors(); track $index) {
       @if (isShown()) {
         <small class="text-red-500">{{ error.message | translate }}</small>

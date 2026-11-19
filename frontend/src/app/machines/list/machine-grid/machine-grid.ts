@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -6,10 +6,9 @@ import type { MenuItem } from 'primeng/api';
 import { Badge } from 'primeng/badge';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
@@ -17,8 +16,10 @@ import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { PlainDatePipe } from '@shared/time/plain-date.pipe';
@@ -50,20 +51,22 @@ import {
   MENU_FILES_TOOLTIP_KEY,
   MENU_METRICS_KEY,
   MENU_METRICS_TOOLTIP_KEY,
-  MENU_OPEN_KEY,
-  MENU_OPEN_TOOLTIP_KEY,
   MENU_PHASES_KEY,
   MENU_PHASES_TOOLTIP_KEY,
+  MENU_SHOW_DETAILS_KEY,
+  MENU_SHOW_DETAILS_TOOLTIP_KEY,
   MENU_SIGNALS_KEY,
   MENU_SIGNALS_TOOLTIP_KEY,
   MENU_STATUSES_KEY,
   MENU_STATUSES_TOOLTIP_KEY,
   SORTABLE_COLUMNS,
   STATE_LABEL_KEYS,
+  TEXT_COLUMNS,
 } from './machine-grid.utils';
 
 @Component({
   imports: [
+    CellText,
     ChipSummary,
     Badge,
     ButtonDirective,
@@ -74,7 +77,7 @@ import {
     InputText,
     LocalDateTimePipe,
     PlainDatePipe,
-    Menu,
+    RowMenuPopup,
     PlainDateRangePicker,
     Select,
     Skeleton,
@@ -134,7 +137,7 @@ export class MachineGrid {
       ...Object.values(STATE_LABEL_KEYS),
       MENU_CHANGE_STATE_KEY,
       MENU_CHANGE_STATE_TOOLTIP_KEY,
-      MENU_OPEN_KEY,
+      MENU_SHOW_DETAILS_KEY,
       MENU_METRICS_KEY,
       MENU_PHASES_KEY,
       MENU_PHASES_TOOLTIP_KEY,
@@ -146,7 +149,7 @@ export class MachineGrid {
       MENU_STATUSES_KEY,
       MENU_FILES_KEY,
       MENU_DELETE_KEY,
-      MENU_OPEN_TOOLTIP_KEY,
+      MENU_SHOW_DETAILS_TOOLTIP_KEY,
       MENU_METRICS_TOOLTIP_KEY,
       MENU_STATUSES_TOOLTIP_KEY,
       MENU_DRAFTS_TOOLTIP_KEY,
@@ -155,6 +158,8 @@ export class MachineGrid {
     ]),
     { initialValue: {} as Record<string, string> },
   );
+
+  private readonly _table = viewChild(Table);
 
   protected readonly grid = createGridTable<Machine, MachineColumn, MachineFilter, MachineSortColumn>({
     allColumns: this.allColumns,
@@ -172,6 +177,8 @@ export class MachineGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: (columns) => this.columnsChange.emit(columns),
     columnsReorder: (columns) => this.columnsReorder.emit(columns),
   });
@@ -192,32 +199,20 @@ export class MachineGrid {
     'min-width': '64rem',
     ...(this.grid.tableRows().length > 0 ? {} : { height: '100%' }),
   }));
-  protected readonly hasRowActions = computed(
-    () =>
-      this.canWrite() ||
-      this.canDelete() ||
-      this.canReadStatuses() ||
-      this.canReadFiles() ||
-      this.canReadMetrics() ||
-      this.canReadPhases() ||
-      this.canReadSignals() ||
-      this.canReadDrafts(),
-  );
-
   protected readonly menuItems = computed<MenuItem[]>(() => {
     const labels = this._labels();
     return [
+      this.rowMenu.menuItem(
+        {
+          labelKey: MENU_SHOW_DETAILS_KEY,
+          tooltipKey: MENU_SHOW_DETAILS_TOOLTIP_KEY,
+          icon: 'pi pi-eye',
+          onSelect: (machine) => this.updateRequested.emit(machine.id),
+        },
+        labels,
+      ),
       ...(this.canWrite()
         ? [
-            this.rowMenu.menuItem(
-              {
-                labelKey: MENU_OPEN_KEY,
-                tooltipKey: MENU_OPEN_TOOLTIP_KEY,
-                icon: 'pi pi-external-link',
-                onSelect: (machine) => this.updateRequested.emit(machine.id),
-              },
-              labels,
-            ),
             this.rowMenu.menuItem(
               {
                 labelKey: MENU_CHANGE_STATE_KEY,

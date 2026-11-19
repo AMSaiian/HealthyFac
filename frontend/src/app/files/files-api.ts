@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 
 import type {
+  FileGridItem,
   FilesPage,
   FilesScope,
   SearchFilesBody,
@@ -38,6 +39,11 @@ function fileUrl(scope: FilesScope, id: string): string {
 @Injectable()
 export class FilesApi {
   private readonly _http = inject(HttpClient);
+
+  /** Reads one file by its ID. A deleted file, or a file outside the scope, answers 404. */
+  get(scope: FilesScope, id: string): Observable<FileGridItem> {
+    return this._http.get<FileGridItem>(fileUrl(scope, id));
+  }
 
   search(scope: FilesScope, body: SearchFilesBody): Observable<FilesPage> {
     return this._http.post<FilesPage>(`${baseUrl(scope)}/${SEARCH_SEGMENT}`, body);

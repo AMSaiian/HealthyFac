@@ -1,4 +1,4 @@
-<span class="font-bold">{{ label() }}</span>
+<span class="hf-field-label">{{ label() }}</span>
 @for (row of rows(); track $index) {
   <div class="flex items-center gap-2">
     <hf-plain-time-picker
@@ -47,7 +47,7 @@
     type="button"
     size="small"
     severity="secondary"
-    class="self-start"
+    class="mt-1 self-start"
     [disabled]="!canAdd()"
     (click)="add()"
   >

@@ -9,6 +9,7 @@ import { EmployeeRole } from '@shared/employee/employee';
 import { isFieldInvalid } from '@shared/forms/field-state';
 
 import { inviteFormSchema, type InviteFormValue } from '@employees/invites/invite-dialog/invite-dialog-schema';
+import { Divider } from 'primeng/divider';
 
 const ROLE_KEYS: Readonly<Record<EmployeeRole, string>> = {
   [EmployeeRole.Worker]: 'EMPLOYEES.ROLES.WORKER',
@@ -17,7 +18,7 @@ const ROLE_KEYS: Readonly<Record<EmployeeRole, string>> = {
 
 /** The form of an invite: the email and the role of the new employee. */
 @Component({
-  imports: [FormField, InputText, Select, TranslatePipe],
+  imports: [Divider, FormField, InputText, Select, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-invite-dialog',
   templateUrl: './invite-dialog.html',

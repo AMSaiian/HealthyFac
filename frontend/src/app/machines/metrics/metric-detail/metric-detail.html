@@ -51,17 +51,25 @@
     </div>
   </p-message>
 }
-<dl class="flex flex-none flex-col">
-  <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+<dl class="flex flex-none flex-col text-(length:--p-form-field-font-size)">
+  <div
+    class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 [&:nth-of-type(odd)]:bg-surface-50 dark:[&:nth-of-type(odd)]:bg-surface-800"
+  >
     <dt class="text-muted-color">{{ 'METRICS.DETAIL.KEY' | translate }}</dt>
     <dd class="min-w-0 break-all">{{ item().value.key }}</dd>
   </div>
-  <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+  <p-divider />
+  <div
+    class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 [&:nth-of-type(odd)]:bg-surface-50 dark:[&:nth-of-type(odd)]:bg-surface-800"
+  >
     <dt class="text-muted-color">{{ 'METRICS.DETAIL.KIND' | translate }}</dt>
     <dd>{{ kindLabelKeys[item().value.valueKind] | translate }}</dd>
   </div>
   @if (isNumeric()) {
-    <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+    <p-divider />
+    <div
+      class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 [&:nth-of-type(odd)]:bg-surface-50 dark:[&:nth-of-type(odd)]:bg-surface-800"
+    >
       <dt class="text-muted-color">{{ 'METRICS.DETAIL.UNIT' | translate }}</dt>
       <dd>
         @if (unitOption(); as option) {
@@ -71,13 +79,19 @@
         }
       </dd>
     </div>
-    <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+    <p-divider />
+    <div
+      class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 [&:nth-of-type(odd)]:bg-surface-50 dark:[&:nth-of-type(odd)]:bg-surface-800"
+    >
       <dt class="text-muted-color">{{ 'METRICS.DETAIL.RANGE' | translate }}</dt>
       <dd>{{ range() }}</dd>
     </div>
   }
   @if (isStateSet()) {
-    <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+    <p-divider />
+    <div
+      class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 [&:nth-of-type(odd)]:bg-surface-50 dark:[&:nth-of-type(odd)]:bg-surface-800"
+    >
       <dt class="text-muted-color">{{ 'METRICS.DETAIL.STATES' | translate }}</dt>
       <dd class="flex flex-wrap gap-1">
         @for (state of item().value.states; track state) {
@@ -89,7 +103,10 @@
       </dd>
     </div>
   }
-  <div class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 odd:bg-surface-50 dark:odd:bg-surface-800">
+  <p-divider />
+  <div
+    class="grid grid-cols-[8rem_1fr] gap-4 px-3 py-2 [&:nth-of-type(odd)]:bg-surface-50 dark:[&:nth-of-type(odd)]:bg-surface-800"
+  >
     <dt class="text-muted-color">{{ 'METRICS.DETAIL.DESCRIPTION' | translate }}</dt>
     <dd class="min-w-0 break-words">
       @if (item().value.description; as description) {

@@ -39,6 +39,7 @@ export function withWorkOrderDrawerForm() {
         isUpdate: Signal<boolean>;
         canManage: Signal<boolean>;
         canWrite: Signal<boolean>;
+        isViewMode: Signal<boolean>;
         workOrder: ResourceRef<WorkOrder | undefined>;
       }>(),
       methods: type<{ _toastError: (key: string) => void }>(),
@@ -76,10 +77,13 @@ export function withWorkOrderDrawerForm() {
     withComputed((store) => {
       const employee = inject(EmployeeStore);
       return {
-        /** The status change is open to a supervisor, and to a worker for own assigned work orders. */
+        /**
+         * The status change is open to a supervisor, and to a worker for own assigned work orders. It needs view
+         * mode: the status dialog does not carry unsaved form changes.
+         */
         canChangeStatus: computed(() => {
           const current = store.workOrder.hasValue() ? store.workOrder.value() : null;
-          if (!store.isUpdate() || current === null) {
+          if (!store.isViewMode() || !store.isUpdate() || current === null) {
             return false;
           }
           const isOwn = current.assigneeId !== null && current.assigneeId === employee.id();

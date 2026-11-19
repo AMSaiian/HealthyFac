@@ -10,11 +10,12 @@ import {
   statusDefinitionFormSchema,
   type StatusDefinitionFormValue,
 } from '@machines/statuses/drawer/status-definition-form/status-definition-form-schema';
+import { StatusDefinitionDetails } from '@machines/statuses/drawer/status-definition-details/status-definition-details';
 import { StatusDefinitionForm } from '@machines/statuses/drawer/status-definition-form/status-definition-form';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 
 @Component({
-  imports: [ActionDialog, LoadingSpinner, StatusDefinitionForm],
+  imports: [ActionDialog, LoadingSpinner, StatusDefinitionDetails, StatusDefinitionForm],
   host: { class: 'contents' },
   providers: [StatusDefinitionsApi, StatusDefinitionDrawerStore],
   selector: 'hf-status-definition-drawer-host',
@@ -25,6 +26,7 @@ export class StatusDefinitionDrawerHost {
   readonly statusDefinitionId = input.required<string | null>();
 
   readonly saved = output<void>();
+  readonly updated = output<void>();
   readonly cancelled = output<void>();
 
   protected readonly store = inject(StatusDefinitionDrawerStore);
@@ -44,6 +46,12 @@ export class StatusDefinitionDrawerHost {
       !hasFormChanges(statusDefinitionFormSchema, initial, current)
     );
   });
+  protected readonly title = computed((): string => {
+    if (this.store.isViewMode()) {
+      return 'STATUS_DEFINITIONS.FORM.DETAILS_TITLE';
+    }
+    return this.store.isUpdate() ? 'STATUS_DEFINITIONS.FORM.UPDATE_TITLE' : 'STATUS_DEFINITIONS.FORM.CREATE_TITLE';
+  });
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
       return 'FORMS.INVALID';
@@ -57,6 +65,12 @@ export class StatusDefinitionDrawerHost {
     });
   }
 
+  protected onEdit(): void {
+    this.store.edit();
+    this._current.set(null);
+    this._isValid.set(false);
+  }
+
   protected onValueChange(value: StatusDefinitionFormValue): void {
     this._current.set(value);
   }
@@ -68,7 +82,7 @@ export class StatusDefinitionDrawerHost {
   protected onSave(): void {
     const value = this._current();
     if (value !== null && this.saveDisabledReason() === null) {
-      this.store.save({ value, onSaved: () => this.saved.emit() });
+      this.store.save({ value, onSaved: () => (this.store.isUpdate() ? this.updated.emit() : this.saved.emit()) });
     }
   }
 }

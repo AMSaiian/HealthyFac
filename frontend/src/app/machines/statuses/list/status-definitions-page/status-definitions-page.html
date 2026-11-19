@@ -54,6 +54,7 @@
     [machineId]="store.machineId() ?? ''"
     [statusDefinitionId]="editor.statusDefinitionId"
     (saved)="store.onSaved()"
+    (updated)="store.reloadStatuses()"
     (cancelled)="store.closeEditor()"
   />
 }

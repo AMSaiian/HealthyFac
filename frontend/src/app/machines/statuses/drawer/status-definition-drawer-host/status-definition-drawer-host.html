@@ -1,17 +1,29 @@
 <hf-action-dialog
-  [title]="store.isUpdate() ? 'STATUS_DEFINITIONS.FORM.UPDATE_TITLE' : 'STATUS_DEFINITIONS.FORM.CREATE_TITLE'"
+  [title]="title()"
   [isSaveDisabled]="saveDisabledReason() !== null"
   [saveDisabledReason]="saveDisabledReason()"
   [isSaving]="store.isSaving()"
+  [isSaveShown]="store.isEditMode()"
+  [isEditShown]="store.isEditShown()"
+  [hasEditCancel]="store.isUpdate() && store.isEditMode()"
   (save)="onSave()"
+  (editRequested)="onEdit()"
+  (editCancelled)="store.cancelEdit()"
   (cancelled)="cancelled.emit()"
 >
   @if (store.initialValue(); as initial) {
-    <hf-status-definition-form
-      [initialValue]="initial"
-      (valueChange)="onValueChange($event)"
-      (validityChange)="onValidityChange($event)"
-    />
+    @if (store.isViewMode()) {
+      <hf-status-definition-details
+        [value]="initial"
+        [descriptionLinks]="store.descriptionLinks()"
+      />
+    } @else {
+      <hf-status-definition-form
+        [initialValue]="initial"
+        (valueChange)="onValueChange($event)"
+        (validityChange)="onValidityChange($event)"
+      />
+    }
   } @else {
     <div class="flex min-h-48">
       @if (showSpinner()) {

@@ -1,14 +1,13 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { EmployeeRole } from '@shared/employee/employee';
@@ -16,8 +15,10 @@ import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { SQUARE_FILTER_BUTTON_PROPS } from '@shared/theme/square-button-props';
@@ -40,12 +41,14 @@ import {
   ROLE_LABEL_KEYS,
   SORTABLE_COLUMNS,
   STATUS_LABEL_KEYS,
+  TEXT_COLUMNS,
 } from './employee-grid.utils';
 
 const EMPLOYEE_COLUMNS: readonly EmployeeColumn[] = Object.values(EmployeeColumn);
 
 @Component({
   imports: [
+    CellText,
     ChipSummary,
     ButtonDirective,
     ColumnFilter,
@@ -53,7 +56,7 @@ const EMPLOYEE_COLUMNS: readonly EmployeeColumn[] = Object.values(EmployeeColumn
     FormsModule,
     InputText,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     Select,
     Skeleton,
     SortIcon,
@@ -100,6 +103,8 @@ export class EmployeeGrid {
     { initialValue: {} as Record<string, string> },
   );
 
+  private readonly _table = viewChild(Table);
+
   protected readonly grid = createGridTable<EmployeeRow, EmployeeColumn, EmployeeFilter, EmployeeSortColumn>({
     allColumns: EMPLOYEE_COLUMNS,
     columns: signal(EMPLOYEE_COLUMNS),
@@ -116,6 +121,8 @@ export class EmployeeGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: () => undefined,
     columnsReorder: () => undefined,
   });
@@ -147,7 +154,7 @@ export class EmployeeGrid {
   }
 
   /** Builds the menu of the row at the click: the retry item shows only for a row that can be retried. */
-  protected openMenu(event: Event, row: EmployeeRow, menu: Menu): void {
+  protected openMenu(event: Event, row: EmployeeRow, menu: RowMenuPopup): void {
     this.menuItems.set(this._menuItemsFor(row));
     this.rowMenu.open(event, row, menu);
   }

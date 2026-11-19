@@ -17,6 +17,7 @@ using ApplicationTieFileToMachineRequest = HealthyFac.Document.Application.Files
 using ApplicationUntieFileFromMachineRequest =
     HealthyFac.Document.Application.Files.Machines.UntieFileFromMachineRequest;
 using ApplicationUpdateFileRequest = HealthyFac.Document.Application.Files.UpdateFileRequest;
+using ApplicationGetFileRequest = HealthyFac.Document.Application.Files.GetFileRequest;
 using ApplicationGetFileLinksRequest = HealthyFac.Document.Application.Files.Links.GetFileLinksRequest;
 using ApplicationLookupFilesRequest = HealthyFac.Document.Application.Files.Lookup.LookupFilesRequest;
 using ApplicationSearchFilesRequest = HealthyFac.Document.Application.Files.Searching.SearchFilesRequest;
@@ -64,6 +65,8 @@ public static class FileEndpoints
                 .WithMetadata(new RequestSizeLimitAttribute(EmbeddedRequestLimit))
                 .DisableAntiforgery();
 
+            companyGroup.MapGet(FileRoutes.ById, GetCompanyFileAsync)
+                .RequireAuthorization(DocumentPermissions.Files.Read);
             companyGroup.MapPut(FileRoutes.ById, UpdateCompanyFileAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
             companyGroup.MapDelete(FileRoutes.ById, DeleteCompanyFileAsync)
@@ -80,6 +83,8 @@ public static class FileEndpoints
                 .RequireAuthorization(DocumentPermissions.Files.Read);
 
             var machineGroup = app.MapGroup(FileRoutes.MachineBaseRoute);
+            machineGroup.MapGet(FileRoutes.ById, GetMachineFileAsync)
+                .RequireAuthorization(DocumentPermissions.Files.Read);
             machineGroup.MapPut(FileRoutes.ById, UpdateMachineFileAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Write);
             machineGroup.MapDelete(FileRoutes.ById, DeleteMachineFileAsync)
@@ -94,6 +99,40 @@ public static class FileEndpoints
 
             return app;
         }
+    }
+
+    private static async Task<Ok<FileGridItem>> GetCompanyFileAsync(
+        [AsParameters] GetFileRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetFileRequest, FileGridItem> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), machineId: null, idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<FileGridItem>> GetMachineFileAsync(
+        [FromRoute(Name = FileRoutes.MachineIdParameter)] string machineId,
+        [AsParameters] GetFileRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetFileRequest, FileGridItem> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(
+                currentUser.GetCompanyId(),
+                MachineRouteIds.Decrypt(machineId, idEncryptor),
+                idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
     }
 
     private static async Task<NoContent> UpdateCompanyFileAsync(

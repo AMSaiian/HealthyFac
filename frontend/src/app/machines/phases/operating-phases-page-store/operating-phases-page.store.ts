@@ -8,7 +8,10 @@ import { catchError } from 'rxjs/operators';
 
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
+import { withDetailsMode } from '@shared/forms/with-details-mode';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { withToasts } from '@shared/toasts/with-toasts';
@@ -48,6 +51,7 @@ const STATUS_OPTION_LIMIT = 100;
 
 export const OperatingPhasesPageStore = signalStore(
   withState<ScopeState>({ machineId: null, machine: null, editor: null, isSaving: false }),
+  withDetailsMode(),
   withProps(() => ({
     _auth: inject(AuthStore),
     _clock: inject(CLOCK),
@@ -97,6 +101,14 @@ export const OperatingPhasesPageStore = signalStore(
       }
       return store.phases.value().items.find((phase) => phase.id === editor.phaseId) ?? null;
     }),
+    isUpdate: computed(() => {
+      const editor = store.editor();
+      return editor !== null && editor.phaseId !== null;
+    }),
+  })),
+  withProps((store) => ({
+    descriptionLinks: descriptionLinks(() => store.editedPhase()?.description ?? null, inject(RichTextImageLinks))
+      .links,
   })),
   withComputed((store) => ({
     statusIds: computed(
@@ -105,6 +117,10 @@ export const OperatingPhasesPageStore = signalStore(
     ),
     isFormDataLoading: computed(
       () => store.metrics.isLoading() || store.statuses.isLoading() || store.phases.isLoading(),
+    ),
+    /** Tells whether the pencil shows: the loaded phase in view mode, for a user who may change it. */
+    isEditShown: computed(
+      () => store.isViewMode() && store.isUpdate() && store.editedPhase() !== null && store.canWrite(),
     ),
   })),
   withMethods((store) => {
@@ -175,17 +191,27 @@ export const OperatingPhasesPageStore = signalStore(
       },
       requestCreate(): void {
         patchState(store, { editor: { phaseId: null } });
+        store._startMode(false);
       },
       requestUpdate(phaseId: string): void {
         patchState(store, { editor: { phaseId } });
+        store._startMode(true);
+      },
+      cancelEdit(): void {
+        store.view();
       },
       closeEditor(): void {
         patchState(store, { editor: null });
       },
       save: savePhase,
       onSaved(): void {
-        patchState(store, { editor: null });
-        store.phases.reload();
+        if (store.editor()?.phaseId === null) {
+          patchState(store, { editor: null });
+          store.phases.reload();
+        } else {
+          store.phases.reload();
+          store.view();
+        }
       },
       requestDelete(phase: OperatingPhase): void {
         store._confirmDestructive({

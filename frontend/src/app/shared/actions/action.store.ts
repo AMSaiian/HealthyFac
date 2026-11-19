@@ -45,6 +45,10 @@ export const ActionStore = signalStore(
       return true;
     }
 
+    function nextResult(type: string, detail: unknown): ActionResult {
+      return { type, sequence: (store.lastResult()?.sequence ?? 0) + 1, detail };
+    }
+
     return {
       /**
        * Opens an action. With `returnTo`, the action that opened it comes back when this one completes or is cancelled,
@@ -62,12 +66,15 @@ export const ActionStore = signalStore(
           patchState(store, { active: action, parent });
         }
       },
+      /** Tells the readers of the result that the action stored a change, and keeps the dialog open. */
+      notify(resultType: string, detail?: unknown): void {
+        patchState(store, { lastResult: nextResult(resultType, detail) });
+      },
       complete(resultType: string, detail?: unknown): void {
-        const sequence = (store.lastResult()?.sequence ?? 0) + 1;
         patchState(store, {
           active: store.parent(),
           parent: null,
-          lastResult: { type: resultType, sequence, detail },
+          lastResult: nextResult(resultType, detail),
         });
       },
       cancel(): void {

@@ -13,6 +13,7 @@ import type { Temporal } from '@shared/time/temporal';
 
 import { assignFormSchema, type AssignFormValue } from './assign-dialog-schema';
 import { GRID_STEP_MINUTES } from '@work-orders/schedule-actions/slot-prefill';
+import { Divider } from 'primeng/divider';
 
 export interface AssignSelection {
   readonly assigneeId: string;
@@ -32,7 +33,7 @@ function isSameSelection(first: AssignSelection | null, second: AssignSelection 
 
 /** The people and the start of an assign or move. The suggestion is the first free start of the chosen day. */
 @Component({
-  imports: [ButtonDirective, FormField, PlainDateTimePicker, Select, Tooltip, TranslatePipe],
+  imports: [Divider, ButtonDirective, FormField, PlainDateTimePicker, Select, Tooltip, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-assign-dialog',
   templateUrl: './assign-dialog.html',

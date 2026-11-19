@@ -1,21 +1,22 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
-import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { asList } from '@shared/grid/table/table-filters';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -32,7 +33,7 @@ import {
   type MachineDraftSort,
 } from '@machines/drafts/draft';
 import { draftRowMenuItems } from '@machines/drafts/draft-row-menu';
-import { isReviewDisabledOf, machineTitleOf } from '@machines/drafts/list/draft-grid/draft-grid.utils';
+import { isReviewDisabledOf, machineTitleOf, TEXT_COLUMNS } from '@machines/drafts/list/draft-grid/draft-grid.utils';
 
 const COLUMN_LABEL_KEYS: Readonly<Record<DraftColumn, string>> = {
   [DraftColumn.Kind]: 'DRAFTS.LIST.COLUMNS.KIND',
@@ -84,6 +85,7 @@ const WRITERS: Readonly<Record<DraftColumn, (filter: MachineDraftFilter) => unkn
 
 @Component({
   imports: [
+    CellText,
     ChipSummary,
     ButtonDirective,
     Checkbox,
@@ -91,7 +93,7 @@ const WRITERS: Readonly<Record<DraftColumn, (filter: MachineDraftFilter) => unkn
     EmptyState,
     FormsModule,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     Select,
     Skeleton,
     Tag,
@@ -156,6 +158,8 @@ export class DraftGrid {
     },
   );
 
+  private readonly _table = viewChild(Table);
+
   protected readonly grid = createGridTable<MachineDraftGridItem, DraftColumn, MachineDraftFilter, DraftSortColumn>({
     allColumns: this.allColumns,
     columns: signal(this.allColumns),
@@ -178,6 +182,8 @@ export class DraftGrid {
       previous: () => this.previousPageRequested.emit(),
       limitChange: (limit) => this.limitChange.emit(limit),
     },
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: () => undefined,
     columnsReorder: () => undefined,
   });
@@ -224,7 +230,7 @@ export class DraftGrid {
   }
 
   /** Builds the menu of the row at the click, so the texts follow the current language. */
-  protected openMenu(event: Event, draft: MachineDraftGridItem, menu: Menu): void {
+  protected openMenu(event: Event, draft: MachineDraftGridItem, menu: RowMenuPopup): void {
     this.menuItems.set(
       draftRowMenuItems({
         translate: (key) => this._translate.instant(key),

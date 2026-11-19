@@ -1,20 +1,33 @@
 <hf-action-dialog
-  [title]="store.isUpdate() ? 'MACHINES.FORM.UPDATE_TITLE' : 'MACHINES.FORM.CREATE_TITLE'"
+  [title]="title()"
   [isSaveDisabled]="saveDisabledReason() !== null"
   [saveDisabledReason]="saveDisabledReason()"
   [isSaving]="store.isSaving()"
+  [isSaveShown]="store.isEditMode()"
+  [isEditShown]="store.isEditShown()"
+  [hasEditCancel]="store.isUpdate() && store.isEditMode()"
   (save)="onSave()"
+  (editRequested)="onEdit()"
+  (editCancelled)="store.cancelEdit()"
   (cancelled)="store.cancel()"
 >
   @if (store.prefilledValue(); as initial) {
-    <hf-machine-form
-      [initialValue]="initial"
-      [isUpdate]="store.isUpdate()"
-      [gatewayId]="store.gatewayId()"
-      [minGoLiveOn]="store.minGoLiveOn()"
-      (valueChange)="onValueChange($event)"
-      (validityChange)="onValidityChange($event)"
-    />
+    @if (store.isViewMode()) {
+      <hf-machine-details
+        [value]="initial"
+        [gatewayId]="store.gatewayId()"
+        [descriptionLinks]="store.descriptionLinks()"
+      />
+    } @else {
+      <hf-machine-form
+        [initialValue]="initial"
+        [isUpdate]="store.isUpdate()"
+        [gatewayId]="store.gatewayId()"
+        [minGoLiveOn]="store.minGoLiveOn()"
+        (valueChange)="onValueChange($event)"
+        (validityChange)="onValidityChange($event)"
+      />
+    }
   } @else {
     <div class="flex min-h-48">
       @if (showSpinner()) {

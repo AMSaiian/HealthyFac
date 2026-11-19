@@ -8,7 +8,11 @@
 >
   <div class="flex flex-col gap-4">
     <div class="flex flex-col gap-1">
-      <label for="draft-title">{{ 'WORK_ORDERS.FORM.TITLE' | translate }}</label>
+      <label
+        class="hf-field-label"
+        for="draft-title"
+        >{{ 'WORK_ORDERS.FORM.TITLE' | translate }}</label
+      >
       @for (error of applyForm.title().errors(); track $index) {
         @if (isShown(applyForm.title)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
@@ -22,9 +26,14 @@
         [formField]="applyForm.title"
       />
     </div>
-    <div class="grid grid-cols-2 gap-4">
+    <p-divider />
+    <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
       <div class="flex flex-col gap-1">
-        <label for="draft-priority">{{ 'WORK_ORDERS.FORM.PRIORITY' | translate }}</label>
+        <label
+          class="hf-field-label"
+          for="draft-priority"
+          >{{ 'WORK_ORDERS.FORM.PRIORITY' | translate }}</label
+        >
         <p-select
           inputId="draft-priority"
           optionLabel="label"
@@ -35,8 +44,13 @@
         >
         </p-select>
       </div>
+      <p-divider layout="vertical" />
       <div class="flex flex-col gap-1">
-        <label for="draft-category">{{ 'WORK_ORDERS.FORM.CATEGORY' | translate }}</label>
+        <label
+          class="hf-field-label"
+          for="draft-category"
+          >{{ 'WORK_ORDERS.FORM.CATEGORY' | translate }}</label
+        >
         <p-select
           inputId="draft-category"
           optionLabel="label"
@@ -48,8 +62,13 @@
         </p-select>
       </div>
     </div>
+    <p-divider />
     <div class="flex flex-col gap-1">
-      <label for="draft-estimate">{{ 'WORK_ORDERS.FORM.ESTIMATE' | translate }}</label>
+      <label
+        class="hf-field-label"
+        for="draft-estimate"
+        >{{ 'WORK_ORDERS.FORM.ESTIMATE' | translate }}</label
+      >
       @for (error of applyForm.estimateMinutes().errors(); track $index) {
         @if (isShown(applyForm.estimateMinutes)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
@@ -57,7 +76,7 @@
       }
       <p-inputnumber
         inputId="draft-estimate"
-        suffix=" min"
+        [suffix]="estimateSuffix"
         [min]="estimateMin"
         [max]="estimateMax"
         [step]="estimateStep"
@@ -66,8 +85,9 @@
         [formField]="applyForm.estimateMinutes"
       />
     </div>
+    <p-divider />
     <div class="flex flex-col gap-1">
-      <span>{{ 'WORK_ORDERS.FORM.DESCRIPTION' | translate }}</span>
+      <span class="hf-field-label">{{ 'WORK_ORDERS.FORM.DESCRIPTION' | translate }}</span>
       <hf-rich-text-editor
         [formField]="applyForm.description"
         [characterLimit]="descriptionMaxLength"

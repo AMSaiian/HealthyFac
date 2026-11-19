@@ -19,12 +19,14 @@ import {
   ESTIMATE_MAX_MINUTES,
   ESTIMATE_MIN_MINUTES,
   ESTIMATE_STEP_MINUTES,
+  ESTIMATE_SUFFIX,
 } from '@work-orders/work-order-limits';
 import { workOrderFormSchema, type WorkOrderFormValue } from '@work-orders/work-order-schema';
+import { Divider } from 'primeng/divider';
 
 /** The dialog that edits a work order draft and applies it. It reads no store. */
 @Component({
-  imports: [ActionDialog, FormField, InputNumber, InputText, RichTextEditor, Select, TranslatePipe],
+  imports: [Divider, ActionDialog, FormField, InputNumber, InputText, RichTextEditor, Select, TranslatePipe],
   host: { class: 'contents' },
   selector: 'hf-draft-apply-dialog',
   templateUrl: './draft-apply-dialog.html',
@@ -40,6 +42,7 @@ export class DraftApplyDialog {
   protected readonly estimateMin = ESTIMATE_MIN_MINUTES;
   protected readonly estimateMax = ESTIMATE_MAX_MINUTES;
   protected readonly estimateStep = ESTIMATE_STEP_MINUTES;
+  protected readonly estimateSuffix = ESTIMATE_SUFFIX;
   private readonly _labels = toSignal(
     inject(TranslateService).stream([...Object.values(PRIORITY_LABEL_KEYS), ...Object.values(CATEGORY_LABEL_KEYS)]),
     { initialValue: {} as Record<string, string> },

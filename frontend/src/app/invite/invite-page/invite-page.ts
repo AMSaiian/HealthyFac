@@ -12,6 +12,7 @@ import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { InviteStore } from '@invite/invite.store';
 import { acceptFormSchema, type AcceptFormValue } from '@invite/invite-page/invite-page-schema';
+import { Divider } from 'primeng/divider';
 
 const ROLE_KEYS: Readonly<Record<string, string>> = {
   worker: 'EMPLOYEES.ROLES.WORKER',
@@ -19,7 +20,7 @@ const ROLE_KEYS: Readonly<Record<string, string>> = {
 };
 
 @Component({
-  imports: [ButtonDirective, FormField, InputText, LoadingSpinner, Tooltip, TranslatePipe],
+  imports: [Divider, ButtonDirective, FormField, InputText, LoadingSpinner, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 flex-1 items-center justify-center p-4' },
   selector: 'hf-invite-page',
   templateUrl: './invite-page.html',

@@ -74,12 +74,18 @@ describe('StatusDefinitionGrid', () => {
   });
 
   it.each([
-    { name: 'WithWriteOnly_HoldsOneItem', canWrite: true, canDelete: false, itemCount: 1 },
-    { name: 'WithWriteAndDelete_HoldsTwoItems', canWrite: true, canDelete: true, itemCount: 2 },
-    { name: 'WithoutPermissions_IsEmpty', canWrite: false, canDelete: false, itemCount: 0 },
+    { name: 'WithWriteOnly_HoldsShowDetailsOnly', canWrite: true, canDelete: false, itemCount: 1 },
+    { name: 'WithWriteAndDelete_HoldsShowDetailsAndDelete', canWrite: true, canDelete: true, itemCount: 2 },
+    { name: 'WithoutPermissions_HoldsShowDetailsOnly', canWrite: false, canDelete: false, itemCount: 1 },
   ])('menuItems_$name', ({ canWrite, canDelete, itemCount }) => {
     const { grid } = setup({ canWrite, canDelete });
 
     expect(grid.menuItems()).toHaveLength(itemCount);
+  });
+
+  it('menuItems_WithoutWritePermission_HoldsShowDetails', () => {
+    const { grid } = setup();
+
+    expect(grid.menuItems().map((item) => item.label)).toEqual(['ACTIONS.SHOW_DETAILS']);
   });
 });

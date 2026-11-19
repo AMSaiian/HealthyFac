@@ -1,37 +1,36 @@
 <hf-action-dialog
-  [title]="store.isUpdate() ? 'WORK_ORDERS.FORM.UPDATE_TITLE' : 'WORK_ORDERS.FORM.CREATE_TITLE'"
+  [title]="title()"
   [isSaveDisabled]="saveDisabledReason() !== null"
   [saveDisabledReason]="saveDisabledReason()"
   [isSaving]="store.isSaving()"
+  [isSaveShown]="store.isEditMode()"
+  [isEditShown]="store.isEditShown()"
+  [hasEditCancel]="store.isUpdate() && store.isEditMode()"
   (save)="onSave()"
+  (editRequested)="onEdit()"
+  (editCancelled)="store.cancelEdit()"
   (cancelled)="store.cancel()"
 >
   @if (store.prefilledValue(); as initial) {
-    @if (store.isUpdate() && store.workOrder.hasValue()) {
+    @if (store.isViewMode() && store.isUpdate() && store.workOrder.hasValue()) {
       <div class="mb-2 flex items-center justify-between gap-2">
         <p-tag
           [class]="'hf-status-' + store.workOrder.value().status"
           [value]="statusLabelKeys[store.workOrder.value().status] | translate"
         />
         @if (store.canChangeStatus()) {
-          <span
-            [pTooltip]="'WORK_ORDERS.BOARD.CHANGE_STATUS_UNSAVED' | translate"
-            [tooltipDisabled]="hasNoChanges()"
+          <button
+            pButton
+            type="button"
+            size="small"
+            severity="secondary"
+            [pTooltip]="'WORK_ORDERS.TOOLTIPS.STATUS' | translate"
+            tooltipPosition="bottom"
+            (click)="store.requestChangeStatus()"
           >
-            <button
-              pButton
-              type="button"
-              size="small"
-              severity="secondary"
-              [pTooltip]="'WORK_ORDERS.TOOLTIPS.STATUS' | translate"
-              tooltipPosition="bottom"
-              [disabled]="!hasNoChanges()"
-              (click)="store.requestChangeStatus()"
-            >
-              <i class="pi pi-flag"></i>
-              {{ 'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate }}
-            </button>
-          </span>
+            <i class="pi pi-flag"></i>
+            {{ 'WORK_ORDERS.BOARD.CHANGE_STATUS' | translate }}
+          </button>
         }
       </div>
     }
@@ -39,7 +38,7 @@
       [lazy]="true"
       [(value)]="tab"
     >
-      @if (store.isUpdate()) {
+      @if (store.isUpdate() && store.isViewMode()) {
         <p-tablist>
           <p-tab
             [pTooltip]="'WORK_ORDERS.TOOLTIPS.TAB_DETAILS' | translate"
@@ -58,22 +57,32 @@
       <p-tabpanels>
         <p-tabpanel [value]="DETAILS_TAB">
           <ng-template #content>
-            <hf-work-order-form
-              [initialValue]="initial"
-              [machines]="store.machineOptions()"
-              [isMachinesLoading]="store.machineLookup.isLoading()"
-              [fileEntries]="store.fileEntries()"
-              [isFilesLoading]="store.lookup.isLoading()"
-              [isEstimateReadOnly]="isEstimateReadOnly()"
-              (valueChange)="onValueChange($event)"
-              (validityChange)="onValidityChange($event)"
-              (uploadChosen)="onUpload($event)"
-              (pickRequested)="store.openPicker()"
-              (machineLookupRequested)="store.machineLookup.request($event)"
-            />
+            @if (store.isViewMode()) {
+              <hf-work-order-details
+                [value]="initial"
+                [machineName]="store.workOrder.hasValue() ? store.workOrder.value().machineName : null"
+                [fileEntries]="store.fileEntries()"
+                [isFilesLoading]="store.lookup.isLoading()"
+                [descriptionLinks]="store.descriptionLinks()"
+              />
+            } @else {
+              <hf-work-order-form
+                [initialValue]="initial"
+                [machines]="store.machineOptions()"
+                [isMachinesLoading]="store.machineLookup.isLoading()"
+                [fileEntries]="store.fileEntries()"
+                [isFilesLoading]="store.lookup.isLoading()"
+                [isEstimateReadOnly]="isEstimateReadOnly()"
+                (valueChange)="onValueChange($event)"
+                (validityChange)="onValidityChange($event)"
+                (uploadChosen)="onUpload($event)"
+                (pickRequested)="store.openPicker()"
+                (machineLookupRequested)="store.machineLookup.request($event)"
+              />
+            }
           </ng-template>
         </p-tabpanel>
-        @if (store.isUpdate()) {
+        @if (store.isUpdate() && store.isViewMode()) {
           <p-tabpanel [value]="HISTORY_TAB">
             <ng-template #content>
               <hf-work-order-history

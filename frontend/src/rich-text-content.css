@@ -1,0 +1,162 @@
+/*
+ * The content style of a rich text, for the editor (`hf-rich-text-editor`) and for the read-only view (`.hf-rich-text`).
+ * Quill core is unlayered and wins over every layered rule, so this file is unlayered too and loads after it. Each rule
+ * names both targets in one selector list, so the two cannot drift apart (`rich-text-content.spec.ts`). A selector of
+ * one target that matches nothing in the other markup still stays in the list: the editor writes every list as one
+ * `ol` of `li[data-list]`, and the view holds the stored `ul`, `ol`, and `hf-check-*` items.
+ */
+hf-rich-text-editor .ql-container,
+hf-rich-text-editor .ql-editor,
+.hf-rich-text {
+  font-family: inherit;
+  font-size: var(--p-form-field-font-size);
+  line-height: 1.5;
+  color: var(--p-text-color);
+}
+
+hf-rich-text-editor .ql-editor p,
+.hf-rich-text p {
+  margin: 0;
+  padding: 0;
+}
+
+hf-rich-text-editor .ql-editor .ql-size-small,
+.hf-rich-text .ql-size-small {
+  font-size: 0.75em;
+}
+
+hf-rich-text-editor .ql-editor .ql-size-large,
+.hf-rich-text .ql-size-large {
+  font-size: 1.5em;
+}
+
+hf-rich-text-editor .ql-editor .ql-size-huge,
+.hf-rich-text .ql-size-huge {
+  font-size: 2.5em;
+}
+
+hf-rich-text-editor .ql-editor a,
+.hf-rich-text a {
+  color: var(--p-primary-color);
+  text-decoration: underline;
+}
+
+hf-rich-text-editor .ql-editor img,
+.hf-rich-text img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* One indent of 1.5rem per level: the list holds the first one, each `ql-indent-N` item or nested list adds one. */
+hf-rich-text-editor .ql-editor ol,
+.hf-rich-text ul,
+.hf-rich-text ol {
+  margin: 0;
+  padding-inline-start: 1.5rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list]:not(.ql-direction-rtl),
+.hf-rich-text li {
+  padding-inline-start: 0;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-1:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-1 {
+  padding-inline-start: 1.5rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-2:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-2 {
+  padding-inline-start: 3rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-3:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-3 {
+  padding-inline-start: 4.5rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-4:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-4 {
+  padding-inline-start: 6rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-5:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-5 {
+  padding-inline-start: 7.5rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-6:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-6 {
+  padding-inline-start: 9rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-7:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-7 {
+  padding-inline-start: 10.5rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-8:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-8 {
+  padding-inline-start: 12rem;
+}
+
+hf-rich-text-editor .ql-editor li[data-list].ql-indent-9:not(.ql-direction-rtl),
+.hf-rich-text li.ql-indent-9 {
+  padding-inline-start: 13.5rem;
+}
+
+hf-rich-text-editor .ql-editor ul,
+.hf-rich-text ul:not(:has(> li.hf-check-checked, > li.hf-check-unchecked)) {
+  list-style-type: disc;
+}
+
+hf-rich-text-editor .ql-editor ol,
+.hf-rich-text ol {
+  list-style-type: decimal;
+}
+
+hf-rich-text-editor .ql-editor ol ol,
+.hf-rich-text ol ol {
+  list-style-type: lower-alpha;
+}
+
+hf-rich-text-editor .ql-editor ol ol ol,
+.hf-rich-text ol ol ol {
+  list-style-type: lower-roman;
+}
+
+hf-rich-text-editor .ql-editor li[data-list='checked'],
+hf-rich-text-editor .ql-editor li[data-list='unchecked'],
+.hf-rich-text li.hf-check-checked,
+.hf-rich-text li.hf-check-unchecked {
+  position: relative;
+  list-style: none;
+}
+
+hf-rich-text-editor .ql-editor li[data-list='checked'] > .ql-ui::before,
+hf-rich-text-editor .ql-editor li[data-list='unchecked'] > .ql-ui::before,
+.hf-rich-text li.hf-check-checked::before,
+.hf-rich-text li.hf-check-unchecked::before {
+  display: inline-block;
+  width: 1.2rem;
+  margin-inline: -1.5rem 0.3rem;
+  color: var(--p-text-color);
+  text-align: right;
+  white-space: nowrap;
+}
+
+hf-rich-text-editor .ql-editor li[data-list='unchecked'] > .ql-ui::before,
+.hf-rich-text li.hf-check-unchecked::before {
+  content: '\2610';
+}
+
+hf-rich-text-editor .ql-editor li[data-list='checked'] > .ql-ui::before,
+.hf-rich-text li.hf-check-checked::before {
+  content: '\2611';
+}
+
+hf-rich-text-editor .ql-editor li[data-list='checked'],
+.hf-rich-text li.hf-check-checked {
+  color: var(--p-text-muted-color);
+  text-decoration: line-through;
+}

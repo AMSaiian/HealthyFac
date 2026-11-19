@@ -26,7 +26,7 @@
         @for (row of store.rows(); track row.field) {
           <section class="flex flex-col gap-2 rounded-border border border-surface p-3">
             <h3 class="font-semibold">{{ labelKey(row) | translate }}</h3>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
               <div class="flex min-w-0 flex-col gap-1">
                 <span class="text-sm text-muted-color">{{ 'DRAFTS.COMPARE.CURRENT' | translate }}</span>
                 @if (row.field === StatusCompareField.Severity) {
@@ -35,6 +35,7 @@
                   <hf-rich-text-view [html]="row.current ?? ''" />
                 }
               </div>
+              <p-divider layout="vertical" />
               <div class="flex min-w-0 flex-col gap-1">
                 <span class="text-sm text-muted-color">{{ 'DRAFTS.COMPARE.PROPOSED' | translate }}</span>
                 @if (!row.canTake) {

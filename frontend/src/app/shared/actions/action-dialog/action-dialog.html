@@ -7,22 +7,56 @@
   [pt]="hiddenClosePt"
   [dismissableMask]="!isSaving()"
   [closeOnEscape]="false"
-  [header]="title() | translate"
   [(visible)]="isVisible"
   (onHide)="cancelled.emit()"
 >
+  <ng-template
+    #header
+    let-ariaLabelledBy="ariaLabelledBy"
+  >
+    <div class="flex w-full items-center justify-between gap-2">
+      <span
+        class="p-dialog-title min-w-0 truncate"
+        [id]="ariaLabelledBy"
+        >{{ title() | translate }}</span
+      >
+      @if (isEditShown()) {
+        <button
+          pButton
+          class="-my-1.5 flex-none"
+          type="button"
+          iconOnly
+          [text]="true"
+          severity="secondary"
+          [pTooltip]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+          tooltipPosition="bottom"
+          [attr.aria-label]="'ACTIONS.TOOLTIPS.EDIT' | translate"
+          (click)="editRequested.emit()"
+        >
+          <i class="pi pi-pencil"></i>
+        </button>
+      }
+    </div>
+  </ng-template>
   <div [class]="bodyClass()">
     <ng-content />
   </div>
   <ng-template #footer>
     <button
       pButton
-      [pTooltip]="(isSaveShown() ? 'ACTIONS.TOOLTIPS.CANCEL' : 'ACTIONS.TOOLTIPS.CLOSE') | translate"
+      [pTooltip]="
+        (hasEditCancel()
+          ? 'ACTIONS.TOOLTIPS.CANCEL_EDIT'
+          : isSaveShown()
+            ? 'ACTIONS.TOOLTIPS.CANCEL'
+            : 'ACTIONS.TOOLTIPS.CLOSE'
+        ) | translate
+      "
       tooltipPosition="bottom"
       type="button"
       severity="secondary"
       [disabled]="isSaving()"
-      (click)="cancelled.emit()"
+      (click)="hasEditCancel() ? editCancelled.emit() : cancelled.emit()"
     >
       {{ (isSaveShown() ? 'ACTIONS.CANCEL' : 'ACTIONS.CLOSE') | translate }}
     </button>

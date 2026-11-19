@@ -20,9 +20,19 @@ import type { StatusDefinitionFormValue } from '@machines/statuses/drawer/status
 import type { StatusSeverity } from '@machines/statuses/status-definition';
 import { SEVERITY_LABEL_KEYS } from '@machines/statuses/status-definition.utils';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
+import { Divider } from 'primeng/divider';
 
 @Component({
-  imports: [ActionDialog, Checkbox, FormsModule, LoadingSpinner, RichTextView, StatusDefinitionForm, TranslatePipe],
+  imports: [
+    Divider,
+    ActionDialog,
+    Checkbox,
+    FormsModule,
+    LoadingSpinner,
+    RichTextView,
+    StatusDefinitionForm,
+    TranslatePipe,
+  ],
   host: { class: 'contents' },
   providers: [DraftsApi, StatusDefinitionsApi, StatusDraftReviewStore],
   selector: 'hf-status-draft-review-host',

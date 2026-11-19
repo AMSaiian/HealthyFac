@@ -17,10 +17,22 @@ import {
   type MachineFormValue,
   REQUIRED_ERROR_KEY,
 } from '@machines/drawer/machine-form/machine-form-schema';
+import { copyText } from '@shared/clipboard/copy-text';
 import { DESCRIPTION_MAX_LENGTH } from '@machines/machine-limits';
+import { Divider } from 'primeng/divider';
 
 @Component({
-  imports: [ButtonDirective, FormField, InputText, PlainDatePicker, RichTextEditor, Select, Tooltip, TranslatePipe],
+  imports: [
+    Divider,
+    ButtonDirective,
+    FormField,
+    InputText,
+    PlainDatePicker,
+    RichTextEditor,
+    Select,
+    Tooltip,
+    TranslatePipe,
+  ],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-machine-form',
   templateUrl: './machine-form.html',
@@ -50,7 +62,7 @@ export class MachineForm {
   protected copyGatewayId(): void {
     const gatewayId = this.gatewayId();
     if (gatewayId !== null) {
-      void navigator.clipboard.writeText(gatewayId);
+      copyText(gatewayId);
     }
   }
 

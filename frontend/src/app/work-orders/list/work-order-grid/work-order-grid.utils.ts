@@ -58,7 +58,7 @@ export const CATEGORY_LABEL_KEYS: Readonly<Record<WorkOrderCategory, string>> = 
 };
 
 export const MENU_KEYS = {
-  open: 'ACTIONS.OPEN',
+  showDetails: 'ACTIONS.SHOW_DETAILS',
   assign: 'WORK_ORDERS.MENU.ASSIGN',
   move: 'WORK_ORDERS.MENU.MOVE',
   unassign: 'WORK_ORDERS.MENU.UNASSIGN',
@@ -104,10 +104,13 @@ export const ALL_FILTER_WRITERS: Readonly<Record<WorkOrderColumn, (filter: WorkO
 };
 
 export const MENU_TOOLTIP_KEYS = {
-  open: 'WORK_ORDERS.TOOLTIPS.OPEN',
+  showDetails: 'ACTIONS.TOOLTIPS.SHOW_DETAILS',
   assign: 'WORK_ORDERS.TOOLTIPS.ASSIGN',
   move: 'WORK_ORDERS.TOOLTIPS.MOVE',
   unassign: 'WORK_ORDERS.TOOLTIPS.UNASSIGN',
   status: 'WORK_ORDERS.TOOLTIPS.STATUS',
   delete: 'WORK_ORDERS.TOOLTIPS.DELETE',
 } as const;
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly WorkOrderColumn[] = [WorkOrderColumn.Title, WorkOrderColumn.Machine];

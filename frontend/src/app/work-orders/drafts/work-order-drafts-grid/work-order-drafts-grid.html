@@ -24,6 +24,8 @@
   (onPage)="grid.onPage($event)"
   (onSort)="grid.onSort($event)"
   (onColReorder)="grid.onColumnReorder($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template
     #header
@@ -32,6 +34,8 @@
     <tr>
       @for (column of columns; track column) {
         <th
+          [style.min-width]="grid.columnWidth(column)"
+          pResizableColumn
           pReorderableColumn
           [pSortableColumn]="column"
           [pSortableColumnDisabled]="!grid.isSortable(column)"
@@ -71,14 +75,17 @@
           } @else {
             @switch (column) {
               @case (WorkOrderDraftColumn.Title) {
-                {{ draft.title }}
+                <hf-cell-text [text]="draft.title" />
               }
               @case (WorkOrderDraftColumn.Machine) {
                 @let machine = machineLabel(draft);
-                {{ machine.name }}
-                @if (machine.isDeleted) {
-                  <span class="text-muted-color">{{ 'MACHINES.DELETED_SUFFIX' | translate }}</span>
-                }
+                <hf-cell-text [text]="machine.name">
+                  @if (machine.isDeleted) {
+                    <span class="text-muted-color shrink-0 whitespace-nowrap">{{
+                      'MACHINES.DELETED_SUFFIX' | translate
+                    }}</span>
+                  }
+                </hf-cell-text>
               }
               @case (WorkOrderDraftColumn.Priority) {
                 {{ priorityLabel(draft.priority) }}
@@ -111,7 +118,7 @@
       >
         @if (grid.showSkeleton()) {
           <p-skeleton />
-        } @else if (hasRowActions()) {
+        } @else {
           <button
             pButton
             [pTooltip]="'ACTIONS.ROW_ACTIONS' | translate"
@@ -145,23 +152,7 @@
     </tr>
   </ng-template>
 </p-table>
-<p-menu
+<hf-row-menu-popup
   #menu
-  appendTo="body"
-  [popup]="true"
   [model]="menuItems()"
->
-  <ng-template
-    #item
-    let-item
-  >
-    <div
-      class="p-menu-item-link flex items-center gap-2 px-3 py-2"
-      [pTooltip]="item.tooltip"
-      [tooltipOptions]="item.tooltipOptions"
-    >
-      <span [class]="item.icon"></span>
-      <span>{{ item.label }}</span>
-    </div>
-  </ng-template>
-</p-menu>
+/>

@@ -25,6 +25,8 @@
   [filters]="grid.tableFilters()"
   (onPage)="grid.onPage($event)"
   (onSort)="grid.onSort($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template #header>
     <tr>
@@ -42,6 +44,8 @@
       }
       @for (column of visibleColumns(); track column) {
         <th
+          [style.min-width]="grid.columnWidth(column)"
+          pResizableColumn
           [pSortableColumn]="column"
           [pSortableColumnDisabled]="!grid.isSortable(column)"
         >
@@ -169,19 +173,13 @@
                 />
               }
               @case (DraftColumn.Machine) {
-                <span class="block max-w-xs truncate">{{
-                  machineTitleOf(draft).key | translate: { name: machineTitleOf(draft).name }
-                }}</span>
+                <hf-cell-text [text]="machineTitleOf(draft).key | translate: { name: machineTitleOf(draft).name }" />
               }
               @case (DraftColumn.Label) {
-                <span
-                  class="block max-w-xs truncate"
-                  [title]="draft.label ?? ''"
-                  >{{ draft.label ?? ('DRAFTS.UNNAMED' | translate) }}</span
-                >
+                <hf-cell-text [text]="draft.label ?? ('DRAFTS.UNNAMED' | translate)" />
               }
               @case (DraftColumn.SourceLocation) {
-                {{ draft.sourceLocation }}
+                <hf-cell-text [text]="draft.sourceLocation" />
               }
               @case (DraftColumn.ProposedAt) {
                 {{ draft.proposedAt | localDateTime }}
@@ -225,29 +223,7 @@
     </tr>
   </ng-template>
 </p-table>
-<p-menu
+<hf-row-menu-popup
   #menu
-  appendTo="body"
-  [popup]="true"
   [model]="menuItems()"
->
-  <ng-template
-    #item
-    let-item
-  >
-    <a
-      class="p-menu-item-link"
-      [pTooltip]="item.tooltip ?? ''"
-      [tooltipOptions]="item.tooltipOptions"
-      tooltipPosition="bottom"
-      [style.pointer-events]="'auto'"
-      [style.cursor]="item.disabled ? 'not-allowed' : null"
-    >
-      <span
-        class="p-menu-item-icon"
-        [class]="item.icon"
-      ></span>
-      <span class="p-menu-item-label">{{ item.label }}</span>
-    </a>
-  </ng-template>
-</p-menu>
+/>

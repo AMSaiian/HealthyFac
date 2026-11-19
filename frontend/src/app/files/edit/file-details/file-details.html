@@ -1,0 +1,22 @@
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'FILES.EDIT_DIALOG.NAME' | translate }}</span>
+  <span class="hf-field-text">{{ value().fileName || emptyCell }}</span>
+  <small class="text-muted-color flex items-center gap-1">
+    {{ 'FILES.EDIT_DIALOG.EXTENSION_HINT' | translate }}
+    <hf-file-type-tag [extension]="extension()" />
+  </small>
+</div>
+<p-divider />
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'FILES.EDIT_DIALOG.DESCRIPTION' | translate }}</span>
+  @if (value().description; as description) {
+    <div class="hf-field-text">
+      <hf-rich-text-view
+        [html]="description"
+        [links]="descriptionLinks()"
+      />
+    </div>
+  } @else {
+    <span class="hf-field-text">{{ emptyCell }}</span>
+  }
+</div>

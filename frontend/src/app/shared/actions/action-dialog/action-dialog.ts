@@ -25,8 +25,17 @@ export class ActionDialog {
   readonly widthClass = input('w-[40rem] max-w-[95vw]');
   /** A grid body fills the dialog height and does not scroll: the grid scrolls inside it. */
   readonly hasGrid = input(false);
+  /** Shows the pencil at the right end of the header. */
+  readonly isEditShown = input(false);
+  /**
+   * Makes the footer **Cancel** button emit `editCancelled` instead of `cancelled`, so a dialog in edit mode returns to
+   * its details and stays open. Escape, the backdrop, and the **Close** button still emit `cancelled`.
+   */
+  readonly hasEditCancel = input(false);
   readonly save = output<void>();
   readonly cancelled = output<void>();
+  readonly editRequested = output<void>();
+  readonly editCancelled = output<void>();
 
   protected readonly isVisible = signal(true);
   private readonly _dialog = viewChild.required(Dialog);

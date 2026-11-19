@@ -6,13 +6,14 @@ import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
 import { OperatingPhasesPageStore } from '@machines/phases/operating-phases-page-store/operating-phases-page.store';
+import { PhaseDetails } from '@machines/phases/phase-details/phase-details';
 import { PhaseForm } from '@machines/phases/phase-form/phase-form';
 import { phaseFormSchema, type PhaseFormValue } from '@machines/phases/phase-form/phase-form-schema';
 import { EMPTY_FORM_VALUE, toFormValue } from '@machines/phases/phase-form/phase-form.utils';
 
 /** The action host of the phase dialog. It reads the page store and starts the save. */
 @Component({
-  imports: [ActionDialog, LoadingSpinner, PhaseForm],
+  imports: [ActionDialog, LoadingSpinner, PhaseDetails, PhaseForm],
   host: { class: 'contents' },
   selector: 'hf-phase-dialog-host',
   templateUrl: './phase-dialog-host.html',
@@ -28,6 +29,12 @@ export class PhaseDialogHost {
     return phase === null ? null : toFormValue(phase);
   });
   protected readonly isNew = computed(() => this.store.editor()?.phaseId === null);
+  protected readonly title = computed((): string => {
+    if (this.store.isViewMode()) {
+      return 'PHASES.FORM.DETAILS_TITLE';
+    }
+    return this.isNew() ? 'PHASES.FORM.CREATE_TITLE' : 'PHASES.FORM.UPDATE_TITLE';
+  });
   protected readonly isReady = computed(
     () => this.initialValue() !== null && this.store.metrics.hasValue() && this.store.statuses.hasValue(),
   );
@@ -50,6 +57,12 @@ export class PhaseDialogHost {
       !this.isNew() && initial !== null && current !== null && !hasFormChanges(phaseFormSchema, initial, current);
     return hasNoChanges ? 'FORMS.NO_CHANGES' : null;
   });
+
+  protected onEdit(): void {
+    this.store.edit();
+    this._current.set(null);
+    this._isValid.set(false);
+  }
 
   protected onValueChange(value: PhaseFormValue): void {
     this._current.set(value);

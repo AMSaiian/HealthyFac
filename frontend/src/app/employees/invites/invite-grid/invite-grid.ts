@@ -1,20 +1,21 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
 import { Skeleton } from 'primeng/skeleton';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { EmployeeRole } from '@shared/employee/employee';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import type { GridSort } from '@shared/grid/requests/grid-request';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { asText } from '@shared/grid/table/table-filters';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
@@ -27,7 +28,7 @@ import {
   type InviteSort,
   InviteSortColumn,
 } from '@employees/employee';
-import { INVITE_MENU_KEYS, inviteMenuItems } from './invite-grid.utils';
+import { INVITE_MENU_KEYS, inviteMenuItems, TEXT_COLUMNS } from './invite-grid.utils';
 
 const COLUMN_LABEL_KEYS: Readonly<Record<InviteColumn, string>> = {
   [InviteColumn.Email]: 'EMPLOYEES.COLUMNS.EMAIL',
@@ -56,13 +57,14 @@ const FILTER_WRITERS: Readonly<Record<InviteColumn, (filter: InviteFilter) => un
 
 @Component({
   imports: [
+    CellText,
     ButtonDirective,
     ColumnFilter,
     EmptyState,
     FormsModule,
     InputText,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     Skeleton,
     SortIcon,
     TableModule,
@@ -101,6 +103,8 @@ export class InviteGrid {
     { initialValue: {} as Record<string, string> },
   );
 
+  private readonly _table = viewChild(Table);
+
   protected readonly grid = createGridTable<InviteRow, InviteColumn, InviteFilter, InviteSortColumn>({
     allColumns: INVITE_COLUMNS,
     columns: signal(INVITE_COLUMNS),
@@ -117,6 +121,8 @@ export class InviteGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: () => undefined,
     columnsReorder: () => undefined,
   });

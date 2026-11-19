@@ -12,9 +12,10 @@ import {
   statusDefinitionFormSchema,
   type StatusDefinitionFormValue,
 } from '@machines/statuses/drawer/status-definition-form/status-definition-form-schema';
+import { Divider } from 'primeng/divider';
 
 @Component({
-  imports: [FormField, InputText, RichTextEditor, Select, TranslatePipe],
+  imports: [Divider, FormField, InputText, RichTextEditor, Select, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-status-definition-form',
   templateUrl: './status-definition-form.html',

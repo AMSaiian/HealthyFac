@@ -6,13 +6,14 @@ import { hasFormChanges } from '@shared/forms/form-changes';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
+import { FileDetails } from '@files/edit/file-details/file-details';
 import { FileEditForm } from '@files/edit/file-edit-form/file-edit-form';
 import { fileEditFormSchema, type FileEditFormValue } from '@files/edit/file-edit-form/file-edit-form-schema';
 import { FileEditStore } from '@files/edit/file-edit.store';
 import { FilesApi } from '@files/files-api';
 
 @Component({
-  imports: [ActionDialog, FileEditForm, LoadingSpinner],
+  imports: [ActionDialog, FileDetails, FileEditForm, LoadingSpinner],
   host: { class: 'contents' },
   providers: [FilesApi, FileEditStore],
   selector: 'hf-file-edit-host',
@@ -27,6 +28,9 @@ export class FileEditHost {
   private readonly _current = signal<FileEditFormValue | null>(null);
   private readonly _isValid = signal(false);
 
+  protected readonly title = computed((): string =>
+    this.store.isViewMode() ? 'FILES.EDIT_DIALOG.DETAILS_TITLE' : 'FILES.EDIT_DIALOG.TITLE',
+  );
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
       return 'FORMS.INVALID';
@@ -42,6 +46,12 @@ export class FileEditHost {
     effect(() => {
       this.store.start(this.action());
     });
+  }
+
+  protected onEdit(): void {
+    this.store.edit();
+    this._current.set(null);
+    this._isValid.set(false);
   }
 
   protected onValueChange(value: FileEditFormValue): void {

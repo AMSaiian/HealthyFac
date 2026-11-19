@@ -8,10 +8,11 @@ import type { Temporal } from '@shared/time/temporal';
 import { BlockListEditor } from '@employees/shifts/block-list-editor/block-list-editor';
 import { overrideFormSchema, type OverrideFormValue } from '@employees/shifts/override-dialog/override-dialog-schema';
 import type { ShiftBlock } from '@employees/shifts/shift';
+import { Divider } from 'primeng/divider';
 
 /** The form of an override: one date and its blocks. No block means a day off. */
 @Component({
-  imports: [BlockListEditor, PlainDatePicker, TranslatePipe],
+  imports: [Divider, BlockListEditor, PlainDatePicker, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-override-dialog',
   templateUrl: './override-dialog.html',

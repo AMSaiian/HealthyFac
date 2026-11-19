@@ -1,9 +1,14 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
+import { DetailsMode } from '@shared/forms/with-details-mode';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { Permission } from '@shared/security/permissions';
 import { type StatusDefinition, StatusSeverity } from '@machines/statuses/status-definition';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 
@@ -37,7 +42,10 @@ function httpError(status: number): HttpErrorResponse {
   return new HttpErrorResponse({ status, statusText: String(status) });
 }
 
-function setup(overrides: Partial<Setup['api']> = {}): Setup {
+function setup(
+  overrides: Partial<Setup['api']> = {},
+  permissions: readonly Permission[] = [Permission.StatusDefinitionsWrite],
+): Setup {
   const messages = { add: vi.fn() };
   const api = {
     get: vi.fn(() => of(STATUS_DEFINITION)),
@@ -50,6 +58,8 @@ function setup(overrides: Partial<Setup['api']> = {}): Setup {
       StatusDefinitionDrawerStore,
       { provide: StatusDefinitionsApi, useValue: api },
       { provide: MessageService, useValue: messages },
+      { provide: AuthStore, useValue: { hasPermission: (permission: Permission) => permissions.includes(permission) } },
+      { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });
@@ -80,6 +90,82 @@ describe('StatusDefinitionDrawerStore', () => {
     expect(api.update).toHaveBeenCalledWith(MACHINE_ID, STATUS_DEFINITION.id, TRIMMED_BODY, expect.anything());
     expect(api.create).not.toHaveBeenCalled();
     expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it('start_ForExisting_IsViewMode', () => {
+    const { store } = setup();
+
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+
+    expect(store.mode()).toBe(DetailsMode.View);
+  });
+
+  it('start_ForNew_IsEditMode', () => {
+    const { store } = setup();
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+
+    store.start(MACHINE_ID, null);
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+  });
+
+  it('isEditShown_WithoutWritePermission_IsFalse', async () => {
+    const { store } = setup({}, [Permission.StatusDefinitionsRead]);
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store.isEditShown()).toBe(false);
+  });
+
+  it('isEditShown_WithWritePermissionAfterLoad_IsTrue', async () => {
+    const { store } = setup();
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+    const beforeLoad = store.isEditShown();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(beforeLoad).toBe(false);
+    expect(store.isEditShown()).toBe(true);
+  });
+
+  it('save_WithExistingStatusDefinition_ReloadsAndReturnsToView', async () => {
+    const { store, api, saved } = setup();
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    store.edit();
+
+    store.save({ value: VALUE, onSaved: saved });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(store.mode()).toBe(DetailsMode.View);
+    expect(saved).toHaveBeenCalledTimes(1);
+  });
+
+  it('save_WithConflict_StaysInEditMode', async () => {
+    const { store, saved } = setup({ update: vi.fn(() => throwError(() => httpError(HttpStatusCode.Conflict))) });
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    store.edit();
+
+    store.save({ value: VALUE, onSaved: saved });
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+    expect(saved).not.toHaveBeenCalled();
+  });
+
+  it('cancelEdit_ForExisting_ReturnsToView', () => {
+    const { store } = setup();
+    store.start(MACHINE_ID, STATUS_DEFINITION.id);
+    store.edit();
+
+    store.cancelEdit();
+
+    expect(store.mode()).toBe(DetailsMode.View);
   });
 
   it('save_WithConflict_ShowsCodeTakenToastAndEmitsNoSaved', () => {

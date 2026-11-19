@@ -69,3 +69,6 @@ export const MENU_TOOLTIP_KEYS = {
   schedule: 'EMPLOYEES.TOOLTIPS.SCHEDULE',
   retry: 'EMPLOYEES.TOOLTIPS.RETRY_PROVISIONING',
 } as const;
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly EmployeeColumn[] = [EmployeeColumn.Name, EmployeeColumn.Email];

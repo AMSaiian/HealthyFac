@@ -12,9 +12,10 @@ import { MachinesApi } from '@machines/machines-api';
 import { MachineDrawerStore } from '@machines/drawer/machine-drawer.store';
 import { machineFormSchema, type MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
 import { MachineForm } from '@machines/drawer/machine-form/machine-form';
+import { MachineDetails } from '@machines/drawer/machine-details/machine-details';
 
 @Component({
-  imports: [ActionDialog, LoadingSpinner, MachineForm],
+  imports: [ActionDialog, LoadingSpinner, MachineDetails, MachineForm],
   host: { class: 'contents' },
   providers: [MachinesApi, DraftsApi, MachineDrawerStore],
   selector: 'hf-machine-drawer-host',
@@ -40,6 +41,12 @@ export class MachineDrawerHost {
       !hasFormChanges(machineFormSchema, initial, current)
     );
   });
+  protected readonly title = computed((): string => {
+    if (this.store.isViewMode()) {
+      return 'MACHINES.FORM.DETAILS_TITLE';
+    }
+    return this.store.isUpdate() ? 'MACHINES.FORM.UPDATE_TITLE' : 'MACHINES.FORM.CREATE_TITLE';
+  });
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
       return 'FORMS.INVALID';
@@ -51,6 +58,12 @@ export class MachineDrawerHost {
     effect(() => {
       this.store.start(this.action());
     });
+  }
+
+  protected onEdit(): void {
+    this.store.edit();
+    this._current.set(null);
+    this._isValid.set(false);
   }
 
   protected onValueChange(value: MachineFormValue): void {

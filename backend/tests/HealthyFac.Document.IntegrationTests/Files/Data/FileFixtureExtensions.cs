@@ -116,6 +116,23 @@ public static class FileFixtureExtensions
             return await handler.HandleAsync(request);
         }
 
+        public async Task<FileGridItem> GetCompanyFileAsync(Guid companyId, Guid id)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<GetFileRequest, FileGridItem>>();
+
+            return await handler.HandleAsync(new GetFileRequest { CompanyId = companyId, Id = id });
+        }
+
+        public async Task<FileGridItem> GetMachineFileAsync(Guid companyId, Guid machineId, Guid id)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<GetFileRequest, FileGridItem>>();
+
+            return await handler.HandleAsync(
+                new GetFileRequest { CompanyId = companyId, MachineId = machineId, Id = id });
+        }
+
         public async Task UpdateCompanyFileAsync(
             Guid companyId,
             UpdateFileRequest request

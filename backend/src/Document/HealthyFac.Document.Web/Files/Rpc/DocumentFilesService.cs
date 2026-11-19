@@ -9,6 +9,7 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using ContractFileInfo = HealthyFac.Document.Contracts.Files.FileInfo;
+using ContractGetFileRequest = HealthyFac.Document.Contracts.Files.GetFileRequest;
 
 namespace HealthyFac.Document.Web.Files.Rpc;
 
@@ -31,7 +32,7 @@ public sealed class DocumentFilesService(
     private readonly IRequestHandler<GetIngestFileLinkRequest, IngestFileLinkResponse> _linkHandler = linkHandler;
     private readonly ICurrentUserProvider _currentUser = currentUser;
 
-    public override async Task<ContractFileInfo> GetFile(GetFileRequest request, ServerCallContext context)
+    public override async Task<ContractFileInfo> GetFile(ContractGetFileRequest request, ServerCallContext context)
     {
         var response = await _fileHandler.HandleAsync(
             new GetIngestFileRequest

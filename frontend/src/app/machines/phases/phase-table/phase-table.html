@@ -5,20 +5,25 @@
   [rowHover]="true"
   [stripedRows]="true"
   (onRowReorder)="onRowReorder($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template #header>
     <tr>
       @if (canWrite()) {
         <th class="w-12"></th>
       }
-      <th>{{ 'PHASES.COLUMNS.NAME' | translate }}</th>
-      <th>{{ 'PHASES.COLUMNS.CODE' | translate }}</th>
-      <th>{{ 'PHASES.COLUMNS.TRACKED' | translate }}</th>
-      <th>{{ 'PHASES.COLUMNS.CONDITIONS' | translate }}</th>
-      <th>{{ 'PHASES.COLUMNS.LIMITS' | translate }}</th>
-      @if (canWrite()) {
-        <th class="w-28"></th>
-      }
+      <th
+        pResizableColumn
+        [style.min-width]="textColumnWidth"
+      >
+        {{ 'PHASES.COLUMNS.NAME' | translate }}
+      </th>
+      <th pResizableColumn>{{ 'PHASES.COLUMNS.CODE' | translate }}</th>
+      <th pResizableColumn>{{ 'PHASES.COLUMNS.TRACKED' | translate }}</th>
+      <th pResizableColumn>{{ 'PHASES.COLUMNS.CONDITIONS' | translate }}</th>
+      <th pResizableColumn>{{ 'PHASES.COLUMNS.LIMITS' | translate }}</th>
+      <th class="w-28"></th>
     </tr>
   </ng-template>
   <ng-template
@@ -37,8 +42,8 @@
           ></span>
         </td>
       }
-      <td>{{ phase.name }}</td>
-      <td>{{ phase.code }}</td>
+      <td><hf-cell-text [text]="phase.name" /></td>
+      <td><hf-cell-text [text]="phase.code" /></td>
       <td>
         <p-tag
           [severity]="phase.isTracked ? 'success' : 'secondary'"
@@ -47,22 +52,22 @@
       </td>
       <td>{{ phase.conditions.length }}</td>
       <td>{{ phase.limits.length }}</td>
-      @if (canWrite()) {
-        <td>
-          <div class="flex justify-end gap-1">
-            <button
-              pButton
-              [pTooltip]="'ACTIONS.TOOLTIPS.EDIT' | translate"
-              tooltipPosition="bottom"
-              type="button"
-              severity="secondary"
-              iconOnly
-              [text]="true"
-              [attr.aria-label]="'ACTIONS.TOOLTIPS.EDIT' | translate"
-              (click)="updateRequested.emit(phase.id)"
-            >
-              <i class="pi pi-pencil"></i>
-            </button>
+      <td>
+        <div class="flex justify-end gap-1">
+          <button
+            pButton
+            [pTooltip]="'ACTIONS.TOOLTIPS.SHOW_DETAILS' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            severity="secondary"
+            iconOnly
+            [text]="true"
+            [attr.aria-label]="'ACTIONS.TOOLTIPS.SHOW_DETAILS' | translate"
+            (click)="updateRequested.emit(phase.id)"
+          >
+            <i class="pi pi-eye"></i>
+          </button>
+          @if (canWrite()) {
             <button
               pButton
               [pTooltip]="'ACTIONS.TOOLTIPS.DELETE' | translate"
@@ -76,9 +81,9 @@
             >
               <i class="pi pi-trash"></i>
             </button>
-          </div>
-        </td>
-      }
+          }
+        </div>
+      </td>
     </tr>
   </ng-template>
 </p-table>

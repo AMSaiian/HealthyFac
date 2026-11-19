@@ -1,20 +1,21 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { Menu } from 'primeng/menu';
 import { Skeleton } from 'primeng/skeleton';
-import { SortIcon, TableModule } from 'primeng/table';
+import { SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { type MachineLabel, machineLabelOf } from '@shared/lookups/lookup-options';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 
@@ -26,24 +27,29 @@ import {
 } from '@work-orders/drafts/work-order-draft';
 import {
   APPLY_KEY,
+  APPLY_NO_RIGHT_KEY,
   APPLY_TOOLTIP_KEY,
   COLUMN_LABEL_KEYS,
   DISMISS_KEY,
+  DISMISS_NO_RIGHT_KEY,
   DISMISS_TOOLTIP_KEY,
   FILTER_READERS,
   FILTER_WRITERS,
   SORTABLE_COLUMNS,
+  TEXT_COLUMNS,
   UNKNOWN_MACHINE_KEY,
+  workOrderDraftMenuItems,
 } from '@work-orders/drafts/work-order-drafts-grid/work-order-drafts-grid.utils';
 import { CATEGORY_LABEL_KEYS, PRIORITY_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 
 @Component({
   imports: [
+    CellText,
     ButtonDirective,
     ColumnChooser,
     EmptyState,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     RouterLink,
     Skeleton,
     SortIcon,
@@ -90,10 +96,14 @@ export class WorkOrderDraftsGrid {
       APPLY_TOOLTIP_KEY,
       DISMISS_KEY,
       DISMISS_TOOLTIP_KEY,
+      APPLY_NO_RIGHT_KEY,
+      DISMISS_NO_RIGHT_KEY,
       UNKNOWN_MACHINE_KEY,
     ]),
     { initialValue: {} as Record<string, string> },
   );
+
+  private readonly _table = viewChild(Table);
 
   protected readonly grid = createGridTable<
     WorkOrderDraft,
@@ -116,47 +126,27 @@ export class WorkOrderDraftsGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: (columns) => this.columnsChange.emit(columns),
     columnsReorder: (columns) => this.columnsReorder.emit(columns),
   });
 
   protected readonly rowMenu = createRowMenu<WorkOrderDraft>();
-  protected readonly hasRowActions = computed(() => this.canApply() || this.canDismiss());
   protected readonly tableStyle = computed(() => ({
     'min-width': '56rem',
     ...(this.grid.tableRows().length > 0 ? {} : { height: '100%' }),
   }));
-  protected readonly menuItems = computed<MenuItem[]>(() => {
-    const labels = this._labels();
-    return [
-      ...(this.canApply()
-        ? [
-            this.rowMenu.menuItem(
-              {
-                labelKey: APPLY_KEY,
-                tooltipKey: APPLY_TOOLTIP_KEY,
-                icon: 'pi pi-check',
-                onSelect: (draft) => this.applyRequested.emit(draft.id),
-              },
-              labels,
-            ),
-          ]
-        : []),
-      ...(this.canDismiss()
-        ? [
-            this.rowMenu.menuItem(
-              {
-                labelKey: DISMISS_KEY,
-                tooltipKey: DISMISS_TOOLTIP_KEY,
-                icon: 'pi pi-times',
-                onSelect: (draft) => this.dismissRequested.emit(draft),
-              },
-              labels,
-            ),
-          ]
-        : []),
-    ];
-  });
+  protected readonly menuItems = computed<MenuItem[]>(() =>
+    workOrderDraftMenuItems({
+      rowMenu: this.rowMenu,
+      labels: this._labels(),
+      canApply: this.canApply(),
+      canDismiss: this.canDismiss(),
+      onApply: (draft) => this.applyRequested.emit(draft.id),
+      onDismiss: (draft) => this.dismissRequested.emit(draft),
+    }),
+  );
 
   protected machineLabel(draft: WorkOrderDraft): MachineLabel {
     return machineLabelOf(draft.machineName, draft.isMachineDeleted, this._text(UNKNOWN_MACHINE_KEY));

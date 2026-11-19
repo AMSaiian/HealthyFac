@@ -25,6 +25,8 @@
   (onPage)="grid.onPage($event)"
   (onSort)="grid.onSort($event)"
   (onColReorder)="grid.onColumnReorder($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template
     #header
@@ -33,6 +35,8 @@
     <tr>
       @for (column of columns; track column) {
         <th
+          [style.min-width]="grid.columnWidth(column)"
+          pResizableColumn
           pReorderableColumn
           [pSortableColumn]="column"
           [pSortableColumnDisabled]="!grid.isSortable(column)"
@@ -257,7 +261,7 @@
                   class="text-primary cursor-pointer text-left font-bold hover:underline"
                   (click)="openRequested.emit(row.id)"
                 >
-                  {{ row.title }}
+                  <hf-cell-text [text]="row.title" />
                 </button>
               }
               @case (WorkOrderColumn.Status) {
@@ -284,14 +288,20 @@
                 {{ categoryLabel(row.category) }}
               }
               @case (WorkOrderColumn.Assignee) {
-                {{ row.assigneeName ?? '—' }}
+                <hf-cell-text [text]="row.assigneeName ?? '—'" />
               }
               @case (WorkOrderColumn.Machine) {
                 @if (row.machineName) {
-                  <span [class.line-through]="row.isMachineDeleted">{{ row.machineName }}</span>
-                  @if (row.isMachineDeleted) {
-                    <span class="text-muted-color ml-1 text-xs">{{ 'WORK_ORDERS.MACHINE_DELETED' | translate }}</span>
-                  }
+                  <hf-cell-text
+                    [text]="row.machineName"
+                    [isStruck]="row.isMachineDeleted"
+                  >
+                    @if (row.isMachineDeleted) {
+                      <span class="text-muted-color shrink-0 text-xs whitespace-nowrap">{{
+                        'WORK_ORDERS.MACHINE_DELETED' | translate
+                      }}</span>
+                    }
+                  </hf-cell-text>
                 } @else {
                   —
                 }
@@ -350,9 +360,7 @@
     </tr>
   </ng-template>
 </p-table>
-<p-menu
+<hf-row-menu-popup
   #menu
-  appendTo="body"
-  [popup]="true"
   [model]="menuItems()"
 />

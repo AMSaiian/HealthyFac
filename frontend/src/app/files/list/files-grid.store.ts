@@ -58,10 +58,6 @@ export const FilesGridStore = signalStore(
         () =>
           hasScope() && store._auth.hasPermission(isCompany() ? Permission.CompanyFilesWrite : Permission.FilesWrite),
       ),
-      canEdit: computed(
-        () =>
-          hasScope() && store._auth.hasPermission(isCompany() ? Permission.CompanyFilesWrite : Permission.FilesWrite),
-      ),
       canDelete: computed(
         () =>
           hasScope() && store._auth.hasPermission(isCompany() ? Permission.CompanyFilesDelete : Permission.FilesDelete),
@@ -260,7 +256,7 @@ export const FilesGridStore = signalStore(
       requestEdit(file: FileGridItem): void {
         const scope = store.scope();
         if (scope !== null) {
-          void store._actions.dispatch({ type: FileActionType.Edit, payload: { scope, item: file } });
+          void store._actions.dispatch({ type: FileActionType.Edit, payload: { scope, id: file.id } });
         }
       },
       /** Runs one ingest or tie action of the row menu. */

@@ -2,13 +2,14 @@ import { signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
+import type { Table } from 'primeng/table';
 import { type Mock, vi } from 'vitest';
 
 import { type GridSort, SortDirection } from '@shared/grid/requests/grid-request';
 import { asList, asRange, asText } from '@shared/grid/table/table-filters';
 import { EMPTY_RANGE, isRangeEmpty, type PlainDateRange } from '@shared/time/plain-date-range';
 
-import { createGridTable, type GridTable } from './grid-table';
+import { createGridTable, type GridTable, resetColumnWidths, TEXT_COLUMN_WIDTH } from './grid-table';
 
 type Column = 'name' | 'serial' | 'tags' | 'period';
 
@@ -32,9 +33,33 @@ interface GridTableHarness {
   readonly sort: WritableSignal<GridSort<'name'> | null>;
   readonly filterChange: Mock;
   readonly pageChange: Mock;
+  readonly columns: WritableSignal<readonly Column[]>;
 }
 
-function setup(nameWriter: (current: Filter) => unknown = (current) => current.name || null): GridTableHarness {
+const MIN_WIDTH = '64rem';
+
+interface FakeTable {
+  readonly table: Table;
+  readonly destroyStyleElement: Mock;
+  readonly element: { style: { width: string; minWidth: string } };
+}
+
+function fakeTable(): FakeTable {
+  const element = { style: { width: '90rem', minWidth: '90rem' } };
+  const destroyStyleElement = vi.fn();
+  const table = {
+    destroyStyleElement,
+    tableViewChild: () => ({ nativeElement: element }),
+    tableStyle: () => ({ 'min-width': MIN_WIDTH }),
+  } as unknown as Table;
+  return { table, destroyStyleElement, element };
+}
+
+function setup(
+  nameWriter: (current: Filter) => unknown = (current) => current.name || null,
+  table: Table | undefined = undefined,
+): GridTableHarness {
+  const columns = signal<readonly Column[]>(['name', 'serial', 'tags', 'period']);
   const filter = signal<Filter>(INITIAL_FILTER);
   const sort = signal<GridSort<'name'> | null>(null);
   const filterChange = vi.fn();
@@ -42,10 +67,10 @@ function setup(nameWriter: (current: Filter) => unknown = (current) => current.n
   TestBed.configureTestingModule({
     providers: [{ provide: TranslateService, useValue: { stream: () => of({}) } }],
   });
-  const table = TestBed.runInInjectionContext(() =>
+  const gridTable = TestBed.runInInjectionContext(() =>
     createGridTable({
       allColumns: ['name', 'serial', 'tags', 'period'],
-      columns: signal<readonly Column[]>(['name', 'serial', 'tags', 'period']),
+      columns,
       filter,
       sort,
       limit: signal(25),
@@ -69,15 +94,51 @@ function setup(nameWriter: (current: Filter) => unknown = (current) => current.n
       filterChange,
       sortChange: vi.fn(),
       pageChange,
+      table: signal(table),
+      textColumns: ['name'],
       columnsChange: vi.fn(),
       columnsReorder: vi.fn(),
     }),
   );
 
-  return { table, sort, filterChange, pageChange };
+  return { table: gridTable, sort, filterChange, pageChange, columns };
 }
 
 describe('createGridTable', () => {
+  it('columns_WhenTheColumnsChange_ResetsTheWidths', () => {
+    const { table, destroyStyleElement, element } = fakeTable();
+    const { columns } = setup(undefined, table);
+    TestBed.tick();
+
+    columns.set(['name', 'serial']);
+    TestBed.tick();
+
+    expect(destroyStyleElement).toHaveBeenCalledTimes(1);
+    expect(element.style.width).toBe('');
+    expect(element.style.minWidth).toBe(MIN_WIDTH);
+  });
+
+  it('columns_OnTheFirstRun_KeepsTheWidths', () => {
+    const { table, destroyStyleElement, element } = fakeTable();
+    setup(undefined, table);
+
+    TestBed.tick();
+
+    expect(destroyStyleElement).not.toHaveBeenCalled();
+    expect(element.style.width).toBe('90rem');
+  });
+
+  it('columnWidth_ForATextColumn_ReturnsTheTextWidth', () => {
+    const { table } = setup();
+
+    expect(table.columnWidth('name')).toBe(TEXT_COLUMN_WIDTH);
+    expect(table.columnWidth('serial')).toBeNull();
+  });
+
+  it('resetColumnWidths_WithoutATable_DoesNothing', () => {
+    expect(() => resetColumnWidths(undefined)).not.toThrow();
+  });
+
   it('onFilterHidden_WithUnchangedValue_EmitsNothing', () => {
     const { table, filterChange } = setup();
 
@@ -169,6 +230,8 @@ describe('createGridTable keyset paging', () => {
         sortChange: vi.fn(),
         pageChange,
         keyset: { pageIndex: signal(pageIndex), next, previous, limitChange },
+        table: signal(undefined),
+        textColumns: [],
         columnsChange: vi.fn(),
         columnsReorder: vi.fn(),
       }),

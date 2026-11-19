@@ -12,12 +12,24 @@
   scrollHeight="flex"
   [value]="rowList()"
   [stripedRows]="true"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template #header>
     <tr>
-      <th>{{ 'SIGNALS.TIME.COLUMNS.NAME' | translate }}</th>
-      <th class="text-right">{{ 'SIGNALS.TIME.COLUMNS.DURATION' | translate }}</th>
-      <th class="text-right">{{ 'SIGNALS.TIME.COLUMNS.SHARE' | translate }}</th>
+      <th pResizableColumn>{{ 'SIGNALS.TIME.COLUMNS.NAME' | translate }}</th>
+      <th
+        pResizableColumn
+        class="text-right"
+      >
+        {{ 'SIGNALS.TIME.COLUMNS.DURATION' | translate }}
+      </th>
+      <th
+        pResizableColumn
+        class="text-right"
+      >
+        {{ 'SIGNALS.TIME.COLUMNS.SHARE' | translate }}
+      </th>
     </tr>
   </ng-template>
   <ng-template

@@ -1,14 +1,13 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
@@ -16,8 +15,10 @@ import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { labelChipsOf } from '@shared/chips/chip-summary/chip-summary.utils';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
@@ -38,14 +39,16 @@ import {
   FILTER_WRITERS,
   MENU_DELETE_KEY,
   MENU_DELETE_TOOLTIP_KEY,
-  MENU_UPDATE_KEY,
-  MENU_UPDATE_TOOLTIP_KEY,
+  MENU_SHOW_DETAILS_KEY,
+  MENU_SHOW_DETAILS_TOOLTIP_KEY,
   SEVERITY_LABEL_KEYS,
   SORTABLE_COLUMNS,
+  TEXT_COLUMNS,
 } from './status-definition-grid.utils';
 
 @Component({
   imports: [
+    CellText,
     ChipSummary,
     ButtonDirective,
     ColumnChooser,
@@ -54,7 +57,7 @@ import {
     FormsModule,
     InputText,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     PlainDateRangePicker,
     Select,
     Skeleton,
@@ -98,9 +101,9 @@ export class StatusDefinitionGrid {
   private readonly _translate = inject(TranslateService);
   private readonly _labels = toSignal(
     this._translate.stream([
-      MENU_UPDATE_KEY,
+      MENU_SHOW_DETAILS_KEY,
       MENU_DELETE_KEY,
-      MENU_UPDATE_TOOLTIP_KEY,
+      MENU_SHOW_DETAILS_TOOLTIP_KEY,
       MENU_DELETE_TOOLTIP_KEY,
       ...Object.values(SEVERITY_LABEL_KEYS),
     ]),
@@ -108,6 +111,8 @@ export class StatusDefinitionGrid {
       initialValue: {} as Record<string, string>,
     },
   );
+
+  private readonly _table = viewChild(Table);
 
   protected readonly grid = createGridTable<
     StatusDefinition,
@@ -130,6 +135,8 @@ export class StatusDefinitionGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: (columns) => this.columnsChange.emit(columns),
     columnsReorder: (columns) => this.columnsReorder.emit(columns),
   });
@@ -146,24 +153,18 @@ export class StatusDefinitionGrid {
     'min-width': '40rem',
     ...(this.grid.tableRows().length > 0 ? {} : { height: '100%' }),
   }));
-  protected readonly hasRowActions = computed(() => this.canWrite() || this.canDelete());
-
   protected readonly menuItems = computed<MenuItem[]>(() => {
     const labels = this._labels();
     return [
-      ...(this.canWrite()
-        ? [
-            this.rowMenu.menuItem(
-              {
-                labelKey: MENU_UPDATE_KEY,
-                tooltipKey: MENU_UPDATE_TOOLTIP_KEY,
-                icon: 'pi pi-pencil',
-                onSelect: (statusDefinition) => this.updateRequested.emit(statusDefinition.id),
-              },
-              labels,
-            ),
-          ]
-        : []),
+      this.rowMenu.menuItem(
+        {
+          labelKey: MENU_SHOW_DETAILS_KEY,
+          tooltipKey: MENU_SHOW_DETAILS_TOOLTIP_KEY,
+          icon: 'pi pi-eye',
+          onSelect: (statusDefinition) => this.updateRequested.emit(statusDefinition.id),
+        },
+        labels,
+      ),
       ...(this.canDelete()
         ? [
             this.rowMenu.menuItem(

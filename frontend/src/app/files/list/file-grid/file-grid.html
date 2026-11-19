@@ -25,6 +25,8 @@
   (onPage)="grid.onPage($event)"
   (onSort)="grid.onSort($event)"
   (onColReorder)="grid.onColumnReorder($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template
     #header
@@ -36,6 +38,8 @@
       }
       @for (column of columns; track column) {
         <th
+          [style.min-width]="grid.columnWidth(column)"
+          pResizableColumn
           pReorderableColumn
           [pSortableColumn]="column"
           [pSortableColumnDisabled]="!grid.isSortable(column)"
@@ -213,11 +217,7 @@
           } @else {
             @switch (column) {
               @case (FileColumn.FileName) {
-                <span
-                  class="block max-w-md truncate"
-                  [title]="file.fileName"
-                  >{{ file.fileName }}</span
-                >
+                <hf-cell-text [text]="file.fileName" />
               }
               @case (FileColumn.Extension) {
                 <hf-file-type-tag [extension]="file.extension" />
@@ -229,11 +229,7 @@
                 {{ file.uploadedAt | localDateTime }}
               }
               @case (FileColumn.Machine) {
-                <span
-                  class="block max-w-xs truncate"
-                  [title]="file.machineName ?? ''"
-                  >{{ file.machineName }}</span
-                >
+                <hf-cell-text [text]="file.machineName ?? ''" />
               }
               @case (FileColumn.Ingest) {
                 <p-tag
@@ -286,23 +282,7 @@
     </tr>
   </ng-template>
 </p-table>
-<p-menu
+<hf-row-menu-popup
   #menu
-  appendTo="body"
-  [popup]="true"
   [model]="menuItems()"
->
-  <ng-template
-    #item
-    let-item
-  >
-    <div
-      class="p-menu-item-link flex items-center gap-2 px-3 py-2"
-      [pTooltip]="item.tooltip"
-      [tooltipOptions]="item.tooltipOptions"
-    >
-      <span [class]="item.icon"></span>
-      <span>{{ item.label }}</span>
-    </div>
-  </ng-template>
-</p-menu>
+/>

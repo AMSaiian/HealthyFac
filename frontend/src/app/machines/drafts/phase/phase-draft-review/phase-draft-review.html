@@ -3,7 +3,11 @@
 }
 @if (isEditable() && initialValue(); as initial) {
   <div class="flex flex-col gap-1">
-    <label for="phase-draft-priority">{{ 'PHASES.FORM.PRIORITY' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="phase-draft-priority"
+      >{{ 'PHASES.FORM.PRIORITY' | translate }}</label
+    >
     <p-inputnumber
       inputId="phase-draft-priority"
       [min]="0"
@@ -12,6 +16,7 @@
       (ngModelChange)="priorityChange.emit($event)"
     />
   </div>
+  <p-divider />
   <hf-phase-form
     [initialValue]="initial"
     [sourceOptions]="sourceOptions()"

@@ -1,5 +1,9 @@
 <div class="flex flex-col gap-1">
-  <label for="invite-email">{{ 'EMPLOYEES.INVITE.EMAIL' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="invite-email"
+    >{{ 'EMPLOYEES.INVITE.EMAIL' | translate }}</label
+  >
   @for (error of inviteForm.email().errors(); track $index) {
     @if (isShown(inviteForm.email)) {
       <small class="text-red-500">{{ error.message | translate }}</small>
@@ -14,8 +18,13 @@
     [formField]="inviteForm.email"
   />
 </div>
+<p-divider />
 <div class="flex flex-col gap-1">
-  <label for="invite-role">{{ 'EMPLOYEES.INVITE.ROLE' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="invite-role"
+    >{{ 'EMPLOYEES.INVITE.ROLE' | translate }}</label
+  >
   <p-select
     inputId="invite-role"
     optionLabel="label"
@@ -36,8 +45,13 @@
     >
   </p-select>
 </div>
+<p-divider />
 <div class="flex flex-col gap-1">
-  <label for="invite-first-name">{{ 'EMPLOYEES.INVITE.FIRST_NAME' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="invite-first-name"
+    >{{ 'EMPLOYEES.INVITE.FIRST_NAME' | translate }}</label
+  >
   @for (error of inviteForm.firstName().errors(); track $index) {
     @if (isShown(inviteForm.firstName)) {
       <small class="text-red-500">{{ error.message | translate }}</small>
@@ -51,8 +65,13 @@
     [formField]="inviteForm.firstName"
   />
 </div>
+<p-divider />
 <div class="flex flex-col gap-1">
-  <label for="invite-last-name">{{ 'EMPLOYEES.INVITE.LAST_NAME' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="invite-last-name"
+    >{{ 'EMPLOYEES.INVITE.LAST_NAME' | translate }}</label
+  >
   @for (error of inviteForm.lastName().errors(); track $index) {
     @if (isShown(inviteForm.lastName)) {
       <small class="text-red-500">{{ error.message | translate }}</small>

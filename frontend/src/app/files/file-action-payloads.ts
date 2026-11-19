@@ -1,4 +1,4 @@
-import { type infer as Infer, literal, nullable, number, object, string, union } from 'zod/mini';
+import { type infer as Infer, literal, number, object, string, union } from 'zod/mini';
 
 const scopeSchema = union([
   object({ kind: literal('company') }),
@@ -10,17 +10,8 @@ export const fileUploadActionPayloadSchema = object({ scope: scopeSchema });
 
 export type FileUploadActionPayload = Infer<typeof fileUploadActionPayloadSchema>;
 
-/** The payload of the action `files.edit`: the scope and the grid row that the user edits. */
-export const fileEditActionPayloadSchema = object({
-  scope: scopeSchema,
-  item: object({
-    id: string(),
-    fileName: string(),
-    extension: string(),
-    description: nullable(string()),
-    rowVersion: number(),
-  }),
-});
+/** The payload of the action `files.edit`: the scope and the ID of the file that the dialog shows. */
+export const fileEditActionPayloadSchema = object({ scope: scopeSchema, id: string() });
 
 export type FileEditActionPayload = Infer<typeof fileEditActionPayloadSchema>;
 

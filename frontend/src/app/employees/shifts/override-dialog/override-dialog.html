@@ -1,5 +1,9 @@
 <div class="flex flex-col gap-1">
-  <label for="override-date">{{ 'SHIFTS.DIALOG.DATE' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="override-date"
+    >{{ 'SHIFTS.DIALOG.DATE' | translate }}</label
+  >
   <hf-plain-date-picker
     [value]="model().date"
     [min]="minDate()"
@@ -7,6 +11,7 @@
     (valueChange)="setDate($event)"
   />
 </div>
+<p-divider />
 <hf-block-list-editor
   [label]="'SHIFTS.DIALOG.BLOCKS' | translate"
   [blocks]="model().blocks"
