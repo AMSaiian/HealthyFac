@@ -1,5 +1,5 @@
 import { Component, effect, input, linkedSignal, output } from '@angular/core';
-import { type FieldTree, form, FormField, validateStandardSchema } from '@angular/forms/signals';
+import { type FieldTree, form, FormField, readonly, validateStandardSchema } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
@@ -19,12 +19,14 @@ import {
   ESTIMATE_MAX_MINUTES,
   ESTIMATE_MIN_MINUTES,
   ESTIMATE_STEP_MINUTES,
+  ESTIMATE_SUFFIX,
   FILE_MAX_COUNT,
 } from '@work-orders/work-order-limits';
 import { workOrderFormSchema, type WorkOrderFormValue } from '@work-orders/work-order-schema';
+import { Divider } from 'primeng/divider';
 
 @Component({
-  imports: [FormField, InputNumber, InputText, RichTextEditor, Select, TranslatePipe, WorkOrderFiles],
+  imports: [Divider, FormField, InputNumber, InputText, RichTextEditor, Select, TranslatePipe, WorkOrderFiles],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-work-order-form',
   templateUrl: './work-order-form.html',
@@ -48,6 +50,7 @@ export class WorkOrderForm {
   protected readonly estimateMin = ESTIMATE_MIN_MINUTES;
   protected readonly estimateMax = ESTIMATE_MAX_MINUTES;
   protected readonly estimateStep = ESTIMATE_STEP_MINUTES;
+  protected readonly estimateSuffix = ESTIMATE_SUFFIX;
   protected readonly priorityOptions = Object.values(WorkOrderPriority).map((value) => ({
     value,
     labelKey: PRIORITY_LABEL_KEYS[value],
@@ -60,6 +63,7 @@ export class WorkOrderForm {
   protected readonly model = linkedSignal<WorkOrderFormValue>(() => ({ ...this.initialValue() }));
   protected readonly workOrderForm = form(this.model, (path) => {
     validateStandardSchema(path, workOrderFormSchema);
+    readonly(path.estimateMinutes, { when: () => this.isEstimateReadOnly() });
   });
 
   protected readonly machineList = keepSelectedOptions(this.machines, () => [this.model().machineId]);

@@ -25,6 +25,8 @@
   (onPage)="grid.onPage($event)"
   (onSort)="grid.onSort($event)"
   (onColReorder)="grid.onColumnReorder($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template
     #header
@@ -33,6 +35,8 @@
     <tr>
       @for (column of columns; track column) {
         <th
+          [style.min-width]="grid.columnWidth(column)"
+          pResizableColumn
           pReorderableColumn
           [pSortableColumn]="column"
           [pSortableColumnDisabled]="!grid.isSortable(column)"
@@ -208,10 +212,13 @@
             @switch (column) {
               @case (CaseColumn.Machine) {
                 @let machine = machineLabel(item.machineId);
-                {{ machine.name }}
-                @if (machine.isDeleted) {
-                  <span class="text-muted-color">{{ 'MACHINES.DELETED_SUFFIX' | translate }}</span>
-                }
+                <hf-cell-text [text]="machine.name">
+                  @if (machine.isDeleted) {
+                    <span class="text-muted-color shrink-0 whitespace-nowrap">{{
+                      'MACHINES.DELETED_SUFFIX' | translate
+                    }}</span>
+                  }
+                </hf-cell-text>
               }
               @case (CaseColumn.State) {
                 {{ stateLabel(item.state) }}

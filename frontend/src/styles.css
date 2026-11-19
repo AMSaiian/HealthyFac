@@ -23,6 +23,22 @@
     min-width: 0;
   }
 
+  .hf-field-label {
+    font-weight: 600;
+  }
+
+  .hf-field-text {
+    display: block;
+    min-width: 0;
+    min-height: calc(var(--p-form-field-padding-y) * 2 + 2px + 1lh);
+    padding: var(--p-form-field-padding-y) var(--p-form-field-padding-x);
+    border: 1px solid transparent;
+    border-radius: var(--p-form-field-border-radius);
+    font-size: var(--p-form-field-font-size);
+    line-height: normal;
+    overflow-wrap: anywhere;
+  }
+
   .hf-list-item {
     @apply rounded-border border border-surface p-3;
   }
@@ -199,59 +215,6 @@
   .hf-priority-critical {
     color: var(--p-surface-0);
     background-color: var(--p-work-order-priority-critical);
-  }
-
-  .hf-rich-text li.hf-check-checked,
-  .hf-rich-text li.hf-check-unchecked {
-    list-style: none;
-    position: relative;
-    padding-left: 1.5rem;
-  }
-
-  .hf-rich-text li.hf-check-checked::before,
-  .hf-rich-text li.hf-check-unchecked::before {
-    position: absolute;
-    left: 0;
-    content: '\2610';
-  }
-
-  .hf-rich-text li.hf-check-checked::before {
-    content: '\2611';
-  }
-
-  .hf-rich-text li.hf-check-checked {
-    text-decoration: line-through;
-    color: var(--p-text-muted-color);
-  }
-
-  .hf-rich-text .ql-size-small {
-    font-size: 0.75em;
-  }
-
-  .hf-rich-text .ql-size-large {
-    font-size: 1.5em;
-  }
-
-  .hf-rich-text .ql-size-huge {
-    font-size: 2.5em;
-  }
-
-  .hf-rich-text ol {
-    list-style-type: decimal;
-    padding-inline-start: 1.5rem;
-  }
-
-  .hf-rich-text ol ol {
-    list-style-type: lower-alpha;
-  }
-
-  .hf-rich-text ol ol ol {
-    list-style-type: lower-roman;
-  }
-
-  .hf-rich-text ul:not(:has(> li.hf-check-checked, > li.hf-check-unchecked)) {
-    list-style-type: disc;
-    padding-inline-start: 1.5rem;
   }
 
   [data-hf-calm] {

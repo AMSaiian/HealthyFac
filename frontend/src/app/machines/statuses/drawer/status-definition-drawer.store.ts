@@ -6,7 +6,12 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import { withDetailsMode } from '@shared/forms/with-details-mode';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { Permission } from '@shared/security/permissions';
 import { withToasts } from '@shared/toasts/with-toasts';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 
@@ -32,12 +37,15 @@ interface DrawerState {
 
 export const StatusDefinitionDrawerStore = signalStore(
   withState<DrawerState>({ machineId: null, statusDefinitionId: null, isSaving: false }),
+  withDetailsMode(),
   withProps(() => ({
     _api: inject(StatusDefinitionsApi),
+    _auth: inject(AuthStore),
   })),
   withToasts(),
   withComputed((store) => ({
     isUpdate: computed(() => store.statusDefinitionId() !== null),
+    canEdit: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsWrite)),
   })),
   withProps((store) => ({
     statusDefinition: rxResource({
@@ -60,6 +68,18 @@ export const StatusDefinitionDrawerStore = signalStore(
       return store.statusDefinition.hasValue() ? toFormValue(store.statusDefinition.value()) : null;
     }),
   })),
+  withProps((store) => ({
+    descriptionLinks: descriptionLinks(
+      () => (store.statusDefinition.hasValue() ? store.statusDefinition.value().description : null),
+      inject(RichTextImageLinks),
+    ).links,
+  })),
+  withComputed((store) => ({
+    /** Tells whether the pencil shows: the loaded item in view mode, for a user who may change it. */
+    isEditShown: computed(
+      () => store.isViewMode() && store.isUpdate() && store.statusDefinition.hasValue() && store.canEdit(),
+    ),
+  })),
   withMethods((store) => {
     const request$ = (value: StatusDefinitionFormValue): Observable<unknown> => {
       const machineId = store.machineId() ?? '';
@@ -74,6 +94,10 @@ export const StatusDefinitionDrawerStore = signalStore(
     return {
       start(machineId: string, statusDefinitionId: string | null): void {
         patchState(store, { machineId, statusDefinitionId });
+        store._startMode(statusDefinitionId !== null);
+      },
+      cancelEdit(): void {
+        store.view();
       },
       save: rxMethod<SaveRequest>(
         pipe(
@@ -81,9 +105,13 @@ export const StatusDefinitionDrawerStore = signalStore(
           exhaustMap(({ value, onSaved }) =>
             request$(value).pipe(
               tap(() => {
-                store._toastSuccess(
-                  store.isUpdate() ? 'STATUS_DEFINITIONS.TOASTS.UPDATED' : 'STATUS_DEFINITIONS.TOASTS.CREATED',
-                );
+                if (store.isUpdate()) {
+                  store._toastSuccess('STATUS_DEFINITIONS.TOASTS.UPDATED');
+                  store.statusDefinition.reload();
+                  store.view();
+                } else {
+                  store._toastSuccess('STATUS_DEFINITIONS.TOASTS.CREATED');
+                }
                 onSaved();
               }),
               catchError((error: unknown) => {

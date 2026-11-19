@@ -9,10 +9,11 @@ import { BlockListEditor } from '@employees/shifts/block-list-editor/block-list-
 import type { ShiftBlock, Weekday } from '@employees/shifts/shift';
 import { WEEKDAY_KEYS } from '@employees/shifts/shifts-store/shifts.store.utils';
 import { versionFormSchema, type VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
+import { Divider } from 'primeng/divider';
 
 /** The form of a version: the first day of effect (a new version only) and the blocks of the 7 weekdays. */
 @Component({
-  imports: [BlockListEditor, PlainDatePicker, TranslatePipe],
+  imports: [Divider, BlockListEditor, PlainDatePicker, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-version-dialog',
   templateUrl: './version-dialog.html',

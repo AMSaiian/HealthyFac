@@ -1,5 +1,4 @@
 import type { MenuItem, TooltipOptions } from 'primeng/api';
-import type { Menu } from 'primeng/menu';
 
 const DANGER_STYLE_CLASS = 'hf-menu-danger';
 
@@ -7,7 +6,12 @@ const DANGER_STYLE_CLASS = 'hf-menu-danger';
 const ROW_MENU_TOOLTIP_OPTIONS: TooltipOptions = { tooltipPosition: 'left' };
 
 /** The label keys of the destructive items (Delete, Revoke, Dismiss). Every menu shows them in the danger style. */
-const DANGER_LABEL_KEYS: readonly string[] = ['ACTIONS.DELETE', 'EMPLOYEES.REVOKE', 'DRAFTS.DISMISS'];
+const DANGER_LABEL_KEYS: readonly string[] = [
+  'ACTIONS.DELETE',
+  'EMPLOYEES.REVOKE',
+  'DRAFTS.DISMISS',
+  'WORK_ORDER_DRAFTS.DISMISS',
+];
 
 export interface RowMenuItem<TRow> {
   readonly labelKey: string;
@@ -20,7 +24,7 @@ export interface RowMenuItem<TRow> {
 export class RowMenu<TRow> {
   activeRow: TRow | null = null;
 
-  open(event: Event, row: TRow, menu: Menu): void {
+  open(event: Event, row: TRow, menu: { toggle(event: Event): void }): void {
     this.activeRow = row;
     menu.toggle(event);
   }

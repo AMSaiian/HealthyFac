@@ -18,9 +18,9 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<StatusDefinitionColumn, string>>
   [StatusDefinitionColumn.UpdatedAt]: 'STATUS_DEFINITIONS.COLUMNS.UPDATED_AT',
 };
 
-export const MENU_UPDATE_KEY = 'STATUS_DEFINITIONS.UPDATE';
+export const MENU_SHOW_DETAILS_KEY = 'ACTIONS.SHOW_DETAILS';
 export const MENU_DELETE_KEY = 'ACTIONS.DELETE';
-export const MENU_UPDATE_TOOLTIP_KEY = 'STATUS_DEFINITIONS.TOOLTIPS.UPDATE';
+export const MENU_SHOW_DETAILS_TOOLTIP_KEY = 'ACTIONS.TOOLTIPS.SHOW_DETAILS';
 export const MENU_DELETE_TOOLTIP_KEY = 'STATUS_DEFINITIONS.TOOLTIPS.DELETE';
 
 export const SORTABLE_COLUMNS: readonly string[] = Object.values(StatusDefinitionSortColumn);
@@ -42,3 +42,6 @@ export const FILTER_WRITERS: Readonly<Record<StatusDefinitionColumn, (filter: St
   [StatusDefinitionColumn.CreatedAt]: (filter) => (isRangeEmpty(filter.createdAt) ? null : filter.createdAt),
   [StatusDefinitionColumn.UpdatedAt]: (filter) => (isRangeEmpty(filter.updatedAt) ? null : filter.updatedAt),
 };
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly StatusDefinitionColumn[] = [StatusDefinitionColumn.Code];

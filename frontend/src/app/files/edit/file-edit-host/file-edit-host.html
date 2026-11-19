@@ -1,18 +1,31 @@
 <hf-action-dialog
-  title="FILES.EDIT_DIALOG.TITLE"
+  [title]="title()"
   [isSaveDisabled]="saveDisabledReason() !== null"
   [saveDisabledReason]="saveDisabledReason()"
   [isSaving]="store.isSaving()"
+  [isSaveShown]="store.isEditMode()"
+  [isEditShown]="store.isEditShown()"
+  [hasEditCancel]="store.isEditMode()"
   (save)="onSave()"
+  (editRequested)="onEdit()"
+  (editCancelled)="store.cancelEdit()"
   (cancelled)="store.cancel()"
 >
   @if (store.initialValue(); as initial) {
-    <hf-file-edit-form
-      [initialValue]="initial"
-      [extension]="store.extension()"
-      (valueChange)="onValueChange($event)"
-      (validityChange)="onValidityChange($event)"
-    />
+    @if (store.isViewMode()) {
+      <hf-file-details
+        [value]="initial"
+        [extension]="store.extension()"
+        [descriptionLinks]="store.descriptionLinks()"
+      />
+    } @else {
+      <hf-file-edit-form
+        [initialValue]="initial"
+        [extension]="store.extension()"
+        (valueChange)="onValueChange($event)"
+        (validityChange)="onValidityChange($event)"
+      />
+    }
   } @else {
     <div class="flex min-h-32">
       @if (showSpinner()) {

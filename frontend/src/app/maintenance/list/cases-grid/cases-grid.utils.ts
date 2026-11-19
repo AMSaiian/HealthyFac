@@ -93,3 +93,6 @@ export const FILTERABLE_COLUMNS: readonly CaseColumn[] = [
   CaseColumn.Severity,
   CaseColumn.LastRun,
 ];
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly CaseColumn[] = [CaseColumn.Machine];

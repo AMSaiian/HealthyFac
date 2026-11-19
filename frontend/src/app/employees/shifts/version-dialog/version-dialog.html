@@ -1,5 +1,9 @@
 <div class="flex flex-col gap-1">
-  <label for="version-effective-from">{{ 'SHIFTS.DIALOG.EFFECTIVE_FROM' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="version-effective-from"
+    >{{ 'SHIFTS.DIALOG.EFFECTIVE_FROM' | translate }}</label
+  >
   <hf-plain-date-picker
     [value]="model().effectiveFrom"
     [min]="minDate()"
@@ -7,8 +11,12 @@
     (valueChange)="setDate($event)"
   />
 </div>
-<div class="flex flex-col gap-2">
+<p-divider />
+<div class="flex flex-col gap-4">
   @for (day of model().days; track day.weekday) {
+    @if (!$first) {
+      <p-divider />
+    }
     <hf-block-list-editor
       [label]="weekdayKey(day.weekday) | translate"
       [blocks]="day.blocks"

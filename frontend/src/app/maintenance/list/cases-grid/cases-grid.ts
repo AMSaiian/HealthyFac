@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -6,7 +6,7 @@ import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -15,6 +15,7 @@ import { type Chip, labelChipsOf, lookupChips } from '@shared/chips/chip-summary
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
@@ -48,11 +49,13 @@ import {
   SEVERITY_LABEL_KEYS,
   SORTABLE_COLUMNS,
   STATE_LABEL_KEYS,
+  TEXT_COLUMNS,
   UNKNOWN_MACHINE_KEY,
 } from '@maintenance/list/cases-grid/cases-grid.utils';
 
 @Component({
   imports: [
+    CellText,
     ButtonDirective,
     ChipSummary,
     ColumnChooser,
@@ -116,6 +119,8 @@ export class CasesGrid {
     { initialValue: {} as Record<string, string> },
   );
 
+  private readonly _table = viewChild(Table);
+
   protected readonly grid = createGridTable<CaseListItem, CaseColumn, CaseFilter, CaseSortColumn>({
     allColumns: this.allColumns,
     columns: this.columns,
@@ -132,6 +137,8 @@ export class CasesGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: (columns) => this.columnsChange.emit(columns),
     columnsReorder: (columns) => this.columnsReorder.emit(columns),
   });

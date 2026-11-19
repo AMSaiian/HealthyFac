@@ -2,7 +2,11 @@
   <section class="flex flex-col gap-4">
     <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.GENERAL' | translate }}</h2>
     <div class="flex flex-col gap-1">
-      <label for="metric-name">{{ 'METRICS.FORM.NAME' | translate }}</label>
+      <label
+        class="hf-field-label"
+        for="metric-name"
+        >{{ 'METRICS.FORM.NAME' | translate }}</label
+      >
       @for (error of metricForm.name().errors(); track $index) {
         @if (isShown(metricForm.name)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
@@ -17,8 +21,13 @@
         [formField]="metricForm.name"
       />
     </div>
+    <p-divider />
     <div class="flex flex-col gap-1">
-      <label for="metric-key">{{ 'METRICS.FORM.KEY' | translate }}</label>
+      <label
+        class="hf-field-label"
+        for="metric-key"
+        >{{ 'METRICS.FORM.KEY' | translate }}</label
+      >
       @for (error of metricForm.key().errors(); track $index) {
         @if (isShown(metricForm.key)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
@@ -33,8 +42,13 @@
         [formField]="metricForm.key"
       />
     </div>
+    <p-divider />
     <div class="flex flex-col gap-1">
-      <label for="metric-kind">{{ 'METRICS.FORM.KIND' | translate }}</label>
+      <label
+        class="hf-field-label"
+        for="metric-kind"
+        >{{ 'METRICS.FORM.KIND' | translate }}</label
+      >
       <p-select
         inputId="metric-kind"
         optionLabel="labelKey"
@@ -57,8 +71,9 @@
         </ng-template>
       </p-select>
     </div>
+    <p-divider />
     <div class="flex flex-col gap-1">
-      <span>{{ 'METRICS.FORM.DESCRIPTION' | translate }}</span>
+      <span class="hf-field-label">{{ 'METRICS.FORM.DESCRIPTION' | translate }}</span>
       @for (error of metricForm.description().errors(); track $index) {
         @if (isShown(metricForm.description)) {
           <small class="text-red-500">{{ error.message | translate }}</small>
@@ -76,7 +91,11 @@
     <section class="flex flex-col gap-4">
       <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.MEASUREMENT' | translate }}</h2>
       <div class="flex flex-col gap-1">
-        <label for="metric-unit">{{ 'METRICS.FORM.UNIT' | translate }}</label>
+        <label
+          class="hf-field-label"
+          for="metric-unit"
+          >{{ 'METRICS.FORM.UNIT' | translate }}</label
+        >
         @for (error of metricForm.unit().errors(); track $index) {
           @if (isShown(metricForm.unit)) {
             <small class="text-red-500">{{ error.message | translate }}</small>
@@ -117,9 +136,14 @@
           </ng-template>
         </p-select>
       </div>
-      <div class="flex gap-4">
-        <div class="flex min-w-0 flex-1 flex-col gap-1">
-          <label for="metric-min">{{ 'METRICS.FORM.MIN' | translate }}</label>
+      <p-divider />
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
+        <div class="flex min-w-0 flex-col gap-1">
+          <label
+            class="hf-field-label"
+            for="metric-min"
+            >{{ 'METRICS.FORM.MIN' | translate }}</label
+          >
           <p-inputnumber
             inputId="metric-min"
             [maxFractionDigits]="maxFractionDigits"
@@ -127,8 +151,13 @@
             [formField]="metricForm.min"
           />
         </div>
-        <div class="flex min-w-0 flex-1 flex-col gap-1">
-          <label for="metric-max">{{ 'METRICS.FORM.MAX' | translate }}</label>
+        <p-divider layout="vertical" />
+        <div class="flex min-w-0 flex-col gap-1">
+          <label
+            class="hf-field-label"
+            for="metric-max"
+            >{{ 'METRICS.FORM.MAX' | translate }}</label
+          >
           @for (error of metricForm.max().errors(); track $index) {
             <small class="text-red-500">{{ error.message | translate }}</small>
           }
@@ -144,60 +173,78 @@
     <p-divider />
     <section class="flex flex-col gap-4">
       <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.MONITORING' | translate }}</h2>
-      <div class="flex flex-col gap-2">
-        <span class="font-semibold">{{ 'METRICS.FORM.ALARM_ROW' | translate }}</span>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex min-w-0 flex-col gap-1">
-            <label for="metric-alarm-low">{{ 'METRICS.FORM.ALARM_LOW' | translate }}</label>
-            <p-inputnumber
-              inputId="metric-alarm-low"
-              [maxFractionDigits]="maxFractionDigits"
-              [useGrouping]="false"
-              [formField]="metricForm.alarmLow"
-            />
-          </div>
-          <div class="flex min-w-0 flex-col gap-1">
-            <label for="metric-alarm-high">{{ 'METRICS.FORM.ALARM_HIGH' | translate }}</label>
-            <p-inputnumber
-              inputId="metric-alarm-high"
-              [maxFractionDigits]="maxFractionDigits"
-              [useGrouping]="false"
-              [formField]="metricForm.alarmHigh"
-            />
-          </div>
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
+        <div class="flex min-w-0 flex-col gap-1">
+          <label
+            class="hf-field-label"
+            for="metric-alarm-low"
+            >{{ 'METRICS.FORM.ALARM_LOW' | translate }}</label
+          >
+          <p-inputnumber
+            inputId="metric-alarm-low"
+            [maxFractionDigits]="maxFractionDigits"
+            [useGrouping]="false"
+            [formField]="metricForm.alarmLow"
+          />
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex min-w-0 flex-col gap-1">
+          <label
+            class="hf-field-label"
+            for="metric-alarm-high"
+            >{{ 'METRICS.FORM.ALARM_HIGH' | translate }}</label
+          >
+          <p-inputnumber
+            inputId="metric-alarm-high"
+            [maxFractionDigits]="maxFractionDigits"
+            [useGrouping]="false"
+            [formField]="metricForm.alarmHigh"
+          />
         </div>
       </div>
-      <div class="flex flex-col gap-2">
-        <span class="font-semibold">{{ 'METRICS.FORM.WARNING_ROW' | translate }}</span>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex min-w-0 flex-col gap-1">
-            <label for="metric-warning-low">{{ 'METRICS.FORM.WARNING_LOW' | translate }}</label>
-            @for (error of metricForm.warningLow().errors(); track $index) {
-              <small class="text-red-500">{{ error.message | translate }}</small>
-            }
-            <p-inputnumber
-              inputId="metric-warning-low"
-              [maxFractionDigits]="maxFractionDigits"
-              [useGrouping]="false"
-              [formField]="metricForm.warningLow"
-            />
-          </div>
-          <div class="flex min-w-0 flex-col gap-1">
-            <label for="metric-warning-high">{{ 'METRICS.FORM.WARNING_HIGH' | translate }}</label>
-            @for (error of metricForm.warningHigh().errors(); track $index) {
-              <small class="text-red-500">{{ error.message | translate }}</small>
-            }
-            <p-inputnumber
-              inputId="metric-warning-high"
-              [maxFractionDigits]="maxFractionDigits"
-              [useGrouping]="false"
-              [formField]="metricForm.warningHigh"
-            />
-          </div>
+      <p-divider />
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
+        <div class="flex min-w-0 flex-col gap-1">
+          <label
+            class="hf-field-label"
+            for="metric-warning-low"
+            >{{ 'METRICS.FORM.WARNING_LOW' | translate }}</label
+          >
+          @for (error of metricForm.warningLow().errors(); track $index) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+          <p-inputnumber
+            inputId="metric-warning-low"
+            [maxFractionDigits]="maxFractionDigits"
+            [useGrouping]="false"
+            [formField]="metricForm.warningLow"
+          />
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex min-w-0 flex-col gap-1">
+          <label
+            class="hf-field-label"
+            for="metric-warning-high"
+            >{{ 'METRICS.FORM.WARNING_HIGH' | translate }}</label
+          >
+          @for (error of metricForm.warningHigh().errors(); track $index) {
+            <small class="text-red-500">{{ error.message | translate }}</small>
+          }
+          <p-inputnumber
+            inputId="metric-warning-high"
+            [maxFractionDigits]="maxFractionDigits"
+            [useGrouping]="false"
+            [formField]="metricForm.warningHigh"
+          />
         </div>
       </div>
+      <p-divider />
       <div class="flex flex-col gap-1">
-        <label for="metric-behavior">{{ 'METRICS.FORM.BEHAVIOR' | translate }}</label>
+        <label
+          class="hf-field-label"
+          for="metric-behavior"
+          >{{ 'METRICS.FORM.BEHAVIOR' | translate }}</label
+        >
         <p-select
           inputId="metric-behavior"
           optionLabel="label"
@@ -215,7 +262,11 @@
     <section class="flex flex-col gap-4">
       <h2 class="text-lg font-semibold">{{ 'METRICS.FORM.SECTIONS.STATES' | translate }}</h2>
       <div class="flex flex-col gap-1">
-        <label for="metric-new-state">{{ 'METRICS.FORM.STATES' | translate }}</label>
+        <label
+          class="hf-field-label"
+          for="metric-new-state"
+          >{{ 'METRICS.FORM.STATES' | translate }}</label
+        >
         @for (error of metricForm.states().errors(); track $index) {
           <small class="text-red-500">{{ error.message | translate }}</small>
         }

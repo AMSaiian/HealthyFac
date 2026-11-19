@@ -7,6 +7,8 @@ import { of, throwError } from 'rxjs';
 
 import { LookupsApi } from '@shared/lookups/lookups-api';
 import { ActionStore } from '@shared/actions/action.store';
+import { DetailsMode } from '@shared/forms/with-details-mode';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -92,6 +94,7 @@ describe('WorkOrderDrawerStore', () => {
   const update = vi.fn();
   const create = vi.fn();
   const complete = vi.fn();
+  const notify = vi.fn();
   const add = vi.fn();
   const dispatch = vi.fn();
   const history = vi.fn();
@@ -123,7 +126,8 @@ describe('WorkOrderDrawerStore', () => {
         },
         { provide: EmployeeStore, useValue: { id: () => options.employeeId ?? null } },
         { provide: LookupsApi, useValue: { machines: () => of([]) } },
-        { provide: ActionStore, useValue: { complete, cancel: cancelAction, dispatch } },
+        { provide: ActionStore, useValue: { complete, notify, cancel: cancelAction, dispatch } },
+        { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
         { provide: MessageService, useValue: { add } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],
@@ -143,6 +147,7 @@ describe('WorkOrderDrawerStore', () => {
     update.mockReset().mockReturnValue(of(undefined));
     create.mockReset().mockReturnValue(of({ id: 'new' }));
     complete.mockReset();
+    notify.mockReset();
     dispatch.mockReset();
     cancelAction.mockReset();
     history.mockReset().mockReturnValue(of([]));
@@ -173,7 +178,70 @@ describe('WorkOrderDrawerStore', () => {
       expect.objectContaining({ fileIds: ['f2', 'f3'], rowVersion: 5, estimateMinutes: 90 }),
       expect.anything(),
     );
-    expect(complete).toHaveBeenCalledWith(WorkOrderActionType.Saved, undefined);
+    expect(notify).toHaveBeenCalledWith(WorkOrderActionType.Saved);
+    expect(complete).not.toHaveBeenCalled();
+  });
+
+  it('start_ForExisting_IsViewMode', async () => {
+    const store = await setup();
+
+    expect(store.mode()).toBe(DetailsMode.View);
+  });
+
+  it('start_ForCreate_IsEditMode', async () => {
+    const store = await setup({ isUpdate: false });
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+  });
+
+  it('isEditShown_WithoutWritePermission_IsFalse', async () => {
+    const store = await setup({ canWrite: false });
+
+    expect(store.isEditShown()).toBe(false);
+  });
+
+  it('isEditShown_WithWritePermissionAfterLoad_IsTrue', async () => {
+    const store = await setup({ canWrite: true });
+
+    expect(store.isEditShown()).toBe(true);
+  });
+
+  it('save_OnUpdate_NotifiesReloadsAndReturnsToView', async () => {
+    const store = await setup({ canManage: true });
+    store.edit();
+    const getCallsBefore = get.mock.calls.length;
+
+    store.save(FORM_VALUE);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls.length - getCallsBefore).toBe(1);
+    expect(store.mode()).toBe(DetailsMode.View);
+    expect(store.isSaving()).toBe(false);
+  });
+
+  it('save_OnUpdateTwice_SendsTheReloadedRowVersion', async () => {
+    const store = await setup({ canManage: true });
+    store.edit();
+    store.save(FORM_VALUE);
+    get.mockReturnValue(of({ ...WORK_ORDER, rowVersion: 6 }));
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    store.edit();
+
+    store.save(FORM_VALUE);
+
+    expect(update.mock.calls.map(([, body]) => (body as { rowVersion: number }).rowVersion)).toEqual([5, 6]);
+  });
+
+  it('cancelEdit_ForExisting_ReturnsToView', async () => {
+    const store = await setup();
+    store.edit();
+
+    store.cancelEdit();
+
+    expect(store.mode()).toBe(DetailsMode.View);
   });
 
   it('save_OnUpdateWithoutManagePermission_SendsTheStoredEstimate', async () => {
@@ -228,6 +296,23 @@ describe('WorkOrderDrawerStore', () => {
     expect(store.canChangeStatus()).toBe(true);
   });
 
+  it('canChangeStatus_InEditMode_IsFalse', async () => {
+    const store = await setup({ canManage: true });
+    store.edit();
+
+    expect(store.canChangeStatus()).toBe(false);
+  });
+
+  it('requestChangeStatus_WhenTheDialogReturns_IsViewMode', async () => {
+    const store = await setup({ canManage: true });
+    store.edit();
+    store.requestChangeStatus();
+
+    store.start({ type: WorkOrderActionType.Open, payload: { workOrderId: 'wo-1' } });
+
+    expect(store.mode()).toBe(DetailsMode.View);
+  });
+
   it('canChangeStatus_ForAWorkerWithAnotherAssignee_IsFalse', async () => {
     const store = await setup({ canWrite: true, employeeId: 'someone-else' });
 
@@ -264,6 +349,17 @@ describe('WorkOrderDrawerStore', () => {
     expect(complete).not.toHaveBeenCalled();
   });
 
+  it('save_With409_StaysInEditModeAndReloads', async () => {
+    update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict })));
+    const store = await setup({ canManage: true });
+    store.edit();
+
+    store.save(FORM_VALUE);
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it('save_With422_ShowsTheRuleToastAndKeepsTheDrawerOpen', async () => {
     update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.UnprocessableEntity })));
     const store = await setup({ canManage: true });
@@ -272,5 +368,16 @@ describe('WorkOrderDrawerStore', () => {
 
     expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error', detail: 'WORK_ORDERS.TOASTS.RULE' }));
     expect(complete).not.toHaveBeenCalled();
+  });
+
+  it('save_With422_StaysInEditMode', async () => {
+    update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.UnprocessableEntity })));
+    const store = await setup({ canManage: true });
+    store.edit();
+
+    store.save(FORM_VALUE);
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+    expect(notify).not.toHaveBeenCalled();
   });
 });

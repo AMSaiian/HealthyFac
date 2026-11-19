@@ -15,6 +15,7 @@ import { FilesApi } from '@files/files-api';
 import { WorkOrderDrawerStore } from '@work-orders/drawer/work-order-drawer-store/work-order-drawer.store';
 import { FilePickerDialog } from '@work-orders/drawer/file-picker-dialog/file-picker-dialog';
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
+import { WorkOrderDetails } from '@work-orders/drawer/work-order-details/work-order-details';
 import { WorkOrderForm } from '@work-orders/drawer/work-order-form/work-order-form';
 import { WorkOrderHistory } from '@work-orders/drawer/work-order-history/work-order-history';
 import { workOrderFormSchema, type WorkOrderFormValue } from '@work-orders/work-order-schema';
@@ -37,6 +38,7 @@ const HISTORY_TAB = 'history';
     Tag,
     Tooltip,
     TranslatePipe,
+    WorkOrderDetails,
     WorkOrderForm,
     WorkOrderHistory,
   ],
@@ -70,6 +72,12 @@ export class WorkOrderDrawerHost {
       !hasFormChanges(workOrderFormSchema, initial, current)
     );
   });
+  protected readonly title = computed((): string => {
+    if (this.store.isViewMode()) {
+      return 'WORK_ORDERS.FORM.DETAILS_TITLE';
+    }
+    return this.store.isUpdate() ? 'WORK_ORDERS.FORM.UPDATE_TITLE' : 'WORK_ORDERS.FORM.CREATE_TITLE';
+  });
   protected readonly saveDisabledReason = computed((): string | null => {
     if (!this._isValid()) {
       return 'WORK_ORDERS.FORM.INVALID';
@@ -88,6 +96,19 @@ export class WorkOrderDrawerHost {
         this.store.activateHistory();
       }
     });
+    effect(() => {
+      const initial = this.store.initialValue();
+      if (this.store.isViewMode() && initial !== null) {
+        this.store.setFormState(initial.fileIds, initial.machineId);
+      }
+    });
+  }
+
+  protected onEdit(): void {
+    this.store.edit();
+    this._current.set(null);
+    this._isValid.set(false);
+    this.tab.set(DETAILS_TAB);
   }
 
   protected onValueChange(value: WorkOrderFormValue): void {

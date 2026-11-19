@@ -38,7 +38,12 @@
                 "output": "flags"
               }
             ],
-            "styles": ["node_modules/quill/dist/quill.core.css", "src/styles.css", "src/rich-text-editor.css"],
+            "styles": [
+              "node_modules/quill/dist/quill.core.css",
+              "src/styles.css",
+              "src/rich-text-content.css",
+              "src/rich-text-editor.css"
+            ],
             "allowedCommonJsDependencies": ["hammerjs", "quill-delta", "slugify"]
           },
           "configurations": {

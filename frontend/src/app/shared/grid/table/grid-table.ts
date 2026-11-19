@@ -1,7 +1,7 @@
-import { computed, inject, type Signal } from '@angular/core';
+import { computed, effect, inject, type Signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
-import type { TableColumnReorderEvent, TablePageEvent } from 'primeng/table';
+import type { Table, TableColumnReorderEvent, TablePageEvent } from 'primeng/table';
 import type { ColumnFilterPassThrough, TablePassThrough } from 'primeng/types/table';
 
 import type { GridSort } from '@shared/grid/requests/grid-request';
@@ -22,6 +22,9 @@ export interface GridTableKeyset {
   readonly limitChange: (limit: number) => void;
 }
 
+/** The minimum header width of a text column: the text cell shows at most this much, and the column is at least this wide. */
+export const TEXT_COLUMN_WIDTH = '20rem';
+
 export interface GridTableOptions<TRow, TColumn extends string, TFilter extends object, TSortColumn extends string> {
   readonly allColumns: readonly TColumn[];
   readonly columns: Signal<readonly TColumn[]>;
@@ -41,6 +44,10 @@ export interface GridTableOptions<TRow, TColumn extends string, TFilter extends 
   readonly pageChange: (page: { offset: number; limit: number }) => void;
   /** Set only by a keyset grid: the position stack of its store. */
   readonly keyset?: GridTableKeyset;
+  /** The PrimeNG table; its resized widths reset on a column change, because PrimeNG keeps a width by column position. */
+  readonly table: Signal<Table | undefined>;
+  /** The columns that show a text cell (`hf-cell-text`); their header gets this minimum width. */
+  readonly textColumns: readonly TColumn[];
   readonly columnsChange: (columns: readonly TColumn[]) => void;
   readonly columnsReorder: (columns: readonly TColumn[]) => void;
 }
@@ -65,6 +72,24 @@ export interface GridTable<TColumn extends string> {
   isColumnVisible(column: TColumn): boolean;
   columnLabelKey(column: TColumn): string;
   isSortable(column: TColumn): boolean;
+  /** The minimum header width of the column: `TEXT_COLUMN_WIDTH` for a text column, else `null`. */
+  columnWidth(column: TColumn): string | null;
+}
+
+/**
+ * Drops the widths that a user resized. The expand resize mode writes the table width and min width inline, and
+ * PrimeNG writes a width style by column position, so a changed column set would show the old widths.
+ */
+export function resetColumnWidths(table: Table | undefined): void {
+  if (table === undefined) {
+    return;
+  }
+  table.destroyStyleElement();
+  const element = table.tableViewChild()?.nativeElement as HTMLElement | undefined;
+  if (element !== undefined) {
+    element.style.width = '';
+    element.style.minWidth = (table.tableStyle()?.['min-width'] as string | undefined) ?? '';
+  }
 }
 
 /**
@@ -88,6 +113,15 @@ export function createGridTable<TRow, TColumn extends string, TFilter extends ob
     isEmptyResult({ rows: options.rows(), isLoading: options.isLoading(), hasLoaded: options.hasLoaded() }),
   );
   const tableColumns = computed(() => [...options.columns()]);
+  let isFirstColumnRun = true;
+  effect(() => {
+    tableColumns();
+    if (isFirstColumnRun) {
+      isFirstColumnRun = false;
+      return;
+    }
+    untracked(() => resetColumnWidths(options.table()));
+  });
   const paginator = computed((): GridPaginator => toPaginator(options.keyset?.pageIndex() ?? null, options.limit()));
   const labels = toSignal(inject(TranslateService).stream(Object.values(GRID_TOOLTIP_KEYS)), {
     initialValue: {} as Record<string, string>,
@@ -167,5 +201,6 @@ export function createGridTable<TRow, TColumn extends string, TFilter extends ob
     isColumnVisible: (column: TColumn): boolean => options.columns().includes(column),
     columnLabelKey: (column: TColumn): string => options.labelKeys[column],
     isSortable: (column: TColumn): boolean => options.sortableColumns.includes(column),
+    columnWidth: (column: TColumn): string | null => (options.textColumns.includes(column) ? TEXT_COLUMN_WIDTH : null),
   };
 }

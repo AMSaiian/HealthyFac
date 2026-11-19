@@ -18,10 +18,10 @@ export const COLUMN_LABEL_KEYS: Readonly<Record<FileColumn, string>> = {
 export const INGEST_COLUMNS: readonly FileColumn[] = [FileColumn.Machine, FileColumn.Ingest];
 
 export const MENU_DOWNLOAD_KEY = 'FILES.ACTIONS_MENU.DOWNLOAD';
-export const MENU_EDIT_KEY = 'ACTIONS.EDIT';
+export const MENU_SHOW_DETAILS_KEY = 'ACTIONS.SHOW_DETAILS';
 export const MENU_DELETE_KEY = 'ACTIONS.DELETE';
 export const MENU_DOWNLOAD_TOOLTIP_KEY = 'FILES.TOOLTIPS.DOWNLOAD';
-export const MENU_EDIT_TOOLTIP_KEY = 'FILES.TOOLTIPS.EDIT';
+export const MENU_SHOW_DETAILS_TOOLTIP_KEY = 'ACTIONS.TOOLTIPS.SHOW_DETAILS';
 export const MENU_DELETE_TOOLTIP_KEY = 'FILES.TOOLTIPS.DELETE';
 export const MENU_INGEST_KEY = 'FILES.ACTIONS_MENU.INGEST';
 export const MENU_CANCEL_INGEST_KEY = 'FILES.ACTIONS_MENU.CANCEL_INGEST';
@@ -182,3 +182,6 @@ export const ROW_ACTION_ICONS: Readonly<Record<FileRowAction, string>> = {
   [FileRowAction.Tie]: 'pi pi-link',
   [FileRowAction.Untie]: 'pi pi-ban',
 };
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly FileColumn[] = [FileColumn.FileName, FileColumn.Machine];

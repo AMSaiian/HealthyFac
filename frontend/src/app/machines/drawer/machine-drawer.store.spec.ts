@@ -6,12 +6,16 @@ import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { DetailsMode } from '@shared/forms/with-details-mode';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import { type Machine, MachineState } from '@machines/machine';
 import { MachineActionType } from '@machines/machine-actions';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import { MachinesApi } from '@machines/machines-api';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 
 import { MachineDrawerStore } from './machine-drawer.store';
 import type { MachineFormValue } from '@machines/drawer/machine-form/machine-form-schema';
@@ -59,6 +63,7 @@ interface Setup {
   api: { get: Spy; create: Spy; update: Spy };
   draftsApi: { getMachineDraft: Spy; applyMachineDraft: Spy };
   complete: ReturnType<typeof vi.spyOn>;
+  notify: ReturnType<typeof vi.spyOn>;
   messages: { add: Spy };
 }
 
@@ -66,7 +71,10 @@ function httpError(status: number): HttpErrorResponse {
   return new HttpErrorResponse({ status, statusText: String(status) });
 }
 
-function setup(overrides: Partial<Setup['api']> = {}): Setup {
+function setup(
+  overrides: Partial<Setup['api']> = {},
+  permissions: readonly Permission[] = [Permission.MachinesWrite],
+): Setup {
   const messages = { add: vi.fn() };
   const api = {
     get: vi.fn(() => of(MACHINE)),
@@ -95,6 +103,8 @@ function setup(overrides: Partial<Setup['api']> = {}): Setup {
       { provide: MachinesApi, useValue: api },
       { provide: DraftsApi, useValue: draftsApi },
       { provide: MessageService, useValue: messages },
+      { provide: AuthStore, useValue: { hasPermission: (permission: Permission) => permissions.includes(permission) } },
+      { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
       {
         provide: CLOCK,
         useValue: { now: () => Temporal.Instant.from('2026-03-10T23:30:00Z'), timeZoneId: () => 'Europe/Kyiv' },
@@ -103,7 +113,8 @@ function setup(overrides: Partial<Setup['api']> = {}): Setup {
     ],
   });
   const complete = vi.spyOn(TestBed.inject(ActionStore), 'complete');
-  return { store: TestBed.inject(MachineDrawerStore), api, draftsApi, complete, messages };
+  const notify = vi.spyOn(TestBed.inject(ActionStore), 'notify');
+  return { store: TestBed.inject(MachineDrawerStore), api, draftsApi, complete, notify, messages };
 }
 
 describe('MachineDrawerStore', () => {
@@ -152,8 +163,8 @@ describe('MachineDrawerStore', () => {
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'MACHINES.TOASTS.CREATED' }));
   });
 
-  it('save_ForUpdate_CallsUpdateAndCompletesAction', async () => {
-    const { store, api, complete, messages } = setup();
+  it('save_ForUpdate_CallsUpdateAndKeepsTheActionOpen', async () => {
+    const { store, api, complete, notify, messages } = setup();
     store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
@@ -165,8 +176,87 @@ describe('MachineDrawerStore', () => {
       STATE_UPDATE_BODY,
       expect.objectContaining({ context: expect.anything() }),
     );
-    expect(complete).toHaveBeenCalledWith(MachineActionType.Saved);
+    expect(notify).toHaveBeenCalledWith(MachineActionType.Saved);
+    expect(complete).not.toHaveBeenCalled();
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'MACHINES.TOASTS.UPDATED' }));
+  });
+
+  it('start_ForUpdate_IsViewMode', () => {
+    const { store } = setup();
+
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
+
+    expect(store.mode()).toBe(DetailsMode.View);
+  });
+
+  it('start_ForCreate_IsEditMode', () => {
+    const { store } = setup();
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
+
+    store.start({ type: MachineActionType.Create, payload: {} });
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+  });
+
+  it('isEditShown_WithoutWritePermission_IsFalse', async () => {
+    const { store } = setup({}, [Permission.MachinesRead]);
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store.isEditShown()).toBe(false);
+  });
+
+  it('isEditShown_WithWritePermissionAfterLoad_IsTrue', async () => {
+    const { store } = setup();
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
+    const beforeLoad = store.isEditShown();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(beforeLoad).toBe(false);
+    expect(store.isEditShown()).toBe(true);
+  });
+
+  it('save_ForUpdate_NotifiesReloadsAndReturnsToView', async () => {
+    const { store, api } = setup();
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    store.edit();
+
+    store.save(UPDATE_VALUE);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(store.mode()).toBe(DetailsMode.View);
+    expect(store.isSaving()).toBe(false);
+  });
+
+  it('save_ForUpdateWithConflict_StaysInEditMode', async () => {
+    const { store, notify } = setup({ update: vi.fn(() => throwError(() => httpError(HttpStatusCode.Conflict))) });
+    store.start({ type: MachineActionType.Update, payload: { machineId: MACHINE.id } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    store.edit();
+
+    store.save(UPDATE_VALUE);
+
+    expect(store.mode()).toBe(DetailsMode.Edit);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('cancelEdit_ForUpdate_ReturnsToViewAndKeepsTheAction', () => {
+    const { store } = setup();
+    const action = { type: MachineActionType.Update, payload: { machineId: MACHINE.id } };
+    store.start(action);
+    store.edit();
+
+    store.cancelEdit();
+
+    expect(store.mode()).toBe(DetailsMode.View);
+    expect(store.action()).toEqual(action);
   });
 
   it('save_ForUpdateWithOnlyAnotherState_SendsTheStateAndTheUnchangedFields', async () => {

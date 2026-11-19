@@ -62,6 +62,10 @@ export const HealthyFacPreset = definePreset(Lara, {
       },
       tabpanel: { padding: '0.75rem 0 0 0' },
     },
+    divider: {
+      horizontal: { margin: '0' },
+      vertical: { margin: '0' },
+    },
     datepicker: {
       panel: { padding: '0.5rem' },
       header: { padding: '0 0 0.375rem 0' },

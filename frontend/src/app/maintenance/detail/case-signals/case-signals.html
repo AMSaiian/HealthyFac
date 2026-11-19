@@ -4,17 +4,19 @@
   scrollHeight="flex"
   [value]="rows()"
   [stripedRows]="true"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template #header>
     <tr>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.SEVERITY' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.RULE' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.SUBJECT' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.VALUE' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.STARTED' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.ENDED' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.DURATION_COLUMN' | translate }}</th>
-      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.COVERAGE' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.SEVERITY' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.RULE' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.SUBJECT' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.VALUE' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.STARTED' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.ENDED' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.DURATION_COLUMN' | translate }}</th>
+      <th pResizableColumn>{{ 'MAINTENANCE.SIGNAL_TABLE.COVERAGE' | translate }}</th>
       <th></th>
     </tr>
   </ng-template>
@@ -29,8 +31,8 @@
           [value]="severityLabel(signal.severity)"
         />
       </td>
-      <td>{{ ruleLabel(signal.rule) }}</td>
-      <td class="font-mono">{{ signalSubject(signal) }}</td>
+      <td><hf-cell-text [text]="ruleLabel(signal.rule)" /></td>
+      <td class="font-mono"><hf-cell-text [text]="signalSubject(signal)" /></td>
       <td>
         @if (signal.value !== null) {
           {{ signal.value | number: '1.0-2' }}

@@ -7,7 +7,11 @@
   (cancelled)="store.cancel()"
 >
   <div class="flex flex-col gap-2">
-    <label for="file-tie-machine">{{ 'FILES.TIE_DIALOG.MACHINE' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="file-tie-machine"
+      >{{ 'FILES.TIE_DIALOG.MACHINE' | translate }}</label
+    >
     <p-select
       inputId="file-tie-machine"
       class="w-full"

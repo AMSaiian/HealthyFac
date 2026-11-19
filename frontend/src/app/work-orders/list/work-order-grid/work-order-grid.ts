@@ -1,22 +1,23 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { type Chip, lookupChips, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { PAGE_SIZES } from '@shared/grid/requests/grid-limits';
 import type { GridSort } from '@shared/grid/requests/grid-request';
 import { delayedLoading } from '@shared/loading/delayed-loading';
@@ -49,6 +50,7 @@ import {
   PRIORITY_LABEL_KEYS,
   SORTABLE_COLUMNS,
   STATUS_LABEL_KEYS,
+  TEXT_COLUMNS,
 } from './work-order-grid.utils';
 
 export type RowActionType =
@@ -67,6 +69,7 @@ const ALL_COLUMNS: readonly WorkOrderColumn[] = Object.values(WorkOrderColumn);
 
 @Component({
   imports: [
+    CellText,
     ButtonDirective,
     ChipSummary,
     ColumnChooser,
@@ -75,7 +78,7 @@ const ALL_COLUMNS: readonly WorkOrderColumn[] = Object.values(WorkOrderColumn);
     FormsModule,
     InputText,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     PlainDateRangePicker,
     Select,
     Skeleton,
@@ -140,6 +143,8 @@ export class WorkOrderGrid {
     ALL_COLUMNS.filter((column) => this.canManage() || column !== WorkOrderColumn.Assignee),
   );
 
+  private readonly _table = viewChild(Table);
+
   protected readonly grid = createGridTable<WorkOrderRow, WorkOrderColumn, WorkOrderFilter, WorkOrderSortColumn>({
     allColumns: ALL_COLUMNS,
     columns: computed(() => this.columns().filter((column) => this.allColumns().includes(column))),
@@ -156,6 +161,8 @@ export class WorkOrderGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: (columns) => this.columnsChange.emit(columns),
     columnsReorder: (columns) => this.columnsReorder.emit(columns),
   });
@@ -214,7 +221,7 @@ export class WorkOrderGrid {
   }
 
   /** Builds the menu of the row at the click: the actions follow the status of the row and the permissions. */
-  protected openMenu(event: Event, row: WorkOrderRow, menu: Menu): void {
+  protected openMenu(event: Event, row: WorkOrderRow, menu: RowMenuPopup): void {
     this.menuItems.set(this._menuItemsFor(row));
     this.rowMenu.open(event, row, menu);
   }
@@ -236,8 +243,8 @@ export class WorkOrderGrid {
     return [
       this.rowMenu.menuItem(
         {
-          labelKey: MENU_KEYS.open,
-          tooltipKey: MENU_TOOLTIP_KEYS.open,
+          labelKey: MENU_KEYS.showDetails,
+          tooltipKey: MENU_TOOLTIP_KEYS.showDetails,
           icon: 'pi pi-eye',
           onSelect: (target) => this.openRequested.emit(target.id),
         },

@@ -1,20 +1,34 @@
 <hf-action-dialog
-  [title]="isNew() ? 'PHASES.FORM.CREATE_TITLE' : 'PHASES.FORM.UPDATE_TITLE'"
+  [title]="title()"
   widthClass="w-[48rem] max-w-[95vw]"
   [isSaveDisabled]="saveDisabledReason() !== null"
   [saveDisabledReason]="saveDisabledReason()"
   [isSaving]="store.isSaving()"
+  [isSaveShown]="store.isEditMode()"
+  [isEditShown]="store.isEditShown()"
+  [hasEditCancel]="store.isUpdate() && store.isEditMode()"
   (save)="onSave()"
+  (editRequested)="onEdit()"
+  (editCancelled)="store.cancelEdit()"
   (cancelled)="store.closeEditor()"
 >
   @if (isReady() && initialValue(); as initial) {
-    <hf-phase-form
-      [initialValue]="initial"
-      [sourceOptions]="store.sourceOptions()"
-      [metrics]="metricList()"
-      (valueChange)="onValueChange($event)"
-      (validityChange)="onValidityChange($event)"
-    />
+    @if (store.isViewMode()) {
+      <hf-phase-details
+        [value]="initial"
+        [sourceOptions]="store.sourceOptions()"
+        [metrics]="metricList()"
+        [descriptionLinks]="store.descriptionLinks()"
+      />
+    } @else {
+      <hf-phase-form
+        [initialValue]="initial"
+        [sourceOptions]="store.sourceOptions()"
+        [metrics]="metricList()"
+        (valueChange)="onValueChange($event)"
+        (validityChange)="onValidityChange($event)"
+      />
+    }
   } @else {
     <div class="flex min-h-48">
       @if (showSpinner()) {

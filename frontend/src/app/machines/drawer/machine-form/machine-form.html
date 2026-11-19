@@ -1,5 +1,9 @@
 <div class="flex flex-col gap-1">
-  <label for="machine-name">{{ 'MACHINES.FORM.NAME' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="machine-name"
+    >{{ 'MACHINES.FORM.NAME' | translate }}</label
+  >
   @for (error of machineForm.name().errors(); track $index) {
     @if (isShown(machineForm.name)) {
       <small class="text-red-500">{{ error.message | translate }}</small>
@@ -14,8 +18,13 @@
     [formField]="machineForm.name"
   />
 </div>
+<p-divider />
 <div class="flex flex-col gap-1">
-  <label for="machine-serial-number">{{ 'MACHINES.FORM.SERIAL_NUMBER' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="machine-serial-number"
+    >{{ 'MACHINES.FORM.SERIAL_NUMBER' | translate }}</label
+  >
   @for (error of machineForm.serialNumber().errors(); track $index) {
     @if (isShown(machineForm.serialNumber)) {
       <small class="text-red-500">{{ error.message | translate }}</small>
@@ -31,8 +40,13 @@
   />
 </div>
 @if (isUpdate()) {
+  <p-divider />
   <div class="flex flex-col gap-1">
-    <label for="machine-state">{{ 'MACHINES.FORM.STATE' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="machine-state"
+      >{{ 'MACHINES.FORM.STATE' | translate }}</label
+    >
     <p-select
       inputId="machine-state"
       optionLabel="labelKey"
@@ -54,9 +68,10 @@
     </p-select>
   </div>
 }
+<p-divider />
 <div class="flex flex-col gap-1">
   <div class="flex items-center gap-2">
-    <span>{{ 'MACHINES.FORM.EXPECTED_GO_LIVE_ON' | translate }}</span>
+    <span class="hf-field-label">{{ 'MACHINES.FORM.EXPECTED_GO_LIVE_ON' | translate }}</span>
     <i
       class="pi pi-info-circle text-muted-color"
       tabindex="0"
@@ -76,8 +91,13 @@
   />
 </div>
 @if (isUpdate() && gatewayId(); as id) {
+  <p-divider />
   <div class="flex flex-col gap-1">
-    <label for="machine-gateway-id">{{ 'MACHINES.FORM.GATEWAY_ID' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="machine-gateway-id"
+      >{{ 'MACHINES.FORM.GATEWAY_ID' | translate }}</label
+    >
     <div class="flex gap-2">
       <input
         pInputText
@@ -102,8 +122,9 @@
     </div>
   </div>
 }
+<p-divider />
 <div class="flex flex-col gap-1">
-  <span>{{ 'MACHINES.FORM.DESCRIPTION' | translate }}</span>
+  <span class="hf-field-label">{{ 'MACHINES.FORM.DESCRIPTION' | translate }}</span>
   @for (error of machineForm.description().errors(); track $index) {
     @if (isShown(machineForm.description)) {
       <small class="text-red-500">{{ error.message | translate }}</small>

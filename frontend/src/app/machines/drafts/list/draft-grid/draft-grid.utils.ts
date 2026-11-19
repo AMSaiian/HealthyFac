@@ -1,4 +1,5 @@
 import { DraftKind, type MachineDraftGridItem } from '@machines/drafts/draft';
+import { DraftColumn } from '@machines/drafts/draft';
 
 const TITLE_MACHINE = 'DRAFTS.GROUP.MACHINE';
 const TITLE_NEW_MACHINE = 'DRAFTS.GROUP.NEW_MACHINE';
@@ -23,3 +24,6 @@ export function machineTitleOf(row: MachineDraftGridItem): MachineTitle {
 export function isReviewDisabledOf(row: MachineDraftGridItem): boolean {
   return row.kind !== DraftKind.Machine && row.machineId === null;
 }
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly DraftColumn[] = [DraftColumn.Machine, DraftColumn.Label];

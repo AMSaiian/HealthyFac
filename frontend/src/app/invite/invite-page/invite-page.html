@@ -17,10 +17,12 @@
             <dt class="text-muted-color w-24 flex-none">{{ 'INVITE.COMPANY' | translate }}</dt>
             <dd class="font-bold">{{ details.companyName }}</dd>
           </div>
+          <p-divider />
           <div class="flex gap-2">
             <dt class="text-muted-color w-24 flex-none">{{ 'INVITE.EMAIL' | translate }}</dt>
             <dd class="font-bold">{{ details.email }}</dd>
           </div>
+          <p-divider />
           <div class="flex gap-2">
             <dt class="text-muted-color w-24 flex-none">{{ 'INVITE.ROLE' | translate }}</dt>
             <dd class="font-bold">{{ roleKey() | translate }}</dd>
@@ -31,7 +33,11 @@
           (submit)="$event.preventDefault(); submit()"
         >
           <div class="flex flex-col gap-1">
-            <label for="invite-first-name">{{ 'INVITE.FIRST_NAME' | translate }}</label>
+            <label
+              class="hf-field-label"
+              for="invite-first-name"
+              >{{ 'INVITE.FIRST_NAME' | translate }}</label
+            >
             @for (error of acceptForm.firstName().errors(); track $index) {
               @if (isShown(acceptForm.firstName)) {
                 <small class="text-red-500">{{ error.message | translate }}</small>
@@ -45,8 +51,13 @@
               [formField]="acceptForm.firstName"
             />
           </div>
+          <p-divider />
           <div class="flex flex-col gap-1">
-            <label for="invite-last-name">{{ 'INVITE.LAST_NAME' | translate }}</label>
+            <label
+              class="hf-field-label"
+              for="invite-last-name"
+              >{{ 'INVITE.LAST_NAME' | translate }}</label
+            >
             @for (error of acceptForm.lastName().errors(); track $index) {
               @if (isShown(acceptForm.lastName)) {
                 <small class="text-red-500">{{ error.message | translate }}</small>

@@ -2,6 +2,7 @@ import type { MenuItem } from 'primeng/api';
 
 import type { InviteRow } from '@employees/employee';
 import type { RowMenu } from '@shared/grid/table/row-menu';
+import { InviteColumn } from '@employees/employee';
 
 export const INVITE_MENU_KEYS = {
   resend: 'EMPLOYEES.RESEND',
@@ -38,3 +39,6 @@ export function inviteMenuItems(
     ),
   ];
 }
+
+/** The columns that show a text cell (`hf-cell-text`): their header has the minimum width of a text column. */
+export const TEXT_COLUMNS: readonly InviteColumn[] = [InviteColumn.Email];

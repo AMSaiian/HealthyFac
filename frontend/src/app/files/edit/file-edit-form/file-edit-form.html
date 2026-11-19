@@ -1,5 +1,9 @@
 <div class="flex flex-col gap-1">
-  <label for="file-edit-name">{{ 'FILES.EDIT_DIALOG.NAME' | translate }}</label>
+  <label
+    class="hf-field-label"
+    for="file-edit-name"
+    >{{ 'FILES.EDIT_DIALOG.NAME' | translate }}</label
+  >
   @for (error of editForm.fileName().errors(); track $index) {
     @if (isShown(editForm.fileName)) {
       <small class="text-red-500">{{ error.message | translate }}</small>
@@ -17,8 +21,9 @@
     <hf-file-type-tag [extension]="extension()" />
   </small>
 </div>
+<p-divider />
 <div class="flex flex-col gap-1">
-  <span>{{ 'FILES.EDIT_DIALOG.DESCRIPTION' | translate }}</span>
+  <span class="hf-field-label">{{ 'FILES.EDIT_DIALOG.DESCRIPTION' | translate }}</span>
   @for (error of editForm.description().errors(); track $index) {
     @if (isShown(editForm.description)) {
       <small class="text-red-500">{{ error.message | translate }}</small>

@@ -76,7 +76,7 @@
     "SAVE": "Save",
     "CANCEL": "Cancel",
     "CLOSE": "Close",
-    "OPEN": "Open",
+    "SHOW_DETAILS": "Show details",
     "DELETE": "Delete",
     "EDIT": "Edit",
     "RELOAD": "Reload",
@@ -86,7 +86,8 @@
     "ROW_ACTIONS": "Row actions",
     "TOOLTIPS": {
       "COLUMNS": "Show or hide columns",
-      "OPEN": "Open the details",
+      "SHOW_DETAILS": "Show the details of this item",
+      "CANCEL_EDIT": "Drop the changes and show the details",
       "SAVE": "Save the changes",
       "CANCEL": "Close the window and drop the changes",
       "CLOSE": "Close the window",
@@ -193,6 +194,7 @@
     "FORM": {
       "CREATE_TITLE": "New machine",
       "UPDATE_TITLE": "Update machine",
+      "DETAILS_TITLE": "Machine",
       "NAME": "Name",
       "SERIAL_NUMBER": "Serial number",
       "STATE": "State",
@@ -214,9 +216,7 @@
   "STATUS_DEFINITIONS": {
     "TITLE": "Statuses of",
     "ADD_NEW": "Add new",
-    "UPDATE": "Update",
     "TOOLTIPS": {
-      "UPDATE": "Edit the status",
       "DELETE": "Delete the status",
       "ADD_NEW": "Add a status for the machine"
     },
@@ -244,6 +244,7 @@
     "FORM": {
       "CREATE_TITLE": "New status",
       "UPDATE_TITLE": "Update status",
+      "DETAILS_TITLE": "Status",
       "CODE": "Code",
       "CODE_PLACEHOLDER": "Enter the code",
       "SEVERITY": "Severity",
@@ -320,8 +321,6 @@
       "ALARM_HIGH": "Alarm above",
       "WARNING_LOW": "Warning below",
       "WARNING_HIGH": "Warning above",
-      "ALARM_ROW": "Alarm",
-      "WARNING_ROW": "Warning",
       "BEHAVIOR": "Behavior",
       "DONE": "Done",
       "INVALID": "The form has errors",
@@ -440,7 +439,6 @@
     "MACHINE_TITLE": "Files of",
     "TOOLTIPS": {
       "DOWNLOAD": "Download the file",
-      "EDIT": "Edit the file name and description",
       "DELETE": "Delete the file",
       "INGEST": "Start the ingest of the file",
       "CANCEL_INGEST": "Cancel the ingest of the file",
@@ -506,6 +504,7 @@
     },
     "EDIT_DIALOG": {
       "TITLE": "Edit file",
+      "DETAILS_TITLE": "File",
       "NAME": "Name",
       "EXTENSION_HINT": "The type of the file stays",
       "DESCRIPTION": "Description"
@@ -747,7 +746,8 @@
         "TOO_MANY_FILES": "A work order holds at most 20 files"
       },
       "CREATE_TITLE": "New work order",
-      "UPDATE_TITLE": "Work order",
+      "UPDATE_TITLE": "Edit work order",
+      "DETAILS_TITLE": "Work order",
       "TITLE": "Title",
       "TITLE_PLACEHOLDER": "What must be done",
       "DESCRIPTION": "Description",
@@ -775,7 +775,6 @@
     "TOOLTIPS": {
       "GRID_VIEW": "Show work orders as a list",
       "BOARD_VIEW": "Show work orders on a board",
-      "OPEN": "Open the work order",
       "ASSIGN": "Assign an employee to the work order",
       "MOVE": "Change the planned start of the work order",
       "UNASSIGN": "Return the work order to the backlog",
@@ -875,8 +874,7 @@
     },
     "BOARD": {
       "CHANGE_STATUS": "Change status",
-      "EMPTY_COLUMN": "No work orders in this column",
-      "CHANGE_STATUS_UNSAVED": "Save or discard the changes first"
+      "EMPTY_COLUMN": "No work orders in this column"
     },
     "DRAFTS": "Drafts"
   },
@@ -1101,6 +1099,7 @@
     "FORM": {
       "CREATE_TITLE": "New phase",
       "UPDATE_TITLE": "Edit phase",
+      "DETAILS_TITLE": "Phase",
       "CODE": "Code",
       "NAME": "Name",
       "DESCRIPTION": "Description",
@@ -1402,6 +1401,8 @@
     "TOOLTIPS": {
       "APPLY": "Create a work order from the draft",
       "DISMISS": "Dismiss the draft without a work order",
+      "APPLY_NO_RIGHT": "You need the right to write drafts and work orders to create a work order from a draft",
+      "DISMISS_NO_RIGHT": "You need the right to write drafts to dismiss a draft",
       "BACK": "Back to the work orders"
     },
     "APPLY_DIALOG": {

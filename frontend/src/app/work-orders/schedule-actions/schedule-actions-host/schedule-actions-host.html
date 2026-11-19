@@ -29,7 +29,11 @@
       }
     } @else {
       <div class="flex flex-col gap-1">
-        <label for="status-choice">{{ 'WORK_ORDERS.SCHEDULE.STATUS' | translate }}</label>
+        <label
+          class="hf-field-label"
+          for="status-choice"
+          >{{ 'WORK_ORDERS.SCHEDULE.STATUS' | translate }}</label
+        >
         <p-select
           inputId="status-choice"
           optionValue="value"

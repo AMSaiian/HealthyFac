@@ -9,6 +9,7 @@ import { RichTextView } from '@shared/rich-text/rich-text-view/rich-text-view';
 
 import { CompareField, type CompareRow } from '@machines/drafts/compare/draft-compare-store/draft-compare.store.utils';
 import { DESCRIPTION_MAX_LENGTH } from '@machines/machine-limits';
+import { Divider } from 'primeng/divider';
 
 const LABEL_KEYS: Readonly<Record<CompareField, string>> = {
   [CompareField.Name]: 'DRAFTS.COMPARE.FIELDS.NAME',
@@ -17,7 +18,7 @@ const LABEL_KEYS: Readonly<Record<CompareField, string>> = {
 };
 
 @Component({
-  imports: [Checkbox, FormsModule, InputText, RichTextEditor, RichTextView, TranslatePipe],
+  imports: [Divider, Checkbox, FormsModule, InputText, RichTextEditor, RichTextView, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-field-compare-list',
   templateUrl: './field-compare-list.html',

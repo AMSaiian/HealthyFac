@@ -8,7 +8,12 @@ import { catchError } from 'rxjs/operators';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
+import { withDetailsMode } from '@shared/forms/with-details-mode';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
+import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { withToasts } from '@shared/toasts/with-toasts';
 import { draftConflictKey } from '@machines/drafts/draft-conflict';
@@ -37,10 +42,12 @@ interface DrawerState {
 
 export const MachineDrawerStore = signalStore(
   withState<DrawerState>({ action: null, isSaving: false }),
+  withDetailsMode(),
   withProps(() => ({
     _api: inject(MachinesApi),
     _draftsApi: inject(DraftsApi),
     _actions: inject(ActionStore),
+    _auth: inject(AuthStore),
     _clock: inject(CLOCK),
   })),
   withToasts(),
@@ -49,6 +56,7 @@ export const MachineDrawerStore = signalStore(
     machineId: computed(() => payloadOf(store.action()).machineId),
     draftId: computed(() => payloadOf(store.action()).draftId),
     today: computed(() => store._clock.now().toZonedDateTimeISO(store._clock.timeZoneId()).toPlainDate()),
+    canEdit: computed(() => store._auth.hasPermission(Permission.MachinesWrite)),
   })),
   withProps((store) => ({
     machine: rxResource({
@@ -78,7 +86,15 @@ export const MachineDrawerStore = signalStore(
       return initial === null ? null : overlay(initial, payloadOf(store.action()));
     }),
   })),
+  withProps((store) => ({
+    descriptionLinks: descriptionLinks(
+      () => (store.machine.hasValue() ? store.machine.value().description : null),
+      inject(RichTextImageLinks),
+    ).links,
+  })),
   withComputed((store) => ({
+    /** Tells whether the pencil shows: the loaded item in view mode, for a user who may change it. */
+    isEditShown: computed(() => store.isViewMode() && store.isUpdate() && store.machine.hasValue() && store.canEdit()),
     gatewayId: computed((): string | null => (store.machine.hasValue() ? store.machine.value().gatewayId : null)),
     /** The first day that the go-live picker allows: today on create, the creation day on edit. */
     minGoLiveOn: computed(() =>
@@ -108,6 +124,7 @@ export const MachineDrawerStore = signalStore(
     return {
       start(action: AppAction): void {
         patchState(store, { action });
+        store._startMode(action.type === MachineActionType.Update);
       },
       save: rxMethod<MachineFormValue>(
         pipe(
@@ -115,8 +132,15 @@ export const MachineDrawerStore = signalStore(
           exhaustMap((value) =>
             request$(value).pipe(
               tap(() => {
-                store._toastSuccess(store.isUpdate() ? 'MACHINES.TOASTS.UPDATED' : 'MACHINES.TOASTS.CREATED');
-                store._actions.complete(MachineActionType.Saved);
+                if (store.isUpdate()) {
+                  store._toastSuccess('MACHINES.TOASTS.UPDATED');
+                  store._actions.notify(MachineActionType.Saved);
+                  store.machine.reload();
+                  store.view();
+                } else {
+                  store._toastSuccess('MACHINES.TOASTS.CREATED');
+                  store._actions.complete(MachineActionType.Saved);
+                }
               }),
               catchError((error: unknown) => {
                 store._toastError(
@@ -130,6 +154,9 @@ export const MachineDrawerStore = signalStore(
           ),
         ),
       ),
+      cancelEdit(): void {
+        store.view();
+      },
       cancel(): void {
         store._actions.cancel();
       },

@@ -80,23 +80,30 @@ describe('MachineGrid', () => {
   it('menuItems_WithStatusesPermission_HoldsStatusesItem', () => {
     const { grid } = setup({ canReadStatuses: true });
 
-    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-list']);
+    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-eye', 'pi pi-list']);
   });
 
   it('menuItems_WithoutStatusesPermission_HoldsNoStatusesItem', () => {
     const { grid } = setup();
 
-    expect(grid.menuItems()).toEqual([]);
+    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-eye']);
   });
 
-  it('menuItems_WithWritePermission_OpenItemIsFirst', () => {
+  it('menuItems_WithoutWritePermission_ShowDetailsItemIsFirst', () => {
+    const { grid } = setup({ canReadStatuses: true });
+
+    expect(grid.menuItems().map((item) => item.label)).toEqual(['ACTIONS.SHOW_DETAILS', 'MACHINES.STATUSES']);
+    expect(grid.menuItems()[0].icon).toBe('pi pi-eye');
+  });
+
+  it('menuItems_WithWritePermission_ShowDetailsItemStaysFirst', () => {
     const { grid } = setup({ canWrite: true, canReadStatuses: true });
 
-    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-external-link', 'pi pi-sync', 'pi pi-list']);
+    expect(grid.menuItems().map((item) => item.icon)).toEqual(['pi pi-eye', 'pi pi-sync', 'pi pi-list']);
   });
 
-  it('menuItems_OpenItemOfActiveRow_EmitsUpdateRequestedWithItsId', () => {
-    const { grid, updates } = setup({ canWrite: true });
+  it('menuItems_ShowDetailsItemOfActiveRow_EmitsUpdateRequestedWithItsId', () => {
+    const { grid, updates } = setup();
     grid.rowMenu.activeRow = MACHINE;
 
     grid.menuItems()[0].command?.({} as never);
@@ -104,12 +111,12 @@ describe('MachineGrid', () => {
     expect(updates).toEqual([MACHINE.id]);
   });
 
-  it('menuItems_WithWritePermission_HoldsExactlyOneStateItemAfterOpen', () => {
+  it('menuItems_WithWritePermission_HoldsExactlyOneStateItemAfterShowDetails', () => {
     const { grid } = setup({ canWrite: true });
 
     const items = grid.menuItems();
 
-    expect(items.map((item) => item.label)).toEqual(['ACTIONS.OPEN', 'MACHINES.CHANGE_STATE']);
+    expect(items.map((item) => item.label)).toEqual(['ACTIONS.SHOW_DETAILS', 'MACHINES.CHANGE_STATE']);
     expect(items[1].icon).toBe('pi pi-sync');
   });
 

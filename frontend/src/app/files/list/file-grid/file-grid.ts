@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -6,10 +6,9 @@ import type { MenuItem } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
+import { ColumnFilter, SortIcon, Table, TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -19,8 +18,10 @@ import type { GridSort } from '@shared/grid/requests/grid-request';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
 import { type Chip, labelChipsOf, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
+import { RowMenuPopup } from '@shared/grid/table/row-menu-popup/row-menu-popup';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { PlainDateRangePicker } from '@shared/time/pickers/plain-date-range-picker/plain-date-range-picker';
@@ -49,8 +50,8 @@ import {
   MENU_DELETE_TOOLTIP_KEY,
   MENU_DOWNLOAD_KEY,
   MENU_DOWNLOAD_TOOLTIP_KEY,
-  MENU_EDIT_KEY,
-  MENU_EDIT_TOOLTIP_KEY,
+  MENU_SHOW_DETAILS_KEY,
+  MENU_SHOW_DETAILS_TOOLTIP_KEY,
   NEVER_OPTION,
   NO_ROW_ACCESS,
   NOT_TIED_OPTION,
@@ -58,6 +59,7 @@ import {
   ROW_ACTION_KEYS,
   ROW_ACTION_TOOLTIP_KEYS,
   SORTABLE_COLUMNS,
+  TEXT_COLUMNS,
   visibleRowActions,
 } from './file-grid.utils';
 
@@ -65,6 +67,7 @@ const ALL_COLUMNS: readonly FileColumn[] = Object.values(FileColumn);
 
 @Component({
   imports: [
+    CellText,
     ChipSummary,
     ButtonDirective,
     Checkbox,
@@ -75,7 +78,7 @@ const ALL_COLUMNS: readonly FileColumn[] = Object.values(FileColumn);
     FormsModule,
     InputText,
     LocalDateTimePipe,
-    Menu,
+    RowMenuPopup,
     PlainDateRangePicker,
     Select,
     Skeleton,
@@ -102,7 +105,6 @@ export class FileGrid {
   readonly limit = input.required<number>();
   readonly sort = input.required<FileSort | null>();
   readonly filter = input.required<FileFilter>();
-  readonly canEdit = input(false);
   readonly canDelete = input(false);
   /** The company page shows the machine and ingest columns and their row actions; the machine page hides them. */
   readonly showIngestColumns = input(true);
@@ -135,10 +137,10 @@ export class FileGrid {
   private readonly _labels = toSignal(
     this._translate.stream([
       MENU_DOWNLOAD_KEY,
-      MENU_EDIT_KEY,
+      MENU_SHOW_DETAILS_KEY,
       MENU_DELETE_KEY,
       MENU_DOWNLOAD_TOOLTIP_KEY,
-      MENU_EDIT_TOOLTIP_KEY,
+      MENU_SHOW_DETAILS_TOOLTIP_KEY,
       MENU_DELETE_TOOLTIP_KEY,
       FILTER_NOT_TIED_KEY,
       INGEST_NEVER_LABEL_KEY,
@@ -152,6 +154,8 @@ export class FileGrid {
   protected readonly allColumns = computed(() =>
     ALL_COLUMNS.filter((column) => this.showIngestColumns() || !INGEST_COLUMNS.includes(column)),
   );
+
+  private readonly _table = viewChild(Table);
 
   protected readonly grid = createGridTable<FileGridItem, FileColumn, FileFilter, FileSortColumn>({
     allColumns: ALL_COLUMNS,
@@ -169,6 +173,8 @@ export class FileGrid {
     filterChange: (patch) => this.filterChange.emit(patch),
     sortChange: (sort) => this.sortChange.emit(sort),
     pageChange: (page) => this.pageChange.emit(page),
+    table: this._table,
+    textColumns: TEXT_COLUMNS,
     columnsChange: (columns) => this.columnsChange.emit(columns),
     columnsReorder: (columns) => this.columnsReorder.emit(columns),
   });
@@ -219,7 +225,7 @@ export class FileGrid {
   }
 
   /** Builds the menu of the row at the click, so the texts and the row actions follow the row and its permissions. */
-  protected openMenu(event: Event, file: FileGridItem, menu: Menu): void {
+  protected openMenu(event: Event, file: FileGridItem, menu: RowMenuPopup): void {
     this.menuItems.set(this._menuItemsFor(file));
     this.rowMenu.open(event, file, menu);
   }
@@ -236,19 +242,15 @@ export class FileGrid {
         },
         labels,
       ),
-      ...(this.canEdit()
-        ? [
-            this.rowMenu.menuItem(
-              {
-                labelKey: MENU_EDIT_KEY,
-                tooltipKey: MENU_EDIT_TOOLTIP_KEY,
-                icon: 'pi pi-pencil',
-                onSelect: (row) => this.editRequested.emit(row),
-              },
-              labels,
-            ),
-          ]
-        : []),
+      this.rowMenu.menuItem(
+        {
+          labelKey: MENU_SHOW_DETAILS_KEY,
+          tooltipKey: MENU_SHOW_DETAILS_TOOLTIP_KEY,
+          icon: 'pi pi-eye',
+          onSelect: (row) => this.editRequested.emit(row),
+        },
+        labels,
+      ),
       ...(this.canDelete()
         ? [
             this.rowMenu.menuItem(

@@ -23,6 +23,8 @@
   [filters]="grid.tableFilters()"
   (onPage)="grid.onPage($event)"
   (onSort)="grid.onSort($event)"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
 >
   <ng-template
     #header
@@ -31,6 +33,8 @@
     <tr>
       @for (column of columns; track column) {
         <th
+          [style.min-width]="grid.columnWidth(column)"
+          pResizableColumn
           [pSortableColumn]="column"
           [pSortableColumnDisabled]="!grid.isSortable(column)"
         >
@@ -149,10 +153,10 @@
           } @else {
             @switch (column) {
               @case (EmployeeColumn.Name) {
-                {{ row.firstName }} {{ row.lastName }}
+                <hf-cell-text [text]="row.firstName + ' ' + row.lastName" />
               }
               @case (EmployeeColumn.Email) {
-                {{ row.email }}
+                <hf-cell-text [text]="row.email" />
               }
               @case (EmployeeColumn.Role) {
                 {{ roleLabel(row.roleCode) }}
@@ -208,23 +212,7 @@
     </tr>
   </ng-template>
 </p-table>
-<p-menu
+<hf-row-menu-popup
   #menu
-  appendTo="body"
-  [popup]="true"
   [model]="menuItems()"
->
-  <ng-template
-    #item
-    let-item
-  >
-    <div
-      class="p-menu-item-link flex items-center gap-2 px-3 py-2"
-      [pTooltip]="item.tooltip"
-      [tooltipOptions]="item.tooltipOptions"
-    >
-      <span [class]="item.icon"></span>
-      <span>{{ item.label }}</span>
-    </div>
-  </ng-template>
-</p-menu>
+/>

@@ -1,7 +1,11 @@
 <section class="flex flex-col gap-4">
   <h2 class="text-lg font-semibold">{{ 'PHASES.FORM.SECTIONS.GENERAL' | translate }}</h2>
   <div class="flex flex-col gap-1">
-    <label for="phase-code">{{ 'PHASES.FORM.CODE' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="phase-code"
+      >{{ 'PHASES.FORM.CODE' | translate }}</label
+    >
     @for (error of phaseForm.code().errors(); track $index) {
       @if (isShown(phaseForm.code)) {
         <small class="text-red-500">{{ error.message | translate }}</small>
@@ -16,8 +20,13 @@
       [formField]="phaseForm.code"
     />
   </div>
+  <p-divider />
   <div class="flex flex-col gap-1">
-    <label for="phase-name">{{ 'PHASES.FORM.NAME' | translate }}</label>
+    <label
+      class="hf-field-label"
+      for="phase-name"
+      >{{ 'PHASES.FORM.NAME' | translate }}</label
+    >
     @for (error of phaseForm.name().errors(); track $index) {
       @if (isShown(phaseForm.name)) {
         <small class="text-red-500">{{ error.message | translate }}</small>
@@ -31,8 +40,9 @@
       [formField]="phaseForm.name"
     />
   </div>
+  <p-divider />
   <div class="flex flex-col gap-1">
-    <span>{{ 'PHASES.FORM.DESCRIPTION' | translate }}</span>
+    <span class="hf-field-label">{{ 'PHASES.FORM.DESCRIPTION' | translate }}</span>
     @for (error of phaseForm.description().errors(); track $index) {
       @if (isShown(phaseForm.description)) {
         <small class="text-red-500">{{ error.message | translate }}</small>
@@ -44,6 +54,7 @@
       [placeholder]="'PHASES.FORM.DESCRIPTION_PLACEHOLDER' | translate"
     />
   </div>
+  <p-divider />
   <div class="flex items-center gap-2">
     <p-checkbox
       inputId="phase-tracked"
@@ -195,7 +206,10 @@
     <small class="text-red-500">{{ error.message | translate }}</small>
   }
   @for (limit of phaseForm.limits; track $index; let i = $index) {
-    <div class="flex flex-col gap-2 rounded border border-surface p-2">
+    @if (!$first) {
+      <p-divider />
+    }
+    <div class="flex flex-col gap-4 rounded border border-surface p-2">
       <div class="flex items-start gap-2">
         <p-select
           class="min-w-0 flex-1"
@@ -222,23 +236,27 @@
       @if (hasNoLimits(i)) {
         <small class="text-muted-color">{{ 'PHASES.FORM.NO_LIMITS' | translate }}</small>
       }
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
         <div class="flex flex-col gap-1">
-          <span>{{ 'PHASES.FORM.ALARM_LOW' | translate }}</span>
+          <span class="hf-field-label">{{ 'PHASES.FORM.ALARM_LOW' | translate }}</span>
           <p-inputnumber
             [maxFractionDigits]="6"
             [formField]="limit.alarmLow"
           />
         </div>
+        <p-divider layout="vertical" />
         <div class="flex flex-col gap-1">
-          <span>{{ 'PHASES.FORM.ALARM_HIGH' | translate }}</span>
+          <span class="hf-field-label">{{ 'PHASES.FORM.ALARM_HIGH' | translate }}</span>
           <p-inputnumber
             [maxFractionDigits]="6"
             [formField]="limit.alarmHigh"
           />
         </div>
+      </div>
+      <p-divider />
+      <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
         <div class="flex flex-col gap-1">
-          <span>{{ 'PHASES.FORM.WARNING_LOW' | translate }}</span>
+          <span class="hf-field-label">{{ 'PHASES.FORM.WARNING_LOW' | translate }}</span>
           @for (error of limit.warningLow().errors(); track $index) {
             <small class="text-red-500">{{ error.message | translate }}</small>
           }
@@ -247,8 +265,9 @@
             [formField]="limit.warningLow"
           />
         </div>
+        <p-divider layout="vertical" />
         <div class="flex flex-col gap-1">
-          <span>{{ 'PHASES.FORM.WARNING_HIGH' | translate }}</span>
+          <span class="hf-field-label">{{ 'PHASES.FORM.WARNING_HIGH' | translate }}</span>
           @for (error of limit.warningHigh().errors(); track $index) {
             <small class="text-red-500">{{ error.message | translate }}</small>
           }

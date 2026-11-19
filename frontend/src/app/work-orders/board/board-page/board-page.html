@@ -4,7 +4,7 @@
   [canOpenDrafts]="grid.canReadDrafts()"
   (createRequested)="grid.requestCreate()"
 >
-  <div class="flex min-h-0 flex-1 flex-col gap-4">
+  <div class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
     <div class="flex flex-none flex-wrap items-center gap-2">
       <input
         pInputText
@@ -95,7 +95,7 @@
       <div
         cdkDropList
         cdkDropListOrientation="horizontal"
-        class="flex w-max flex-none gap-3"
+        class="flex w-max flex-none gap-4"
         (cdkDropListDropped)="onHeaderDrop($event)"
       >
         @for (status of store.visibleStatuses(); track status) {
@@ -113,7 +113,7 @@
       </div>
       <div
         cdkDropListGroup
-        class="flex min-h-0 w-max flex-1 gap-3"
+        class="flex min-h-0 w-max flex-1 gap-4"
       >
         @for (status of store.visibleStatuses(); track status) {
           <hf-board-column

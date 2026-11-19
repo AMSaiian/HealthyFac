@@ -10,9 +10,10 @@ import { RichTextEditor } from '@shared/rich-text/rich-text-editor/rich-text-edi
 import { DESCRIPTION_MAX_LENGTH } from '@files/files-limits';
 
 import { fileEditFormSchema, type FileEditFormValue } from './file-edit-form-schema';
+import { Divider } from 'primeng/divider';
 
 @Component({
-  imports: [FileTypeTag, FormField, InputText, RichTextEditor, TranslatePipe],
+  imports: [Divider, FileTypeTag, FormField, InputText, RichTextEditor, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-file-edit-form',
   templateUrl: './file-edit-form.html',

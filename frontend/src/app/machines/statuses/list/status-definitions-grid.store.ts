@@ -107,6 +107,10 @@ export const StatusDefinitionsGridStore = signalStore(
         patchState(store, { editor: null });
         store.statuses.reload();
       },
+      /** Loads the grid again and keeps the editor open: an update save leaves the dialog in view mode. */
+      reloadStatuses(): void {
+        store.statuses.reload();
+      },
       requestDelete(statusDefinition: StatusDefinition): void {
         store._confirmDestructive({
           headerKey: 'STATUS_DEFINITIONS.DELETE_HEADER',

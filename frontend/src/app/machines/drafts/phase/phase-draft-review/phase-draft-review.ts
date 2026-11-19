@@ -14,10 +14,11 @@ import type { PhaseFormValue } from '@machines/phases/phase-form/phase-form-sche
 import type { ConditionSourceOption } from '@machines/phases/phase-form/phase-form.utils';
 import { toConditionRows, toLimitRows } from '@machines/drafts/phase/phase-draft-review/phase-draft-review.utils';
 import type { PhaseSourceNames } from '@machines/drafts/phase/phase-draft-review-store/phase-draft-review.store.utils';
+import { Divider } from 'primeng/divider';
 
 /** Shows a phase draft: its values, its conditions, its limit rows, and the target state of each source. */
 @Component({
-  imports: [FormsModule, InputNumber, Message, PhaseForm, RichTextView, Tag, TranslatePipe],
+  imports: [Divider, FormsModule, InputNumber, Message, PhaseForm, RichTextView, Tag, TranslatePipe],
   host: { class: 'flex min-w-0 flex-col gap-4' },
   selector: 'hf-phase-draft-review',
   templateUrl: './phase-draft-review.html',

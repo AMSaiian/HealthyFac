@@ -1,0 +1,71 @@
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'MACHINES.FORM.NAME' | translate }}</span>
+  <span class="hf-field-text">{{ value().name || emptyCell }}</span>
+</div>
+<p-divider />
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'MACHINES.FORM.SERIAL_NUMBER' | translate }}</span>
+  <span class="hf-field-text">{{ value().serialNumber || emptyCell }}</span>
+</div>
+<p-divider />
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'MACHINES.FORM.STATE' | translate }}</span>
+  <span class="hf-field-text">
+    @if (value().state; as state) {
+      {{ stateLabelKeys[state] | translate }}
+    } @else {
+      {{ emptyCell }}
+    }
+  </span>
+</div>
+<p-divider />
+<div class="flex flex-col gap-1">
+  <div class="flex items-center gap-2">
+    <span class="hf-field-label">{{ 'MACHINES.FORM.EXPECTED_GO_LIVE_ON' | translate }}</span>
+    <i
+      class="pi pi-info-circle text-muted-color"
+      tabindex="0"
+      tooltipPosition="bottom"
+      tooltipEvent="hover"
+      [pTooltip]="'MACHINES.FORM.EXPECTED_GO_LIVE_ON_HINT' | translate"
+      [attr.aria-label]="'MACHINES.FORM.EXPECTED_GO_LIVE_ON_HINT' | translate"
+    ></i>
+  </div>
+  <span class="hf-field-text">{{ (value().expectedGoLiveOn | pickerDate) || emptyCell }}</span>
+</div>
+@if (gatewayId(); as id) {
+  <p-divider />
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'MACHINES.FORM.GATEWAY_ID' | translate }}</span>
+    <div class="flex gap-2">
+      <span class="hf-field-text min-w-0 flex-1">{{ id }}</span>
+      <button
+        pButton
+        [pTooltip]="'MACHINES.FORM.COPY_GATEWAY_ID' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        iconOnly
+        class="flex-none"
+        severity="secondary"
+        [attr.aria-label]="'MACHINES.FORM.COPY_GATEWAY_ID' | translate"
+        (click)="copyGatewayId()"
+      >
+        <i class="pi pi-copy"></i>
+      </button>
+    </div>
+  </div>
+}
+<p-divider />
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'MACHINES.FORM.DESCRIPTION' | translate }}</span>
+  @if (value().description; as description) {
+    <div class="hf-field-text">
+      <hf-rich-text-view
+        [html]="description"
+        [links]="descriptionLinks()"
+      />
+    </div>
+  } @else {
+    <span class="hf-field-text">{{ emptyCell }}</span>
+  }
+</div>

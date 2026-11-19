@@ -185,6 +185,19 @@ describe('StatusDefinitionsGridStore', () => {
     expect(options.context.get(SKIP_ERROR_TOAST)).toBe(true);
   });
 
+  it('reloadStatuses_KeepsTheEditorOpen', async () => {
+    const { store, search } = await setup();
+    store.requestUpdate(STATUS_DEFINITION.id);
+    const callsBefore = search.mock.calls.length;
+
+    store.reloadStatuses();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(search.mock.calls.length - callsBefore).toBe(1);
+    expect(store.editor()).toEqual({ statusDefinitionId: STATUS_DEFINITION.id });
+  });
+
   it('requestDelete_WhenRejected_SendsNoRequest', async () => {
     const { store, remove } = await setup({ isConfirmed: false });
 

@@ -8,14 +8,17 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { CompanyStore } from '@shared/company/company.store';
+import { DetailsMode } from '@shared/forms/with-details-mode';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { Permission } from '@shared/security/permissions';
 
 import { MachineState } from '@machines/machine';
 import { MACHINES_ROUTES } from '@machines/machines.routes';
 import { PhaseConditionOperator } from '@machines/phases/operating-phase';
 import { OperatingPhasesPage } from '@machines/phases/operating-phases-page/operating-phases-page';
 import { OperatingPhasesPageStore } from '@machines/phases/operating-phases-page-store/operating-phases-page.store';
-import { EMPTY_FORM_VALUE } from '@machines/phases/phase-form/phase-form.utils';
+import { EMPTY_FORM_VALUE, toFormValue } from '@machines/phases/phase-form/phase-form.utils';
+import type { OperatingPhase } from '@machines/phases/operating-phase';
 
 const MACHINE_URL = '/api/core/v1/machines/m1';
 const PHASES_URL = '/api/telemetry/v1/machines/m1/operating-phases';
@@ -54,7 +57,7 @@ function phase(id: string, priority: number): object {
 @Component({ template: '', selector: 'hf-not-found-stub', host: { class: 'contents' } })
 class NotFoundStub {}
 
-function setup(): HttpTestingController {
+function setup(permissions: readonly Permission[] | null = null): HttpTestingController {
   TestBed.configureTestingModule({
     providers: [
       provideRouter(
@@ -68,7 +71,12 @@ function setup(): HttpTestingController {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: () => true } },
+      {
+        provide: AuthStore,
+        useValue: {
+          hasPermission: (permission: Permission) => permissions === null || permissions.includes(permission),
+        },
+      },
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
       { provide: ConfirmationService, useValue: { confirm: vi.fn() } },
@@ -200,6 +208,100 @@ describe('phases route', () => {
       ]);
       request.flush({ id: 'new' });
     });
+  });
+
+  it('phasesRoute_ShowDetailsOfAPhase_OpensTheDialogInViewMode', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+
+    store?.requestUpdate('a');
+
+    expect(store?.editor()).toEqual({ phaseId: 'a' });
+    expect(store?.mode()).toBe(DetailsMode.View);
+    expect(store?.isEditShown()).toBe(true);
+  });
+
+  it('phasesRoute_AddNew_OpensTheDialogInEditMode', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+
+    store?.requestCreate();
+
+    expect(store?.editor()).toEqual({ phaseId: null });
+    expect(store?.mode()).toBe(DetailsMode.Edit);
+    expect(store?.isEditShown()).toBe(false);
+  });
+
+  it('phasesRoute_PencilThenSave_SendsThePutReloadsTheListAndStaysOpenInViewMode', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+    store?.requestUpdate('a');
+    store?.edit();
+    const edited = store?.editedPhase() as OperatingPhase;
+
+    store?.save({ value: { ...toFormValue(edited), name: 'Renamed' }, onSaved: () => store.onSaved() });
+
+    await vi.waitFor(() => {
+      const request = http.expectOne(`${PHASES_URL}/a`);
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toMatchObject({ name: 'Renamed' });
+      request.flush(null);
+    });
+    await flushWhenRequested(http, PHASES_URL, {
+      items: [{ ...phase('a', 1), name: 'Renamed' }, phase('b', 3), phase('c', 2)],
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store?.mode()).toBe(DetailsMode.View);
+    expect(store?.editor()).toEqual({ phaseId: 'a' });
+    expect(store?.editedPhase()?.name).toBe('Renamed');
+  });
+
+  it('phasesRoute_SaveWith409_StaysInEditMode', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+    store?.requestUpdate('a');
+    store?.edit();
+    const edited = store?.editedPhase() as OperatingPhase;
+
+    store?.save({ value: { ...toFormValue(edited), code: 'taken' }, onSaved: () => store.onSaved() });
+
+    await vi.waitFor(() => {
+      http.expectOne(`${PHASES_URL}/a`).flush(null, { status: 409, statusText: 'Conflict' });
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store?.mode()).toBe(DetailsMode.Edit);
+    expect(store?.editor()).toEqual({ phaseId: 'a' });
+  });
+
+  it('phasesRoute_PencilThenCancel_ReturnsToViewMode', async () => {
+    const http = setup();
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+    store?.requestUpdate('a');
+    store?.edit();
+
+    store?.cancelEdit();
+
+    expect(store?.mode()).toBe(DetailsMode.View);
+    expect(store?.editor()).toEqual({ phaseId: 'a' });
+  });
+
+  it('phasesRoute_WithReadPermissionOnly_OpensTheDialogInViewModeWithoutAPencil', async () => {
+    const http = setup([Permission.OperatingPhasesRead]);
+    const harness = await openPhases(http);
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+
+    store?.requestUpdate('a');
+
+    expect(store?.canWrite()).toBe(false);
+    expect(store?.mode()).toBe(DetailsMode.View);
+    expect(store?.isEditShown()).toBe(false);
   });
 
   it('phasesRoute_MissingMachine_LeadsToTheNotFoundPage', async () => {

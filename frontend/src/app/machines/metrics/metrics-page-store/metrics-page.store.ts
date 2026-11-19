@@ -1,7 +1,6 @@
 import type { HttpErrorResponse } from '@angular/common/http';
 import { HttpStatusCode } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -14,8 +13,8 @@ import { hasFormChanges } from '@shared/forms/form-changes';
 import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
+import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
-import { collectFileIds } from '@shared/rich-text/file-image/rich-text-images';
 import { CLOCK } from '@shared/time/clock';
 import { withToasts } from '@shared/toasts/with-toasts';
 
@@ -114,22 +113,9 @@ export const MetricsPageStore = signalStore(
     hasPendingWork: computed(() => store.hasChanges() || store.isFormChanged()),
   })),
   withProps((store) => {
-    const imageLinksApi = inject(RichTextImageLinks);
-    return {
-      imageLinks: rxResource({
-        params: () => {
-          const ids = collectFileIds(store.selected()?.value.description ?? null);
-          return ids.length === 0 ? undefined : ids;
-        },
-        stream: ({ params }) => imageLinksApi.resolve(params),
-      }),
-    };
+    const links = descriptionLinks(() => store.selected()?.value.description ?? null, inject(RichTextImageLinks));
+    return { imageLinks: links.resource, descriptionLinks: links.links };
   }),
-  withComputed((store) => ({
-    descriptionLinks: computed((): ReadonlyMap<string, string> =>
-      store.imageLinks.hasValue() ? store.imageLinks.value() : new Map<string, string>(),
-    ),
-  })),
   withMethods((store) => {
     const confirmLoss = (messageKey: string, onAccept: () => void): void => {
       store._confirmDestructive({

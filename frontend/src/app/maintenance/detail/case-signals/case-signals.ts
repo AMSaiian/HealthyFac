@@ -27,6 +27,7 @@ import {
   signalSubject,
 } from '@maintenance/detail/case-signals/case-signals.utils';
 import { SEVERITY_LABEL_KEYS } from '@maintenance/list/cases-grid/cases-grid.utils';
+import { CellText } from '@shared/grid/table/cell-text/cell-text';
 
 const SECONDS_PER_MINUTE = 60;
 const MINUTES_PER_HOUR = 60;
@@ -34,6 +35,7 @@ const MINUTES_PER_HOUR = 60;
 /** The paged signals of a case. It reads no store: the page passes the rows and takes the page events. */
 @Component({
   imports: [
+    CellText,
     ButtonDirective,
     DecimalPipe,
     LocalDateTimePipe,

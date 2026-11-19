@@ -1,5 +1,5 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { computed, effect, inject } from '@angular/core';
+import { computed, effect, inject, type Signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import {
   patchState,
@@ -18,6 +18,8 @@ import { catchError } from 'rxjs/operators';
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
+import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
+import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 
@@ -40,7 +42,13 @@ interface ActionState {
 export function withWorkOrderDrawerAction() {
   return signalStoreFeature(
     {
-      methods: type<{ _toastSuccess: (key: string) => void; _toastError: (key: string) => void }>(),
+      props: type<{ isViewMode: Signal<boolean> }>(),
+      methods: type<{
+        _toastSuccess: (key: string) => void;
+        _toastError: (key: string) => void;
+        _startMode: (isUpdate: boolean) => void;
+        view: () => void;
+      }>(),
     },
     withState<ActionState>({ action: null, isHistoryActive: false, isSaving: false }),
     withComputed((store) => {
@@ -65,9 +73,25 @@ export function withWorkOrderDrawerAction() {
         }),
       };
     }),
+    withProps((store) => ({
+      descriptionLinks: descriptionLinks(
+        () => (store.workOrder.hasValue() ? store.workOrder.value().description : null),
+        inject(RichTextImageLinks),
+      ).links,
+    })),
+    withComputed((store) => ({
+      /** Tells whether the pencil shows: the loaded item in view mode, for a user who may change it. */
+      isEditShown: computed(
+        () => store.isViewMode() && store.isUpdate() && store.workOrder.hasValue() && store.canWrite(),
+      ),
+    })),
     withMethods((store) => ({
       start(action: AppAction): void {
         patchState(store, { action, isHistoryActive: false });
+        store._startMode(payloadOf(action).workOrderId !== undefined);
+      },
+      cancelEdit(): void {
+        store.view();
       },
       /** Starts the loading of the history: the History tab calls it when it opens, so a closed tab sends no request. */
       activateHistory(): void {
@@ -109,11 +133,18 @@ export function withWorkOrderDrawerAction() {
             exhaustMap((value) =>
               request$(value).pipe(
                 tap(() => {
-                  store._toastSuccess(store.isUpdate() ? 'WORK_ORDERS.TOASTS.UPDATED' : 'WORK_ORDERS.TOASTS.CREATED');
-                  actions.complete(
-                    WorkOrderActionType.Saved,
-                    store.isUpdate() ? undefined : ({ status: WorkOrderStatus.Backlog } satisfies SavedDetail),
-                  );
+                  if (store.isUpdate()) {
+                    store._toastSuccess('WORK_ORDERS.TOASTS.UPDATED');
+                    actions.notify(WorkOrderActionType.Saved);
+                    store.workOrder.reload();
+                    store.history.reload();
+                    store.view();
+                  } else {
+                    store._toastSuccess('WORK_ORDERS.TOASTS.CREATED');
+                    actions.complete(WorkOrderActionType.Saved, {
+                      status: WorkOrderStatus.Backlog,
+                    } satisfies SavedDetail);
+                  }
                 }),
                 catchError((error: unknown) => {
                   handleFailure(error);

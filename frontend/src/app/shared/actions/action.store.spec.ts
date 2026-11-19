@@ -78,6 +78,30 @@ describe('ActionStore', () => {
     expect(store.active()).toBeNull();
   });
 
+  it('notify_WithOpenAction_KeepsTheActionAndRaisesTheSequence', async () => {
+    const store = createStore();
+    await store.dispatch(PARENT);
+
+    store.notify(SAVED_TYPE, { id: 'a' });
+
+    expect(store.active()).toEqual(PARENT);
+    expect(store.lastResult()).toEqual({ type: SAVED_TYPE, sequence: 1, detail: { id: 'a' } });
+  });
+
+  it('notify_ThenComplete_GivesIncreasingSequences', async () => {
+    const store = createStore();
+    await store.dispatch(PARENT);
+
+    store.notify(SAVED_TYPE);
+    const first = store.lastResult();
+    store.complete(SAVED_TYPE);
+    const second = store.lastResult();
+
+    expect(first?.sequence).toBe(1);
+    expect(second?.sequence).toBe(2);
+    expect(store.active()).toBeNull();
+  });
+
   it('cancel_Always_ClearsActiveWithoutResult', async () => {
     const store = createStore();
     await store.dispatch({ type: CREATE_TYPE, payload: { name: 'Lathe' } });

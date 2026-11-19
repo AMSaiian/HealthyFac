@@ -1,0 +1,23 @@
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'STATUS_DEFINITIONS.FORM.CODE' | translate }}</span>
+  <span class="hf-field-text">{{ value().code || emptyCell }}</span>
+</div>
+<p-divider />
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'STATUS_DEFINITIONS.FORM.SEVERITY' | translate }}</span>
+  <span class="hf-field-text">{{ severityLabelKeys[value().severity] | translate }}</span>
+</div>
+<p-divider />
+<div class="flex flex-col gap-1">
+  <span class="hf-field-label">{{ 'STATUS_DEFINITIONS.FORM.DESCRIPTION' | translate }}</span>
+  @if (value().description; as description) {
+    <div class="hf-field-text">
+      <hf-rich-text-view
+        [html]="description"
+        [links]="descriptionLinks()"
+      />
+    </div>
+  } @else {
+    <span class="hf-field-text">{{ emptyCell }}</span>
+  }
+</div>
