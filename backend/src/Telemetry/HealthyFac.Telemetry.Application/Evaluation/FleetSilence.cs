@@ -55,4 +55,7 @@ public sealed class FleetSilence(
 
         return isSilent;
     }
+
+    /// <summary>Puts the state back to never checked, not silent. Only the test fixtures call it.</summary>
+    internal void Reset() => _isSilent = false;
 }

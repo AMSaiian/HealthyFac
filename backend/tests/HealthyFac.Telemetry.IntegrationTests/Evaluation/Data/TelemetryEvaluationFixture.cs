@@ -1,4 +1,3 @@
-using System.Reflection;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Telemetry.Application.Evaluation;
 using HealthyFac.Telemetry.Infrastructure.Database;
@@ -49,21 +48,10 @@ public sealed class TelemetryEvaluationFixture : IAsyncLifetime, IResetBeforeEac
         await Database.ResetAsync();
         Origin = Time.GetUtcNow().UtcDateTime;
         RunFailure.Reset();
-        ResetFleetSilence();
+        Database.GetSingleton<FleetSilence>().Reset();
     }
 
     public async ValueTask DisposeAsync() => await _database!.DisposeAsync();
 
     public IServiceScope CreateActorScope(ActorContext actor) => Database.CreateActorScope(actor);
-
-    /// <summary>
-    /// Puts the singleton <see cref="FleetSilence"/> back to its start state, "never checked, not silent". A worker
-    /// round of an earlier test can leave it silent, and a silent fleet opens no silent machine episode and closes no
-    /// phase interval. The class has no reset member, because production code never needs one, so the field is set by
-    /// reflection.
-    /// </summary>
-    private void ResetFleetSilence() =>
-        typeof(FleetSilence)
-            .GetField(name: "_isSilent", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(Database.GetSingleton<FleetSilence>(), value: false);
 }
