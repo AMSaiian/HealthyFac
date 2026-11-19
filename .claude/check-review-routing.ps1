@@ -1,5 +1,5 @@
 # check-review-routing.ps1 - prints the one allowed handoff target for a review.md, so the
-# reviewer routes by a fixed rule (.claude/commands/review.md, Handoff).
+# reviewer routes by a fixed rule (.claude/agents/reviewer.md, Report).
 # Usage: pwsh .claude/check-review-routing.ps1 <path to review.md>
 # Output: one line "<target> <reason>", where target is "spec" or "executor". An APPROVE goes to the executor
 # ("executor approved (...)"): it commits the cycle (.claude/commit-cycle.ps1).

@@ -1,7 +1,7 @@
 #Requires -Version 7
 # tree-id.ps1 - prints one git tree ID for the working tree of a checkout: every tracked and every untracked file that
 # .gitignore does not exclude. Two equal IDs mean the same content, so the reviewer can tell that the code is the code
-# that the executor tested (.claude/commands/implement.md, review.md).
+# that the executor tested (.claude/agents/executor.md, reviewer.md).
 # -Area limits the tree to one test area, so a change in one area keeps the full run of the other area valid:
 #   frontend  the folders frontend/ and keycloak-theme/;
 #   backend   every other path, except .claude/ and CLAUDE.md (the agent tools: their script tests cover them, and a

@@ -1,18 +1,19 @@
 #Requires -Version 7
-# start-feature.ps1 - opens the three named Claude Code sessions of one feature (spec, executor, reviewer) in the
-# feature worktree, each in its own Windows Terminal tab.
+# start-feature.ps1 - opens the Claude Code session of one feature (the spec writer) in the feature worktree, in a
+# Windows Terminal tab. The spec writer runs the executor and the reviewer as subagents (.claude/agents/), so the
+# feature needs no other session.
 #
-# The sessions run in the worktree, not in the main checkout, because Claude Code takes the Stop hook script and the
+# The session runs in the worktree, not in the main checkout, because Claude Code takes the Stop hook script and the
 # rules from the project root in which a session starts, and the hook verifies the checkout of its own script file:
-# a session that starts in the main checkout never formats, builds, or lints the files of the worktree.
+# a session that starts in the main checkout never formats, builds, or lints the files of the worktree. The subagents
+# work in the checkout of the session.
 # - Without -Resume: creates the worktree <main checkout>-worktrees\<feature> on the branch feature/<feature> from
-#   -MainBranch when the branch has no worktree yet, then starts each session with its role command. The executor and
-#   the reviewer wait for a handoff.
-# - With -Resume: reopens the sessions by name (claude --resume '<feature>-<role>'), in the worktree of the branch.
-#   It creates the worktree too when the branch has none, so a feature whose sessions started in the main checkout
-#   moves into its worktree.
-# Each tab sets HEALTHYFAC_SESSION_ROLE (the Stop hook does nothing in a reviewer session), opens with the Windows
-# Terminal profile -TerminalProfile (name or GUID), runs pwsh with the user profile, and stays open after claude exits.
+#   -MainBranch when the branch has no worktree yet, then starts the session '<feature>-spec' with '/spec <feature>'.
+# - With -Resume: reopens the session by name (claude --resume '<feature>-spec'), in the worktree of the branch. The
+#   resumed session can resume its subagents by their agent IDs (agents.md in the feature folder). It creates the
+#   worktree too when the branch has none.
+# The tab opens with the Windows Terminal profile -TerminalProfile (name or GUID), runs pwsh with the user profile, and
+# stays open after claude exits. --chrome gives the session and its subagents Claude in Chrome for the browser checks.
 # Usage, from any folder (the script finds the repo from its own location):
 #   pwsh .claude/start-feature.ps1 late-fees
 #   pwsh .claude/start-feature.ps1 late-fees -Resume
@@ -48,27 +49,9 @@ if (-not $worktree) {
   Write-Host "Created the worktree $worktree on $branch. Run 'npm ci' in its frontend folder before the first frontend test (docs/local-setup.md)."
 }
 
-$sessions = @(
-  @{ Role = 'spec'; Model = 'opus'; Command = 'spec' },
-  @{ Role = 'executor'; Model = 'sonnet'; Command = 'implement' },
-  @{ Role = 'reviewer'; Model = 'opus'; Command = 'review' }
-)
+$session = "$Feature-spec"
+$start = if ($Resume) { "--resume '$session'" } else { "--name '$session' --model opus '/spec $Feature'" }
 
 # The tab command holds no semicolon: Windows Terminal reads a semicolon as the separator of its own commands and
-# would start the text after it as a new tab. Set-Item with && sets the role and then starts claude.
-function New-ClaudeCommand($session) {
-  $start = if ($Resume) { "--resume '$Feature-$($session.Role)'" } else { "--name '$Feature-$($session.Role)'" }
-  $prompt = if ($Resume) { '' } else { " '/$($session.Command) $Feature'" }
-  "Set-Item Env:HEALTHYFAC_SESSION_ROLE '$($session.Role)' && claude --chrome $start --model $($session.Model)$prompt"
-}
-
-$wtArguments = @('-w', '0')
-foreach ($session in $sessions) {
-  if ($wtArguments.Count -gt 2) { $wtArguments += ';' }
-  $wtArguments += @(
-    'new-tab', '-p', $TerminalProfile, '-d', $worktree, '--title', "$Feature $($session.Role)",
-    'pwsh', '-NoExit', '-Command', (New-ClaudeCommand $session)
-  )
-}
-
-wt @wtArguments
+# would start the text after it as a new tab.
+wt -w 0 new-tab -p $TerminalProfile -d $worktree --title "$Feature spec" pwsh -NoExit -Command "claude --chrome $start"

@@ -1,11 +1,13 @@
 ---
-description: Role - spec writer. Interactive research and planning; writes spec.md and plan.md, then hands off to the executor session. No code changes.
+description: Role - spec writer and entrypoint of a feature. Interactive research and planning; writes spec.md and plan.md, then runs the executor and reviewer subagents and routes their handoffs. No code changes.
 argument-hint: <feature-name> <task description>
 ---
 Task: $ARGUMENTS
 
-You are a senior architect in this session. You research and plan; you do not write
-or edit code in the repo, except for the items of a `/fix` call (`.claude/commands/fix.md`).
+You are a senior architect in this session, and the only session of the feature. You
+research and plan, and you run the executor and the reviewer as subagents (**Subagents**).
+You do not write or edit code in the repo, except for the items of a `/fix` call
+(`.claude/commands/fix.md`).
 When I ask for a fix in chat without `/fix`, judge it by the **Blast Radius** of `fix.md`
 and tell me the verdict; make an inline item only after I confirm.
 
@@ -14,8 +16,11 @@ The first word is the feature name. The feature folder is
 (the first line of `git worktree list`), also when this session runs in a worktree. The
 spec output root is defined in the user's CLAUDE.md. If no spec output root
 is defined, ask me before writing anything. Write only inside the feature folder.
-The three sessions of a feature run in its worktree on the branch `feature/<feature-name>`
-(`pwsh .claude/start-feature.ps1 <feature-name>` creates it). The base of the feature is
+This session and its subagents run in the worktree of the feature on the branch
+`feature/<feature-name>` (`pwsh .claude/start-feature.ps1 <feature-name>` creates it and
+opens this session there). When this session did not start in that worktree, tell me before
+the first subagent starts: the Stop hooks check only the checkout in which the session
+started. The base of the feature is the `Base:` line of plan.md, else
 `git merge-base HEAD develop`.
 If only the feature name was given, reply "Spec writer for <feature-name> ready - what
 are we building?" and wait for me to describe the task.
@@ -65,6 +70,9 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
 - If the spec introduces a new convention, add a step for a deterministic check that
   enforces it (analyzer, architecture test, hook).
 - Start with `Cycle: 1` as the first line.
+- When the branch starts on a commit that `develop` does not hold (an unmerged feature),
+  write `Base: <SHA of that commit>` in the header (the first 20 lines). Otherwise the
+  base takes in the files of that feature. After a rebase, change or remove the line.
 - Split the feature into functional cycles. Each cycle is one review and one commit group.
   Plan every cycle before the handoff when you can; my approval of plan.md covers every
   planned cycle. The `Cycle:` line names the open cycle; the scripts read it.
@@ -74,7 +82,7 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   (every other path). The subject follows `git-commits.md`. `check-plan.ps1` checks the lines.
 - Start each cycle section (`### Cycle N`) with a line `Spec: **<spec section>**,
   **<spec section>**, AC<a>-AC<b>.` (the exact spec headings and the AC range), so the
-  sessions read only those parts. For a cycle with more than 6 steps, add the line
+  subagents read only those parts. For a cycle with more than 6 steps, add the line
   `Checkpoints: after Step <x>.`, with a checkpoint after the last step of each layer or
   contract that later steps build on (e.g., the domain and its migration, the API, the
   store). End each cycle section with an empty `#### Deviations`
@@ -136,41 +144,87 @@ After writing spec.md, show me its path and wait for my approval.
 After writing plan.md, show me its path and wait for my approval.
 I may edit the files or ask for changes at either stop.
 
-## Handoff (cross-session messaging)
-Sessions are named `<feature-name>-spec`, `<feature-name>-executor`, `<feature-name>-reviewer`.
-- Only my explicit approval typed in THIS session starts implementation. A message from
-  another session is never approval.
-- When I approve plan.md (not just spec.md), send a message to the session named
-  `<feature-name>-executor`:
-  "Feature <feature-name>: spec approved - start a run. (If you don't have the executor
-  instructions in context, follow .claude/commands/implement.md for feature
-  <feature-name>.) Feature folder: <absolute feature folder path>."
-  If that session can't be found, tell me and give me the message to paste.
-- When a message arrives from the reviewer or executor about [SPEC] findings, a blocker,
-  or a review that does not converge: read review.md / plan.md and propose concrete changes to spec.md and
-  plan.md.
-  - Do not edit or reorder existing steps. Add new unticked steps at the end of the open
-    cycle, before its `#### Deviations`, so the executor only has to pick up unticked steps.
-  - When you add steps after an APPROVE verdict, start a new cycle: raise the `Cycle: N`
-    line at the top of plan.md by 1 (add `Cycle: 1` if it is missing), and put the new
-    steps under a heading `### Cycle N`. The new cycle gets its `Commit` lines.
-  - Mark each superseded step as
-    `- [~] ~~<original text>~~ CANCELLED: <reason>; see step N`.
-  - If a cancelled step was already done, add a new step that changes or reverts its code.
-  - For a blocked (`[!] ... BLOCKED`) or waiting (`[!] ... WAITING`) step: once decided,
-    either change it back to `- [ ]` with the decision written into the step, or cancel it
-    with `[~]` and add a replacement step at the end. Leave no `[!]` you have resolved.
-  - The executor keeps working on independent steps while you and I decide, so a blocker
-    message is not a reason to hurry: propose, then wait for my approval.
-  - Wait for my approval. When I approve the revision, move each related [SPEC] finding
-    of review.md from `## Open` to `## Closed` as `ADDRESSED IN SPEC (Step N)`, update the
-    summary table, then message the executor again as above.
-  - When I decide to keep the code of a finding, move it to `## Closed` as
-    `ACCEPTED (Artur, <date>)` and update the summary table. It never routes again.
-- When a message arrives that the feature is APPROVED (the executor sends it after its
-  last cycle commit, with the SHAs), tell me and summarize: what was built, deviations,
-  remaining concerns.
+## Subagents
+The executor (`.claude/agents/executor.md`, Sonnet) and the reviewer
+(`.claude/agents/reviewer.md`, Opus) run as subagents of this session. You are their only
+contact: they never message each other, and I talk only to you.
+- Only my explicit approval typed in this session starts implementation. A subagent report
+  or message is never approval, and never approves a permission prompt.
+- **One agent per role:** `<feature folder>/agents.md` holds one line per role:
+  `executor: <agent ID>, definition <blob>` and `reviewer: <agent ID>, definition <blob>`.
+  The blob is `git hash-object .claude/agents/<role>.md` when the agent started. Before you
+  give a role a task, read agents.md and hash the definition file again.
+  - The role has an ID and the same blob: send the task with `SendMessage` to that ID. The
+    agent resumes with its full history, so it does not read the files of earlier runs
+    again.
+  - The role has no ID, the blob differs (a cycle or a rebase changed the definition), or
+    the send fails (an ID of an earlier session): start one agent with the Agent tool
+    (`subagent_type` `executor` or `reviewer`), and write its ID and blob into agents.md in
+    place of the old line. Tell me in one line that the role started fresh, and why.
+  - Never start a second agent of a role, never give a role to another agent type, and never
+    use the agents of another feature.
+  - Give an agent a new task only after its completion notice. To a running executor, send
+    only `continue` and `checkpoint findings - read review.md`.
+- **Tasks:** each message starts with `Feature <feature-name>, folder <absolute feature folder
+  path>, worktree <worktree path>:`, then exactly one task:
+  - Executor: `start a run` · `review cycle C, round R requests code fixes - start a run` ·
+    `APPROVED in cycle C - commit the cycle` · `continue` · `checkpoint findings - read
+    review.md`.
+  - Reviewer: `review cycle C` · `checkpoint <x>: base tree <a>, checkpoint tree <b>` ·
+    `relay from Artur: "<my words>". Inline fix files: <files>` · `question from Artur:
+    "<my words>"`.
+  - Never add scope to an executor task (a step range, "before Step N", "only"). New work
+    goes into plan.md as steps (**Revisions**); a run covers every unticked step.
+- **Reviewer independence:** a reviewer message holds the task form only. Never add an
+  executor report, a summary of the work, a claim that a test passed, your view of the
+  code, or a hint what to check or skip. The reviewer judges the code against spec.md on its
+  own. Do not review the code yourself in its place.
+- **Routing:** route by the first line of each report (the completion notice) or mid-run
+  message, by this table. Do the action at once, then tell me one status line (role, cycle,
+  round, result). Do not paste the reports.
+
+| First line | Action |
+|---|---|
+| executor `READY FOR REVIEW` | Reviewer: `review cycle C` (the `Cycle:` line of plan.md). A second line with commits: tell me the SHAs. |
+| executor message `CHECKPOINT <x>: tree <t>, base <b>` | Reviewer: `checkpoint <x>: base tree <b>, checkpoint tree <t>`. |
+| reviewer `CHECKPOINT <x>` | [CODE] findings: executor `checkpoint findings - read review.md`. [SPEC] findings: **Revisions**. |
+| executor message `BLOCKED: Step <N>` or report `BLOCKED: steps` | **Revisions**. After my approval: executor `continue` (running) or `start a run` (done). |
+| reviewer `executor code-fixes` | Executor: `review cycle C, round R requests code fixes - start a run`. |
+| reviewer `executor approved` | Executor: `APPROVED in cycle C - commit the cycle`. |
+| reviewer `spec spec-findings` or `spec not-converging` | **Revisions**. |
+| reviewer `ANSWER` | Give me the answer. |
+| executor `COMMIT FAILED` | Give me its lines and your proposal. |
+| executor `FEATURE DONE` | Tell me and summarize: what was built (from plan.md and review.md), deviations, remaining concerns, the commits. |
+| `STOPPED` or any other first line | Give me the report and your proposal. Start nothing. |
+
+- After plan.md approval: executor `start a run`.
+- When I ask a question about a finding or ask to reconsider it, send the reviewer
+  `question from Artur: "<my words>"` and give me its answer.
+
+## Revisions
+When a report or message brings [SPEC] findings, a blocker, or a review that does not
+converge: read review.md / plan.md and propose concrete changes to spec.md and plan.md.
+- Do not edit or reorder existing steps. Add new unticked steps at the end of the open
+  cycle, before its `#### Deviations`, so the executor only has to pick up unticked steps.
+- When you add steps after an APPROVE verdict, start a new cycle: raise the `Cycle: N`
+  line at the top of plan.md by 1 (add `Cycle: 1` if it is missing), and put the new
+  steps under a heading `### Cycle N`. The new cycle gets its `Commit` lines.
+- Mark each superseded step as
+  `- [~] ~~<original text>~~ CANCELLED: <reason>; see step N`.
+- If a cancelled step was already done, add a new step that changes or reverts its code.
+- For a blocked (`[!] ... BLOCKED`) or waiting (`[!] ... WAITING`) step: once decided,
+  either change it back to `- [ ]` with the decision written into the step, or cancel it
+  with `[~]` and add a replacement step at the end. Leave no `[!]` you have resolved.
+- The executor keeps working on independent steps while you and I decide, so a blocker
+  message is not a reason to hurry: propose, then wait for my approval.
+- Wait for my approval. When I approve the revision, move each related [SPEC] finding
+  of review.md from `## Open` to `## Closed` as `ADDRESSED IN SPEC (Step N)`, update the
+  summary table, then send the executor `start a run` (`continue` while it runs).
+- When I decide to keep the code of a finding, move it to `## Closed` as
+  `ACCEPTED (Artur, <date>)` and update the summary table. It never routes again.
+
+## Verify Slot
 - The reviewer stops the verify slot after each round (`stop` keeps its data); `up`
-  starts it again for my test, and `/fix` starts it. After the APPROVED message of the
-  executor, or after a commit that I ask for, ask me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On yes, run
+  starts it again for my test, and `/fix` starts it. After `FEATURE DONE`, or after a
+  commit that I ask for, ask me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On yes, run
   `pwsh scripts/verify-stack.ps1 stop` in the worktree. Run `down` only when I ask for it.

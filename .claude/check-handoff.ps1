@@ -1,6 +1,6 @@
 #Requires -Version 7
 # check-handoff.ps1 - the pre-review check of the executor: it finds the mechanical findings before the review
-# (.claude/commands/implement.md, Handoff).
+# (.claude/agents/executor.md, Handoff).
 # Usage: pwsh .claude/check-handoff.ps1 <feature folder> [-Repo <path>] [-Base <ref>] [-Cycle <N>]
 #        [-MainBranch <name>] [-FormatScript <path>]
 # Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the merge base of HEAD and -MainBranch (develop), so a main branch

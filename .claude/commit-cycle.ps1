@@ -1,6 +1,6 @@
 #Requires -Version 7
 # commit-cycle.ps1 - commits an approved cycle as one commit for each group of its changed files: tooling, docs, and
-# code (.claude/commands/implement.md, Commit). The subjects come from the "Commit <group>: <subject>" lines of the
+# code (.claude/agents/executor.md, Commit). The subjects come from the "Commit <group>: <subject>" lines of the
 # cycle in plan.md (.claude/commands/spec.md, plan.md).
 # Usage: pwsh .claude/commit-cycle.ps1 <feature folder> [-Repo <path>] [-MainBranch <name>]
 # Defaults: -Repo is the checkout that holds this script file (not the current folder); -MainBranch is develop.

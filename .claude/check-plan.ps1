@@ -1,6 +1,6 @@
 #Requires -Version 7
 # check-plan.ps1 - checks the one thing about a cycle that a model cannot check reliably: that the sessions can find
-# every part of the cycle, and that each step holds its own facts (.claude/commands/spec.md, Handoff).
+# every part of the cycle, and that each step holds its own facts (.claude/commands/spec.md, plan.md).
 # Usage: pwsh .claude/check-plan.ps1 <feature folder> [-Cycle <N>]
 #        (default: the "Cycle:" line of plan.md; the highest cycle when plan.md has none)
 # Output: one line for each problem. Exit code 1 when there is one.

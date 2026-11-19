@@ -6,6 +6,11 @@
 # Cases:
 # - Turn skip: a turn that changes no file does nothing; a turn that changes a .cs file runs the cleanup.
 # - Reviewer: a session with HEALTHYFAC_SESSION_ROLE=reviewer does nothing; the same Stop without it runs the cleanup.
+#   A SubagentStop of the reviewer subagent does nothing; the same SubagentStop of the executor runs the cleanup.
+# - Executor in flight: a Stop of the main session with an executor subagent in background_tasks does nothing; the same
+#   Stop with only a shell task in flight runs the cleanup.
+# - Reviewer write scope: the reviewer PreToolUse hook allows review.md outside the repo and denies a repo file, a
+#   review.md inside the repo or one of its worktrees, another file outside the repo, and a call without a file.
 # - Checkout: the hook verifies the checkout that holds its script file. With the session folder (cwd) in checkout 2,
 #   outside every checkout, or with CLAUDE_PROJECT_DIR on checkout 2, the hook of checkout 1 cleans checkout 1 only.
 #   The hook of a git worktree cleans the worktree and leaves the main checkout unchanged.
@@ -100,11 +105,13 @@ function New-TestRepo([string] $name) {
 # copy changes no git status. $cwd is the session folder of the hook input (default: the checkout).
 function Invoke-Hook(
   [string] $repo, [string] $session = 'test', [string] $hooks = $HooksDir, [string] $script = 'verify-changed.ps1',
-  [string] $cwd = $repo) {
+  [string] $cwd = $repo, [hashtable] $fields = @{}) {
   $installed = Join-Path $repo '.claude/hooks'
   New-Item -ItemType Directory -Force $installed | Out-Null
   Copy-Item (Join-Path $hooks '*.ps1') $installed -Force
-  $inputJson = @{ session_id = $session; cwd = $cwd } | ConvertTo-Json -Compress
+  $hookFields = @{ session_id = $session; cwd = $cwd }
+  foreach ($key in $fields.Keys) { $hookFields[$key] = $fields[$key] }
+  $inputJson = $hookFields | ConvertTo-Json -Compress -Depth 5
   $output = $inputJson | & pwsh -NoProfile -File (Join-Path $installed $script) 2>&1
   [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = ($output -join "`n") }
 }
@@ -166,6 +173,45 @@ try {
   Assert-That ($result.ExitCode -eq 0 -and -not $result.Output -and -not (Test-Cleaned $repo 'A')) 'A Stop of a reviewer session does nothing'
   [void](Invoke-Hook $repo 's1')
   Assert-That (Test-Cleaned $repo 'A') 'Proof: the same Stop without the reviewer role runs the cleanup'
+
+  Write-Host 'Reviewer subagent'
+  $repo = New-TestRepo 'reviewer-subagent'
+  $result = Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'SubagentStop'; agent_type = 'reviewer'; agent_id = 'a1' }
+  Assert-That ($result.ExitCode -eq 0 -and -not $result.Output -and -not (Test-Cleaned $repo 'A')) 'A SubagentStop of the reviewer does nothing'
+  [void](Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'SubagentStop'; agent_type = 'executor'; agent_id = 'a2' })
+  Assert-That (Test-Cleaned $repo 'A') 'Proof: the same SubagentStop of the executor runs the cleanup'
+
+  Write-Host 'Executor in flight'
+  $repo = New-TestRepo 'executor-in-flight'
+  $executorTask = @{ id = 't1'; type = 'subagent'; status = 'running'; description = 'run'; agent_type = 'executor' }
+  $result = Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'Stop'; background_tasks = @($executorTask) }
+  Assert-That ($result.ExitCode -eq 0 -and -not $result.Output -and -not (Test-Cleaned $repo 'A')) 'A Stop of the main session with the executor in flight does nothing'
+  $shellTask = @{ id = 't2'; type = 'shell'; status = 'running'; description = 'tail'; command = 'tail -f log' }
+  [void](Invoke-Hook $repo 's1' -fields @{ hook_event_name = 'Stop'; background_tasks = @($shellTask) })
+  Assert-That (Test-Cleaned $repo 'A') 'Proof: the same Stop with only a shell task in flight runs the cleanup'
+
+  Write-Host 'Reviewer write scope'
+  $repo = New-TestRepo 'write-scope'
+  $scopeTree = Join-Path $work 'write-scope-feature'
+  git -C $repo worktree add -q $scopeTree -b feature/scope 2>&1 | Out-Null
+  $featureFolder = Join-Path $work 'specs/HealthyFac/scope'
+  New-Item -ItemType Directory -Force $featureFolder | Out-Null
+  $writeCases = @(
+    @{ Path = (Join-Path $featureFolder 'review.md'); Exit = 0; Name = 'allows review.md in the feature folder outside the repo' },
+    @{ Path = (Join-Path $repo 'backend/App/A.cs'); Exit = 2; Name = 'denies a repo file' },
+    @{ Path = (Join-Path $repo 'review.md'); Exit = 2; Name = 'denies a review.md inside the repo' },
+    @{ Path = (Join-Path $scopeTree 'docs/review.md'); Exit = 2; Name = 'denies a review.md in a new folder of a worktree of the repo' },
+    @{ Path = (Join-Path $featureFolder 'plan.md'); Exit = 2; Name = 'denies plan.md in the feature folder' })
+  foreach ($case in $writeCases) {
+    $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{
+      hook_event_name = 'PreToolUse'; tool_name = 'Write'; tool_input = @{ file_path = $case.Path; content = 'x' } }
+    Assert-That ($result.ExitCode -eq $case.Exit) "The reviewer write hook $($case.Name)"
+  }
+  $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{
+    hook_event_name = 'PreToolUse'; tool_name = 'NotebookEdit'; tool_input = @{ notebook_path = (Join-Path $repo 'n.ipynb') } }
+  Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a notebook in the repo'
+  $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{ hook_event_name = 'PreToolUse'; tool_name = 'Write' }
+  Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a call without a file'
 
   Write-Host 'Checkout resolved from the hook script'
   $first = New-TestRepo 'checkout-one'
