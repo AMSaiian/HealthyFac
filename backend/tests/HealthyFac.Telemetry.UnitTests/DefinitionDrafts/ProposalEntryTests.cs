@@ -1,4 +1,4 @@
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 using HealthyFac.Telemetry.UnitTests.DefinitionDrafts.Data;
 
 namespace HealthyFac.Telemetry.UnitTests.DefinitionDrafts;

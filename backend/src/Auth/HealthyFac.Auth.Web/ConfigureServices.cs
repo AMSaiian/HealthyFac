@@ -1,7 +1,7 @@
 using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Auth.Web.Locales;
 using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
-using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.CurrentUser;

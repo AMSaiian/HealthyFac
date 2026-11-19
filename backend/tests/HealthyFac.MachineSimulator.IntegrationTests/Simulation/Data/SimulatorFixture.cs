@@ -5,7 +5,7 @@ using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.MachineSimulator.Machines;
 using HealthyFac.MachineSimulator.Publishing;
 using HealthyFac.MachineSimulator.Simulation;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Initialization;

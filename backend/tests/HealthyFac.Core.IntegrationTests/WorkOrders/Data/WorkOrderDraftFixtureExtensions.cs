@@ -5,7 +5,7 @@ using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Insights.Messaging.WorkOrders;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Messaging;

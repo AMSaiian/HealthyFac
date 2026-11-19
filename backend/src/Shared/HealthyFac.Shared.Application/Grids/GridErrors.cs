@@ -15,8 +15,6 @@ public static class GridErrors
 
         public const string SortColumnUnknown = "Sort column is not sortable.";
 
-        public const string FilterRequired = "Filter is required.";
-
         public const string DateRangeFromNotBeforeTo = "The start of the date range must be before its end.";
 
         public const string DateRangeNotUtc = "A date range bound must be a UTC instant (end it with Z).";

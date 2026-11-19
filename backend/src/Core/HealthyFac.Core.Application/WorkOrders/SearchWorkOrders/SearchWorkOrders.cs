@@ -2,6 +2,7 @@ using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -60,7 +61,7 @@ public sealed class SearchWorkOrdersRequestValidator
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(WorkOrderErrors.Validation.CompanyIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new WorkOrderGridFilterValidator())
             .When(request => request.Filter is not null);
     }

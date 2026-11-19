@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.IdEncryption;
@@ -12,7 +13,8 @@ using ApplicationCreateShiftTemplateVersionRequest =
 using ApplicationDeleteShiftOverrideRequest = HealthyFac.Core.Application.Shifts.DeleteShiftOverrideRequest;
 using ApplicationDeleteShiftTemplateVersionRequest =
     HealthyFac.Core.Application.Shifts.DeleteShiftTemplateVersionRequest;
-using ApplicationGetEmployeeDayScheduleRequest = HealthyFac.Core.Application.Shifts.GetEmployeeDayScheduleRequest;
+using ApplicationGetEmployeeDayScheduleRequest =
+    HealthyFac.Core.Application.Shifts.DaySchedules.GetEmployeeDayScheduleRequest;
 using ApplicationListShiftOverridesRequest = HealthyFac.Core.Application.Shifts.ListShiftOverridesRequest;
 using ApplicationListShiftTemplateVersionsRequest =
     HealthyFac.Core.Application.Shifts.ListShiftTemplateVersionsRequest;

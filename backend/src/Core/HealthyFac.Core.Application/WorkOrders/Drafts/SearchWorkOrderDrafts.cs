@@ -4,6 +4,7 @@ using FluentValidation;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
@@ -83,7 +84,7 @@ public sealed class SearchWorkOrderDraftsRequestValidator
         : base(WorkOrderDraftSortColumn.All)
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(WorkOrderDraftErrors.Validation.CompanyIdRequired);
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new WorkOrderDraftGridFilterValidator())
             .When(request => request.Filter is not null);
     }

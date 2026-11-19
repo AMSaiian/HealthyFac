@@ -6,6 +6,10 @@ using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.Enumerations;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.Evaluation.Phases;
 using HealthyFac.Telemetry.Domain.Evaluation.Rules;
@@ -74,6 +78,14 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        TransactionRunner.Save(this, base.SaveChanges, acceptAllChangesOnSuccess);
+
     public Task RunInTransactionAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken = default(CancellationToken)
@@ -101,23 +113,12 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
             isolationLevel,
             cancellationToken);
 
-    public async Task<TResult> RunInTransactionAsync<TResult>(
+    public Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     )
-    {
-        if (ChangeTracker.HasChanges())
-        {
-            throw PersistenceErrors.UnsavedChangesBeforeTransaction();
-        }
-
-        return await Database
-            .CreateExecutionStrategy()
-            .ExecuteAsync(
-                token => RunTransactionAttemptAsync(operation, isolationLevel, token),
-                cancellationToken);
-    }
+        => TransactionRunner.RunAsync(this, operation, isolationLevel, cancellationToken);
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -145,30 +146,5 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
         modelBuilder.UseCaseInsensitiveText();
         modelBuilder.ToSnakeCaseConventions();
         modelBuilder.HasPostgreSqlExtensions(DatabaseConstants.RequiredPostgresExtensions);
-    }
-
-    private async Task<TResult> RunTransactionAttemptAsync<TResult>(
-        Func<CancellationToken, Task<TResult>> operation,
-        IsolationLevel isolationLevel,
-        CancellationToken cancellationToken
-    )
-    {
-        ChangeTracker.Clear();
-        await using var transaction = await Database.BeginTransactionAsync(isolationLevel, cancellationToken);
-
-        var result = await operation(cancellationToken);
-        if (Database.CurrentTransaction != transaction)
-        {
-            throw PersistenceErrors.TransactionEndedByOperation();
-        }
-
-        if (ChangeTracker.HasChanges())
-        {
-            throw PersistenceErrors.UnsavedChangesAfterOperation();
-        }
-
-        await transaction.CommitAsync(cancellationToken);
-
-        return result;
     }
 }

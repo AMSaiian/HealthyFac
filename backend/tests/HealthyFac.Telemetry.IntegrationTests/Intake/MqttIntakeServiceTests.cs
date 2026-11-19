@@ -1,5 +1,6 @@
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;

@@ -1,4 +1,4 @@
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 
 namespace HealthyFac.Insights.Application.Agents.Tools.Invocation;
 

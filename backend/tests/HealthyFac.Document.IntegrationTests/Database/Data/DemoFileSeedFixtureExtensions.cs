@@ -4,6 +4,7 @@ using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Document.Infrastructure.Database.Initialization;
 using HealthyFac.Document.Infrastructure.Database.Seeding;
+using HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 using HealthyFac.Document.Infrastructure.Files.Storage;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Seeding;

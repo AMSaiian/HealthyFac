@@ -9,6 +9,7 @@ using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Domain.Shifts;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Infrastructure.Companies.Seeding;
+using HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 using HealthyFac.Core.Infrastructure.Employees.Seeding;
 using HealthyFac.Core.Infrastructure.Machines.Seeding;
 using HealthyFac.Core.Infrastructure.WorkOrders.Seeding;

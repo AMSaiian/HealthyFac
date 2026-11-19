@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts;

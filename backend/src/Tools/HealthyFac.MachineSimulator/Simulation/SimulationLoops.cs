@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using HealthyFac.MachineSimulator.Machines;
+using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Publishing;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.Shared.Application.Observability;

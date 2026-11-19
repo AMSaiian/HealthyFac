@@ -2,6 +2,7 @@ using FluentValidation;
 using HealthyFac.Document.Application.MachineRegistrations;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -33,7 +34,7 @@ public sealed class SearchFilesRequestValidator
             .WithMessage(FileErrors.MachineIdRequired)
             .When(request => request.MachineId.HasValue);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new FileGridFilterValidator())
             .When(request => request.Filter is not null);
     }

@@ -4,7 +4,8 @@
 # Usage: pwsh .claude/check-handoff.ps1 <feature folder> [-Repo <path>] [-Base <ref>] [-Cycle <N>]
 #        [-MainBranch <name>] [-FormatScript <path>]
 # Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the merge base of HEAD and -MainBranch (develop), so a main branch
-# that moved adds no files of other features; -Cycle is the highest cycle of plan.md; -FormatScript is
+# that moved adds no files of other features; -Cycle is the Cycle: line of plan.md (the highest cycle when plan.md
+# has none); -FormatScript is
 # format-changed.ps1 next to this file.
 # Output: one line for each problem. Exit code 1 when there is one.
 # It runs the format script on the changed files first, so it can change files: each changed file is a problem.

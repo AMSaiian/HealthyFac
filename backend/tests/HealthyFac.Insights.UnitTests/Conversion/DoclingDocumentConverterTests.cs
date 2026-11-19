@@ -1,8 +1,9 @@
 using System.Text;
 using HealthyFac.Insights.Application.Conversion;
 using HealthyFac.Insights.Application.Ingest.Processing;
-using HealthyFac.Insights.Infrastructure.Ingest;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using HealthyFac.Insights.Infrastructure.Conversion;
+using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Conversion.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

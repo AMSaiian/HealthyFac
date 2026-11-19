@@ -1,6 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 using HealthyFac.Shared.Domain.Gateways;
 using Microsoft.Extensions.Hosting;
 

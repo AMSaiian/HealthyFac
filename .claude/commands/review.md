@@ -41,8 +41,11 @@ Never Grep a pattern that prints whole entries (e.g., `^\*   Steps? `): Read the
 Read a full file only for a reference that points outside these parts.
 
 ## Rounds
-- Round 1 of a cycle: review the whole cycle: `git diff <base>` in the feature worktree
-  (the base is `git merge-base HEAD develop`), and the checks below.
+- Round 1 of a cycle: review the changes since the last commit of the branch:
+  `git diff <tree of HEAD> <tree of the checkout>`, both IDs from `pwsh .claude/tree-id.ps1
+  -Repo <repo path>` (the first with `-Ref HEAD`), and the checks below. In the first cycle,
+  `HEAD` is the base (`git merge-base HEAD develop`). In a later cycle, the earlier cycles
+  are committed and were reviewed.
 - A later round of the same cycle: review `git diff <Reviewed tree>` (the tree of the last
   round, in review.md) and each open finding. Check again only the parts that this diff
   touches. When the diff changes shared code (`backend/src/Shared/`,
@@ -156,8 +159,10 @@ any finding.
 ## Handoff (cross-session messaging)
 Run `pwsh .claude/check-review-routing.ps1 <review.md path>`. It prints the one allowed
 target. Send one message to that target, by the result:
-- `Verdict: APPROVE` → session `$ARGUMENTS-spec`: "Feature $ARGUMENTS: APPROVED in cycle C,
-  round R. Remaining MINOR findings: <count>. See review.md."
+- `Verdict: APPROVE` → session `$ARGUMENTS-executor`: "Feature $ARGUMENTS: APPROVED in cycle C,
+  round R - commit the cycle. Remaining MINOR findings: <count>. (If you don't have the
+  executor instructions in context, follow .claude/commands/implement.md for feature
+  $ARGUMENTS.) Feature folder: <absolute feature folder path>."
 - CHANGES_REQUESTED, and any finding is REOPENED (2) or more, or R is 4 or more →
   session `$ARGUMENTS-spec`: "Feature $ARGUMENTS: not converging at cycle C, round R
   (<finding IDs>). See review.md." Do not message the executor.

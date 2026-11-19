@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.QueryExpressions;
 

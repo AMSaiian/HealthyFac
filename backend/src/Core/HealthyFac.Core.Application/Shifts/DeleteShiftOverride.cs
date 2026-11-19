@@ -1,6 +1,10 @@
 using System.Data;
 using FluentValidation;
+using HealthyFac.Core.Application.Shifts.ChangeChecks;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
+using HealthyFac.Core.Application.Shifts.Scopes;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -45,8 +49,9 @@ public sealed class DeleteShiftOverridePreHandlerCheck(ICoreDbContext dbContext,
 }
 
 /// <summary>
-/// Deletes the override of a date with its blocks in one save, so the date returns to the template. The change runs in
-/// one serializable transaction with the same guard as the other shift changes.
+/// Deletes the override of a date with its blocks in one save, so the date returns to the template. The cascade
+/// removes the loaded blocks, and the save interceptor turns each removal into a soft delete. The change runs in one
+/// serializable transaction with the same guard as the other shift changes.
 /// </summary>
 /// <param name="dbContext">Saves the change.</param>
 /// <param name="reader">Loads the shift data.</param>
@@ -87,7 +92,6 @@ public sealed class DeleteShiftOverrideRequestHandler(
 
         var before = shifts.Resolve(request.Date, request.Date);
         _dbContext.Entry(existing).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
-        _dbContext.ShiftOverrideBlocks.RemoveRange(existing.Blocks);
         _dbContext.ShiftOverrides.Remove(existing);
         shifts.Overrides.Remove(existing);
         var after = shifts.Resolve(request.Date, request.Date);

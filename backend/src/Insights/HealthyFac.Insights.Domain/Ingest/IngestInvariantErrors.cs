@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace HealthyFac.Insights.Domain.Ingest;
 
 /// <summary>
@@ -6,6 +8,10 @@ namespace HealthyFac.Insights.Domain.Ingest;
 /// </summary>
 public static class IngestInvariantErrors
 {
-    public static InvalidOperationException IllegalTransition(Guid attemptId, IngestState from, string action) =>
+    public static InvalidOperationException IllegalTransition(
+        Guid attemptId,
+        IngestState from,
+        [CallerMemberName] string action = ""
+    ) =>
         new($"Ingest attempt '{attemptId}' is {from.Value}, so it cannot {action}.");
 }

@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.Application.UseCases;
@@ -41,7 +42,7 @@ public sealed class SearchDefinitionDraftsRequestValidator
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DefinitionDraftErrors.SearchScopeRequired);
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new DefinitionDraftGridFilterValidator())
             .When(request => request.Filter is not null);
     }

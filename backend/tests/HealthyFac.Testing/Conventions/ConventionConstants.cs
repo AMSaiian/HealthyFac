@@ -22,6 +22,19 @@ public static class ConventionConstants
         public const string SettingsPort = "Port";
     }
 
+    public static class Transactions
+    {
+        public const string RunInTransactionMethod = "RunInTransactionAsync";
+        public const string RunnerType = "HealthyFac.Shared.Infrastructure.Persistence.TransactionRunner";
+        public const string SaveMethod = "SaveChangesAsync";
+        public const string RunnerSaveMethod = "SaveAsync";
+        public const string SyncSaveMethod = "SaveChanges";
+        public const string RunnerSyncSaveMethod = "Save";
+
+        public static readonly IReadOnlySet<string> StartMethodNames =
+            new HashSet<string> { "BeginTransaction", "BeginTransactionAsync" };
+    }
+
     public static class Options
     {
         public const string TypeSuffix = "Options";

@@ -23,7 +23,7 @@ public class ShiftOverrideBlockConfiguration : IEntityTypeConfiguration<ShiftOve
         builder.HasOne<ShiftOverride>()
             .WithMany(shiftOverride => shiftOverride.Blocks)
             .HasForeignKey(block => block.ShiftOverrideId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasNotEmptyGuidCheck(block => block.ShiftOverrideId);
 

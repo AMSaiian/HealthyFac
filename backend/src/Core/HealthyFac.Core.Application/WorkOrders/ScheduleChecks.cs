@@ -1,5 +1,6 @@
 using FluentValidation.Results;
 using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;

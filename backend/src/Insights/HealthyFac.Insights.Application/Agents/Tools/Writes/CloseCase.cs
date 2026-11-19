@@ -1,6 +1,6 @@
 using FluentValidation;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Shared.Application.CurrentUser;

@@ -1,5 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.MachineSimulator.Machines;
+using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Simulation.Data;

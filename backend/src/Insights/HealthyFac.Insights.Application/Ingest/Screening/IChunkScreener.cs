@@ -1,5 +1,5 @@
 using HealthyFac.Insights.Application.Conversion;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
 
 namespace HealthyFac.Insights.Application.Ingest.Screening;
 

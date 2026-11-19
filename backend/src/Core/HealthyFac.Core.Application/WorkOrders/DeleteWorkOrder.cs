@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -41,9 +42,10 @@ public sealed class DeleteWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 }
 
 /// <summary>
-/// Removes a work order and its file links in one save. The save interceptor turns each removal into a soft delete.
-/// The history rows stay unchanged (they are append-only). A deleted work order frees its slot, because the occupancy
-/// queries join the work orders, and the query filter hides the deleted ones.
+/// Removes a work order with one save. The interceptor soft-deletes the file links and the history in the work order
+/// save, so a failed save leaves them unchanged. The history has no bound, so the handler does not load it. A deleted
+/// work order frees its slot, because the occupancy queries join the work orders, and the query filter hides the
+/// deleted ones.
 /// </summary>
 /// <param name="dbContext">Loads the work order and saves the removal.</param>
 public sealed class DeleteWorkOrderRequestHandler(ICoreDbContext dbContext) : RequestHandler<DeleteWorkOrderRequest>
@@ -63,7 +65,6 @@ public sealed class DeleteWorkOrderRequestHandler(ICoreDbContext dbContext) : Re
             ?? throw new NotFoundException(WorkOrderErrors.Rejections.WorkOrderNotFound);
 
         _dbContext.Entry(workOrder).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
-        _dbContext.WorkOrderFiles.RemoveRange(workOrder.Files);
         _dbContext.WorkOrders.Remove(workOrder);
 
         try

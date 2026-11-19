@@ -168,6 +168,151 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
         isolation.Should().Be(TransactionTestData.ReadCommittedIsolation);
     }
 
+    [Fact]
+    public async Task RunInTransactionAsync_InsideOpenTransaction_JoinsWithoutCommit()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+        var isTransactionShared = false;
+
+        var act = () => dbContext.RunInTransactionAsync(async outerToken =>
+        {
+            var outerTransaction = dbContext.Database.CurrentTransaction;
+            await dbContext.RunInTransactionAsync(
+                async innerToken =>
+                {
+                    isTransactionShared = dbContext.Database.CurrentTransaction == outerTransaction;
+                    dbContext.Companies.Add(
+                        new Company
+                        {
+                            Name = TransactionTestData.JoinedRolledBackCompanyName,
+                            TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                        });
+                    await dbContext.SaveChangesAsync(innerToken);
+                }, outerToken);
+
+            throw new TransactionTestException();
+        });
+
+        await act.Should().ThrowAsync<TransactionTestException>();
+
+        var companyCount = await CountCompaniesAsync(TransactionTestData.JoinedRolledBackCompanyName);
+
+        isTransactionShared.Should().BeTrue();
+        companyCount.Should().Be(expected: 0);
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_InsideOpenTransaction_KeepsTrackedEntities()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+        var state = await dbContext.RunInTransactionAsync(
+            async outerToken =>
+            {
+                var company = new Company
+                {
+                    Name = TransactionTestData.TrackedCompanyName, TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                };
+                dbContext.Companies.Add(company);
+                await dbContext.SaveChangesAsync(outerToken);
+                await dbContext.RunInTransactionAsync(_ => Task.CompletedTask, outerToken);
+
+                return dbContext.Entry(company).State;
+            }, TestContext.Current.CancellationToken);
+
+        state.Should().Be(EntityState.Unchanged);
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_InsideOpenTransactionWithOtherLevel_Throws()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+        var act = () => dbContext.RunInTransactionAsync(
+            outerToken => dbContext.RunInTransactionAsync(
+                _ => Task.CompletedTask, IsolationLevel.Serializable, outerToken),
+            IsolationLevel.ReadCommitted);
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage(
+                PersistenceErrors
+                    .IsolationLevelDiffersFromOpenTransaction(IsolationLevel.ReadCommitted, IsolationLevel.Serializable)
+                    .Message);
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_InsideOpenTransactionWithUnsavedChanges_ThrowsWithoutRunningOperation()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+        var isOperationRun = false;
+
+        var act = () => dbContext.RunInTransactionAsync(outerToken =>
+        {
+            dbContext.Companies.Add(
+                new Company
+                {
+                    Name = TransactionTestData.JoinedUnsavedCompanyName,
+                    TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                });
+
+            return dbContext.RunInTransactionAsync(
+                _ =>
+                {
+                    isOperationRun = true;
+
+                    return Task.CompletedTask;
+                }, outerToken);
+        });
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage(PersistenceErrors.UnsavedChangesBeforeTransaction().Message);
+        isOperationRun.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_WhenJoinedOperationLeavesUnsavedChanges_Throws()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+        var act = () => dbContext.RunInTransactionAsync(outerToken => dbContext.RunInTransactionAsync(
+            _ =>
+            {
+                dbContext.Companies.Add(
+                    new Company
+                    {
+                        Name = TransactionTestData.JoinedUnsavedCompanyName,
+                        TimeZoneId = TransactionTestData.CompanyTimeZoneId,
+                    });
+
+                return Task.CompletedTask;
+            }, outerToken));
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage(PersistenceErrors.UnsavedChangesAfterOperation().Message);
+    }
+
+    [Fact]
+    public async Task RunInTransactionAsync_WhenJoinedOperationCommits_Throws()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+        var act = () => dbContext.RunInTransactionAsync(outerToken => dbContext.RunInTransactionAsync(
+            innerToken => dbContext.Database.CommitTransactionAsync(innerToken), outerToken));
+
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage(PersistenceErrors.TransactionEndedByOperation().Message);
+    }
+
     private static async Task<string> ReadIsolationAsync(CoreDbContext dbContext)
     {
         var isolations = await dbContext.Database

@@ -1,5 +1,6 @@
 using System.Globalization;
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.UnitTests.Shifts.Data;
 
 namespace HealthyFac.Core.UnitTests.Shifts;

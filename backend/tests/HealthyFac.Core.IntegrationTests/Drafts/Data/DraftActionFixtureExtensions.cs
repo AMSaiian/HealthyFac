@@ -100,6 +100,24 @@ public static class DraftActionFixtureExtensions
             return seenIds;
         }
 
+        public async Task<IReadOnlyList<Guid>> ReadFirstDraftPageWithoutFilterAsync(Guid companyId, Guid machineId)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<
+                    IRequestHandler<SearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>>>();
+
+            var page = await handler.HandleAsync(
+                new SearchMachineDraftsRequest
+                {
+                    CompanyId = companyId,
+                    MachineId = machineId,
+                    Limit = DraftSearchTestData.NoFilterPageLimit,
+                });
+
+            return page.Items.Select(item => item.Id).ToList();
+        }
+
         public async Task DismissDraftAsync(Guid companyId, Guid draftId)
         {
             using var scope = fixture.CreateUserScope(companyId);

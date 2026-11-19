@@ -1,6 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -32,7 +33,7 @@ public sealed class SearchWorkOrderBatchEntryValidator
     public SearchWorkOrderBatchEntryValidator()
         : base(WorkOrderSortColumn.All)
     {
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new WorkOrderGridFilterValidator())
             .When(request => request.Filter is not null);
     }

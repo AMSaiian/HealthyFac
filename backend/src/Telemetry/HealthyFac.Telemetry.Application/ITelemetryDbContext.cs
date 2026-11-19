@@ -1,5 +1,8 @@
 using HealthyFac.Shared.Application.Persistence;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.Evaluation.Phases;
 using HealthyFac.Telemetry.Domain.Evaluation.Rules;

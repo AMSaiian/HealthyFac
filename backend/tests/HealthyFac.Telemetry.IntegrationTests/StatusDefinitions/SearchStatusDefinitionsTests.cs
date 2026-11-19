@@ -44,6 +44,21 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
     }
 
     [Fact]
+    public async Task Search_WithoutFilter_ReturnsFirstPageOfAllRows()
+    {
+        var tenant = _fixture.ArrangeMachineTenant();
+        var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+        var ids = await _fixture.SeedStatusDefinitionsAsync(machineId, StatusDefinitionSearchTestData.CreateSeeds());
+
+        var response = await _fixture.SearchStatusDefinitionsAsync(
+            tenant.CompanyId,
+            StatusDefinitionSearchTestData.CreateSearchWithoutFilter(tenant.CompanyId, machineId));
+
+        response.Items.Select(item => item.Id).Should().Equal(ids.OrderBy(id => id.ToString(), StringComparer.Ordinal));
+        response.TotalCount.Should().Be(ids.Count);
+    }
+
+    [Fact]
     public async Task SearchStatusDefinitions_WithCodePrefix_MatchesIgnoringCase()
     {
         var tenant = _fixture.ArrangeMachineTenant();

@@ -1,5 +1,5 @@
 using HealthyFac.Insights.Application;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
 using HealthyFac.Insights.Domain.Ingest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

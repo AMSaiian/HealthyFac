@@ -3,7 +3,8 @@ using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 using HealthyFac.Telemetry.Application;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.ApiTests.DefinitionDrafts.Data;

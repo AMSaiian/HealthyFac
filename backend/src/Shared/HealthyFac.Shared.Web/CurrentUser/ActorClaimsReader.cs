@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CurrentUser.ServiceActors;

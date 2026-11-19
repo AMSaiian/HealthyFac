@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 using HealthyFac.Insights.Application.Agents;
 using HealthyFac.Insights.Application.Agents.Tools.Reads;
 using HealthyFac.Insights.Application.Agents.Tools.Writes;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;

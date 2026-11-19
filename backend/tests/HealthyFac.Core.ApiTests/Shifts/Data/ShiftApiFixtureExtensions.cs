@@ -8,7 +8,7 @@ using HealthyFac.Core.Application.Employees;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Authentication;

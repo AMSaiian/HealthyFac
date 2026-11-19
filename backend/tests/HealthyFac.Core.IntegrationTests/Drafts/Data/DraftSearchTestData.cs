@@ -7,6 +7,8 @@ namespace HealthyFac.Core.IntegrationTests.Drafts.Data;
 public static class DraftSearchTestData
 {
     public const int PageLimit = 2;
+    public const int NoFilterPageLimit = 25;
+    public const int NoFilterDraftCount = 3;
     public const int PendingCount = 3;
     public const int DismissedCount = 2;
     public const int DraftCount = PendingCount + DismissedCount;

@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -30,7 +31,7 @@ public sealed class SearchStatusDefinitionsRequestValidator
             .NotEmpty()
             .WithMessage(StatusDefinitionErrors.MachineIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new StatusDefinitionGridFilterValidator())
             .When(request => request.Filter is not null);
     }

@@ -1,4 +1,4 @@
-using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Shared.Application.IdEncryption;
 using ApplicationSetShiftOverrideRequest = HealthyFac.Core.Application.Shifts.SetShiftOverrideRequest;
 

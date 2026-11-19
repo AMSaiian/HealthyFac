@@ -5,7 +5,7 @@ using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Testing.Containers;

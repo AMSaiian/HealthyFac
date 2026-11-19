@@ -1,6 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.Grids.Keyset;
@@ -42,7 +43,7 @@ public sealed class SearchMachineDraftsRequestValidator
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DraftErrors.SearchScopeRequired);
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new MachineDraftGridFilterValidator())
             .When(request => request.Filter is not null);
     }

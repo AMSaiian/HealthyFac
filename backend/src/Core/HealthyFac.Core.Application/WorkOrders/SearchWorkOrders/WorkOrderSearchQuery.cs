@@ -48,7 +48,7 @@ public sealed class WorkOrderSearchQuery(
             .AsNoTracking()
             .ApplyScope(scope, companyId, ownEmployeeId, _currentUser.GetUserId())
             .ApplyFilter(search.Filter);
-        if (search.Filter.IsDelayed is { } isDelayed)
+        if (search.Filter?.IsDelayed is { } isDelayed)
         {
             query = query.Where(
                 isDelayed ? WorkOrderCurrentRow.IsDelayed(nowUtc) : WorkOrderCurrentRow.IsNotDelayed(nowUtc));

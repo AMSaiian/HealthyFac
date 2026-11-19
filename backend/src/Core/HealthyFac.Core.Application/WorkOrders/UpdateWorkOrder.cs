@@ -4,6 +4,7 @@ using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
@@ -163,8 +164,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         _dbContext.Entry(workOrder).State = EntityState.Modified;
         await SaveAsync(cancellationToken);
 
-        var removedLinks = workOrder.ReplaceFiles(request.FileIds);
-        _dbContext.WorkOrderFiles.RemoveRange(removedLinks);
+        workOrder.ReplaceFiles(request.FileIds);
         _dbContext.WorkOrderFiles.AddRange(
             workOrder.Files.Where(link => _dbContext.Entry(link).State == EntityState.Detached));
         await SaveAsync(cancellationToken);

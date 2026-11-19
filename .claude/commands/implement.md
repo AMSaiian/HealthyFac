@@ -21,7 +21,9 @@ When this command is first run, do not read files or start work. Reply only:
 "Executor for $ARGUMENTS ready - waiting for handoff." and end your turn.
 Start a run only when a message from the session `$ARGUMENTS-spec` or `$ARGUMENTS-reviewer`
 asks you to start, or when I tell you to start. Each such message starts one run of
-"What to do on each run" below. Any other message: answer it, but do not start a run.
+"What to do on each run" below. A message from `$ARGUMENTS-reviewer` that says
+`APPROVED in cycle C` starts **Commit** below, not a run. Any other message: answer it, but
+do not start a run.
 At the start of every run, read the parts of **Reading** below; they change between runs.
 If a start message arrives while a run is in progress, finish the current step, read the
 open cycle of plan.md again, and continue the same run with any newly unblocked steps.
@@ -31,7 +33,9 @@ The plan is your only input. Read by section: Grep a heading or step pattern for
 numbers, then Read (`offset`, `limit`). Never Grep a pattern that prints whole entries
 (e.g., `^\*   Steps? `): Read the range. Never read spec.md, except its AC lines.
 - plan.md header: the first 20 lines (cycle line, status, goal).
-- The open cycle: Grep `^#{1,3} ` in plan.md for the range from `### Cycle N` to the next
+- The open cycle is the cycle of the `Cycle:` line (the first line of plan.md). Later
+  `### Cycle` sections are planned cycles: do not start them before **Commit** moves the
+  `Cycle:` line. Grep `^#{1,3} ` in plan.md for the range from `### Cycle N` to the next
   heading of level 1 to 3. It holds the steps and `#### Deviations` of the cycle. An old
   plan keeps its Deviations in a plan-wide `## Deviations`: Read only the entries of the
   cycle steps there.
@@ -83,7 +87,7 @@ is unneeded.
   "checkpoint <x> ready" with both tree IDs to `$ARGUMENTS-reviewer`, and continue. Before
   the next step, read review.md again and fix each open checkpoint finding.
 - Never delete, skip, or weaken a test to make it pass.
-- Do not commit or push unless I say so.
+- Never commit inside a run, and never push, amend, or rebase. The Stop hook checks only the files that differ from HEAD, so a commit inside a run skips them. Commit only through **Commit** below.
 - Known failures: a test that fails in `baseline.md` and that no step fixes is not a
   reason to stop. Name it in the report. A failure that is not in `baseline.md` is new:
   treat it like any other failure.
@@ -158,6 +162,16 @@ specific error messages. Never change the approach based on what you find.
 - Deviations (same as in plan.md)
 - Rules you could not follow, with the reason
 - Remaining concerns
+
+## Commit
+A message from `$ARGUMENTS-reviewer` that says `APPROVED in cycle C` starts this section.
+- Run `pwsh .claude/commit-cycle.ps1 <feature folder>` in the worktree.
+- When it exits 1: send its lines to `$ARGUMENTS-spec` and end your turn.
+- When it passes and plan.md has a `### Cycle <C+1>` section: set the first line of plan.md
+  to `Cycle: <C+1>` and start a run of that cycle at once. Do not wait for me.
+- When it passes and there is no next cycle: send `$ARGUMENTS-spec` the message
+  `Feature $ARGUMENTS: APPROVED in cycle C, round R, committed <short SHAs>. Remaining MINOR
+  findings: <count>. See review.md.` and end your turn.
 
 ## Handoff (cross-session messaging)
 If any step is still `[!]` at the end of the run: do not hand off to the reviewer.

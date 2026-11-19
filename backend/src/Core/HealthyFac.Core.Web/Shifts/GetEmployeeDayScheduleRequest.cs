@@ -1,7 +1,8 @@
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Shared.Application.IdEncryption;
 using Microsoft.AspNetCore.Mvc;
-using ApplicationGetEmployeeDayScheduleRequest = HealthyFac.Core.Application.Shifts.GetEmployeeDayScheduleRequest;
+using ApplicationGetEmployeeDayScheduleRequest =
+    HealthyFac.Core.Application.Shifts.DaySchedules.GetEmployeeDayScheduleRequest;
 
 namespace HealthyFac.Core.Web.Shifts;
 

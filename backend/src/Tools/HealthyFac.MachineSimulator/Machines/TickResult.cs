@@ -1,4 +1,6 @@
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
 
 namespace HealthyFac.MachineSimulator.Machines;
 

@@ -1,4 +1,4 @@
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using Microsoft.Extensions.AI;
 
 namespace HealthyFac.Insights.Application.Embeddings;

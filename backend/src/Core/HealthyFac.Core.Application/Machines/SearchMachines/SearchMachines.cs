@@ -1,6 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -24,7 +25,7 @@ public sealed class SearchMachinesRequestValidator
             .NotEmpty()
             .WithMessage(MachineErrors.CompanyIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new MachineGridFilterValidator())
             .When(request => request.Filter is not null);
     }
@@ -65,8 +66,8 @@ public sealed class SearchMachinesRequestHandler(ICoreDbContext dbContext)
             .ApplyFilter(request.Filter)
             .ApplyPendingDraftsFilter(
                 _dbContext,
-                request.Filter.HasPendingDrafts,
-                request.Filter.PendingDefinitionDraftMachineIds)
+                request.Filter?.HasPendingDrafts,
+                request.Filter?.PendingDefinitionDraftMachineIds)
             .ApplySort(request.Sort, MachineSortMap.Instance)
             .ToGridResponseAsync(
                 request.Offset,

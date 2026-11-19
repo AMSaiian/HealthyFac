@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.UnitTests.Composition.Data;
 using HealthyFac.Gateway.Web.Composition;
-using HealthyFac.Gateway.Web.Composition.Drafts;
+using HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 namespace HealthyFac.Gateway.UnitTests.Composition;
 

@@ -2,6 +2,7 @@ using FluentValidation;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -42,7 +43,7 @@ public sealed class SearchEmployeesRequestValidator
             .NotEmpty()
             .WithMessage(EmployeeInviteErrors.Validation.CompanyIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new EmployeeGridFilterValidator())
             .When(request => request.Filter is not null);
     }

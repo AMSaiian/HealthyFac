@@ -1,4 +1,5 @@
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 using HealthyFac.Core.UnitTests.Database.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
@@ -19,7 +20,7 @@ public sealed class DevelopmentDataOptionsValidatorTests
     {
         var result = _validator.Validate(new DevelopmentDataOptions { TestTenant = testTenant });
 
-        result.IsValid.Should().BeTrue(because: caseName);
+        result.IsValid.Should().BeTrue(caseName);
     }
 
     [Theory]

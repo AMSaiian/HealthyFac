@@ -2,7 +2,7 @@ using HealthyFac.Auth.Application;
 using HealthyFac.Auth.Infrastructure;
 using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Testing.Containers;

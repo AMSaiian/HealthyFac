@@ -1,4 +1,6 @@
-using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+using HealthyFac.MachineSimulator.Scenarios.Presets;
 using HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios;

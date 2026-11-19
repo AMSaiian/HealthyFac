@@ -1,4 +1,4 @@
-using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
@@ -31,7 +31,7 @@ public class MachineStateHistoryConfiguration : IEntityTypeConfiguration<Machine
         builder.HasOne<Machine>()
             .WithMany(machine => machine.StateHistory)
             .HasForeignKey(row => row.MachineId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasEnumerationCheck(row => row.State)
             .HasNotEmptyGuidCheck(row => row.MachineId);

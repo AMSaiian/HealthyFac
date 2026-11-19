@@ -1,5 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
 
 namespace HealthyFac.MachineSimulator.Simulation;
 

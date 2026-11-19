@@ -7,6 +7,7 @@ using HealthyFac.Document.Application.Files.Links;
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Document.Infrastructure.Database.Initialization;
 using HealthyFac.Document.Infrastructure.Database.Seeding;
+using HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 using HealthyFac.Document.Infrastructure.Files.Inspection;
 using HealthyFac.Document.Infrastructure.Files.Links;
 using HealthyFac.Document.Infrastructure.Files.Storage;

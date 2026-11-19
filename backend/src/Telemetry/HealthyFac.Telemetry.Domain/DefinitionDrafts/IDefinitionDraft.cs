@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 
 namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
 

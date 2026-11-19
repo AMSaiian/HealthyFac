@@ -1,6 +1,6 @@
 using System.Net;
 using HealthyFac.Insights.Application.Agents;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Agents.Models;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using Microsoft.Extensions.Options;

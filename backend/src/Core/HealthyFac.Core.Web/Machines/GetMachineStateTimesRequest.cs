@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Application.IdEncryption;
 using Microsoft.AspNetCore.Mvc;
-using ApplicationGetMachineStateTimesRequest = HealthyFac.Core.Application.Machines.GetMachineStateTimesRequest;
+using ApplicationGetMachineStateTimesRequest = HealthyFac.Core.Application.Machines.States.GetMachineStateTimesRequest;
 
 namespace HealthyFac.Core.Web.Machines;
 

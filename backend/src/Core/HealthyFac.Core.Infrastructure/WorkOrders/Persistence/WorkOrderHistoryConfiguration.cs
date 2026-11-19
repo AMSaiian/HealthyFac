@@ -41,7 +41,7 @@ public class WorkOrderHistoryConfiguration : IEntityTypeConfiguration<WorkOrderH
         builder.HasOne<WorkOrder>()
             .WithMany(workOrder => workOrder.History)
             .HasForeignKey(row => row.WorkOrderId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<Employee>()
             .WithMany()

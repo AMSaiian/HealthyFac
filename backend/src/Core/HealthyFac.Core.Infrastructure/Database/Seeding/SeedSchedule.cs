@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 namespace HealthyFac.Core.Infrastructure.Database.Seeding;
 

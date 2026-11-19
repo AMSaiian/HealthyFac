@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using HealthyFac.Shared.Application;
+using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Persistence;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Testing.Resetting;
 using Microsoft.AspNetCore.Builder;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -321,6 +324,135 @@ public static class ConventionChecks
             .Where(ThrowsOnRead)
             .Select(field => $"{field.DeclaringType?.FullName}.{field.Name}")
             .ToList();
+
+    /// <summary>
+    /// Finds the types that begin a database transaction (<c>BeginTransaction</c> or <c>BeginTransactionAsync</c> on
+    /// <see cref="DatabaseFacade"/>) outside <c>TransactionRunner</c>. The runner joins an open transaction and
+    /// retries the whole unit inside the execution strategy, so a second place that begins a transaction would skip
+    /// both. The check reads the IL of every method of a top-level type and of the types nested in it (lambdas,
+    /// async state machines, local functions).
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>One line for each type and called method.</returns>
+    public static IReadOnlyList<string> FindTransactionStarts(Assembly assembly) =>
+        FindTransactionStarts(assembly.GetSourceTypes());
+
+    /// <inheritdoc cref="FindTransactionStarts(Assembly)"/>
+    /// <param name="types">The types to inspect.</param>
+    public static IReadOnlyList<string> FindTransactionStarts(IEnumerable<Type> types) =>
+        types
+            .Where(type => !type.IsNested && type.FullName != ConventionConstants.Transactions.RunnerType)
+            .SelectMany(type => MethodCallInspection.FindCalls(type, IsTransactionStart)
+                .Select(call => $"{type.DisplayName}: calls {call.Callee.DeclaringType!.Name}.{call.Callee.Name}"))
+            .Distinct()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+    /// <summary>
+    /// Finds the service contexts (a concrete <see cref="DbContext"/> that implements
+    /// <see cref="ITransactionalDbContext"/>) whose <c>SaveChangesAsync(bool, CancellationToken)</c> and
+    /// <c>SaveChanges(bool)</c> are not overrides that call <c>TransactionRunner.SaveAsync</c> and
+    /// <c>TransactionRunner.Save</c>. A save with a soft delete cascade needs the transaction of the
+    /// runner, and a context without the override would throw at the first cascade.
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>One line for each context without the call.</returns>
+    public static IReadOnlyList<string> FindContextsWithoutSaveTransaction(Assembly assembly) =>
+        FindContextsWithoutSaveTransaction(assembly.GetSourceTypes());
+
+    /// <inheritdoc cref="FindContextsWithoutSaveTransaction(Assembly)"/>
+    /// <param name="types">The types to inspect.</param>
+    public static IReadOnlyList<string> FindContextsWithoutSaveTransaction(IEnumerable<Type> types) =>
+        types
+            .Where(type => type is { IsClass: true, IsAbstract: false }
+                && typeof(DbContext).IsAssignableFrom(type)
+                && typeof(ITransactionalDbContext).IsAssignableFrom(type))
+            .SelectMany(FindMissingSaveOverrides)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+    private static IEnumerable<string> FindMissingSaveOverrides(Type type)
+    {
+        if (!CallsRunnerSave(
+            type,
+            ConventionConstants.Transactions.SaveMethod,
+            ConventionConstants.Transactions.RunnerSaveMethod,
+            [typeof(bool), typeof(CancellationToken)]))
+        {
+            yield return $"{type.DisplayName}: {ConventionConstants.Transactions.SaveMethod}(bool, CancellationToken) "
+                + $"does not call TransactionRunner.{ConventionConstants.Transactions.RunnerSaveMethod}";
+        }
+
+        if (!CallsRunnerSave(
+            type,
+            ConventionConstants.Transactions.SyncSaveMethod,
+            ConventionConstants.Transactions.RunnerSyncSaveMethod,
+            [typeof(bool)]))
+        {
+            yield return $"{type.DisplayName}: {ConventionConstants.Transactions.SyncSaveMethod}(bool) "
+                + $"does not call TransactionRunner.{ConventionConstants.Transactions.RunnerSyncSaveMethod}";
+        }
+    }
+
+    private static bool CallsRunnerSave(Type type, string saveMethod, string runnerMethod, Type[] parameterTypes)
+    {
+        var save = type.GetMethod(
+            saveMethod,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+            parameterTypes);
+
+        return save is not null
+            && MethodCallInspection.FindCalls(type, method => IsRunnerMethod(method, runnerMethod))
+                .Any(call => call.Caller == save || call.Caller.DeclaringType != type);
+    }
+
+    private static bool IsRunnerMethod(MethodBase method, string runnerMethod) =>
+        method.Name == runnerMethod
+        && method.DeclaringType?.FullName == ConventionConstants.Transactions.RunnerType;
+
+    /// <summary>
+    /// Finds the inbox handlers that call <c>RunInTransactionAsync</c>. An inbox handler is a use case handler
+    /// (<c>RequestHandler&lt;TMessage&gt;</c>) of an integration message. The inbox runner already runs it inside
+    /// one transaction, so a handler transaction would only join it, and a handler that asks for another isolation
+    /// level would throw. A race belongs to a row lock, a unique index, or a row version.
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>One line for each handler that calls the method.</returns>
+    public static IReadOnlyList<string> FindInboxHandlerTransactions(Assembly assembly) =>
+        FindInboxHandlerTransactions(assembly.GetSourceTypes());
+
+    /// <inheritdoc cref="FindInboxHandlerTransactions(Assembly)"/>
+    /// <param name="types">The types to inspect.</param>
+    public static IReadOnlyList<string> FindInboxHandlerTransactions(IEnumerable<Type> types) =>
+        types
+            .Where(type => type is { IsClass: true, IsAbstract: false } && IsInboxHandler(type))
+            .Where(type => MethodCallInspection.FindCalls(type, IsRunInTransaction).Any())
+            .Select(type => $"{type.DisplayName}: calls {ConventionConstants.Transactions.RunInTransactionMethod}")
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+    private static bool IsInboxHandler(Type type)
+    {
+        for (var current = type.BaseType; current is not null; current = current.BaseType)
+        {
+            if (current.IsGenericType && current.GetGenericTypeDefinition() == typeof(RequestHandler<>))
+            {
+                return typeof(IIntegrationMessage).IsAssignableFrom(current.GetGenericArguments()[0]);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsRunInTransaction(MethodBase method) =>
+        method.Name == ConventionConstants.Transactions.RunInTransactionMethod
+        && method.DeclaringType is not null
+        && typeof(ITransactionalDbContext).IsAssignableFrom(method.DeclaringType);
+
+    private static bool IsTransactionStart(MethodBase method) =>
+        ConventionConstants.Transactions.StartMethodNames.Contains(method.Name)
+        && (method.DeclaringType == typeof(DatabaseFacade)
+            || method.DeclaringType == typeof(RelationalDatabaseFacadeExtensions));
 
     private static bool IsKeysetSortMap(Type type) =>
         type.IsGenericType

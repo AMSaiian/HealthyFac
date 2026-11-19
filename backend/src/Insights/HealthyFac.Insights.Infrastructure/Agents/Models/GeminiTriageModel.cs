@@ -1,6 +1,6 @@
 using System.Text.Json;
 using HealthyFac.Insights.Application.Agents.Triage;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Ai;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;

@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using HealthyFac.Insights.Application.Conversion;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Microsoft.Extensions.Options;
 

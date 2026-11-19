@@ -4,6 +4,7 @@ using HealthyFac.Document.Application.Files.Lookup;
 using HealthyFac.Document.Application.Files.Searching;
 using HealthyFac.Document.Application.Files.Uploading;
 using HealthyFac.Document.Web.Authorization;
+using HealthyFac.Document.Web.Files.Uploads;
 using HealthyFac.Document.Web.MachineRegistrations;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Grids;
@@ -22,6 +23,8 @@ using ApplicationSearchFilesRequest = HealthyFac.Document.Application.Files.Sear
 using ApplicationUploadEmbeddedImageRequest =
     HealthyFac.Document.Application.Files.Uploading.UploadEmbeddedImageRequest;
 using ApplicationUploadFileRequest = HealthyFac.Document.Application.Files.Uploading.UploadFileRequest;
+using UploadEmbeddedImageRequest = HealthyFac.Document.Web.Files.Uploads.UploadEmbeddedImageRequest;
+using UploadFileRequest = HealthyFac.Document.Web.Files.Uploads.UploadFileRequest;
 
 namespace HealthyFac.Document.Web.Files;
 

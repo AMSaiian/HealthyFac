@@ -4,8 +4,10 @@ using HealthyFac.Core.Web.Shifts;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
-using ApplicationCompanyDayScheduleResponse = HealthyFac.Core.Application.Shifts.CompanyDayScheduleResponse;
-using ApplicationGetCompanyDayScheduleRequest = HealthyFac.Core.Application.Shifts.GetCompanyDayScheduleRequest;
+using ApplicationCompanyDayScheduleResponse =
+    HealthyFac.Core.Application.Shifts.DaySchedules.CompanyDayScheduleResponse;
+using ApplicationGetCompanyDayScheduleRequest =
+    HealthyFac.Core.Application.Shifts.DaySchedules.GetCompanyDayScheduleRequest;
 
 namespace HealthyFac.Core.Web.Companies;
 

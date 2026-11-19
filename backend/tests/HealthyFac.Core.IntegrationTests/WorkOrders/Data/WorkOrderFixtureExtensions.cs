@@ -4,7 +4,7 @@ using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
@@ -168,6 +168,30 @@ public static class WorkOrderFixtureExtensions
             return await dbContext.WorkOrderFiles
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .CountAsync(link => link.WorkOrderId == workOrderId);
+        }
+
+        public async Task<IReadOnlyList<WorkOrderFile>> LoadFileLinkRowsAsync(Guid workOrderId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.WorkOrderFiles
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Where(link => link.WorkOrderId == workOrderId)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<WorkOrderHistory>> LoadHistoryRowsAsync(Guid workOrderId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            return await dbContext.WorkOrderHistories
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Where(row => row.WorkOrderId == workOrderId)
+                .ToListAsync();
         }
 
         public async Task<WorkOrder> LoadWorkOrderAsync(Guid workOrderId)

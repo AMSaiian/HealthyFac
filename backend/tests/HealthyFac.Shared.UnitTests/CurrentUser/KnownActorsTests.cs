@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;

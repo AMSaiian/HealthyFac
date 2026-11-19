@@ -1,5 +1,5 @@
 using HealthyFac.Shared.Application.Observability;
-using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.CurrentUser;
@@ -17,6 +17,7 @@ using HealthyFac.Shared.Web.Tracing;
 using HealthyFac.Shared.Web.Versioning;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 using HealthyFac.Telemetry.Web.Authorization;
 using HealthyFac.Telemetry.Web.DefinitionDrafts;
 using HealthyFac.Telemetry.Web.MetricDefinitions;

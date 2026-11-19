@@ -1,7 +1,9 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.MachineSimulator.Machines;
+using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Publishing;
-using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.MachineSimulator.Simulation;

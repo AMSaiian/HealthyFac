@@ -2,8 +2,14 @@ using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using FluentValidation.Results;
+using HealthyFac.Core.Application.Shifts.BlockInput;
+using HealthyFac.Core.Application.Shifts.ChangeChecks;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
+using HealthyFac.Core.Application.Shifts.Scopes;
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -156,8 +162,7 @@ public sealed class SetShiftOverrideRequestHandler(
         }
 
         _dbContext.Entry(existing).Property(stored => stored.RowVersion).OriginalValue = rowVersion;
-        var removedBlocks = existing.ReplaceBlocks(times);
-        _dbContext.ShiftOverrideBlocks.RemoveRange(removedBlocks);
+        existing.ReplaceBlocks(times);
         _dbContext.ShiftOverrideBlocks.AddRange(existing.Blocks);
         _dbContext.Entry(existing).State = EntityState.Modified;
     }

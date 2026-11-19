@@ -1,4 +1,4 @@
-using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Application.Machines.Lookups;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;

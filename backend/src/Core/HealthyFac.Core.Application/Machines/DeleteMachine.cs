@@ -1,6 +1,7 @@
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
@@ -31,11 +32,11 @@ public sealed class DeleteMachinePreHandlerCheck(ICurrentUserProvider currentUse
 }
 
 /// <summary>
-/// Removes a machine and its state history, dismisses its pending drafts, and queues the
-/// <see cref="MachineDeleted"/> message in the same save.
-/// The save interceptor turns each removal into a soft delete, so the rows stay and the query filter hides them.
-/// One save stores all removals together. A machine outside the company and a
-/// machine that is already deleted, are "not found".
+/// Removes a machine, dismisses its pending drafts, and queues the <see cref="MachineDeleted"/> message with one
+/// save. The save interceptor turns the removal of the machine into a soft delete, so the rows stay and the query
+/// filter hides them. The state history has no bound, so the handler does not load it: the interceptor soft-deletes
+/// it in the machine save, and a failed save leaves it unchanged. A machine outside the company and a machine that is
+/// already deleted are "not found".
 /// </summary>
 /// <remarks>
 /// The handler loads and dismisses the drafts after it removes the machine. A draft that is tracked when the
@@ -50,21 +51,13 @@ public sealed class DeleteMachineRequestHandler(ICoreDbContext dbContext, IOutbo
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly IOutbox _outbox = outbox;
 
-    protected override async Task HandleInternalAsync(
-        DeleteMachineRequest request,
-        CancellationToken cancellationToken
-    )
+    protected override async Task HandleInternalAsync(DeleteMachineRequest request, CancellationToken cancellationToken)
     {
         var machine = await _dbContext.Machines.SingleOrDefaultAsync(
                 candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
                 cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
 
-        var stateHistory = await _dbContext.MachineStateHistories
-            .Where(row => row.MachineId == machine.Id)
-            .ToListAsync(cancellationToken);
-
-        _dbContext.MachineStateHistories.RemoveRange(stateHistory);
         _dbContext.Machines.Remove(machine);
         await DismissPendingDraftsAsync(machine.Id, cancellationToken);
         _outbox.Add(new MachineDeleted { MachineId = machine.Id, CompanyId = machine.CompanyId });

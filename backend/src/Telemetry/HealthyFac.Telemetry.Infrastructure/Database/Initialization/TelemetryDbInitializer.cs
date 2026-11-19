@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Telemetry.Infrastructure.Database.Seeding;
+using HealthyFac.Telemetry.Infrastructure.Database.Seeding.DemoDefinitionDrafts;
 using HealthyFac.Telemetry.Infrastructure.MetricUnits.Persistence;
 using HealthyFac.Telemetry.Messaging.MetricUnits;
 using Microsoft.EntityFrameworkCore;

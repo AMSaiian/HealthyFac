@@ -80,4 +80,4 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - One table: item, verdict, files, check result. Then the plan items, each with the failed
   condition and the proposed step. Then the app URL and the log path.
 - End with: "Check in the browser and tell me 'tested' or the next fix."
-- Never commit. Commit only when I ask.
+- Never commit. Commit only when I ask. An inline fix after the review of a cycle changes its tree, so commit-cycle.ps1 refuses that cycle until a new review round.

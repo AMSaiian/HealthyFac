@@ -1,3 +1,5 @@
+using HealthyFac.Shared.Application.CurrentUser.Actors;
+
 namespace HealthyFac.Shared.Application.CurrentUser;
 
 /// <summary>

@@ -1,7 +1,7 @@
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Authentication;

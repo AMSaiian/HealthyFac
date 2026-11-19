@@ -1,4 +1,4 @@
-using HealthyFac.Gateway.Web.Composition.Drafts;
+using HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 namespace HealthyFac.Gateway.UnitTests.Composition.Data;
 

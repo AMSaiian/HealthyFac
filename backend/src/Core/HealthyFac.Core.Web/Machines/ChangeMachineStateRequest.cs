@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.IdEncryption;
-using ApplicationChangeMachineStateRequest = HealthyFac.Core.Application.Machines.ChangeMachineStateRequest;
+using ApplicationChangeMachineStateRequest = HealthyFac.Core.Application.Machines.States.ChangeMachineStateRequest;
 
 namespace HealthyFac.Core.Web.Machines;
 

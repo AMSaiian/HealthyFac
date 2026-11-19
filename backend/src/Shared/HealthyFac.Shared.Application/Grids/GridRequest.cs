@@ -16,11 +16,11 @@ public abstract record GridRequest<TFilter, TSortColumn>
 
     public GridSort<TSortColumn>? Sort { get; init; }
 
-    public required TFilter Filter { get; init; }
+    public TFilter? Filter { get; init; }
 }
 
 /// <summary>
-/// Validates the paging, the sort column, and the presence of the filter of a grid request. A grid validator derives
+/// Validates the paging and the sort column of a grid request. A grid validator derives
 /// from it, passes its sortable columns, and adds the rules of its own filter.
 /// </summary>
 /// <typeparam name="TRequest">The grid request type.</typeparam>
@@ -47,9 +47,5 @@ public abstract class GridRequestValidator<TRequest, TFilter, TSortColumn> : Abs
             .Must(sortable.Contains)
             .When(request => request.Sort is not null)
             .WithMessage(GridErrors.Validation.SortColumnUnknown);
-
-        RuleFor(request => request.Filter)
-            .NotNull()
-            .WithMessage(GridErrors.Validation.FilterRequired);
     }
 }

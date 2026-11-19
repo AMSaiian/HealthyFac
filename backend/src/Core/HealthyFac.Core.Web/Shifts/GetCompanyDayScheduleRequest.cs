@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using ApplicationGetCompanyDayScheduleRequest = HealthyFac.Core.Application.Shifts.GetCompanyDayScheduleRequest;
+using ApplicationGetCompanyDayScheduleRequest =
+    HealthyFac.Core.Application.Shifts.DaySchedules.GetCompanyDayScheduleRequest;
 
 namespace HealthyFac.Core.Web.Shifts;
 
