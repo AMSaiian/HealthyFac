@@ -32,4 +32,20 @@ public sealed class TransactionConventionTests
 
         violations.Should().BeEmpty();
     }
+
+    [Fact]
+    public void FindContextsWithoutSaveTransaction_WithPlantedTypes_ReportsOnlyTheContextWithoutOverride()
+    {
+        var violations = ConventionChecks.FindContextsWithoutSaveTransaction(
+        [
+            typeof(PlantedContextWithoutSaveOverride),
+            typeof(PlantedContextWithSaveOverride),
+            typeof(PlantedTransactionReader),
+        ]);
+
+        violations.Should()
+            .Equal(
+                $"{typeof(PlantedContextWithoutSaveOverride).FullName}: SaveChangesAsync(bool, CancellationToken) "
+                + "does not call TransactionRunner.SaveAsync");
+    }
 }

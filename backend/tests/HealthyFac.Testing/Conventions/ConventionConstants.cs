@@ -26,6 +26,8 @@ public static class ConventionConstants
     {
         public const string RunInTransactionMethod = "RunInTransactionAsync";
         public const string RunnerType = "HealthyFac.Shared.Infrastructure.Persistence.TransactionRunner";
+        public const string SaveMethod = "SaveChangesAsync";
+        public const string RunnerSaveMethod = "SaveAsync";
 
         public static readonly IReadOnlySet<string> StartMethodNames =
             new HashSet<string> { "BeginTransaction", "BeginTransactionAsync" };

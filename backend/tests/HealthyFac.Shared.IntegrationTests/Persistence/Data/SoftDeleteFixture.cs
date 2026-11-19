@@ -13,7 +13,7 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
 
     private IDisposable? _actorLease;
 
-    public FakeTimeProvider TimeProvider { get; } = new(SoftDeleteTestData.Now);
+    public FakeTimeProvider TimeProvider { get; private set; } = new(SoftDeleteTestData.Now);
 
     public async ValueTask InitializeAsync()
     {
@@ -29,6 +29,8 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
         await _database.DisposeAsync();
     }
 
+    public void ResetClock() => TimeProvider = new FakeTimeProvider(SoftDeleteTestData.Now);
+
     public SoftDeleteDbContext CreateDbContext()
     {
         var currentUser = new ActorCurrentUserProvider(_holder);
@@ -38,5 +40,16 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
             .Options;
 
         return new SoftDeleteDbContext(options);
+    }
+
+    public UnguardedSoftDeleteDbContext CreateUnguardedDbContext()
+    {
+        var currentUser = new ActorCurrentUserProvider(_holder);
+        var options = new DbContextOptionsBuilder<UnguardedSoftDeleteDbContext>()
+            .UseNpgsql(_database.ConnectionString)
+            .AddInterceptors(new SoftDeleteInterceptor(TimeProvider, currentUser))
+            .Options;
+
+        return new UnguardedSoftDeleteDbContext(options);
     }
 }

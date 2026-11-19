@@ -1,5 +1,4 @@
 using System.Data;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace HealthyFac.Shared.Application.Persistence;
 
@@ -11,12 +10,6 @@ namespace HealthyFac.Shared.Application.Persistence;
 /// </summary>
 public interface ITransactionalDbContext
 {
-    /// <summary>
-    /// The database facade of the context. The soft delete helper reads the open transaction through it, so it
-    /// throws when it runs outside <c>RunInTransactionAsync</c>.
-    /// </summary>
-    DatabaseFacade Database { get; }
-
     /// <summary>
     /// Runs <paramref name="operation"/> in one transaction and commits. Use it only when one <c>SaveChangesAsync</c>
     /// call is not enough (e.g., lock a row, handle it, and mark it processed as one unit). The operation saves its

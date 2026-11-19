@@ -349,6 +349,47 @@ public static class ConventionChecks
             .ToList();
 
     /// <summary>
+    /// Finds the service contexts (a concrete <see cref="DbContext"/> that implements
+    /// <see cref="ITransactionalDbContext"/>) whose <c>SaveChangesAsync(bool, CancellationToken)</c> is not an override
+    /// that calls <c>TransactionRunner.SaveAsync</c>. A save with a soft delete cascade needs the transaction of the
+    /// runner, and a context without the override would throw at the first cascade.
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <returns>One line for each context without the call.</returns>
+    public static IReadOnlyList<string> FindContextsWithoutSaveTransaction(Assembly assembly) =>
+        FindContextsWithoutSaveTransaction(assembly.GetSourceTypes());
+
+    /// <inheritdoc cref="FindContextsWithoutSaveTransaction(Assembly)"/>
+    /// <param name="types">The types to inspect.</param>
+    public static IReadOnlyList<string> FindContextsWithoutSaveTransaction(IEnumerable<Type> types) =>
+        types
+            .Where(type => type is { IsClass: true, IsAbstract: false }
+                && typeof(DbContext).IsAssignableFrom(type)
+                && typeof(ITransactionalDbContext).IsAssignableFrom(type))
+            .Where(type => !CallsRunnerSave(type))
+            .Select(type =>
+                $"{type.DisplayName}: {ConventionConstants.Transactions.SaveMethod}(bool, CancellationToken) "
+                + $"does not call TransactionRunner.{ConventionConstants.Transactions.RunnerSaveMethod}")
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+    private static bool CallsRunnerSave(Type type)
+    {
+        var save = type.GetMethod(
+            ConventionConstants.Transactions.SaveMethod,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+            [typeof(bool), typeof(CancellationToken)]);
+
+        return save is not null
+            && MethodCallInspection.FindCalls(type, IsRunnerSave)
+                .Any(call => call.Caller == save || call.Caller.DeclaringType != type);
+    }
+
+    private static bool IsRunnerSave(MethodBase method) =>
+        method.Name == ConventionConstants.Transactions.RunnerSaveMethod
+        && method.DeclaringType?.FullName == ConventionConstants.Transactions.RunnerType;
+
+    /// <summary>
     /// Finds the inbox handlers that call <c>RunInTransactionAsync</c>. An inbox handler is a use case handler
     /// (<c>RequestHandler&lt;TMessage&gt;</c>) of an integration message. The inbox runner already runs it inside
     /// one transaction, so a handler transaction would only join it, and a handler that asks for another isolation

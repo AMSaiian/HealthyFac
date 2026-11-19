@@ -227,4 +227,15 @@ public sealed class ConventionTests
 
         violations.Should().BeEmpty();
     }
+
+    [Theory]
+    [MemberData(nameof(ConventionTestData.AllAssemblies), MemberType = typeof(ConventionTestData))]
+    public void Contexts_SaveThroughTransactionRunner(string assemblyName)
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindContextsWithoutSaveTransaction(LayerDependencyTestData.Resolve(assemblyName)));
+
+        violations.Should().BeEmpty();
+    }
 }

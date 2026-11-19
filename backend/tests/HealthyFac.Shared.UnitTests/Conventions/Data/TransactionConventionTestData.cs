@@ -1,4 +1,6 @@
 using System.Data;
+using HealthyFac.Shared.Application.Persistence;
+using HealthyFac.Shared.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.UnitTests.Conventions.Data;
@@ -40,4 +42,59 @@ public sealed class PlantedTransactionReader(DbContext dbContext)
     private readonly DbContext _dbContext = dbContext;
 
     public bool HasOpenTransaction => _dbContext.Database.CurrentTransaction is not null;
+}
+
+public abstract class PlantedTransactionalContextBase(DbContextOptions options)
+    : DbContext(options), ITransactionalDbContext
+{
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.RunAsync(
+        this,
+        async token =>
+        {
+            await operation(token);
+
+            return true;
+        },
+        IsolationLevel.ReadCommitted,
+        cancellationToken);
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.RunAsync(this, operation, IsolationLevel.ReadCommitted, cancellationToken);
+
+    public Task RunInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.RunAsync(
+        this,
+        async token =>
+        {
+            await operation(token);
+
+            return true;
+        },
+        isolationLevel,
+        cancellationToken);
+
+    public Task<TResult> RunInTransactionAsync<TResult>(
+        Func<CancellationToken, Task<TResult>> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.RunAsync(this, operation, isolationLevel, cancellationToken);
+}
+
+public sealed class PlantedContextWithoutSaveOverride(DbContextOptions options)
+    : PlantedTransactionalContextBase(options);
+
+public sealed class PlantedContextWithSaveOverride(DbContextOptions options) : PlantedTransactionalContextBase(options)
+{
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
 }

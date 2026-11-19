@@ -60,6 +60,11 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
 
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
 
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) => TransactionRunner.SaveAsync(this, base.SaveChangesAsync, acceptAllChangesOnSuccess, cancellationToken);
+
     public Task RunInTransactionAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken = default(CancellationToken)

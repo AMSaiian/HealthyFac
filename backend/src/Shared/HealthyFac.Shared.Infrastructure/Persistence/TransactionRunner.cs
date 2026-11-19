@@ -1,4 +1,5 @@
 using System.Data;
+using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -52,6 +53,51 @@ public static class TransactionRunner
             .ExecuteAsync(
                 token => RunAttemptAsync(dbContext, operation, isolationLevel, token),
                 cancellationToken);
+    }
+
+    /// <summary>
+    /// Saves the changes of <paramref name="dbContext"/>. A save with a soft delete cascade runs in one transaction
+    /// inside the execution strategy (the pattern of the EF Core connection resiliency documentation), so the
+    /// interceptor statements and the save commit together. A retry repeats both, because the deleted principals stay
+    /// detectable (<c>Modified</c> with the original <c>DeletedAt</c> null). Inside an open transaction, or without a
+    /// cascade, the save runs as EF Core runs it.
+    /// </summary>
+    /// <param name="dbContext">The context to save.</param>
+    /// <param name="save">The base <c>SaveChangesAsync</c> of the context.</param>
+    /// <param name="isAcceptingAllChanges">Whether to accept the changes in the tracker after the save.</param>
+    /// <param name="cancellationToken">Cancels the save and rolls back a transaction that this call began.</param>
+    /// <returns>The number of state entries that the save wrote.</returns>
+    public static async Task<int> SaveAsync(
+        DbContext dbContext,
+        Func<bool, CancellationToken, Task<int>> save,
+        bool isAcceptingAllChanges,
+        CancellationToken cancellationToken
+    )
+    {
+        if (dbContext.Database.CurrentTransaction is not null || !SoftDeleteCascade.HasCascadeWork(dbContext))
+        {
+            return await save(isAcceptingAllChanges, cancellationToken);
+        }
+
+        var count = await dbContext.Database
+            .CreateExecutionStrategy()
+            .ExecuteAsync(
+                async token =>
+                {
+                    await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                        IsolationLevel.ReadCommitted, token);
+                    var attemptCount = await save(arg1: false, token);
+                    await transaction.CommitAsync(token);
+
+                    return attemptCount;
+                },
+                cancellationToken);
+        if (isAcceptingAllChanges)
+        {
+            dbContext.ChangeTracker.AcceptAllChanges();
+        }
+
+        return count;
     }
 
     private static async Task<TResult> JoinAsync<TResult>(

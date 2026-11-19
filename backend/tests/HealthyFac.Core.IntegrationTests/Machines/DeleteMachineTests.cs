@@ -147,7 +147,9 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         history.Should()
             .HaveCount(expected: 2)
             .And.OnlyContain(row => row.DeletedAt == SoftDeleteQueryTestData.FirstDeleteAt.UtcDateTime
-                && row.DeletedBy == actorId);
+                && row.DeletedBy == actorId
+                && row.UpdatedAt == SoftDeleteQueryTestData.FirstDeleteAt.UtcDateTime
+                && row.UpdatedBy == actorId);
     }
 
     [Fact]

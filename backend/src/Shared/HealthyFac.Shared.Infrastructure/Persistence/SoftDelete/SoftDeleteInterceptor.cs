@@ -8,7 +8,9 @@ namespace HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 /// <summary>
 /// Turns the removal of an <see cref="ISoftDeletable"/> entity into an update that sets <c>DeletedAt</c> and
 /// <c>DeletedBy</c>. Register it before <see cref="AuditableEntityInterceptor"/>, so the audit interceptor sees the
-/// entry as modified and sets <c>UpdatedAt</c> and <c>UpdatedBy</c>.
+/// entry as modified and sets <c>UpdatedAt</c> and <c>UpdatedBy</c>. It also soft-deletes the untracked rows of the
+/// <c>Cascade</c> relations of a deleted entity, read from the model; <c>Restrict</c> relations and dependents without
+/// <see cref="ISoftDeletable"/> stay unchanged.
 /// </summary>
 public sealed class SoftDeleteInterceptor(
     TimeProvider timeProvider,
@@ -23,32 +25,39 @@ public sealed class SoftDeleteInterceptor(
         InterceptionResult<int> result
     )
     {
-        ApplySoftDelete(eventData.Context);
+        if (eventData.Context is not null && SoftDeleteCascade.HasCascadeWork(eventData.Context))
+        {
+            throw SoftDeleteCascadeErrors.SynchronousSave();
+        }
+
+        if (eventData.Context is not null)
+        {
+            FlipDeletedEntries(
+                eventData.Context, _timeProvider.GetUtcNow().UtcDateTime, _currentUserProvider.TryGetUserId());
+        }
 
         return base.SavingChanges(eventData, result);
     }
 
-    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        ApplySoftDelete(eventData.Context);
-
-        return base.SavingChangesAsync(eventData, result, cancellationToken);
-    }
-
-    private void ApplySoftDelete(DbContext? context)
-    {
-        if (context is null)
+        if (eventData.Context is not null)
         {
-            return;
+            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+            var userId = _currentUserProvider.TryGetUserId();
+            await SoftDeleteCascade.ApplyAsync(eventData.Context, utcNow, userId, cancellationToken);
+            FlipDeletedEntries(eventData.Context, utcNow, userId);
         }
 
-        var userId = _currentUserProvider.TryGetUserId();
-        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        return await base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
 
+    private static void FlipDeletedEntries(DbContext context, DateTime utcNow, Guid? userId)
+    {
         foreach (var entry in context.ChangeTracker.Entries<ISoftDeletable>()
             .Where(entry => entry.State == EntityState.Deleted)
             .ToList())
