@@ -1,4 +1,5 @@
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 using HealthyFac.Shared.Web.CurrentUser;
 using HealthyFac.Shared.Web.CurrentUser.ServiceActors;

@@ -1,10 +1,11 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Machines;
+namespace HealthyFac.Core.Application.Machines.Lookups;
 
 public record LookupMachineNamesRequest : IRequest<LookupMachineNamesResponse>
 {

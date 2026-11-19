@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>
 /// The position of one row as a service shows it: the sort value and the encrypted ID. The Gateway keeps the ID as the

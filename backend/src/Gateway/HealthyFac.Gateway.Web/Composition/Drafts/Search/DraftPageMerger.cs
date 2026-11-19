@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>One merged page: the rows in order and the position that reads the next page.</summary>
 public sealed record MergedDraftPage

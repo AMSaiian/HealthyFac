@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ApplicationRevokeEmployeeInviteRequest =
     HealthyFac.Core.Application.Employees.RevokeEmployeeInviteRequest;
 
-namespace HealthyFac.Core.Web.Employees;
+namespace HealthyFac.Core.Web.Employees.Invites;
 
 public record RevokeEmployeeInviteRequest
 {

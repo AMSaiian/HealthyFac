@@ -3,7 +3,7 @@ using HealthyFac.Insights.Application.Agents.Prompts;
 using HealthyFac.Insights.Application.Agents.Runs;
 using HealthyFac.Insights.Application.Agents.Snapshots;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;

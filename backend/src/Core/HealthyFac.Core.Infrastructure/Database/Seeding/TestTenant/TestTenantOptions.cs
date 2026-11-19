@@ -2,7 +2,7 @@ using FluentValidation;
 using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Employees;
 
-namespace HealthyFac.Core.Infrastructure.Database.Seeding;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 
 /// <summary>
 /// Describes the test company and its first supervisor. The same values feed Keycloak (the realm import) and Core

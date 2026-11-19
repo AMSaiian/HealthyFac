@@ -1,6 +1,6 @@
 using UUIDNext;
 
-namespace HealthyFac.Shared.Application.CurrentUser;
+namespace HealthyFac.Shared.Application.CurrentUser.Actors;
 
 /// <summary>
 /// Defines the actors that are not users and tells their kind from their IDs. Every actor ID is a name-based UUID

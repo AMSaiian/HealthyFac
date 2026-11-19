@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Infrastructure.Database.Seeding;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 
 internal sealed record TestTenantEmployee
 {

@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Resetting;

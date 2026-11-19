@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
 
 /// <summary>
 /// Composes the view of one ingest attempt: the machine drafts of Core and the metric, status, and phase drafts of

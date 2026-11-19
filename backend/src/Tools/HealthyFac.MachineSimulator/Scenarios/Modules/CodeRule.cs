@@ -1,4 +1,6 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Modules;
 
 /// <summary>
 /// A status code that a draining module sends while its rule holds.

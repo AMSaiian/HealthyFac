@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Modules;
 
 /// <summary>
 /// The effect of a module failure. A trip failure stops the machine. A warning failure keeps it running.

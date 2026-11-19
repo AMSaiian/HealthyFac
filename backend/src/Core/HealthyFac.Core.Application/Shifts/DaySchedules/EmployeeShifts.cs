@@ -1,6 +1,7 @@
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.DaySchedules;
 
 /// <summary>
 /// The template versions and the overrides of one employee, with the zone of the company. A use case changes the

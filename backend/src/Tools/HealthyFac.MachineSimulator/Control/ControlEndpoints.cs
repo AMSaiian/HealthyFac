@@ -1,5 +1,6 @@
 using FluentValidation.Results;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.Simulation;
 using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.AspNetCore.Http.HttpResults;

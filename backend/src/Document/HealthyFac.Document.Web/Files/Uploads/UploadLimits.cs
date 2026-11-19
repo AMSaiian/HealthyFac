@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace HealthyFac.Document.Web.Files;
+namespace HealthyFac.Document.Web.Files.Uploads;
 
 /// <summary>
 /// Configures how many uploads run at the same time. An upload buffers its body on disk and inspects it, so the limit

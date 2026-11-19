@@ -3,7 +3,7 @@ using HealthyFac.Insights.Application.Ingest;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Infrastructure.Persistence.RowLocks;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.Persistence;
 
 /// <summary>
 /// Locks the active attempt of a file with <c>FOR UPDATE</c> through the shared row lock.

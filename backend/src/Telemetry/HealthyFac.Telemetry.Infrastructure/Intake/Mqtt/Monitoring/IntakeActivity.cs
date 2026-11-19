@@ -5,7 +5,7 @@ using MQTTnet;
 using MQTTnet.Packets;
 using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Intake.Tags;
 
-namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 
 /// <summary>
 /// Starts and completes the consumer span of one received message. The span name holds the subscription pattern, never

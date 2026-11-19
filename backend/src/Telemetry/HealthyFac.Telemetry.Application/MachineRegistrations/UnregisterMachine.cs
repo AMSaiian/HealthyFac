@@ -4,7 +4,9 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application.DefinitionDrafts;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Telemetry.Application.MachineRegistrations;

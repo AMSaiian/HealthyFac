@@ -1,4 +1,4 @@
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>
 /// The position of a composed draft page: the keyset position of each source, and whether the source has no more rows.

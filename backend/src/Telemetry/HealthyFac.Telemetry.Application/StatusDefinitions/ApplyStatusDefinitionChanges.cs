@@ -1,6 +1,7 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;

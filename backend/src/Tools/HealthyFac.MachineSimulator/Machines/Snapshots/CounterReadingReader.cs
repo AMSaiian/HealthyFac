@@ -1,7 +1,7 @@
 using HealthyFac.Telemetry.Application;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Machines.Snapshots;
 
 /// <summary>
 /// Reads the latest stored value of the counters of a machine, so a counter continues after a restart of the simulator.

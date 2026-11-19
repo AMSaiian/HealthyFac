@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Telemetry.Application.Evaluation;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;

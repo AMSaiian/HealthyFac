@@ -1,4 +1,8 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+using HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Presets;
 
 /// <summary>
 /// The centrifugal pump (serial number <c>HV-EP80-2023-04412</c>): continuous duty. The seal is a warning module, and

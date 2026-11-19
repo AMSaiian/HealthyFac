@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 
 /// <summary>
 /// Wraps the body stream of an HTTP response and disposes the response with it, so the connection ends when the

@@ -1,4 +1,4 @@
-using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.UnitTests.Shifts.Data;
 
 namespace HealthyFac.Core.UnitTests.Shifts;

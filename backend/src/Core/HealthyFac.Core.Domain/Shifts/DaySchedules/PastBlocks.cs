@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Domain.Shifts;
+namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
 /// Protects the part of today that already happened: an ended block, and the start of a running block.

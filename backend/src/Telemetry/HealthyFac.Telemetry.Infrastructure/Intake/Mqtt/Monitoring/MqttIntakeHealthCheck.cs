@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 
 /// <summary>
 /// Reports <see cref="HealthStatus.Degraded"/> while the MQTT intake is enabled and fewer consumers than

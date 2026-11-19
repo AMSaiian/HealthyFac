@@ -1,5 +1,5 @@
 using HealthyFac.Insights.Application.Ingest.Processing;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.Worker;
 
 /// <summary>
 /// The background loop that runs the ingest attempts: it sweeps the attempts whose lease ended, claims the oldest

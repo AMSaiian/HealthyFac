@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.WorkOrders;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.HttpFailures;

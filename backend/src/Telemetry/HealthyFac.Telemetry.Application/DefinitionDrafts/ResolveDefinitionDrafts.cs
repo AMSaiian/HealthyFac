@@ -1,7 +1,8 @@
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Application.DefinitionDrafts.Following;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
 

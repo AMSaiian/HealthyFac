@@ -1,4 +1,4 @@
-namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding;
+namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding.DemoDefinitionDrafts;
 
 /// <summary>
 /// Defines the failures of the demo definition draft seed.

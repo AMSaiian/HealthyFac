@@ -1,4 +1,6 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Curves;
 
 /// <summary>
 /// The value of one metric along a drain. A curve of 4 points (reference, normal limit, alarm, trip) sits at the

@@ -2,7 +2,7 @@ using HealthyFac.Core.Application;
 using HealthyFac.Telemetry.Application;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Machines.Snapshots;
 
 /// <summary>
 /// Reads the machines of the Core database with their registrations and definitions of the Telemetry database. Both

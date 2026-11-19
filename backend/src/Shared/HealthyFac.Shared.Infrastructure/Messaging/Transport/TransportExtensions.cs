@@ -2,6 +2,7 @@ using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

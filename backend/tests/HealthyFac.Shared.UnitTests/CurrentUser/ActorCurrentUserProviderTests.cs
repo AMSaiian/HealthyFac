@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 using UnauthorizedAccessException = HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException;

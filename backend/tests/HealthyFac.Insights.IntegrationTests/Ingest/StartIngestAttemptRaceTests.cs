@@ -3,7 +3,7 @@ using HealthyFac.Insights.Application.Files;
 using HealthyFac.Insights.Application.Ingest;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;

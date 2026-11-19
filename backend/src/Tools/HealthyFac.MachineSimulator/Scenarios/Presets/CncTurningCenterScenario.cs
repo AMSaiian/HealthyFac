@@ -1,4 +1,8 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+using HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Presets;
 
 /// <summary>
 /// The CNC turning center (serial number <c>MTC420-24-0187</c>): cycles of 40 seconds of cutting and 10 seconds of

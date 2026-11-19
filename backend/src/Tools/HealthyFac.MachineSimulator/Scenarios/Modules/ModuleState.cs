@@ -1,4 +1,6 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Modules;
 
 /// <summary>
 /// The state of one module of one machine: its mode and the progress of the drain from 0 (normal values) to 1 (the

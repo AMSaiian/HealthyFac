@@ -1,9 +1,9 @@
-using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Domain.Time;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.DaySchedules;
 
 /// <summary>
 /// Builds the day responses of one or several employees for one local date. The employee day and the company day share

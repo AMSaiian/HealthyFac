@@ -1,7 +1,7 @@
 using ApplicationUploadEmbeddedImageRequest =
     HealthyFac.Document.Application.Files.Uploading.UploadEmbeddedImageRequest;
 
-namespace HealthyFac.Document.Web.Files;
+namespace HealthyFac.Document.Web.Files.Uploads;
 
 public record UploadEmbeddedImageRequest
 {

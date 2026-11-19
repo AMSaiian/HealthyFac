@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
 
 /// <summary>
 /// The queued attempts at the time of a sample: how many wait and since when the oldest waits.

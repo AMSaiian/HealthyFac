@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Infrastructure.Database.Seeding;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 
 /// <summary>
 /// Defines the failures of the demo draft seed.

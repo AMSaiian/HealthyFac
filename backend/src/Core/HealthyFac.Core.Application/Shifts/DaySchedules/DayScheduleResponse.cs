@@ -1,7 +1,7 @@
-using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.DaySchedules;
 
 /// <summary>
 /// The day of one employee: the blocks with their local times and UTC instants, where they come from, and the

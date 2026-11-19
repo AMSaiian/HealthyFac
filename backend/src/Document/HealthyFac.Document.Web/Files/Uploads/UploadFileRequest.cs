@@ -1,6 +1,6 @@
 using ApplicationUploadFileRequest = HealthyFac.Document.Application.Files.Uploading.UploadFileRequest;
 
-namespace HealthyFac.Document.Web.Files;
+namespace HealthyFac.Document.Web.Files.Uploads;
 
 public record UploadFileRequest
 {

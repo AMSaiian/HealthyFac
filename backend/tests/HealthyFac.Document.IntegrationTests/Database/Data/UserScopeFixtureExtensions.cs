@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Document.IntegrationTests.Database.Data;

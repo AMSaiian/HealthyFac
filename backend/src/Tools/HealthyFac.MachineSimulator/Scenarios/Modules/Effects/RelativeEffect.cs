@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
 
 /// <summary>
 /// A share that grows linearly from 0 to <paramref name="ShareAtEnd"/> along the drain and scales the value.

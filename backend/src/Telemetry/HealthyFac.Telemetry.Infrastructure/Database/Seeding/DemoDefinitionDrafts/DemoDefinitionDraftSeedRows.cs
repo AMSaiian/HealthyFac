@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding;
+namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding.DemoDefinitionDrafts;
 
 /// <summary>The root of <c>telemetry.json</c>. The keys are the database column names of the snapshot.</summary>
 public sealed record DemoDefinitionDraftSeedFile

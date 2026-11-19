@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;

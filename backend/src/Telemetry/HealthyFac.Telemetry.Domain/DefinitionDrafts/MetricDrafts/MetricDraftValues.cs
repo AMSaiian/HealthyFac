@@ -1,4 +1,4 @@
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 
 /// <summary>
 /// The proposed values of a metric definition draft. Every value can be <see langword="null"/>.

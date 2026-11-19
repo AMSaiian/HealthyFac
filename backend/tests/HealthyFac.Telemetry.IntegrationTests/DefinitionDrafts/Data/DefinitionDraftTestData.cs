@@ -1,4 +1,5 @@
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.Infrastructure.DefinitionDrafts.Persistence;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;

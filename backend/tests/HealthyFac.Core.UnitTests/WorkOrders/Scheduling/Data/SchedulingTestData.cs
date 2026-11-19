@@ -1,5 +1,6 @@
 using System.Globalization;
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Shared.Domain.Time;

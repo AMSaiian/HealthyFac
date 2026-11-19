@@ -5,7 +5,7 @@ using Instruments = HealthyFac.Shared.Application.Observability.ObservabilityCon
 using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Ingest.Tags;
 using Units = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Units;
 
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
 
 /// <summary>
 /// The instruments of the ingest (meter <c>HealthyFac.Insights.Ingest</c>): the attempts by result, the duration of

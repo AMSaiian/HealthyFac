@@ -1,6 +1,7 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 
 namespace HealthyFac.Core.IntegrationTests.Database.Data;
 

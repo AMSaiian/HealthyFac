@@ -1,5 +1,7 @@
 using HealthyFac.Gateway.Web.Composition;
 using HealthyFac.Gateway.Web.Composition.Drafts;
+using HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
+using HealthyFac.Gateway.Web.Composition.Drafts.Search;
 using HealthyFac.Gateway.Web.Composition.Machines;
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Gateway.Web.RateLimiting;

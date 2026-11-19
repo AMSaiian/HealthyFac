@@ -1,7 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Employees;
 
-namespace HealthyFac.Core.Infrastructure.Database.Seeding;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding.TestTenant;
 
 /// <summary>
 /// Describes the worker of the test company. The fixed IDs equal the <c>sub</c> and <c>employee_id</c> claims of the

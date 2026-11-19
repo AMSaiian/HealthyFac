@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Modules;
 
 /// <summary>
 /// The mode of a module: normal values, a drain toward the failure, or the failure itself.

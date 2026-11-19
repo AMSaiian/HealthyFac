@@ -1,7 +1,7 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Testing.Authentication;
 
 namespace HealthyFac.Core.ApiTests.Employees;

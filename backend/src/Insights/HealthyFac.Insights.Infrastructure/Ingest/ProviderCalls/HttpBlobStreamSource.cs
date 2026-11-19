@@ -1,7 +1,7 @@
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 
 /// <summary>
 /// Opens a file from its signed link. The call reads the response headers only, and the body streams on demand, so the

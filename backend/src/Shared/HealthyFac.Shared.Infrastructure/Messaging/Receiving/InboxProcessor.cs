@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.CurrentUser;

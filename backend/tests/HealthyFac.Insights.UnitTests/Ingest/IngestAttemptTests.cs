@@ -149,6 +149,28 @@ public sealed class IngestAttemptTests
     }
 
     [Fact]
+    public void Claim_WhenNotQueued_ThrowsNamingClaim()
+    {
+        var attempt = IngestAttemptTestData.Create(IngestState.InProcess);
+
+        var act = () => attempt.Claim(IngestAttemptTestData.Now, IngestAttemptTestData.LeaseUntil);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage(expectedWildcardPattern: "*cannot Claim.");
+    }
+
+    [Fact]
+    public void InterruptForFileDelete_WhenStateRejectsIt_ThrowsNamingInterruptForFileDelete()
+    {
+        var attempt = IngestAttemptTestData.Create(IngestState.Failed);
+
+        var act = () => attempt.InterruptForFileDelete(IngestAttemptTestData.Now);
+
+        act.Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage(expectedWildcardPattern: "*cannot InterruptForFileDelete.");
+    }
+
+    [Fact]
     public void ChangeMachine_WithNewerTime_StoresTheMachine()
     {
         var attempt = IngestAttemptTestData.Create(IngestState.Queued);

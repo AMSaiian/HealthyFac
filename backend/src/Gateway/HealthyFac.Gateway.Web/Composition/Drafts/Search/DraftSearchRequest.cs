@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>
 /// The parts of a composed draft search request that the Gateway needs for the merge. The services check the rest

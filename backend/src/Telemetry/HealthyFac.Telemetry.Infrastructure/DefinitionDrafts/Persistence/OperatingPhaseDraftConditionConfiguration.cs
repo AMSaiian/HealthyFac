@@ -1,5 +1,5 @@
 using HealthyFac.Shared.Infrastructure.Persistence;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

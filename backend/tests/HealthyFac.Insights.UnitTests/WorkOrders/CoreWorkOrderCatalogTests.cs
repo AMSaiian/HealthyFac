@@ -1,5 +1,5 @@
 using System.Net;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.WorkOrders;
 using HealthyFac.Insights.UnitTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.IdEncryption;

@@ -1,7 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Domain.Shifts;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.BlockInput;
 
 /// <summary>
 /// Checks the days of a template version: exactly one entry for each weekday, and valid blocks on each day.

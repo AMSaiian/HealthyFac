@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Modules;
 
 /// <summary>
 /// The module names of all detailed scenarios. The camelCase values reach the control API. A scenario holds a subset.

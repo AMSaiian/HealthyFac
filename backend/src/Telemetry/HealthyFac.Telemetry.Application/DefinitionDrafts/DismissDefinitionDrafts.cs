@@ -1,10 +1,13 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts;

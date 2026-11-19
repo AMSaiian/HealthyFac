@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
 
 /// <summary>One group of the attempt view and the IDs that name its machine, for the name lookup.</summary>
 public sealed record AttemptGroup

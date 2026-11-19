@@ -5,7 +5,7 @@ using HealthyFac.Core.Application.Employees.SearchEmployees;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.IntegrationTests.Database.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.EntityFrameworkCore;

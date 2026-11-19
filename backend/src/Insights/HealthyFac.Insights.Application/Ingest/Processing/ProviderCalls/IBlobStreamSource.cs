@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 
 /// <summary>
 /// Opens the content of a file from a signed link as a stream.

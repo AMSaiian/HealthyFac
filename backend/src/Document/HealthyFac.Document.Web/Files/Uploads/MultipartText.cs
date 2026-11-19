@@ -3,7 +3,7 @@ using HealthyFac.Document.Application.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.TextInput;
 
-namespace HealthyFac.Document.Web.Files;
+namespace HealthyFac.Document.Web.Files.Uploads;
 
 /// <summary>
 /// Normalizes the text fields of a multipart form. The shared JSON options normalize the strings of a JSON body; a form

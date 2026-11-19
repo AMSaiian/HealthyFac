@@ -1,4 +1,6 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Modules;
 
 /// <summary>
 /// A module of a scenario: what it does to the machine, how it changes the metrics while it drains, and which codes it

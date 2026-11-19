@@ -2,7 +2,7 @@ using System.Text.Json;
 using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.Infrastructure.Files.Storage;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Seeding;
@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Document.Infrastructure.Database.Seeding;
+namespace HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 
 /// <summary>
 /// Creates the demo files of the ingest snapshot: the file refs of <c>document.json</c> and their bytes in blob

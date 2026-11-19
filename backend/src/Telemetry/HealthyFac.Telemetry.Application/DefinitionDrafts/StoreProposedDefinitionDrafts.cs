@@ -1,9 +1,14 @@
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Entities;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Application.DefinitionDrafts.Following;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts;

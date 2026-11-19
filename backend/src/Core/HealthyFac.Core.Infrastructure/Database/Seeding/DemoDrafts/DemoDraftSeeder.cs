@@ -1,6 +1,6 @@
 using System.Text.Json;
 using HealthyFac.Core.Domain.Drafts;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Seeding;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Core.Infrastructure.Database.Seeding;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 
 /// <summary>
 /// Creates the demo machine drafts of the ingest snapshot from <c>core.json</c>, all pending (Telemetry seeds the

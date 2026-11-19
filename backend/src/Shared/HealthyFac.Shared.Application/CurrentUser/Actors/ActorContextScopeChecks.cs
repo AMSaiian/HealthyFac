@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Application.CurrentUser;
+namespace HealthyFac.Shared.Application.CurrentUser.Actors;
 
 /// <summary>
 /// Defines the scope checks of the actor. Pre-handler checks call them, so every use case checks the company in the

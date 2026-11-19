@@ -1,7 +1,7 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.Scopes;
 
 /// <summary>
 /// Checks the company scope of the employee that a shift use case names.

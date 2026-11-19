@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
 
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Machines.Snapshots;
 
 /// <summary>
 /// One row of the Core state history of a machine.

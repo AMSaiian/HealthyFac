@@ -1,4 +1,4 @@
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 
 /// <summary>
 /// The proposed values of an operating phase draft. Every value can be <see langword="null"/>.

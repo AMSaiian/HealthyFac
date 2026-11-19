@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace HealthyFac.Core.Infrastructure.Database.Seeding;
+namespace HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 
 /// <summary>The root of <c>core.json</c>. The keys are the database column names of the snapshot.</summary>
 public sealed record DemoDraftSeedFile

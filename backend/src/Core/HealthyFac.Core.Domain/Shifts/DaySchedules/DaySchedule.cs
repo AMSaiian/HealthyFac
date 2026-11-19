@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Domain.Shifts;
+namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
 /// The work blocks of one employee on one local date of the company, sorted by start.

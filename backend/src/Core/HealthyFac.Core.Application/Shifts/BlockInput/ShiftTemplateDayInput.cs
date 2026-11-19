@@ -1,6 +1,7 @@
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.BlockInput;
 
 /// <summary>
 /// The blocks of one weekday of a template version as a client sends them.

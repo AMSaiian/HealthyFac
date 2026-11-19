@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
 
 /// <summary>
 /// A boolean metric that turns to a value when the drain reaches a progress.

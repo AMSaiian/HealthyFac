@@ -1,7 +1,7 @@
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Shared.Application.ErrorHandling;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.Scopes;
 
 /// <summary>
 /// Checks the scope of a shift read. The company scope reaches every employee of the company. The own scope reaches

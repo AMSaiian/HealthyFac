@@ -1,6 +1,6 @@
 using HealthyFac.Insights.Application.Agents;
-using HealthyFac.Insights.Application.Ingest.Processing;
-using HealthyFac.Insights.Infrastructure.Ingest;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;

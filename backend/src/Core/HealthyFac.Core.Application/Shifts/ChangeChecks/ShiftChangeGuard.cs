@@ -1,10 +1,10 @@
-using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.ChangeChecks;
 
 /// <summary>
 /// Rejects a shift change that breaks the past part of today or leaves a future scheduled work order outside the

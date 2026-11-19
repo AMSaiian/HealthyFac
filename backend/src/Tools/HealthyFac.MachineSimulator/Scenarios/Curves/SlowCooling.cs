@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Curves;
 
 /// <summary>
 /// The slow fall of a temperature toward the ambient temperature while a part does not run. The last value of each key

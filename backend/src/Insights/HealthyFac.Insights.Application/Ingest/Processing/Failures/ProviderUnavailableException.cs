@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Failures;
 
 /// <summary>
 /// Reports that an external service stayed unavailable through all retries.

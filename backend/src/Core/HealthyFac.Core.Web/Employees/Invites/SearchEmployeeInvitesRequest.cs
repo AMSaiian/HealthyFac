@@ -3,7 +3,7 @@ using HealthyFac.Shared.Application.Grids;
 using ApplicationSearchEmployeeInvitesRequest =
     HealthyFac.Core.Application.Employees.SearchEmployeeInvites.SearchEmployeeInvitesRequest;
 
-namespace HealthyFac.Core.Web.Employees;
+namespace HealthyFac.Core.Web.Employees.Invites;
 
 public record SearchEmployeeInvitesRequest : GridRequest<EmployeeInviteGridFilter, EmployeeInviteSortColumn>;
 

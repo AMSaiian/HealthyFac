@@ -1,6 +1,6 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.Worker;
 
 /// <summary>
 /// Defines the service actors of the ingest worker. The sweep and the claim run as a service flow. The run of an

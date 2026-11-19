@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Shifts;
-using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Application.Shifts.ChangeChecks;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Shared.Application.ErrorHandling;

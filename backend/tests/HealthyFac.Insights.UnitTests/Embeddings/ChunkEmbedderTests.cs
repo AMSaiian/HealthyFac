@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Options;
 using HealthyFac.Insights.Application.Embeddings;
 using HealthyFac.Insights.Application.Ingest.Processing;
-using HealthyFac.Insights.Infrastructure.Ingest;
+using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Embeddings.Data;
+using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.UnitTests.Embeddings;
 

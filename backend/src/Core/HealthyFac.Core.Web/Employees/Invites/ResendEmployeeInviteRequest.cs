@@ -1,7 +1,7 @@
 using ApplicationResendEmployeeInviteRequest =
     HealthyFac.Core.Application.Employees.ResendEmployeeInviteRequest;
 
-namespace HealthyFac.Core.Web.Employees;
+namespace HealthyFac.Core.Web.Employees.Invites;
 
 public record ResendEmployeeInviteRequest
 {

@@ -1,7 +1,7 @@
 using FluentValidation;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.BlockInput;
 
 /// <summary>
 /// Checks the blocks of one day for a template version and for an override: at most 6 blocks, each ending after it

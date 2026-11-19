@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.Worker;
 
 /// <summary>
 /// An attempt that the worker claimed: the identity to run it as.

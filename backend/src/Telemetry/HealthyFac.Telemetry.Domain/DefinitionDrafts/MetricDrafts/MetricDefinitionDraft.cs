@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 
 /// <summary>
 /// A metric definition that the ingest of a file proposed. Every value can be <see langword="null"/>: the user

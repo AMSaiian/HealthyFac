@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Insights.Domain.Ingest;
@@ -100,7 +101,7 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// </exception>
     public void Claim(DateTime now, DateTime leaseUntil)
     {
-        EnsureState(IngestState.Queued, action: "start");
+        EnsureState(IngestState.Queued);
         State = IngestState.InProcess;
         StartedAt = now;
         LeaseUntil = leaseUntil;
@@ -119,7 +120,7 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// </exception>
     public void Complete(DateTime now, int pageCount, int chunkCount, int draftCount, string? warning)
     {
-        EnsureState(IngestState.InProcess, action: "complete");
+        EnsureState(IngestState.InProcess);
         State = IngestState.Completed;
         FinishedAt = now;
         LeaseUntil = null;
@@ -140,7 +141,7 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// </exception>
     public void Fail(DateTime now, IngestErrorCode code, IngestErrorDetail? detail = null)
     {
-        EnsureState(IngestState.InProcess, action: "fail");
+        EnsureState(IngestState.InProcess);
         State = IngestState.Failed;
         FinishedAt = now;
         LeaseUntil = null;
@@ -160,7 +161,7 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     {
         if (IsFinal)
         {
-            throw IngestInvariantErrors.IllegalTransition(Id, State, action: "be interrupted");
+            throw IngestInvariantErrors.IllegalTransition(Id, State);
         }
 
         State = IngestState.Interrupted;
@@ -182,7 +183,7 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
     {
         if (State == IngestState.Failed || State == IngestState.Interrupted)
         {
-            throw IngestInvariantErrors.IllegalTransition(Id, State, action: "be interrupted by a file delete");
+            throw IngestInvariantErrors.IllegalTransition(Id, State);
         }
 
         State = IngestState.Interrupted;
@@ -208,7 +209,7 @@ public class IngestAttempt : IEntity, IAuditable, ISoftDeletable, IVersioned
         MachineChangedAt = changedAt;
     }
 
-    private void EnsureState(IngestState expected, string action)
+    private void EnsureState(IngestState expected, [CallerMemberName] string action = "")
     {
         if (State != expected)
         {

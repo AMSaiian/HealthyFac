@@ -1,10 +1,11 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.Application.Machines.SearchMachines;
+using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;

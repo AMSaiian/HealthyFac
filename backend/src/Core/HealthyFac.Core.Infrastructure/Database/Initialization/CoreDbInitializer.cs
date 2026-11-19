@@ -1,4 +1,5 @@
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 using HealthyFac.Core.Infrastructure.Roles.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;

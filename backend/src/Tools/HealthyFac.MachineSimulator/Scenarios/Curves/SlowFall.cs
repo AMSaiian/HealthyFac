@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Curves;
 
 /// <summary>
 /// The linear fall of a value while a part does not run, down to a floor. Keep the running value with

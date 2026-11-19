@@ -1,5 +1,6 @@
 using HealthyFac.Insights.Application.Ingest.Processing;
-using HealthyFac.Insights.Infrastructure.Ingest;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Ingest.Data;
 using Microsoft.Extensions.Options;
 
@@ -13,9 +14,7 @@ public sealed class ProviderResilienceTests
 
     [Theory]
     [MemberData(nameof(ProviderResilienceTestData.PermanentErrors), MemberType = typeof(ProviderResilienceTestData))]
-    public async Task ExecuteAsync_WithPermanentError_FailsAtOnceWithoutRetryAndWithoutProviderText(
-        Exception error
-    )
+    public async Task ExecuteAsync_WithPermanentError_FailsAtOnceWithoutRetryAndWithoutProviderText(Exception error)
     {
         var calls = 0;
 

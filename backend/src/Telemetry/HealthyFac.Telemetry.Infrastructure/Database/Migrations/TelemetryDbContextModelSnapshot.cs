@@ -170,7 +170,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDefinitionDraft", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts.MetricDefinitionDraft", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -353,7 +353,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraft", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraft", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -482,7 +482,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraftCondition", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraftCondition", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -559,7 +559,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraftLimit", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraftLimit", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -627,7 +627,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntry", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries.ProposalEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -689,7 +689,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDefinitionDraft", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts.StatusDefinitionDraft", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -1895,18 +1895,18 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraftCondition", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraftCondition", b =>
                 {
-                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraft", null)
+                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraft", null)
                         .WithMany("Conditions")
                         .HasForeignKey("DraftId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraftLimit", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraftLimit", b =>
                 {
-                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraft", null)
+                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraft", null)
                         .WithMany("Limits")
                         .HasForeignKey("DraftId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -2092,7 +2092,7 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.OperatingPhaseDraft", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraft", b =>
                 {
                     b.Navigation("Conditions");
 

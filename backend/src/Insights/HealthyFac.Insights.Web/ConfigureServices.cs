@@ -3,7 +3,7 @@ using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Web.Authorization;
 using HealthyFac.Insights.Web.Cases;
 using HealthyFac.Insights.Web.Ingest;
-using HealthyFac.Shared.Infrastructure.Messaging.Transport;
+using HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 using HealthyFac.Shared.Web.Authentication;
 using HealthyFac.Shared.Web.CrossOrigin;
 using HealthyFac.Shared.Web.CurrentUser;

@@ -1,11 +1,12 @@
 using FluentValidation;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.DaySchedules;
 
 public record GetCompanyDayScheduleRequest : IRequest<CompanyDayScheduleResponse>
 {

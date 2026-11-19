@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using System.Text.Json;
 using HealthyFac.MachineSimulator.Publishing;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.Simulation;
 using HealthyFac.MachineSimulator.UnitTests.Simulation.Data;
 using HealthyFac.Shared.Application.Observability;

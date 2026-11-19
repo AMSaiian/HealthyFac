@@ -2,7 +2,7 @@ using HealthyFac.Core.Application.Companies;
 using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.DaySchedules;
 
 /// <summary>
 /// Loads the shift data of an employee, so a use case can resolve the day schedules of a date range.

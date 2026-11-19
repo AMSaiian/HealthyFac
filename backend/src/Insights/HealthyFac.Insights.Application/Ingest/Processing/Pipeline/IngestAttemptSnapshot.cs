@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
 
 /// <summary>
 /// The values of a claimed attempt that the pipeline reads. The pipeline never holds the tracked entity.

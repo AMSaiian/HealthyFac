@@ -1,4 +1,4 @@
-using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;

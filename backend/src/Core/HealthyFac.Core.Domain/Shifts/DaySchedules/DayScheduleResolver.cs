@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Time;
 
-namespace HealthyFac.Core.Domain.Shifts;
+namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
 /// Resolves the work blocks of an employee on a local date.

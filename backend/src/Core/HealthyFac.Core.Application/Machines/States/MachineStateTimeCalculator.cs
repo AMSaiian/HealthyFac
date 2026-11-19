@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
 
-namespace HealthyFac.Core.Application.Machines;
+namespace HealthyFac.Core.Application.Machines.States;
 
 /// <summary>One row of the state history: the state and the moment it started.</summary>
 public readonly record struct MachineStateSpan

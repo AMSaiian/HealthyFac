@@ -1,4 +1,4 @@
-using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
 

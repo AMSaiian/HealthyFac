@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Domain.Shifts;
+namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
 /// One work block of a resolved day, in company-zone local times and as UTC instants.

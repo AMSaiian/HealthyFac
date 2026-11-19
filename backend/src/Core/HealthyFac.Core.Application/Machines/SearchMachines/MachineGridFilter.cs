@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FluentValidation;
+using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Domain.Gateways;

@@ -1,4 +1,4 @@
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;

@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.Shared.Application.CurrentUser;
+namespace HealthyFac.Shared.Application.CurrentUser.Actors;
 
 /// <summary>
 /// Defines the deployable services. The camelCase values are part of the actor IDs and the <c>Service:Name</c>

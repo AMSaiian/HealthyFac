@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Machines.Snapshots;
 
 /// <summary>
 /// The changes that a snapshot caused in a machine. The engine logs them.

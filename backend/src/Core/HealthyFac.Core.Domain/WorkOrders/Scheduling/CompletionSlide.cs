@@ -1,4 +1,4 @@
-using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 namespace HealthyFac.Core.Domain.WorkOrders.Scheduling;
 

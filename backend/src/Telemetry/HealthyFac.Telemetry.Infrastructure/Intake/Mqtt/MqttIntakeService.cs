@@ -5,6 +5,7 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Application.Intake;
+using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -86,9 +87,10 @@ public sealed class MqttIntakeService(
     private readonly IntakeMetrics _metrics = metrics;
     private readonly ILogger<MqttIntakeService> _logger = logger;
     private readonly MqttClientFactory _clientFactory = new();
+
     private readonly TaskCompletionSource _orphanCheckCompleted =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
-    
+
     /// <summary>
     /// Completes when the check of the orphan sessions at start has ended, with or without a failure. A test waits for
     /// it before it reads the sessions.
@@ -246,8 +248,8 @@ public sealed class MqttIntakeService(
         try
         {
             for (var index = _options.ConsumerCount;
-                 index < MqttIntakeConstants.Limits.MaxConsumerCount && !cancellationToken.IsCancellationRequested;
-                 index++)
+                index < MqttIntakeConstants.Limits.MaxConsumerCount && !cancellationToken.IsCancellationRequested;
+                index++)
             {
                 await TryEmptyOrphanAsync(index, cancellationToken);
             }

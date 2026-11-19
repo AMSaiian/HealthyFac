@@ -1,4 +1,6 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
 
 /// <summary>
 /// The drained value on a curve. In the main phase the curve value replaces the phase value, and in the other running

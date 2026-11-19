@@ -1,3 +1,5 @@
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+
 namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
 
 /// <summary>

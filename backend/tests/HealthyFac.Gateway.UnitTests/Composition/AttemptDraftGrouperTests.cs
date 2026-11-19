@@ -1,4 +1,4 @@
-using HealthyFac.Gateway.Web.Composition.Drafts;
+using HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
 using static HealthyFac.Gateway.UnitTests.Composition.Data.AttemptDraftGrouperTestData;
 
 namespace HealthyFac.Gateway.UnitTests.Composition;

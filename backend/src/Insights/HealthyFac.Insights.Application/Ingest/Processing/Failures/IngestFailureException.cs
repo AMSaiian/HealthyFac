@@ -1,6 +1,6 @@
 using HealthyFac.Insights.Domain.Ingest;
 
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Failures;
 
 /// <summary>
 /// Reports that a stage of the pipeline failed with a known error code. The use case turns it into a failed attempt.

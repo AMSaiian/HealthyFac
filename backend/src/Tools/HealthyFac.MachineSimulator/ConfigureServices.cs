@@ -2,6 +2,7 @@ using HealthyFac.Core.Application;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.MachineSimulator.Control;
 using HealthyFac.MachineSimulator.Machines;
+using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Publishing;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Simulation;

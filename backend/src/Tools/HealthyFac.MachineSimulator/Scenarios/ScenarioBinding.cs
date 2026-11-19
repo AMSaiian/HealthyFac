@@ -1,3 +1,5 @@
+using HealthyFac.MachineSimulator.Scenarios.Presets;
+
 namespace HealthyFac.MachineSimulator.Scenarios;
 
 /// <summary>

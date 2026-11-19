@@ -6,6 +6,7 @@ using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Insights.Messaging.Drafts;

@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Curves;
 
 /// <summary>
 /// Adds a small random noise to a numeric value. Counters and booleans get none.

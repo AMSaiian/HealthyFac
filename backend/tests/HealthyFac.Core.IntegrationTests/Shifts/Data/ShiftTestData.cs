@@ -1,6 +1,8 @@
 using System.Globalization;
 using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Shared.Domain.Time;
 
 namespace HealthyFac.Core.IntegrationTests.Shifts.Data;

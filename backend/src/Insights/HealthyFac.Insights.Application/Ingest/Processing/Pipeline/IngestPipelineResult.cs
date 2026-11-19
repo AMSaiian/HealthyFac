@@ -1,7 +1,7 @@
 using HealthyFac.Insights.Application.Conversion;
 using HealthyFac.Insights.Application.Extraction.Mapping;
 
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
 
 /// <summary>
 /// What the pipeline produced: the file facts, the chunks with their embeddings, and the mapped drafts.

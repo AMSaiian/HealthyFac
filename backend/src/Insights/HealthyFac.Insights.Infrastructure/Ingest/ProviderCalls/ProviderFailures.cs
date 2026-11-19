@@ -3,7 +3,7 @@ using System.Net;
 using Google.GenAI;
 using Grpc.Core;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 
 /// <summary>
 /// Tells transient errors of external services from permanent ones. The ingest retry (<see cref="ProviderResilience"/>)

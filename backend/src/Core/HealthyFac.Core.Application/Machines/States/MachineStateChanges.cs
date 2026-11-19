@@ -3,7 +3,7 @@ using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.Messaging;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Machines;
+namespace HealthyFac.Core.Application.Machines.States;
 
 /// <summary>
 /// Defines the one rule that changes the state of a machine. The update and the state-only use case share it.

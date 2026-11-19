@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace HealthyFac.Shared.Infrastructure.Messaging.Transport;
+namespace HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 
 public static class BrokerHealthCheckExtensions
 {

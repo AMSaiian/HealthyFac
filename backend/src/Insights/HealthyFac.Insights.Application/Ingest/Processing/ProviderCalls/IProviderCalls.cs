@@ -1,4 +1,6 @@
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+
+namespace HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 
 /// <summary>
 /// Runs a call to an external service (Document, blob storage, Docling, Telemetry, Gemini) with retries for transient

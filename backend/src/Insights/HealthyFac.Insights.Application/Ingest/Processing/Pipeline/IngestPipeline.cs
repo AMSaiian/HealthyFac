@@ -6,6 +6,9 @@ using HealthyFac.Insights.Application.Extraction.Proposals;
 using HealthyFac.Insights.Application.Extraction.Runs;
 using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Application.Files;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using HealthyFac.Insights.Application.Ingest.Screening;
 using HealthyFac.Insights.Application.MetricUnits;
 using HealthyFac.Insights.Domain.Agents.Runs;
@@ -13,7 +16,7 @@ using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.Observability;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
 
 /// <summary>
 /// Runs the stages of one ingest: the link of the file, the conversion, the screening, the unit catalog and the machine

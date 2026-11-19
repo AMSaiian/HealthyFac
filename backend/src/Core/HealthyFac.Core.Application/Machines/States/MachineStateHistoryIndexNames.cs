@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Application.Machines;
+namespace HealthyFac.Core.Application.Machines.States;
 
 /// <summary>
 /// Names the unique index of the machine state history. The handlers read it to tell a same-instant parallel state

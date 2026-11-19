@@ -1,11 +1,14 @@
 using System.Text.Json;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Seeding;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding;
+namespace HealthyFac.Telemetry.Infrastructure.Database.Seeding.DemoDefinitionDrafts;
 
 /// <summary>
 /// Creates the demo metric, status, and phase drafts of the ingest snapshot from <c>telemetry.json</c>, all pending,

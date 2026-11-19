@@ -1,6 +1,8 @@
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 

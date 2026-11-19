@@ -3,7 +3,7 @@ using HealthyFac.Core.Application.Employees;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.IdEncryption;
 
-namespace HealthyFac.Core.Web.Employees;
+namespace HealthyFac.Core.Web.Employees.Invites;
 
 /// <summary>
 /// Decrypts the invite ID of a route.

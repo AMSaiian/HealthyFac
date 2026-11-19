@@ -1,4 +1,4 @@
-using ApplicationLookupMachinesRequest = HealthyFac.Core.Application.Machines.LookupMachinesRequest;
+using ApplicationLookupMachinesRequest = HealthyFac.Core.Application.Machines.Lookups.LookupMachinesRequest;
 
 namespace HealthyFac.Core.Web.Machines;
 

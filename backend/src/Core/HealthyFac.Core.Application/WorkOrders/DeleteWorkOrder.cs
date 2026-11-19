@@ -1,5 +1,6 @@
 using FluentValidation;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Persistence.SoftDelete;
 using HealthyFac.Shared.Application.UseCases;

@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 
 /// <summary>
 /// Defines the states of one proposed machine of a proposal. The camelCase values reach the API and the database,

@@ -1,13 +1,13 @@
 using System.Text.Json.Serialization;
 
-namespace HealthyFac.Document.Infrastructure.Database.Seeding;
+namespace HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 
 /// <summary>The root of <c>document.json</c>.</summary>
 public sealed record DemoDocumentSeedFile
 {
-    [JsonPropertyName("referenceTime")]
+    [JsonPropertyName(name: "referenceTime")]
     public required DateTimeOffset ReferenceTime { get; init; }
 
-    [JsonPropertyName("fileRefs")]
+    [JsonPropertyName(name: "fileRefs")]
     public required IReadOnlyList<DemoFileSeedRow> FileRefs { get; init; }
 }

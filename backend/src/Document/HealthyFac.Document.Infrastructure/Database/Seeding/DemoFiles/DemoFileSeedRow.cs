@@ -1,46 +1,46 @@
 using System.Text.Json.Serialization;
 
-namespace HealthyFac.Document.Infrastructure.Database.Seeding;
+namespace HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 
 /// <summary>One file ref of <c>document.json</c>. The keys are the database column names of the snapshot.</summary>
 public sealed record DemoFileSeedRow
 {
-    [JsonPropertyName("id")]
+    [JsonPropertyName(name: "id")]
     public required Guid Id { get; init; }
 
-    [JsonPropertyName("machine_id")]
+    [JsonPropertyName(name: "machine_id")]
     public Guid? MachineId { get; init; }
 
-    [JsonPropertyName("purpose")]
+    [JsonPropertyName(name: "purpose")]
     public required string Purpose { get; init; }
 
-    [JsonPropertyName("file_name")]
+    [JsonPropertyName(name: "file_name")]
     public required string FileName { get; init; }
 
-    [JsonPropertyName("extension")]
+    [JsonPropertyName(name: "extension")]
     public required string Extension { get; init; }
 
-    [JsonPropertyName("content_type")]
+    [JsonPropertyName(name: "content_type")]
     public required string ContentType { get; init; }
 
-    [JsonPropertyName("size_bytes")]
+    [JsonPropertyName(name: "size_bytes")]
     public required long SizeBytes { get; init; }
 
-    [JsonPropertyName("sha256")]
+    [JsonPropertyName(name: "sha256")]
     public required string Sha256 { get; init; }
 
-    [JsonPropertyName("description")]
+    [JsonPropertyName(name: "description")]
     public string? Description { get; init; }
 
-    [JsonPropertyName("ingest_failed_count")]
+    [JsonPropertyName(name: "ingest_failed_count")]
     public int IngestFailedCount { get; init; }
 
-    [JsonPropertyName("ingest_state")]
+    [JsonPropertyName(name: "ingest_state")]
     public required string IngestState { get; init; }
 
-    [JsonPropertyName("ingest_state_changed_at")]
+    [JsonPropertyName(name: "ingest_state_changed_at")]
     public DateTime? IngestStateChangedAt { get; init; }
 
-    [JsonPropertyName("machine_changed_at")]
+    [JsonPropertyName(name: "machine_changed_at")]
     public DateTime? MachineChangedAt { get; init; }
 }

@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Web.Employees;
+namespace HealthyFac.Core.Web.Employees.Invites;
 
 /// <summary>
 /// Defines route constants for employee invite endpoints.

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
 
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
 
 /// <summary>
 /// Holds the activity source of the ingest. The service registers it in the tracing setup through

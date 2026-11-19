@@ -1,4 +1,4 @@
-namespace HealthyFac.Document.Infrastructure.Database.Seeding;
+namespace HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 
 /// <summary>
 /// Defines the failures of the demo file seed.

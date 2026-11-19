@@ -1,9 +1,11 @@
 using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 
 /// <summary>
 /// Runs the calls to external services (Document, blob storage, Docling, Telemetry, Gemini) in one retry pipeline: 3

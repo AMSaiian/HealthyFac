@@ -16,7 +16,7 @@ using ApplicationRevokeEmployeeInviteRequest =
 using ApplicationSearchEmployeeInvitesRequest =
     HealthyFac.Core.Application.Employees.SearchEmployeeInvites.SearchEmployeeInvitesRequest;
 
-namespace HealthyFac.Core.Web.Employees;
+namespace HealthyFac.Core.Web.Employees.Invites;
 
 /// <summary>
 /// Configures endpoint routing for employee invite operations.

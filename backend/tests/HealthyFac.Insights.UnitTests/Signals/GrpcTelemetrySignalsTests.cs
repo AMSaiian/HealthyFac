@@ -1,5 +1,5 @@
 using Grpc.Core;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Insights.UnitTests.Files.Data;
 using HealthyFac.Insights.UnitTests.Signals.Data;

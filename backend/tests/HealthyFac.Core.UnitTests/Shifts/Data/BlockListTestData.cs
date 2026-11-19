@@ -1,5 +1,5 @@
 using System.Globalization;
-using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.BlockInput;
 
 namespace HealthyFac.Core.UnitTests.Shifts.Data;
 

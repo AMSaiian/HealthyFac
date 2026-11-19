@@ -3,7 +3,7 @@ using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Application.Files.Uploading;
 using HealthyFac.Shared.Application.ErrorHandling;
 
-namespace HealthyFac.Document.Web.Files;
+namespace HealthyFac.Document.Web.Files.Uploads;
 
 /// <summary>
 /// Reads the file part of a multipart upload.

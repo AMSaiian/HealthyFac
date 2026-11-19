@@ -1,4 +1,4 @@
-using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Shared.Application.IdEncryption;
 using ApplicationUpdateShiftTemplateVersionRequest =
     HealthyFac.Core.Application.Shifts.UpdateShiftTemplateVersionRequest;

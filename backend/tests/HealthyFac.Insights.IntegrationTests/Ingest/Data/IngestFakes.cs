@@ -1,6 +1,7 @@
 using HealthyFac.Insights.Application.Conversion;
 using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using HealthyFac.Insights.Infrastructure.Ai;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;

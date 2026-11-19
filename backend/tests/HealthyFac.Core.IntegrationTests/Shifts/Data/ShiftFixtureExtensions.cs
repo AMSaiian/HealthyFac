@@ -1,10 +1,13 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.BlockInput;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Domain.Time;

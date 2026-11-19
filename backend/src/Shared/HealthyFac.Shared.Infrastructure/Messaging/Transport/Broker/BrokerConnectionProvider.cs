@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 
-namespace HealthyFac.Shared.Infrastructure.Messaging.Transport;
+namespace HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 
 /// <summary>
 /// Keeps one RabbitMQ connection for the readiness probes. A probe that opened its own connection and disposed

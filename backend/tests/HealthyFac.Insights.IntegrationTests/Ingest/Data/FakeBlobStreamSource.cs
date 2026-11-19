@@ -1,5 +1,5 @@
 using System.Text;
-using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest.Data;
 

@@ -7,7 +7,7 @@ using HealthyFac.Shared.Infrastructure.Persistence.RowLocks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.Worker;
 
 /// <summary>
 /// The queries of the worker loop: the claim of the oldest queued attempt and the sweep of an attempt whose lease

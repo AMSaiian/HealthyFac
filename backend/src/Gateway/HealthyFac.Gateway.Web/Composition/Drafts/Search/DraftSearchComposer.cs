@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>The scope of a composed draft search: one machine, or one ingest attempt.</summary>
 public sealed record DraftSearchScope

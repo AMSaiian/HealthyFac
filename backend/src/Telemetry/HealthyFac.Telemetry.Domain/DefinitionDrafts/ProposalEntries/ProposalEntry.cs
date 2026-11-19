@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Entities;
 
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 
 /// <summary>
 /// One proposed machine of a proposal. Its ID is the ID of the proposed machine draft in Core, so messages that

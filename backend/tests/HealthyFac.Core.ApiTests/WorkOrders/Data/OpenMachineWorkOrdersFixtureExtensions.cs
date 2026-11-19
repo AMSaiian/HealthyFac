@@ -5,7 +5,7 @@ using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Companies;
 using HealthyFac.Core.Domain.Machines;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Authentication;

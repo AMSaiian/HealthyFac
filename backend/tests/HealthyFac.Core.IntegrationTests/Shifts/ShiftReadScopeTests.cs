@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Shared.Application.ErrorHandling;

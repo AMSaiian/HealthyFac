@@ -1,7 +1,8 @@
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Employees.InviteTokens;
-using HealthyFac.Core.Application.Shifts;
+using HealthyFac.Core.Application.Shifts.ChangeChecks;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Shared.Application.UseCases;

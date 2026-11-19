@@ -2,6 +2,7 @@ using FluentValidation;
 using HealthyFac.Document.Application.MachineRegistrations;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;

@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Entities;
 
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 
 /// <summary>
 /// A proposed limit row of an <see cref="OperatingPhaseDraft"/>. It names its metric as a definition or as a draft of

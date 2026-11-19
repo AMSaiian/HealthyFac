@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>The filter that one source gets, or the decision to skip the source.</summary>
 public sealed record SourceFilter

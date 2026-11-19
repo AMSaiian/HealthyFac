@@ -1,4 +1,4 @@
-namespace HealthyFac.Telemetry.Domain.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 
 /// <summary>
 /// The proposed values of a status definition draft. Every value can be <see langword="null"/>.

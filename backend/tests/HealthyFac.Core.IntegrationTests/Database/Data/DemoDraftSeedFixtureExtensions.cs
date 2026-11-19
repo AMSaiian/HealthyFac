@@ -2,6 +2,7 @@ using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
+using HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Seeding;

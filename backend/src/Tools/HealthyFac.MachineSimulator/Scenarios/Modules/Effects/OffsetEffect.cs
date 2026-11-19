@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
 
 /// <summary>
 /// An amount that grows linearly from 0 to <paramref name="AtEnd"/> along the drain and is added to the value.

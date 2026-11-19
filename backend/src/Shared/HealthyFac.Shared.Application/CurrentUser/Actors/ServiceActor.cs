@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.Shared.Application.CurrentUser;
+namespace HealthyFac.Shared.Application.CurrentUser.Actors;
 
 /// <summary>
 /// Defines the flows that shared code runs in every service: the database start-up and the two message processors.

@@ -3,13 +3,14 @@ using FluentValidation;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Machines;
+namespace HealthyFac.Core.Application.Machines.States;
 
 public record ChangeMachineStateRequest : IRequest
 {

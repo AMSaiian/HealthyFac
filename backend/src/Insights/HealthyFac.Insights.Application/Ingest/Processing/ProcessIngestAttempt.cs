@@ -1,10 +1,14 @@
 using System.Diagnostics;
 using FluentValidation;
 using HealthyFac.Insights.Application.Extraction.Runs;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
+using HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
 using HealthyFac.Insights.Application.Ingest.Screening;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Application.UseCases;

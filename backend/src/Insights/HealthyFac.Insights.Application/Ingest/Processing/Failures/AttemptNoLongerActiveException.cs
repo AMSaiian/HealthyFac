@@ -1,4 +1,4 @@
-namespace HealthyFac.Insights.Application.Ingest.Processing;
+namespace HealthyFac.Insights.Application.Ingest.Processing.Failures;
 
 /// <summary>
 /// Reports that the attempt left the state <c>inProcess</c> while the pipeline ran (a user cancel, a delete of the

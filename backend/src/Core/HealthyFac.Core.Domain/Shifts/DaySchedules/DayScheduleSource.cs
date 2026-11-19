@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.Core.Domain.Shifts;
+namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
 /// Tells where the blocks of a day come from. The camelCase values reach the API, so never rename one in place.

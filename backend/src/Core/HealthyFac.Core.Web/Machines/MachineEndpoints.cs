@@ -1,5 +1,7 @@
 using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Application.Machines;
+using HealthyFac.Core.Application.Machines.Lookups;
+using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Grids;
@@ -8,13 +10,13 @@ using HealthyFac.Shared.Application.Links;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using ApplicationChangeMachineStateRequest = HealthyFac.Core.Application.Machines.ChangeMachineStateRequest;
+using ApplicationChangeMachineStateRequest = HealthyFac.Core.Application.Machines.States.ChangeMachineStateRequest;
 using ApplicationCreateMachineRequest = HealthyFac.Core.Application.Machines.CreateMachineRequest;
 using ApplicationDeleteMachineRequest = HealthyFac.Core.Application.Machines.DeleteMachineRequest;
-using ApplicationGetMachineStateTimesRequest = HealthyFac.Core.Application.Machines.GetMachineStateTimesRequest;
+using ApplicationGetMachineStateTimesRequest = HealthyFac.Core.Application.Machines.States.GetMachineStateTimesRequest;
 using ApplicationGetMachineRequest = HealthyFac.Core.Application.Machines.GetMachineRequest;
-using ApplicationLookupMachineNamesRequest = HealthyFac.Core.Application.Machines.LookupMachineNamesRequest;
-using ApplicationLookupMachinesRequest = HealthyFac.Core.Application.Machines.LookupMachinesRequest;
+using ApplicationLookupMachineNamesRequest = HealthyFac.Core.Application.Machines.Lookups.LookupMachineNamesRequest;
+using ApplicationLookupMachinesRequest = HealthyFac.Core.Application.Machines.Lookups.LookupMachinesRequest;
 using ApplicationSearchMachinesRequest = HealthyFac.Core.Application.Machines.SearchMachines.SearchMachinesRequest;
 using ApplicationUpdateMachineRequest = HealthyFac.Core.Application.Machines.UpdateMachineRequest;
 

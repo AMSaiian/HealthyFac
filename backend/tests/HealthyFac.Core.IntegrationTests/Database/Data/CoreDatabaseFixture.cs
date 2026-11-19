@@ -5,7 +5,7 @@ using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Email;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Containers;

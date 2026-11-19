@@ -1,6 +1,6 @@
 using HealthyFac.Shared.Domain.Enumerations;
 
-namespace HealthyFac.Shared.Application.CurrentUser;
+namespace HealthyFac.Shared.Application.CurrentUser.Actors;
 
 /// <summary>
 /// Defines the kinds of actor that perform an operation. The camelCase values are part of the actor IDs, so never

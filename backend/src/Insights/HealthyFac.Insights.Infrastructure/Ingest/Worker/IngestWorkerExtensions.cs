@@ -1,9 +1,11 @@
 using HealthyFac.Insights.Application.Ingest.Processing;
+using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
+using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace HealthyFac.Insights.Infrastructure.Ingest;
+namespace HealthyFac.Insights.Infrastructure.Ingest.Worker;
 
 /// <summary>
 /// Provides extension methods for registering the ingest worker.

@@ -1,5 +1,5 @@
 using HealthyFac.Core.Infrastructure.Database.Seeding;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using Microsoft.Extensions.DependencyInjection;

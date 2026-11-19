@@ -3,7 +3,7 @@ using HealthyFac.Document.Application;
 using HealthyFac.Document.Infrastructure;
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Document.Infrastructure.Database.Initialization;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Web.IdEncryption;
 using HealthyFac.Testing.Containers;

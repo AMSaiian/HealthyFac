@@ -1,3 +1,7 @@
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+using HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
+
 namespace HealthyFac.MachineSimulator.Scenarios;
 
 /// <summary>

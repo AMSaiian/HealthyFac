@@ -1,4 +1,4 @@
-namespace HealthyFac.Core.Domain.Shifts;
+namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
 /// The local start and end of one work block of a day. The end is after the start. Both are times in the company zone.

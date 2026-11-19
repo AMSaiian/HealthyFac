@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HealthyFac.Gateway.Web.Composition.Drafts;
+namespace HealthyFac.Gateway.Web.Composition.Drafts.Search;
 
 /// <summary>
 /// Gives the comparer of the sort values of each sort column of the draft grid. Core and Telemetry use the same

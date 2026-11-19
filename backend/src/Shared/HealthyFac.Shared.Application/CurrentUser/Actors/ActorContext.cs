@@ -1,4 +1,4 @@
-namespace HealthyFac.Shared.Application.CurrentUser;
+namespace HealthyFac.Shared.Application.CurrentUser.Actors;
 
 /// <summary>
 /// Describes who performs the current operation: a user of a request, the original actor of a received message,

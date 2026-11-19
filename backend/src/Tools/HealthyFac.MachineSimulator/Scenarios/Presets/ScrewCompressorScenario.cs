@@ -1,4 +1,8 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+using HealthyFac.MachineSimulator.Scenarios.Modules.Effects;
+
+namespace HealthyFac.MachineSimulator.Scenarios.Presets;
 
 /// <summary>
 /// The screw compressor (serial number <c>NRS37-22-1093</c>): cycles of 120 seconds loaded and 30 seconds standby. The

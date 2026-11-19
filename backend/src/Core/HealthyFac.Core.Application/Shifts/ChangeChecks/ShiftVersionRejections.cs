@@ -2,7 +2,7 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.ChangeChecks;
 
 /// <summary>
 /// Chooses the answer for a template version that a load did not find.

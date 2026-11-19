@@ -7,7 +7,7 @@ using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 using HealthyFac.Auth.Messaging.Identities;
 using HealthyFac.Core.Messaging.Employees;
-using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;

@@ -4,7 +4,7 @@ using Instruments = HealthyFac.Shared.Application.Observability.ObservabilityCon
 using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Intake.Tags;
 using Units = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Units;
 
-namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
+namespace HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 
 /// <summary>
 /// Holds the instruments of the <see cref="ObservabilityConstants.Intake.Meter"/> meter. The service records one

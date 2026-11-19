@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using HealthyFac.Core.Domain.Machines;
 
-namespace HealthyFac.Core.Application.Machines;
+namespace HealthyFac.Core.Application.Machines.States;
 
 /// <summary>
 /// Defines the current state of a machine for queries. The projection and the grid filter share it, so the rule has

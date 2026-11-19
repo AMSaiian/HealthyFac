@@ -1,6 +1,6 @@
-using HealthyFac.Core.Domain.Shifts;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
 
-namespace HealthyFac.Core.Application.Shifts;
+namespace HealthyFac.Core.Application.Shifts.BlockInput;
 
 /// <summary>
 /// One work block of a day as a client sends it, in times of the company zone.

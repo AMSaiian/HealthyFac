@@ -1,9 +1,13 @@
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using Microsoft.EntityFrameworkCore;
 
-namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Application.DefinitionDrafts.Following;
 
 /// <summary>
 /// The one place where the handlers of the proposal messages find an entry and move its draft children. The messages

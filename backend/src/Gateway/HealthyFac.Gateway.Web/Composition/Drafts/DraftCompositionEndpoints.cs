@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
+using HealthyFac.Gateway.Web.Composition.Drafts.Search;
 using HealthyFac.Gateway.Web.RateLimiting;
 using HealthyFac.Shared.Web.CrossOrigin;
 using Microsoft.AspNetCore.Mvc;

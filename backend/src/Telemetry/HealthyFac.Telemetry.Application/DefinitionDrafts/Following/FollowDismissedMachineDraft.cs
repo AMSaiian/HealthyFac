@@ -2,7 +2,7 @@ using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
-namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
+namespace HealthyFac.Telemetry.Application.DefinitionDrafts.Following;
 
 public sealed class FollowDismissedMachineDraftPreHandlerCheck : PassThroughPreHandlerCheck<MachineDraftDismissed>;
 

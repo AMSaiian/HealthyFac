@@ -2,6 +2,7 @@ using FluentValidation;
 using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
