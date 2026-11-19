@@ -24,7 +24,10 @@ public static class SoftDeleteCascade
     private const string DeletedAtParameter = "deletedAt";
     private const string DeletedByParameter = "deletedBy";
     private const string UpdateByRelationTemplate = "UPDATE {0} SET {1} WHERE {2}";
-    private const string UpdateByKeysTemplate = "UPDATE {0} SET {1} WHERE {2} = ANY(@" + KeysParameter + ")";
+
+    private const string UpdateByKeysTemplate =
+        "UPDATE {0} SET {1} WHERE {2} = ANY(@" + KeysParameter + ") AND {3} IS NULL";
+
     private const string SelectKeysTemplate = "SELECT {0} AS \"Value\" FROM {1} WHERE {2}";
 
     /// <summary>Tells whether a tracked entry is a soft-deleted principal with at least one cascade relation.</summary>
@@ -170,12 +173,13 @@ public static class SoftDeleteCascade
             .Where(entry => dependent.IsAssignableFrom(entry.Metadata))
             .Select(entry => (Guid)entry.Property(primaryKeyProperty.Name).CurrentValue!)
             .ToArray();
+        var deletedAtColumn = Column(dependent.FindProperty(nameof(ISoftDeletable.DeletedAt)));
         var rowFilter =
             $"{Column(relation.Properties[index: 0])} = ANY(@{PrincipalKeysParameter}) "
-            + $"AND {Column(dependent.FindProperty(nameof(ISoftDeletable.DeletedAt)))} IS NULL "
+            + $"AND {deletedAtColumn} IS NULL "
             + $"AND NOT ({primaryKey} = ANY(@{TrackedKeysParameter}))";
         var setClause =
-            $"{Column(dependent.FindProperty(nameof(ISoftDeletable.DeletedAt)))} = @{DeletedAtParameter}, "
+            $"{deletedAtColumn} = @{DeletedAtParameter}, "
             + $"{Column(dependent.FindProperty(nameof(ISoftDeletable.DeletedBy)))} = @{DeletedByParameter}";
         if (typeof(IAuditable).IsAssignableFrom(dependent.ClrType))
         {
@@ -211,7 +215,7 @@ public static class SoftDeleteCascade
         }
 
         await dbContext.Database.ExecuteSqlRawAsync(
-            Format(UpdateByKeysTemplate, table, setClause, primaryKey),
+            Format(UpdateByKeysTemplate, table, setClause, primaryKey, deletedAtColumn),
             [
                 .. CreateTimeParameters(deletedAt, deletedBy),
                 CreateKeysParameter(KeysParameter, keys),
