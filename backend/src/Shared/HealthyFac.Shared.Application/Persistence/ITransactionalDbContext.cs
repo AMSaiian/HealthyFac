@@ -5,7 +5,8 @@ namespace HealthyFac.Shared.Application.Persistence;
 /// <summary>
 /// Declares the explicit transaction of a service context. The Application interface of a service (e.g.,
 /// <c>ICoreDbContext</c>) inherits it, so use cases can run several saves in one transaction. Each context implements
-/// both methods with the same code as <c>CoreDbContext</c>.
+/// the overloads with a call to <c>TransactionRunner.RunAsync</c> (Shared.Infrastructure) and holds no copy of the
+/// code.
 /// </summary>
 public interface ITransactionalDbContext
 {
@@ -18,6 +19,8 @@ public interface ITransactionalDbContext
     /// the call or after the operation, or on a transaction that the operation ended.
     /// </summary>
     /// <remarks>
+    /// Inside an open transaction (the inbox runner, an outer call), the operation joins it: it runs once, with no new
+    /// transaction, no retry, and no tracker clear, and the outer call commits.
     /// Each attempt clears the change tracker first, so the changes of a failed attempt are not saved again. Read and
     /// change every entity inside the operation: an entity loaded before the call is no longer tracked.
     /// </remarks>
@@ -25,7 +28,8 @@ public interface ITransactionalDbContext
     /// <param name="cancellationToken">Cancels the operation and rolls back the transaction.</param>
     /// <returns>A task that completes when the transaction commits.</returns>
     /// <exception cref="InvalidOperationException">The context has unsaved changes before the call or after the
-    /// operation, or the operation committed or rolled back the transaction.</exception>
+    /// operation, the operation committed or rolled back the transaction, or the isolation level differs from the level
+    /// of the open transaction.</exception>
     Task RunInTransactionAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken = default(CancellationToken)
@@ -40,6 +44,8 @@ public interface ITransactionalDbContext
     /// after the operation, or on a transaction that the operation ended.
     /// </summary>
     /// <remarks>
+    /// Inside an open transaction (the inbox runner, an outer call), the operation joins it: it runs once, with no new
+    /// transaction, no retry, and no tracker clear, and the outer call commits.
     /// Each attempt clears the change tracker first, so the changes of a failed attempt are not saved again. Read and
     /// change every entity inside the operation: an entity loaded before the call is no longer tracked.
     /// </remarks>
@@ -48,7 +54,8 @@ public interface ITransactionalDbContext
     /// <param name="cancellationToken">Cancels the operation and rolls back the transaction.</param>
     /// <returns>The result of the attempt that committed.</returns>
     /// <exception cref="InvalidOperationException">The context has unsaved changes before the call or after the
-    /// operation, or the operation committed or rolled back the transaction.</exception>
+    /// operation, the operation committed or rolled back the transaction, or the isolation level differs from the level
+    /// of the open transaction.</exception>
     Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
         CancellationToken cancellationToken = default(CancellationToken)
@@ -60,12 +67,17 @@ public interface ITransactionalDbContext
     /// <see cref="IsolationLevel.Serializable"/> only for a write that checks an invariant across rows (e.g., an
     /// overlap). A serialization failure (<c>40001</c>) runs the whole unit again.
     /// </summary>
+    /// <remarks>
+    /// Inside an open transaction (the inbox runner, an outer call), the operation joins it: it runs once, with no new
+    /// transaction, no retry, and no tracker clear, and the outer call commits.
+    /// </remarks>
     /// <param name="operation">The work to run in the transaction.</param>
     /// <param name="isolationLevel">The isolation level of the transaction.</param>
     /// <param name="cancellationToken">Cancels the operation and rolls back the transaction.</param>
     /// <returns>A task that completes when the transaction commits.</returns>
     /// <exception cref="InvalidOperationException">The context has unsaved changes before the call or after the
-    /// operation, or the operation committed or rolled back the transaction.</exception>
+    /// operation, the operation committed or rolled back the transaction, or the isolation level differs from the level
+    /// of the open transaction.</exception>
     Task RunInTransactionAsync(
         Func<CancellationToken, Task> operation,
         IsolationLevel isolationLevel,
@@ -77,13 +89,18 @@ public interface ITransactionalDbContext
     /// result of the operation. It follows the same rules as
     /// <see cref="RunInTransactionAsync(Func{CancellationToken, Task}, IsolationLevel, CancellationToken)"/>.
     /// </summary>
+    /// <remarks>
+    /// Inside an open transaction (the inbox runner, an outer call), the operation joins it: it runs once, with no new
+    /// transaction, no retry, and no tracker clear, and the outer call commits.
+    /// </remarks>
     /// <typeparam name="TResult">The type of the operation result.</typeparam>
     /// <param name="operation">The work to run in the transaction.</param>
     /// <param name="isolationLevel">The isolation level of the transaction.</param>
     /// <param name="cancellationToken">Cancels the operation and rolls back the transaction.</param>
     /// <returns>The result of the attempt that committed.</returns>
     /// <exception cref="InvalidOperationException">The context has unsaved changes before the call or after the
-    /// operation, or the operation committed or rolled back the transaction.</exception>
+    /// operation, the operation committed or rolled back the transaction, or the isolation level differs from the level
+    /// of the open transaction.</exception>
     Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
         IsolationLevel isolationLevel,

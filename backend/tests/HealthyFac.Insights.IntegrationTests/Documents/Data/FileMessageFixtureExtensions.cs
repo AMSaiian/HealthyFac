@@ -21,7 +21,11 @@ public static class FileMessageFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<FileDeleted>>();
 
-            await handler.HandleAsync(new FileDeleted { FileId = fileId, CompanyId = companyId });
+            var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
+
+            await dbContext.RunInTransactionAsync(
+                token => handler.HandleAsync(new FileDeleted { FileId = fileId, CompanyId = companyId }, token),
+                TestContext.Current.CancellationToken);
         }
 
         public async Task HandleMachineChangedAsync(Guid companyId, Guid fileId, Guid? machineId, DateTime changedAt)
@@ -29,14 +33,19 @@ public static class FileMessageFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<FileMachineChanged>>();
 
-            await handler.HandleAsync(
-                new FileMachineChanged
-                {
-                    FileId = fileId,
-                    CompanyId = companyId,
-                    MachineId = machineId,
-                    ChangedAt = changedAt,
-                });
+            var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
+
+            await dbContext.RunInTransactionAsync(
+                token => handler.HandleAsync(
+                    new FileMachineChanged
+                    {
+                        FileId = fileId,
+                        CompanyId = companyId,
+                        MachineId = machineId,
+                        ChangedAt = changedAt,
+                    },
+                    token),
+                TestContext.Current.CancellationToken);
         }
 
         public async Task<IReadOnlyList<IngestAttempt>> LoadAttemptsAsync()

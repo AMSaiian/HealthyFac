@@ -1,3 +1,5 @@
+using System.Data;
+
 namespace HealthyFac.Shared.Infrastructure.Persistence;
 
 /// <summary>
@@ -22,5 +24,14 @@ public static class PersistenceErrors
         new(
             "The transaction operation committed or rolled back the transaction. "
             + "Only the context ends the transaction, so a retry cannot repeat a committed part."
+        );
+
+    public static InvalidOperationException IsolationLevelDiffersFromOpenTransaction(
+        IsolationLevel open,
+        IsolationLevel requested
+    ) =>
+        new(
+            $"The open transaction runs at {open}, so an operation at {requested} cannot join it. "
+            + "Use the level of the open transaction."
         );
 }

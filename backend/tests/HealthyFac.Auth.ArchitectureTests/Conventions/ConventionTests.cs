@@ -194,4 +194,26 @@ public sealed class ConventionTests
 
         violations.Should().BeEmpty();
     }
+
+    [Theory]
+    [MemberData(nameof(ConventionTestData.AllAssemblies), MemberType = typeof(ConventionTestData))]
+    public void Assemblies_BeginNoTransactionOutsideTransactionRunner(string assemblyName)
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindTransactionStarts(LayerDependencyTestData.Resolve(assemblyName)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Theory]
+    [MemberData(nameof(ConventionTestData.AllAssemblies), MemberType = typeof(ConventionTestData))]
+    public void InboxHandlers_CallNoRunInTransactionAsync(string assemblyName)
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindInboxHandlerTransactions(LayerDependencyTestData.Resolve(assemblyName)));
+
+        violations.Should().BeEmpty();
+    }
 }

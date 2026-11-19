@@ -56,23 +56,12 @@ public sealed class TestServiceDbContext(DbContextOptions<TestServiceDbContext> 
             isolationLevel,
             cancellationToken);
 
-    public async Task<TResult> RunInTransactionAsync<TResult>(
+    public Task<TResult> RunInTransactionAsync<TResult>(
         Func<CancellationToken, Task<TResult>> operation,
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken = default(CancellationToken)
     )
-    {
-        if (ChangeTracker.HasChanges())
-        {
-            throw PersistenceErrors.UnsavedChangesBeforeTransaction();
-        }
-
-        return await Database
-            .CreateExecutionStrategy()
-            .ExecuteAsync(
-                token => RunTransactionAttemptAsync(operation, isolationLevel, token),
-                cancellationToken);
-    }
+        => TransactionRunner.RunAsync(this, operation, isolationLevel, cancellationToken);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -80,31 +69,6 @@ public sealed class TestServiceDbContext(DbContextOptions<TestServiceDbContext> 
         modelBuilder.ApplyInboxConfiguration();
         modelBuilder.ApplyConfiguration(new TestAuditedEntityConfiguration());
         modelBuilder.ToSnakeCaseConventions();
-    }
-
-    private async Task<TResult> RunTransactionAttemptAsync<TResult>(
-        Func<CancellationToken, Task<TResult>> operation,
-        IsolationLevel isolationLevel,
-        CancellationToken cancellationToken
-    )
-    {
-        ChangeTracker.Clear();
-        await using var transaction = await Database.BeginTransactionAsync(isolationLevel, cancellationToken);
-
-        var result = await operation(cancellationToken);
-        if (Database.CurrentTransaction != transaction)
-        {
-            throw PersistenceErrors.TransactionEndedByOperation();
-        }
-
-        if (ChangeTracker.HasChanges())
-        {
-            throw PersistenceErrors.UnsavedChangesAfterOperation();
-        }
-
-        await transaction.CommitAsync(cancellationToken);
-
-        return result;
     }
 }
 

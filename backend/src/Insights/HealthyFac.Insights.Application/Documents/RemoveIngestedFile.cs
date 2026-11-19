@@ -16,8 +16,9 @@ public sealed class RemoveIngestedFilePreHandlerCheck : PassThroughPreHandlerChe
 /// <summary>
 /// Removes what Insights holds of a deleted file: it interrupts the queued, running, or completed attempt with the
 /// reason <c>fileDeleted</c> and deletes the ingested document with its chunks (the cascade). Both steps run under the
-/// lock of that attempt, so the worker cannot store a document for the file between them. A repeat delivery changes
-/// nothing, because no such attempt and no document are left.
+/// lock of that attempt, which lives inside the transaction of the inbox runner until the inbox commits, so the worker
+/// cannot store a document for the file between them. The handler opens no transaction of its own. A repeat delivery
+/// changes nothing, because no such attempt and no document are left.
 /// </summary>
 /// <remarks>
 /// The lock also matches a completed attempt. When the worker holds the lock and commits <c>completed</c> while this
@@ -40,12 +41,7 @@ public sealed class RemoveIngestedFileRequestHandler(
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
 
-    protected override Task HandleInternalAsync(FileDeleted request, CancellationToken cancellationToken) =>
-        _dbContext.RunInTransactionAsync(
-            token => RemoveAsync(request, token),
-            cancellationToken);
-
-    private async Task RemoveAsync(FileDeleted request, CancellationToken cancellationToken)
+    protected override async Task HandleInternalAsync(FileDeleted request, CancellationToken cancellationToken)
     {
         var attempt = await _attemptLock.LockAttemptForFileDeleteAsync(
             request.FileId,
