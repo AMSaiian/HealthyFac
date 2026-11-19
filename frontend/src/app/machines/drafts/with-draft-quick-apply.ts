@@ -48,12 +48,14 @@ import {
   type MachineDraftDetail,
   type MachineDraftsPage,
   type MetricDraftDetail,
+  type PhaseDraftDetail,
   type StatusDraftDetail,
 } from '@machines/drafts/draft';
 import { draftConflictKey } from '@machines/drafts/draft-conflict';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import {
   applicableMetrics,
+  applicablePhases,
   applicableStatuses,
   chunk,
   groupReason,
@@ -64,6 +66,7 @@ import {
   retryAfterSeconds,
   STATUS_BATCH_MAX_ITEMS,
 } from '@machines/drafts/with-draft-quick-apply.utils';
+import { toPhaseBody } from '@machines/drafts/phase/phase-draft-review-store/phase-draft-review.store.utils';
 import { toBatchChange } from '@machines/drafts/status/status-draft-review-store/status-draft-review.store.utils';
 import { MetricDefinitionsApi } from '@machines/metrics/metric-definitions-api';
 import type { MetricUnitsResponse } from '@machines/metrics/metric-definition';
@@ -102,11 +105,18 @@ export interface QuickApplyState {
  */
 class MachineNotReadyError extends Error {}
 
+/** The drafts of the new machine still await their target: Telemetry has not moved them to the machine yet. */
+class DraftsNotMovedError extends Error {}
+
 /** The error of a call that got `429` again after the wait. The run stops and the rest of the drafts stay pending. */
 class RateLimitedError extends Error {}
 
 function isNotFoundError(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound;
+}
+
+function isConflictError(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === HttpStatusCode.Conflict;
 }
 
 /** Asks again on `404` (the new machine may not have reached Telemetry yet), then fails with `MachineNotReadyError`. */
@@ -119,6 +129,20 @@ function retryWhileMachineUnknown<T>(): MonoTypeOperatorFunction<T> {
     }),
     catchError((error: unknown) => throwError(() => (isNotFoundError(error) ? new MachineNotReadyError() : error))),
   );
+}
+
+function hasAwaitingChildren(group: AttemptDraftGroup): boolean {
+  return [...group.metrics, ...group.statuses].some((draft) => draft.state === DraftState.AwaitingTarget);
+}
+
+function childIdsOf(group: AttemptDraftGroup): string[] {
+  return [...group.metrics, ...group.statuses, ...group.phases].map((draft) => draft.id);
+}
+
+/** Tells whether every child draft of the group from before the apply sits in the group of the new machine. */
+function hasMovedChildren(before: AttemptDraftGroup, moved: AttemptDraftGroup): boolean {
+  const movedIds = new Set(childIdsOf(moved));
+  return childIdsOf(before).every((id) => movedIds.has(id));
 }
 
 const TOAST_SUMMARY_KEYS = {
@@ -153,7 +177,12 @@ function notFound(): HttpErrorResponse {
 }
 
 function pendingIds(group: AttemptDraftGroup): string[] {
-  const drafts = [...(group.machineDraft === null ? [] : [group.machineDraft]), ...group.metrics, ...group.statuses];
+  const drafts = [
+    ...(group.machineDraft === null ? [] : [group.machineDraft]),
+    ...group.metrics,
+    ...group.statuses,
+    ...group.phases,
+  ];
   return drafts.filter((draft) => draft.state === DraftState.Pending).map((draft) => draft.id);
 }
 
@@ -363,6 +392,32 @@ export function withDraftQuickApply(): SignalStoreFeature<
           map(() => undefined),
         );
 
+      /**
+       * Applies a phase draft with the call of the review flow. A phase code that the machine already has (`409`) counts
+       * as skipped, so the rest of a group run still applies.
+       */
+      const phaseStep$ = (machineId: string, draft: PhaseDraftDetail, progress: Progress): Observable<void> => {
+        const body = toPhaseBody(draft);
+        if (body === null) {
+          progress.skipped += 1;
+          return of(undefined);
+        }
+        return rateLimited$(() => store._quickDraftsApi.applyPhaseDraft(machineId, draft.id, body, options)).pipe(
+          retryWhileMachineUnknown(),
+          tap(() => {
+            progress.applied += 1;
+          }),
+          map(() => undefined),
+          catchError((error: unknown) => {
+            if (!isConflictError(error)) {
+              return throwError(() => error);
+            }
+            progress.skipped += 1;
+            return of(undefined);
+          }),
+        );
+      };
+
       const draftRun$ = (attemptId: string, draftId: string, progress: Progress): Observable<void> =>
         fresh$(attemptId).pipe(
           switchMap((drafts) => {
@@ -370,6 +425,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
               const machine = group.machineDraft?.id === draftId ? group.machineDraft : null;
               const metric = group.metrics.find((candidate) => candidate.id === draftId);
               const status = group.statuses.find((candidate) => candidate.id === draftId);
+              const phase = group.phases.find((candidate) => candidate.id === draftId);
               if (machine !== null) {
                 return machineStep$(machine, progress).pipe(map(() => undefined));
               }
@@ -381,6 +437,9 @@ export function withDraftQuickApply(): SignalStoreFeature<
               }
               if (status !== undefined) {
                 return statusesStep$(group.machineId, [status], progress);
+              }
+              if (phase !== undefined) {
+                return phaseStep$(group.machineId, phase, progress);
               }
             }
             return throwError(notFound);
@@ -394,6 +453,35 @@ export function withDraftQuickApply(): SignalStoreFeature<
             : group.machineDraft?.id === ref.machineDraftId,
         ) ?? null;
 
+      /**
+       * Reads the drafts of the attempt until the group of the new machine holds every child draft of the group from
+       * before the apply, and none of them is in the state `awaitingTarget`. Telemetry moves the child drafts to the
+       * machine after it handles `MachineCreated`, so a read right after the apply can show the machine draft alone or
+       * the children as not ready. The wait is the one of `retryWhileMachineUnknown`.
+       */
+      const movedGroup$ = (
+        attemptId: string,
+        machineId: string,
+        before: AttemptDraftGroup,
+      ): Observable<AttemptDraftGroup> =>
+        defer(() => fresh$(attemptId)).pipe(
+          map((drafts) => {
+            const moved = drafts.groups.find((candidate) => candidate.machineId === machineId);
+            if (moved === undefined || hasAwaitingChildren(moved) || !hasMovedChildren(before, moved)) {
+              throw new DraftsNotMovedError();
+            }
+            return moved;
+          }),
+          retry({
+            count: MACHINE_SYNC_RETRY_COUNT,
+            delay: (error: unknown, retryCount: number) =>
+              error instanceof DraftsNotMovedError ? timer(machineSyncDelayMs(retryCount)) : throwError(() => error),
+          }),
+          catchError((error: unknown) =>
+            throwError(() => (error instanceof DraftsNotMovedError ? new MachineNotReadyError() : error)),
+          ),
+        );
+
       const machineOfGroup$ = (
         attemptId: string,
         group: AttemptDraftGroup,
@@ -404,18 +492,68 @@ export function withDraftQuickApply(): SignalStoreFeature<
           return of(group);
         }
         return machineStep$(machine, progress).pipe(
-          switchMap((machineId) =>
-            machine.isCreate
-              ? fresh$(attemptId).pipe(
-                  map((drafts) => drafts.groups.find((candidate) => candidate.machineId === machineId) ?? group),
-                  map((moved) => (moved.machineId === null ? { ...moved, machineId } : moved)),
-                )
-              : of(group),
-          ),
+          switchMap((machineId) => (machine.isCreate ? movedGroup$(attemptId, machineId, group) : of(group))),
         );
       };
 
-      const childrenOfGroup$ = (group: AttemptDraftGroup, progress: Progress): Observable<void> => {
+      /**
+       * Sends the metric drafts in one call. On `409` (a key that another draft or a change holds, or a changed
+       * revision) it sends them one by one: a draft that conflicts counts as skipped and the rest still apply.
+       */
+      const metricsOrOneByOne$ = (
+        machineId: string,
+        drafts: readonly MetricDraftDetail[],
+        progress: Progress,
+      ): Observable<void> =>
+        metricsStep$(machineId, drafts, progress).pipe(
+          catchError((error: unknown) =>
+            isConflictError(error)
+              ? from(drafts).pipe(
+                  concatMap((draft) =>
+                    metricsStep$(machineId, [draft], progress).pipe(
+                      catchError((single: unknown) => {
+                        if (!isConflictError(single)) {
+                          return throwError(() => single);
+                        }
+                        progress.skipped += 1;
+                        return of(undefined);
+                      }),
+                    ),
+                  ),
+                  toArray(),
+                  map(() => undefined),
+                )
+              : throwError(() => error),
+          ),
+        );
+
+      /**
+       * Applies the pending phase drafts that apply on their own, after the metric and status drafts. The attempt is read
+       * again first: applying a metric or status draft moves the references of the phase drafts to the new definitions.
+       * A phase draft that still waits for a draft counts as skipped.
+       */
+      const phasesStep$ = (attemptId: string, group: AttemptDraftGroup, progress: Progress): Observable<void> => {
+        const machineId = group.machineId;
+        const hasPhases = group.phases.some((draft) => draft.state === DraftState.Pending);
+        if (machineId === null || !hasPhases) {
+          return of(undefined);
+        }
+        return fresh$(attemptId).pipe(
+          switchMap((drafts) => {
+            const current = drafts.groups.find((candidate) => candidate.machineId === machineId);
+            const pending = (current?.phases ?? []).filter((draft) => draft.state === DraftState.Pending);
+            const phases = current === undefined ? [] : applicablePhases(current);
+            progress.skipped += pending.length - phases.length;
+            return from(phases).pipe(
+              concatMap((draft) => phaseStep$(machineId, draft, progress)),
+              toArray(),
+              map(() => undefined),
+            );
+          }),
+        );
+      };
+
+      const childrenOfGroup$ = (attemptId: string, group: AttemptDraftGroup, progress: Progress): Observable<void> => {
         const machineId = group.machineId;
         if (machineId === null) {
           return of(undefined);
@@ -426,19 +564,34 @@ export function withDraftQuickApply(): SignalStoreFeature<
           group.metrics.filter((draft) => draft.state === DraftState.Pending).length +
           group.statuses.filter((draft) => draft.state === DraftState.Pending).length;
         progress.skipped += pendingCount - metrics.length - statuses.length;
-        const metrics$ = metrics.length === 0 ? of(undefined) : metricsStep$(machineId, metrics, progress);
+        const metrics$ = metrics.length === 0 ? of(undefined) : metricsOrOneByOne$(machineId, metrics, progress);
         return metrics$.pipe(
           concatMap(() => (statuses.length === 0 ? of(undefined) : statusesStep$(machineId, statuses, progress))),
+          concatMap(() => phasesStep$(attemptId, group, progress)),
         );
       };
 
-      const groupRun$ = (attemptId: string, ref: GroupRef, progress: Progress): Observable<void> =>
+      /**
+       * Applies one group. A run over a whole attempt takes its groups from the stored read, and an earlier group of
+       * the run can move the drafts of a later one (a create group moves its children to the new machine), so a group
+       * that is gone then counts as done (`isGoneAllowed`). A run of one group reports it as not found.
+       */
+      const groupRun$ = (
+        attemptId: string,
+        ref: GroupRef,
+        progress: Progress,
+        isGoneAllowed = false,
+      ): Observable<void> =>
         fresh$(attemptId).pipe(
           switchMap((drafts) => {
             const group = findGroup(drafts, ref);
-            return group === null ? throwError(notFound) : machineOfGroup$(attemptId, group, progress);
+            if (group === null) {
+              return isGoneAllowed ? EMPTY : throwError(notFound);
+            }
+            return machineOfGroup$(attemptId, group, progress).pipe(
+              switchMap((moved) => childrenOfGroup$(attemptId, moved, progress)),
+            );
           }),
-          switchMap((group) => childrenOfGroup$(group, progress)),
         );
 
       const pendingPage$ = (machineId: string, after: KeysetPosition | null): Observable<MachineDraftsPage> =>
@@ -491,7 +644,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
           machineId: group.machineId,
         }));
         return from(refs).pipe(
-          concatMap((ref) => groupRun$(attemptId, ref, progress)),
+          concatMap((ref) => groupRun$(attemptId, ref, progress, true)),
           toArray(),
           map(() => undefined),
         );

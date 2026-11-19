@@ -19,12 +19,21 @@ public sealed class InsightsServiceTokenTests(KeycloakRealmCollectionFixture fix
     }
 
     [Fact]
-    public async Task ServiceToken_WithTelemetryScope_CarriesOnlyTheTwoTelemetryReads()
+    public async Task ServiceToken_WithTelemetryScope_CarriesOnlyTheTelemetryReads()
     {
         var claims = await RequestClaimsAsync(InsightsServiceTokenTestData.TelemetryScope);
 
         claims.Permissions().Should().BeEquivalentTo(InsightsServiceTokenTestData.TelemetryPermissions);
         claims.Audiences().Should().Contain(RealmTestData.TelemetryClientId);
+    }
+
+    [Fact]
+    public async Task ServiceToken_WithWorkOrdersScope_CarriesOnlyTheWorkOrderRead()
+    {
+        var claims = await RequestClaimsAsync(InsightsServiceTokenTestData.WorkOrdersScope);
+
+        claims.Permissions().Should().BeEquivalentTo(InsightsServiceTokenTestData.WorkOrdersPermissions);
+        claims.Audiences().Should().Contain(RealmTestData.CoreClientId);
     }
 
     [Fact]

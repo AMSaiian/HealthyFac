@@ -1,5 +1,10 @@
 using System.Data;
 using HealthyFac.Insights.Application;
+using HealthyFac.Insights.Domain.Agents.Actions;
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
+using HealthyFac.Insights.Domain.Cases;
+using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -25,6 +30,16 @@ public class InsightsDbContext(DbContextOptions<InsightsDbContext> options)
     public DbSet<IngestedDocument> IngestedDocuments => Set<IngestedDocument>();
 
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
+
+    public DbSet<MaintenanceCase> MaintenanceCases => Set<MaintenanceCase>();
+
+    public DbSet<MachineSignal> MachineSignals => Set<MachineSignal>();
+
+    public DbSet<AgentRun> AgentRuns => Set<AgentRun>();
+
+    public DbSet<AgentToolCall> AgentToolCalls => Set<AgentToolCall>();
+
+    public DbSet<AgentAction> AgentActions => Set<AgentAction>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
@@ -80,6 +95,20 @@ public class InsightsDbContext(DbContextOptions<InsightsDbContext> options)
         configurationBuilder.HaveEnumerationConversion<IngestState>();
         configurationBuilder.HaveEnumerationConversion<IngestErrorCode>();
         configurationBuilder.HaveEnumerationConversion<IngestInterruptReason>();
+        configurationBuilder.HaveEnumerationConversion<CaseState>();
+        configurationBuilder.HaveEnumerationConversion<SignalCoverage>();
+        configurationBuilder.HaveEnumerationConversion<SignalRule>();
+        configurationBuilder.HaveEnumerationConversion<SignalSeverity>();
+        configurationBuilder.HaveEnumerationConversion<SignalState>();
+        configurationBuilder.HaveEnumerationConversion<AgentRole>();
+        configurationBuilder.HaveEnumerationConversion<AgentRunState>();
+        configurationBuilder.HaveEnumerationConversion<AgentRunVerdict>();
+        configurationBuilder.HaveEnumerationConversion<AgentRunErrorCode>();
+        configurationBuilder.HaveEnumerationConversion<AgentRunSkipReason>();
+        configurationBuilder.HaveEnumerationConversion<ToolCallOutcome>();
+        configurationBuilder.HaveEnumerationConversion<AgentActionKind>();
+        configurationBuilder.HaveEnumerationConversion<AgentActionState>();
+        configurationBuilder.HaveEnumerationConversion<AgentActionFollowUp>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,0 +1,174 @@
+<header class="flex flex-none flex-wrap items-center justify-between gap-2">
+  <div class="flex min-w-0 items-center gap-2">
+    <a
+      pButton
+      [pTooltip]="'ACTIONS.BACK_TO_MACHINES' | translate"
+      tooltipPosition="bottom"
+      routerLink="/machines"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [attr.aria-label]="'ACTIONS.BACK_TO_MACHINES' | translate"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h1 class="min-w-0 truncate text-2xl font-bold">{{ 'SIGNALS.TITLE' | translate }} {{ store.machine()?.name }}</h1>
+  </div>
+  <div class="flex flex-none items-center gap-2">
+    <p-select
+      class="w-56"
+      optionLabel="name"
+      optionValue="id"
+      appendTo="body"
+      [options]="metricOptions()"
+      [loading]="showSpinner() && store.definitions.isLoading()"
+      [ngModel]="store.selectedMetric()?.id"
+      (ngModelChange)="store.selectMetric($event)"
+    />
+    <p-select
+      class="w-40"
+      optionValue="value"
+      appendTo="body"
+      [options]="rangeOptions"
+      [placeholder]="'SIGNALS.CUSTOM_RANGE' | translate"
+      [ariaLabel]="'SIGNALS.RANGE_LABEL' | translate"
+      [ngModel]="selectedPreset()"
+      (ngModelChange)="store.selectRange($event)"
+    >
+      <ng-template
+        #selectedItem
+        let-option
+      >
+        {{ option.labelKey | translate }}
+      </ng-template>
+      <ng-template
+        #item
+        let-option
+      >
+        {{ option.labelKey | translate }}
+      </ng-template>
+    </p-select>
+    <hf-plain-date-time-range-picker
+      class="w-80"
+      [placeholder]="'SIGNALS.RANGE_PLACEHOLDER' | translate"
+      [value]="pickedRange()"
+      (valueChange)="onRangePicked($event)"
+    />
+    @if (isZoomed()) {
+      <button
+        pButton
+        [pTooltip]="'SIGNALS.RESET_ZOOM' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'SIGNALS.RESET_ZOOM' | translate"
+        (click)="store.resetZoom()"
+      >
+        <i class="pi pi-search-minus"></i>
+      </button>
+    }
+    <button
+      pButton
+      [pTooltip]="'SIGNALS.HOW_TO_READ.TITLE' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [attr.aria-label]="'SIGNALS.HOW_TO_READ.TITLE' | translate"
+      (click)="howToRead.toggle($event)"
+    >
+      <i class="pi pi-info-circle"></i>
+    </button>
+    <p-popover
+      #howToRead
+      appendTo="body"
+    >
+      <div class="flex w-96 max-w-[90vw] flex-col gap-2">
+        <h2 class="font-semibold">{{ 'SIGNALS.HOW_TO_READ.TITLE' | translate }}</h2>
+        <ul class="flex list-disc flex-col gap-1 pl-4">
+          <li>{{ 'SIGNALS.HOW_TO_READ.AVG' | translate }}</li>
+          <li>{{ 'SIGNALS.HOW_TO_READ.RANGE' | translate }}</li>
+          <li>{{ 'SIGNALS.HOW_TO_READ.LIMITS' | translate }}</li>
+          <li>{{ 'SIGNALS.HOW_TO_READ.SIGNALS' | translate }}</li>
+          <li>{{ 'SIGNALS.HOW_TO_READ.ZOOM' | translate }}</li>
+        </ul>
+      </div>
+    </p-popover>
+    <span
+      [pTooltip]="
+        store.isRefreshCoolingDown()
+          ? ('ACTIONS.TOOLTIPS.RELOAD_WAIT' | translate: { seconds: store.refreshSecondsLeft() })
+          : ''
+      "
+      tooltipPosition="bottom"
+      [tooltipDisabled]="!store.isRefreshCoolingDown()"
+    >
+      <button
+        pButton
+        [pTooltip]="'ACTIONS.TOOLTIPS.RELOAD' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        [disabled]="store.isRefreshCoolingDown()"
+        (click)="store.refresh()"
+      >
+        <i class="pi pi-refresh"></i>
+        {{ 'ACTIONS.RELOAD' | translate }}
+      </button>
+    </span>
+  </div>
+</header>
+<div class="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
+  @if (showEmpty()) {
+    <hf-empty-state
+      icon="pi pi-chart-line"
+      [messageKey]="hasNoMetric() ? 'SIGNALS.NO_METRIC' : 'SIGNALS.NO_DATA'"
+    />
+  } @else {
+    <div class="relative flex h-[28rem] flex-none flex-col">
+      <hf-metric-chart
+        [buckets]="buckets()"
+        [limits]="limits()"
+        [episodes]="store.metricEpisodes()"
+        [unit]="unit()"
+        [isDark]="theme.isDark()"
+        (widthChange)="store.setWidth($event)"
+        (zoomed)="store.zoomTo($event.from, $event.to)"
+      />
+      @if (showSpinner()) {
+        <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+          <hf-loading-spinner />
+        </div>
+      }
+    </div>
+  }
+  <section class="relative flex flex-none flex-col gap-4">
+    <h2 class="text-lg font-semibold">{{ 'SIGNALS.TIME.TITLE' | translate }}</h2>
+    <div class="flex flex-col gap-2">
+      <h3 class="font-semibold">{{ 'SIGNALS.TIME.PHASES_TITLE' | translate }}</h3>
+      @if (hasNoPhases()) {
+        <p class="text-muted-color">{{ 'SIGNALS.TIME.NO_PHASES' | translate }}</p>
+      } @else {
+        <hf-time-breakdown
+          [rows]="phaseRows()"
+          [isDark]="theme.isDark()"
+        />
+      }
+    </div>
+    <div class="flex flex-col gap-2">
+      <h3 class="font-semibold">{{ 'SIGNALS.TIME.STATES_TITLE' | translate }}</h3>
+      <hf-time-breakdown
+        [rows]="stateRows()"
+        [isDark]="theme.isDark()"
+      />
+    </div>
+    @if (showTimesSpinner()) {
+      <div class="absolute inset-0 flex bg-surface-0/60 dark:bg-surface-900/60">
+        <hf-loading-spinner />
+      </div>
+    }
+  </section>
+</div>

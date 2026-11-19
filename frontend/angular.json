@@ -39,7 +39,7 @@
               }
             ],
             "styles": ["node_modules/quill/dist/quill.core.css", "src/styles.css", "src/rich-text-editor.css"],
-            "allowedCommonJsDependencies": ["quill-delta", "slugify"]
+            "allowedCommonJsDependencies": ["hammerjs", "quill-delta", "slugify"]
           },
           "configurations": {
             "production": {

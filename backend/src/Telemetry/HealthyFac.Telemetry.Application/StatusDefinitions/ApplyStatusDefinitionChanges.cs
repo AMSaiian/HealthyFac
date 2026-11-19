@@ -188,9 +188,14 @@ public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbCo
             request.CompanyId,
             request.MachineId,
             request.Items
-                .Select((item, index) => (item.DraftId, Path: $"items[{index}].draftId"))
+                .Select((item, index) => (item.DraftId, Path: $"items[{index}].draftId", applied[index].Id))
                 .Where(reference => reference.DraftId is not null)
-                .Select(reference => new DraftReference { Path = reference.Path, DraftId = reference.DraftId!.Value })
+                .Select(reference => new DraftReference
+                {
+                    Path = reference.Path,
+                    DraftId = reference.DraftId!.Value,
+                    DefinitionId = reference.Id,
+                })
                 .ToList(),
             cancellationToken);
 

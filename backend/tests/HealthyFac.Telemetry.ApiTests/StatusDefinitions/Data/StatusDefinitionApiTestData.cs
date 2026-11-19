@@ -15,7 +15,7 @@ public static class StatusDefinitionApiTestData
     public const string Code = "E-100";
 
     public const string FileImageDescription =
-        "<p><img data-file-id=\"v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" alt=\"pump\"></p>";
+        "<p><img data-file-id=\"v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\" alt=\"pump\"></p>";
 
     public const string SrcImageDescription = "<p><img src=\"https://example.com/a.png\"></p>";
     public const string UpdatedCode = "E-200";

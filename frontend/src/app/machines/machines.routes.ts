@@ -17,6 +17,14 @@ import { MetricDefinitionsApi } from './metrics/metric-definitions-api';
 import { MetricUnitsApi } from './metrics/metric-units-api';
 import { MetricsPage } from './metrics/metrics-page/metrics-page';
 import { metricsPageGuard } from './metrics/metrics-page.guard';
+import { OperatingPhasesPage } from './phases/operating-phases-page/operating-phases-page';
+import { operatingPhasesResolver } from './phases/operating-phases.resolver';
+import { OperatingPhasesApi } from './phases/operating-phases-api';
+import { OperatingPhasesPageStore } from '@machines/phases/operating-phases-page-store/operating-phases-page.store';
+import { MetricChartPage } from './signals/metric-chart-page/metric-chart-page';
+import { metricChartResolver } from './signals/metric-chart.resolver';
+import { SignalsApi } from './signals/signals-api';
+import { MetricChartPageStore } from '@machines/signals/metric-chart-page-store/metric-chart-page.store';
 import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 import { metricsResolver } from './metrics/metrics.resolver';
 
@@ -35,6 +43,20 @@ export const MACHINES_ROUTES: Routes = [
     component: MachineFilesPage,
     providers: [MachinesApi, FilesApi, IngestApi, FilesGridStore],
     resolve: { machine: machineFilesResolver },
+  },
+  {
+    path: ':machineId/phases',
+    title: 'TITLES.OPERATING_PHASES',
+    component: OperatingPhasesPage,
+    providers: [MachinesApi, OperatingPhasesApi, MetricDefinitionsApi, StatusDefinitionsApi, OperatingPhasesPageStore],
+    resolve: { machine: operatingPhasesResolver },
+  },
+  {
+    path: ':machineId/signals',
+    title: 'TITLES.SIGNALS',
+    component: MetricChartPage,
+    providers: [MachinesApi, MetricDefinitionsApi, SignalsApi, MetricChartPageStore],
+    resolve: { machine: metricChartResolver },
   },
   {
     path: ':machineId/metrics',

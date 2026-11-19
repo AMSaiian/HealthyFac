@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using HealthyFac.Insights.Application.Extraction;
+using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Shared.Application.Grids;
@@ -37,22 +37,20 @@ public sealed class TelemetryMachineSignalCatalog(
         using var lease = _downstreamScopes.Enter(TelemetryClientNames.DownstreamScope);
         var encryptedId = _idEncryptor.Encrypt(machineId);
 
-        var metricKeys = await ReadMetricKeysAsync(client, encryptedId, cancellationToken);
-        if (metricKeys is null)
+        var metrics = await ReadMetricsAsync(client, encryptedId, cancellationToken);
+        if (metrics is null)
         {
             return Empty();
         }
 
-        var statusCodes = await ReadStatusCodesAsync(client, encryptedId, cancellationToken);
+        var statuses = await ReadStatusesAsync(client, encryptedId, cancellationToken);
 
-        return statusCodes is null
-            ? Empty()
-            : new MachineSignals { MetricKeys = metricKeys, StatusCodes = statusCodes };
+        return statuses is null ? Empty() : new MachineSignals { Metrics = metrics, Statuses = statuses };
     }
 
-    private static MachineSignals Empty() => new() { MetricKeys = [], StatusCodes = [] };
+    private static MachineSignals Empty() => new() { Metrics = [], Statuses = [] };
 
-    private static async Task<List<string>?> ReadMetricKeysAsync(
+    private async Task<List<SignalReference>?> ReadMetricsAsync(
         HttpClient client,
         string encryptedId,
         CancellationToken cancellationToken
@@ -69,16 +67,16 @@ public sealed class TelemetryMachineSignalCatalog(
         await response.EnsureSuccessAsync(cancellationToken);
         var payload = await response.Content.ReadFromJsonAsync<MetricDefinitionsPayload>(cancellationToken);
 
-        return payload?.Definitions.Select(definition => definition.Key).ToList() ?? [];
+        return payload?.Definitions.Select(definition => ToReference(definition.Id, definition.Key)).ToList() ?? [];
     }
 
-    private static async Task<List<string>?> ReadStatusCodesAsync(
+    private async Task<List<SignalReference>?> ReadStatusesAsync(
         HttpClient client,
         string encryptedId,
         CancellationToken cancellationToken
     )
     {
-        var codes = new List<string>();
+        var statuses = new List<SignalReference>();
         var offset = 0;
 
         while (true)
@@ -96,18 +94,21 @@ public sealed class TelemetryMachineSignalCatalog(
             var page = await response.Content.ReadFromJsonAsync<StatusPagePayload>(cancellationToken);
             if (page is null || page.Items.Count == 0)
             {
-                return codes;
+                return statuses;
             }
 
-            codes.AddRange(page.Items.Select(item => item.Code));
+            statuses.AddRange(page.Items.Select(item => ToReference(item.Id, item.Code)));
             offset += page.Items.Count;
 
             if (offset >= page.TotalCount)
             {
-                return codes;
+                return statuses;
             }
         }
     }
+
+    private SignalReference ToReference(string encryptedId, string key) =>
+        new() { Id = _idEncryptor.Decrypt(encryptedId), Key = key };
 
     private sealed record MetricDefinitionsPayload
     {
@@ -116,6 +117,8 @@ public sealed class TelemetryMachineSignalCatalog(
 
     private sealed record KeyPayload
     {
+        public required string Id { get; init; }
+
         public required string Key { get; init; }
     }
 
@@ -137,6 +140,8 @@ public sealed class TelemetryMachineSignalCatalog(
 
     private sealed record CodePayload
     {
+        public required string Id { get; init; }
+
         public required string Code { get; init; }
     }
 }

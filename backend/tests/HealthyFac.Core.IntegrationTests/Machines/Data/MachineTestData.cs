@@ -9,6 +9,10 @@ public static class MachineTestData
 {
     public static readonly DateOnly FutureGoLiveOn = new(year: 2099, month: 1, day: 1);
     public static readonly DateOnly SecondGoLiveOn = new(year: 2099, month: 1, day: 2);
+
+    public static readonly DateTime SecondGoLiveStartsAt = new(
+        year: 2099, month: 1, day: 1, hour: 22, minute: 0, second: 0, DateTimeKind.Utc);
+
     public static readonly DateOnly ThirdGoLiveOn = new(year: 2099, month: 1, day: 3);
 
     public const string CompanyName = "Plant Co";

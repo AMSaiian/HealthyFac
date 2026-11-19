@@ -6,8 +6,13 @@ import {
   DraftState,
   type MachineDraftDetail,
   type MetricDraftDetail,
+  type PhaseDraftDetail,
   type StatusDraftDetail,
 } from '@machines/drafts/draft';
+import {
+  PhaseApplyBlock,
+  phaseApplyBlock,
+} from '@machines/drafts/phase/phase-draft-review-store/phase-draft-review.store.utils';
 import { type MetricUnitsResponse, MetricValueKind } from '@machines/metrics/metric-definition';
 import { unitFromCatalog } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 
@@ -21,6 +26,8 @@ export enum QuickReason {
   UnitsLoading = 'DRAFTS.QUICK.UNITS_LOADING',
   NothingToApply = 'DRAFTS.QUICK.ALL_NEED_REVIEW',
   AwaitingTarget = 'DRAFTS.REVIEW_AWAITING_TARGET',
+  PhaseWaitsForDrafts = 'DRAFTS.QUICK.PHASE_WAITS_FOR_DRAFTS',
+  PhaseValues = 'DRAFTS.QUICK.NEEDS_PHASE_VALUES',
 }
 
 /** The first wait for a new machine to reach Telemetry. Each retry waits twice as long as the one before. */
@@ -99,6 +106,18 @@ export function statusReason(draft: StatusDraftDetail): string | null {
   return isBlank(draft.code) ? QuickReason.StatusValues : null;
 }
 
+/**
+ * A phase draft applies on its own when its values are complete and every condition and limit row names a definition.
+ * A row that names a draft of a metric or a status waits for that draft.
+ */
+export function phaseReason(draft: PhaseDraftDetail): string | null {
+  const block = phaseApplyBlock(draft);
+  if (block === null) {
+    return null;
+  }
+  return block === PhaseApplyBlock.WaitsForDrafts ? QuickReason.PhaseWaitsForDrafts : QuickReason.PhaseValues;
+}
+
 function isMachineDraftPendingCreate(group: AttemptDraftGroup): boolean {
   return group.machineDraft?.isCreate === true && group.machineDraft.state === DraftState.Pending;
 }
@@ -136,6 +155,13 @@ export function needsReviewReasons(
         reasons[status.id] = childWait ?? statusReason(status);
       }
     }
+    for (const phase of group.phases) {
+      if (phase.state === DraftState.AwaitingTarget) {
+        reasons[phase.id] = QuickReason.AwaitingTarget;
+      } else if (phase.state === DraftState.Pending) {
+        reasons[phase.id] = childWait ?? phaseReason(phase);
+      }
+    }
   }
   return reasons;
 }
@@ -152,6 +178,11 @@ export function applicableStatuses(group: AttemptDraftGroup): StatusDraftDetail[
   return group.statuses.filter((draft) => draft.state === DraftState.Pending && statusReason(draft) === null);
 }
 
+/** The pending phase drafts of the group that apply on their own. */
+export function applicablePhases(group: AttemptDraftGroup): PhaseDraftDetail[] {
+  return group.phases.filter((draft) => draft.state === DraftState.Pending && phaseReason(draft) === null);
+}
+
 /**
  * The reason that **Apply all** is off for a group, or `null`. A pending machine draft that needs review blocks the
  * group, because its children depend on it. Else the group needs at least one draft that applies.
@@ -165,6 +196,7 @@ export function groupReason(group: AttemptDraftGroup, catalog: MetricUnitsRespon
   if (group.machineId === null) {
     return QuickReason.MachinePending;
   }
-  const hasApplicable = applicableMetrics(group, catalog).length + applicableStatuses(group).length > 0;
+  const hasApplicable =
+    applicableMetrics(group, catalog).length + applicableStatuses(group).length + applicablePhases(group).length > 0;
   return hasApplicable ? null : QuickReason.NothingToApply;
 }

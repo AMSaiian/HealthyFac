@@ -13,7 +13,7 @@ import { ColumnFilter, SortIcon, TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { ChipSummary } from '@shared/chips/chip-summary/chip-summary';
-import { type Chip, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
+import { type Chip, lookupChips, toChips } from '@shared/chips/chip-summary/chip-summary.utils';
 import { ColumnChooser } from '@shared/grid/table/column-chooser/column-chooser';
 import { createGridTable } from '@shared/grid/table/grid-table';
 import { createRowMenu } from '@shared/grid/table/row-menu';
@@ -198,21 +198,11 @@ export class WorkOrderGrid {
   }
 
   protected assigneeChips(assigneeIds: readonly string[]): Chip[] {
-    return toChips(
-      assigneeIds,
-      '',
-      (id) => this.employees().find((option) => option.id === id)?.displayName ?? id,
-      this.employees().map((option) => option.id),
-    );
+    return lookupChips(assigneeIds, this.employees());
   }
 
   protected machineChips(machineIds: readonly string[]): Chip[] {
-    return toChips(
-      machineIds,
-      '',
-      (id) => this.machines().find((option) => option.id === id)?.displayName ?? id,
-      this.machines().map((option) => option.id),
-    );
+    return lookupChips(machineIds, this.machines());
   }
 
   protected categoryLabel(category: WorkOrderCategory): string {

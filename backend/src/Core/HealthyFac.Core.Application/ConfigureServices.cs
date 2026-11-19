@@ -31,6 +31,7 @@ public static class ConfigureServices
             services.AddScoped<ShiftChangeGuard>();
             services.AddScoped<DayScheduleBuilder>();
             services.AddScoped<ScheduleChecks>();
+            services.AddScoped<WorkOrderCreation>();
 
             return services;
         }

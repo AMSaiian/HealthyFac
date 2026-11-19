@@ -1,0 +1,13 @@
+<p-datepicker
+  [appendTo]="appendTo()"
+  [placeholder]="placeholder()"
+  selectionMode="range"
+  [readonlyInput]="true"
+  [ngModel]="pickerValue()"
+  [invalid]="invalid()"
+  [disabled]="disabled()"
+  [showTime]="true"
+  hourFormat="24"
+  (ngModelChange)="onPickerChange($event)"
+  (onBlur)="touch.emit()"
+/>

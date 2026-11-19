@@ -14,6 +14,9 @@ public sealed class GeminiOptions
 
     public required string ChatModel { get; init; }
 
+    /// <summary>The small model of the triage and the screener, for example a Flash-Lite model.</summary>
+    public required string TriageModel { get; init; }
+
     public string EmbeddingModel { get; init; } = "gemini-embedding-001";
 
     /// <summary>The size of an embedding. It must equal the size of the <c>vector</c> column.</summary>
@@ -33,6 +36,7 @@ public sealed class GeminiOptionsValidator : AbstractValidator<GeminiOptions>
         RuleFor(options => options.ProjectId).NotEmpty().WithMessage(GeminiMessages.ProjectIdRequired);
         RuleFor(options => options.Location).NotEmpty().WithMessage(GeminiMessages.LocationRequired);
         RuleFor(options => options.ChatModel).NotEmpty().WithMessage(GeminiMessages.ChatModelRequired);
+        RuleFor(options => options.TriageModel).NotEmpty().WithMessage(GeminiMessages.TriageModelRequired);
         RuleFor(options => options.EmbeddingModel).NotEmpty().WithMessage(GeminiMessages.EmbeddingModelRequired);
         RuleFor(options => options.EmbeddingDimensions)
             .GreaterThan(valueToCompare: 0)

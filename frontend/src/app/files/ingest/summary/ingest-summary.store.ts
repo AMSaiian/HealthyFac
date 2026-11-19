@@ -8,7 +8,7 @@ import { skipErrorToast } from '@shared/http/http-error-key';
 
 import type { IngestSummaryActionPayload } from '@files/file-action-payloads';
 import { IngestApi } from '@files/ingest/ingest-api';
-import { attemptReasonKey, parseWarning } from '@files/ingest/ingest-attempt.utils';
+import { attemptReason, parseWarning } from '@files/ingest/ingest-attempt.utils';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
@@ -34,7 +34,7 @@ export const IngestSummaryStore = signalStore(
   })),
   withComputed((store) => ({
     isNotFound: computed(() => isNotFound(store.attempt.error())),
-    reasonKey: computed(() => (store.attempt.hasValue() ? attemptReasonKey(store.attempt.value()) : null)),
+    reason: computed(() => (store.attempt.hasValue() ? attemptReason(store.attempt.value()) : null)),
     warning: computed(() => (store.attempt.hasValue() ? parseWarning(store.attempt.value().warning) : null)),
   })),
   withMethods((store) => ({

@@ -22,7 +22,8 @@ public sealed record DraftFilterSplit
 
 /// <summary>
 /// Splits the filter of a composed draft request into one filter for Core and one for Telemetry. Core holds only
-/// machine drafts, in the states pending, applied, and dismissed. Telemetry holds metric and status drafts in all 4
+/// machine drafts, in the states pending, applied, and dismissed. Telemetry holds metric, status, and phase drafts in
+/// all 4
 /// states. A value that no source knows goes to both, so each service answers <c>400</c> as it does for its own grid.
 /// </summary>
 public static class DraftFilterSplitter
@@ -31,7 +32,9 @@ public static class DraftFilterSplitter
     private const string StatesProperty = "states";
     private const string ValuesProperty = "values";
 
-    private static readonly string[] TelemetryOnlyKinds = [DraftNames.Kinds.Metric, DraftNames.Kinds.Status];
+    private static readonly string[] TelemetryOnlyKinds =
+        [DraftNames.Kinds.Metric, DraftNames.Kinds.Status, DraftNames.Kinds.Phase];
+
     private static readonly string[] CoreOnlyKinds = [DraftNames.Kinds.Machine];
     private static readonly string[] TelemetryOnlyStates = [DraftNames.States.AwaitingTarget];
 

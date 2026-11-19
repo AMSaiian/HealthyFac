@@ -23,13 +23,17 @@ public class MachineRegistrationConfiguration : IEntityTypeConfiguration<Machine
             .HasMaxLength(GatewayIds.Length)
             .IsRequired();
 
+        builder.Property(registration => registration.State)
+            .IsRequired();
+
         builder.ConfigureVersioned();
 
         builder.HasIndex(registration => registration.GatewayId)
             .HasDatabaseName(MachineRegistrationIndexNames.GatewayId)
             .IsUnique();
 
-        builder.HasNotEmptyGuidCheck(registration => registration.CompanyId)
+        builder.HasEnumerationCheck(registration => registration.State)
+            .HasNotEmptyGuidCheck(registration => registration.CompanyId)
             .HasLengthCheck(registration => registration.GatewayId, GatewayIds.Length, GatewayIds.Length);
     }
 }

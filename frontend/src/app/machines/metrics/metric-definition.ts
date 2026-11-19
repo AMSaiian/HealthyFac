@@ -4,6 +4,20 @@ export enum MetricValueKind {
   StateSet = 'stateSet',
 }
 
+/** How the readings of a numeric metric behave: a level moves up and down, a counter only grows. */
+export enum MetricBehavior {
+  Level = 'level',
+  Counter = 'counter',
+}
+
+/** The default limits of a numeric metric. An empty limit means no limit on that side. */
+export interface MetricLimitValues {
+  readonly warningLow: number | null;
+  readonly warningHigh: number | null;
+  readonly alarmLow: number | null;
+  readonly alarmHigh: number | null;
+}
+
 export interface MetricUnitReference {
   readonly quantityKind: string;
   readonly name: string;
@@ -13,7 +27,7 @@ export interface MetricUnit extends MetricUnitReference {
   readonly abbreviation: string;
 }
 
-export interface MetricDefinition {
+export interface MetricDefinition extends MetricLimitValues {
   readonly id: string;
   readonly key: string;
   readonly name: string;
@@ -23,6 +37,7 @@ export interface MetricDefinition {
   readonly min: number | null;
   readonly max: number | null;
   readonly states: readonly string[] | null;
+  readonly behavior: MetricBehavior;
   readonly createdAt: string;
   readonly updatedAt: string | null;
 }
@@ -32,7 +47,7 @@ export interface MetricDefinitionsResponse {
   readonly definitions: readonly MetricDefinition[];
 }
 
-export interface CreatedMetricDefinition {
+export interface CreatedMetricDefinition extends MetricLimitValues {
   readonly key: string;
   readonly name: string;
   readonly description: string | null;
@@ -41,17 +56,21 @@ export interface CreatedMetricDefinition {
   readonly min: number | null;
   readonly max: number | null;
   readonly states: readonly string[] | null;
+  /** The behavior of a numeric metric, or `null` for another kind. */
+  readonly behavior: MetricBehavior | null;
   /** The metric draft that proposed this change. Telemetry marks it applied in the same save. */
   readonly draftId: string | null;
 }
 
-export interface UpdatedMetricDefinition {
+export interface UpdatedMetricDefinition extends MetricLimitValues {
   readonly id: string;
   readonly name: string;
   readonly description: string | null;
   readonly min: number | null;
   readonly max: number | null;
   readonly states: readonly string[] | null;
+  /** The behavior of a numeric metric, or `null` for another kind. */
+  readonly behavior: MetricBehavior | null;
   /** The metric draft that proposed this change. Telemetry marks it applied in the same save. */
   readonly draftId: string | null;
 }

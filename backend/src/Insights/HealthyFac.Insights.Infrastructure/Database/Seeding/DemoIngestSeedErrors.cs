@@ -7,5 +7,7 @@ public static class DemoIngestSeedErrors
 {
     public static string AttemptNotCompleted(Guid attemptId) => $"The demo attempt {attemptId} is not completed.";
 
+    public static string RunNotCompleted(Guid runId) => $"The demo run {runId} is not completed.";
+
     public static string SeedFileEmpty(string fileName) => $"The demo seed file {fileName} is empty.";
 }

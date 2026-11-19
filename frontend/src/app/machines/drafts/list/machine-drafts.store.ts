@@ -33,7 +33,12 @@ import { draftConflictKey } from '@machines/drafts/draft-conflict';
 import { toApplyList, withSelected } from '@machines/drafts/list/machine-drafts.store.utils';
 import { DraftActionType } from '@machines/drafts/draft-actions';
 
-import { reviewMachineDraft, reviewMetricDrafts, reviewStatusDraft } from '@machines/drafts/draft-review';
+import {
+  reviewMachineDraft,
+  reviewMetricDrafts,
+  reviewPhaseDraft,
+  reviewStatusDraft,
+} from '@machines/drafts/draft-review';
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import { withDraftQuickApply } from '@machines/drafts/with-draft-quick-apply';
 
@@ -347,6 +352,8 @@ export const MachineDraftsStore = signalStore(
           reviewMachineDraft(actions, item.id, item.isCreate);
         } else if (item.kind === DraftKind.Status && item.machineId !== null) {
           reviewStatusDraft(actions, { machineId: item.machineId, attemptId: item.attemptId, draftId: item.id });
+        } else if (item.kind === DraftKind.Phase && item.machineId !== null) {
+          reviewPhaseDraft(actions, { machineId: item.machineId, attemptId: item.attemptId, draftId: item.id });
         } else if (item.kind === DraftKind.Metric && item.machineId !== null) {
           void reviewMetricDrafts(actions, router, item.machineId, item.attemptId);
         }

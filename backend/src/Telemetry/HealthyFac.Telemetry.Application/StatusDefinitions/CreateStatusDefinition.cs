@@ -110,7 +110,14 @@ public class CreateStatusDefinitionRequestHandler(ITelemetryDbContext dbContext,
             await _draftMarker.MarkStatusDraftsAsync(
                 request.CompanyId,
                 request.MachineId,
-                [new DraftReference { Path = AppliedDraftMarker.SingleDraftPath, DraftId = draftId }],
+                [
+                    new DraftReference
+                    {
+                        Path = AppliedDraftMarker.SingleDraftPath,
+                        DraftId = draftId,
+                        DefinitionId = status.Id,
+                    },
+                ],
                 cancellationToken);
         }
 

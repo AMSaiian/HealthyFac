@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Application.DownstreamScopes;
@@ -11,6 +12,7 @@ public sealed class TelemetryMachineSignalCatalogTests
     private const int PageSize = 100;
     private const int StatusCount = 250;
 
+    private static readonly Guid TempId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000201");
     private static readonly Guid MachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");
 
     private readonly DownstreamScopeHolder _holder = new();
@@ -27,13 +29,16 @@ public sealed class TelemetryMachineSignalCatalogTests
     public async Task Get_WithManyStatusDefinitions_ReadsEveryPageAndTheMetricKeys()
     {
         _factory.Respond = (request, body) => request.Method == HttpMethod.Get
-            ? Json(new { definitions = new[] { new { key = "temp" }, new { key = "pressure" } } })
+            ? Json(new { definitions = new[] { new { id = Encrypted(TempId), key = "temp" } } })
             : Json(StatusPage(body!));
 
         var signals = await _catalog.GetAsync(MachineId, TestContext.Current.CancellationToken);
 
-        signals.MetricKeys.Should().Equal("temp", "pressure");
+        signals.Metrics.Should().Equal(new SignalReference { Id = TempId, Key = "temp" });
         signals.StatusCodes.Should().HaveCount(StatusCount).And.OnlyHaveUniqueItems();
+        signals.Statuses.Select(status => status.Id)
+            .Should()
+            .Equal(Enumerable.Range(start: 0, StatusCount).Select(StatusId));
 
         var searches = _factory.Calls.Where(call => call.Method == HttpMethod.Post.Method).ToList();
         searches.Should().HaveCount(expected: 3);
@@ -74,7 +79,7 @@ public sealed class TelemetryMachineSignalCatalogTests
     public async Task Get_WhenStatusSearchAnswersNotFound_ReturnsEmptyLists()
     {
         _factory.Respond = (request, _) => request.Method == HttpMethod.Get
-            ? Json(new { definitions = new[] { new { key = "temp" } } })
+            ? Json(new { definitions = new[] { new { id = Encrypted(TempId), key = "temp" } } })
             : new HttpResponseMessage(HttpStatusCode.NotFound);
 
         var signals = await _catalog.GetAsync(MachineId, TestContext.Current.CancellationToken);
@@ -82,6 +87,10 @@ public sealed class TelemetryMachineSignalCatalogTests
         signals.MetricKeys.Should().BeEmpty();
         signals.StatusCodes.Should().BeEmpty();
     }
+
+    private static string Encrypted(Guid id) => new PrefixIdEncryptor().Encrypt(id);
+
+    private static Guid StatusId(int index) => new(index, b: 0, c: 0, new byte[8]);
 
     private static HttpResponseMessage Json<T>(T payload) =>
         new(HttpStatusCode.OK) { Content = JsonContent.Create(payload) };
@@ -93,7 +102,7 @@ public sealed class TelemetryMachineSignalCatalogTests
     {
         var offset = OffsetOf(body);
         var items = Enumerable.Range(offset, Math.Min(PageSize, StatusCount - offset))
-            .Select(index => new { code = $"E{index}" })
+            .Select(index => new { id = Encrypted(StatusId(index)), code = $"E{index}" })
             .ToArray();
 
         return new { items, totalCount = StatusCount };

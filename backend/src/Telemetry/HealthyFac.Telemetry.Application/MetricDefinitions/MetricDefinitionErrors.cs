@@ -22,6 +22,10 @@ public static class MetricDefinitionErrors
     public const string UnitNameRequired = "The unit name is required.";
     public const string UnitUnknown = "The unit does not exist in the unit catalog.";
     public const string RangeNotAllowed = "Only a numeric metric has a range.";
+    public const string LimitsNotAllowed = "Only a numeric metric has limits.";
+    public const string WarningLowBelowAlarmLow = "The warning low limit must not be below the alarm low limit.";
+    public const string WarningHighAboveAlarmHigh = "The warning high limit must not be above the alarm high limit.";
+    public const string UsedByPhase = "An active operating phase uses this metric in a condition.";
     public const string RangeNotAscending = "The minimum must be below the maximum.";
     public const string StatesRequired = "A state set needs states.";
     public const string StatesNotAllowed = "Only a state set has states.";

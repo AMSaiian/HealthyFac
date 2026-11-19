@@ -20,6 +20,7 @@ export type WorkOrdersView = 'grid' | 'board';
 export class ViewHeader {
   readonly activeView = input.required<WorkOrdersView>();
   readonly canCreate = input(false);
+  readonly canOpenDrafts = input(false);
 
   readonly createRequested = output<void>();
 }

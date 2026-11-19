@@ -1,0 +1,90 @@
+<p-table
+  styleClass="p-datatable-sm"
+  [value]="rows()"
+  [stripedRows]="true"
+>
+  <ng-template #header>
+    <tr>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.SEVERITY' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.RULE' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.SUBJECT' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.VALUE' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.STARTED' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.ENDED' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.DURATION_COLUMN' | translate }}</th>
+      <th>{{ 'MAINTENANCE.SIGNAL_TABLE.COVERAGE' | translate }}</th>
+      <th></th>
+    </tr>
+  </ng-template>
+  <ng-template
+    #body
+    let-signal
+  >
+    <tr>
+      <td>
+        <p-tag
+          [severity]="severityTag(signal.severity)"
+          [value]="severityLabel(signal.severity)"
+        />
+      </td>
+      <td>{{ ruleLabel(signal.rule) }}</td>
+      <td class="font-mono">{{ signalSubject(signal) }}</td>
+      <td>
+        @if (signal.value !== null) {
+          {{ signal.value | number: '1.0-2' }}
+          @if (signalComparison(signal); as sign) {
+            {{ sign }} {{ signal.limit | number: '1.0-2' }}
+          }
+        }
+      </td>
+      <td>{{ signal.openedAt | localDateTime }}</td>
+      <td>
+        @if (signal.resolvedAt) {
+          {{ signal.resolvedAt | localDateTime }}
+        } @else {
+          <span class="text-muted-color">{{ 'MAINTENANCE.SIGNAL_TABLE.STILL_OPEN' | translate }}</span>
+        }
+      </td>
+      <td>{{ durationText(signal) }}</td>
+      <td>
+        <p-tag
+          [severity]="coverageTag(signal.coverage)"
+          [value]="coverageLabel(signal)"
+        />
+      </td>
+      <td class="text-right">
+        <a
+          pButton
+          [pTooltip]="'MAINTENANCE.TOOLTIPS.SHOW_ON_CHART' | translate"
+          tooltipPosition="bottom"
+          severity="secondary"
+          iconOnly
+          [text]="true"
+          [attr.aria-label]="'MAINTENANCE.TOOLTIPS.SHOW_ON_CHART' | translate"
+          [routerLink]="['/machines', machineId(), 'signals']"
+          [queryParams]="chartQuery(signal)"
+        >
+          <i class="pi pi-chart-line"></i>
+        </a>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template #emptymessage>
+    <tr>
+      <td
+        colspan="9"
+        class="text-muted-color"
+      >
+        {{ 'MAINTENANCE.SIGNAL_TABLE.EMPTY' | translate }}
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<p-paginator
+  [first]="offset()"
+  [rows]="limit()"
+  [totalRecords]="totalCount()"
+  [rowsPerPageOptions]="pageSizes"
+  [showCurrentPageReport]="false"
+  (onPageChange)="onPage($event)"
+/>

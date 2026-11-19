@@ -16,5 +16,7 @@ public static class WorkOrderRoutes
     public const string History = ById + "/history";
     public const string Assignee = ById + "/assignee";
     public const string Move = ById + "/move";
+    public const string MachineParameter = "machineId";
+    public const string OpenForMachine = "/machines/{" + MachineParameter + "}/open-work-orders";
     public const string ResourceLocationFormat = "{0}/{1}";
 }

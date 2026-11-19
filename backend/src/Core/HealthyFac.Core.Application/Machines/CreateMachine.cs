@@ -124,6 +124,8 @@ public class CreateMachineRequestHandler(
                 GatewayId = machine.GatewayId,
                 CompanyId = machine.CompanyId,
                 Name = machine.Name,
+                ExpectedGoLiveOn = machine.ExpectedGoLiveOn,
+                GoLiveStartsAt = MachineGoLiveRules.StartOfDayUtc(machine.ExpectedGoLiveOn, zone),
             });
 
         try

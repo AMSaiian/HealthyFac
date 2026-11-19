@@ -5,7 +5,7 @@ namespace HealthyFac.Shared.Infrastructure.IdEncryption;
 /// </summary>
 public static class IdEncryptionConstants
 {
-    public const string CurrentVersionPrefix = "v1.";
+    public const string CurrentVersionPrefix = "v1_";
 
     public static class Lengths
     {

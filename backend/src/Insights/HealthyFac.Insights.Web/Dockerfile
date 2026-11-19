@@ -16,6 +16,8 @@ COPY src/Insights/HealthyFac.Insights.Messaging/*.csproj       src/Insights/Heal
 COPY src/Document/HealthyFac.Document.Messaging/*.csproj       src/Document/HealthyFac.Document.Messaging/
 COPY src/Document/HealthyFac.Document.Contracts/*.csproj       src/Document/HealthyFac.Document.Contracts/
 COPY src/Telemetry/HealthyFac.Telemetry.Messaging/*.csproj     src/Telemetry/HealthyFac.Telemetry.Messaging/
+COPY src/Core/HealthyFac.Core.Messaging/*.csproj               src/Core/HealthyFac.Core.Messaging/
+COPY src/Telemetry/HealthyFac.Telemetry.Contracts/*.csproj     src/Telemetry/HealthyFac.Telemetry.Contracts/
 COPY src/Insights/HealthyFac.Insights.Infrastructure/*.csproj  src/Insights/HealthyFac.Insights.Infrastructure/
 COPY src/Insights/HealthyFac.Insights.Web/*.csproj             src/Insights/HealthyFac.Insights.Web/
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj          src/Shared/HealthyFac.Shared.Domain/

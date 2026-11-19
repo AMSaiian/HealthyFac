@@ -15,4 +15,11 @@ public sealed record MetricDraftValues
     public double? Min { get; init; }
     public double? Max { get; init; }
     public IReadOnlyList<string>? States { get; init; }
+    public double? WarningLow { get; init; }
+    public double? WarningHigh { get; init; }
+    public double? AlarmLow { get; init; }
+    public double? AlarmHigh { get; init; }
+
+    /// <summary>One of <c>level</c>, <c>counter</c>, or <see langword="null"/>.</summary>
+    public string? Behavior { get; init; }
 }

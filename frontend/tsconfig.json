@@ -25,6 +25,7 @@
       "@employees/*": ["./src/app/employees/*"],
       "@schedule/*": ["./src/app/schedule/*"],
       "@invite/*": ["./src/app/invite/*"],
+      "@maintenance/*": ["./src/app/maintenance/*"],
       "@testdata/*": ["../testdata/*"],
       "@public/*": ["./public/*"]
     }

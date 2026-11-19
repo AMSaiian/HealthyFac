@@ -25,6 +25,29 @@ public sealed class DemoDefinitionDraftSeedTests(TelemetryDatabaseFixture fixtur
     }
 
     [Fact]
+    public async Task SeedAsync_WithATestTenant_StoresThePhaseDraftsWithTheirConditionsOnTheEntryOfTheirAttempt()
+    {
+        await _fixture.RunDemoDefinitionDraftSeedAsync();
+
+        var drafts = await _fixture.LoadDemoDefinitionDraftsAsync();
+
+        drafts.Phases.Should().HaveCount(DemoDefinitionDraftSeedTestData.PhaseDraftCount);
+        drafts.Phases.Sum(phase => phase.Conditions.Count)
+            .Should()
+            .Be(DemoDefinitionDraftSeedTestData.PhaseConditionCount);
+        drafts.Phases.Should()
+            .OnlyContain(phase => phase.State == DefinitionDraftState.Pending
+                && phase.CompanyId == DevelopmentSeedTestData.CompanyId
+                && drafts.Entries.Any(entry => entry.Id == phase.ProposalEntryId));
+        drafts.Phases.SelectMany(phase => phase.Conditions)
+            .Should()
+            .OnlyContain(condition => condition.IsWaitingForDraft);
+        drafts.Metrics.Where(metric => metric.AlarmHigh != null || metric.WarningHigh != null)
+            .Should()
+            .HaveCount(DemoDefinitionDraftSeedTestData.LimitedMetricDraftCount);
+    }
+
+    [Fact]
     public async Task SeedAsync_WithATestTenant_StoresOneEntryForEachMachineDraft()
     {
         await _fixture.RunDemoDefinitionDraftSeedAsync();
@@ -56,6 +79,7 @@ public sealed class DemoDefinitionDraftSeedTests(TelemetryDatabaseFixture fixtur
 
         drafts.Metrics.Should().HaveCount(DemoDefinitionDraftSeedTestData.MetricDraftCount);
         drafts.Statuses.Should().HaveCount(DemoDefinitionDraftSeedTestData.StatusDraftCount);
+        drafts.Phases.Should().HaveCount(DemoDefinitionDraftSeedTestData.PhaseDraftCount);
         drafts.Entries.Should().HaveCount(DemoDefinitionDraftSeedTestData.EntryCount);
     }
 }

@@ -3,11 +3,9 @@ using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
-using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
-using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.WorkOrders;
 
@@ -87,95 +85,39 @@ public sealed class CreateWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 /// <summary>
 /// Creates a work order in the backlog. The company scope may also assign it: the four schedule rules then run in one
 /// serializable transaction, and the work order is created with its first two history rows in one save. The own scope
-/// may not set an assignee or a start. The file links are created in the same save.
+/// may not set an assignee or a start. The file links are created in the same save. The create rules are in
+/// <see cref="WorkOrderCreation"/>.
 /// </summary>
-/// <param name="dbContext">Reads the machine and saves the work order.</param>
-/// <param name="scheduleChecks">Checks the slot of an assigned work order.</param>
-/// <param name="ownEmployee">Finds the employee of the actor: the own scope needs one.</param>
-public sealed class CreateWorkOrderRequestHandler(
-    ICoreDbContext dbContext,
-    ScheduleChecks scheduleChecks,
-    OwnEmployeeResolver ownEmployee
-) : IRequestHandler<CreateWorkOrderRequest, CreateWorkOrderResponse>
+/// <param name="dbContext">Saves the work order.</param>
+/// <param name="creation">Runs the create rules and adds the work order.</param>
+public sealed class CreateWorkOrderRequestHandler(ICoreDbContext dbContext, WorkOrderCreation creation)
+    : IRequestHandler<CreateWorkOrderRequest, CreateWorkOrderResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
-    private readonly ScheduleChecks _scheduleChecks = scheduleChecks;
-    private readonly OwnEmployeeResolver _ownEmployee = ownEmployee;
+    private readonly WorkOrderCreation _creation = creation;
 
     public async Task<CreateWorkOrderResponse> HandleAsync(
         CreateWorkOrderRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        if (request.Scope == AccessScope.Own)
-        {
-            await EnsureOwnCreateAsync(request, cancellationToken);
-        }
+        await _creation.EnsureOwnCreateAsync(request, cancellationToken);
 
         var workOrderId = request.AssigneeId.HasValue
             ? await _dbContext.RunInTransactionAsync(
-                token => CreateAsync(request, token),
+                token => CreateAndSaveAsync(request, token),
                 IsolationLevel.Serializable,
                 cancellationToken)
-            : await CreateAsync(request, cancellationToken);
+            : await CreateAndSaveAsync(request, cancellationToken);
 
         return new CreateWorkOrderResponse { Id = workOrderId };
     }
 
-    private async Task EnsureOwnCreateAsync(CreateWorkOrderRequest request, CancellationToken cancellationToken)
+    private async Task<Guid> CreateAndSaveAsync(CreateWorkOrderRequest request, CancellationToken cancellationToken)
     {
-        if (request.AssigneeId.HasValue || request.PlannedStartLocal.HasValue)
-        {
-            throw new ForbiddenAccessException(WorkOrderErrors.Rejections.OwnScopeForbidden);
-        }
-
-        if (await _ownEmployee.FindIdAsync(cancellationToken) is null)
-        {
-            throw new NotFoundException(WorkOrderErrors.Rejections.OwnEmployeeNotFound);
-        }
-    }
-
-    private async Task<Guid> CreateAsync(CreateWorkOrderRequest request, CancellationToken cancellationToken)
-    {
-        if (request.MachineId is { } machineId)
-        {
-            var isMachineInCompany = await _dbContext.Machines
-                .AsNoTracking()
-                .AnyAsync(
-                    machine => machine.Id == machineId && machine.CompanyId == request.CompanyId,
-                    cancellationToken);
-            if (!isMachineInCompany)
-            {
-                throw new NotFoundException(WorkOrderErrors.Rejections.MachineNotFound);
-            }
-        }
-
-        var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
-        var workOrder = WorkOrder.Create(
-            request.CompanyId,
-            request.Title,
-            request.Description,
-            request.Priority,
-            request.Category,
-            request.MachineId,
-            estimate);
-        workOrder.ReplaceFiles(request.FileIds);
-
-        if (request is { AssigneeId: { } assigneeId, PlannedStartLocal: { } plannedStartLocal })
-        {
-            var startUtc = await _scheduleChecks.EnsureAsync(
-                request.CompanyId,
-                assigneeId,
-                plannedStartLocal,
-                estimate,
-                workOrder.Id,
-                cancellationToken);
-            workOrder.Assign(assigneeId, plannedStartLocal, startUtc);
-        }
-
-        _dbContext.WorkOrders.Add(workOrder);
+        var workOrderId = await _creation.CreateAsync(request, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return workOrder.Id;
+        return workOrderId;
     }
 }

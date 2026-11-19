@@ -16,6 +16,14 @@ export function reviewStatusDraft(
   void actions.dispatchChild({ type: DraftActionType.ReviewStatus, payload: target });
 }
 
+/** Opens the review of one phase draft. The dialog shows its conditions and limit rows, and applies it. */
+export function reviewPhaseDraft(
+  actions: { dispatchChild(action: AppAction): Promise<void> },
+  target: { machineId: string; attemptId: string; draftId: string },
+): void {
+  void actions.dispatchChild({ type: DraftActionType.ReviewPhase, payload: target });
+}
+
 /**
  * Opens the review of one machine draft. A create draft opens the machine drawer with the draft values. An update
  * draft opens the compare dialog.

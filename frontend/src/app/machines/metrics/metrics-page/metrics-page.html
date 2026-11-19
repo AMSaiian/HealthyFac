@@ -114,7 +114,7 @@
     @if (store.editInitial(); as initial) {
       <hf-metric-form
         [initialValue]="initial"
-        [isNew]="store.edit()?.localId === null"
+        [isNew]="store.isEditedItemUnsaved()"
         [takenKeys]="store.takenKeys()"
         [unitGroups]="unitGroups()"
         [isUnitsLoading]="store.units.isLoading()"

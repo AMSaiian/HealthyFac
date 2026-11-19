@@ -10,6 +10,9 @@ public static class MachineRoutes
     public const string IdParameter = "id";
     public const string ById = "/{" + IdParameter + "}";
     public const string State = ById + "/state";
+    public const string StateTimes = ById + "/state-times";
+    public const string FromParameter = "from";
+    public const string ToParameter = "to";
     public const string Search = "/search";
     public const string Lookup = "/lookup";
     public const string Names = "/names";

@@ -1,3 +1,8 @@
+using HealthyFac.Insights.Domain.Agents.Actions;
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
+using HealthyFac.Insights.Domain.Cases;
+using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.Persistence;
@@ -18,6 +23,18 @@ public interface IInsightsDbContext : ITransactionalDbContext
     DbSet<IngestedDocument> IngestedDocuments { get; }
 
     DbSet<DocumentChunk> DocumentChunks { get; }
+
+    DbSet<MaintenanceCase> MaintenanceCases { get; }
+
+    DbSet<MachineSignal> MachineSignals { get; }
+
+    DbSet<AgentRun> AgentRuns { get; }
+
+    DbSet<AgentToolCall> AgentToolCalls { get; }
+
+    DbSet<AgentAction> AgentActions { get; }
+
+    ChangeTracker ChangeTracker { get; }
 
     EntityEntry<TEntity> Entry<TEntity>(TEntity entity)
         where TEntity : class;

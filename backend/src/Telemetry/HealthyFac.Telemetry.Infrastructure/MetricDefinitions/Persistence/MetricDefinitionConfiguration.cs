@@ -33,6 +33,24 @@ public class MetricDefinitionConfiguration : IEntityTypeConfiguration<MetricDefi
         builder.Property(metric => metric.ValueKind)
             .IsRequired();
 
+        builder.Property(metric => metric.Behavior)
+            .HasDefaultValueSql(MetricDefinitionDatabaseConstants.DefaultBehaviorSql)
+            .IsRequired();
+
+        builder.ComplexProperty(
+            metric => metric.Limits,
+            limits =>
+            {
+                limits.Property(value => value.WarningLow)
+                    .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.WarningLow);
+                limits.Property(value => value.WarningHigh)
+                    .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.WarningHigh);
+                limits.Property(value => value.AlarmLow)
+                    .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.AlarmLow);
+                limits.Property(value => value.AlarmHigh)
+                    .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.AlarmHigh);
+            });
+
         builder.Property(metric => metric.States)
             .HasField(fieldName: "_states")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -52,6 +70,7 @@ public class MetricDefinitionConfiguration : IEntityTypeConfiguration<MetricDefi
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasEnumerationCheck(metric => metric.ValueKind)
+            .HasEnumerationCheck(metric => metric.Behavior)
             .HasNotBlankCheck(metric => metric.Key)
             .HasNotBlankCheck(metric => metric.Name)
             .HasLengthCheck(metric => metric.Key, minLength: 1, MetricDefinitionRules.KeyMaxLength)

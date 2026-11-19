@@ -7,6 +7,7 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Domain.Shifts;
 using HealthyFac.Core.Domain.WorkOrders;
+using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
@@ -38,6 +39,8 @@ public class CoreDbContext(DbContextOptions<CoreDbContext> options)
     public DbSet<MachineStateHistory> MachineStateHistories => Set<MachineStateHistory>();
 
     public DbSet<MachineDraft> MachineDrafts => Set<MachineDraft>();
+
+    public DbSet<WorkOrderDraft> WorkOrderDrafts => Set<WorkOrderDraft>();
 
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
 

@@ -5,6 +5,7 @@
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Application\HealthyFac.Shared.Application.csproj"/>
         <ProjectReference Include="..\..\Core\HealthyFac.Core.Messaging\HealthyFac.Core.Messaging.csproj"/>
         <ProjectReference Include="..\..\Insights\HealthyFac.Insights.Messaging\HealthyFac.Insights.Messaging.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Telemetry.Messaging\HealthyFac.Telemetry.Messaging.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

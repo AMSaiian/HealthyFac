@@ -5,6 +5,7 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.Domain.Shifts;
 using HealthyFac.Core.Domain.WorkOrders;
+using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -31,6 +32,8 @@ public interface ICoreDbContext : ITransactionalDbContext
     DbSet<MachineStateHistory> MachineStateHistories { get; }
 
     DbSet<MachineDraft> MachineDrafts { get; }
+
+    DbSet<WorkOrderDraft> WorkOrderDrafts { get; }
 
     DbSet<WorkOrder> WorkOrders { get; }
 

@@ -5,6 +5,11 @@ namespace HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 
 public static class MachineRegistrationTestData
 {
+    public static readonly DateOnly GoLiveDay = new(year: 2026, month: 12, day: 1);
+
+    public static readonly DateTime GoLiveStart = new(
+        year: 2026, month: 11, day: 30, hour: 22, minute: 0, second: 0, DateTimeKind.Utc);
+
     public const int RaceParticipantCount = 2;
 
     public const string MachineName = "Test Machine";
@@ -19,6 +24,8 @@ public static class MachineRegistrationTestData
             GatewayId = GatewayIds.Create(),
             CompanyId = CompanyId,
             Name = MachineName,
+            ExpectedGoLiveOn = GoLiveDay,
+            GoLiveStartsAt = GoLiveStart,
         };
 
     public static MachineDeleted CreateDeletedMessage(Guid machineId) =>

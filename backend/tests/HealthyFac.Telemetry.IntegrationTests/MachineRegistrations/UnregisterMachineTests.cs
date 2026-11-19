@@ -6,6 +6,7 @@ using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations;
@@ -69,6 +70,34 @@ public sealed class UnregisterMachineTests(TelemetryDatabaseFixture fixture)
         metric.DeletedAt.Should().NotBeNull();
         metric.DeletedBy.Should().NotBeNull();
         otherMetric.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnregisterMachine_WithPhases_SoftDeletesThemWithTheirRowsAndNoPhaseOfAnotherMachine()
+    {
+        var arrangement = await _fixture.ArrangePhaseMachineAsync();
+        var otherArrangement = await _fixture.ArrangePhaseMachineAsync();
+        var phaseId = await _fixture.AddPhaseAsync(arrangement, code: "cutting", priority: 1);
+        var otherPhaseId = await _fixture.AddPhaseAsync(otherArrangement, code: "cutting", priority: 1);
+
+        await _fixture.UnregisterMachineAsync(
+            new MachineDeleted
+            {
+                MachineId = arrangement.MachineId,
+                CompanyId = MachineRegistrationTestData.CompanyId,
+            });
+
+        var phase = await _fixture.LoadPhaseAsync(phaseId);
+        var otherPhase = await _fixture.LoadPhaseAsync(otherPhaseId);
+        var (conditions, limits) = await _fixture.LoadPhaseRowsAsync(phaseId);
+        var (otherConditions, otherLimits) = await _fixture.LoadPhaseRowsAsync(otherPhaseId);
+
+        phase.DeletedAt.Should().NotBeNull();
+        conditions.Should().NotBeEmpty().And.OnlyContain(row => row.DeletedAt != null);
+        limits.Should().NotBeEmpty().And.OnlyContain(row => row.DeletedAt != null);
+        otherPhase.DeletedAt.Should().BeNull();
+        otherConditions.Should().OnlyContain(row => row.DeletedAt == null);
+        otherLimits.Should().OnlyContain(row => row.DeletedAt == null);
     }
 
     [Fact]

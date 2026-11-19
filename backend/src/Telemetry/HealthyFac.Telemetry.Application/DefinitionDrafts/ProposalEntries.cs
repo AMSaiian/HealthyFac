@@ -64,10 +64,19 @@ public sealed class ProposalEntries(ITelemetryDbContext dbContext, IMachineRegis
             .Where(OpenDefinitionDrafts.Predicate<StatusDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
+        var phases = await _dbContext.OperatingPhaseDrafts
+            .Include(draft => draft.Conditions)
+            .Include(draft => draft.Limits)
+            .Where(draft => draft.ProposalEntryId == entry.Id)
+            .Where(OpenDefinitionDrafts.Predicate<OperatingPhaseDraft>())
+            .ToListAsync(cancellationToken);
+
         _dbContext.MetricDefinitionDrafts.RemoveRange(
             metrics.Where(metric => metric.Follow(entry, isTargetRegistrationDeleted)));
         _dbContext.StatusDefinitionDrafts.RemoveRange(
             statuses.Where(status => status.Follow(entry, isTargetRegistrationDeleted)));
+        _dbContext.OperatingPhaseDrafts.RemoveRange(
+            phases.Where(phase => phase.Follow(entry, isTargetRegistrationDeleted)));
     }
 
     /// <summary>

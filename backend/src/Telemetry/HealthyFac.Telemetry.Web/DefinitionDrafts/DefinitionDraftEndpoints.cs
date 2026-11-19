@@ -7,6 +7,8 @@ using HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
 using HealthyFac.Telemetry.Web.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using ApplicationApplyOperatingPhaseDraftRequest =
+    HealthyFac.Telemetry.Application.DefinitionDrafts.ApplyOperatingPhaseDraftRequest;
 using ApplicationDismissDefinitionDraftRequest =
     HealthyFac.Telemetry.Application.DefinitionDrafts.DismissDefinitionDraftRequest;
 using ApplicationDismissDefinitionDraftsRequest =
@@ -47,6 +49,10 @@ public static class DefinitionDraftEndpoints
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
             drafts.MapPost(DefinitionDraftRoutes.Dismiss, DismissAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);
+            app.MapGroup(DefinitionDraftRoutes.MachineDraftsRoute)
+                .MapPost(DefinitionDraftRoutes.ApplyPhase, ApplyPhaseAsync)
+                .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write)
+                .RequireAuthorization(TelemetryPermissions.OperatingPhases.Write);
             app.MapGroup(DefinitionDraftRoutes.MachineDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.DismissAll, DismissMachineDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);
@@ -104,6 +110,24 @@ public static class DefinitionDraftEndpoints
                 CompanyId = currentUser.GetCompanyId(),
                 AttemptId = DefinitionDraftRouteIds.Decrypt(attemptId, idEncryptor),
             },
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<ApplyOperatingPhaseDraftResponse>> ApplyPhaseAsync(
+        [FromRoute(Name = DefinitionDraftRoutes.MachineIdParameter)] string machineId,
+        [FromRoute(Name = DefinitionDraftRoutes.IdParameter)]
+        string id,
+        ApplyOperatingPhaseDraftRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationApplyOperatingPhaseDraftRequest, ApplyOperatingPhaseDraftResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(machineId, id, currentUser.GetCompanyId(), idEncryptor),
             cancellationToken);
 
         return TypedResults.Ok(response);

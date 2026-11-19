@@ -1,0 +1,24 @@
+<hf-action-dialog
+  title="MAINTENANCE.CLOSE_DIALOG.TITLE"
+  [isSaveDisabled]="saveDisabledReason() !== null"
+  [saveDisabledReason]="saveDisabledReason()"
+  [isSaving]="isSaving()"
+  (save)="onSave()"
+  (cancelled)="cancelled.emit()"
+>
+  <div class="flex flex-col gap-1">
+    <label for="close-reason">{{ 'MAINTENANCE.CLOSE_DIALOG.REASON' | translate }}</label>
+    @for (error of closeForm.reason().errors(); track $index) {
+      @if (isShown()) {
+        <small class="text-red-500">{{ error.message | translate }}</small>
+      }
+    }
+    <textarea
+      pTextarea
+      id="close-reason"
+      rows="4"
+      [attr.data-hf-calm]="isShown() ? null : ''"
+      [formField]="closeForm.reason"
+    ></textarea>
+  </div>
+</hf-action-dialog>

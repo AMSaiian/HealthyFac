@@ -22,8 +22,8 @@ public static class AiServiceExtensions
         /// <summary>
         /// Registers the validated Gemini options, one Google.GenAI client for Vertex AI (the project, the location,
         /// and the Application Default Credentials from <c>GOOGLE_APPLICATION_CREDENTIALS</c>), the embedding
-        /// generator with the task type <c>RETRIEVAL_DOCUMENT</c>, the chat client, and the embedder. Each
-        /// generator and client writes OpenTelemetry data without the prompt and answer text.
+        /// generator with the task type <c>RETRIEVAL_DOCUMENT</c>, the chat client, the keyed triage chat client, and
+        /// the embedder. Each generator and client writes OpenTelemetry data without the prompt and answer text.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -58,6 +58,18 @@ public static class AiServiceExtensions
 
                     return provider.GetRequiredService<Client>().AsIChatClient(options.ChatModel);
                 })
+                .UseOpenTelemetry(
+                    sourceName: SourceName,
+                    configure: telemetry => telemetry.EnableSensitiveData = false);
+
+            services.AddKeyedChatClient(
+                    AiClientKeys.Triage,
+                    provider =>
+                    {
+                        var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+
+                        return provider.GetRequiredService<Client>().AsIChatClient(options.TriageModel);
+                    })
                 .UseOpenTelemetry(
                     sourceName: SourceName,
                     configure: telemetry => telemetry.EnableSensitiveData = false);

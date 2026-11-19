@@ -1,4 +1,5 @@
 import type { PlainDateRange } from '@shared/time/plain-date-range';
+import type { PlainDateTimeRange } from '@shared/time/plain-date-time-range';
 import { Temporal } from '@shared/time/temporal';
 
 const MONTH_OFFSET = 1;
@@ -42,6 +43,23 @@ export function pickerDateToPlainDateTime(value: Date | null): Temporal.PlainDat
         value.getHours(),
         value.getMinutes(),
       );
+}
+
+/** The value of a range date picker with times: the two moments, or `null` when the range is empty. */
+export function plainDateTimeRangeToPickerDates(value: PlainDateTimeRange): (Date | null)[] | null {
+  return value.from === null && value.to === null
+    ? null
+    : [plainDateTimeToPickerDate(value.from), plainDateTimeToPickerDate(value.to)];
+}
+
+/** Reads the value of a range date picker with times. A range with one moment has an open end. */
+export function pickerDatesToPlainDateTimeRange(
+  value: readonly (Date | null)[] | null | undefined,
+): PlainDateTimeRange {
+  return {
+    from: pickerDateToPlainDateTime(value?.[0] ?? null),
+    to: pickerDateToPlainDateTime(value?.[1] ?? null),
+  };
 }
 
 export function zonedDateTimeToPickerDate(value: Temporal.ZonedDateTime | null): Date | null {

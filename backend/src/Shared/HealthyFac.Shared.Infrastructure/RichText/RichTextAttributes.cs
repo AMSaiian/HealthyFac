@@ -44,5 +44,5 @@ internal static class RichTextAttributes
     /// <summary>
     /// The format of an encrypted file ID: the version prefix, then 24 ciphertext bytes in Base64Url (32 characters).
     /// </summary>
-    public const string FileIdPattern = "^v[0-9]+\\.[A-Za-z0-9_-]{32}\\z";
+    public const string FileIdPattern = "^v[0-9]+_[A-Za-z0-9_-]{32}\\z";
 }

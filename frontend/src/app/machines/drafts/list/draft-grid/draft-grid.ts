@@ -47,6 +47,7 @@ const KIND_KEYS: Readonly<Record<DraftKind, string>> = {
   [DraftKind.Machine]: 'DRAFTS.KINDS.MACHINE',
   [DraftKind.Metric]: 'DRAFTS.KINDS.METRIC',
   [DraftKind.Status]: 'DRAFTS.KINDS.STATUS',
+  [DraftKind.Phase]: 'DRAFTS.KINDS.PHASE',
 };
 
 const STATE_KEYS: Readonly<Record<DraftState, string>> = {

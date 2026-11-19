@@ -1,17 +1,31 @@
 <header class="flex flex-none items-center justify-between">
   <h1 class="text-2xl font-bold">{{ 'WORK_ORDERS.TITLE' | translate }}</h1>
-  @if (canCreate()) {
-    <button
-      pButton
-      [pTooltip]="'WORK_ORDERS.TOOLTIPS.ADD_NEW' | translate"
-      tooltipPosition="bottom"
-      type="button"
-      (click)="createRequested.emit()"
-    >
-      <i class="pi pi-plus"></i>
-      {{ 'WORK_ORDERS.ADD_NEW' | translate }}
-    </button>
-  }
+  <div class="flex items-center gap-2">
+    @if (canOpenDrafts()) {
+      <a
+        pButton
+        [pTooltip]="'WORK_ORDERS.TOOLTIPS.DRAFTS' | translate"
+        tooltipPosition="bottom"
+        routerLink="/work-orders/drafts"
+        severity="secondary"
+      >
+        <i class="pi pi-inbox"></i>
+        {{ 'WORK_ORDERS.DRAFTS' | translate }}
+      </a>
+    }
+    @if (canCreate()) {
+      <button
+        pButton
+        [pTooltip]="'WORK_ORDERS.TOOLTIPS.ADD_NEW' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        (click)="createRequested.emit()"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'WORK_ORDERS.ADD_NEW' | translate }}
+      </button>
+    }
+  </div>
 </header>
 <p-tabs
   class="flex min-h-0 flex-1 flex-col"

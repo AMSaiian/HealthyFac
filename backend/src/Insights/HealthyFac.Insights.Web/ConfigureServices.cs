@@ -1,6 +1,7 @@
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Web.Authorization;
+using HealthyFac.Insights.Web.Cases;
 using HealthyFac.Insights.Web.Ingest;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Web.Authentication;
@@ -137,6 +138,7 @@ public static class ConfigureServices
             app.MapSharedOpenApi();
             var versionedGroup = app.MapVersionedGroup();
             versionedGroup.MapIngestEndpoints();
+            versionedGroup.MapCaseEndpoints();
 
             return app;
         }

@@ -22,6 +22,32 @@ public static class DraftsProposedTestData
                 DraftMessageErrors.Validation.RangeInvalid
             },
             {
+                CreateMessage(
+                    isMachineFile: false, [CreateMachine(metrics: [CreateMetric(warningLow: 1, alarmLow: 5)])]),
+                DraftMessageErrors.Validation.WarningLowBelowAlarmLow
+            },
+            {
+                CreateMessage(
+                    isMachineFile: false, [CreateMachine(metrics: [CreateMetric(warningHigh: 95, alarmHigh: 90)])]),
+                DraftMessageErrors.Validation.WarningHighAboveAlarmHigh
+            },
+            {
+                CreateMessage(
+                    isMachineFile: false,
+                    [
+                        CreateMachine(
+                            metrics:
+                            [
+                                CreateMetric(valueKind: DraftMessageLimits.ValueKinds.Boolean, alarmHigh: 1),
+                            ]),
+                    ]),
+                DraftMessageErrors.Validation.LimitsOnlyForNumeric
+            },
+            {
+                CreateMessage(isMachineFile: false, [CreateMachine(metrics: [CreateMetric(behavior: "wave")])]),
+                DraftMessageErrors.Validation.BehaviorInvalid
+            },
+            {
                 CreateMessage(isMachineFile: false, [CreateMachine(metrics: [CreateMetric(states: ["on"])])]),
                 DraftMessageErrors.Validation.StatesInvalid
             },
@@ -87,14 +113,26 @@ public static class DraftsProposedTestData
     private static ProposedMetric CreateMetric(
         double? min = null,
         double? max = null,
-        IReadOnlyList<string>? states = null
+        IReadOnlyList<string>? states = null,
+        string? valueKind = null,
+        double? warningLow = null,
+        double? warningHigh = null,
+        double? alarmLow = null,
+        double? alarmHigh = null,
+        string? behavior = null
     ) =>
         new()
         {
             DraftId = Guid.CreateVersion7(),
             Key = "motor.temperature",
+            ValueKind = valueKind,
             Min = min,
             Max = max,
             States = states,
+            WarningLow = warningLow,
+            WarningHigh = warningHigh,
+            AlarmLow = alarmLow,
+            AlarmHigh = alarmHigh,
+            Behavior = behavior,
         };
 }

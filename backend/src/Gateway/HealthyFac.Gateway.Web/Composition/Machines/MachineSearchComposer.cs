@@ -3,7 +3,8 @@ using System.Text.Json.Nodes;
 namespace HealthyFac.Gateway.Web.Composition.Machines;
 
 /// <summary>
-/// Composes the machine grid: Core answers the page, and Telemetry adds its pending metric and status draft counts to
+/// Composes the machine grid: Core answers the page, and Telemetry adds its pending metric, status, and phase draft
+/// counts to
 /// the rows. The filter <c>hasPendingDrafts</c> needs the Telemetry counts before Core runs the query.
 /// </summary>
 /// <param name="downstreamClient">Calls Core and Telemetry.</param>

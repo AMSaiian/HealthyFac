@@ -2,6 +2,8 @@ using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
+using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -62,12 +64,67 @@ public sealed class LookupMachinesTests(CoreDatabaseFixture fixture)
         response.Items.Select(item => item.DisplayName).Should().NotContain(unexpected: "Machine 050");
     }
 
-    private async Task<LookupResponse> LookupAsync(Guid companyId, string? search)
+    [Fact]
+    public async Task Lookup_WithIds_ReturnsThoseMachinesAlsoDeletedOnesAndIgnoresOtherCompaniesAndTheSearch()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+        var latheId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, LookupMachinesTestData.LatheName, serialNumber: "LK-1");
+        var pressId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, LookupMachinesTestData.PressName, serialNumber: "LK-2");
+        var deletedId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, LookupMachinesTestData.DeletedName, serialNumber: "LK-3");
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, deletedId);
+        var foreignId = await _fixture.CreateMachineAsync(
+            otherTenant.CompanyId, LookupMachinesTestData.OtherCompanyMachineName, serialNumber: "LK-4");
+
+        var response = await LookupAsync(
+            tenant.CompanyId, LookupMachinesTestData.LowerCasePart, [latheId, deletedId, foreignId, pressId]);
+
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([latheId, pressId, deletedId]);
+        response.Items.Single(item => item.Id == deletedId).DisplayName.Should().Be(LookupMachinesTestData.DeletedName);
+        response.Items.Single(item => item.Id == deletedId).IsDeleted.Should().BeTrue();
+        response.Items.Where(item => item.Id != deletedId).Should().OnlyContain(item => !item.IsDeleted);
+    }
+
+    [Fact]
+    public async Task Lookup_WithMoreMachinesThanItemsOfALookupPage_ReturnsEveryRequestedMachine()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var ids = new List<Guid>();
+        for (var index = 0; index < LookupValidationConstants.MaxItems + 5; index++)
+        {
+            ids.Add(
+                await _fixture.CreateMachineAsync(
+                    tenant.CompanyId, $"Machine {index:D3}", $"{LookupMachinesTestData.SerialPrefix}{index}"));
+        }
+
+        var response = await LookupAsync(tenant.CompanyId, search: null, ids);
+
+        response.Items.Should().HaveCount(ids.Count);
+    }
+
+    [Fact]
+    public async Task Lookup_WithMoreIdsThanTheGridLimit_ThrowsValidationWithTheLimitInTheMessage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var ids = Enumerable.Range(start: 0, GridValidationConstants.MaxLimit + 1)
+            .Select(_ => Guid.CreateVersion7())
+            .ToList();
+
+        var act = () => LookupAsync(tenant.CompanyId, search: null, ids);
+
+        var exception = await act.Should().ThrowAsync<AppValidationException>();
+        exception.Which.Message.Should().Contain(GridValidationConstants.MaxLimit.ToString());
+    }
+
+    private async Task<LookupResponse> LookupAsync(Guid companyId, string? search, IReadOnlyList<Guid>? ids = null)
     {
         using var scope = _fixture.CreateUserScope(companyId);
 
         return await scope.ServiceProvider
             .GetRequiredService<IRequestHandler<LookupMachinesRequest, LookupResponse>>()
-            .HandleAsync(new LookupMachinesRequest { CompanyId = companyId, Search = search });
+            .HandleAsync(new LookupMachinesRequest { CompanyId = companyId, Search = search, Ids = ids });
     }
 }

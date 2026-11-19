@@ -1,8 +1,13 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 
-/** The reason code of the `422` of the draft API (a draft that is not pending), in the problem `detail`. */
+/**
+ * The reason code of the `422` of the draft API, in the problem `detail`: a draft that is not pending, a phase draft
+ * that still uses a draft, and a metric or status draft that an open phase draft uses.
+ */
 const UNPROCESSABLE_KEYS: ReadonlyMap<string, string> = new Map([
   ['draftNotPending', 'DRAFTS.CONFLICTS.DRAFT_NOT_PENDING'],
+  ['draftUsesDrafts', 'DRAFTS.CONFLICTS.DRAFT_USES_DRAFTS'],
+  ['draftUsedByPhaseDraft', 'DRAFTS.CONFLICTS.DRAFT_USED_BY_PHASE_DRAFT'],
 ]);
 
 /** The texts of the "changed" conflict of the `409` of the draft API (Core, then Telemetry), in the problem `detail`. */

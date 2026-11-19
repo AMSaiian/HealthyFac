@@ -1,0 +1,170 @@
+<header class="flex flex-none flex-wrap items-center justify-between gap-2">
+  <div class="flex min-w-0 flex-wrap items-center gap-2">
+    <a
+      pButton
+      [pTooltip]="'MAINTENANCE.TOOLTIPS.BACK' | translate"
+      tooltipPosition="bottom"
+      routerLink="/maintenance/cases"
+      severity="secondary"
+      iconOnly
+      [text]="true"
+      [attr.aria-label]="'MAINTENANCE.TOOLTIPS.BACK' | translate"
+    >
+      <i class="pi pi-arrow-left"></i>
+    </a>
+    <h1 class="min-w-0 truncate text-2xl font-bold">
+      {{ 'MAINTENANCE.CASE_TITLE' | translate }}
+      @if (store.detail(); as detail) {
+        <a
+          class="text-primary"
+          [pTooltip]="'MAINTENANCE.TOOLTIPS.OPEN_DASHBOARDS' | translate"
+          tooltipPosition="bottom"
+          [routerLink]="['/machines', detail.machineId, 'signals']"
+        >
+          {{ store.machineLabel().name }}
+        </a>
+      }
+      @if (store.machineLabel().isDeleted) {
+        <span class="text-muted-color">{{ 'MACHINES.DELETED_SUFFIX' | translate }}</span>
+      }
+    </h1>
+    @if (store.detail(); as detail) {
+      <p-tag
+        severity="secondary"
+        [value]="stateLabel(detail.state)"
+      />
+      @if (detail.highestOpenSeverity; as severity) {
+        <p-tag
+          [severity]="severityTag(severity)"
+          [value]="severityLabel(severity)"
+        />
+      }
+      @if (detail.isAiUnavailable) {
+        <p-tag
+          severity="warn"
+          [value]="aiUnavailableKey | translate"
+        />
+      }
+    }
+  </div>
+  <div class="flex flex-none items-center gap-2">
+    @if (store.canAct()) {
+      <button
+        pButton
+        [pTooltip]="'MAINTENANCE.TOOLTIPS.CLOSE_CASE' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="danger"
+        [outlined]="true"
+        [disabled]="store.isBusy()"
+        (click)="store.requestClose()"
+      >
+        {{ 'MAINTENANCE.CLOSE_CASE' | translate }}
+      </button>
+      <button
+        pButton
+        [pTooltip]="'MAINTENANCE.TOOLTIPS.RUN_AGAIN' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        [disabled]="store.isBusy()"
+        (click)="store.runAgain()"
+      >
+        <i class="pi pi-refresh"></i>
+        {{ 'MAINTENANCE.RUN_AGAIN' | translate }}
+      </button>
+    }
+    <span
+      [pTooltip]="
+        store.isRefreshCoolingDown()
+          ? ('ACTIONS.TOOLTIPS.RELOAD_WAIT' | translate: { seconds: store.refreshSecondsLeft() })
+          : ''
+      "
+      tooltipPosition="bottom"
+      [tooltipDisabled]="!store.isRefreshCoolingDown()"
+    >
+      <button
+        pButton
+        [pTooltip]="'ACTIONS.TOOLTIPS.RELOAD' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        [disabled]="store.isRefreshCoolingDown()"
+        (click)="store.refresh()"
+      >
+        <i class="pi pi-refresh"></i>
+        {{ 'ACTIONS.RELOAD' | translate }}
+      </button>
+    </span>
+  </div>
+</header>
+@if (store.detail(); as detail) {
+  <p class="m-0 flex flex-none flex-wrap gap-x-4 gap-y-1 text-muted-color">
+    <span>{{ 'MAINTENANCE.OPENED_AT' | translate }}: {{ detail.openedAt | localDateTime }}</span>
+    @if (detail.closedAt) {
+      <span>{{ 'MAINTENANCE.CLOSED_AT' | translate }}: {{ detail.closedAt | localDateTime }}</span>
+    }
+  </p>
+  <hf-case-outcome
+    [outcome]="detail.outcome"
+    [canRunAgain]="store.canAct()"
+    (runAgain)="store.runAgain()"
+  />
+  <p-tabs
+    class="flex min-h-0 flex-none flex-col"
+    [lazy]="true"
+    [(value)]="tab"
+  >
+    <p-tablist>
+      <p-tab
+        [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_SIGNALS' | translate"
+        tooltipPosition="bottom"
+        [value]="SIGNALS_TAB"
+        >{{ 'MAINTENANCE.SIGNALS_TITLE' | translate }} ({{ detail.signalCount }})</p-tab
+      >
+      <p-tab
+        [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_AI_LOG' | translate"
+        tooltipPosition="bottom"
+        [value]="AI_LOG_TAB"
+        >{{ 'MAINTENANCE.RUNS_TITLE' | translate }}</p-tab
+      >
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel [value]="SIGNALS_TAB">
+        <ng-template #content>
+          @if (store.signals.hasValue()) {
+            <hf-case-signals
+              [signals]="store.signals.value().items"
+              [machineId]="detail.machineId"
+              [totalCount]="store.signals.value().totalCount"
+              [offset]="store.signalsOffset()"
+              [limit]="store.signalsLimit()"
+              (pageChange)="store.setSignalsPage($event.offset, $event.limit)"
+            />
+          }
+        </ng-template>
+      </p-tabpanel>
+      <p-tabpanel [value]="AI_LOG_TAB">
+        <ng-template #content>
+          @if (store.runs.hasValue()) {
+            <hf-ai-log-panel
+              [runs]="store.runs.value().items"
+              [toolCalls]="store.toolCallsByRun()"
+              [totalCount]="store.runs.value().totalCount"
+              [offset]="store.runsOffset()"
+              [limit]="store.runsLimit()"
+              (runOpened)="store.openRun($event)"
+              (pageChange)="store.setRunsPage($event.offset, $event.limit)"
+            />
+          }
+        </ng-template>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+}
+@if (store.isCloseOpen()) {
+  <hf-close-case-dialog
+    [isSaving]="store.isBusy()"
+    (closeRequested)="store.close($event)"
+    (cancelled)="store.cancelClose()"
+  />
+}

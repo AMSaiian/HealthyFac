@@ -5,6 +5,8 @@ namespace HealthyFac.Core.Web.Machines;
 public record LookupMachinesRequest
 {
     public string? Search { get; init; }
+
+    public IReadOnlyList<Guid>? Ids { get; init; }
 }
 
 public static class LookupMachinesRequestExtensions
@@ -12,6 +14,6 @@ public static class LookupMachinesRequestExtensions
     extension(LookupMachinesRequest request)
     {
         public ApplicationLookupMachinesRequest ToApplicationRequest(Guid companyId) =>
-            new() { CompanyId = companyId, Search = request.Search };
+            new() { CompanyId = companyId, Search = request.Search, Ids = request.Ids };
     }
 }

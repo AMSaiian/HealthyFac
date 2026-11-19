@@ -10,6 +10,7 @@ public static class DraftNames
         public const string Machine = "machine";
         public const string Metric = "metric";
         public const string Status = "status";
+        public const string Phase = "phase";
     }
 
     public static class States

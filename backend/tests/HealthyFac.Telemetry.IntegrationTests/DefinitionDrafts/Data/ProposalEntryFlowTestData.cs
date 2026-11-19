@@ -13,6 +13,8 @@ public sealed record FlowIds
 
     public required Guid StatusId { get; init; }
 
+    public required Guid PhaseId { get; init; }
+
     public required Guid MachineId { get; init; }
 
     public static FlowIds Create() =>
@@ -21,6 +23,7 @@ public sealed record FlowIds
             EntryId = Guid.CreateVersion7(),
             MetricId = Guid.CreateVersion7(),
             StatusId = Guid.CreateVersion7(),
+            PhaseId = Guid.CreateVersion7(),
             MachineId = Guid.CreateVersion7(),
         };
 }
@@ -105,6 +108,7 @@ public static class ProposalEntryFlowTestData
             DraftId = ids.EntryId,
             Metrics = [new ProposedMetric { DraftId = ids.MetricId, Key = "motor.temperature" }],
             Statuses = [new ProposedStatus { DraftId = ids.StatusId, Code = "E104" }],
+            Phases = [PhaseDraftTestData.ProposedPhase(ids)],
         };
 
     private static DraftsResolved Resolved(

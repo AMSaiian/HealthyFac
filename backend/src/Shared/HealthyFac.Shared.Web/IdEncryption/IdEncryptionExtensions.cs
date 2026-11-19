@@ -1,9 +1,7 @@
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using HealthyFac.Shared.Application.IdEncryption;
-using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
-using HealthyFac.Shared.Web.IdEncryption.Converters;
+using HealthyFac.Shared.Infrastructure.IdEncryption.Json;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,81 +24,13 @@ public static class IdEncryptionExtensions
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddIdEncryption(IConfiguration? configuration = null)
         {
-            services.AddValidatedOptions<IdEncryptionOptions, IdEncryptionOptionsValidator>(
-                IdEncryptionOptions.SectionName,
-                configuration
-            );
-
-            services.AddSingleton<IIdEncryptor, AesKwIdEncryptor>();
+            services.AddIdEncryptor(configuration);
             services.AddOptions();
             services.AddTransient<IConfigureOptions<JsonOptions>, IdEncryptionJsonOptionsConfigurator>();
 
             return services;
         }
     }
-
-    /// <summary>
-    /// Applies ID encryption converters to JSON object properties matching the ID naming convention: a
-    /// <see cref="Guid"/> or nullable <see cref="Guid"/> named <c>id</c> or <c>*Id</c>, and a <see cref="Guid"/>
-    /// collection named <c>*Ids</c> (an array, <see cref="List{T}"/>, or an interface that a list implements).
-    /// </summary>
-    public static void ApplyIdEncryption(JsonTypeInfo typeInfo, IIdEncryptor encryptor)
-    {
-        if (typeInfo.Kind != JsonTypeInfoKind.Object)
-        {
-            return;
-        }
-
-        foreach (var property in typeInfo.Properties)
-        {
-            if (!property.Name.EndsWith(
-                    IdEncryptionConstants.Conventions.PropertySuffix,
-                    StringComparison.OrdinalIgnoreCase)
-                && !property.Name.EndsWith(
-                    IdEncryptionConstants.Conventions.CollectionPropertySuffix,
-                    StringComparison.OrdinalIgnoreCase)
-                && !property.Name.Equals(
-                    IdEncryptionConstants.Conventions.ExactPropertyName,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var hasIgnore = property.AttributeProvider?
-                    .GetCustomAttributes(typeof(IgnoreIdEncryptionAttribute), inherit: false)
-                    .Length
-                > 0;
-
-            if (hasIgnore)
-            {
-                continue;
-            }
-
-            var converter = ResolveConverter(property.PropertyType, encryptor);
-            if (converter is not null)
-            {
-                property.CustomConverter = converter;
-            }
-        }
-    }
-
-    private static JsonConverter? ResolveConverter(Type propertyType, IIdEncryptor encryptor)
-    {
-        return propertyType switch
-        {
-            not null when propertyType == typeof(Guid) => new EncryptedGuidConverter(encryptor),
-            not null when propertyType == typeof(Guid?) => new EncryptedNullableGuidConverter(encryptor),
-            not null when IsGuidCollection(propertyType) => (JsonConverter?)Activator.CreateInstance(
-                typeof(EncryptedGuidCollectionConverter<>).MakeGenericType(propertyType),
-                encryptor),
-            _ => null,
-        };
-    }
-
-    private static bool IsGuidCollection(Type propertyType)
-        => propertyType == typeof(Guid[])
-            || (typeof(IEnumerable<Guid>).IsAssignableFrom(propertyType)
-                && propertyType.IsAssignableFrom(typeof(List<Guid>)));
 }
 
 internal sealed class IdEncryptionJsonOptionsConfigurator(IIdEncryptor encryptor) : IConfigureOptions<JsonOptions>
@@ -111,7 +41,7 @@ internal sealed class IdEncryptionJsonOptionsConfigurator(IIdEncryptor encryptor
     {
         var resolver = options.SerializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
         options.SerializerOptions.TypeInfoResolver = resolver.WithAddedModifier(typeInfo =>
-            IdEncryptionExtensions.ApplyIdEncryption(typeInfo, _encryptor)
+            IdEncryptionJsonModifier.Apply(typeInfo, _encryptor)
         );
     }
 }

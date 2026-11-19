@@ -68,7 +68,8 @@ public sealed class DismissDefinitionDraftsPreHandlerCheck(
 }
 
 /// <summary>
-/// Dismisses every <c>pending</c> and <c>awaitingTarget</c> metric and status draft in the scope. The machine scope
+/// Dismisses every <c>pending</c> and <c>awaitingTarget</c> metric, status, and phase draft in the scope. The machine
+/// scope
 /// holds the drafts that target the machine. The attempt scope holds every draft of the attempt. One save stores all
 /// changes, so a draft that changed in parallel is a conflict and nothing is dismissed.
 /// </summary>
@@ -104,8 +105,16 @@ public sealed class DismissDefinitionDraftsRequestHandler(ITelemetryDbContext db
             .Where(OpenDefinitionDrafts.Predicate<StatusDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
+        var phaseDrafts = await _dbContext.OperatingPhaseDrafts
+            .Where(draft => draft.CompanyId == request.CompanyId
+                && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
+                && (request.AttemptId == null || draft.AttemptId == request.AttemptId))
+            .Where(OpenDefinitionDrafts.Predicate<OperatingPhaseDraft>())
+            .ToListAsync(cancellationToken);
+
         metricDrafts.ForEach(draft => draft.Dismiss());
         statusDrafts.ForEach(draft => draft.Dismiss());
+        phaseDrafts.ForEach(draft => draft.Dismiss());
 
         try
         {
@@ -116,6 +125,7 @@ public sealed class DismissDefinitionDraftsRequestHandler(ITelemetryDbContext db
             throw new ConflictException(DefinitionDraftErrors.DraftChanged, exception);
         }
 
-        return new DismissDefinitionDraftsResponse { DismissedCount = metricDrafts.Count + statusDrafts.Count };
+        return new DismissDefinitionDraftsResponse
+            { DismissedCount = metricDrafts.Count + statusDrafts.Count + phaseDrafts.Count };
     }
 }

@@ -3,8 +3,8 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
+using HealthyFac.Shared.Infrastructure.IdEncryption.Json;
 using HealthyFac.Shared.UnitTests.IdEncryption.Data;
-using HealthyFac.Shared.Web.IdEncryption;
 
 namespace HealthyFac.Shared.UnitTests.IdEncryption;
 
@@ -24,7 +24,7 @@ public sealed class IdEncryptionCollectionConventionTests
             {
                 Modifiers =
                 {
-                    typeInfo => IdEncryptionExtensions.ApplyIdEncryption(typeInfo, _encryptor),
+                    typeInfo => IdEncryptionJsonModifier.Apply(typeInfo, _encryptor),
                 },
             },
         };

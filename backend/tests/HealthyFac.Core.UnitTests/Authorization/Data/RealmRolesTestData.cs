@@ -14,6 +14,9 @@ public static class RealmRolesTestData
     private const string NameKey = "name";
     private const string CompositesKey = "composites";
 
+    /// <summary>The realm roles of service accounts. A service role is no job role, also when it reads Core.</summary>
+    private static readonly string[] ServiceRoleNames = ["insights-service"];
+
     public static IReadOnlyList<string> ReadCoreClientRoles() =>
         ReadRoles()[ClientKey]![CoreClientId]!.AsArray()
             .Select(role => role![NameKey]!.GetValue<string>())
@@ -21,6 +24,7 @@ public static class RealmRolesTestData
 
     public static IReadOnlyList<JobRole> ReadJobRoles() =>
         ReadRoles()[RealmKey]!.AsArray()
+            .Where(role => !ServiceRoleNames.Contains(role![NameKey]!.GetValue<string>()))
             .Select(role => new JobRole
             {
                 Name = role![NameKey]!.GetValue<string>(),

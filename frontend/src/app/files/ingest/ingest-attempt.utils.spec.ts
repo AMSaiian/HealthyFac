@@ -1,6 +1,6 @@
 import { type IngestAttempt, IngestErrorCode, IngestInterruptReason, IngestState } from '@files/ingest/ingest-attempt';
 
-import { attemptReasonKey, parseWarning, toKeySegment } from './ingest-attempt.utils';
+import { attemptReason, attemptReasonKey, parseWarning, toKeySegment } from './ingest-attempt.utils';
 
 const ATTEMPT: IngestAttempt = {
   id: 'a1',
@@ -38,6 +38,42 @@ describe('ingest attempt utils', () => {
     expect(attemptReasonKey(failed)).toBe('INGEST.ERRORS.PROVIDER_UNAVAILABLE');
     expect(attemptReasonKey(interrupted)).toBe('INGEST.INTERRUPTED.LEASE_EXPIRED');
     expect(attemptReasonKey(ATTEMPT)).toBeNull();
+  });
+
+  it('attemptReason_UnsafeContentWithDetail_ReturnsTheKeyWithTheLocationAndTheReason', () => {
+    const failed = {
+      ...ATTEMPT,
+      state: IngestState.Failed,
+      errorCode: IngestErrorCode.UnsafeContent,
+      errorDetail: { location: 'page 3', reason: 'asks to ignore the rules' },
+    };
+
+    expect(attemptReason(failed)).toEqual({
+      key: 'INGEST.ERRORS.UNSAFE_CONTENT',
+      values: { location: 'page 3', reason: 'asks to ignore the rules' },
+    });
+  });
+
+  it('attemptReason_UnsafeContentWithoutDetail_ReturnsTheKeyWithNoValues', () => {
+    const failed = { ...ATTEMPT, state: IngestState.Failed, errorCode: IngestErrorCode.UnsafeContent };
+
+    expect(attemptReason(failed)).toEqual({ key: 'INGEST.ERRORS.UNSAFE_CONTENT', values: {} });
+  });
+
+  it('attemptReason_OtherCodes_KeepTheirKeysWithNoValues', () => {
+    const codes = Object.values(IngestErrorCode).filter((code) => code !== IngestErrorCode.UnsafeContent);
+
+    for (const errorCode of codes) {
+      const failed = {
+        ...ATTEMPT,
+        state: IngestState.Failed,
+        errorCode,
+        errorDetail: { location: 'x', reason: 'y' },
+      };
+
+      expect(attemptReason(failed)?.values).toEqual({});
+      expect(attemptReason(failed)?.key).toBe(attemptReasonKey(failed));
+    }
   });
 
   it('parseWarning_WithKeyAndValues_ReadsBoth', () => {

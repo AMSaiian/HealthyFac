@@ -23,6 +23,11 @@ public static class RealmTestData
     public const string DocumentClientId = "healthyfac-document";
     public const string InsightsClientId = "healthyfac-insights";
     public const string AuthClientId = "healthyfac-auth";
+    public const string InsightsServiceRoleName = "insights-service";
+    public const string WorkOrdersScopeName = "insights-work-orders";
+    public const string TelemetryScopeName = "insights-telemetry";
+    public const string SignalsReadPermission = "signals:read";
+    public const string WorkOrdersReadPermission = "work-orders:read";
     public const string PermissionsClaim = KeycloakClaimTypes.Permissions;
     public const string SupervisorRoleName = "supervisor";
     public const string ClientIdClaim = "client_id";
@@ -93,6 +98,9 @@ public static class RealmTestData
 
     public static IReadOnlyList<string> TelemetryPermissions { get; } =
     [
+        "operating-phases:read",
+        "operating-phases:write",
+        "signals:read",
         "metric-definitions:read",
         "metric-definitions:write",
         "status-definitions:read",
@@ -115,6 +123,8 @@ public static class RealmTestData
     [
         "ingest:read",
         "ingest:write",
+        "cases:read",
+        "cases:write",
     ];
 
     /// <summary>The permissions of a token that the web app gets: the permissions of every API.</summary>

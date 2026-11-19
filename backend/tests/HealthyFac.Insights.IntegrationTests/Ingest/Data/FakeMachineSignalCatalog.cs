@@ -1,20 +1,28 @@
-using HealthyFac.Insights.Application.Extraction;
+using HealthyFac.Insights.Application.Extraction.Signals;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest.Data;
 
 /// <summary>
-/// Answers with no metric keys and no status codes, like a machine without definitions.
+/// Answers with <see cref="Signals"/>. The default is no metrics and no statuses, like a machine without definitions.
 /// </summary>
 public sealed class FakeMachineSignalCatalog : IMachineSignalCatalog
 {
     public List<Guid> AskedMachines { get; } = [];
 
-    public void Reset() => AskedMachines.Clear();
+    public MachineSignals Signals { get; set; } = Empty();
+
+    public void Reset()
+    {
+        AskedMachines.Clear();
+        Signals = Empty();
+    }
 
     public Task<MachineSignals> GetAsync(Guid machineId, CancellationToken cancellationToken)
     {
         AskedMachines.Add(machineId);
 
-        return Task.FromResult(new MachineSignals { MetricKeys = [], StatusCodes = [] });
+        return Task.FromResult(Signals);
     }
+
+    private static MachineSignals Empty() => new() { Metrics = [], Statuses = [] };
 }

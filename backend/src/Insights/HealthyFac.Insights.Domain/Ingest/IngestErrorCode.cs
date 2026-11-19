@@ -15,6 +15,7 @@ public sealed class IngestErrorCode : Enumeration<IngestErrorCode>
     public static readonly IngestErrorCode ConversionTimeout = new(value: "conversionTimeout");
     public static readonly IngestErrorCode InvalidExtraction = new(value: "invalidExtraction");
     public static readonly IngestErrorCode ProviderUnavailable = new(value: "providerUnavailable");
+    public static readonly IngestErrorCode UnsafeContent = new(value: "unsafeContent");
 
     private IngestErrorCode(string value)
         : base(value)

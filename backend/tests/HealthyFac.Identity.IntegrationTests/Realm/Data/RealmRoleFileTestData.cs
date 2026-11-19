@@ -14,12 +14,15 @@ public static class RealmRoleFileTestData
         RealmTestData.SupervisorRoleName,
     };
 
+    public static JsonNode ReadRealm() =>
+        JsonNode.Parse(File.ReadAllText(KeycloakFiles.Find(RealmFileDirectory, RealmFileName)))!;
+
     public static IReadOnlyList<string> ReadRolePermissions(string roleName) =>
         ReadRolePermissions(roleName, RealmTestData.CoreClientId);
 
     public static IReadOnlyList<string> ReadRolePermissions(string roleName, string clientId)
     {
-        var realm = JsonNode.Parse(File.ReadAllText(KeycloakFiles.Find(RealmFileDirectory, RealmFileName)))!;
+        var realm = ReadRealm();
         var role = realm[propertyName: "roles"]![propertyName: "realm"]!.AsArray()
             .Single(candidate => candidate![propertyName: "name"]!.GetValue<string>() == roleName)!;
 

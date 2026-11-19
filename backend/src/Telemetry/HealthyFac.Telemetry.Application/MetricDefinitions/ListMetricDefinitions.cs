@@ -46,6 +46,16 @@ public record MetricDefinitionResponse
 
     public IReadOnlyList<string>? States { get; init; }
 
+    public double? WarningLow { get; init; }
+
+    public double? WarningHigh { get; init; }
+
+    public double? AlarmLow { get; init; }
+
+    public double? AlarmHigh { get; init; }
+
+    public required MetricBehavior Behavior { get; init; }
+
     public required DateTime CreatedAt { get; init; }
 
     public DateTime? UpdatedAt { get; init; }
@@ -143,6 +153,11 @@ public sealed class ListMetricDefinitionsRequestHandler(ITelemetryDbContext dbCo
                 Min = metric.Min,
                 Max = metric.Max,
                 States = metric.States,
+                WarningLow = metric.Limits.WarningLow,
+                WarningHigh = metric.Limits.WarningHigh,
+                AlarmLow = metric.Limits.AlarmLow,
+                AlarmHigh = metric.Limits.AlarmHigh,
+                Behavior = metric.Behavior,
                 CreatedAt = metric.CreatedAt,
                 UpdatedAt = metric.UpdatedAt,
             })

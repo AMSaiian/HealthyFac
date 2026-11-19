@@ -24,6 +24,11 @@ public static class IdEncryptionValidationMessages
     public static class Prefix
     {
         public const string Required = "Encryption key version prefix is required.";
+
+        public const string DotNotAllowed =
+            "Encryption key version prefix must not contain a dot, "
+            + "because an ID with a dot looks like a file name in a URL.";
+
         public const string DuplicatesNotAllowed = "Duplicate encryption key version prefixes are not allowed.";
     }
 }

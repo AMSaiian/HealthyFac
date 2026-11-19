@@ -131,7 +131,7 @@ export function withScheduleActionsAction() {
         const current = store.workOrder.hasValue() ? store.workOrder.value() : null;
         return mergeLookupOptions(
           store.type() === WorkOrderActionType.Move && current?.assigneeId != null
-            ? [{ id: current.assigneeId, displayName: current.assigneeName ?? current.assigneeId }]
+            ? [{ id: current.assigneeId, displayName: current.assigneeName ?? current.assigneeId, isDeleted: false }]
             : [],
           store.employeeLookup.options(),
         );

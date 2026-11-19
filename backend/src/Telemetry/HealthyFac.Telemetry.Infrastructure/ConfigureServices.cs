@@ -13,12 +13,14 @@ using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Shared.Infrastructure.Time;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Application.DefinitionDrafts;
+using HealthyFac.Telemetry.Application.Evaluation;
 using HealthyFac.Telemetry.Application.Intake;
 using HealthyFac.Telemetry.Application.MachineRegistrations;
 using HealthyFac.Telemetry.Application.MetricSchemas;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Initialization;
 using HealthyFac.Telemetry.Infrastructure.Database.Seeding;
+using HealthyFac.Telemetry.Infrastructure.Evaluation;
 using HealthyFac.Telemetry.Infrastructure.Intake;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.Infrastructure.MachineRegistrations;
@@ -90,6 +92,8 @@ public static class ConfigureServices
             services.AddMessagingTransport(configuration);
             services.AddMessageProcessors();
 
+            services.AddIntegrationMessage<MachineStateChanged>();
+            services.AddIntegrationMessage<MachineGoLiveDateChanged>();
             services.AddIntegrationMessage<MachineCreated>();
             services.AddIntegrationMessage<MachineDeleted>();
             services.AddIntegrationMessage<DraftsProposed>();
@@ -102,8 +106,16 @@ public static class ConfigureServices
 
             services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
                 SeedingOptions.SectionName, configuration);
+            services.AddValidatedOptions<DetectionOptions, DetectionOptionsValidator>(
+                DetectionOptions.SectionName, configuration);
             services.AddValidatedOptions<MqttIntakeOptions, MqttIntakeOptionsValidator>(
                 MqttIntakeOptions.SectionName, configuration);
+            services.AddSingleton<DetectionMetrics>();
+            services.AddSingleton<FleetSilence>();
+            services.AddScoped<EvaluationClaims>();
+            services.AddSingleton<EvaluationWorker>();
+            services.AddHostedService(provider => provider.GetRequiredService<EvaluationWorker>());
+            services.AddScoped<SampleBatchReader>();
             services.AddSingleton<IMetricSchemaGenerator, MetricSchemaGenerator>();
             services.AddSingleton<IMachineMessageParser, MachineMessageParser>();
             services.AddSingleton<MqttIntakeState>();

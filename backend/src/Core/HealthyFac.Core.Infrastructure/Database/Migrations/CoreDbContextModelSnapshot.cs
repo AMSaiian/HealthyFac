@@ -823,6 +823,124 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.Drafts.WorkOrderDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AppliedWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("applied_work_order_id");
+
+                    b.Property<Guid>("CaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("case_id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("category");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<int>("EstimateMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimate_minutes");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("priority");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("state");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MachineId");
+
+                    b.HasIndex("CompanyId", "MachineId", "State")
+                        .HasDatabaseName("ix_work_order_drafts_company_id_machine_id_state")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("work_order_drafts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_work_order_draft_category_allowed", "\"category\" IN ('inspection', 'other', 'preventive', 'repair')");
+
+                            t.HasCheckConstraint("ck_work_order_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_work_order_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 5000");
+
+                            t.HasCheckConstraint("ck_work_order_draft_estimate_minutes_range", "\"estimate_minutes\" BETWEEN 5 AND 720");
+
+                            t.HasCheckConstraint("ck_work_order_draft_priority_allowed", "\"priority\" IN ('critical', 'high', 'low', 'medium')");
+
+                            t.HasCheckConstraint("ck_work_order_draft_state_allowed", "\"state\" IN ('applied', 'dismissed', 'pending')");
+
+                            t.HasCheckConstraint("ck_work_order_draft_title_length", "char_length(\"title\") BETWEEN 1 AND 200");
+
+                            t.HasCheckConstraint("ck_work_order_draft_title_not_blank", "\"title\" COLLATE \"default\" ~ '\\S'");
+                        });
+                });
+
             modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1295,6 +1413,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.Employees.Employee", null)
                         .WithMany()
                         .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.Drafts.WorkOrderDraft", b =>
+                {
+                    b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
+                        .WithMany()
+                        .HasForeignKey("MachineId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

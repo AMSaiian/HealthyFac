@@ -102,6 +102,22 @@ public static class MachineRegistrationFixtureExtensions
             await handler.HandleAsync(message);
         }
 
+        public async Task ChangeMachineStateAsync(MachineStateChanged message)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<MachineStateChanged>>();
+
+            await handler.HandleAsync(message);
+        }
+
+        public async Task ChangeMachineGoLiveDateAsync(MachineGoLiveDateChanged message)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<MachineGoLiveDateChanged>>();
+
+            await handler.HandleAsync(message);
+        }
+
         public async Task UnregisterMachineAsync(MachineDeleted message)
         {
             using var scope = fixture.ScopeFactory.CreateScope();

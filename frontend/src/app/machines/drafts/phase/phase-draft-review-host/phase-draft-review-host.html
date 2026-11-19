@@ -1,0 +1,31 @@
+<hf-action-dialog
+  title="DRAFTS.PHASE.TITLE"
+  widthClass="w-[48rem] max-w-[95vw]"
+  [isSaveDisabled]="store.applyBlock() !== null || store.isLoading()"
+  [saveDisabledReason]="store.applyBlock()"
+  [isSaving]="store.isSaving()"
+  (save)="store.apply()"
+  (cancelled)="store.cancel()"
+>
+  @if (store.draft(); as draft) {
+    <hf-phase-draft-review
+      [draft]="draft"
+      [names]="store.names()"
+      [blockKey]="store.applyBlock()"
+      [isEditable]="store.isEditable()"
+      [initialValue]="store.initialValue()"
+      [sourceOptions]="store.sourceOptions()"
+      [metrics]="store.metricList()"
+      [priority]="store.priority()"
+      (valueChange)="store.setFormValue($event)"
+      (validityChange)="store.setFormValidity($event)"
+      (priorityChange)="store.setPriority($event)"
+    />
+  } @else {
+    <div class="flex min-h-32">
+      @if (showSpinner()) {
+        <hf-loading-spinner />
+      }
+    </div>
+  }
+</hf-action-dialog>

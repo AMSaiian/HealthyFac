@@ -42,7 +42,7 @@ public record ApplyMetricDefinitionChangesResponse
 }
 
 /// <summary>A new metric definition. The key, the value kind, and the unit are fixed from now on.</summary>
-public record CreatedMetricDefinition
+public record CreatedMetricDefinition : IMetricLimitsInput
 {
     /// <summary>The metric draft that this definition applies, or <see langword="null"/>.</summary>
     public Guid? DraftId { get; init; }
@@ -62,10 +62,21 @@ public record CreatedMetricDefinition
     public double? Max { get; init; }
 
     public IReadOnlyList<string>? States { get; init; }
+
+    public double? WarningLow { get; init; }
+
+    public double? WarningHigh { get; init; }
+
+    public double? AlarmLow { get; init; }
+
+    public double? AlarmHigh { get; init; }
+
+    /// <summary>How the readings behave. A missing value means <see cref="MetricBehavior.Level"/>.</summary>
+    public MetricBehavior? Behavior { get; init; }
 }
 
 /// <summary>A change of the editable fields of a metric definition. It has no key, value kind, or unit.</summary>
-public record UpdatedMetricDefinition
+public record UpdatedMetricDefinition : IMetricLimitsInput
 {
     public required Guid Id { get; init; }
 
@@ -81,6 +92,18 @@ public record UpdatedMetricDefinition
     public double? Max { get; init; }
 
     public IReadOnlyList<string>? States { get; init; }
+
+    /// <summary>The limits replace the stored ones: a missing limit removes it.</summary>
+    public double? WarningLow { get; init; }
+
+    public double? WarningHigh { get; init; }
+
+    public double? AlarmLow { get; init; }
+
+    public double? AlarmHigh { get; init; }
+
+    /// <summary>How the readings behave. A missing value means <see cref="MetricBehavior.Level"/>.</summary>
+    public MetricBehavior? Behavior { get; init; }
 }
 
 /// <summary>A unit of the catalog by the pair of its quantity kind name and its unit name.</summary>
@@ -197,6 +220,17 @@ public class CreatedMetricDefinitionValidator : AbstractValidator<CreatedMetricD
         RuleFor(x => x.States).HasValidStates();
 
         RuleForEach(x => x.States!).SingleLineText().When(x => x.States is not null);
+
+        this.AddMetricLimitRules();
+
+        When(
+            x => x.ValueKind is not null && x.ValueKind != MetricValueKind.Numeric, () =>
+            {
+                RuleFor(x => x.WarningLow).Null().WithMessage(MetricDefinitionErrors.LimitsNotAllowed);
+                RuleFor(x => x.WarningHigh).Null().WithMessage(MetricDefinitionErrors.LimitsNotAllowed);
+                RuleFor(x => x.AlarmLow).Null().WithMessage(MetricDefinitionErrors.LimitsNotAllowed);
+                RuleFor(x => x.AlarmHigh).Null().WithMessage(MetricDefinitionErrors.LimitsNotAllowed);
+            });
     }
 }
 
@@ -236,6 +270,8 @@ public class UpdatedMetricDefinitionValidator : AbstractValidator<UpdatedMetricD
         RuleFor(x => x.States).HasValidStates();
 
         RuleForEach(x => x.States!).SingleLineText().When(x => x.States is not null);
+
+        this.AddMetricLimitRules();
     }
 }
 
@@ -348,6 +384,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
         var isSchemaChanged = created.Count > 0 || request.Deleted.Count > 0 || updateResults.Contains(item: true);
 
         var deleted = definitions.Where(metric => request.Deleted.Contains(metric.Id)).ToList();
+        await RemoveFromPhasesAsync(registration.Id, request.Deleted, cancellationToken);
         _dbContext.MetricDefinitions.RemoveRange(deleted);
         _dbContext.MetricDefinitions.AddRange(created);
 
@@ -369,10 +406,17 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             request.CompanyId,
             request.MachineId,
             request.Created
-                .Select((metric, index) => (metric.DraftId, Path: $"created[{index}].draftId"))
-                .Concat(request.Updated.Select((metric, index) => (metric.DraftId, Path: $"updated[{index}].draftId")))
+                .Select((metric, index) => (metric.DraftId, Path: $"created[{index}].draftId", created[index].Id))
+                .Concat(
+                    request.Updated.Select((metric, index) =>
+                        (metric.DraftId, Path: $"updated[{index}].draftId", metric.Id)))
                 .Where(reference => reference.DraftId is not null)
-                .Select(reference => new DraftReference { Path = reference.Path, DraftId = reference.DraftId!.Value })
+                .Select(reference => new DraftReference
+                {
+                    Path = reference.Path,
+                    DraftId = reference.DraftId!.Value,
+                    DefinitionId = reference.Id,
+                })
                 .ToList(),
             cancellationToken);
 
@@ -396,8 +440,7 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
     )
     {
         var unit = ResolveUnit(metric, index, units);
-
-        return new MetricDefinition(
+        var definition = new MetricDefinition(
             registrationId,
             metric.Key,
             metric.Name,
@@ -407,6 +450,9 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             metric.Min,
             metric.Max,
             metric.States);
+        definition.ChangeLimits(metric.ToLimits(), metric.Behavior ?? MetricBehavior.Level);
+
+        return definition;
     }
 
     private static MeasurementUnit ResolveUnit(
@@ -452,7 +498,43 @@ public sealed class ApplyMetricDefinitionChangesRequestHandler(
             throw Rejected($"updated[{index}].states", MetricDefinitionErrors.StatesNotAllowed);
         }
 
-        return definition.Update(updated.Name, updated.Description, updated.Min, updated.Max, updated.States);
+        if (definition.ValueKind != MetricValueKind.Numeric && updated.HasAnyLimit)
+        {
+            throw Rejected($"updated[{index}].warningLow", MetricDefinitionErrors.LimitsNotAllowed);
+        }
+
+        var isChanged = definition.Update(updated.Name, updated.Description, updated.Min, updated.Max, updated.States);
+        definition.ChangeLimits(updated.ToLimits(), updated.Behavior ?? MetricBehavior.Level);
+
+        return isChanged;
+    }
+
+    private async Task RemoveFromPhasesAsync(
+        Guid registrationId,
+        IReadOnlyList<Guid> deletedIds,
+        CancellationToken cancellationToken
+    )
+    {
+        if (deletedIds.Count == 0)
+        {
+            return;
+        }
+
+        var phases = await _dbContext.OperatingPhases
+            .Include(phase => phase.Conditions)
+            .Include(phase => phase.Limits)
+            .Where(phase => phase.MachineRegistrationId == registrationId)
+            .ToListAsync(cancellationToken);
+
+        if (phases.Any(phase => phase.UsesAnyMetricInConditions(deletedIds)))
+        {
+            throw new UnprocessableException(MetricDefinitionErrors.UsedByPhase);
+        }
+
+        foreach (var phase in phases)
+        {
+            phase.RemoveLimitsOf(deletedIds);
+        }
     }
 
     private static MetricSchema ToSchemaMetric(MetricDefinition metric, IReadOnlyList<MeasurementUnit> units)

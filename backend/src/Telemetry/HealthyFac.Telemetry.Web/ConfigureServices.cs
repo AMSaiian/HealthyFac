@@ -11,6 +11,7 @@ using HealthyFac.Shared.Web.Logging;
 using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.OpenApi;
 using HealthyFac.Shared.Web.Proxy;
+using HealthyFac.Shared.Web.Rpc;
 using HealthyFac.Shared.Web.Serialization;
 using HealthyFac.Shared.Web.Tracing;
 using HealthyFac.Shared.Web.Versioning;
@@ -20,6 +21,9 @@ using HealthyFac.Telemetry.Web.Authorization;
 using HealthyFac.Telemetry.Web.DefinitionDrafts;
 using HealthyFac.Telemetry.Web.MetricDefinitions;
 using HealthyFac.Telemetry.Web.MetricUnits;
+using HealthyFac.Telemetry.Web.OperatingPhases;
+using HealthyFac.Telemetry.Web.SignalEpisodes;
+using HealthyFac.Telemetry.Web.SignalEpisodes.Rpc;
 using HealthyFac.Telemetry.Web.StatusDefinitions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Metrics;
@@ -51,6 +55,7 @@ public static class ConfigureServices
 
             services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
+            services.AddSharedGrpc(environment, configuration);
 
             return services;
         }
@@ -98,7 +103,8 @@ public static class ConfigureServices
             services.ConfigureOpenTelemetryTracerProvider(tracing =>
                 tracing.AddSource(ObservabilityConstants.Intake.Source));
             services.ConfigureOpenTelemetryMeterProvider(metrics =>
-                metrics.AddMeter(ObservabilityConstants.Intake.Meter));
+                metrics.AddMeter(ObservabilityConstants.Intake.Meter)
+                    .AddMeter(ObservabilityConstants.Evaluation.Meter));
 
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<TelemetryDbContext>(
@@ -127,6 +133,7 @@ public static class ConfigureServices
         public WebApplication UseApiPipeline()
         {
             app.UseSharedHealthChecks();
+            app.UseSharedGrpcPort();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
             app.UseSerilogRequestLogging();
@@ -151,10 +158,14 @@ public static class ConfigureServices
         {
             app.MapSharedOpenApi();
             var versionedGroup = app.MapVersionedGroup();
+            versionedGroup.MapOperatingPhaseEndpoints();
             versionedGroup.MapMetricUnitEndpoints();
             versionedGroup.MapMetricDefinitionEndpoints();
             versionedGroup.MapStatusDefinitionEndpoints();
             versionedGroup.MapDefinitionDraftEndpoints();
+            versionedGroup.MapSignalEndpoints();
+            app.MapGrpcService<TelemetrySignalsService>();
+            app.MapSharedGrpcReflection();
 
             return app;
         }

@@ -19,6 +19,7 @@ public record IngestAttemptResponse
             SizeBytes = attempt.SizeBytes,
             State = attempt.State,
             ErrorCode = attempt.ErrorCode,
+            ErrorDetail = attempt.ErrorDetail,
             InterruptReason = attempt.InterruptReason,
             Warning = attempt.Warning,
             QueuedAt = attempt.QueuedAt,
@@ -44,6 +45,8 @@ public record IngestAttemptResponse
     public required IngestState State { get; init; }
 
     public IngestErrorCode? ErrorCode { get; init; }
+
+    public IngestErrorDetail? ErrorDetail { get; init; }
 
     public IngestInterruptReason? InterruptReason { get; init; }
 

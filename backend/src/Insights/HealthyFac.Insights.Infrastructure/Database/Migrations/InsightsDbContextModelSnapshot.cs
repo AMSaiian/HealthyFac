@@ -25,6 +25,489 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "vector");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Agents.Actions.AgentAction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CallId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("call_id")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<string>("FollowUp")
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("follow_up");
+
+                    b.Property<Guid?>("FollowUpWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("follow_up_work_order_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("state");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "CallId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_agent_actions_run_id_call_id");
+
+                    b.ToTable("agent_actions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_action_call_id_not_blank", "\"call_id\" COLLATE \"default\" ~ '\\S'");
+
+                            t.HasCheckConstraint("ck_agent_action_follow_up_allowed", "\"follow_up\" IN ('applied', 'dismissed')");
+
+                            t.HasCheckConstraint("ck_agent_action_kind_allowed", "\"kind\" IN ('closeCase', 'linkWorkOrder', 'proposeWorkOrder')");
+
+                            t.HasCheckConstraint("ck_agent_action_state_allowed", "\"state\" IN ('buffered', 'committed', 'discarded')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Agents.Runs.AgentRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_number");
+
+                    b.Property<Guid?>("CaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("case_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(19)
+                        .HasColumnType("character varying(19)")
+                        .HasColumnName("error_code");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<Guid?>("IngestAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ingest_attempt_id");
+
+                    b.Property<int>("InputTokens")
+                        .HasColumnType("integer")
+                        .HasColumnName("input_tokens");
+
+                    b.Property<DateTime?>("LeaseUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lease_until");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("model")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<int>("OutputTokens")
+                        .HasColumnType("integer")
+                        .HasColumnName("output_tokens");
+
+                    b.Property<string>("PromptHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("prompt_hash")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("prompt_version")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("role");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("SkipReason")
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("skip_reason");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("Verdict")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("verdict");
+
+                    b.Property<string>("VerdictReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("verdict_reason")
+                        .UseCollation("case_insensitive");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId")
+                        .HasDatabaseName("ix_agent_runs_case_id");
+
+                    b.HasIndex("IngestAttemptId")
+                        .HasDatabaseName("ix_agent_runs_ingest_attempt_id");
+
+                    b.HasIndex("State", "DueAt")
+                        .HasDatabaseName("ix_agent_runs_state_due_at");
+
+                    b.ToTable("agent_runs", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_run_attempt_number_range", "\"attempt_number\" BETWEEN 0 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_agent_run_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'providerUnavailable', 'unexpectedError')");
+
+                            t.HasCheckConstraint("ck_agent_run_input_tokens_range", "\"input_tokens\" BETWEEN 0 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_agent_run_output_tokens_range", "\"output_tokens\" BETWEEN 0 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_agent_run_role_allowed", "\"role\" IN ('extractor', 'planner', 'screener', 'triage')");
+
+                            t.HasCheckConstraint("ck_agent_run_skip_reason_allowed", "\"skip_reason\" IN ('caseNotOpen', 'nothingToReview')");
+
+                            t.HasCheckConstraint("ck_agent_run_state_allowed", "\"state\" IN ('completed', 'failed', 'interrupted', 'queued', 'running', 'skipped')");
+
+                            t.HasCheckConstraint("ck_agent_run_verdict_allowed", "\"verdict\" IN ('dismiss', 'escalate', 'safe', 'unsafe', 'watch')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Agents.ToolCalls.AgentToolCall", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Arguments")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("arguments");
+
+                    b.Property<string>("CallId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("call_id")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<int>("DurationMilliseconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_milliseconds");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("result");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tool_name")
+                        .UseCollation("case_insensitive");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_agent_tool_calls_run_id_sequence");
+
+                    b.ToTable("agent_tool_calls", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_agent_tool_call_call_id_not_blank", "\"call_id\" COLLATE \"default\" ~ '\\S'");
+
+                            t.HasCheckConstraint("ck_agent_tool_call_duration_milliseconds_range", "\"duration_milliseconds\" BETWEEN 0 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_agent_tool_call_outcome_allowed", "\"outcome\" IN ('failed', 'rejected', 'succeeded')");
+
+                            t.HasCheckConstraint("ck_agent_tool_call_sequence_range", "\"sequence\" BETWEEN 1 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_agent_tool_call_tool_name_not_blank", "\"tool_name\" COLLATE \"default\" ~ '\\S'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Cases.MaintenanceCase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CloseReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("close_reason")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("opened_at");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "MachineId" }, "ux_maintenance_cases_open_machine")
+                        .IsUnique()
+                        .HasFilter("state = 'open'");
+
+                    b.ToTable("maintenance_cases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_maintenance_case_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_maintenance_case_machine_id_not_empty", "\"machine_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_maintenance_case_state_allowed", "\"state\" IN ('closed', 'open', 'resolved')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Cases.Signals.MachineSignal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("case_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("Coverage")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("coverage");
+
+                    b.Property<double?>("ForecastSeconds")
+                        .HasColumnType("double precision")
+                        .HasColumnName("forecast_seconds");
+
+                    b.Property<double?>("Limit")
+                        .HasColumnType("double precision")
+                        .HasColumnName("limit");
+
+                    b.Property<Guid>("MachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("machine_id");
+
+                    b.Property<Guid?>("MetricDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("metric_definition_id");
+
+                    b.Property<string>("MetricKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("metric_key")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("opened_at");
+
+                    b.Property<string>("PhaseCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("phase_code")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("Rule")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)")
+                        .HasColumnName("rule");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("severity");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("state");
+
+                    b.Property<string>("StatusCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status_code")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<Guid?>("StatusDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("status_definition_id");
+
+                    b.Property<double?>("Value")
+                        .HasColumnType("double precision")
+                        .HasColumnName("value");
+
+                    b.Property<Guid?>("WorkOrderDraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_draft_id");
+
+                    b.Property<Guid?>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.Property<double?>("Z")
+                        .HasColumnType("double precision")
+                        .HasColumnName("z");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId")
+                        .HasDatabaseName("ix_machine_signals_case_id");
+
+                    b.HasIndex("CompanyId", "MachineId", "State")
+                        .HasDatabaseName("ix_machine_signals_company_id_machine_id_state");
+
+                    b.ToTable("machine_signals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_machine_signal_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_machine_signal_coverage_allowed", "\"coverage\" IN ('dismissed', 'drafted', 'linked', 'new', 'watched')");
+
+                            t.HasCheckConstraint("ck_machine_signal_machine_id_not_empty", "\"machine_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_machine_signal_rule_allowed", "\"rule\" IN ('drift', 'silentMachine', 'status', 'threshold', 'trend', 'unknownMode')");
+
+                            t.HasCheckConstraint("ck_machine_signal_sequence_range", "\"sequence\" BETWEEN 1 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_machine_signal_severity_allowed", "\"severity\" IN ('alarm', 'warning')");
+
+                            t.HasCheckConstraint("ck_machine_signal_state_allowed", "\"state\" IN ('open', 'resolved')");
+                        });
+                });
+
             modelBuilder.Entity("HealthyFac.Insights.Domain.Documents.DocumentChunk", b =>
                 {
                     b.Property<Guid>("Id")
@@ -163,6 +646,10 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(19)")
                         .HasColumnName("error_code");
 
+                    b.Property<string>("ErrorDetail")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("error_detail");
+
                     b.Property<string>("Extension")
                         .IsRequired()
                         .HasMaxLength(8)
@@ -214,6 +701,12 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("queued_at");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint")
                         .HasColumnName("size_bytes");
@@ -248,12 +741,6 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnName("warning")
                         .UseCollation("case_insensitive");
 
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id");
 
                     b.HasIndex("State", "QueuedAt")
@@ -273,7 +760,7 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("ck_ingest_attempt_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
 
-                            t.HasCheckConstraint("ck_ingest_attempt_error_code_allowed", "\"error_code\" IN ('conversionFailed', 'conversionTimeout', 'fileNotFound', 'invalidExtraction', 'noText', 'providerUnavailable', 'tooManyPages')");
+                            t.HasCheckConstraint("ck_ingest_attempt_error_code_allowed", "\"error_code\" IN ('conversionFailed', 'conversionTimeout', 'fileNotFound', 'invalidExtraction', 'noText', 'providerUnavailable', 'tooManyPages', 'unsafeContent')");
 
                             t.HasCheckConstraint("ck_ingest_attempt_error_code_only_when_failed", "error_code IS NULL OR state = 'failed'");
 
@@ -344,6 +831,12 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("received_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -355,12 +848,6 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -416,6 +903,12 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("processed_on");
 
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<string>("TraceParent")
                         .HasColumnType("text")
                         .HasColumnName("trace_parent")
@@ -428,12 +921,6 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasColumnName("type")
                         .UseCollation("case_insensitive");
 
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id");
 
                     b.HasIndex("NextAttemptOn")
@@ -443,6 +930,45 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         {
                             t.HasCheckConstraint("ck_outbox_message_actor_id_not_empty", "\"actor_id\" <> '00000000-0000-0000-0000-000000000000'");
                         });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Agents.Actions.AgentAction", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Agents.Runs.AgentRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Agents.Runs.AgentRun", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Cases.MaintenanceCase", null)
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthyFac.Insights.Domain.Ingest.IngestAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("IngestAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Agents.ToolCalls.AgentToolCall", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Agents.Runs.AgentRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Cases.Signals.MachineSignal", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Cases.MaintenanceCase", null)
+                        .WithMany("Signals")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("HealthyFac.Insights.Domain.Documents.DocumentChunk", b =>
@@ -461,6 +987,11 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .HasForeignKey("AttemptId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Cases.MaintenanceCase", b =>
+                {
+                    b.Navigation("Signals");
                 });
 
             modelBuilder.Entity("HealthyFac.Insights.Domain.Documents.IngestedDocument", b =>

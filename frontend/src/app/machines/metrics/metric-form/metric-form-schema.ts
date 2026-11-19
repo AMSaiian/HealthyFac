@@ -16,7 +16,7 @@ import {
 
 import { richTextSchema } from '@shared/rich-text/rich-text-schema';
 
-import { MetricValueKind } from '@machines/metrics/metric-definition';
+import { MetricBehavior, MetricValueKind } from '@machines/metrics/metric-definition';
 import {
   DESCRIPTION_MAX_LENGTH,
   KEY_MAX_LENGTH,
@@ -31,6 +31,8 @@ export const KEY_INVALID_ERROR_KEY = 'METRICS.FORM.ERRORS.KEY_INVALID';
 export const KEY_TAKEN_ERROR_KEY = 'METRICS.FORM.ERRORS.KEY_TAKEN';
 export const UNIT_REQUIRED_ERROR_KEY = 'METRICS.FORM.ERRORS.UNIT_REQUIRED';
 export const RANGE_ERROR_KEY = 'METRICS.FORM.ERRORS.RANGE';
+export const WARNING_LOW_ERROR_KEY = 'METRICS.FORM.ERRORS.WARNING_LOW';
+export const WARNING_HIGH_ERROR_KEY = 'METRICS.FORM.ERRORS.WARNING_HIGH';
 export const STATES_TOO_FEW_ERROR_KEY = 'METRICS.FORM.ERRORS.STATES_TOO_FEW';
 export const STATES_DUPLICATED_ERROR_KEY = 'METRICS.FORM.ERRORS.STATES_DUPLICATED';
 
@@ -56,6 +58,11 @@ export const metricFormSchema = object({
   unit: string(),
   min: nullable(number()),
   max: nullable(number()),
+  warningLow: nullable(number()),
+  warningHigh: nullable(number()),
+  alarmLow: nullable(number()),
+  alarmHigh: nullable(number()),
+  behavior: zodEnum(MetricBehavior),
   states: array(keyText()),
 }).check(
   refine((value) => value.valueKind !== MetricValueKind.Numeric || value.unit !== '', {
@@ -66,6 +73,22 @@ export const metricFormSchema = object({
     (value) =>
       value.valueKind !== MetricValueKind.Numeric || value.min === null || value.max === null || value.min < value.max,
     { path: ['max'], error: RANGE_ERROR_KEY },
+  ),
+  refine(
+    (value) =>
+      value.valueKind !== MetricValueKind.Numeric ||
+      value.warningLow === null ||
+      value.alarmLow === null ||
+      value.warningLow >= value.alarmLow,
+    { path: ['warningLow'], error: WARNING_LOW_ERROR_KEY },
+  ),
+  refine(
+    (value) =>
+      value.valueKind !== MetricValueKind.Numeric ||
+      value.warningHigh === null ||
+      value.alarmHigh === null ||
+      value.warningHigh <= value.alarmHigh,
+    { path: ['warningHigh'], error: WARNING_HIGH_ERROR_KEY },
   ),
   refine((value) => value.valueKind !== MetricValueKind.StateSet || value.states.length >= MIN_STATE_COUNT, {
     path: ['states'],

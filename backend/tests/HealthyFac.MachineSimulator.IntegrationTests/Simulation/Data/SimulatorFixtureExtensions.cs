@@ -77,6 +77,8 @@ public static class SimulatorFixtureExtensions
                     GatewayId = machine.GatewayId,
                     CompanyId = machine.CompanyId,
                     Name = $"Machine {machine.SerialNumber}",
+                    ExpectedGoLiveOn = SimulatorTestData.GoLiveDay,
+                    GoLiveStartsAt = SimulatorTestData.GoLiveStart,
                 });
         }
 

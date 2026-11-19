@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application.MetricSchemas;
+using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.MetricUnits;
@@ -67,11 +68,16 @@ public sealed class TelemetryDevelopmentDataSeeder(
 
         foreach (var seed in seeds.Where(seed => !registeredIds.Contains(seed.MachineId)))
         {
+            var seededAt = _timeProvider.GetUtcNow().UtcDateTime;
             var registration = new MachineRegistration(
                 seed.MachineId,
                 seed.GatewayId,
-                tenant.CompanyId);
+                tenant.CompanyId,
+                DateOnly.FromDateTime(seededAt),
+                seededAt);
             _dbContext.MachineRegistrations.Add(registration);
+            _dbContext.MachineEvaluations.Add(
+                new MachineEvaluation(registration.Id, _timeProvider.GetUtcNow().UtcDateTime));
             _dbContext.MetricSchemaRevisions.Add(
                 new MetricSchemaRevision(
                     registration.Id,

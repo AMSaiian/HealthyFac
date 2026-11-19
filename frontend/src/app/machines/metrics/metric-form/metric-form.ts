@@ -1,8 +1,10 @@
 import type { ElementRef } from '@angular/core';
-import { Component, computed, effect, input, linkedSignal, output, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, input, linkedSignal, output, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { disabled, type FieldTree, form, FormField, validate, validateStandardSchema } from '@angular/forms/signals';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Divider } from 'primeng/divider';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
@@ -20,13 +22,30 @@ import {
   type MetricFormValue,
 } from '@machines/metrics/metric-form/metric-form-schema';
 import { DESCRIPTION_MAX_LENGTH } from '@machines/metrics/metric-limits';
-import { KIND_OPTIONS, quantityKindKey, type UnitGroup } from '@machines/metrics/metric-form/metric-form.utils';
+import {
+  BEHAVIOR_LABEL_KEYS,
+  BEHAVIOR_OPTIONS,
+  KIND_OPTIONS,
+  quantityKindKey,
+  type UnitGroup,
+} from '@machines/metrics/metric-form/metric-form.utils';
 import { nextKey } from '@machines/metrics/metrics-page-store/metrics-page.store.utils';
 
 const MAX_FRACTION_DIGITS = 6;
 
 @Component({
-  imports: [ButtonDirective, FormField, InputNumber, InputText, RichTextEditor, Select, Tag, Tooltip, TranslatePipe],
+  imports: [
+    ButtonDirective,
+    Divider,
+    FormField,
+    InputNumber,
+    InputText,
+    RichTextEditor,
+    Select,
+    Tag,
+    Tooltip,
+    TranslatePipe,
+  ],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4' },
   selector: 'hf-metric-form',
   templateUrl: './metric-form.html',
@@ -47,6 +66,17 @@ export class MetricForm {
 
   protected readonly descriptionMaxLength = DESCRIPTION_MAX_LENGTH;
   protected readonly kindOptions = KIND_OPTIONS;
+  private readonly _behaviorLabels = toSignal(inject(TranslateService).stream(Object.values(BEHAVIOR_LABEL_KEYS)), {
+    initialValue: {} as Record<string, string>,
+  });
+
+  /** The options carry the translated `label`, because PrimeNG builds the accessible name from the option label. */
+  protected readonly behaviorOptions = computed(() =>
+    BEHAVIOR_OPTIONS.map((option) => ({
+      value: option.value,
+      label: this._behaviorLabels()[option.labelKey] ?? option.labelKey,
+    })),
+  );
   protected readonly quantityKindKey = quantityKindKey;
   protected readonly maxFractionDigits = MAX_FRACTION_DIGITS;
   protected readonly newState = signal('');

@@ -5,6 +5,7 @@ export enum DraftKind {
   Machine = 'machine',
   Metric = 'metric',
   Status = 'status',
+  Phase = 'phase',
 }
 
 export enum DraftState {
@@ -56,6 +57,12 @@ export interface MetricDraftDetail {
   readonly min: number | null;
   readonly max: number | null;
   readonly states: readonly string[] | null;
+  readonly warningLow: number | null;
+  readonly warningHigh: number | null;
+  readonly alarmLow: number | null;
+  readonly alarmHigh: number | null;
+  /** A value of `MetricBehavior`, or `null` when the draft proposes none. */
+  readonly behavior: string | null;
 }
 
 export interface StatusDraftDetail {
@@ -67,6 +74,41 @@ export interface StatusDraftDetail {
   readonly description: string | null;
 }
 
+/** One condition of a phase draft. A source is a definition, or a draft that the user has not applied yet. */
+export interface PhaseDraftConditionDetail {
+  readonly metricDefinitionId: string | null;
+  readonly metricDraftId: string | null;
+  readonly statusDefinitionId: string | null;
+  readonly statusDraftId: string | null;
+  readonly operator: string | null;
+  readonly value: number | null;
+  readonly upperValue: number | null;
+  readonly states: readonly string[] | null;
+}
+
+/** One limit row of a phase draft. The metric is a definition, or a draft that the user has not applied yet. */
+export interface PhaseDraftLimitDetail {
+  readonly metricDefinitionId: string | null;
+  readonly metricDraftId: string | null;
+  readonly warningLow: number | null;
+  readonly warningHigh: number | null;
+  readonly alarmLow: number | null;
+  readonly alarmHigh: number | null;
+}
+
+export interface PhaseDraftDetail {
+  readonly id: string;
+  readonly state: DraftState;
+  readonly sourceLocation: string | null;
+  readonly code: string | null;
+  readonly name: string | null;
+  readonly description: string | null;
+  readonly priority: number | null;
+  readonly isTracked: boolean | null;
+  readonly conditions: readonly PhaseDraftConditionDetail[];
+  readonly limits: readonly PhaseDraftLimitDetail[];
+}
+
 /** The drafts of one machine in one attempt. A group of a create draft has no machine ID yet. */
 export interface AttemptDraftGroup {
   readonly machineId: string | null;
@@ -74,6 +116,7 @@ export interface AttemptDraftGroup {
   readonly machineDraft: MachineDraftDetail | null;
   readonly metrics: readonly MetricDraftDetail[];
   readonly statuses: readonly StatusDraftDetail[];
+  readonly phases: readonly PhaseDraftDetail[];
 }
 
 /** The answer of the call that dismisses every pending draft of a machine. */
@@ -105,6 +148,10 @@ export interface ApplyMachineDraftBody {
   /** The date of a create draft from the drawer. The compare dialog and the quick apply send none. */
   readonly expectedGoLiveOn?: string;
   readonly rowVersion?: number;
+}
+
+export interface ApplyPhaseDraftResponse {
+  readonly id: string;
 }
 
 export interface ApplyMachineDraftResponse {

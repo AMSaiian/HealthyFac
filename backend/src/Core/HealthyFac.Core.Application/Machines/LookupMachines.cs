@@ -1,9 +1,11 @@
 using FluentValidation;
 using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.Machines;
@@ -14,6 +16,12 @@ public record LookupMachinesRequest : IRequest<LookupResponse>
 
     /// <summary>Part of the machine name. Without it the lookup answers the first machines by name.</summary>
     public string? Search { get; init; }
+
+    /// <summary>
+    /// The machines to name. With it, the lookup returns those machines of the company, also deleted ones, so an old
+    /// row keeps its name, and ignores <see cref="Search"/> and the page limit.
+    /// </summary>
+    public IReadOnlyList<Guid>? Ids { get; init; }
 }
 
 public sealed class LookupMachinesRequestValidator : AbstractValidator<LookupMachinesRequest>
@@ -26,6 +34,11 @@ public sealed class LookupMachinesRequestValidator : AbstractValidator<LookupMac
             .MaximumLength(LookupValidationConstants.SearchMaxLength)
             .WithMessage(LookupErrors.SearchTooLong)
             .SingleLineText();
+
+        RuleFor(request => request.Ids)
+            .Must(ids => ids!.Count <= GridValidationConstants.MaxLimit)
+            .WithMessage(LookupErrors.TooManyIds)
+            .When(request => request.Ids is not null);
     }
 }
 
@@ -57,6 +70,20 @@ public sealed class LookupMachinesRequestHandler(ICoreDbContext dbContext)
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
+        if (request.Ids is not null)
+        {
+            var named = await _dbContext.Machines
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .Where(machine => machine.CompanyId == request.CompanyId && request.Ids.Contains(machine.Id))
+                .OrderBy(machine => machine.Name)
+                .ThenBy(machine => machine.Id)
+                .Select(machine => new LookupOption
+                    { Id = machine.Id, DisplayName = machine.Name, IsDeleted = machine.DeletedAt != null })
+                .ToListAsync(cancellationToken);
+
+            return new LookupResponse { Items = named };
+        }
+
         var query = _dbContext.Machines.Where(machine => machine.CompanyId == request.CompanyId);
         if (!string.IsNullOrEmpty(request.Search))
         {
@@ -67,7 +94,8 @@ public sealed class LookupMachinesRequestHandler(ICoreDbContext dbContext)
             .OrderBy(machine => machine.Name)
             .ThenBy(machine => machine.Id)
             .Take(LookupValidationConstants.MaxItems)
-            .Select(machine => new LookupOption { Id = machine.Id, DisplayName = machine.Name })
+            .Select(machine => new LookupOption
+                { Id = machine.Id, DisplayName = machine.Name, IsDeleted = machine.DeletedAt != null })
             .ToListAsync(cancellationToken);
 
         return new LookupResponse { Items = items };

@@ -14,6 +14,7 @@ public static class MachineMessageErrors
         public const string RenamedAtRequired = "RenamedAt is required.";
         public const string StateRequired = "State is required.";
         public const string StartedAtRequired = "StartedAt is required.";
+        public const string ChangedAtRequired = "ChangedAt is required.";
 
         public static readonly string NameTooLong =
             $"Name must have at most {MachineMessageLimits.NameMaxLength} characters.";

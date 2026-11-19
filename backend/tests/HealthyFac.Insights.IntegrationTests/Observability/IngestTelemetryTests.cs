@@ -15,6 +15,7 @@ namespace HealthyFac.Insights.IntegrationTests.Observability;
 public sealed class IngestTelemetryTests(InsightsFixture fixture)
 {
     private const string StartSourceName = "HealthyFac.Insights.Tests.Start";
+
     private static readonly string[] GenAiContentTags =
     [
         "gen_ai.input.messages",
@@ -41,7 +42,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         process.ParentId.Should().BeNull();
         process.Links.Should().ContainSingle().Which.Context.TraceId.Should().Be(startTraceId);
         process.GetTagItem(Constants.Ingest.Tags.Result).Should().Be(Constants.Ingest.Results.Completed);
-        process.GetTagItem(Constants.Ingest.Tags.FileType).Should().Be("pdf");
+        process.GetTagItem(Constants.Ingest.Tags.FileType).Should().Be(expected: "pdf");
         process.GetTagItem(Constants.Ingest.Tags.ErrorCode).Should().BeNull();
         process.Status.Should().NotBe(ActivityStatusCode.Error);
         convert.ParentId.Should().Be(process.Id);
@@ -54,7 +55,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         using var capture = new SpanCapture(Constants.Ingest.Source);
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
-        _fixture.Ingest.Converter.Behavior = _ => throw new ConversionFailedException("Unsupported layout");
+        _fixture.Ingest.Converter.Behavior = _ => throw new ConversionFailedException(message: "Unsupported layout");
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
@@ -62,7 +63,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
 
         process.Status.Should().Be(ActivityStatusCode.Error);
         process.GetTagItem(Constants.Ingest.Tags.Result).Should().Be(Constants.Ingest.Results.Failed);
-        process.GetTagItem(Constants.Ingest.Tags.ErrorCode).Should().Be("conversionFailed");
+        process.GetTagItem(Constants.Ingest.Tags.ErrorCode).Should().Be(expected: "conversionFailed");
     }
 
     [Fact]
@@ -83,7 +84,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         var process = capture.Spans.Single(span => span.OperationName == Constants.Ingest.Spans.Process);
 
         process.GetTagItem(Constants.Ingest.Tags.Result).Should().Be(Constants.Ingest.Results.Interrupted);
-        process.GetTagItem(Constants.Ingest.Tags.InterruptReason).Should().Be("cancelled");
+        process.GetTagItem(Constants.Ingest.Tags.InterruptReason).Should().Be(expected: "cancelled");
     }
 
     [Fact]
@@ -129,28 +130,31 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
 
         var attempt = attempts.GetMeasurementSnapshot().Should().ContainSingle().Which;
         attempt.Tags[Constants.Ingest.Tags.Result].Should().Be(Constants.Ingest.Results.Completed);
-        attempts.Instrument!.Unit.Should().Be("{attempt}");
-        durations.Instrument!.Unit.Should().Be("s");
-        stages.Should().BeEquivalentTo(
-            new[]
-            {
-                Constants.Ingest.Stages.Convert,
-                Constants.Ingest.Stages.Embed,
-                Constants.Ingest.Stages.Extract,
-                Constants.Ingest.Stages.Store,
-            });
+        attempts.Instrument!.Unit.Should().Be(expected: "{attempt}");
+        durations.Instrument!.Unit.Should().Be(expected: "s");
+        stages.Should()
+            .BeEquivalentTo(
+                new[]
+                {
+                    Constants.Ingest.Stages.Convert,
+                    Constants.Ingest.Stages.Screen,
+                    Constants.Ingest.Stages.Embed,
+                    Constants.Ingest.Stages.Extract,
+                    Constants.Ingest.Stages.Store,
+                });
         pages.LastMeasurement!.Value.Should().Be(expected: 2);
-        pages.Instrument!.Unit.Should().Be("{page}");
+        pages.Instrument!.Unit.Should().Be(expected: "{page}");
         chunks.LastMeasurement!.Value.Should().Be(expected: 2);
-        chunks.Instrument!.Unit.Should().Be("{chunk}");
-        draftKinds.Should().BeEquivalentTo(
-            new Dictionary<string, long>
-            {
-                [Constants.Ingest.DraftKinds.Machine] = 1,
-                [Constants.Ingest.DraftKinds.Metric] = 1,
-                [Constants.Ingest.DraftKinds.Status] = 1,
-            });
-        drafts.Instrument!.Unit.Should().Be("{draft}");
+        chunks.Instrument!.Unit.Should().Be(expected: "{chunk}");
+        draftKinds.Should()
+            .BeEquivalentTo(
+                new Dictionary<string, long>
+                {
+                    [Constants.Ingest.DraftKinds.Machine] = 1,
+                    [Constants.Ingest.DraftKinds.Metric] = 1,
+                    [Constants.Ingest.DraftKinds.Status] = 1,
+                });
+        drafts.Instrument!.Unit.Should().Be(expected: "{draft}");
     }
 
     [Fact]
@@ -159,13 +163,13 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         var attempts = Collect<long>(Constants.Ingest.Instruments.Attempts);
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
-        _fixture.Ingest.Converter.Behavior = _ => throw new ConversionFailedException("Unsupported layout");
+        _fixture.Ingest.Converter.Behavior = _ => throw new ConversionFailedException(message: "Unsupported layout");
 
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
         var attempt = attempts.GetMeasurementSnapshot().Should().ContainSingle().Which;
         attempt.Tags[Constants.Ingest.Tags.Result].Should().Be(Constants.Ingest.Results.Failed);
-        attempt.Tags[Constants.Ingest.Tags.ErrorCode].Should().Be("conversionFailed");
+        attempt.Tags[Constants.Ingest.Tags.ErrorCode].Should().Be(expected: "conversionFailed");
     }
 
     [Fact]
@@ -181,9 +185,9 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         age.RecordObservableInstruments();
 
         pending.LastMeasurement!.Value.Should().Be(expected: 1);
-        pending.Instrument!.Unit.Should().Be("{attempt}");
-        age.LastMeasurement!.Value.Should().BeGreaterThanOrEqualTo(0);
-        age.Instrument!.Unit.Should().Be("s");
+        pending.Instrument!.Unit.Should().Be(expected: "{attempt}");
+        age.LastMeasurement!.Value.Should().BeGreaterThanOrEqualTo(expected: 0);
+        age.Instrument!.Unit.Should().Be(expected: "s");
     }
 
     private MetricCollector<T> Collect<T>(string instrument)
@@ -199,7 +203,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
         };
         ActivitySource.AddActivityListener(listener);
-        using var start = source.StartActivity("Start");
+        using var start = source.StartActivity(name: "Start");
 
         await _fixture.StartAttemptAsync();
 

@@ -1,9 +1,15 @@
 using HealthyFac.Shared.Application.Persistence;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
+using HealthyFac.Telemetry.Domain.Evaluation;
+using HealthyFac.Telemetry.Domain.Evaluation.Phases;
+using HealthyFac.Telemetry.Domain.Evaluation.Rules;
+using HealthyFac.Telemetry.Domain.Evaluation.Statistics;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.MetricUnits;
+using HealthyFac.Telemetry.Domain.OperatingPhases;
+using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -19,6 +25,18 @@ public interface ITelemetryDbContext : ITransactionalDbContext
 {
     DbSet<MachineRegistration> MachineRegistrations { get; }
 
+    DbSet<OperatingPhase> OperatingPhases { get; }
+
+    DbSet<MachineEvaluation> MachineEvaluations { get; }
+
+    DbSet<MetricStatistics> MetricStatistics { get; }
+
+    DbSet<RuleStreak> RuleStreaks { get; }
+
+    DbSet<PhaseInterval> PhaseIntervals { get; }
+
+    DbSet<SignalEpisode> SignalEpisodes { get; }
+
     DbSet<StatusDefinition> StatusDefinitions { get; }
 
     DbSet<MetricDefinition> MetricDefinitions { get; }
@@ -30,6 +48,8 @@ public interface ITelemetryDbContext : ITransactionalDbContext
     DbSet<MetricDefinitionDraft> MetricDefinitionDrafts { get; }
 
     DbSet<StatusDefinitionDraft> StatusDefinitionDrafts { get; }
+
+    DbSet<OperatingPhaseDraft> OperatingPhaseDrafts { get; }
 
     DbSet<ReceivedMessage> ReceivedMessages { get; }
 

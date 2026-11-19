@@ -8,6 +8,9 @@ public static class TelemetryClientNames
     /// <summary>The name of the HTTP client that calls Telemetry with the service token and actor headers.</summary>
     public const string Client = "telemetry";
 
+    /// <summary>The name of the gRPC client that reads the signals from Telemetry.</summary>
+    public const string Signals = "telemetry-signals";
+
     /// <summary>The downstream scope of every Telemetry call. The token handler adds the service name.</summary>
     public const string DownstreamScope = "telemetry";
 }

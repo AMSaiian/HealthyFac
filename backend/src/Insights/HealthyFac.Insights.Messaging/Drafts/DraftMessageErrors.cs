@@ -21,6 +21,14 @@ public static class DraftMessageErrors
         public const string ValueKindInvalid = "The value kind is not allowed.";
         public const string SeverityInvalid = "The severity is not allowed.";
         public const string RangeInvalid = "Min must be below Max.";
+        public const string WarningLowBelowAlarmLow = "WarningLow must not be below AlarmLow.";
+        public const string WarningHighAboveAlarmHigh = "WarningHigh must not be above AlarmHigh.";
+        public const string LimitsOnlyForNumeric = "Only a numeric metric has limits.";
+        public const string BehaviorInvalid = "The behavior is not allowed.";
+        public const string PriorityNegative = "Priority must not be negative.";
+        public const string ConditionSourceInvalid = "A condition names exactly 1 source.";
+        public const string LimitMetricInvalid = "A limit row names exactly 1 metric.";
+        public const string OperatorInvalid = "The operator is not allowed.";
         public const string StatesInvalid = "States need at least 2 different values.";
         public const string DescriptionNotAllowed = "The description holds HTML that is not allowed.";
         public const string DescriptionTooMuchFormatting = "The description has too much formatting.";

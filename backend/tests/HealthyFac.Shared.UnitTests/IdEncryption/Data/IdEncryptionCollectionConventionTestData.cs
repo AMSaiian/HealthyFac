@@ -15,7 +15,7 @@ public static class IdEncryptionCollectionConventionTestData
     public const string IgnoredIdsPropertyName = "ignoredIds";
     public const string CorrelationTokensPropertyName = "correlationTokens";
 
-    public const string NonArrayIdsJson = """{"tagIds":"v1.not-an-array"}""";
+    public const string NonArrayIdsJson = """{"tagIds":"v1_not-an-array"}""";
     public const string InvalidElementJson = """{"tagIds":["not-an-encrypted-id"]}""";
 
     public static TheoryData<CollectionConventionTestModel> Models =>

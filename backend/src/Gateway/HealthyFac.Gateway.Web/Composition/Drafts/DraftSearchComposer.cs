@@ -25,7 +25,8 @@ public sealed record DraftSearchScope
 }
 
 /// <summary>
-/// Composes one page of the draft grid from Core (machine drafts) and Telemetry (metric and status drafts). Both
+/// Composes one page of the draft grid from Core (machine drafts) and Telemetry (metric, status, and phase drafts).
+/// Both
 /// services page by the same sort key, so the Gateway reads one page from each in parallel, merges them, and keeps one
 /// position for each source. A source that has no more rows is still called with a limit of 1 and its last position, so
 /// its total count stays in the sum on every page; its rows are not used.

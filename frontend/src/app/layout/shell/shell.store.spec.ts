@@ -80,6 +80,7 @@ describe('ShellStore', () => {
       HOME_PATH,
       MACHINES_PATH,
       '/work-orders',
+      '/maintenance/cases',
       '/employees',
       '/company/schedule',
       '/employees/e%201/schedule',

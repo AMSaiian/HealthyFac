@@ -5,14 +5,16 @@ import { Subject } from 'rxjs';
 import { createLookup } from '@shared/lookups/create-lookup';
 import {
   keepSelectedOptions,
+  labelsById,
   LOOKUP_DEBOUNCE_MILLISECONDS,
   type LookupOption,
+  machineLabelOf,
   mergeLookupOptions,
 } from '@shared/lookups/lookup-options';
 
-const lathe: LookupOption = { id: 'm1', displayName: 'Lathe' };
-const press: LookupOption = { id: 'm2', displayName: 'Press' };
-const mill: LookupOption = { id: 'm3', displayName: 'Mill' };
+const lathe: LookupOption = { id: 'm1', displayName: 'Lathe', isDeleted: false };
+const press: LookupOption = { id: 'm2', displayName: 'Press', isDeleted: true };
+const mill: LookupOption = { id: 'm3', displayName: 'Mill', isDeleted: false };
 
 describe('mergeLookupOptions', () => {
   it('mergeLookupOptions_WithSelectedOptionInTheFoundPage_ListsItOnceFirst', () => {
@@ -84,5 +86,29 @@ describe('createLookup', () => {
 
     expect(lookup.options()).toEqual([lathe]);
     expect(lookup.isLoading()).toBe(false);
+  });
+});
+
+describe('machineLabelOf', () => {
+  it('machineLabelOf_KnownDeletedName_KeepsTheNameAndTheDeletedFlag', () => {
+    expect(machineLabelOf('Lathe', true, 'Unknown')).toEqual({ name: 'Lathe', isDeleted: true });
+  });
+
+  it('machineLabelOf_KnownLiveName_IsNotDeleted', () => {
+    expect(machineLabelOf('Lathe', false, 'Unknown')).toEqual({ name: 'Lathe', isDeleted: false });
+  });
+
+  it.each([null, undefined])('machineLabelOf_Name%s_ShowsTheUnknownNameWithoutTheDeletedFlag', (name) => {
+    expect(machineLabelOf(name, true, 'Unknown')).toEqual({ name: 'Unknown', isDeleted: false });
+  });
+});
+
+describe('labelsById', () => {
+  it('labelsById_Options_MapsEachIdToItsNameAndItsDeletedFlag', () => {
+    const labels = labelsById([lathe, press]);
+
+    expect(labels.get('m1')).toEqual({ name: 'Lathe', isDeleted: false });
+    expect(labels.get('m2')).toEqual({ name: 'Press', isDeleted: true });
+    expect(labels.get('m3')).toBeUndefined();
   });
 });

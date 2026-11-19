@@ -23,4 +23,16 @@ public static class DefinitionDraftErrors
     /// with status 422 when the draft is not pending.
     /// </summary>
     public const string DraftNotPending = "draftNotPending";
+
+    /// <summary>
+    /// The stable key that the web app maps to a translated text. The apply of a phase draft returns it with status
+    /// 422 while a condition or a limit row still names a metric or a status draft.
+    /// </summary>
+    public const string DraftUsesDrafts = "draftUsesDrafts";
+
+    /// <summary>
+    /// The stable key that the web app maps to a translated text. The dismiss of a metric or a status draft returns
+    /// it with status 422 while a pending phase draft uses the draft.
+    /// </summary>
+    public const string DraftUsedByPhaseDraft = "draftUsedByPhaseDraft";
 }

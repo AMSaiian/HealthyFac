@@ -1,41 +1,41 @@
 {
-  "referenceTime": "2026-11-10T13:44:48.132126+00:00",
+  "referenceTime": "2026-11-18T18:19:52.974308+00:00",
   "machineDrafts": [
     {
-      "id": "01a1c5b3-7ed6-7edf-8814-0b54963bcac3",
-      "attempt_id": "01a1c5b2-59ec-7c4f-88b4-84a649d1f67a",
-      "file_id": "01a1c5b1-557a-7039-9339-06a308f1f579",
-      "queued_at": "2026-11-10T13:42:42.412491+00:00",
-      "target_machine_id": "0190f3a0-0000-7000-8000-000000000101",
-      "applied_machine_id": null,
-      "state": "pending",
-      "name": "MTC-420",
-      "serial_number": "MTC420-24-0187",
-      "description": "<p>The MTC-420 is a two-axis slant-bed CNC lathe with a 45-degree slant bed of cast iron, 12-station turret, and MC-8T control. It is intended for turning, drilling, and threading of metal workpieces (steel, cast iron, aluminium, brass) in industrial use.</p><p>Main components include a ribbed cast iron bed with roller linear guides, main spindle with A2-6 nose and 15 kW AC motor, servo turret with 12 stations (VDI 30), hydraulic tailstock quill, hydraulic unit, central grease lubrication system, coolant system, hinged belt chip conveyor, and an electrical cabinet.</p><p>Operating limits include a maximum turning diameter of 420 mm, maximum turning length of 600 mm, bar capacity of 52 mm, spindle speed range of 30 to 4,500 rpm, hydraulic system pressure of 35 bar nominal, and ambient operating temperature of 10 to 35 &#176;C.</p>"
-    },
-    {
-      "id": "01a1c5b3-dfe3-7630-863b-826d2c20cb19",
-      "attempt_id": "01a1c5b2-7d0e-73ff-a99b-7ea7b401f2fc",
-      "file_id": "01a1c5b1-558e-7276-930c-dbb92ce3ee79",
-      "queued_at": "2026-11-10T13:42:51.40657+00:00",
+      "id": "01a1efd2-392e-7c40-b3d3-a2b4d64932ba",
+      "attempt_id": "01a1efcf-cb96-79b5-9079-576a79908380",
+      "file_id": "01a1efce-3b62-7ae6-bdd3-7e5c84c0a9a5",
+      "queued_at": "2026-11-18T17:58:55.126557+00:00",
       "target_machine_id": null,
       "applied_machine_id": null,
       "state": "pending",
       "name": "Halvik EP 80-200 End-Suction Centrifugal Pump",
       "serial_number": "HV-EP80-2023-04412",
-      "description": "<p>The pump set is intended for pumping clean or slightly contaminated water without solids larger than 2 mm, at 5 to 60 &#176;C, in the flow range of chapter 4. It is designed for continuous operation in industrial cooling and process water systems.</p><p>Main parts include a volute casing (axial suction nozzle, radial discharge nozzle pointing upwards), casing cover, shaft, closed impeller, grease-lubricated bearing frame housing two deep groove ball bearings (drive end 6309-C3, non-drive end 6308-C3), mechanical seal, casing and casing cover wear rings, flexible spacer coupling, and an 18.5 kW 2-pole motor.</p><p>Main operating limits include an allowed flow range of 35 to 140 m&#179;/h, duty point of 110 m&#179;/h at 46 m head, maximum casing pressure of 16 bar at 20 &#176;C, liquid temperature between 5 and 60 &#176;C (trip above 70 &#176;C), and a maximum start frequency of 6 times per hour.</p>"
+      "description": "<p>End-suction, single stage, back pull-out centrifugal pump set with an 18.5 kW motor, designed for continuous operation pumping clean or slightly contaminated process cooling water in industrial systems.</p><p>Main components include cast iron volute casing and casing cover, stainless steel shaft, closed cast iron impeller, bronze wear rings, single mechanical seal, grease-lubricated deep groove ball bearings (6309-C3 DE, 6308-C3 NDE), flexible spacer coupling, base plate, and an electric motor.</p><p>Operating limits include liquid temperature 5 to 60 &#176;C, allowed flow range 35 to 140 m&#179;/h, maximum casing pressure 16 bar at 20 &#176;C, and a maximum of 6 starts per hour.</p>"
     },
     {
-      "id": "01a1c5b4-44fa-7e53-8842-0578d8db1e28",
-      "attempt_id": "01a1c5b2-a4da-7101-8cc6-3f5d4800dba1",
-      "file_id": "01a1c5b1-558e-7bf7-a096-1153a8ad8054",
-      "queued_at": "2026-11-10T13:43:01.594539+00:00",
+      "id": "01a1efdf-c3ff-7a50-83e6-71c4e937c891",
+      "attempt_id": "01a1efde-d63f-7296-b4fe-653abdacc9fc",
+      "file_id": "01a1efde-2242-73fb-8578-c4961231a06f",
+      "queued_at": "2026-11-18T18:15:20.895334+00:00",
+      "target_machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "applied_machine_id": null,
+      "state": "pending",
+      "name": "MTC-420",
+      "serial_number": "MTC420-24-0187",
+      "description": "<p>The MTC-420 is a two-axis CNC turning center with a 45-degree slant bed of cast iron, intended for the turning, drilling, and threading of metal workpieces in industrial use.</p><p>Main components include an EN-GJL-300 cast iron bed with roller linear guides, an AC spindle motor with a 12-station servo turret (VDI 30), a hydraulic tailstock, a hydraulic unit, a central lubrication system, a coolant system with tank and immersion pump, a chip conveyor, and an electrical cabinet with an MC-8T control.</p><p>Operating limits include a spindle speed range of 30 to 4,500 rpm, maximum turning diameter of 420 mm, nominal hydraulic system pressure of 35 bar, and permitted ambient operating temperature between 10 and 35 &#176;C.</p>"
+    },
+    {
+      "id": "01a1efe1-62f4-7d31-82c9-5b72b7cdb76b",
+      "attempt_id": "01a1efde-f5b9-759b-ac11-8d32271d38bc",
+      "file_id": "01a1efde-2263-7b5e-9ba8-30319d21cbb8",
+      "queued_at": "2026-11-18T18:15:28.953252+00:00",
       "target_machine_id": null,
       "applied_machine_id": null,
       "state": "pending",
       "name": "RSV-37 (variable speed drive)",
       "serial_number": "NRS37-22-1093",
-      "description": "<p>Supplies compressed air at 7 bar to the production hall: pneumatic tools, actuators, and blow-off nozzles.</p><p>Twin-screw air end with oil injection, 37 kW permanent magnet motor with frequency converter, oil separator vessel, air-cooled oil cooler and aftercooler, electronic condensate drain, AirLogic 5 controller.</p><p>The motor drives the air end directly. Air enters through the air filter and the inlet valve and is compressed between the two rotors. Injected oil seals, cools, and lubricates the rotors. The separator vessel removes the oil from the air; the oil returns through the oil cooler and the oil filter. The minimum pressure valve keeps at least 4 bar in the vessel for the oil circulation. The VSD changes the motor speed to hold the setpoint pressure.</p>"
+      "description": "<p>Supplies compressed air at 7 bar to the production hall: pneumatic tools, actuators, and blow-off nozzles.</p><p>Main parts include a twin-screw air end with oil injection, 37 kW permanent magnet motor with frequency converter, oil separator vessel, air-cooled oil cooler and aftercooler, electronic condensate drain, and AirLogic 5 controller.</p><p>Main operating limits: maximum working pressure 8 bar, minimum working pressure 5.5 bar, motor speed range 1,000 to 3,600 rpm, ambient temperature range 0 to 46 &#176;C.</p>"
     }
   ]
 }

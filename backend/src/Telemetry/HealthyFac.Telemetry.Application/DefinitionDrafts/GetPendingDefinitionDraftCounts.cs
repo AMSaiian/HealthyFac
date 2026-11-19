@@ -52,7 +52,8 @@ public sealed class GetPendingDefinitionDraftCountsPreHandlerCheck(ICurrentUserP
 }
 
 /// <summary>
-/// Counts the pending metric and status drafts of each machine of the company, so the Gateway can show the count in the
+/// Counts the pending metric, status, and phase drafts of each machine of the company, so the Gateway can show the
+/// count in the
 /// machine list. A draft that waits for its target (<c>awaitingTarget</c>) does not count. A machine with a deleted
 /// registration and a machine with no pending draft are left out.
 /// </summary>
@@ -78,8 +79,15 @@ public sealed class GetPendingDefinitionDraftCountsRequestHandler(ITelemetryDbCo
                 && draft.TargetMachineId != null)
             .Select(draft => draft.TargetMachineId!.Value);
 
+        var phaseMachineIds = _dbContext.OperatingPhaseDrafts
+            .Where(draft => draft.CompanyId == request.CompanyId
+                && draft.State == DefinitionDraftState.Pending
+                && draft.TargetMachineId != null)
+            .Select(draft => draft.TargetMachineId!.Value);
+
         var counts = await metricMachineIds
             .Concat(statusMachineIds)
+            .Concat(phaseMachineIds)
             .Where(machineId => _dbContext.MachineRegistrations.Any(registration =>
                 registration.Id == machineId && registration.CompanyId == request.CompanyId))
             .GroupBy(machineId => machineId)

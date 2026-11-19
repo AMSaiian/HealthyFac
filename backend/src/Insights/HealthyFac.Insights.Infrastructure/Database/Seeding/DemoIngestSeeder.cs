@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -84,7 +86,55 @@ public sealed class DemoIngestSeeder(
             AddDocument(dbContext, row, tenant.CompanyId, shift, seedFile.DocumentChunks, embeddingsFile);
         }
 
+        foreach (var row in seedFile.AgentRuns.Where(row => !existingAttemptIds.Contains(row.IngestAttemptId)))
+        {
+            AddRun(dbContext, row, shift, seedFile.AgentToolCalls);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void AddRun(
+        InsightsDbContext dbContext,
+        DemoRunRow row,
+        SeedTimeShift shift,
+        IReadOnlyList<DemoToolCallRow> callRows
+    )
+    {
+        if (!string.Equals(row.State, AgentRunState.Completed.Value, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(DemoIngestSeedErrors.RunNotCompleted(row.Id));
+        }
+
+        var startedAt = shift.Shift(row.StartedAt)!.Value;
+        var run = new AgentRun(
+            AgentRole.FromValue(row.Role),
+            caseId: null,
+            row.IngestAttemptId,
+            shift.Shift(row.DueAt)!.Value);
+        run.Claim(startedAt, startedAt);
+        run.UseModel(row.Model, row.PromptVersion, row.PromptHash);
+        run.Complete(
+            shift.Shift(row.FinishedAt)!.Value,
+            verdict: null,
+            verdictReason: null,
+            row.InputTokens,
+            row.OutputTokens);
+        dbContext.AgentRuns.Add(run).Property(nameof(AgentRun.Id)).CurrentValue = row.Id;
+
+        foreach (var callRow in callRows.Where(call => call.RunId == row.Id).OrderBy(call => call.Sequence))
+        {
+            var call = new AgentToolCall(
+                row.Id,
+                callRow.Sequence,
+                callRow.CallId,
+                callRow.ToolName,
+                callRow.Arguments.GetRawText(),
+                ToolCallOutcome.FromValue(callRow.Outcome),
+                callRow.Result.GetRawText(),
+                callRow.DurationMilliseconds);
+            dbContext.AgentToolCalls.Add(call).Property(nameof(AgentToolCall.Id)).CurrentValue = callRow.Id;
+        }
     }
 
     private static void AddAttempt(InsightsDbContext dbContext, DemoAttemptRow row, Guid companyId, SeedTimeShift shift)

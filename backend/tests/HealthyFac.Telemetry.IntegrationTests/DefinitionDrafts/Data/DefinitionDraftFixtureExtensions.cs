@@ -100,6 +100,19 @@ public static class DefinitionDraftFixtureExtensions
                 .ToListAsync();
         }
 
+        public async Task<IReadOnlyList<OperatingPhaseDraft>> LoadPhaseDraftsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>()
+                .OperatingPhaseDrafts
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .Include(draft => draft.Conditions)
+                .Include(draft => draft.Limits)
+                .ToListAsync();
+        }
+
         public async Task<IReadOnlyList<StatusDefinitionDraft>> LoadStatusDraftsAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();

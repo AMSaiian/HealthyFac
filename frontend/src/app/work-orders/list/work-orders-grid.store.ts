@@ -47,6 +47,7 @@ export const WorkOrdersGridStore = signalStore(
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.WorkOrdersWrite)),
     canManage: computed(() => store._auth.hasPermission(Permission.WorkOrdersManage)),
+    canReadDrafts: computed(() => store._auth.hasPermission(Permission.DraftsRead)),
   })),
   withProps((store) => ({
     workOrders: rxResource({

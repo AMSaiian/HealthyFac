@@ -115,7 +115,14 @@ public sealed class UpdateStatusDefinitionRequestHandler(ITelemetryDbContext dbC
             await _draftMarker.MarkStatusDraftsAsync(
                 request.CompanyId,
                 request.MachineId,
-                [new DraftReference { Path = AppliedDraftMarker.SingleDraftPath, DraftId = draftId }],
+                [
+                    new DraftReference
+                    {
+                        Path = AppliedDraftMarker.SingleDraftPath,
+                        DraftId = draftId,
+                        DefinitionId = status.Id,
+                    },
+                ],
                 cancellationToken);
         }
 

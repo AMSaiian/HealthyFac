@@ -2,7 +2,7 @@ import Quill from 'quill';
 
 import { keepFileImagesOnly, registerFileImageBlot } from './file-image-blot';
 
-const FILE_ID = 'v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const FILE_ID = 'v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 function createQuill(): Quill {
   registerFileImageBlot();

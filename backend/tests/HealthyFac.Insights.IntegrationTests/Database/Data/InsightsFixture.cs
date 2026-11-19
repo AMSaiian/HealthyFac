@@ -7,6 +7,7 @@ using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
 using HealthyFac.Testing.Resetting;
@@ -104,6 +105,7 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddMetrics();
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddActorContext();
+        services.AddIdEncryptor(configuration);
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
         services.ConfigureDbContext<InsightsDbContext>(options => options.AddInterceptors(SaveGate, SaveHook));
