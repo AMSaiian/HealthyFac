@@ -31,13 +31,15 @@ public sealed class SoftDeleteInterceptor(
         InterceptionResult<int> result
     )
     {
-        if (eventData.Context is not null)
+        if (eventData.Context is null)
         {
-            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-            var userId = _currentUserProvider.TryGetUserId();
-            Apply(eventData.Context, utcNow, userId);
-            FlipDeletedEntries(eventData.Context, utcNow, userId);
+            return base.SavingChanges(eventData, result);
         }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var userId = _currentUserProvider.TryGetUserId();
+        Apply(eventData.Context, utcNow, userId);
+        FlipDeletedEntries(eventData.Context, utcNow, userId);
 
         return base.SavingChanges(eventData, result);
     }
@@ -48,13 +50,15 @@ public sealed class SoftDeleteInterceptor(
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        if (eventData.Context is not null)
+        if (eventData.Context is null)
         {
-            var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
-            var userId = _currentUserProvider.TryGetUserId();
-            await ApplyAsync(eventData.Context, utcNow, userId, cancellationToken);
-            FlipDeletedEntries(eventData.Context, utcNow, userId);
+            return await base.SavingChangesAsync(eventData, result, cancellationToken);
         }
+
+        var utcNow = _timeProvider.GetUtcNow().UtcDateTime;
+        var userId = _currentUserProvider.TryGetUserId();
+        await ApplyAsync(eventData.Context, utcNow, userId, cancellationToken);
+        FlipDeletedEntries(eventData.Context, utcNow, userId);
 
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
@@ -101,7 +105,7 @@ public sealed class SoftDeleteInterceptor(
         while (steps.TryDequeue(out var step))
         {
             var (handler, deletion) = CreateStep(dbContext, step.Relation, step.PrincipalKeys, deletedAt, deletedBy);
-            var keys = await handler.ApplyAsync(deletion, cancellationToken);
+            var keys = await handler.ApplyAsync(dbContext, deletion, cancellationToken);
             EnqueueNextSteps(steps, step.Relation, keys);
         }
     }
@@ -136,7 +140,7 @@ public sealed class SoftDeleteInterceptor(
         while (steps.TryDequeue(out var step))
         {
             var (handler, deletion) = CreateStep(dbContext, step.Relation, step.PrincipalKeys, deletedAt, deletedBy);
-            var keys = handler.Apply(deletion);
+            var keys = handler.Apply(dbContext, deletion);
             EnqueueNextSteps(steps, step.Relation, keys);
         }
     }
@@ -233,7 +237,6 @@ public sealed class SoftDeleteInterceptor(
                 typeof(DependentSoftDelete<>).MakeGenericType(clrType))!);
         var deletion = new DependentDeletionContext
         {
-            DbContext = dbContext,
             Relation = relation,
             PrincipalKeys = principalKeys,
             TrackedKeys = dbContext.ChangeTracker.Entries()

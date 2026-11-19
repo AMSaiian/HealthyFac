@@ -13,10 +13,14 @@ namespace HealthyFac.Shared.Infrastructure.Persistence.SoftDelete.Dependents;
 internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
     where TDependent : class, ISoftDeletable
 {
-    public async Task<List<Guid>> ApplyAsync(DependentDeletionContext deletion, CancellationToken cancellationToken)
+    public async Task<List<Guid>> ApplyAsync(
+        DbContext dbContext,
+        DependentDeletionContext deletion,
+        CancellationToken cancellationToken
+    )
     {
         var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
-        var rows = FindRows(deletion);
+        var rows = FindRows(dbContext, deletion);
         if (!deletion.HasOwnCascade)
         {
             await rows.ExecuteUpdateAsync(setters => SetDeleted(setters, deletion), cancellationToken);
@@ -30,16 +34,16 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
             return keys;
         }
 
-        await FindRowsByKeys(deletion, keys)
+        await FindRowsByKeys(dbContext, deletion, keys)
             .ExecuteUpdateAsync(setters => SetDeleted(setters, deletion), cancellationToken);
 
         return keys;
     }
 
-    public List<Guid> Apply(DependentDeletionContext deletion)
+    public List<Guid> Apply(DbContext dbContext, DependentDeletionContext deletion)
     {
         var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
-        var rows = FindRows(deletion);
+        var rows = FindRows(dbContext, deletion);
         if (!deletion.HasOwnCascade)
         {
             rows.ExecuteUpdate(setters => SetDeleted(setters, deletion));
@@ -53,28 +57,32 @@ internal sealed class DependentSoftDelete<TDependent> : IDependentSoftDelete
             return keys;
         }
 
-        FindRowsByKeys(deletion, keys).ExecuteUpdate(setters => SetDeleted(setters, deletion));
+        FindRowsByKeys(dbContext, deletion, keys).ExecuteUpdate(setters => SetDeleted(setters, deletion));
 
         return keys;
     }
 
-    private static IQueryable<TDependent> FindRows(DependentDeletionContext deletion)
+    private static IQueryable<TDependent> FindRows(DbContext dbContext, DependentDeletionContext deletion)
     {
         var foreignKeyName = deletion.Relation.Properties[index: 0].Name;
         var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
         var principals = deletion.PrincipalKeys.ToArray();
         var tracked = deletion.TrackedKeys.ToArray();
 
-        return deletion.DbContext.Set<TDependent>()
+        return dbContext.Set<TDependent>()
             .Where(row => principals.Contains(EF.Property<Guid>(row, foreignKeyName))
                 && !tracked.Contains(EF.Property<Guid>(row, primaryKeyName)));
     }
 
-    private static IQueryable<TDependent> FindRowsByKeys(DependentDeletionContext deletion, List<Guid> keys)
+    private static IQueryable<TDependent> FindRowsByKeys(
+        DbContext dbContext,
+        DependentDeletionContext deletion,
+        List<Guid> keys
+    )
     {
         var primaryKeyName = deletion.Relation.DeclaringEntityType.FindPrimaryKey()!.Properties[index: 0].Name;
 
-        return deletion.DbContext.Set<TDependent>()
+        return dbContext.Set<TDependent>()
             .Where(row => keys.Contains(EF.Property<Guid>(row, primaryKeyName)));
     }
 
