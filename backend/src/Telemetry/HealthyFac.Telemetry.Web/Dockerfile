@@ -9,7 +9,7 @@ ENV DOTNET_NOLOGO=1 \
     DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Copy only the files that affect restore, so this layer caches across source edits.
-COPY Directory.Build.props Directory.Packages.props BannedSymbols.txt HealthyFac.slnx ./
+COPY Directory.Build.props Directory.Packages.props BannedSymbols*.txt HealthyFac.slnx ./
 COPY src/Telemetry/HealthyFac.Telemetry.Domain/*.csproj          src/Telemetry/HealthyFac.Telemetry.Domain/
 COPY src/Telemetry/HealthyFac.Telemetry.Application/*.csproj     src/Telemetry/HealthyFac.Telemetry.Application/
 COPY src/Telemetry/HealthyFac.Telemetry.Messaging/*.csproj      src/Telemetry/HealthyFac.Telemetry.Messaging/
