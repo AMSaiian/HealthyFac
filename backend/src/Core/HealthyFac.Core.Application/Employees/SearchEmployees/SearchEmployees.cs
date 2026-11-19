@@ -42,7 +42,7 @@ public sealed class SearchEmployeesRequestValidator
             .NotEmpty()
             .WithMessage(EmployeeInviteErrors.Validation.CompanyIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new EmployeeGridFilterValidator())
             .When(request => request.Filter is not null);
     }

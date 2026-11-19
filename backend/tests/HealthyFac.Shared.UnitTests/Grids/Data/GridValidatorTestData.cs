@@ -49,6 +49,14 @@ public static class GridValidatorTestData
         new List<Guid> { Guid.NewGuid(), Guid.Empty },
     };
 
+    public static TestGridRequest CreateRequestWithoutFilter() =>
+        new()
+        {
+            Offset = GridValidationConstants.MinOffset,
+            Limit = GridValidationConstants.MinLimit,
+            Filter = null,
+        };
+
     public static TestGridRequest CreateRequest(
         int limit = GridValidationConstants.MinLimit,
         GridSort<TestSortColumn>? sort = null

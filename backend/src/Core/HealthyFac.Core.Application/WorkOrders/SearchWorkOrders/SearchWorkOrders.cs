@@ -60,7 +60,7 @@ public sealed class SearchWorkOrdersRequestValidator
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(WorkOrderErrors.Validation.CompanyIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new WorkOrderGridFilterValidator())
             .When(request => request.Filter is not null);
     }

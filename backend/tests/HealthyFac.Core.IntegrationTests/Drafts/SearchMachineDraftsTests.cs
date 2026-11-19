@@ -41,4 +41,21 @@ public sealed class SearchMachineDraftsTests(CoreDatabaseFixture fixture)
         seenIds.Should().Equal(expectedOrder(stored), caseName);
         seenIds.Should().HaveCount(draftIds.Count);
     }
+
+    [Fact]
+    public async Task Search_WithoutFilter_ReturnsFirstPageOfAllRows()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var draftIds = new List<Guid>();
+        for (var index = 0; index < DraftSearchTestData.NoFilterDraftCount; index++)
+        {
+            draftIds.Add(await _fixture.AddMachineDraftAsync(tenant.CompanyId, machineId));
+        }
+
+        var seenIds = await _fixture.ReadFirstDraftPageWithoutFilterAsync(tenant.CompanyId, machineId);
+
+        seenIds.Should().BeEquivalentTo(draftIds);
+        seenIds.Select(id => id.ToString()).Should().BeInAscendingOrder(StringComparer.Ordinal);
+    }
 }

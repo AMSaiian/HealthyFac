@@ -32,7 +32,7 @@ public sealed class SearchWorkOrderBatchEntryValidator
     public SearchWorkOrderBatchEntryValidator()
         : base(WorkOrderSortColumn.All)
     {
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new WorkOrderGridFilterValidator())
             .When(request => request.Filter is not null);
     }

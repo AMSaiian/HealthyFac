@@ -13,7 +13,7 @@ public abstract record KeysetGridRequest<TFilter, TSortColumn>
 
     public GridSort<TSortColumn>? Sort { get; init; }
 
-    public required TFilter Filter { get; init; }
+    public TFilter? Filter { get; init; }
 
     /// <summary>
     /// The position of the last row of the previous page, or <see langword="null"/> for the first page.
@@ -22,7 +22,7 @@ public abstract record KeysetGridRequest<TFilter, TSortColumn>
 }
 
 /// <summary>
-/// Validates the limit, the sort column, and the presence of the filter of a keyset grid request.
+/// Validates the limit and the sort column of a keyset grid request.
 /// </summary>
 /// <typeparam name="TRequest">The keyset grid request type.</typeparam>
 /// <typeparam name="TFilter">The typed filter record of the grid.</typeparam>
@@ -44,9 +44,5 @@ public abstract class KeysetGridRequestValidator<TRequest, TFilter, TSortColumn>
             .Must(sortable.Contains)
             .When(request => request.Sort is not null)
             .WithMessage(GridErrors.Validation.SortColumnUnknown);
-
-        RuleFor(request => request.Filter)
-            .NotNull()
-            .WithMessage(GridErrors.Validation.FilterRequired);
     }
 }

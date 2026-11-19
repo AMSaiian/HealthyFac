@@ -116,7 +116,7 @@ public sealed class SearchCasesRequestValidator
         : base(CaseSortColumn.All)
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(CaseErrors.CompanyIdRequired);
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new CaseGridFilterValidator())
             .When(request => request.Filter is not null);
     }

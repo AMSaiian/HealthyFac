@@ -33,7 +33,7 @@ public sealed class SearchFilesRequestValidator
             .WithMessage(FileErrors.MachineIdRequired)
             .When(request => request.MachineId.HasValue);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new FileGridFilterValidator())
             .When(request => request.Filter is not null);
     }

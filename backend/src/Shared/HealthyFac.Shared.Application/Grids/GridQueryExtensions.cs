@@ -14,13 +14,13 @@ public static class GridQueryExtensions
         where T : class, IEntity<Guid>
     {
         /// <summary>
-        /// Adds the predicate of the filter as one <c>Where</c>. A filter without a filled field leaves the query as it
-        /// is.
+        /// Adds the predicate of the filter as one <c>Where</c>. A null filter or a filter without a filled field
+        /// leaves the query as it is.
         /// </summary>
-        /// <param name="filter">The typed filter of the grid.</param>
+        /// <param name="filter">The typed filter of the grid, or <see langword="null"/> for no filter.</param>
         /// <returns>The filtered query.</returns>
-        public IQueryable<T> ApplyFilter(IFilter<T> filter) =>
-            filter.ToPredicate() is { } predicate ? query.Where(predicate) : query;
+        public IQueryable<T> ApplyFilter(IFilter<T>? filter) =>
+            filter?.ToPredicate() is { } predicate ? query.Where(predicate) : query;
 
         /// <summary>
         /// Orders the query by the mapped key of the sort column, then by the ID. The ID is the last key, so rows with

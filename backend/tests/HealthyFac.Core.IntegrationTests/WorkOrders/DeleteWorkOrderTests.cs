@@ -56,8 +56,9 @@ public sealed class DeleteWorkOrderTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTenantAsync();
         var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(scheduled.Id);
 
-        await DeleteAsync(tenant, scheduled.Id, await _fixture.LoadWorkOrderRowVersionAsync(scheduled.Id));
+        await DeleteAsync(tenant, scheduled.Id, rowVersion);
 
         var links = await _fixture.LoadFileLinkRowsAsync(scheduled.Id);
         var history = await _fixture.LoadHistoryRowsAsync(scheduled.Id);

@@ -41,6 +41,16 @@ public sealed class GridRequestValidatorTests
     }
 
     [Fact]
+    public void Validate_WithoutFilter_IsValid()
+    {
+        var validator = new TestGridRequestValidator(TestSortColumn.All);
+
+        var result = validator.Validate(GridValidatorTestData.CreateRequestWithoutFilter());
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
     public void Validate_WithUnknownSortColumn_Fails()
     {
         var validator = new TestGridRequestValidator([TestSortColumn.Name]);

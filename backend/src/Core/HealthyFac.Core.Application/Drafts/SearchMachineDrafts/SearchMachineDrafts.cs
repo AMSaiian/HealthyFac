@@ -42,7 +42,7 @@ public sealed class SearchMachineDraftsRequestValidator
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DraftErrors.SearchScopeRequired);
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new MachineDraftGridFilterValidator())
             .When(request => request.Filter is not null);
     }

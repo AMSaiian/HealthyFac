@@ -3,12 +3,14 @@ using System.Text.Json;
 using HealthyFac.Core.ApiTests.Drafts.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
+using HealthyFac.Shared.Application.Grids;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
 [Collection(CoreApiCollection.Name)]
 public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
 {
+    private const string WithoutFilterBody = "{\"offset\":0,\"limit\":25}";
     private const string AllBody = "{\"offset\":0,\"limit\":25,\"filter\":{}}";
     private const string WithDraftsBody = "{\"offset\":0,\"limit\":25,\"filter\":{\"hasPendingDrafts\":true}}";
     private const string WithoutDraftsBody = "{\"offset\":0,\"limit\":25,\"filter\":{\"hasPendingDrafts\":false}}";
@@ -65,6 +67,46 @@ public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
 
         withCounts.Keys.Should().Equal(withDrafts);
         withoutCounts.Keys.Should().Equal(withoutDrafts);
+    }
+
+    [Fact]
+    public async Task Search_WithoutFilter_ReturnsFirstPageOfAllRows()
+    {
+        var first = await _fixture.ArrangeMachineAsync(serialNumber: "NOFILTER-A");
+        var second = await _fixture.ArrangeMachineAsync(serialNumber: "NOFILTER-B");
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission),
+            WithoutFilterBody);
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        using var document = JsonDocument.Parse(content);
+        var ids = document.RootElement.GetProperty(propertyName: "items")
+            .EnumerateArray()
+            .Select(item => _fixture.IdEncryptor.Decrypt(item.GetProperty(propertyName: "id").GetString()!))
+            .ToList();
+        var totalCount = document.RootElement.GetProperty(propertyName: "totalCount").GetInt32();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        ids.Should()
+            .BeEquivalentTo([_fixture.IdEncryptor.Decrypt(first), _fixture.IdEncryptor.Decrypt(second)]);
+        ids.Select(id => id.ToString()).Should().BeInAscendingOrder(StringComparer.Ordinal);
+        totalCount.Should().Be(expected: 2);
+    }
+
+    [Fact]
+    public async Task Search_WithInvalidFilterValue_Returns400WithRuleMessage()
+    {
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            MachineApiTestData.SearchPath,
+            _fixture.CreateMachineClaims(MachineApiTestData.ReadPermission),
+            MachineApiTestData.SearchWithBackwardsGoLiveRangeBody);
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        content.Should().Contain(GridErrors.Validation.DateRangeFromNotBeforeTo);
     }
 
     private async Task<Dictionary<string, int>> ReadCountsAsync(string body)

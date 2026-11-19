@@ -30,7 +30,7 @@ public sealed class SearchStatusDefinitionsRequestValidator
             .NotEmpty()
             .WithMessage(StatusDefinitionErrors.MachineIdRequired);
 
-        RuleFor(request => request.Filter)
+        RuleFor(request => request.Filter!)
             .SetValidator(new StatusDefinitionGridFilterValidator())
             .When(request => request.Filter is not null);
     }

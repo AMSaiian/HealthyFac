@@ -42,6 +42,15 @@ public static class StatusDefinitionSearchTestData
             Filter = filter ?? new StatusDefinitionGridFilter(),
         };
 
+    public static SearchStatusDefinitionsRequest CreateSearchWithoutFilter(Guid companyId, Guid machineId) =>
+        new()
+        {
+            CompanyId = companyId,
+            MachineId = machineId,
+            Offset = 0,
+            Limit = 25,
+        };
+
     public static TheoryData<StatusDefinitionSortColumn, SortDirection, int[]> SortCases =>
         new()
         {

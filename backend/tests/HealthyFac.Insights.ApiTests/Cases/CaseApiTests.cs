@@ -33,6 +33,28 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         items[index: 0].GetProperty(propertyName: "signalCount").GetInt32().Should().Be(expected: 1);
     }
 
+    [Fact]
+    public async Task Search_WithoutFilter_ReturnsFirstPageOfAllRows()
+    {
+        var first = await _fixture.ArrangeCaseAsync();
+        var second = await _fixture.ArrangeCaseAsync();
+
+        var response = await _fixture.SendCaseRequestAsync(
+            HttpMethod.Post,
+            CaseApiTestData.SearchPath,
+            _fixture.CreateCaseClaims(CaseApiTestData.ReadPermission),
+            new { offset = 0, limit = 20 });
+
+        var ids = await ReadIdsAsync(response);
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        using var document = JsonDocument.Parse(content);
+        var totalCount = document.RootElement.GetProperty(propertyName: "totalCount").GetInt32();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        ids.Should().BeEquivalentTo([_fixture.IdEncryptor.Encrypt(first), _fixture.IdEncryptor.Encrypt(second)]);
+        totalCount.Should().Be(expected: 2);
+    }
+
     [Theory]
     [MemberData(nameof(CaseApiTestData.AiUnavailableCases), MemberType = typeof(CaseApiTestData))]
     public async Task Search_AfterAFailedRun_ShowsAiUnavailableOnlyForAProviderOrUnexpectedFailure(
