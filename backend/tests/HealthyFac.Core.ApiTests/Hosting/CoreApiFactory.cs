@@ -1,5 +1,8 @@
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.Email;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Realtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -24,6 +27,7 @@ public sealed class CoreApiFactory(
 ) : WebApplicationFactory<Program>
 {
     private const string TestEnvironment = "Test";
+    private const string SenderTypeName = "BackgroundQueueSender`1";
 
     private readonly IReadOnlyDictionary<string, string?> _settings = settings;
     private readonly TestTokenFactory _tokens = tokens;
@@ -44,6 +48,10 @@ public sealed class CoreApiFactory(
             services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, _tokens.TrustTestKey);
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender, DiscardingEmailSender>();
+            services.RemoveAll<IBackgroundQueue<RealtimePush>>();
+            services.AddSingleton<IBackgroundQueue<RealtimePush>>(new RecordingRealtimeQueue());
+            var sender = services.Single(descriptor => descriptor.ImplementationType?.Name == SenderTypeName);
+            services.Remove(sender);
         });
     }
 }

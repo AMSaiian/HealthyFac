@@ -1,10 +1,14 @@
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Web.IdEncryption;
 using HealthyFac.Shared.Web.Serialization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.Retry;
 using StackExchange.Redis;
 using SignalRRedisOptions = Microsoft.AspNetCore.SignalR.StackExchangeRedis.RedisOptions;
 
@@ -21,7 +25,8 @@ public static class RealtimeExtensions
         /// Registers SignalR with the JSON protocol only and the Redis backplane on the shared Redis connection. The
         /// hub protocol reads the shared JSON conventions and, when an <see cref="IIdEncryptor"/> is registered, the ID
         /// encryption. The gateway registers none: it serializes no push, because the backplane forwards the bytes
-        /// that the pusher wrote. A host that only pushes calls it too and maps no hub.
+        /// that the pusher wrote. A host that only pushes calls it too and maps no hub. It also registers the handler
+        /// of the push queue, the push metrics, and the retry pipeline of a push.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -36,9 +41,33 @@ public static class RealtimeExtensions
                 .Configure<IServiceProvider>(ConfigureJsonProtocol);
             services.AddOptions<SignalRRedisOptions>()
                 .Configure<IServiceProvider>(ConfigureBackplane);
+            services.AddMetrics();
+            services.AddSingleton<RealtimeMetrics>();
+            services.AddSingleton<IBackgroundItemDropObserver<RealtimePush>>(provider =>
+                provider.GetRequiredService<RealtimeMetrics>());
+            services.AddScoped<IBackgroundItemHandler<RealtimePush>, RealtimePushHandler>();
+            services.AddResiliencePipeline(
+                RealtimeConstants.Push.PipelineKey,
+                (builder, context) => ConfigurePushPipeline(
+                    builder,
+                    context.ServiceProvider.GetRequiredService<TimeProvider>()));
 
             return services;
         }
+    }
+
+    internal static void ConfigurePushPipeline(ResiliencePipelineBuilder builder, TimeProvider timeProvider)
+    {
+        builder.TimeProvider = timeProvider;
+        builder.AddRetry(
+            new RetryStrategyOptions
+            {
+                MaxRetryAttempts = RealtimeConstants.Push.MaxRetryCount,
+                BackoffType = DelayBackoffType.Exponential,
+                Delay = RealtimeConstants.Push.RetryDelay,
+                UseJitter = true,
+                ShouldHandle = new PredicateBuilder().Handle<RedisException>().Handle<RedisTimeoutException>(),
+            });
     }
 
     private static void ConfigureJsonProtocol(JsonHubProtocolOptions options, IServiceProvider provider)

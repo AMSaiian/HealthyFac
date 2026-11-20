@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Web.CurrentUser.ServiceActors;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Realtime;
 
 namespace HealthyFac.Core.ApiTests.Hosting;
 
@@ -33,6 +34,7 @@ public static class CoreApiTestData
             [key: "Smtp:Security"] = "None",
             [key: "Smtp:FromAddress"] = "no-reply@healthyfac.test",
             [key: "Smtp:FromName"] = "HealthyFac Tests",
+            [key: "Redis:ConnectionString"] = RealtimeTestSettings.UnreachableRedis,
             [key: "Seeding:IsOptionalDataSeeded"] = bool.FalseString,
             [$"{ServiceActorOptions.SectionName}:AllowedClients:0"] = TestServiceTokenClaims.DefaultClientId,
         };

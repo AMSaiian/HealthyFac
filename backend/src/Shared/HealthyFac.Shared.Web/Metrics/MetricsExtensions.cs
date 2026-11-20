@@ -44,6 +44,8 @@ public static class MetricsExtensions
                         .ConfigureResource(resource => resource.AddSharedAttributes())
                         .AddMeter(ObservabilityConstants.Meters.Messaging)
                         .AddMeter(ObservabilityConstants.Meters.Runtime)
+                        .AddMeter(ObservabilityConstants.Meters.Realtime)
+                        .AddMeter(ObservabilityConstants.Meters.BackgroundQueues)
                         .AddMeter(options.AdditionalMeters)
                         .AddAspNetCoreInstrumentation()
                         .AddHttpClientInstrumentation();

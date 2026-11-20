@@ -12,6 +12,7 @@ public static class ObservabilityConstants
         public const string Messaging = "HealthyFac.Messaging";
         public const string Rendering = "HealthyFac.Rendering";
         public const string Email = "HealthyFac.Email";
+        public const string Realtime = "HealthyFac.Realtime";
     }
 
     /// <summary>
@@ -41,6 +42,7 @@ public static class ObservabilityConstants
         public const string Decrypt = "IdEncryption.Decrypt";
         public const string RazorRender = "Razor.Render";
         public const string EmailSend = "Email.Send";
+        public const string RealtimePush = "Realtime.Push";
     }
 
     public static class Tags
@@ -309,6 +311,8 @@ public static class ObservabilityConstants
     public static class Meters
     {
         public const string Messaging = Sources.Messaging;
+        public const string Realtime = Sources.Realtime;
+        public const string BackgroundQueues = "HealthyFac.BackgroundQueues";
 
         /// <summary>The built-in .NET runtime meter (GC, thread pool, exceptions).</summary>
         public const string Runtime = "System.Runtime";
@@ -420,6 +424,59 @@ public static class ObservabilityConstants
         }
     }
 
+    /// <summary>
+    /// The names of the real-time push. The source and the meter are <see cref="Sources.Realtime"/> and
+    /// <see cref="Meters.Realtime"/>. No ID enters a tag: the target is a kind value, a topic value, or
+    /// <see cref="SessionEnded"/>.
+    /// </summary>
+    public static class Realtime
+    {
+        /// <summary>The target tag value of the end of a web session.</summary>
+        public const string SessionEnded = "sessionEnded";
+
+        public static class Instruments
+        {
+            public const string Pushes = "healthyfac.realtime.pushes";
+            public const string PushDuration = "healthyfac.realtime.push.duration";
+        }
+
+        public static class Tags
+        {
+            public const string Target = "realtime.target";
+
+            /// <summary>The result of a push, from <see cref="Results"/>.</summary>
+            public const string Result = "realtime.result";
+        }
+
+        public static class Results
+        {
+            public const string Sent = "sent";
+            public const string Failed = "failed";
+            public const string Dropped = "dropped";
+        }
+    }
+
+    /// <summary>
+    /// The names of the background queues. The meter is <see cref="Meters.BackgroundQueues"/>.
+    /// </summary>
+    public static class BackgroundQueues
+    {
+        public static class Instruments
+        {
+            public const string Length = "healthyfac.background_queue.length";
+        }
+
+        public static class Tags
+        {
+            public const string ItemType = "background_queue.item_type";
+        }
+
+        public static class ItemTypes
+        {
+            public const string RealtimePush = "realtimePush";
+        }
+    }
+
     /// <summary>The UCUM units of the instruments.</summary>
     public static class Units
     {
@@ -434,6 +491,8 @@ public static class ObservabilityConstants
         public const string Readings = "{reading}";
         public const string Silences = "{silence}";
         public const string Runs = "{run}";
+        public const string Pushes = "{push}";
+        public const string Items = "{item}";
     }
 
     public static class Outcomes
