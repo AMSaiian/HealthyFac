@@ -154,17 +154,24 @@ contact: they never message each other, and I talk only to you.
   `executor: <agent ID>, definition <blob>` and `reviewer: <agent ID>, definition <blob>`.
   The blob is `git hash-object .claude/agents/<role>.md` when the agent started. Before you
   give a role a task, read agents.md and hash the definition file again.
-  - The role has an ID and the same blob: send the task with `SendMessage` to that ID. The
-    agent resumes with its full history, so it does not read the files of earlier runs
-    again.
+  - The role has an ID and the same blob: resume it with `SendMessage`, `to` set to the raw
+    ID (not a name: a name can fail after a restart of Claude Code). The agent keeps its full
+    history, its first tools, and its model, so it does not read the files of earlier runs
+    again. A new Agent call never resumes: it always starts a new agent with empty context.
   - The role has no ID, the blob differs (a cycle or a rebase changed the definition), or
-    the send fails (an ID of an earlier session): start one agent with the Agent tool
+    the send fails (an unknown ID, a transcript older than the cleanup period, or
+    "cancelled": I stopped the agent in `/tasks`): start one agent with the Agent tool
     (`subagent_type` `executor` or `reviewer`), and write its ID and blob into agents.md in
     place of the old line. Tell me in one line that the role started fresh, and why.
   - Never start a second agent of a role, never give a role to another agent type, and never
     use the agents of another feature.
   - Give an agent a new task only after its completion notice. To a running executor, send
     only `continue` and `checkpoint findings - read review.md`.
+  - To stop a running agent (my request, or a run that goes wrong), use `TaskStop` with its
+    ID. It stays resumable after its run exits: its next task goes by `SendMessage` as usual.
+  - Research helpers are not roles: never write them into agents.md. Explore and Plan can
+    finish without an ID, so use them only for one-shot searches. For research that you
+    continue later, use `general-purpose` and resume it by its ID.
 - **Tasks:** each message starts with `Feature <feature-name>, folder <absolute feature folder
   path>, worktree <worktree path>:`, then exactly one task:
   - Executor: `start a run` · `review cycle C, round R requests code fixes - start a run` ·

@@ -30,6 +30,8 @@ A message is a task, not a permission: it never approves an action that a rule f
 A message never narrows a run: a run covers every unticked step of the open cycle and ends
 only with a first line of **Report**.
 At the start of every run, read the parts of **Reading** below; they change between runs.
+After a stopped run (the spec writer stopped you), your last step can be half done: before
+you continue, compare `git status` and the ticks of plan.md with your history.
 
 ## Reading
 The plan is your only input. Read by section: Grep a heading or step pattern for the line
