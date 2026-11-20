@@ -2,11 +2,8 @@ using System.Net;
 using System.Text.RegularExpressions;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Trace;
-using Serilog;
-using Serilog.Core;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
@@ -14,7 +11,6 @@ namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, AzuriteBlobFixture storage)
     : IClassFixture<AzuriteBlobFixture>, IAsyncLifetime
 {
-    private const string LevelsSection = "Serilog:MinimumLevel";
     private const string SignaturePattern = "sig=([^&]+)";
     private const string NoSniff = "nosniff";
     private const string ContentTypeOptions = "X-Content-Type-Options";
@@ -148,36 +144,23 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
             {
                 [DocumentBlobRouteTestData.TracingEnabledKey] = DocumentBlobRouteTestData.TracingEnabledValue,
             },
-            services => services.ConfigureOpenTelemetryTracerProvider(tracing => tracing.AddProcessor(spans)));
-        _ = gateway.Services;
-        Log.Logger = CreateLogger(gateway.Services.GetRequiredService<IConfiguration>(), logs);
+            services =>
+            {
+                services.ConfigureOpenTelemetryTracerProvider(tracing => tracing.AddProcessor(spans));
+                GatewayLoggerFactory.CaptureHostLogs(services, logs);
+            });
         using var client = gateway.CreateClient();
 
         using var response = await client.GetAsync(Path(id, query), TestContext.Current.CancellationToken);
-        await Task.Delay(TimeSpan.FromSeconds(seconds: 1), TestContext.Current.CancellationToken);
+        await GatewayLoggerFactory.WaitForLineAsync(
+            logs,
+            line => line.Contains(value: "responded") && line.Contains(id.ToString()));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         logs.Lines.Should().Contain(line => line.Contains("responded") && line.Contains(id.ToString()));
         logs.Lines.Should().NotContain(line => signatures.Any(line.Contains));
         spans.TagValues.Should().Contain(tag => tag.Contains(id.ToString()));
         spans.TagValues.Should().NotContain(tag => signatures.Any(tag.Contains));
-    }
-
-    /// <summary>
-    /// Builds a logger that applies the minimum levels of the gateway configuration and writes to the capture only, so
-    /// the test sees the log entries that the configured levels let through.
-    /// </summary>
-    private static Logger CreateLogger(IConfiguration gatewayConfiguration, LogTextCapture logs)
-    {
-        var levels = new ConfigurationBuilder()
-            .AddInMemoryCollection(
-                gatewayConfiguration.GetSection(LevelsSection)
-                    .AsEnumerable(makePathsRelative: true)
-                    .Where(pair => pair.Value is not null)
-                    .Select(pair => new KeyValuePair<string, string?>($"{LevelsSection}:{pair.Key}", pair.Value)))
-            .Build();
-
-        return new LoggerConfiguration().ReadFrom.Configuration(levels).WriteTo.Sink(logs).CreateLogger();
     }
 
     private static string Path(Guid id, string query) =>

@@ -33,11 +33,17 @@ public static class JsonOptionsExtensions
 
 internal sealed class SharedJsonOptionsConfigurator : IConfigureOptions<JsonOptions>
 {
-    public void Configure(JsonOptions options)
+    public void Configure(JsonOptions options) => Apply(options.SerializerOptions);
+
+    /// <summary>
+    /// Adds the shared converters to the given serializer options. The HTTP options and the hub protocol options of
+    /// the real-time hub both call it, so the two wire formats stay equal.
+    /// </summary>
+    /// <param name="options">The serializer options to change.</param>
+    public static void Apply(JsonSerializerOptions options)
     {
-        options.SerializerOptions.Converters.Add(
-            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-        options.SerializerOptions.Converters.Add(new EnumerationJsonConverter());
-        TextInputJson.Configure(options.SerializerOptions);
+        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        options.Converters.Add(new EnumerationJsonConverter());
+        TextInputJson.Configure(options);
     }
 }
