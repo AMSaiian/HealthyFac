@@ -38,6 +38,28 @@ internal static class ActorClaimsReader
     public static ActorContext Read(ClaimsPrincipal user, IHeaderDictionary headers, ServiceActorOptions options) =>
         IsServiceToken(user) ? ReadServiceActor(user, headers, options) : ReadUser(user);
 
+    /// <summary>
+    /// Reads the company of a user token. The <c>organization</c> claim must occur exactly once with a GUID value.
+    /// </summary>
+    /// <param name="user">The authenticated user.</param>
+    /// <param name="companyId">The company when the token holds exactly one valid organization.</param>
+    /// <returns><see langword="true"/> when the token names exactly one company.</returns>
+    public static bool TryReadCompanyId(ClaimsPrincipal user, out Guid companyId)
+    {
+        var organizations = user.FindAll(KeycloakClaimTypes.Organization)
+            .Select(claim => claim.Value)
+            .ToList();
+
+        if (organizations.Count == 1 && Guid.TryParse(organizations[index: 0], out companyId))
+        {
+            return true;
+        }
+
+        companyId = Guid.Empty;
+
+        return false;
+    }
+
     private static bool IsServiceToken(ClaimsPrincipal user) =>
         user.HasClaim(claim => claim.Type == KeycloakClaimTypes.ClientId)
         && !user.HasClaim(claim => claim.Type == KeycloakClaimTypes.Organization)
@@ -98,16 +120,5 @@ internal static class ActorClaimsReader
     }
 
     private static Guid ReadCompanyId(ClaimsPrincipal user)
-    {
-        var organizations = user.FindAll(KeycloakClaimTypes.Organization)
-            .Select(claim => claim.Value)
-            .ToList();
-
-        if (organizations.Count != 1 || !Guid.TryParse(organizations[index: 0], out var companyId))
-        {
-            throw CurrentUserErrors.OrganizationInvalid();
-        }
-
-        return companyId;
-    }
+        => TryReadCompanyId(user, out var companyId) ? companyId : throw CurrentUserErrors.OrganizationInvalid();
 }

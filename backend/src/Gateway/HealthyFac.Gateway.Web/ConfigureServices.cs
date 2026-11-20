@@ -5,8 +5,8 @@ using HealthyFac.Gateway.Web.Composition.Drafts.Search;
 using HealthyFac.Gateway.Web.Composition.Machines;
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Gateway.Web.RateLimiting;
+using HealthyFac.Gateway.Web.Realtime;
 using HealthyFac.Gateway.Web.Revocation;
-using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Revocation;
@@ -17,8 +17,11 @@ using HealthyFac.Shared.Web.HealthChecks;
 using HealthyFac.Shared.Web.Logging;
 using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.Proxy;
+using HealthyFac.Shared.Web.Realtime;
 using HealthyFac.Shared.Web.Tracing;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Serilog;
 using StackExchange.Redis;
 using Yarp.ReverseProxy.Transforms;
@@ -48,7 +51,7 @@ public static class ConfigureServices
             services.AddExceptionHandler<GatewayExceptionHandler>();
             services.AddProblemDetails();
             services.AddSharedCors(configuration);
-            services.AddSharedRedis(configuration);
+            services.AddSharedRealtime(configuration);
             services.AddGatewaySecurity(configuration);
             services.AddGatewayRateLimiting(configuration);
             services.AddReverseProxy()
@@ -71,6 +74,8 @@ public static class ConfigureServices
         {
             services.AddSharedJwtAuthentication(configuration);
             services.AddTokenRevocationStore();
+            services.AddSingleton<IPostConfigureOptions<JwtBearerOptions>, RealtimeTokenReader>();
+            services.AddSingleton<RealtimeOriginCheck>();
             services.AddSingleton<RevocationCheckMiddleware>();
             services.AddAuthorizationBuilder()
                 .SetAuthenticatedFallbackPolicy()
@@ -109,6 +114,7 @@ public static class ConfigureServices
             app.UseSerilogRequestLogging();
             app.UseExceptionHandler();
             app.UseSharedCors();
+            app.UseMiddleware<RealtimeOriginCheck>();
             app.UseAuthentication();
             app.UseMiddleware<RevocationCheckMiddleware>();
             app.UseRateLimiter();
@@ -128,6 +134,7 @@ public static class ConfigureServices
         {
             app.MapDraftCompositionEndpoints();
             app.MapMachineCompositionEndpoints();
+            app.MapRealtimeEndpoints();
             app.MapReverseProxy(proxy =>
             {
                 proxy.UseMiddleware<ProxyErrorMiddleware>();

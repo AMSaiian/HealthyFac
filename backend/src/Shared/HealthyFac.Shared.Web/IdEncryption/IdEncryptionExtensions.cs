@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
@@ -37,11 +38,19 @@ internal sealed class IdEncryptionJsonOptionsConfigurator(IIdEncryptor encryptor
 {
     private readonly IIdEncryptor _encryptor = encryptor;
 
-    public void Configure(JsonOptions options)
+    public void Configure(JsonOptions options) => Apply(options.SerializerOptions, _encryptor);
+
+    /// <summary>
+    /// Adds the ID encryption modifier to the given serializer options. The HTTP options and the hub protocol options
+    /// of the real-time hub both call it, so an ID looks the same on both wire formats.
+    /// </summary>
+    /// <param name="options">The serializer options to change.</param>
+    /// <param name="encryptor">Encrypts and decrypts the IDs.</param>
+    public static void Apply(JsonSerializerOptions options, IIdEncryptor encryptor)
     {
-        var resolver = options.SerializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
-        options.SerializerOptions.TypeInfoResolver = resolver.WithAddedModifier(typeInfo =>
-            IdEncryptionJsonModifier.Apply(typeInfo, _encryptor)
+        var resolver = options.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
+        options.TypeInfoResolver = resolver.WithAddedModifier(typeInfo =>
+            IdEncryptionJsonModifier.Apply(typeInfo, encryptor)
         );
     }
 }
