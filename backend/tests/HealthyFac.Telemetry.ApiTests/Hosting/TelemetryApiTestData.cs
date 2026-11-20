@@ -1,4 +1,5 @@
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Realtime;
 
 namespace HealthyFac.Telemetry.ApiTests.Hosting;
 
@@ -20,6 +21,7 @@ public static class TelemetryApiTestData
             [key: "IdEncryption:Keys:0:Prefix"] = "v1_",
             [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
             [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
+            [key: "Redis:ConnectionString"] = RealtimeTestSettings.UnreachableRedis,
             [key: "Seeding:IsOptionalDataSeeded"] = bool.FalseString,
             [key: "ServiceActors:AllowedClients:0"] = InsightsClientId,
         };

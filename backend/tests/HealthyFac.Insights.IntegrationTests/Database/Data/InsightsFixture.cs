@@ -5,11 +5,14 @@ using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Realtime;
 using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -55,6 +58,8 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
     }
 
     public ConcurrentSaveGate SaveGate { get; } = new();
+
+    public RecordingRealtimeQueue RealtimeQueue { get; } = new();
 
     public SaveHook SaveHook { get; } = new();
 
@@ -108,6 +113,7 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddIdEncryptor(configuration);
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
+        services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
         services.ConfigureDbContext<InsightsDbContext>(options => options.AddInterceptors(SaveGate, SaveHook));
         services.AddSingleton(Files);
         services.AddSingleton<IFileCatalog>(Files);
@@ -138,6 +144,7 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
         Logs.Clear();
         Ingest.Reset();
         SaveHook.Clear();
+        RealtimeQueue.Clear();
         await _resetter.ResetAsync();
         await _redis.FlushAsync();
     }

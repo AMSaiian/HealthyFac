@@ -1,7 +1,9 @@
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
+using HealthyFac.Shared.Infrastructure.Realtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -15,7 +17,8 @@ public static class ProcessingExtensions
         /// Registers the background processors of the outbox and the inbox, and the scoped classes that do the
         /// work of one message. Call it after <c>AddMessagingTransport</c>, because the publisher uses the Rebus
         /// bus and the processors read the messaging options. It also registers the messaging metrics and the
-        /// backlog sampler that feeds their gauges.
+        /// backlog sampler that feeds their gauges. A service that never called <c>AddRealtimeNotifier</c> gets a
+        /// notifier that throws on an add, so the inbox runner always has one.
         /// </summary>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddMessageProcessors()
@@ -24,6 +27,7 @@ public static class ProcessingExtensions
             services.AddMessagingMetrics();
             services.AddScoped<OutboxMessagePublisher>();
             services.AddScoped<InboxMessageRunner>();
+            services.TryAddScoped<IRealtimeNotifier, UnregisteredRealtimeNotifier>();
             services.AddHostedService<OutboxProcessor>();
             services.AddHostedService<InboxProcessor>();
             services.AddHostedService<MessageBacklogSampler>();

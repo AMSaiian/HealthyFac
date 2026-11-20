@@ -8,6 +8,7 @@ using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
+using HealthyFac.Shared.Infrastructure.Realtime;
 using HealthyFac.Shared.Infrastructure.RichText;
 using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Shared.Infrastructure.Time;
@@ -94,6 +95,7 @@ public static class ConfigureServices
             services.AddServiceOptions(configuration);
             services.AddMessagingTransport(configuration);
             services.AddMessageProcessors();
+            services.AddRealtimeNotifier();
 
             services.AddIntegrationMessage<MachineStateChanged>();
             services.AddIntegrationMessage<MachineGoLiveDateChanged>();

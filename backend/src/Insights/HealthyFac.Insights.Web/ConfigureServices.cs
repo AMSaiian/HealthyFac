@@ -15,6 +15,7 @@ using HealthyFac.Shared.Web.Logging;
 using HealthyFac.Shared.Web.Metrics;
 using HealthyFac.Shared.Web.OpenApi;
 using HealthyFac.Shared.Web.Proxy;
+using HealthyFac.Shared.Web.Realtime;
 using HealthyFac.Shared.Web.Serialization;
 using HealthyFac.Shared.Web.Tracing;
 using HealthyFac.Shared.Web.Versioning;
@@ -45,6 +46,7 @@ public static class ConfigureServices
 
             services.AddActorContextMiddleware();
             services.AddSharedExceptionHandling();
+            services.AddSharedRealtime(configuration);
 
             return services;
         }

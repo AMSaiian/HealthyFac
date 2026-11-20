@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using HealthyFac.Shared.Application;
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Persistence;
 using HealthyFac.Shared.Application.UseCases;
@@ -430,6 +431,46 @@ public static class ConventionChecks
             .Select(type => $"{type.DisplayName}: calls {ConventionConstants.Transactions.RunInTransactionMethod}")
             .Order(StringComparer.Ordinal)
             .ToList();
+
+    /// <summary>
+    /// Finds the background queue item types that break the item rules. An item type is the <c>TItem</c> of an
+    /// <c>IBackgroundItemHandler&lt;TItem&gt;</c> implementation. An item crosses from the request scope to the
+    /// scope of the sender, so it holds plain data only: no property of an interface type (a type argument counts
+    /// too), a <c>DbContext</c>, or an <c>IServiceProvider</c>. Each item type has exactly one handler type.
+    /// </summary>
+    /// <param name="types">The types to inspect.</param>
+    /// <returns>One line for each broken rule.</returns>
+    public static IReadOnlyList<string> FindBackgroundItemViolations(IEnumerable<Type> types)
+    {
+        var handled = types
+            .Where(type => type is { IsClass: true, IsAbstract: false, IsGenericTypeDefinition: false })
+            .SelectMany(type => type.GetInterfaces()
+                .Where(contract => contract.IsGenericType
+                    && contract.GetGenericTypeDefinition() == typeof(IBackgroundItemHandler<>))
+                .Select(contract => (Handler: type, Item: contract.GetGenericArguments()[0])))
+            .ToList();
+
+        var multipleHandlers = handled
+            .GroupBy(pair => pair.Item)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key.DisplayName}: has {group.Count()} handlers");
+
+        var forbiddenProperties = handled
+            .Select(pair => pair.Item)
+            .Distinct()
+            .SelectMany(item => item.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(property => IsForbiddenItemType(property.PropertyType))
+                .Select(property => $"{item.DisplayName}.{property.Name}: type {property.PropertyType.Name}"));
+
+        return multipleHandlers.Concat(forbiddenProperties).Order(StringComparer.Ordinal).ToList();
+    }
+
+    private static bool IsForbiddenItemType(Type type) =>
+        type.IsInterface
+        || typeof(DbContext).IsAssignableFrom(type)
+        || type == typeof(IServiceProvider)
+        || (type.IsGenericType && type.GetGenericArguments().Any(IsForbiddenItemType))
+        || (type.IsArray && IsForbiddenItemType(type.GetElementType()!));
 
     private static bool IsInboxHandler(Type type)
     {

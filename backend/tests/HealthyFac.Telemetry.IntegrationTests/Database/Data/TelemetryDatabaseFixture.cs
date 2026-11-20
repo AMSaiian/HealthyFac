@@ -1,4 +1,6 @@
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Telemetry.Application;
 using HealthyFac.Telemetry.Infrastructure;
@@ -6,6 +8,7 @@ using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Database.Initialization;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Realtime;
 using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -43,6 +46,8 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachT
     }
 
     public ConcurrentSaveGate SaveGate { get; } = new();
+
+    public RecordingRealtimeQueue RealtimeQueue { get; } = new();
 
     /// <summary>The connection string of the test database, for a test that reads <c>pg_stat_activity</c>.</summary>
     public string ConnectionString => _database.ConnectionString;
@@ -95,6 +100,7 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachT
         services.AddActorContext();
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
+        services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
         services.ConfigureDbContext<TelemetryDbContext>(options => options.AddInterceptors(SaveGate));
         _configureServices?.Invoke(services);
 
@@ -112,6 +118,7 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachT
     /// </summary>
     public async ValueTask ResetAsync()
     {
+        RealtimeQueue.Clear();
         await _resetter.ResetAsync();
 
         using var scope = ScopeFactory.CreateScope();
