@@ -11,10 +11,12 @@ import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { firstValueFrom, type Observable, of, throwError, toArray } from 'rxjs';
 
+import { NETWORK_ERROR_URL, NOT_FOUND_URL } from '@shared/http/fallback-urls';
+
 import type { Machine } from '@machines/machine';
 import { StatusDefinitionsGridStore } from '@machines/statuses/list/status-definitions-grid.store';
 
-import { NOT_FOUND_URL, statusDefinitionsResolver } from './status-definitions.resolver';
+import { statusDefinitionsResolver } from './status-definitions.resolver';
 
 const MACHINE_ID = 'encrypted-machine-id';
 const MACHINE = { id: MACHINE_ID, name: 'Lathe 01' } as Machine;
@@ -52,14 +54,24 @@ describe('statusDefinitionsResolver', () => {
     expect(result).toBe(MACHINE);
   });
 
-  it('statusDefinitionsResolver_WithNotFound_RedirectsToNotFoundPageKeepingTheUrl', async () => {
+  it('statusDefinitionsResolver_WithNotFound_RedirectsToNotFoundPageWithTheRequestedBrowserUrl', async () => {
     const [result] = await resolve(() => throwError(() => httpError(HttpStatusCode.NotFound)));
 
     expect(messages.add).not.toHaveBeenCalled();
     expect(result).toBeInstanceOf(RedirectCommand);
     const redirect = result as RedirectCommand;
     expect(TestBed.inject(Router).serializeUrl(redirect.redirectTo as never)).toBe(NOT_FOUND_URL);
-    expect(redirect.navigationBehaviorOptions).toEqual({ skipLocationChange: true });
+    expect(redirect.navigationBehaviorOptions?.skipLocationChange).toBeUndefined();
+    expect(redirect.navigationBehaviorOptions).toHaveProperty('browserUrl');
+  });
+
+  it('statusDefinitionsResolver_WithStatus0_RedirectsToTheNetworkPageWithoutToast', async () => {
+    const [result] = await resolve(() => throwError(() => httpError(0)));
+
+    expect(messages.add).not.toHaveBeenCalled();
+    const redirect = result as RedirectCommand;
+    expect(TestBed.inject(Router).serializeUrl(redirect.redirectTo as never)).toBe(NETWORK_ERROR_URL);
+    expect(redirect.navigationBehaviorOptions).toHaveProperty('browserUrl');
   });
 
   it('statusDefinitionsResolver_WithServerError_ShowsStatusToastAndCancelsNavigation', async () => {

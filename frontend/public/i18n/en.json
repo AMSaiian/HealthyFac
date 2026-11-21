@@ -5,6 +5,7 @@
   "TITLES": {
     "HOME": "Home",
     "NOT_FOUND": "Page not found",
+    "NETWORK_ERROR": "No connection",
     "MACHINES": "Machines",
     "STATUS_DEFINITIONS": "Statuses",
     "METRICS": "Metrics",
@@ -50,8 +51,11 @@
     }
   },
   "NOT_FOUND": {
-    "MESSAGE": "This page does not exist",
-    "BACK": "Go to the home page"
+    "MESSAGE": "The page does not exist, or you have no access to it",
+    "HOME": "Home"
+  },
+  "NETWORK_ERROR": {
+    "MESSAGE": "The page could not load. Check your connection and try again"
   },
   "ERRORS": {
     "UNEXPECTED": "An unexpected error occurred",

@@ -1,18 +1,14 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { RedirectCommand, type ResolveFn, Router } from '@angular/router';
-import { TranslateService } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
-import { catchError, EMPTY, of, tap, throwError } from 'rxjs';
+import type { RedirectCommand, ResolveFn } from '@angular/router';
+import { tap } from 'rxjs';
 
-import { httpErrorMessageKey } from '@shared/http/http-error-message';
+import { catchResolverFailure } from '@shared/http/resolver-failure';
 import { Temporal } from '@shared/time/temporal';
 
 import type { Machine } from '@machines/machine';
 import { MetricChartPageStore } from '@machines/signals/metric-chart-page-store/metric-chart-page.store';
-import { MACHINE_ID_PARAMETER, NOT_FOUND_URL } from '@machines/statuses/list/status-definitions.resolver';
+import { MACHINE_ID_PARAMETER } from '@machines/statuses/list/status-definitions.resolver';
 
-const ERROR_SUMMARY_KEY = 'TOASTS.ERROR';
 /** The query of a link that opens the dashboards on a from-to range (ISO instants), as the case page builds it. */
 const FROM_PARAMETER = 'from';
 const TO_PARAMETER = 'to';
@@ -27,14 +23,12 @@ function isInstantRange(from: string, to: string): boolean {
 }
 
 /**
- * Opens the machine of the route in the metric chart store before the page activates. A missing machine (`404`) leads to the
- * not-found page. Another HTTP failure shows its status toast and cancels the navigation.
+ * Opens the machine of the route in the metric chart store before the page activates. A missing machine (`404`) leads
+ * to the not-found page, and a network failure (status `0`) to the network page. Both keep the requested address in the
+ * address bar (`browserUrl`). Another HTTP failure shows its status toast and cancels the navigation.
  */
 export const metricChartResolver: ResolveFn<Machine | RedirectCommand> = (route) => {
   const store = inject(MetricChartPageStore);
-  const router = inject(Router);
-  const messages = inject(MessageService);
-  const translate = inject(TranslateService);
 
   return store.openMachine(route.paramMap.get(MACHINE_ID_PARAMETER) ?? '').pipe(
     tap(() => {
@@ -48,19 +42,6 @@ export const metricChartResolver: ResolveFn<Machine | RedirectCommand> = (route)
         store.preferMetricKey(metricKey);
       }
     }),
-    catchError((error: unknown) => {
-      if (!(error instanceof HttpErrorResponse)) {
-        return throwError(() => error);
-      }
-      if (error.status === HttpStatusCode.NotFound) {
-        return of(new RedirectCommand(router.parseUrl(NOT_FOUND_URL), { skipLocationChange: true }));
-      }
-      messages.add({
-        severity: 'error',
-        summary: translate.instant(ERROR_SUMMARY_KEY),
-        detail: translate.instant(httpErrorMessageKey(error.status)),
-      });
-      return EMPTY;
-    }),
+    catchResolverFailure(),
   );
 };

@@ -1,12 +1,19 @@
 import type { Routes } from '@angular/router';
 
 import { companyGuard } from '@shared/company/company.guard';
+import { NETWORK_ERROR_PATH } from '@shared/http/fallback-urls';
 import { authGuard } from '@shared/security/auth.guard';
 import { permissionGuard } from '@shared/security/permission.guard';
+import { NetworkErrorPage } from '@fallback/network-error/network-error-page';
 import { CASES_RETURN_TARGET } from '@maintenance/maintenance-return-target';
 import { WORK_ORDERS_RETURN_TARGET } from '@work-orders/work-orders-return-target';
 
 export const routes: Routes = [
+  {
+    path: NETWORK_ERROR_PATH,
+    title: 'TITLES.NETWORK_ERROR',
+    component: NetworkErrorPage,
+  },
   {
     path: '',
     title: 'TITLES.HOME',

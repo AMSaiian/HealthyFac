@@ -11,10 +11,12 @@ import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { firstValueFrom, type Observable, of, throwError, toArray } from 'rxjs';
 
+import { NETWORK_ERROR_URL, NOT_FOUND_URL } from '@shared/http/fallback-urls';
+
 import type { Machine } from '@machines/machine';
 import { MachinesApi } from '@machines/machines-api';
 
-import { machineFilesResolver, NOT_FOUND_URL } from './machine-files.resolver';
+import { machineFilesResolver } from './machine-files.resolver';
 
 const MACHINE_ID = 'encrypted-machine-id';
 const MACHINE = { id: MACHINE_ID, name: 'Lathe 01' } as Machine;
@@ -48,14 +50,24 @@ describe('machineFilesResolver', () => {
     expect(result).toBe(MACHINE);
   });
 
-  it('machineFilesResolver_WithNotFound_RedirectsToNotFoundPageKeepingTheUrl', async () => {
+  it('machineFilesResolver_WithNotFound_RedirectsToNotFoundPageWithTheRequestedBrowserUrl', async () => {
     const [result] = await resolve(() => throwError(() => new HttpErrorResponse({ status: HttpStatusCode.NotFound })));
 
     expect(messages.add).not.toHaveBeenCalled();
     expect(result).toBeInstanceOf(RedirectCommand);
     const redirect = result as RedirectCommand;
     expect(TestBed.inject(Router).serializeUrl(redirect.redirectTo as never)).toBe(NOT_FOUND_URL);
-    expect(redirect.navigationBehaviorOptions).toEqual({ skipLocationChange: true });
+    expect(redirect.navigationBehaviorOptions?.skipLocationChange).toBeUndefined();
+    expect(redirect.navigationBehaviorOptions).toHaveProperty('browserUrl');
+  });
+
+  it('machineFilesResolver_WithStatus0_RedirectsToTheNetworkPageWithoutToast', async () => {
+    const [result] = await resolve(() => throwError(() => new HttpErrorResponse({ status: 0 })));
+
+    expect(messages.add).not.toHaveBeenCalled();
+    const redirect = result as RedirectCommand;
+    expect(TestBed.inject(Router).serializeUrl(redirect.redirectTo as never)).toBe(NETWORK_ERROR_URL);
+    expect(redirect.navigationBehaviorOptions).toHaveProperty('browserUrl');
   });
 
   it('machineFilesResolver_WithServerError_ShowsStatusToastAndCancelsNavigation', async () => {

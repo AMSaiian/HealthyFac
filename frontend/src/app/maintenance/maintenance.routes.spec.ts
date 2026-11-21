@@ -12,6 +12,7 @@ import { APP_ROUTER_FEATURES } from '@app/app-router';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { HistoryStore } from '@shared/history/history.store';
+import { HOME_RETURN_TARGET } from '@shared/history/return-target';
 import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -47,6 +48,9 @@ const EMPTY_PAGE = { items: [], totalCount: 0 };
 @Component({ template: '', selector: 'hf-not-found-stub', host: { class: 'contents' } })
 class NotFoundStub {}
 
+@Component({ template: '', selector: 'hf-network-error-stub', host: { class: 'contents' } })
+class NetworkErrorStub {}
+
 function setup(permissions: readonly string[]): {
   http: HttpTestingController;
   messages: { add: ReturnType<typeof vi.fn> };
@@ -58,6 +62,7 @@ function setup(permissions: readonly string[]): {
         [
           { path: 'maintenance', children: MAINTENANCE_ROUTES },
           { path: 'not-found', component: NotFoundStub },
+          { path: 'network-error', component: NetworkErrorStub },
           { path: 'machines/:id/signals', component: NotFoundStub },
         ],
         ...APP_ROUTER_FEATURES,
@@ -143,6 +148,52 @@ describe('maintenance routes', () => {
     expect(router.url).toBe('/maintenance/cases/c1');
     expect(navigation.currentEntry.index).toBe(entryCount - 2);
     expect(navigation.entries().length).toBe(entryCount);
+  });
+
+  it('caseRoute_404FromALink_BackReturnsToTheSource', async () => {
+    const { http } = setup([Permission.CasesRead]);
+    const history = TestBed.inject(HistoryStore);
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/maintenance/cases');
+    await vi.waitFor(() => {
+      TestBed.tick();
+      http.match(SEARCH_URL).forEach((request) => request.flush(EMPTY_PAGE));
+      expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(CasesPage);
+    });
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+
+    const opening = harness.navigateByUrl('/maintenance/cases/c1');
+    await vi.waitFor(() => {
+      http.expectOne(CASE_URL).flush(null, { status: 404, statusText: 'Not Found' });
+    });
+    await opening;
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(NotFoundStub);
+    expect(navigation.currentEntry.url).toContain('/maintenance/cases/c1');
+
+    const entryCount = navigation.entries().length;
+
+    await history.back(HOME_RETURN_TARGET);
+    expect(TestBed.inject(Router).url).toBe('/maintenance/cases');
+    expect(navigation.entries().length).toBe(entryCount);
+    expect(navigation.currentEntry.index).toBe(entryCount - 2);
+  });
+
+  it('caseRoute_Status0_ShowsTheNetworkPage', async () => {
+    const { http, messages } = setup([Permission.CasesRead]);
+    const harness = await RouterTestingHarness.create();
+
+    const opening = harness.navigateByUrl('/maintenance/cases/c1');
+    await vi.waitFor(() => {
+      http.expectOne(CASE_URL).error(new ProgressEvent('error'), { status: 0 });
+    });
+    await opening;
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(NetworkErrorStub);
+    expect(messages.add).not.toHaveBeenCalled();
+    expect((TestBed.inject(PlatformNavigation) as FakePlatformNavigation).currentEntry.url).toContain(
+      '/maintenance/cases/c1',
+    );
   });
 
   it('casesRoute_AfterOpening_SearchesTheCasesNewestFirstAndLoadsTheMachineNames', async () => {

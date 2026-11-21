@@ -8,8 +8,10 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { CompanyStore } from '@shared/company/company.store';
+import { NETWORK_ERROR_PATH } from '@shared/http/fallback-urls';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 
+import { NetworkErrorPage } from '@fallback/network-error/network-error-page';
 import { CompanyFilesPage } from '@files/list/company-files-page/company-files-page';
 import { CasesPage } from '@maintenance/list/cases-page/cases-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
@@ -41,6 +43,15 @@ function setup(): HttpTestingController {
 }
 
 describe('app routes', { timeout: ROUTE_LOAD_TIMEOUT * 2 }, () => {
+  it('networkErrorRoute_IsNotLazy', () => {
+    const [first] = routes;
+
+    expect(first.path).toBe(NETWORK_ERROR_PATH);
+    expect(first.component).toBe(NetworkErrorPage);
+    expect(first.loadComponent).toBeUndefined();
+    expect(first.canActivate).toBeUndefined();
+  });
+
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',
