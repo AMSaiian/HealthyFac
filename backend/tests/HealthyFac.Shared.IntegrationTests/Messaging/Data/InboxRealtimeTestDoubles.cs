@@ -4,6 +4,7 @@ using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Npgsql;
@@ -118,5 +119,49 @@ public sealed class InboxRealtimeRetryFixture : TransportFixture
                     DatabaseOutageTestData.RetryMaxDelay,
                     errorCodesToAdd: null))
             .AddInterceptors(_interceptor);
+    }
+}
+
+/// <summary>
+/// Records the calls that the inbox runner makes to its unit observers, in order.
+/// </summary>
+public sealed class RecordingInboxObserver : IInboxUnitObserver
+{
+    private readonly List<string> _calls = [];
+    private readonly Lock _lock = new();
+
+    public IReadOnlyList<string> Calls
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return [.. _calls];
+            }
+        }
+    }
+
+    public void OnUnitStarting()
+    {
+        lock (_lock)
+        {
+            _calls.Add(InboxRealtimeTestData.StartingCall);
+        }
+    }
+
+    public void OnUnitCommitted()
+    {
+        lock (_lock)
+        {
+            _calls.Add(InboxRealtimeTestData.CommittedCall);
+        }
+    }
+
+    public void Reset()
+    {
+        lock (_lock)
+        {
+            _calls.Clear();
+        }
     }
 }

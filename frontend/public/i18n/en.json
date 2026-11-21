@@ -42,14 +42,17 @@
   "NOTIFICATIONS": {
     "BELL": {
       "TITLE": "Notifications",
-      "EMPTY": "No notifications yet"
+      "EMPTY": "No notifications yet",
+      "MARK_ALL_AS_READ": "Mark all as read"
     },
+    "MARK_AS_READ": "Mark as read",
     "PROVISIONING_REASONS": {
       "ORGANIZATION_NOT_FOUND": "the company is not set up in the sign-in system",
       "EMAIL_ALREADY_REGISTERED": "the email is already registered",
       "ROLE_NOT_FOUND": "the role is missing in the sign-in system",
       "UNKNOWN": "an unknown error"
     },
+    "DISMISS": "Close this notification and mark it as read",
     "JUMP": "Open",
     "KINDS": {
       "SHIFT_CHANGED": "Your shift on {{date}} changed",

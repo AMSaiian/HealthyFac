@@ -9,6 +9,10 @@ import { AuthStore, MIN_TOKEN_VALIDITY_SECONDS } from '@shared/security/auth-sto
 import { CLOCK } from '@shared/time/clock';
 
 const MILLISECONDS_PER_SECOND = 1000;
+
+/** A start that has not ended after this time counts as failed. */
+export const START_TIMEOUT_MILLISECONDS = 30_000;
+
 type ConnectKind = 'start' | 'renew' | 'recover';
 
 const NOTIFICATION_METHOD = 'Notification';
@@ -39,7 +43,9 @@ export const HUB_CONNECTION_FACTORY = new InjectionToken<() => HubConnection>('H
  * replaces the current one 30 seconds before the token expires, because the gateway closes a connection at the
  * token expiry. A failed start and a close with an error start a new connection with the retry delays. A new
  * connection that follows a drop (a retry of a failed start, a restart after a close with an error) emits
- * `reconnected$`, because the pages missed the hints of the gap. The first start and a planned renew emit nothing.
+ * `reconnected$`, because the pages missed the hints of the gap. The first start and a planned renew emit nothing. A
+ * start that has not ended after 30 seconds counts as failed, because a WebSocket that the browser blocks can fire no
+ * close.
  */
 @Injectable({ providedIn: 'root' })
 export class RealtimeConnection {
@@ -57,6 +63,7 @@ export class RealtimeConnection {
   private _retryTimer: ReturnType<typeof setTimeout> | null = null;
   private _renewTimer: ReturnType<typeof setTimeout> | null = null;
   private _lastRenewAt: number | null = null;
+  private readonly _pendingStarts = new Map<HubConnection, ReturnType<typeof setTimeout>>();
 
   readonly notifications$: Observable<RealtimeNotification> = this._notifications.asObservable();
   readonly hints$: Observable<RealtimeHint> = this._hints.asObservable();
@@ -72,8 +79,16 @@ export class RealtimeConnection {
     this._isStopped = true;
     this._lastRenewAt = null;
     this._clearTimers();
+    const pending = [...this._pendingStarts.keys()];
+    for (const timer of this._pendingStarts.values()) {
+      clearTimeout(timer);
+    }
+    this._pendingStarts.clear();
     const connection = this._current;
     this._current = null;
+    for (const hub of pending) {
+      this._stopWithoutWaiting(hub);
+    }
     await connection?.stop();
   }
 
@@ -84,10 +99,9 @@ export class RealtimeConnection {
     }
     const connection = this._createConnection();
     this._attach(connection);
-    try {
-      await connection.start();
-    } catch {
-      await connection.stop().catch(() => undefined);
+    const isStarted = await this._startWithLimit(connection);
+    if (!isStarted) {
+      this._stopWithoutWaiting(connection);
       this._retryAfterFailure(attempt, kind);
       return;
     }
@@ -102,6 +116,46 @@ export class RealtimeConnection {
     if (kind === 'recover') {
       this._reconnected.next();
     }
+  }
+
+  /**
+   * Starts the connection and gives the result: `true` when it started, `false` when it failed or did not end within
+   * `START_TIMEOUT_MILLISECONDS`. The late result of a start that the limit ended is ignored.
+   */
+  private _startWithLimit(connection: HubConnection): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+      const finish = (isStarted: boolean): void => {
+        const timer = this._pendingStarts.get(connection);
+        if (timer !== undefined) {
+          clearTimeout(timer);
+          this._pendingStarts.delete(connection);
+        }
+        resolve(isStarted);
+      };
+      this._pendingStarts.set(
+        connection,
+        setTimeout(() => {
+          this._pendingStarts.delete(connection);
+          resolve(false);
+        }, START_TIMEOUT_MILLISECONDS),
+      );
+      connection.start().then(
+        () => {
+          finish(true);
+        },
+        () => {
+          finish(false);
+        },
+      );
+    });
+  }
+
+  /**
+   * Starts the stop of a connection and does not wait for it. The SignalR stop of a connection whose start has not
+   * ended waits for that start, and a start that never ends never lets it finish, so a caller that waits could hang.
+   */
+  private _stopWithoutWaiting(connection: HubConnection): void {
+    void connection.stop().catch(() => undefined);
   }
 
   /** The renew takes a fresh token through the one refresh of `AuthStore`, never the token that it still holds. */

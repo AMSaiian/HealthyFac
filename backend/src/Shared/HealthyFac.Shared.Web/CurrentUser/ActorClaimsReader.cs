@@ -14,7 +14,7 @@ namespace HealthyFac.Shared.Web.CurrentUser;
 /// Builds the actor of a request from the claims of a validated access token. A user token gives the user. A
 /// service token (Client Credentials) gives the actor that the calling service sends in the actor headers.
 /// </summary>
-internal static class ActorClaimsReader
+public static class ActorClaimsReader
 {
     /// <summary>
     /// Reads the actor from a token of the user shape or of the service shape. A token with the client ID claim and
@@ -60,6 +60,52 @@ internal static class ActorClaimsReader
         return false;
     }
 
+    /// <summary>Reads the user ID of a token: the <c>sub</c> claim, when it is a GUID.</summary>
+    /// <param name="user">The authenticated user.</param>
+    /// <param name="userId">The user ID, or <see cref="Guid.Empty"/> when the claim is missing or not a GUID.</param>
+    /// <returns><see langword="true"/> when the token has a GUID <c>sub</c> claim.</returns>
+    public static bool TryReadUserId(ClaimsPrincipal user, out Guid userId)
+    {
+        if (Guid.TryParse(user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out userId))
+        {
+            return true;
+        }
+
+        userId = Guid.Empty;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Reads the actor of a user token, with no service path. A connection that always has a user token (a hub
+    /// connection) uses it.
+    /// </summary>
+    /// <param name="user">The authenticated user.</param>
+    /// <returns>The user, the company, and the employee of the token.</returns>
+    /// <exception cref="UnauthorizedAccessException">
+    /// Thrown when the token has no valid <c>sub</c>, <c>organization</c>, or <c>employee_id</c>.
+    /// </exception>
+    public static ActorContext ReadUser(ClaimsPrincipal user)
+    {
+        if (!TryReadUserId(user, out var userId))
+        {
+            throw CurrentUserErrors.SubjectInvalid();
+        }
+
+        if (!Guid.TryParse(user.FindFirst(KeycloakClaimTypes.EmployeeId)?.Value, out var employeeId))
+        {
+            throw CurrentUserErrors.EmployeeIdInvalid();
+        }
+
+        return new ActorContext
+        {
+            Kind = ActorKind.User,
+            UserId = userId,
+            CompanyId = ReadCompanyId(user),
+            EmployeeId = employeeId,
+        };
+    }
+
     private static bool IsServiceToken(ClaimsPrincipal user) =>
         user.HasClaim(claim => claim.Type == KeycloakClaimTypes.ClientId)
         && !user.HasClaim(claim => claim.Type == KeycloakClaimTypes.Organization)
@@ -96,27 +142,6 @@ internal static class ActorClaimsReader
         return Guid.TryParse(rawCompanyId.ToString(), out var companyId)
             ? companyId
             : throw CurrentUserErrors.ServiceActorMissing();
-    }
-
-    private static ActorContext ReadUser(ClaimsPrincipal user)
-    {
-        if (!Guid.TryParse(user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId))
-        {
-            throw CurrentUserErrors.SubjectInvalid();
-        }
-
-        if (!Guid.TryParse(user.FindFirst(KeycloakClaimTypes.EmployeeId)?.Value, out var employeeId))
-        {
-            throw CurrentUserErrors.EmployeeIdInvalid();
-        }
-
-        return new ActorContext
-        {
-            Kind = ActorKind.User,
-            UserId = userId,
-            CompanyId = ReadCompanyId(user),
-            EmployeeId = employeeId,
-        };
     }
 
     private static Guid ReadCompanyId(ClaimsPrincipal user)

@@ -52,4 +52,50 @@ public sealed class InboxRealtimePushTests(TransportCollectionFixture fixture)
         row.ProcessedOn.Should().Be(InboxTestData.Now);
         _fixture.RealtimeQueue.Items.Should().ContainSingle();
     }
+
+    [Fact]
+    public async Task InboxProcessor_WithHandledRow_CallsTheObserverStartThenCommit()
+    {
+        await _fixture.AddPendingInboxRowAsync(
+            InboxRealtimeTestData.HandledRowId,
+            InboxRealtimeTestData.MessageType,
+            InboxRealtimeTestData.HandledText,
+            InboxProcessorTestData.UserActorId,
+            InboxProcessorTestData.UserCompanyId,
+            InboxTestData.Now);
+        var processor = _fixture.Create<InboxProcessor>();
+
+        await processor.RunAsync(CancellationToken.None);
+
+        _fixture.InboxObserver.Calls.Take(count: 2)
+            .Should()
+            .Equal(InboxRealtimeTestData.StartingCall, InboxRealtimeTestData.CommittedCall);
+        _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.CommittedCall)
+            .Should()
+            .Be(expected: 1);
+    }
+
+    [Fact]
+    public async Task InboxProcessor_WhenTheHandlerThrows_CallsNoCommitObserverUntilTheRetrySucceeds()
+    {
+        await _fixture.AddPendingInboxRowAsync(
+            InboxRealtimeTestData.FailsOnceRowId,
+            InboxRealtimeTestData.MessageType,
+            InboxRealtimeTestData.FailsOnceText,
+            InboxProcessorTestData.UserActorId,
+            InboxProcessorTestData.UserCompanyId,
+            InboxTestData.Now);
+        var processor = _fixture.Create<InboxProcessor>();
+
+        await processor.RunAsync(CancellationToken.None);
+        var callsAfterFailure = _fixture.InboxObserver.Calls;
+        await _fixture.MakeInboxRowDueAsync(InboxRealtimeTestData.FailsOnceRowId);
+        await processor.RunAsync(CancellationToken.None);
+
+        callsAfterFailure.Should().StartWith(InboxRealtimeTestData.StartingCall);
+        callsAfterFailure.Should().NotContain(InboxRealtimeTestData.CommittedCall);
+        _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.CommittedCall)
+            .Should()
+            .Be(expected: 1);
+    }
 }

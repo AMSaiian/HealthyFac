@@ -1,6 +1,7 @@
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Revocation;
+using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Net.Http.Headers;
 using Polly.CircuitBreaker;
@@ -32,7 +33,7 @@ public sealed class RevocationCheckMiddleware(
             return;
         }
 
-        if (!Guid.TryParse(context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var userId))
+        if (!ActorClaimsReader.TryReadUserId(context.User, out var userId))
         {
             await RejectAsync(context);
 

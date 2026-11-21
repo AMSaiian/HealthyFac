@@ -23,7 +23,10 @@ const DAY = { date: '2027-06-01' } as DaySchedule;
 
 const messages = { add: vi.fn() };
 
-function resolve(openDay: (id: string) => Observable<DaySchedule>): Promise<unknown[]> {
+function resolve(
+  openDay: (id: string, dateQuery: string | undefined) => Observable<DaySchedule>,
+  queryParams: Record<string, string> = {},
+): Promise<unknown[]> {
   TestBed.configureTestingModule({
     providers: [
       { provide: EmployeeDayStore, useValue: { openDay } },
@@ -33,7 +36,7 @@ function resolve(openDay: (id: string) => Observable<DaySchedule>): Promise<unkn
   });
   const route = {
     paramMap: convertToParamMap({ id: EMPLOYEE_ID }),
-    queryParamMap: convertToParamMap({}),
+    queryParamMap: convertToParamMap(queryParams),
   } as ActivatedRouteSnapshot;
   const result = TestBed.runInInjectionContext(() => employeeDayResolver(route, {} as RouterStateSnapshot));
   return firstValueFrom((result as Observable<unknown>).pipe(toArray()));
@@ -49,8 +52,16 @@ describe('employeeDayResolver', () => {
 
     const [result] = await resolve(openDay);
 
-    expect(openDay).toHaveBeenCalledExactlyOnceWith(EMPLOYEE_ID);
+    expect(openDay).toHaveBeenCalledExactlyOnceWith(EMPLOYEE_ID, undefined);
     expect(result).toBe(DAY);
+  });
+
+  it('employeeDayResolver_WithDateQuery_OpensTheDayOfTheQuery', async () => {
+    const openDay = vi.fn(() => of(DAY));
+
+    await resolve(openDay, { date: DAY.date });
+
+    expect(openDay).toHaveBeenCalledExactlyOnceWith(EMPLOYEE_ID, DAY.date);
   });
 
   it('employeeDayResolver_With404_RedirectsToTheNotFoundPage', async () => {

@@ -11,6 +11,11 @@ import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { type CompanyDaySchedule, ScheduleApi } from '@schedule/schedule-api';
 
 import { CompanyDayStore } from './company-day.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 const COMPANY_DAY: CompanyDaySchedule = {
   date: '2027-06-01',
@@ -32,6 +37,7 @@ const COMPANY_DAY: CompanyDaySchedule = {
 };
 
 describe('CompanyDayStore', () => {
+  const realtime = createFakeRealtimeConnection();
   const lastResult = signal<ActionResult | null>(null);
   const companyDay = vi.fn();
   let currentNow = Temporal.Instant.from('2027-06-01T07:00:00Z');
@@ -44,6 +50,7 @@ describe('CompanyDayStore', () => {
   async function setup(): Promise<InstanceType<typeof CompanyDayStore>> {
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         CompanyDayStore,
         { provide: ScheduleApi, useValue: { companyDay } },
         { provide: ActionStore, useValue: { dispatch: vi.fn(), lastResult } },
@@ -64,6 +71,22 @@ describe('CompanyDayStore', () => {
     lastResult.set(null);
     currentNow = Temporal.Instant.from('2027-06-01T07:00:00Z');
     companyDay.mockReset().mockReturnValue(of(COMPANY_DAY));
+  });
+
+  it('hint_OfTheScheduleTopic_ReloadsTheDayOnceAfterOneSecond', async () => {
+    await setup();
+    vi.useFakeTimers();
+    const callsBefore = companyDay.mock.calls.length;
+
+    realtime.hints$.next({ topic: RealtimeTopic.Schedule });
+    await vi.advanceTimersByTimeAsync(999);
+    expect(companyDay.mock.calls.length).toBe(callsBefore);
+    await vi.advanceTimersByTimeAsync(1);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    vi.useRealTimers();
+
+    expect(companyDay.mock.calls.length - callsBefore).toBe(1);
   });
 
   it('rows_AfterLoad_HaveOneRowPerEmployeeWithTheFullName', async () => {

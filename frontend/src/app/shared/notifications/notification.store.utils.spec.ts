@@ -1,10 +1,12 @@
 import {
   jumpOf,
+  messageSeverityOf,
   minutesOfTimeSpan,
   type NotificationJump,
   type TextContext,
   textKeyOf,
   textParamsOf,
+  toastIconOf,
 } from './notification.store.utils';
 import { type RealtimeNotification, RealtimeNotificationKind } from '@shared/realtime/realtime';
 
@@ -185,5 +187,22 @@ describe('notification.store.utils', () => {
     );
 
     expect(params['reason']).toBe('[NOTIFICATIONS.PROVISIONING_REASONS.UNKNOWN]');
+  });
+
+  it.each([
+    ['success', 'pi pi-check-circle'],
+    ['error', 'pi pi-times-circle'],
+    [undefined, 'pi pi-info-circle'],
+  ])('toastIconOf_With%s_Gives%s', (severity, expected) => {
+    expect(toastIconOf(severity)).toBe(expected);
+  });
+
+  it.each([
+    [false, 'info'],
+    [true, 'secondary'],
+  ])('messageSeverityOf_WithIsRead%s_Gives%s', (isRead, expected) => {
+    const entry = { notification: notificationOf(RealtimeNotificationKind.WorkOrderAssigned, {}), isRead };
+
+    expect(messageSeverityOf(entry)).toBe(expected);
   });
 });

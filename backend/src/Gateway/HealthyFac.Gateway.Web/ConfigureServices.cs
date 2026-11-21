@@ -75,7 +75,7 @@ public static class ConfigureServices
             services.AddSharedJwtAuthentication(configuration);
             services.AddTokenRevocationStore();
             services.AddSingleton<IPostConfigureOptions<JwtBearerOptions>, RealtimeTokenReader>();
-            services.AddSingleton<RealtimeOriginCheck>();
+            services.AddSingleton<IConfigureOptions<WebSocketOptions>, WebSocketOriginOptionsSetup>();
             services.AddSingleton<RevocationCheckMiddleware>();
             services.AddAuthorizationBuilder()
                 .SetAuthenticatedFallbackPolicy()
@@ -114,7 +114,7 @@ public static class ConfigureServices
             app.UseSerilogRequestLogging();
             app.UseExceptionHandler();
             app.UseSharedCors();
-            app.UseMiddleware<RealtimeOriginCheck>();
+            app.UseWebSockets();
             app.UseAuthentication();
             app.UseMiddleware<RevocationCheckMiddleware>();
             app.UseRateLimiter();

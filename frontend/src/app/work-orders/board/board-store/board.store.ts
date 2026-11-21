@@ -12,6 +12,9 @@ import { withBoardLayout } from './board.layout.slice';
 import type { WorkOrderStatus } from '@work-orders/work-order';
 import { INITIAL_RANGE } from './board.store.utils';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 /**
@@ -40,5 +43,8 @@ export const BoardStore = signalStore(
       }
     },
   })),
+  withRealtimeReload<{ reloadAll: () => void }>([RealtimeTopic.WorkOrders], (store) => {
+    store.reloadAll();
+  }),
   withStoreDevtools('board'),
 );

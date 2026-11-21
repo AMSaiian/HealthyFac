@@ -66,6 +66,12 @@ export const HealthyFacPreset = definePreset(Lara, {
       horizontal: { margin: '0' },
       vertical: { margin: '0' },
     },
+    badge: {
+      sm: { minWidth: '0.875rem', height: '0.875rem', fontSize: '0.5625rem' },
+    },
+    overlaybadge: {
+      root: { outline: { width: '1px' } },
+    },
     datepicker: {
       panel: { padding: '0.5rem' },
       header: { padding: '0 0 0.375rem 0' },

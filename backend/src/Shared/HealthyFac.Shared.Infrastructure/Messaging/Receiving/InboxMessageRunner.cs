@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Observability;
-using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using Microsoft.Extensions.Logging;
@@ -14,8 +13,8 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 /// shares the service context of the scope that the inbox processor opens for the row. The runner locks the row
 /// as the inbox processor actor of the service, enters the restored actor of the row, calls the typed handler, and
 /// marks the row. The handler changes and the processed state commit together. A failure rolls the whole unit back.
-/// After the commit, the runner pushes the real-time events that the handler added to the shared notifier. A
-/// failed or repeated attempt pushes nothing.
+/// The runner calls each <see cref="IInboxUnitObserver"/> at the start of every attempt of the unit and after the
+/// commit. A failed or repeated attempt calls no commit observer.
 /// </summary>
 /// <param name="dbContext">The service context that holds the inbox set.</param>
 /// <param name="inbox">The inbox that marks a row as processed.</param>
@@ -24,7 +23,7 @@ namespace HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 /// <param name="timeProvider">The clock for the due time of the rows and the handling duration.</param>
 /// <param name="serviceOptions">The name of the running service, for the actor of the claim step.</param>
 /// <param name="metrics">Counts the handled messages and records the handling duration.</param>
-/// <param name="notifier">The scoped notifier that the handler of the message adds its events to.</param>
+/// <param name="observers">The observers of the unit, called in order.</param>
 /// <param name="logger">The logger of the runner.</param>
 internal sealed class InboxMessageRunner(
     IInboxDbContext dbContext,
@@ -34,7 +33,7 @@ internal sealed class InboxMessageRunner(
     TimeProvider timeProvider,
     IOptions<ServiceOptions> serviceOptions,
     MessagingMetrics metrics,
-    IRealtimeNotifier notifier,
+    IEnumerable<IInboxUnitObserver> observers,
     ILogger<InboxMessageRunner> logger
 )
 {
@@ -45,13 +44,13 @@ internal sealed class InboxMessageRunner(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly IOptions<ServiceOptions> _serviceOptions = serviceOptions;
     private readonly MessagingMetrics _metrics = metrics;
-    private readonly IRealtimeNotifier _notifier = notifier;
+    private readonly IEnumerable<IInboxUnitObserver> _observers = observers;
     private readonly ILogger<InboxMessageRunner> _logger = logger;
 
     /// <summary>
-    /// Claims the next due row and handles it. After the transaction commits, the runner pushes the real-time
-    /// events of the handler, logs the handled message at <c>Information</c>, and counts it. A retried or
-    /// rolled-back attempt never pushes, logs, or counts it.
+    /// Claims the next due row and handles it. After the transaction commits, the runner calls the observers, logs
+    /// the handled message at <c>Information</c>, and counts it. A retried or rolled-back attempt never calls the
+    /// commit observers, logs, or counts it.
     /// </summary>
     /// <param name="onClaimed">Receives the ID of the claimed row, so the processor can schedule a retry after a
     /// failure.</param>
@@ -64,7 +63,11 @@ internal sealed class InboxMessageRunner(
         var handled = await _dbContext.RunInTransactionAsync<(Guid Id, string Type)?>(
             async token =>
             {
-                _notifier.Clear();
+                foreach (var observer in _observers)
+                {
+                    observer.OnUnitStarting();
+                }
+
                 var message = await ClaimNextAsync(token);
                 if (message is null)
                 {
@@ -83,7 +86,11 @@ internal sealed class InboxMessageRunner(
             return false;
         }
 
-        _notifier.Push();
+        foreach (var observer in _observers)
+        {
+            observer.OnUnitCommitted();
+        }
+
         _logger.LogInformation(
             message: "Inbox message {MessageId} of type {MessageType} handled.",
             handled.Value.Id,

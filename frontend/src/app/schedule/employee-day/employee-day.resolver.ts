@@ -11,9 +11,9 @@ const DATE_QUERY_PARAMETER = 'date';
 
 /**
  * Loads the first day of the employee of the route before the page activates: the day of the query parameter `date`,
- * or today. A missing employee (`404`) leads to the
- * not-found page, and a network failure (status `0`) to the network page. Both keep the requested address in the
- * address bar (`browserUrl`). Another HTTP failure shows its status toast and cancels the navigation.
+ * or today. A missing employee (`404`) leads to the not-found page, and a network failure (status `0`) to the network
+ * page. Both keep the requested address in the address bar (`browserUrl`). Another HTTP failure shows its status toast
+ * and cancels the navigation.
  */
 export const employeeDayResolver: ResolveFn<DaySchedule | RedirectCommand> = (route) =>
   inject(EmployeeDayStore)

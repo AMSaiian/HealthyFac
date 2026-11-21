@@ -16,6 +16,11 @@ import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
 
 import { EmployeeDayStore } from './employee-day.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 const DAY: DaySchedule = {
   date: '2027-06-01',
@@ -41,6 +46,7 @@ const DAY: DaySchedule = {
 };
 
 describe('EmployeeDayStore', () => {
+  const realtime = createFakeRealtimeConnection();
   const lastResult = signal<ActionResult | null>(null);
   const employeeDay = vi.fn();
   const dispatch = vi.fn();
@@ -54,6 +60,7 @@ describe('EmployeeDayStore', () => {
   async function setup(permissions: readonly string[] = []): Promise<InstanceType<typeof EmployeeDayStore>> {
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         EmployeeDayStore,
         { provide: ScheduleApi, useValue: { employeeDay } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
@@ -79,6 +86,22 @@ describe('EmployeeDayStore', () => {
     currentNow = Temporal.Instant.from('2027-06-01T07:00:00Z');
     dispatch.mockReset();
     employeeDay.mockReset().mockReturnValue(of(DAY));
+  });
+
+  it('hint_OfTheWorkOrdersTopic_ReloadsTheDayOnceAfterOneSecond', async () => {
+    await setup();
+    vi.useFakeTimers();
+    const callsBefore = employeeDay.mock.calls.length;
+
+    realtime.hints$.next({ topic: RealtimeTopic.WorkOrders });
+    await vi.advanceTimersByTimeAsync(999);
+    expect(employeeDay.mock.calls.length).toBe(callsBefore);
+    await vi.advanceTimersByTimeAsync(1);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    vi.useRealTimers();
+
+    expect(employeeDay.mock.calls.length - callsBefore).toBe(1);
   });
 
   it('rows_AfterLoad_HoldOneRowWithTheOwnNameAndTemporalTimes', async () => {
@@ -125,6 +148,7 @@ describe('EmployeeDayStore', () => {
         { provide: EmployeeStore, useValue: { id: () => 'e1', name: () => 'Ann Lee' } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         { provide: CLOCK, useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' } },
+        provideFakeRealtimeConnection(),
       ],
     });
     const store = TestBed.inject(EmployeeDayStore);

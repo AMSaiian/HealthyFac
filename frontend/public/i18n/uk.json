@@ -42,14 +42,17 @@
   "NOTIFICATIONS": {
     "BELL": {
       "TITLE": "Сповіщення",
-      "EMPTY": "Сповіщень ще немає"
+      "EMPTY": "Сповіщень ще немає",
+      "MARK_ALL_AS_READ": "Позначити все прочитаним"
     },
+    "MARK_AS_READ": "Позначити прочитаним",
     "PROVISIONING_REASONS": {
       "ORGANIZATION_NOT_FOUND": "компанію не налаштовано в системі входу",
       "EMAIL_ALREADY_REGISTERED": "електронну пошту вже зареєстровано",
       "ROLE_NOT_FOUND": "роль відсутня в системі входу",
       "UNKNOWN": "невідома помилка"
     },
+    "DISMISS": "Закрити сповіщення і позначити його прочитаним",
     "JUMP": "Відкрити",
     "KINDS": {
       "SHIFT_CHANGED": "Вашу зміну {{date}} змінено",

@@ -15,6 +15,11 @@ import { MetricUnitsApi } from '@machines/metrics/metric-units-api';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 
 import { type AttemptDraftsEntry, withDraftQuickApply } from './with-draft-quick-apply';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 const DRAFTS_URL = '/api/core/v1/ingest-attempts/a1/drafts';
 const MACHINE_APPLY_URL = '/api/core/v1/machine-drafts/md/apply';
@@ -112,6 +117,7 @@ const MOVED_GROUP = {
 const EXISTING_GROUP = { ...MOVED_GROUP, machineDraft: null };
 
 const HostStore = signalStore(withDraftQuickApply());
+const realtime = createFakeRealtimeConnection();
 
 async function untilRequest(
   http: HttpTestingController,
@@ -156,6 +162,7 @@ async function setup(entries: readonly AttemptDraftsEntry[]): Promise<Setup> {
   const messages = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(realtime),
       HostStore,
       DraftsApi,
       MetricDefinitionsApi,
@@ -423,6 +430,56 @@ describe('withDraftQuickApply', () => {
         expect.objectContaining({ severity: 'error', detail: 'DRAFTS.QUICK.FAILED' }),
       );
       expect(store.quickRun()).toEqual({ count: 1, hasApplied: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('applyDraft_WhenAHintOfTheMachineArrivesDuringTheWait_RunsTheNextTryAtOnce', async () => {
+    const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [EXISTING_GROUP] } }]);
+    vi.useFakeTimers();
+    try {
+      store.applyDraft('a1', 'st');
+      await vi.advanceTimersByTimeAsync(0);
+      http.expectOne(DRAFTS_URL).flush({ groups: [EXISTING_GROUP] });
+      await vi.advanceTimersByTimeAsync(0);
+      http
+        .expectOne((candidate) => candidate.url === STATUSES_APPLY_URL)
+        .flush(null, { status: HttpStatusCode.NotFound, statusText: 'Not Found' });
+      await vi.advanceTimersByTimeAsync(100);
+      http.expectNone(STATUSES_APPLY_URL);
+
+      realtime.hints$.next({ topic: RealtimeTopic.DefinitionDrafts, machineId: 'm1' });
+      await vi.advanceTimersByTimeAsync(0);
+      http.expectOne((candidate) => candidate.url === STATUSES_APPLY_URL).flush(null);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(store.quickRun()).toEqual({ count: 1, hasApplied: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it.each([
+    { topic: RealtimeTopic.DefinitionDrafts, machineId: 'other-machine' },
+    { topic: RealtimeTopic.DefinitionDrafts, attemptId: 'other-attempt' },
+    { topic: RealtimeTopic.Machines, machineId: 'm1' },
+  ])('applyDraft_WhenAnotherHintArrivesDuringTheWait_KeepsWaiting', async (hint) => {
+    const { store, http } = await setup([{ attemptId: 'a1', drafts: { groups: [EXISTING_GROUP] } }]);
+    vi.useFakeTimers();
+    try {
+      store.applyDraft('a1', 'st');
+      await vi.advanceTimersByTimeAsync(0);
+      http.expectOne(DRAFTS_URL).flush({ groups: [EXISTING_GROUP] });
+      await vi.advanceTimersByTimeAsync(0);
+      http
+        .expectOne((candidate) => candidate.url === STATUSES_APPLY_URL)
+        .flush(null, { status: HttpStatusCode.NotFound, statusText: 'Not Found' });
+
+      realtime.hints$.next(hint);
+      await vi.advanceTimersByTimeAsync(499);
+
+      http.expectNone(STATUSES_APPLY_URL);
     } finally {
       vi.useRealTimers();
     }

@@ -10,7 +10,4 @@ public static class RealtimeErrors
 
     public static InvalidOperationException KindNotGrouped(RealtimeNotificationKind kind) =>
         new($"The kind '{kind.Value}' goes to one user, so add it with AddToUser.");
-
-    public static InvalidOperationException NotRegistered() =>
-        new(message: "This service has no real-time notifier. Call AddRealtimeNotifier before you add an event.");
 }

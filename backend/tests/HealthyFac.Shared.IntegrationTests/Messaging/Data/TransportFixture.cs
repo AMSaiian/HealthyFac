@@ -54,6 +54,8 @@ public class TransportFixture : IAsyncLifetime
 
     public RecordingRealtimeQueue RealtimeQueue { get; } = new();
 
+    public RecordingInboxObserver InboxObserver { get; } = new();
+
     /// <summary>
     /// The meter factory of the test host. A <c>MetricCollector</c> on it reads only the measurements of this host.
     /// </summary>
@@ -91,6 +93,8 @@ public class TransportFixture : IAsyncLifetime
         builder.Services.AddSingleton(CancellationTrigger);
         builder.Services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
         builder.Services.AddScoped<IRealtimeNotifier, RealtimeNotifier>();
+        builder.Services.AddScoped<IInboxUnitObserver, RealtimeInboxObserver>();
+        builder.Services.AddSingleton<IInboxUnitObserver>(InboxObserver);
         builder.Services.AddMessagingMetrics();
         builder.Services.AddUseCases(SharedIntegrationTestsAssembly.Instance);
         builder.Services.AddIntegrationMessage<TestPing>();
@@ -174,6 +178,7 @@ public class TransportFixture : IAsyncLifetime
         Logs.Reset();
         CancellationTrigger.Reset();
         RealtimeQueue.Clear();
+        InboxObserver.Reset();
     }
 
     public IServiceScope CreateScope(ActorContext? actor = null) =>

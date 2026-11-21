@@ -6,6 +6,9 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 import type { MachineLabel } from '@shared/lookups/lookup-options';
@@ -103,6 +106,10 @@ export const CasePageStore = signalStore(
         ),
       ),
     );
+    const reloadNow = (): void => {
+      patchState(store, { refreshCount: store.refreshCount() + 1 });
+      reload();
+    };
     const loadToolCalls = rxMethod<string>(
       pipe(
         exhaustMap((runId) =>
@@ -181,13 +188,14 @@ export const CasePageStore = signalStore(
           loadToolCalls(runId);
         }
       },
+      /** Reloads the header, the outcome, and the current page of both tabs. No cooldown: a hint calls it too. */
+      reloadNow,
       /** Reloads the header, the outcome, and the current page of both tabs, once per cooldown. */
       refresh(): void {
         if (store.isRefreshCoolingDown()) {
           return;
         }
-        patchState(store, { refreshCount: store.refreshCount() + 1 });
-        reload();
+        reloadNow();
         store.startRefreshCooldown();
       },
       runAgain: () => runAgain(),
@@ -200,5 +208,12 @@ export const CasePageStore = signalStore(
       close,
     };
   }),
+  withRealtimeReload<{ reloadNow: () => void; caseId: () => string | null }>(
+    [RealtimeTopic.Cases],
+    (store) => {
+      store.reloadNow();
+    },
+    (store) => store.caseId(),
+  ),
   withStoreDevtools('case-page'),
 );

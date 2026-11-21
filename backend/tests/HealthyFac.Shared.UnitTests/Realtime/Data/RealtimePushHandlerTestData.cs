@@ -212,5 +212,6 @@ public static class RealtimePushHandlerTestData
             MetricTarget = RealtimeNotificationKind.ShiftChanged.Value,
         };
 
-    public static Exception Failure => new RedisTimeoutException(message: "down", CommandStatus.Unknown);
+    public static Exception Failure =>
+        new RedisTimeoutException(CommandFlags.None, message: "down", CommandStatus.Unknown);
 }

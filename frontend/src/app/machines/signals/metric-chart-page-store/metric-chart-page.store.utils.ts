@@ -35,6 +35,9 @@ export type RangeSelection =
 
 export const DEFAULT_RANGE: RangeSelection = { kind: 'preset', preset: ChartRange.Hour };
 
+/** How often the chart loads the history again while the range is a preset (Artur 2026-11-21). */
+export const METRIC_CHART_RELOAD_INTERVAL_MS = 15_000;
+
 /** The pause after the last range change (a pick, a zoom, a pan) before the chart asks for the history (Artur). */
 export const RANGE_DEBOUNCE_MS = 300;
 
