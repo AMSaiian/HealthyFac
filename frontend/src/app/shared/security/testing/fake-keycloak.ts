@@ -9,7 +9,9 @@ export interface FakeKeycloak {
   isTokenExpired: ReturnType<typeof vi.fn>;
   token: string | undefined;
   refreshToken: string | undefined;
-  tokenParsed: object | undefined;
+  tokenParsed: { exp?: number } | undefined;
+  subject: string | undefined;
+  timeSkew: number | undefined;
   idTokenParsed: object | undefined;
   onTokenExpired: (() => void) | undefined;
   onAuthRefreshSuccess: (() => void) | undefined;
@@ -25,6 +27,8 @@ export function createFakeKeycloak(): FakeKeycloak {
     token: 'token-1',
     refreshToken: 'refresh-1',
     tokenParsed: {},
+    subject: undefined,
+    timeSkew: undefined,
     idTokenParsed: {},
     onTokenExpired: undefined,
     onAuthRefreshSuccess: undefined,

@@ -31,7 +31,10 @@ function resolve(openDay: (id: string) => Observable<DaySchedule>): Promise<unkn
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });
-  const route = { paramMap: convertToParamMap({ id: EMPLOYEE_ID }) } as ActivatedRouteSnapshot;
+  const route = {
+    paramMap: convertToParamMap({ id: EMPLOYEE_ID }),
+    queryParamMap: convertToParamMap({}),
+  } as ActivatedRouteSnapshot;
   const result = TestBed.runInInjectionContext(() => employeeDayResolver(route, {} as RouterStateSnapshot));
   return firstValueFrom((result as Observable<unknown>).pipe(toArray()));
 }

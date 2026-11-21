@@ -80,6 +80,52 @@ describe('schedule routes', () => {
     http.expectNone((request) => request.url === EMPLOYEE_DAY_URL);
   });
 
+  it.each([
+    ['2026-11-21', '2026-11-21'],
+    ['bad', TODAY],
+    ['2026-02-30', TODAY],
+  ])('employeeDayRoute_WithDateQuery%s_RequestsThatDayOrTodayOnce', async (query, expectedDate) => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+
+    const navigation = harness.navigateByUrl(`/employees/e1/schedule?date=${query}`);
+    await vi.waitFor(() => {
+      const request = http.expectOne((candidate) => candidate.url === EMPLOYEE_DAY_URL);
+      expect(request.request.params.get('date')).toBe(expectedDate);
+      request.flush({ ...DAY, date: expectedDate });
+    });
+    await navigation;
+    TestBed.tick();
+    TestBed.tick();
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);
+    http.expectNone((request) => request.url === EMPLOYEE_DAY_URL);
+  });
+
+  it('employeeDayRoute_DateQueryChangesOnThePage_RequestsThatDayOnce', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/employees/e1/schedule');
+    await vi.waitFor(() => {
+      http.expectOne((request) => request.url === EMPLOYEE_DAY_URL).flush(DAY);
+    });
+    await navigation;
+    TestBed.tick();
+
+    await harness.navigateByUrl(`/employees/e1/schedule?date=${NEXT_DAY}`);
+    TestBed.tick();
+    await vi.waitFor(() => {
+      TestBed.tick();
+      const request = http.expectOne((candidate) => candidate.url === EMPLOYEE_DAY_URL);
+      expect(request.request.params.get('date')).toBe(NEXT_DAY);
+      request.flush({ ...DAY, date: NEXT_DAY });
+    });
+    TestBed.tick();
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);
+    http.expectNone((request) => request.url === EMPLOYEE_DAY_URL);
+  });
+
   it('employeeDayRoute_DateChangeFails_KeepsThePage', async () => {
     const http = setup();
     const harness = await RouterTestingHarness.create();

@@ -6,10 +6,12 @@ import { withAuthLocale } from './auth.locale.slice';
 import { KEYCLOAK } from '@shared/security/keycloak';
 import { type Permission, readPermissions } from '@shared/security/permissions';
 import { isSessionEndedByServer, SessionEndedError } from '@shared/security/session-errors';
+import { Temporal } from '@shared/time/temporal';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
-const MIN_TOKEN_VALIDITY_SECONDS = 30;
+export const MIN_TOKEN_VALIDITY_SECONDS = 30;
+const MILLISECONDS_PER_SECOND = 1000;
 const FORCE_REFRESH_VALIDITY_SECONDS = -1;
 const SILENT_CHECK_SSO_PATH = '/silent-check-sso.html';
 const NO_SESSION_MESSAGE = 'The session has ended.';
@@ -124,6 +126,18 @@ export const AuthStore = signalStore(
           throw new SessionEndedError(NO_SESSION_MESSAGE);
         }
         return store._keycloak.token;
+      },
+      subject(): string | null {
+        return store._keycloak.subject ?? null;
+      },
+      /** The expiry of the token on the clock of the browser: `exp` plus the skew that keycloak-js measured. */
+      tokenExpiresAt(): Temporal.Instant | null {
+        const expiresAt = store._keycloak.tokenParsed?.exp;
+        if (typeof expiresAt !== 'number') {
+          return null;
+        }
+        const skewSeconds = store._keycloak.timeSkew ?? 0;
+        return Temporal.Instant.fromEpochMilliseconds((expiresAt + skewSeconds) * MILLISECONDS_PER_SECOND);
       },
       currentToken(): string | undefined {
         return store._keycloak.token;

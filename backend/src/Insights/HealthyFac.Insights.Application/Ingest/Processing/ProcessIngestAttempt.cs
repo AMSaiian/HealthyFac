@@ -271,18 +271,16 @@ public sealed class ProcessIngestAttemptRequestHandler(
         CancellationToken cancellationToken
     )
     {
-        var state = IngestState.Interrupted;
-        Guid? createdBy = null;
         using var storeSpan = IngestActivitySource.Instance.StartActivity(ObservabilityConstants.Ingest.Spans.Store);
         using var storeTimer = _metrics.MeasureStage(ObservabilityConstants.Ingest.Stages.Store);
 
-        await _dbContext.RunInTransactionAsync(
+        var createdBy = await _dbContext.RunInTransactionAsync<Guid?>(
             async token =>
             {
                 var locked = await LockOwnAttemptAsync(snapshot, token);
                 if (locked is null)
                 {
-                    return;
+                    return null;
                 }
 
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -323,22 +321,24 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 var failedCount = await CountFailedAsync(snapshot, token);
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
-                state = IngestState.Completed;
-                createdBy = locked.CreatedBy;
+
+                return locked.CreatedBy;
             },
             cancellationToken);
 
-        if (createdBy is { } user)
+        if (createdBy is not { } user)
         {
-            _notifier.AddIngestFinished(
-                user,
-                snapshot.AttemptId,
-                snapshot.FileName,
-                state,
-                isActorSkipped: false);
+            return IngestState.Interrupted;
         }
 
-        return state;
+        _notifier.AddIngestFinished(
+            user,
+            snapshot.AttemptId,
+            snapshot.FileName,
+            IngestState.Completed,
+            isActorSkipped: false);
+
+        return IngestState.Completed;
     }
 
     private async Task FailAsync(
@@ -350,16 +350,13 @@ public sealed class ProcessIngestAttemptRequestHandler(
         long startedAt
     )
     {
-        var isFailed = false;
-        Guid? createdBy = null;
-
-        await _dbContext.RunInTransactionAsync(
+        var createdBy = await _dbContext.RunInTransactionAsync<Guid?>(
             async token =>
             {
                 var locked = await LockOwnAttemptAsync(snapshot, token);
                 if (locked is null)
                 {
-                    return;
+                    return null;
                 }
 
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -383,28 +380,24 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 var failedCount = await CountFailedAsync(snapshot, token) + 1;
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
-                isFailed = true;
-                createdBy = locked.CreatedBy;
+
+                return locked.CreatedBy;
             },
             CancellationToken.None);
 
-        if (!isFailed)
+        if (createdBy is null)
         {
             await FinishInterruptedAsync(snapshot, startedAt);
 
             return;
         }
 
-        if (createdBy is { } user)
-        {
-            _notifier.AddIngestFinished(
-                user,
-                snapshot.AttemptId,
-                snapshot.FileName,
-                IngestState.Failed,
-                isActorSkipped: false);
-        }
-
+        _notifier.AddIngestFinished(
+            createdBy.Value,
+            snapshot.AttemptId,
+            snapshot.FileName,
+            IngestState.Failed,
+            isActorSkipped: false);
         _logger.LogWarning(
             message: "Ingest attempt {AttemptId} failed with the error code {ErrorCode}.",
             snapshot.AttemptId,
@@ -417,15 +410,13 @@ public sealed class ProcessIngestAttemptRequestHandler(
 
     private async Task InterruptAsync(IngestAttemptSnapshot snapshot, IngestInterruptReason reason)
     {
-        Guid? createdBy = null;
-
-        await _dbContext.RunInTransactionAsync(
+        var createdBy = await _dbContext.RunInTransactionAsync<Guid?>(
             async token =>
             {
                 var locked = await LockOwnAttemptAsync(snapshot, token);
                 if (locked is null)
                 {
-                    return;
+                    return null;
                 }
 
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -433,7 +424,8 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 var failedCount = await CountFailedAsync(snapshot, token);
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
-                createdBy = locked.CreatedBy;
+
+                return locked.CreatedBy;
             },
             CancellationToken.None);
 

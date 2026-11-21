@@ -67,7 +67,7 @@ describe('EmployeeDayStore', () => {
       ],
     });
     const store = TestBed.inject(EmployeeDayStore);
-    await firstValueFrom(store.openDay('e1'));
+    await firstValueFrom(store.openDay('e1', undefined));
     await settle();
     return store;
   }
@@ -129,7 +129,7 @@ describe('EmployeeDayStore', () => {
     });
     const store = TestBed.inject(EmployeeDayStore);
 
-    await expect(firstValueFrom(store.openDay('e1'))).rejects.toBeInstanceOf(HttpErrorResponse);
+    await expect(firstValueFrom(store.openDay('e1', undefined))).rejects.toBeInstanceOf(HttpErrorResponse);
     expect(store.employeeId()).toBeNull();
     expect(store.date()).toBeNull();
   });

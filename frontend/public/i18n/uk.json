@@ -39,6 +39,32 @@
       "CHOOSE_LANGUAGE": "Перемкнути застосунок на цю мову"
     }
   },
+  "NOTIFICATIONS": {
+    "BELL": {
+      "TITLE": "Сповіщення",
+      "EMPTY": "Сповіщень ще немає"
+    },
+    "PROVISIONING_REASONS": {
+      "ORGANIZATION_NOT_FOUND": "компанію не налаштовано в системі входу",
+      "EMAIL_ALREADY_REGISTERED": "електронну пошту вже зареєстровано",
+      "ROLE_NOT_FOUND": "роль відсутня в системі входу",
+      "UNKNOWN": "невідома помилка"
+    },
+    "JUMP": "Відкрити",
+    "KINDS": {
+      "SHIFT_CHANGED": "Вашу зміну {{date}} змінено",
+      "WORK_ORDER_ASSIGNED": "Вам призначено \"{{title}}\"",
+      "WORK_ORDER_UNASSIGNED": "Вас знято з \"{{title}}\"",
+      "WORK_ORDER_ESTIMATE_CHANGED": "Оцінку \"{{title}}\" змінено з {{oldMinutes}} на {{newMinutes}} хв",
+      "WORK_ORDER_RESCHEDULED": "\"{{title}}\" перенесено на {{plannedStartLocal}}",
+      "WORK_ORDER_RETURNED_TO_BACKLOG": "\"{{title}}\" повернуто в беклог",
+      "INGEST_FINISHED": "Обробку {{fileName}} завершено: {{state}}",
+      "WORK_ORDER_BLOCKED": "\"{{title}}\" заблоковано",
+      "WORK_ORDER_DRAFT_CREATED": "Нова чернетка наряду: \"{{title}}\"",
+      "PROVISIONING_FAILED": "Не вдалося створити обліковий запис {{employeeName}}: {{reason}}",
+      "MAINTENANCE_CASE_OPENED": "Відкрито випадок обслуговування ({{severity}})"
+    }
+  },
   "LANGUAGE": {
     "EN": "English",
     "UK": "Українська"

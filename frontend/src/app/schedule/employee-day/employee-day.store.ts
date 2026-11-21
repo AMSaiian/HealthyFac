@@ -15,7 +15,7 @@ import type { Temporal } from '@shared/time/temporal';
 import type { DaySchedule } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
-import { followToday, minuteTicker, todayOf, toRow } from '@schedule/schedule-time';
+import { followToday, minuteTicker, plainDateOrNull, todayOf, toRow } from '@schedule/schedule-time';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
@@ -78,11 +78,12 @@ export const EmployeeDayStore = signalStore(
   })),
   withMethods((store) => ({
     /**
-     * Requests the day of today for the route resolver, keeps it, and then sets the employee and the date. The day
-     * resource takes the kept day instead of asking again, so the first day is requested once.
+     * Requests the first day for the route resolver, keeps it, and then sets the employee and the date. The first day
+     * is the day of the query parameter `date`, or today when the value is missing or invalid. The day resource takes
+     * the kept day instead of asking again, so the first day is requested once.
      */
-    openDay(employeeId: string): Observable<DaySchedule> {
-      const date = todayOf(store._clock);
+    openDay(employeeId: string, dateQuery: string | undefined): Observable<DaySchedule> {
+      const date = plainDateOrNull(dateQuery) ?? todayOf(store._clock);
       return store._api.employeeDay(employeeId, date.toString()).pipe(
         tap((day) => {
           store._preloaded.value = { employeeId, date, day };
@@ -92,6 +93,17 @@ export const EmployeeDayStore = signalStore(
     },
     setDate(date: Temporal.PlainDate): void {
       patchState(store, { date });
+    },
+    /**
+     * Shows the day of the query parameter `date` when it changes on the open page (a jump to the same employee). A
+     * missing or invalid value, or the shown day, keeps the shown day, so the day is not requested again.
+     */
+    showDay(dateQuery: string | undefined): void {
+      const date = plainDateOrNull(dateQuery);
+      const shown = store.date();
+      if (date !== null && (shown === null || !date.equals(shown))) {
+        patchState(store, { date });
+      }
     },
     previousDay(): void {
       const date = store.date();

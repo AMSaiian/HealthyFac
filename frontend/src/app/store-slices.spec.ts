@@ -15,6 +15,7 @@ const TOAST_OR_CONFIRM_OWNERS: readonly string[] = [
   'shared/confirm/',
   'shared/rich-text/rich-text-editor',
   'shared/errors/',
+  'shared/notifications/',
 ];
 
 function relativePath(path: string): string {

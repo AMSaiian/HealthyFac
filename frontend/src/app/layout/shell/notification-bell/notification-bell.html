@@ -1,0 +1,54 @@
+<p-overlaybadge
+  severity="danger"
+  [value]="unreadCount()"
+  [badgeDisabled]="unreadCount() === 0"
+>
+  <button
+    pButton
+    [pTooltip]="'NOTIFICATIONS.BELL.TITLE' | translate"
+    tooltipPosition="bottom"
+    type="button"
+    iconOnly
+    severity="secondary"
+    [text]="true"
+    [attr.aria-label]="'NOTIFICATIONS.BELL.TITLE' | translate"
+    (click)="popover().toggle($event)"
+  >
+    <i class="pi pi-bell"></i>
+  </button>
+</p-overlaybadge>
+<p-popover
+  appendTo="body"
+  (onShow)="opened.emit()"
+  (onHide)="closed.emit()"
+>
+  <div class="flex max-h-96 w-96 flex-col gap-2 overflow-y-auto">
+    @for (item of items(); track item.entry.notification.notificationId) {
+      <div class="flex items-start gap-2 rounded p-2 hover:bg-emphasis">
+        <div class="flex min-w-0 flex-1 flex-col">
+          <span class="break-words">
+            {{ item.text }}
+          </span>
+          <span class="text-sm text-muted-color">{{ item.entry.notification.occurredAt | localDateTime }}</span>
+        </div>
+        @if (hasJump(item.entry)) {
+          <button
+            pButton
+            [pTooltip]="'NOTIFICATIONS.JUMP' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [attr.aria-label]="'NOTIFICATIONS.JUMP' | translate"
+            (click)="jump.emit(item.entry)"
+          >
+            <i class="pi pi-arrow-right"></i>
+          </button>
+        }
+      </div>
+    } @empty {
+      <span class="p-2 text-muted-color">{{ 'NOTIFICATIONS.BELL.EMPTY' | translate }}</span>
+    }
+  </div>
+</p-popover>

@@ -11,6 +11,7 @@ import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-
 
 const MINUTE_MS = 60_000;
 const STATUS_CLASS_PREFIX = 'hf-status-';
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export function toBlocks(blocks: readonly DayScheduleBlock[]): ScheduleBlock[] {
   return blocks.map((block) => ({
@@ -33,6 +34,18 @@ export function toBars(workOrders: readonly DayScheduleWorkOrder[]): ScheduleBar
 /** Maps the day of the backend to one row of the schedule board, with every time as a Temporal value. */
 export function toRow(id: string, label: string, day: DaySchedule): ScheduleRow {
   return { id, label, blocks: toBlocks(day.blocks), bars: toBars(day.workOrders) };
+}
+
+/** Reads a `yyyy-MM-dd` text. A missing, malformed, or impossible date gives `null`. */
+export function plainDateOrNull(value: string | undefined): Temporal.PlainDate | null {
+  if (value === undefined || !ISO_DATE_PATTERN.test(value)) {
+    return null;
+  }
+  try {
+    return Temporal.PlainDate.from(value, { overflow: 'reject' });
+  } catch {
+    return null;
+  }
 }
 
 export function todayOf(clock: Clock): Temporal.PlainDate {

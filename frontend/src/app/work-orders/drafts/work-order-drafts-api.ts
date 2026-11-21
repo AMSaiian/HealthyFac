@@ -6,6 +6,7 @@ import type {
   ApplyWorkOrderDraftBody,
   DismissWorkOrderDraftBody,
   SearchWorkOrderDraftsBody,
+  WorkOrderDraft,
   WorkOrderDraftsPage,
 } from '@work-orders/drafts/work-order-draft';
 
@@ -26,6 +27,10 @@ function draftUrl(id: string): string {
 @Injectable()
 export class WorkOrderDraftsApi {
   private readonly _http = inject(HttpClient);
+
+  get(id: string, options?: RequestOptions): Observable<WorkOrderDraft> {
+    return this._http.get<WorkOrderDraft>(draftUrl(id), options);
+  }
 
   search(body: SearchWorkOrderDraftsBody): Observable<WorkOrderDraftsPage> {
     return this._http.post<WorkOrderDraftsPage>(SEARCH_URL, body);
