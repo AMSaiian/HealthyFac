@@ -1,4 +1,4 @@
-import { APP_ACTION_HOSTS } from '@app/app.config';
+import { APP_ACTION_HOSTS } from '@app/app-action-hosts';
 import {
   SHIFT_OVERRIDE_COMPOSE_NAME,
   SHIFT_VERSION_COMPOSE_NAME,

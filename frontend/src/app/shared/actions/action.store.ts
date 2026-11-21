@@ -28,7 +28,12 @@ export const ActionStore = signalStore(
     _registrations: inject(ACTION_HOSTS),
     _router: inject(Router),
     _history: inject(HistoryStore),
-    _flow: { isSkipped: false, endCount: 0, lastUrl: null as string | null, skippingId: null as number | null },
+    _flow: {
+      isSkipped: false,
+      lastEndId: null as number | null,
+      lastUrl: null as string | null,
+      skippingId: null as number | null,
+    },
   })),
   withMethods((store) => {
     async function isValid(action: AppAction): Promise<boolean> {
@@ -87,7 +92,7 @@ export const ActionStore = signalStore(
     }
 
     /** Opens the drawer that the `compose` value names. A value that makes no valid action leaves the URL. */
-    async function restoreFromCompose(compose: string, endCount: number): Promise<void> {
+    async function restoreFromCompose(compose: string, endId: number): Promise<void> {
       const { name, id } = parseCompose(compose);
       const codecs = store._registrations.flatMap((candidate) =>
         candidate.compose?.name === name ? [candidate.compose] : [],
@@ -98,7 +103,7 @@ export const ActionStore = signalStore(
       const params = routeParams();
       const decoded = [...new Set(codecs)].map((codec) => codec.decode(id, params)).find((action) => action !== null);
       const isOpened = decoded !== undefined && (await isValid(decoded));
-      if (endCount !== store._flow.endCount) {
+      if (endId !== store._flow.lastEndId) {
         return;
       }
       if (!isOpened) {
@@ -116,7 +121,7 @@ export const ActionStore = signalStore(
       }
     }
 
-    async function restoreFromState(entryState: unknown, endCount: number): Promise<void> {
+    async function restoreFromState(entryState: unknown, endId: number): Promise<void> {
       patchState(store, { active: null, parent: null, isComposed: false });
       if (!isEntryState(entryState)) {
         writeEntryState();
@@ -124,7 +129,7 @@ export const ActionStore = signalStore(
       }
       const active = await restoreAction(entryState.active);
       const parent = active === null ? null : await restoreAction(entryState.parent);
-      if (endCount !== store._flow.endCount) {
+      if (endId !== store._flow.lastEndId) {
         return;
       }
       patchState(store, { active, parent });
@@ -171,7 +176,7 @@ export const ActionStore = signalStore(
           store._router.currentNavigation()?.extras.skipLocationChange === true ? event.id : null;
       },
       _onNavigationEnd(event: NavigationEnd): void {
-        store._flow.endCount += 1;
+        store._flow.lastEndId = event.id;
         const previousUrl = store._flow.lastUrl;
         store._flow.lastUrl = event.urlAfterRedirects;
         if (store._flow.skippingId === event.id) {
@@ -187,10 +192,10 @@ export const ActionStore = signalStore(
         const compose = store._history.compose();
         if (compose !== null) {
           patchState(store, { active: null, parent: null, isComposed: false });
-          void restoreFromCompose(compose, store._flow.endCount);
+          void restoreFromCompose(compose, event.id);
           return;
         }
-        void restoreFromState(store._history.startStateOf(event.id), store._flow.endCount);
+        void restoreFromState(store._history.startStateOf(event.id), event.id);
       },
     };
   }),

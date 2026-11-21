@@ -6,8 +6,8 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { APP_ACTION_HOSTS } from '@app/app-action-hosts';
 import { APP_ROUTER_FEATURES } from '@app/app-router';
-import { APP_ACTION_HOSTS } from '@app/app.config';
 import { provideActionHosts } from '@shared/actions/action-registry';
 import { ActionStore } from '@shared/actions/action.store';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
