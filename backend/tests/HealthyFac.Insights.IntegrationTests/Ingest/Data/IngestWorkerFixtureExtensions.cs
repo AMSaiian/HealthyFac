@@ -50,9 +50,9 @@ public static class IngestWorkerFixtureExtensions
             return response.Id;
         }
 
-        public async Task CancelAttemptAsync(Guid attemptId)
+        public async Task CancelAttemptAsync(Guid attemptId, Guid? actorUserId = null)
         {
-            using var scope = fixture.CreateActorScope(UserActor());
+            using var scope = fixture.CreateActorScope(UserActor(actorUserId));
             var handler = scope.ServiceProvider.GetRequiredService<IRequestHandler<CancelIngestAttemptRequest>>();
 
             await handler.HandleAsync(
@@ -102,11 +102,11 @@ public static class IngestWorkerFixtureExtensions
         }
     }
 
-    private static ActorContext UserActor() =>
+    private static ActorContext UserActor(Guid? userId = null) =>
         new()
         {
             Kind = ActorKind.User,
-            UserId = IngestWorkerTestData.UserId,
+            UserId = userId ?? IngestWorkerTestData.UserId,
             CompanyId = IngestAttemptTestData.CompanyId,
         };
 }

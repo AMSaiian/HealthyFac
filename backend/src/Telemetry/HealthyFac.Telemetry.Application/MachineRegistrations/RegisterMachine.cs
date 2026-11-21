@@ -1,9 +1,11 @@
 using EntityFramework.Exceptions.Common;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Application.MetricSchemas;
+using HealthyFac.Telemetry.Application.Realtime;
 using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
@@ -25,15 +27,18 @@ public sealed class RegisterMachinePreHandlerCheck : PassThroughPreHandlerCheck<
 /// <param name="dbContext">Reads and saves the registration.</param>
 /// <param name="timeProvider">Provides the time of the first schema revision.</param>
 /// <param name="metricSchemaGenerator">Builds the first schema.</param>
+/// <param name="notifier">Adds the hint after the save. The inbox runner pushes it after the commit.</param>
 public sealed class RegisterMachineRequestHandler(
     ITelemetryDbContext dbContext,
     TimeProvider timeProvider,
-    IMetricSchemaGenerator metricSchemaGenerator
+    IMetricSchemaGenerator metricSchemaGenerator,
+    IRealtimeNotifier notifier
 ) : RequestHandler<MachineCreated>
 {
     private readonly ITelemetryDbContext _dbContext = dbContext;
     private readonly IMetricSchemaGenerator _metricSchemaGenerator = metricSchemaGenerator;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(MachineCreated request, CancellationToken cancellationToken)
     {
@@ -73,7 +78,11 @@ public sealed class RegisterMachineRequestHandler(
             {
                 throw;
             }
+
+            return;
         }
+
+        _notifier.AddDefinitionDraftsHint(request.CompanyId, attemptId: null, request.MachineId);
     }
 
     private Task<bool> IsRegisteredAsync(Guid machineId, CancellationToken cancellationToken) =>

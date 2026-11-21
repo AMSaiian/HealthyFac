@@ -25,7 +25,7 @@ internal sealed class RealtimeNotifier(
     private readonly IBackgroundQueue<RealtimePush> _queue = queue;
     private readonly List<(RealtimePush Push, ActivityContext Context)> _buffer = [];
 
-    public void AddToUser(Guid userId, RealtimeNotificationKind kind, object data)
+    public void AddToUser(Guid userId, RealtimeNotificationKind kind, object data, bool isActorSkipped)
     {
         if (RealtimeAudiences.KindPermissions.ContainsKey(kind))
         {
@@ -34,7 +34,7 @@ internal sealed class RealtimeNotifier(
 
         var actor = _currentUserProvider.TryGetActor();
         var isOwnAction = actor?.Kind == ActorKind.User && actor.UserId == userId;
-        if (isOwnAction)
+        if (isActorSkipped && isOwnAction)
         {
             return;
         }
@@ -44,12 +44,12 @@ internal sealed class RealtimeNotifier(
             {
                 Target = RealtimePushTarget.User,
                 UserId = userId,
-                Notification = CreateNotification(kind, data, actor),
+                Notification = CreateNotification(kind, data, isActorSkipped ? actor : null),
                 MetricTarget = kind.Value,
             });
     }
 
-    public void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data)
+    public void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data, bool isActorSkipped)
     {
         if (!RealtimeAudiences.KindPermissions.ContainsKey(kind))
         {
@@ -61,7 +61,10 @@ internal sealed class RealtimeNotifier(
             {
                 Target = RealtimePushTarget.Group,
                 Group = RealtimeGroups.ForKind(companyId, kind),
-                Notification = CreateNotification(kind, data, _currentUserProvider.TryGetActor()),
+                Notification = CreateNotification(
+                    kind,
+                    data,
+                    isActorSkipped ? _currentUserProvider.TryGetActor() : null),
                 MetricTarget = kind.Value,
             });
     }

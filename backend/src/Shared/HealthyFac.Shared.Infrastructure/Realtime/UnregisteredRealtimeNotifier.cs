@@ -8,10 +8,10 @@ namespace HealthyFac.Shared.Infrastructure.Realtime;
 /// </summary>
 internal sealed class UnregisteredRealtimeNotifier : IRealtimeNotifier
 {
-    public void AddToUser(Guid userId, RealtimeNotificationKind kind, object data) =>
+    public void AddToUser(Guid userId, RealtimeNotificationKind kind, object data, bool isActorSkipped) =>
         throw RealtimeErrors.NotRegistered();
 
-    public void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data) =>
+    public void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data, bool isActorSkipped) =>
         throw RealtimeErrors.NotRegistered();
 
     public void AddHint(Guid companyId, RealtimeHint hint) => throw RealtimeErrors.NotRegistered();

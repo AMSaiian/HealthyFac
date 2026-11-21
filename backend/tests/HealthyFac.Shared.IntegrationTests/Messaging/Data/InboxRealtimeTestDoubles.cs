@@ -42,7 +42,8 @@ public sealed class RealtimePushHandler(
         _notifier.AddToGroup(
             InboxProcessorTestData.UserCompanyId,
             RealtimeNotificationKind.WorkOrderBlocked,
-            new { request.Text });
+            new { request.Text },
+            isActorSkipped: true);
 
         var isFailing = request.Text.Contains(InboxRealtimeTestData.FailsOnceMarker) && attempts == 0;
         if (isFailing)

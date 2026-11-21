@@ -1,7 +1,9 @@
 using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Insights.Application.Ingest;
+using HealthyFac.Insights.Application.Realtime;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -29,17 +31,20 @@ public sealed class RemoveIngestedFilePreHandlerCheck : PassThroughPreHandlerChe
 /// <param name="attemptLock">Locks the attempt that the delete stops.</param>
 /// <param name="outbox">Stores the state message with the change.</param>
 /// <param name="timeProvider">Provides the time of the change.</param>
+/// <param name="notifier">Adds the end event after the save. The inbox runner pushes it after the commit.</param>
 public sealed class RemoveIngestedFileRequestHandler(
     IInsightsDbContext dbContext,
     IIngestAttemptLock attemptLock,
     IOutbox outbox,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<FileDeleted>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly IIngestAttemptLock _attemptLock = attemptLock;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(FileDeleted request, CancellationToken cancellationToken)
     {
@@ -64,5 +69,15 @@ public sealed class RemoveIngestedFileRequestHandler(
             .Where(document => document.Id == request.FileId && document.CompanyId == request.CompanyId)
             .ExecuteDeleteAsync(cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (attempt is not null)
+        {
+            _notifier.AddIngestFinished(
+                attempt.CreatedBy,
+                attempt.Id,
+                attempt.FileName,
+                IngestState.Interrupted,
+                isActorSkipped: true);
+        }
     }
 }

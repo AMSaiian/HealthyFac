@@ -110,6 +110,24 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task ChangeStatus_OfALateCompletionByTheAssignee_RecordsRescheduledForTheAssignee()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var finishing = await CreateAssignedAsync(tenant, time: "10:00");
+        var next = await CreateAssignedAsync(tenant, time: "11:00");
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "11:30"));
+        _fixture.RealtimeQueue.Clear();
+
+        await _fixture.ChangeStatusAsync(tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.Completed);
+
+        var rescheduled = PushesOf().Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
+        rescheduled.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderRescheduled);
+        ((WorkOrderRescheduledData)rescheduled.Notification.Data).WorkOrderId.Should().Be(next);
+    }
+
+    [Fact]
     public async Task ChangeStatus_ToBlocked_RecordsBlockedToTheKindGroup()
     {
         var tenant = await ArrangeTenantAsync();

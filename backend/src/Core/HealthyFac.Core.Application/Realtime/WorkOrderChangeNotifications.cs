@@ -54,7 +54,8 @@ public static class WorkOrderChangeNotifications
                         Title = change.Title,
                         OldEstimate = change.OldEstimate,
                         NewEstimate = change.NewEstimate,
-                    });
+                    },
+                    isActorSkipped: true);
             }
 
             notifier.PushWorkOrdersHint(companyId);
@@ -75,7 +76,8 @@ public static class WorkOrderChangeNotifications
                 notifier.AddToGroup(
                     companyId,
                     RealtimeNotificationKind.WorkOrderBlocked,
-                    new WorkOrderBlockedData { WorkOrderId = change.WorkOrderId, Title = change.Title });
+                    new WorkOrderBlockedData { WorkOrderId = change.WorkOrderId, Title = change.Title },
+                    isActorSkipped: true);
             }
 
             foreach (var move in change.SlideMoves)
@@ -108,7 +110,8 @@ public static class WorkOrderChangeNotifications
                         WorkOrderId = change.WorkOrderId,
                         Title = change.Title,
                         PlannedStartLocal = change.PlannedStartLocal!.Value,
-                    });
+                    },
+                    isActorSkipped: true);
             }
         }
 
@@ -119,7 +122,8 @@ public static class WorkOrderChangeNotifications
                 notifier.AddToUser(
                     userId,
                     RealtimeNotificationKind.WorkOrderUnassigned,
-                    new WorkOrderTitleData { Title = change.Title });
+                    new WorkOrderTitleData { Title = change.Title },
+                    isActorSkipped: true);
             }
         }
 
@@ -135,7 +139,8 @@ public static class WorkOrderChangeNotifications
                         WorkOrderId = change.WorkOrderId,
                         Title = change.Title,
                         PlannedStartLocal = change.PlannedStartLocal!.Value,
-                    });
+                    },
+                    isActorSkipped: true);
             }
         }
 
@@ -156,7 +161,8 @@ public static class WorkOrderChangeNotifications
                         WorkOrderId = move.WorkOrderId,
                         Title = move.Title,
                         PlannedStartLocal = newStart,
-                    });
+                    },
+                    isActorSkipped: false);
 
                 return;
             }
@@ -164,7 +170,8 @@ public static class WorkOrderChangeNotifications
             notifier.AddToUser(
                 userId,
                 RealtimeNotificationKind.WorkOrderReturnedToBacklog,
-                new WorkOrderTitleData { Title = move.Title });
+                new WorkOrderTitleData { Title = move.Title },
+                isActorSkipped: false);
         }
     }
 }

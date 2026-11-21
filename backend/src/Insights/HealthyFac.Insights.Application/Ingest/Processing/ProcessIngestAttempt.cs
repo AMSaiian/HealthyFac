@@ -5,12 +5,14 @@ using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.Ingest.Processing.Monitoring;
 using HealthyFac.Insights.Application.Ingest.Processing.Pipeline;
 using HealthyFac.Insights.Application.Ingest.Screening;
+using HealthyFac.Insights.Application.Realtime;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -82,6 +84,7 @@ public sealed class ProcessIngestAttemptPreHandlerCheck(ICurrentUserProvider cur
 /// <param name="options">Holds the run limit.</param>
 /// <param name="logger">Logs the final state of each attempt.</param>
 /// <param name="metrics">Records the result, the stage durations, and the counts of each run.</param>
+/// <param name="notifier">Adds the end event after each final save and pushes once at the end of the run.</param>
 public sealed class ProcessIngestAttemptRequestHandler(
     IInsightsDbContext dbContext,
     IIngestAttemptLock attemptLock,
@@ -90,7 +93,8 @@ public sealed class ProcessIngestAttemptRequestHandler(
     TimeProvider timeProvider,
     IOptions<IngestProcessingOptions> options,
     ILogger<ProcessIngestAttemptRequestHandler> logger,
-    IngestMetrics metrics
+    IngestMetrics metrics,
+    IRealtimeNotifier notifier
 ) : RequestHandler<ProcessIngestAttemptRequest>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
@@ -101,6 +105,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
     private readonly IngestProcessingOptions _options = options.Value;
     private readonly ILogger<ProcessIngestAttemptRequestHandler> _logger = logger;
     private readonly IngestMetrics _metrics = metrics;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     private Activity? _processSpan;
 
@@ -108,6 +113,18 @@ public sealed class ProcessIngestAttemptRequestHandler(
         ProcessIngestAttemptRequest request,
         CancellationToken cancellationToken
     )
+    {
+        try
+        {
+            await ProcessAsync(request, cancellationToken);
+        }
+        finally
+        {
+            _notifier.Push();
+        }
+    }
+
+    private async Task ProcessAsync(ProcessIngestAttemptRequest request, CancellationToken cancellationToken)
     {
         var snapshot = await LoadSnapshotAsync(request, cancellationToken);
         if (snapshot is null)
@@ -255,6 +272,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
     )
     {
         var state = IngestState.Interrupted;
+        Guid? createdBy = null;
         using var storeSpan = IngestActivitySource.Instance.StartActivity(ObservabilityConstants.Ingest.Spans.Store);
         using var storeTimer = _metrics.MeasureStage(ObservabilityConstants.Ingest.Stages.Store);
 
@@ -306,8 +324,19 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
                 state = IngestState.Completed;
+                createdBy = locked.CreatedBy;
             },
             cancellationToken);
+
+        if (createdBy is { } user)
+        {
+            _notifier.AddIngestFinished(
+                user,
+                snapshot.AttemptId,
+                snapshot.FileName,
+                state,
+                isActorSkipped: false);
+        }
 
         return state;
     }
@@ -322,6 +351,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
     )
     {
         var isFailed = false;
+        Guid? createdBy = null;
 
         await _dbContext.RunInTransactionAsync(
             async token =>
@@ -354,6 +384,7 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
                 isFailed = true;
+                createdBy = locked.CreatedBy;
             },
             CancellationToken.None);
 
@@ -362,6 +393,16 @@ public sealed class ProcessIngestAttemptRequestHandler(
             await FinishInterruptedAsync(snapshot, startedAt);
 
             return;
+        }
+
+        if (createdBy is { } user)
+        {
+            _notifier.AddIngestFinished(
+                user,
+                snapshot.AttemptId,
+                snapshot.FileName,
+                IngestState.Failed,
+                isActorSkipped: false);
         }
 
         _logger.LogWarning(
@@ -376,6 +417,8 @@ public sealed class ProcessIngestAttemptRequestHandler(
 
     private async Task InterruptAsync(IngestAttemptSnapshot snapshot, IngestInterruptReason reason)
     {
+        Guid? createdBy = null;
+
         await _dbContext.RunInTransactionAsync(
             async token =>
             {
@@ -390,8 +433,19 @@ public sealed class ProcessIngestAttemptRequestHandler(
                 var failedCount = await CountFailedAsync(snapshot, token);
                 _outbox.Add(IngestStateMessages.Create(locked, failedCount, now));
                 await _dbContext.SaveChangesAsync(token);
+                createdBy = locked.CreatedBy;
             },
             CancellationToken.None);
+
+        if (createdBy is { } user)
+        {
+            _notifier.AddIngestFinished(
+                user,
+                snapshot.AttemptId,
+                snapshot.FileName,
+                IngestState.Interrupted,
+                isActorSkipped: false);
+        }
     }
 
     private async Task<IngestAttempt?> LockOwnAttemptAsync(
