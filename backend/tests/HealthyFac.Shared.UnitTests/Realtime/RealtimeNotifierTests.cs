@@ -14,7 +14,8 @@ public sealed class RealtimeNotifierTests
     {
         var fixture = new NotifierFixture(RealtimeNotifierTestData.ServiceActor);
 
-        fixture.Notifier.AddToGroup(RealtimeNotifierTestData.CompanyId, kind, new { Name = "data" });
+        fixture.Notifier.AddToGroup(
+            RealtimeNotifierTestData.CompanyId, kind, new { Name = "data" }, isActorSkipped: true);
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -46,7 +47,8 @@ public sealed class RealtimeNotifierTests
         fixture.Notifier.AddToUser(
             RealtimeNotifierTestData.ActorUserId,
             RealtimeNotificationKind.ShiftChanged,
-            new { Name = "data" });
+            new { Name = "data" },
+            isActorSkipped: true);
         fixture.Notifier.Push();
 
         fixture.Queue.Items.Should().BeEmpty();
@@ -60,7 +62,8 @@ public sealed class RealtimeNotifierTests
         fixture.Notifier.AddToUser(
             RealtimeNotifierTestData.OtherUserId,
             RealtimeNotificationKind.ShiftChanged,
-            new { Name = "data" });
+            new { Name = "data" },
+            isActorSkipped: true);
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -71,6 +74,55 @@ public sealed class RealtimeNotifierTests
     }
 
     [Fact]
+    public void AddToUser_ForTheActorUserWithoutTheSkip_EnqueuesTheNotification()
+    {
+        var fixture = new NotifierFixture(RealtimeNotifierTestData.UserActor);
+
+        fixture.Notifier.AddToUser(
+            RealtimeNotifierTestData.ActorUserId,
+            RealtimeNotificationKind.ShiftChanged,
+            new { Name = "data" },
+            isActorSkipped: false);
+        fixture.Notifier.Push();
+
+        var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
+        push.UserId.Should().Be(RealtimeNotifierTestData.ActorUserId);
+        push.Notification!.ActorSubject.Should().BeNull();
+    }
+
+    [Fact]
+    public void AddToGroup_FromAUserActorWithTheSkip_CarriesTheActorSubject()
+    {
+        var fixture = new NotifierFixture(RealtimeNotifierTestData.UserActor);
+
+        fixture.Notifier.AddToGroup(
+            RealtimeNotifierTestData.CompanyId,
+            RealtimeNotificationKind.WorkOrderBlocked,
+            new { Name = "data" },
+            isActorSkipped: true);
+        fixture.Notifier.Push();
+
+        var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
+        push.Notification!.ActorSubject.Should().Be(RealtimeNotifierTestData.ActorUserId);
+    }
+
+    [Fact]
+    public void AddToGroup_FromAUserActorWithoutTheSkip_CarriesNoActorSubject()
+    {
+        var fixture = new NotifierFixture(RealtimeNotifierTestData.UserActor);
+
+        fixture.Notifier.AddToGroup(
+            RealtimeNotifierTestData.CompanyId,
+            RealtimeNotificationKind.WorkOrderBlocked,
+            new { Name = "data" },
+            isActorSkipped: false);
+        fixture.Notifier.Push();
+
+        var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
+        push.Notification!.ActorSubject.Should().BeNull();
+    }
+
+    [Fact]
     public void AddToUser_FromAServiceActor_EnqueuesTheNotificationWithoutActorSubject()
     {
         var fixture = new NotifierFixture(RealtimeNotifierTestData.ServiceActor);
@@ -78,7 +130,8 @@ public sealed class RealtimeNotifierTests
         fixture.Notifier.AddToUser(
             RealtimeNotifierTestData.ActorUserId,
             RealtimeNotificationKind.IngestFinished,
-            new { Name = "data" });
+            new { Name = "data" },
+            isActorSkipped: true);
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -93,7 +146,8 @@ public sealed class RealtimeNotifierTests
         var act = () => fixture.Notifier.AddToUser(
             RealtimeNotifierTestData.OtherUserId,
             RealtimeNotificationKind.WorkOrderBlocked,
-            new { Name = "data" });
+            new { Name = "data" },
+            isActorSkipped: true);
 
         act.Should()
             .Throw<InvalidOperationException>()
@@ -108,7 +162,8 @@ public sealed class RealtimeNotifierTests
         var act = () => fixture.Notifier.AddToGroup(
             RealtimeNotifierTestData.CompanyId,
             RealtimeNotificationKind.ShiftChanged,
-            new { Name = "data" });
+            new { Name = "data" },
+            isActorSkipped: true);
 
         act.Should()
             .Throw<InvalidOperationException>()

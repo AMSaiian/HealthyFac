@@ -12,13 +12,18 @@ namespace HealthyFac.Shared.Application.Realtime;
 public interface IRealtimeNotifier
 {
     /// <summary>
-    /// Adds a notification of a user-targeted kind for one user. The event is skipped when the current actor is that
-    /// user, because the user already knows the result of their own action.
+    /// Adds a notification of a user-targeted kind for one user.
     /// </summary>
     /// <param name="userId">The <c>sub</c> of the receiving user.</param>
     /// <param name="kind">A user-targeted kind.</param>
     /// <param name="data">The data of the kind. It holds plain data only.</param>
-    void AddToUser(Guid userId, RealtimeNotificationKind kind, object data);
+    /// <param name="isActorSkipped">
+    /// <see langword="true"/> for a direct action of the actor inside a request: the event is skipped when the current
+    /// actor is the recipient, because the user already knows the result. <see langword="false"/> for a result that
+    /// no user saw at that time (a worker end, an inbox handler, a side effect of the action): the actor gets the
+    /// event too.
+    /// </param>
+    void AddToUser(Guid userId, RealtimeNotificationKind kind, object data, bool isActorSkipped);
 
     /// <summary>
     /// Adds a notification of a group kind for every user of the company who holds the permission of the kind.
@@ -26,7 +31,13 @@ public interface IRealtimeNotifier
     /// <param name="companyId">The company of the group.</param>
     /// <param name="kind">A group kind (<see cref="RealtimeAudiences.KindPermissions"/>).</param>
     /// <param name="data">The data of the kind. It holds plain data only.</param>
-    void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data);
+    /// <param name="isActorSkipped">
+    /// <see langword="true"/> for a direct action of the actor inside a request: the notification carries the
+    /// <c>actorSubject</c> of a user actor, so the web app drops it for the actor. <see langword="false"/> for a
+    /// result that no user saw at that time (a worker end, an inbox handler, a side effect of the action): the
+    /// notification has no <c>actorSubject</c>.
+    /// </param>
+    void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data, bool isActorSkipped);
 
     /// <summary>
     /// Adds a hint for every user of the company who holds the permission of the topic.

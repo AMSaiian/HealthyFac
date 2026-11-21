@@ -38,6 +38,19 @@ public sealed class ProvisioningRealtimeTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Inbox_WithAUserActor_RecordsFailedWithoutActorSubject()
+    {
+        var tenant = await _fixture.ArrangeUnprovisionedShiftTenantAsync();
+        _fixture.RealtimeQueue.Clear();
+
+        var outcome = await ReceiveAsync(tenant, Guid.CreateVersion7());
+
+        var push = _fixture.RealtimeQueue.Items.Should().ContainSingle().Subject.Push;
+        outcome.IsProcessed.Should().BeTrue();
+        push.Notification!.ActorSubject.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Inbox_WithProvisioningFailedForAnActiveEmployee_RecordsNothing()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
@@ -49,7 +62,7 @@ public sealed class ProvisioningRealtimeTests(CoreDatabaseFixture fixture)
         _fixture.RealtimeQueue.Items.Should().BeEmpty();
     }
 
-    private async Task<InboxRowOutcome> ReceiveAsync(ShiftTenant tenant)
+    private async Task<InboxRowOutcome> ReceiveAsync(ShiftTenant tenant, Guid? actorUserId = null)
     {
         var provisioner = KnownActors.ForServiceFlow(ServiceName.Auth, flow: "provisioner", tenant.CompanyId);
         var message = new IdentityProvisioningFailed { EmployeeId = tenant.EmployeeId, Reason = Reason };
@@ -57,7 +70,7 @@ public sealed class ProvisioningRealtimeTests(CoreDatabaseFixture fixture)
         return await _fixture.ReceiveThroughInboxAsync(
             IdentityProvisioningFailed.MessageType,
             JsonSerializer.Serialize(message, MessagingJsonOptions.Instance),
-            provisioner.UserId,
+            actorUserId ?? provisioner.UserId,
             tenant.CompanyId);
     }
 }

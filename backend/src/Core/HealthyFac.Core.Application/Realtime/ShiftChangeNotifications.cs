@@ -23,7 +23,8 @@ public static class ShiftChangeNotifications
                 notifier.AddToUser(
                     identityUserId,
                     RealtimeNotificationKind.ShiftChanged,
-                    new ShiftChangedData { EmployeeId = change.EmployeeId, Date = change.Date });
+                    new ShiftChangedData { EmployeeId = change.EmployeeId, Date = change.Date },
+                    isActorSkipped: true);
             }
 
             notifier.AddHint(companyId, new RealtimeHint { Topic = RealtimeTopic.Schedule });

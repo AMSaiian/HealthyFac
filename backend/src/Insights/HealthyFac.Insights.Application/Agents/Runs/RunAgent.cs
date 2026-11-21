@@ -3,6 +3,7 @@ using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -61,12 +62,14 @@ public sealed class RunAgentPreHandlerCheck(ICurrentUserProvider currentUser) : 
 /// <param name="timeProvider">Provides the end time of a run that needs no model call.</param>
 /// <param name="commit">Ends a run that failed with an unexpected error.</param>
 /// <param name="logger">Logs an unexpected error of a run.</param>
+/// <param name="notifier">Pushes the case hint once after every path of the run.</param>
 public sealed class RunAgentRequestHandler(
     IInsightsDbContext dbContext,
     IEnumerable<IAgentRunner> runners,
     TimeProvider timeProvider,
     RunCommit commit,
-    ILogger<RunAgentRequestHandler> logger
+    ILogger<RunAgentRequestHandler> logger,
+    IRealtimeNotifier notifier
 ) : RequestHandler<RunAgentRequest>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
@@ -74,8 +77,21 @@ public sealed class RunAgentRequestHandler(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly RunCommit _commit = commit;
     private readonly ILogger<RunAgentRequestHandler> _logger = logger;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(RunAgentRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await HandleRunAsync(request, cancellationToken);
+        }
+        finally
+        {
+            _notifier.Push();
+        }
+    }
+
+    private async Task HandleRunAsync(RunAgentRequest request, CancellationToken cancellationToken)
     {
         try
         {

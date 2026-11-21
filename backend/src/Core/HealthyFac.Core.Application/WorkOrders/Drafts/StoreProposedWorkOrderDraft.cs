@@ -83,6 +83,7 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
         _notifier.AddToGroup(
             request.CompanyId,
             RealtimeNotificationKind.WorkOrderDraftCreated,
-            new WorkOrderDraftCreatedData { DraftId = request.DraftId, Title = request.Title });
+            new WorkOrderDraftCreatedData { DraftId = request.DraftId, Title = request.Title },
+            isActorSkipped: false);
     }
 }

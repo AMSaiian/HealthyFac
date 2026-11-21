@@ -64,6 +64,7 @@ public sealed class FailProvisioningRequestHandler(
             {
                 EmployeeName = $"{employee.FirstName} {employee.LastName}",
                 Reason = request.Reason,
-            });
+            },
+            isActorSkipped: false);
     }
 }
