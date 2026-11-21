@@ -1,17 +1,20 @@
 <header class="flex flex-none items-center justify-between">
   <div class="flex items-center gap-2">
-    <a
-      pButton
-      [pTooltip]="'WORK_ORDER_DRAFTS.TOOLTIPS.BACK' | translate"
-      tooltipPosition="bottom"
-      routerLink="/work-orders"
-      severity="secondary"
-      iconOnly
-      [text]="true"
-      [attr.aria-label]="'WORK_ORDER_DRAFTS.TOOLTIPS.BACK' | translate"
-    >
-      <i class="pi pi-arrow-left"></i>
-    </a>
+    @if (history.canReturn(returnTarget)) {
+      <button
+        pButton
+        type="button"
+        [pTooltip]="'ACTIONS.BACK' | translate"
+        tooltipPosition="bottom"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'ACTIONS.BACK' | translate"
+        (click)="history.back(returnTarget)"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+    }
     <h1 class="text-2xl font-bold">{{ 'WORK_ORDER_DRAFTS.TITLE' | translate }}</h1>
   </div>
 </header>

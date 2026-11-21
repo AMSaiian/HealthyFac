@@ -1,8 +1,21 @@
+import { parseCompose } from '@shared/history/history.store.utils';
+
 import type { OperatingPhase } from '@machines/phases/operating-phase';
 
 /** The editor of the page: a new phase (`phaseId` is `null`) or a stored one. */
 export interface PhaseEditor {
   readonly phaseId: string | null;
+}
+
+export const PHASE_COMPOSE_NAME = 'phase';
+
+/** Reads the editor from the `compose` value: `phase` is a new phase, `phase:<id>` a stored one. */
+export function toPhaseEditor(compose: string | null): PhaseEditor | null {
+  if (compose === null) {
+    return null;
+  }
+  const { name, id } = parseCompose(compose);
+  return name === PHASE_COMPOSE_NAME ? { phaseId: id } : null;
 }
 
 /** The phases in the order that the evaluator reads them and that the reorder API stores: the lowest priority first. */

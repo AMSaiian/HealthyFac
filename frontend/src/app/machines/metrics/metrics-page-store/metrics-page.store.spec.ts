@@ -1,12 +1,14 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { ApplicationRef, signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, Subject, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
+import { HistoryStore } from '@shared/history/history.store';
+import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { MachineState } from '@machines/machine';
@@ -143,7 +145,8 @@ interface Setup {
   store: InstanceType<typeof MetricsPageStore>;
   api: { getDefinitions: Spy; apply: Spy; getSchema: Spy };
   draftsApi: { listForAttempt: Spy };
-  actions: { complete: Spy; returnPath: WritableSignal<{ url: string } | null> };
+  actions: { complete: Spy };
+  history: { canGoBack: WritableSignal<boolean>; back: Spy };
   resolveLinks: Spy;
   messages: { add: Spy };
   confirmation: { confirm: Spy };
@@ -152,7 +155,7 @@ interface Setup {
 async function setup(
   definitions: MetricDefinitionsResponse = LOADED,
   apply?: Spy,
-  overrides: { getDefinitions?: Spy; listForAttempt?: Spy } = {},
+  overrides: { getDefinitions?: Spy; listForAttempt?: Spy; isHistoryReal?: boolean } = {},
 ): Promise<Setup> {
   const messages = { add: vi.fn() };
   const confirmation = { confirm: vi.fn((options: { accept: () => void }) => options.accept()) };
@@ -165,12 +168,14 @@ async function setup(
   const draftsApi = {
     listForAttempt: overrides.listForAttempt ?? vi.fn(() => of(DRAFTS)),
   };
-  const actions = { complete: vi.fn(), returnPath: signal<{ url: string } | null>(null) };
+  const actions = { complete: vi.fn() };
+  const history = { canGoBack: signal(false), back: vi.fn(() => Promise.resolve()) };
   TestBed.configureTestingModule({
     providers: [
       MetricsPageStore,
       { provide: DraftsApi, useValue: draftsApi },
       { provide: ActionStore, useValue: actions },
+      ...(overrides.isHistoryReal === true ? [provideRouter([])] : [{ provide: HistoryStore, useValue: history }]),
       { provide: MetricDefinitionsApi, useValue: api },
       { provide: MetricUnitsApi, useValue: { getUnits: () => of({ kinds: [] }) } },
       { provide: MachinesApi, useValue: { get: () => of(MACHINE) } },
@@ -185,7 +190,7 @@ async function setup(
   store.openMachine(MACHINE.id).subscribe();
   TestBed.tick();
   await TestBed.inject(ApplicationRef).whenStable();
-  return { store, api, draftsApi, actions, messages, confirmation, resolveLinks };
+  return { store, api, draftsApi, actions, history, messages, confirmation, resolveLinks };
 }
 
 function stageNew(store: Setup['store']): void {
@@ -481,8 +486,8 @@ describe('MetricsPageStore', () => {
     expect(store.hasChanges()).toBe(false);
   });
 
-  it('back_WithoutReturnPath_GoesToTheMachines', async () => {
-    const { store } = await setup();
+  it('back_WithoutPreviousEntry_GoesToMachines', async () => {
+    const { store } = await setup(LOADED, undefined, { isHistoryReal: true });
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
 
     store.back();
@@ -490,66 +495,76 @@ describe('MetricsPageStore', () => {
     expect(navigate).toHaveBeenCalledWith('/machines');
   });
 
-  it('back_WithReturnPath_GoesToTheStoredUrl', async () => {
-    const { store, actions } = await setup();
-    actions.returnPath.set({ url: '/files' });
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+  it('back_WithPreviousEntry_AsksTheHistoryForTheMachinesTarget', async () => {
+    const { store, history } = await setup();
+    history.canGoBack.set(true);
 
     store.back();
 
-    expect(navigate).toHaveBeenCalledWith('/files');
+    expect(history.back).toHaveBeenCalledWith(MACHINES_RETURN_TARGET);
   });
 
-  it('apply_WithReturnPath_GoesBackToTheStoredUrlAndTheGuardDoesNotAskWhileLeaving', async () => {
-    const { store, actions } = await setup(LOADED);
-    actions.returnPath.set({ url: '/files' });
-    let isLeavingAtNavigation = false;
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockImplementation(() => {
-      isLeavingAtNavigation = store.isLeaving();
-      return Promise.resolve(true);
+  it('apply_WithPreviousEntry_GoesBackWithoutTheLeaveQuestion', async () => {
+    const { store, history, confirmation } = await setup(LOADED);
+    history.canGoBack.set(true);
+    let isLeavingAtBack = false;
+    history.back.mockImplementation(() => {
+      isLeavingAtBack = store.isLeaving();
+      return Promise.resolve();
     });
     stageNew(store);
 
     store.apply();
     TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
 
-    expect(navigate).toHaveBeenCalledWith('/files');
-    expect(isLeavingAtNavigation).toBe(true);
+    expect(history.back).toHaveBeenCalledWith(MACHINES_RETURN_TARGET);
+    expect(isLeavingAtBack).toBe(true);
+    expect(store.isLeaving()).toBe(false);
+    expect(confirmation.confirm).not.toHaveBeenCalled();
   });
 
-  it('apply_WithReturnPathAndAFailure_StaysOnThePage', async () => {
-    const apply = vi.fn(() =>
-      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict, statusText: 'Conflict' })),
-    );
-    const { store, actions } = await setup(LOADED, apply);
-    actions.returnPath.set({ url: '/files' });
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+  it('apply_WithoutPreviousEntry_StaysOnThePage', async () => {
+    const { store, history } = await setup(LOADED);
     stageNew(store);
 
     store.apply();
     TestBed.tick();
 
-    expect(navigate).not.toHaveBeenCalled();
+    expect(history.back).not.toHaveBeenCalled();
   });
 
-  it('requestDiscard_WithReturnPath_GoesBackToTheStoredUrlAtOnce', async () => {
-    const { store, actions } = await setup(LOADED);
-    actions.returnPath.set({ url: '/files' });
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+  it('apply_WithPreviousEntryAndAFailure_StaysOnThePage', async () => {
+    const apply = vi.fn(() =>
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict, statusText: 'Conflict' })),
+    );
+    const { store, history } = await setup(LOADED, apply);
+    history.canGoBack.set(true);
+    stageNew(store);
+
+    store.apply();
+    TestBed.tick();
+
+    expect(history.back).not.toHaveBeenCalled();
+  });
+
+  it('confirmedDiscard_WithPreviousEntry_GoesBackWithoutTheLeaveQuestion', async () => {
+    const { store, history, confirmation } = await setup(LOADED);
+    history.canGoBack.set(true);
     stageNew(store);
 
     store.requestDiscard();
 
-    expect(navigate).toHaveBeenCalledWith('/files');
+    expect(confirmation.confirm).toHaveBeenCalledTimes(1);
+    expect(history.back).toHaveBeenCalledWith(MACHINES_RETURN_TARGET);
   });
 
-  it('requestDiscard_WithoutReturnPath_StaysOnThePage', async () => {
-    const { store } = await setup();
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+  it('requestDiscard_WithoutPreviousEntry_StaysOnThePage', async () => {
+    const { store, history } = await setup();
     stageNew(store);
 
     store.requestDiscard();
 
-    expect(navigate).not.toHaveBeenCalled();
+    expect(history.back).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, DestroyRef, effect, inject, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -9,6 +9,8 @@ import { catchError } from 'rxjs/operators';
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { withDetailsMode } from '@shared/forms/with-details-mode';
+import { HistoryStore } from '@shared/history/history.store';
+import { formatCompose } from '@shared/history/history.store.utils';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
@@ -25,8 +27,9 @@ import { nextPriority, toBody, toSourceOptions } from '@machines/phases/phase-fo
 import type { PhaseFormValue } from '@machines/phases/phase-form/phase-form-schema';
 import {
   movedOrder,
-  type PhaseEditor,
+  PHASE_COMPOSE_NAME,
   sortByPriority,
+  toPhaseEditor,
 } from '@machines/phases/operating-phases-page-store/operating-phases-page.store.utils';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 import { INITIAL_GRID } from '@machines/statuses/list/status-definitions-grid.store.utils';
@@ -42,7 +45,6 @@ interface SaveRequest {
 interface ScopeState {
   machineId: string | null;
   machine: Machine | null;
-  editor: PhaseEditor | null;
   isSaving: boolean;
 }
 
@@ -50,7 +52,7 @@ interface ScopeState {
 const STATUS_OPTION_LIMIT = 100;
 
 export const OperatingPhasesPageStore = signalStore(
-  withState<ScopeState>({ machineId: null, machine: null, editor: null, isSaving: false }),
+  withState<ScopeState>({ machineId: null, machine: null, isSaving: false }),
   withDetailsMode(),
   withProps(() => ({
     _auth: inject(AuthStore),
@@ -59,11 +61,13 @@ export const OperatingPhasesPageStore = signalStore(
     _machinesApi: inject(MachinesApi),
     _metricsApi: inject(MetricDefinitionsApi),
     _statusesApi: inject(StatusDefinitionsApi),
+    _history: inject(HistoryStore),
   })),
   withToasts(),
   withConfirm(),
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.OperatingPhasesWrite)),
+    editor: computed(() => toPhaseEditor(store._history.compose())),
   })),
   withProps((store) => ({
     phases: rxResource({
@@ -180,33 +184,31 @@ export const OperatingPhasesPageStore = signalStore(
 
     return {
       /**
-       * Starts a visit to the phases of a machine: loads the machine, then closes the dialog. The state changes only
+       * Starts a visit to the phases of a machine: loads the machine. The state changes only
        * after a successful load, so a failed load keeps the current machine. The load skips the error toast, so the
        * caller decides what a failure means.
        */
       openMachine(machineId: string): Observable<Machine> {
         return store._machinesApi
           .get(machineId, skipErrorToast())
-          .pipe(tap((machine) => patchState(store, { machineId, machine, editor: null })));
+          .pipe(tap((machine) => patchState(store, { machineId, machine })));
       },
       requestCreate(): void {
-        patchState(store, { editor: { phaseId: null } });
-        store._startMode(false);
+        void store._history.openCompose(formatCompose(PHASE_COMPOSE_NAME));
       },
       requestUpdate(phaseId: string): void {
-        patchState(store, { editor: { phaseId } });
-        store._startMode(true);
+        void store._history.openCompose(formatCompose(PHASE_COMPOSE_NAME, phaseId));
       },
       cancelEdit(): void {
         store.view();
       },
       closeEditor(): void {
-        patchState(store, { editor: null });
+        void store._history.closeCompose();
       },
       save: savePhase,
       onSaved(): void {
         if (store.editor()?.phaseId === null) {
-          patchState(store, { editor: null });
+          void store._history.closeCompose();
           store.phases.reload();
         } else {
           store.phases.reload();
@@ -229,6 +231,27 @@ export const OperatingPhasesPageStore = signalStore(
         sendOrder(movedOrder(store.items(), from, to));
       },
     };
+  }),
+  withHooks({
+    onInit(store) {
+      inject(DestroyRef).onDestroy(store._history.registerComposeNames([PHASE_COMPOSE_NAME]));
+      effect(() => {
+        const editor = store.editor();
+        if (editor !== null) {
+          untracked(() => store._startMode(editor.phaseId !== null));
+        }
+      });
+      effect(() => {
+        const phaseId = store.editor()?.phaseId ?? null;
+        if (
+          phaseId !== null &&
+          store.phases.hasValue() &&
+          !store.phases.value().items.some((phase) => phase.id === phaseId)
+        ) {
+          void store._history.removeCompose();
+        }
+      });
+    },
   }),
   withStoreDevtools('operating-phases-page'),
 );

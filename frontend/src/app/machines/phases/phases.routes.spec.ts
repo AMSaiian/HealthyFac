@@ -2,12 +2,16 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, withAutoCleanupInjectors, withComponentInputBinding } from '@angular/router';
+import { PlatformNavigation } from '@angular/common';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { APP_ROUTER_FEATURES } from '@app/app-router';
 import { CompanyStore } from '@shared/company/company.store';
+import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { DetailsMode } from '@shared/forms/with-details-mode';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
@@ -65,9 +69,9 @@ function setup(permissions: readonly Permission[] | null = null): HttpTestingCon
           { path: 'machines', children: MACHINES_ROUTES },
           { path: 'not-found', component: NotFoundStub },
         ],
-        withComponentInputBinding(),
-        withAutoCleanupInjectors(),
+        ...APP_ROUTER_FEATURES,
       ),
+      provideFakePlatformNavigation(),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
@@ -91,9 +95,9 @@ async function flushWhenRequested(http: HttpTestingController, url: string, body
   });
 }
 
-async function openPhases(http: HttpTestingController): Promise<RouterTestingHarness> {
+async function openPhases(http: HttpTestingController, url = '/machines/m1/phases'): Promise<RouterTestingHarness> {
   const harness = await RouterTestingHarness.create();
-  const navigation = harness.navigateByUrl('/machines/m1/phases');
+  const navigation = harness.navigateByUrl(url);
   await flushWhenRequested(http, MACHINE_URL, MACHINE);
   await navigation;
   TestBed.tick();
@@ -154,6 +158,8 @@ describe('phases route', () => {
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
 
     store?.requestCreate();
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
     store?.save({
       value: { ...EMPTY_FORM_VALUE, code: 'idle', name: 'Idle', conditions: [] },
       onSaved: vi.fn(),
@@ -182,6 +188,8 @@ describe('phases route', () => {
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
 
     store?.requestCreate();
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
     store?.save({
       value: {
         ...EMPTY_FORM_VALUE,
@@ -216,6 +224,8 @@ describe('phases route', () => {
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
 
     store?.requestUpdate('a');
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
 
     expect(store?.editor()).toEqual({ phaseId: 'a' });
     expect(store?.mode()).toBe(DetailsMode.View);
@@ -228,6 +238,8 @@ describe('phases route', () => {
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
 
     store?.requestCreate();
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
 
     expect(store?.editor()).toEqual({ phaseId: null });
     expect(store?.mode()).toBe(DetailsMode.Edit);
@@ -239,6 +251,8 @@ describe('phases route', () => {
     const harness = await openPhases(http);
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
     store?.requestUpdate('a');
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
     store?.edit();
     const edited = store?.editedPhase() as OperatingPhase;
 
@@ -265,6 +279,8 @@ describe('phases route', () => {
     const harness = await openPhases(http);
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
     store?.requestUpdate('a');
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
     store?.edit();
     const edited = store?.editedPhase() as OperatingPhase;
 
@@ -284,6 +300,8 @@ describe('phases route', () => {
     const harness = await openPhases(http);
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
     store?.requestUpdate('a');
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
     store?.edit();
 
     store?.cancelEdit();
@@ -298,10 +316,36 @@ describe('phases route', () => {
     const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
 
     store?.requestUpdate('a');
+    await vi.waitFor(() => expect(store?.editor()).not.toBeNull());
+    TestBed.tick();
 
     expect(store?.canWrite()).toBe(false);
     expect(store?.mode()).toBe(DetailsMode.View);
     expect(store?.isEditShown()).toBe(false);
+  });
+
+  it('phasesRoute_ComposeOnLoad_OpensInViewMode', async () => {
+    const http = setup();
+
+    const harness = await openPhases(http, '/machines/m1/phases?compose=phase:a');
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+    await vi.waitFor(() => expect(store?.mode()).toBe(DetailsMode.View));
+
+    expect(store?.editor()).toEqual({ phaseId: 'a' });
+    expect(TestBed.inject(Router).url).toBe('/machines/m1/phases?compose=phase:a');
+  });
+
+  it('phasesRoute_UnknownPhaseId_RemovesCompose', async () => {
+    const http = setup();
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+
+    const harness = await openPhases(http, '/machines/m1/phases?compose=phase:unknown');
+    const entryCount = navigation.entries().length;
+    const store = harness.routeDebugElement?.injector.get(OperatingPhasesPageStore);
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/machines/m1/phases'));
+
+    expect(store?.editor()).toBeNull();
+    expect(navigation.entries().length).toBe(entryCount);
   });
 
   it('phasesRoute_MissingMachine_LeadsToTheNotFoundPage', async () => {

@@ -40,6 +40,38 @@ public sealed class DemoDraftSeedTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task SeedAsync_OnAnEmptyDatabase_AddsTheWorkOrderDraft()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+        await _fixture.RunDemoDraftSeedAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+
+        var drafts = await _fixture.LoadDemoDraftsAsync();
+
+        var draft = drafts.WorkOrders.Should().ContainSingle().Subject;
+        draft.Id.Should().Be(DemoDraftSeedTestData.WorkOrderDraftId);
+        draft.State.Should().Be(DraftState.Pending);
+        draft.CaseId.Should().Be(DemoDraftSeedTestData.CaseId);
+        draft.MachineId.Should().Be(DatabaseTestData.FirstSeedMachineId);
+        draft.Title.Should().Be(DemoDraftSeedTestData.WorkOrderDraftTitle);
+        draft.EstimateMinutes.Should().Be(DemoDraftSeedTestData.WorkOrderDraftEstimateMinutes);
+        draft.CompanyId.Should().Be(DatabaseTestData.TestTenantCompanyId);
+        draft.CreatedBy.Should().Be(DatabaseTestData.TestSupervisorIdentityId);
+    }
+
+    [Fact]
+    public async Task SeedAsync_Twice_AddsTheWorkOrderDraftOnce()
+    {
+        await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+        await _fixture.RunDemoDraftSeedAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+
+        await _fixture.RunDemoDraftSeedAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);
+
+        var drafts = await _fixture.LoadDemoDraftsAsync();
+
+        drafts.WorkOrders.Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task SeedAsync_AfterTheTenantSeed_AddsNoOutboxRow()
     {
         await _fixture.RunSeederAsync(DatabaseTestData.ForcedRecreationWithSeedMachinesOptions);

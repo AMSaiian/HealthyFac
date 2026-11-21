@@ -1,5 +1,7 @@
 using System.Text.Json;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.WorkOrders;
+using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
@@ -11,9 +13,10 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 
 /// <summary>
-/// Creates the demo machine drafts of the ingest snapshot from <c>core.json</c>, all pending (Telemetry seeds the
-/// metric and status drafts). The rows belong to the test company and are created as the test supervisor. The seeder
-/// skips a draft whose ID exists, a deleted one too, so a restart adds nothing.
+/// Creates the demo machine drafts and the pending work order draft of the ingest snapshot from <c>core.json</c>
+/// (Telemetry seeds the metric and status drafts, and Insights seeds the case that the work order draft links). The
+/// rows belong to the test company and are created as the test supervisor. The seeder skips a draft whose ID exists,
+/// a deleted one too, so a restart adds nothing.
 /// </summary>
 /// <remarks>
 /// One <c>SaveChangesAsync</c> stores every row. The seeder adds no outbox row: the drafts come from the ingest in
@@ -38,7 +41,7 @@ public sealed class DemoDraftSeeder(
     private readonly DemoIngestSeedLocation _location = location;
 
     /// <summary>
-    /// Adds the missing drafts in one save.
+    /// Adds the missing machine drafts and work order drafts in one save.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
@@ -73,8 +76,33 @@ public sealed class DemoDraftSeeder(
                 .Where(row => !existingMachineIds.Contains(row.Id))
                 .Select(row => ToMachineDraft(row, tenant.CompanyId, shift)));
 
+        var workOrderIds = seedFile.WorkOrderDrafts.Select(row => row.Id).ToList();
+        var existingWorkOrderIds = await dbContext.WorkOrderDrafts
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .Where(draft => workOrderIds.Contains(draft.Id))
+            .Select(draft => draft.Id)
+            .ToListAsync(cancellationToken);
+
+        dbContext.WorkOrderDrafts.AddRange(
+            seedFile.WorkOrderDrafts
+                .Where(row => !existingWorkOrderIds.Contains(row.Id))
+                .Select(row => ToWorkOrderDraft(row, tenant.CompanyId)));
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static WorkOrderDraft ToWorkOrderDraft(DemoWorkOrderDraftRow row, Guid companyId) =>
+        new(
+            row.Id,
+            companyId,
+            row.MachineId,
+            row.CaseId,
+            row.RunId,
+            row.Title,
+            row.Description,
+            WorkOrderPriority.FromValue(row.Priority),
+            WorkOrderCategory.FromValue(row.Category),
+            row.EstimateMinutes);
 
     private static MachineDraft ToMachineDraft(DemoMachineDraftRow row, Guid companyId, SeedTimeShift shift) =>
         new(

@@ -10,6 +10,39 @@ public sealed record DemoDraftSeedFile
 
     [JsonPropertyName(name: "machineDrafts")]
     public required IReadOnlyList<DemoMachineDraftRow> MachineDrafts { get; init; }
+
+    [JsonPropertyName(name: "workOrderDrafts")]
+    public required IReadOnlyList<DemoWorkOrderDraftRow> WorkOrderDrafts { get; init; }
+}
+
+public sealed record DemoWorkOrderDraftRow
+{
+    [JsonPropertyName(name: "id")]
+    public required Guid Id { get; init; }
+
+    [JsonPropertyName(name: "machine_id")]
+    public required Guid MachineId { get; init; }
+
+    [JsonPropertyName(name: "case_id")]
+    public required Guid CaseId { get; init; }
+
+    [JsonPropertyName(name: "run_id")]
+    public required Guid RunId { get; init; }
+
+    [JsonPropertyName(name: "title")]
+    public required string Title { get; init; }
+
+    [JsonPropertyName(name: "description")]
+    public string? Description { get; init; }
+
+    [JsonPropertyName(name: "priority")]
+    public required string Priority { get; init; }
+
+    [JsonPropertyName(name: "category")]
+    public required string Category { get; init; }
+
+    [JsonPropertyName(name: "estimate_minutes")]
+    public required int EstimateMinutes { get; init; }
 }
 
 public sealed record DemoMachineDraftRow

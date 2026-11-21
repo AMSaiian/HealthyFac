@@ -3965,5 +3965,26 @@
       },
       "duration_milliseconds": 1
     }
+  ],
+  "maintenanceCases": [
+    {
+      "id": "0190f3a0-0000-7000-8000-000000000c41",
+      "machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "state": "open",
+      "opened_at": "2026-11-18T16:19:52.974308+00:00"
+    }
+  ],
+  "machineSignals": [
+    {
+      "id": "0190f3a0-0000-7000-8000-000000000c42",
+      "machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "case_id": "0190f3a0-0000-7000-8000-000000000c41",
+      "rule": "threshold",
+      "severity": "warning",
+      "state": "open",
+      "coverage": "drafted",
+      "work_order_draft_id": "0190f3a0-0000-7000-8000-000000000c21",
+      "opened_at": "2026-11-18T16:19:52.974308+00:00"
+    }
   ]
 }

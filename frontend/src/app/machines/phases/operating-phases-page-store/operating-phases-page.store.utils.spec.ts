@@ -2,6 +2,7 @@ import type { OperatingPhase } from '@machines/phases/operating-phase';
 import {
   movedOrder,
   sortByPriority,
+  toPhaseEditor,
 } from '@machines/phases/operating-phases-page-store/operating-phases-page.store.utils';
 
 function phase(id: string, priority: number): OperatingPhase {
@@ -43,5 +44,18 @@ describe('operating phases page store utils', () => {
     [1, 1],
   ])('movedOrder_PositionsOutsideTheListOrEqual_KeepsTheOrder_%i_%i', (from, to) => {
     expect(movedOrder([phase('a', 3), phase('b', 2), phase('c', 1)], from, to)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('toPhaseEditor', () => {
+  it.each([
+    ['WithoutCompose', null, null],
+    ['WithTheNewName', 'phase', { phaseId: null }],
+    ['WithAStoredId', 'phase:p1', { phaseId: 'p1' }],
+    ['WithAnotherName', 'status:s1', null],
+  ])('toPhaseEditor_%s', (_name, compose, expected) => {
+    const result = toPhaseEditor(compose);
+
+    expect(result).toEqual(expected);
   });
 });

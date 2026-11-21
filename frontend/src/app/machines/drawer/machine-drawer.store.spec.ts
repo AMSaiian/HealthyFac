@@ -419,4 +419,15 @@ describe('MachineDrawerStore', () => {
 
     expect(store.prefilledValue()?.expectedGoLiveOn).toEqual(TODAY);
   });
+
+  it('start_WhenTheMachineIsNotFound_ClosesTheDrawer', async () => {
+    const { store } = setup({ get: vi.fn(() => throwError(() => httpError(HttpStatusCode.NotFound))) });
+    const cancel = vi.spyOn(TestBed.inject(ActionStore), 'cancel');
+
+    store.start({ type: MachineActionType.Update, payload: { machineId: 'm1' } });
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
 });

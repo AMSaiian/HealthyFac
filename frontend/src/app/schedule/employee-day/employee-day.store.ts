@@ -8,7 +8,6 @@ import { ActionStore } from '@shared/actions/action.store';
 import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
-import { Permission } from '@shared/security/permissions';
 import type { ScheduleRow } from '@shared/schedule/schedule-row';
 import { CLOCK } from '@shared/time/clock';
 import type { Temporal } from '@shared/time/temporal';
@@ -50,7 +49,6 @@ export const EmployeeDayStore = signalStore(
     }),
   })),
   withComputed((store) => ({
-    canGoBack: computed(() => store._auth.hasPermission(Permission.EmployeesRead)),
     hasFailed: computed(() => store.day.status() === 'error'),
     isNotFound: computed(() => {
       const error: unknown = store.day.error();

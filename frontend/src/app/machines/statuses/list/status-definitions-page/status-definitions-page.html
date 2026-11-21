@@ -1,17 +1,20 @@
 <header class="flex flex-none items-center justify-between">
   <div class="flex items-center gap-2">
-    <a
-      pButton
-      [pTooltip]="'ACTIONS.BACK_TO_MACHINES' | translate"
-      tooltipPosition="bottom"
-      routerLink="/machines"
-      severity="secondary"
-      iconOnly
-      [text]="true"
-      [attr.aria-label]="'ACTIONS.BACK_TO_MACHINES' | translate"
-    >
-      <i class="pi pi-arrow-left"></i>
-    </a>
+    @if (history.canReturn(returnTarget)) {
+      <button
+        pButton
+        type="button"
+        [pTooltip]="'ACTIONS.BACK' | translate"
+        tooltipPosition="bottom"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'ACTIONS.BACK' | translate"
+        (click)="history.back(returnTarget)"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+    }
     <h1 class="text-2xl font-bold">{{ 'STATUS_DEFINITIONS.TITLE' | translate }} {{ store.machine()?.name }}</h1>
   </div>
   <div class="flex items-center gap-2">

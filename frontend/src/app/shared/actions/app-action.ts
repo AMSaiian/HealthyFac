@@ -29,7 +29,20 @@ export interface ActionHostModule {
   readonly schema: PayloadSchema;
 }
 
+/**
+ * Maps an action to the `compose` query param and back. `encode` returns `null` for an action that the param cannot
+ * carry (e.g., a payload with prefill fields), so the action opens in memory. `decode` gets the route params of the
+ * page, and returns `null` for a value that makes no action.
+ */
+export interface ComposeCodec {
+  readonly name: string;
+  encode(action: AppAction): string | null;
+  decode(id: string | null, params: Readonly<Record<string, string>>): AppAction | null;
+}
+
 export interface ActionHostRegistration {
   readonly type: string;
   readonly load: () => Promise<ActionHostModule>;
+  /** A drawer has a codec: it opens through the `compose` query param, so it has its own history entry. */
+  readonly compose?: ComposeCodec;
 }

@@ -1,11 +1,17 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { ApplicationRef } from '@angular/core';
+import { PlatformNavigation } from '@angular/common';
+import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
+import { z } from 'zod/mini';
 
+import { provideActionHosts } from '@shared/actions/action-registry';
 import { ActionStore } from '@shared/actions/action.store';
+import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -17,12 +23,18 @@ import {
   emptyDays,
   monthRange,
   normalizeVersion,
+  toShiftDialog,
   toVersionFormValue,
 } from '@employees/shifts/shifts-store/shifts.store.utils';
 import { versionFormSchema } from '@employees/shifts/version-dialog/version-dialog-schema';
 import type { VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 
+import { WORK_ORDER_COMPOSE, WorkOrderActionType } from '@work-orders/work-order-actions';
+
 import { ShiftsStore } from './shifts.store';
+
+@Component({ template: '', host: { class: 'contents' } })
+class Blank {}
 
 const VERSION: ShiftVersion = normalizeVersion({
   id: 'v1',
@@ -63,7 +75,9 @@ describe('ShiftsStore', () => {
     await TestBed.inject(ApplicationRef).whenStable();
   }
 
-  async function setup(options: { isConfirmed?: boolean } = {}): Promise<InstanceType<typeof ShiftsStore>> {
+  async function setup(
+    options: { isConfirmed?: boolean; isActionStoreReal?: boolean } = {},
+  ): Promise<InstanceType<typeof ShiftsStore>> {
     TestBed.configureTestingModule({
       providers: [
         ShiftsStore,
@@ -80,7 +94,23 @@ describe('ShiftsStore', () => {
           },
         },
         { provide: AuthStore, useValue: { hasPermission: () => true } },
-        { provide: ActionStore, useValue: { dispatch: vi.fn() } },
+        provideRouter([{ path: '**', component: Blank }]),
+        provideFakePlatformNavigation(),
+        ...(options.isActionStoreReal === true
+          ? [
+              provideActionHosts([
+                {
+                  type: WorkOrderActionType.Open,
+                  compose: WORK_ORDER_COMPOSE,
+                  load: () =>
+                    Promise.resolve({
+                      component: class WorkOrderHost {},
+                      schema: z.object({ workOrderId: z.optional(z.string()) }),
+                    }),
+                },
+              ]),
+            ]
+          : [{ provide: ActionStore, useValue: { dispatch: vi.fn() } }]),
         { provide: MessageService, useValue: { add } },
         {
           provide: ConfirmationService,
@@ -98,6 +128,10 @@ describe('ShiftsStore', () => {
       ],
     });
     const store = TestBed.inject(ShiftsStore);
+    if (options.isActionStoreReal === true) {
+      TestBed.inject(ActionStore);
+    }
+    await TestBed.inject(Router).navigateByUrl('/shifts');
     store.setEmployee('e1');
     await settle();
     return store;
@@ -123,8 +157,10 @@ describe('ShiftsStore', () => {
   it('saveVersion_OnCreate_SendsTheDateAndSevenDays', async () => {
     const store = await setup();
     store.openVersionDialog(null);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
 
     store.saveVersion(FORM);
+    await vi.waitFor(() => expect(store.dialog()).toBeNull());
 
     const body = createVersion.mock.calls[0][1];
     expect(body.effectiveFrom).toBe('2027-07-05');
@@ -136,6 +172,7 @@ describe('ShiftsStore', () => {
   it('saveVersion_OnEdit_SendsTheDaysAndTheRowVersionWithoutADate', async () => {
     const store = await setup();
     store.openVersionDialog(VERSION);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
 
     store.saveVersion(FORM);
 
@@ -151,6 +188,7 @@ describe('ShiftsStore', () => {
     createVersion.mockReturnValue(throwError(affectedError));
     const store = await setup();
     store.openVersionDialog(null);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
 
     store.saveVersion(FORM);
 
@@ -167,6 +205,7 @@ describe('ShiftsStore', () => {
     );
     const store = await setup();
     store.openVersionDialog(null);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
 
     store.saveVersion(FORM);
 
@@ -179,19 +218,21 @@ describe('ShiftsStore', () => {
     updateVersion.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict })));
     const store = await setup();
     store.openVersionDialog(VERSION);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
     const before = shiftVersions.mock.calls.length;
 
     store.saveVersion(FORM);
     await settle();
 
+    await vi.waitFor(() => expect(store.dialog()).toBeNull());
     expect(add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'SHIFTS.TOASTS.CONFLICT' }));
-    expect(store.dialog()).toBeNull();
     expect(shiftVersions.mock.calls.length - before).toBe(1);
   });
 
   it('saveOverride_OnEdit_SendsTheBlocksAndTheRowVersion', async () => {
     const store = await setup();
     store.openOverrideDialog(OVERRIDE);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
 
     store.saveOverride({ date: Temporal.PlainDate.from('2027-06-10'), blocks: [] });
 
@@ -201,6 +242,7 @@ describe('ShiftsStore', () => {
   it('saveOverride_OnCreate_SendsNoRowVersion', async () => {
     const store = await setup();
     store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
 
     store.saveOverride({ date: Temporal.PlainDate.from('2027-06-12'), blocks: [{ start: '10:00', end: '11:00' }] });
 
@@ -252,6 +294,42 @@ describe('ShiftsStore', () => {
     expect(store.isEditable({ ...VERSION, effectiveFrom: '2027-05-01' })).toBe(false);
   });
 
+  it('openOverrideDialog_AfterAFailedVersionSave_ClearsTheAffectedList', async () => {
+    createVersion.mockReturnValue(throwError(affectedError));
+    const store = await setup();
+    store.openVersionDialog(null);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
+    store.saveVersion(FORM);
+    expect(store.affectedWorkOrders()).toHaveLength(1);
+
+    store.openOverrideDialog(null);
+
+    await vi.waitFor(() => expect(store.dialog()?.kind).toBe('override'));
+    await settle();
+    expect(store.affectedWorkOrders()).toEqual([]);
+  });
+
+  it('openWorkOrder_WhileShiftDialogIsOpen_KeepsDialogAndAffected', async () => {
+    createVersion.mockReturnValue(throwError(affectedError));
+    const store = await setup({ isActionStoreReal: true });
+    store.openVersionDialog(null);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
+    store.saveVersion(FORM);
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+    const entryCount = navigation.entries().length;
+
+    store.openWorkOrder('wo-1');
+    await vi.waitFor(() => expect(TestBed.inject(ActionStore).active()).not.toBeNull());
+
+    expect(TestBed.inject(ActionStore).active()).toEqual({
+      type: WorkOrderActionType.Open,
+      payload: { workOrderId: 'wo-1' },
+    });
+    expect(store.dialog()).not.toBeNull();
+    expect(store.affectedWorkOrders()).toHaveLength(1);
+    expect(navigation.entries().length).toBe(entryCount);
+  });
+
   it('nextMonth_AndPreviousMonth_ReloadTheOverridesOfThatMonth', async () => {
     const store = await setup();
 
@@ -259,6 +337,28 @@ describe('ShiftsStore', () => {
     await settle();
 
     expect(shiftOverrides).toHaveBeenLastCalledWith('e1', '2027-07-01', '2027-07-31');
+  });
+});
+
+describe('toShiftDialog', () => {
+  it.each([
+    ['WithoutCompose', null, null],
+    ['WithTheNewVersion', 'shift-version', { kind: 'version', version: null }],
+    ['WithAStoredVersion', 'shift-version:v1', { kind: 'version', version: VERSION }],
+    ['WithAnUnknownVersion', 'shift-version:v9', 'unknown'],
+    ['WithTheNewOverride', 'shift-override', { kind: 'override', override: null }],
+    ['WithAStoredOverride', 'shift-override:o1', { kind: 'override', override: OVERRIDE }],
+    ['WithAnUnknownOverride', 'shift-override:o9', 'unknown'],
+    ['WithAnotherName', 'phase:p1', null],
+  ])('toShiftDialog_%s', (_name, compose, expected) => {
+    const result = toShiftDialog(compose, [VERSION], [OVERRIDE]);
+
+    expect(result).toEqual(expected);
+  });
+
+  it('toShiftDialog_WithAStoredIdBeforeTheListLoads_IsNull', () => {
+    expect(toShiftDialog('shift-version:v1', null, null)).toBeNull();
+    expect(toShiftDialog('shift-override:o1', null, null)).toBeNull();
   });
 });
 

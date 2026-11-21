@@ -355,7 +355,7 @@ export const MachineDraftsStore = signalStore(
         } else if (item.kind === DraftKind.Phase && item.machineId !== null) {
           reviewPhaseDraft(actions, { machineId: item.machineId, attemptId: item.attemptId, draftId: item.id });
         } else if (item.kind === DraftKind.Metric && item.machineId !== null) {
-          void reviewMetricDrafts(actions, router, item.machineId, item.attemptId);
+          void reviewMetricDrafts(router, item.machineId, item.attemptId);
         }
       },
       /** Applies one draft without the review screen. */

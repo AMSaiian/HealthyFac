@@ -8,7 +8,6 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
-import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -159,18 +158,6 @@ describe('EmployeeDayStore', () => {
     store.openWorkOrder('wo-1');
 
     expect(dispatch).toHaveBeenCalledWith({ type: WorkOrderActionType.Open, payload: { workOrderId: 'wo-1' } });
-  });
-
-  it('canGoBack_WithEmployeesRead_IsTrue', async () => {
-    const store = await setup([Permission.EmployeesRead]);
-
-    expect(store.canGoBack()).toBe(true);
-  });
-
-  it('canGoBack_WithoutEmployeesRead_IsFalse', async () => {
-    const store = await setup();
-
-    expect(store.canGoBack()).toBe(false);
   });
 
   it('now_FirstTick_ComesAtTheNextFullMinute', async () => {

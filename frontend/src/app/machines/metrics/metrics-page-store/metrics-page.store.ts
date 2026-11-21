@@ -1,7 +1,6 @@
 import type { HttpErrorResponse } from '@angular/common/http';
 import { HttpStatusCode } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
-import { Router } from '@angular/router';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, type Observable, pipe, tap } from 'rxjs';
@@ -40,8 +39,8 @@ import { withMetricsPageItems } from './metrics-page.items.slice';
 import { withMetricsPageMachine } from './metrics-page.machine.slice';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
-
-const MACHINES_URL = '/machines';
+import { HistoryStore } from '@shared/history/history.store';
+import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 
 /**
  * The metrics page of one machine. Each slice owns one state group and writes only that group. The store owns the
@@ -59,7 +58,7 @@ export const MetricsPageStore = signalStore(
     _machinesApi: inject(MachinesApi),
     _api: inject(MetricDefinitionsApi),
     _actions: inject(ActionStore),
-    _router: inject(Router),
+    _history: inject(HistoryStore),
   })),
   withComputed((store) => {
     const auth = inject(AuthStore);
@@ -135,18 +134,17 @@ export const MetricsPageStore = signalStore(
     };
 
     /**
-     * Goes back to the page and the dialog that opened this review. The user has already decided (an apply or a
-     * confirmed discard), so `isLeaving` lets the leave guard pass: the pending drafts are staged again after a
-     * reload and would make it ask a second time. Does nothing without a return path.
+     * Goes back one history entry, to the page and the dialog that opened this review. The user has already decided
+     * (an apply or a confirmed discard), so `isLeaving` lets the leave guard pass: the pending drafts are staged again
+     * after a reload and would make it ask a second time. Does nothing without a previous app entry.
      */
-    const leaveToReturnPath = (): void => {
-      const url = store._actions.returnPath()?.url;
-      if (url !== undefined) {
-        patchState(store, { isLeaving: true });
-        void store._router.navigateByUrl(url).finally(() => {
-          patchState(store, { isLeaving: false });
-        });
+    const leaveBack = async (): Promise<void> => {
+      if (!store._history.canGoBack()) {
+        return;
       }
+      patchState(store, { isLeaving: true });
+      await store._history.back(MACHINES_RETURN_TARGET);
+      patchState(store, { isLeaving: false });
     };
 
     const applyRequest = rxMethod<void>(
@@ -165,7 +163,7 @@ export const MetricsPageStore = signalStore(
               patchState(store, { isApplying: false });
               store.reload();
               store.drafts.reload();
-              leaveToReturnPath();
+              void leaveBack();
             }),
             catchError((error: unknown) => {
               patchState(store, { isApplying: false });
@@ -242,12 +240,12 @@ export const MetricsPageStore = signalStore(
           store._closeForm();
           store._resetNewCount();
           store.reload();
-          leaveToReturnPath();
+          void leaveBack();
         });
       },
-      /** The page **Back** button: returns to the dialog that opened the review, else to the machines. */
+      /** The page **Back** button: goes back one entry, or to the machines without a previous app entry. */
       back(): void {
-        void store._router.navigateByUrl(store._actions.returnPath()?.url ?? MACHINES_URL);
+        void store._history.back(MACHINES_RETURN_TARGET);
       },
       apply(): void {
         if (store.canApply()) {

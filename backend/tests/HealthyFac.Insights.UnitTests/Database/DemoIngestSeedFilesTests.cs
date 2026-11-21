@@ -84,7 +84,7 @@ public sealed class DemoIngestSeedFilesTests : IDisposable
     {
         var names = _files.Core.EnumerateObject().Select(property => property.Name);
 
-        names.Should().BeEquivalentTo("referenceTime", "machineDrafts");
+        names.Should().BeEquivalentTo("referenceTime", "machineDrafts", "workOrderDrafts");
     }
 
     [Fact]

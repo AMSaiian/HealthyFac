@@ -1,17 +1,20 @@
 <header class="flex flex-none flex-wrap items-center justify-between gap-2">
   <div class="flex min-w-0 flex-wrap items-center gap-2">
-    <a
-      pButton
-      [pTooltip]="'MAINTENANCE.TOOLTIPS.BACK' | translate"
-      tooltipPosition="bottom"
-      routerLink="/maintenance/cases"
-      severity="secondary"
-      iconOnly
-      [text]="true"
-      [attr.aria-label]="'MAINTENANCE.TOOLTIPS.BACK' | translate"
-    >
-      <i class="pi pi-arrow-left"></i>
-    </a>
+    @if (history.canReturn(returnTarget)) {
+      <button
+        pButton
+        type="button"
+        [pTooltip]="'ACTIONS.BACK' | translate"
+        tooltipPosition="bottom"
+        severity="secondary"
+        iconOnly
+        [text]="true"
+        [attr.aria-label]="'ACTIONS.BACK' | translate"
+        (click)="history.back(returnTarget)"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+    }
     <h1 class="min-w-0 truncate text-2xl font-bold">
       {{ 'MAINTENANCE.CASE_TITLE' | translate }}
       @if (store.detail(); as detail) {

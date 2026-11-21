@@ -37,5 +37,18 @@
       "serial_number": "NRS37-22-1093",
       "description": "<p>Supplies compressed air at 7 bar to the production hall: pneumatic tools, actuators, and blow-off nozzles.</p><p>Main parts include a twin-screw air end with oil injection, 37 kW permanent magnet motor with frequency converter, oil separator vessel, air-cooled oil cooler and aftercooler, electronic condensate drain, and AirLogic 5 controller.</p><p>Main operating limits: maximum working pressure 8 bar, minimum working pressure 5.5 bar, motor speed range 1,000 to 3,600 rpm, ambient temperature range 0 to 46 &#176;C.</p>"
     }
+  ],
+  "workOrderDrafts": [
+    {
+      "id": "0190f3a0-0000-7000-8000-000000000c21",
+      "machine_id": "0190f3a0-0000-7000-8000-000000000101",
+      "case_id": "0190f3a0-0000-7000-8000-000000000c41",
+      "run_id": "0190f3a0-0000-7000-8000-000000000c31",
+      "title": "Inspect the spindle bearing",
+      "description": null,
+      "priority": "high",
+      "category": "inspection",
+      "estimate_minutes": 60
+    }
   ]
 }

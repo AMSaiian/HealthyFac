@@ -23,6 +23,57 @@ public sealed record DemoIngestSeedFile
 
     [JsonPropertyName(name: "agentToolCalls")]
     public required IReadOnlyList<DemoToolCallRow> AgentToolCalls { get; init; }
+
+    [JsonPropertyName(name: "maintenanceCases")]
+    public required IReadOnlyList<DemoCaseRow> MaintenanceCases { get; init; }
+
+    [JsonPropertyName(name: "machineSignals")]
+    public required IReadOnlyList<DemoSignalRow> MachineSignals { get; init; }
+}
+
+public sealed record DemoCaseRow
+{
+    [JsonPropertyName(name: "id")]
+    public required Guid Id { get; init; }
+
+    [JsonPropertyName(name: "machine_id")]
+    public required Guid MachineId { get; init; }
+
+    [JsonPropertyName(name: "state")]
+    public required string State { get; init; }
+
+    [JsonPropertyName(name: "opened_at")]
+    public required DateTime OpenedAt { get; init; }
+}
+
+public sealed record DemoSignalRow
+{
+    [JsonPropertyName(name: "id")]
+    public required Guid Id { get; init; }
+
+    [JsonPropertyName(name: "machine_id")]
+    public required Guid MachineId { get; init; }
+
+    [JsonPropertyName(name: "case_id")]
+    public required Guid CaseId { get; init; }
+
+    [JsonPropertyName(name: "rule")]
+    public required string Rule { get; init; }
+
+    [JsonPropertyName(name: "severity")]
+    public required string Severity { get; init; }
+
+    [JsonPropertyName(name: "state")]
+    public required string State { get; init; }
+
+    [JsonPropertyName(name: "coverage")]
+    public required string Coverage { get; init; }
+
+    [JsonPropertyName(name: "work_order_draft_id")]
+    public required Guid WorkOrderDraftId { get; init; }
+
+    [JsonPropertyName(name: "opened_at")]
+    public required DateTime OpenedAt { get; init; }
 }
 
 public sealed record DemoAttemptRow

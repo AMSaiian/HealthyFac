@@ -40,33 +40,16 @@ export function reviewMachineDraft(
   );
 }
 
-/** The part of the action store that the metrics review uses to keep the dialog and to close it. */
-interface ReturnPathActions {
-  active(): AppAction | null;
-  cancel(): void;
-  rememberReturn(url: string, action: AppAction, targetPrefix: string): void;
-}
-
 const MACHINES_PATH = '/machines';
 const METRICS_PATH = 'metrics';
 const DRAFT_ATTEMPT_PARAM = 'draftAttemptId';
 
 /**
  * Opens the metrics page of a machine with the pending metric drafts of one attempt staged as proposed items. The
- * page reads the attempt from the query parameter <c>draftAttemptId</c>. The open dialog closes, and the action store
- * keeps it with the current URL, so it opens again when the router comes back to that URL.
+ * page reads the attempt from the query parameter <c>draftAttemptId</c>. The navigation adds a history entry and keeps
+ * the open dialog in the entry it leaves, so Back opens the dialog again.
  */
-export function reviewMetricDrafts(
-  actions: ReturnPathActions,
-  router: Router,
-  machineId: string,
-  attemptId: string,
-): Promise<boolean> {
-  const dialog = actions.active();
-  if (dialog !== null) {
-    actions.rememberReturn(router.url, dialog, `${MACHINES_PATH}/${machineId}/${METRICS_PATH}`);
-  }
-  actions.cancel();
+export function reviewMetricDrafts(router: Router, machineId: string, attemptId: string): Promise<boolean> {
   return router.navigate([MACHINES_PATH, machineId, METRICS_PATH], {
     queryParams: { [DRAFT_ATTEMPT_PARAM]: attemptId },
   });
