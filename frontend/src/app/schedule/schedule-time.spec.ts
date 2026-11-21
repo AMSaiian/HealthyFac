@@ -2,7 +2,7 @@ import { type DaySchedule, WorkOrderPriority, WorkOrderStatus } from '@work-orde
 
 import { Temporal } from '@shared/time/temporal';
 
-import { followToday, toRow } from './schedule-time';
+import { followToday, plainDateOrNull, toRow } from './schedule-time';
 
 const DAY: DaySchedule = {
   date: '2027-06-01',
@@ -69,4 +69,17 @@ describe('followToday', () => {
 
     expect(result).toBeNull();
   });
+});
+
+describe('plainDateOrNull', () => {
+  it('plainDateOrNull_WithAnIsoDate_ReturnsThePlainDate', () => {
+    expect(plainDateOrNull('2026-11-21')?.toString()).toBe('2026-11-21');
+  });
+
+  it.each([undefined, '', 'bad', '2026-13-01', '2026-02-30', '2026-1-1', '20261121', '2026-11-21T10:00:00'])(
+    'plainDateOrNull_With%s_ReturnsNull',
+    (value) => {
+      expect(plainDateOrNull(value)).toBeNull();
+    },
+  );
 });

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
@@ -18,7 +18,19 @@ const EMPTY_PAGE: DraftsResult = { items: [], totalCount: 0 };
   templateUrl: './work-order-drafts-page.html',
 })
 export class WorkOrderDraftsPage {
+  /** The query parameter `draftId`: the draft whose apply dialog opens. */
+  readonly draftId = input<string>();
+
   protected readonly store = inject(WorkOrderDraftsGridStore);
 
   protected readonly page = computed(() => (this.store.drafts.hasValue() ? this.store.drafts.value() : EMPTY_PAGE));
+
+  constructor() {
+    effect(() => {
+      const draftId = this.draftId();
+      if (draftId !== undefined) {
+        this.store.openLinkedDraft(draftId);
+      }
+    });
+  }
 }

@@ -15,7 +15,9 @@ public static class ContentSecurityPolicy
     /// <c>style</c> attributes, and an attribute style cannot run script. <c>frame-src</c> allows the hidden
     /// iframe of the silent SSO check: it loads the identity provider, which then redirects back to the app.
     /// <c>img-src</c> allows the API origin, because the images of a rich text load from the file links of the
-    /// gateway (<c>/api/document/blobs</c>) on that origin.
+    /// gateway (<c>/api/document/blobs</c>) on that origin. <c>connect-src</c> also allows the WebSocket form of the
+    /// API origin: the hub connection of the realtime client uses the <c>wss:</c> scheme, which an <c>https:</c>
+    /// source does not match.
     /// </remarks>
     /// <param name="nonce">The nonce of the response. Angular applies it to its own style elements.</param>
     /// <param name="apiBaseUrl">The public URL of the API gateway. The policy allows only its origin for requests and
@@ -26,12 +28,25 @@ public static class ContentSecurityPolicy
     {
         var authOrigin = authUrl.GetLeftPart(UriPartial.Authority);
         var apiOrigin = apiBaseUrl.GetLeftPart(UriPartial.Authority);
+        var apiWebSocketOrigin = WebSocketOriginOf(apiBaseUrl);
 
         return $"default-src 'self'; script-src 'self' 'nonce-{nonce}'; style-src-elem 'self' 'nonce-{nonce}'; "
             + "style-src-attr 'unsafe-inline'; "
             + $"img-src 'self' data: {apiOrigin}; font-src 'self'; "
-            + $"connect-src 'self' {apiOrigin} {authOrigin}; "
+            + $"connect-src 'self' {apiOrigin} {apiWebSocketOrigin} {authOrigin}; "
             + $"frame-src 'self' {authOrigin}; base-uri 'self'; form-action 'self'; "
             + "frame-ancestors 'none'; object-src 'none'";
+    }
+
+    private static string WebSocketOriginOf(Uri apiBaseUrl)
+    {
+        var webSocketUri = new UriBuilder
+        {
+            Scheme = apiBaseUrl.Scheme == Uri.UriSchemeHttps ? Uri.UriSchemeWss : Uri.UriSchemeWs,
+            Host = apiBaseUrl.Host,
+            Port = apiBaseUrl.IsDefaultPort ? -1 : apiBaseUrl.Port,
+        };
+
+        return webSocketUri.Uri.GetLeftPart(UriPartial.Authority);
     }
 }

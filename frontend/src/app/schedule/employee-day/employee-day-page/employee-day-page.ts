@@ -21,6 +21,8 @@ const NOT_FOUND_URL = '/not-found';
 })
 export class EmployeeDayPage {
   readonly id = input.required<string>();
+  /** The query parameter `date` (`yyyy-MM-dd`): the day to open. */
+  readonly date = input<string>();
 
   protected readonly store = inject(EmployeeDayStore);
   protected readonly clock = inject(CLOCK);
@@ -30,6 +32,9 @@ export class EmployeeDayPage {
   constructor() {
     effect(() => {
       this.store.setEmployee(this.id());
+    });
+    effect(() => {
+      this.store.openDay(this.date());
     });
     effect(() => {
       if (this.store.isNotFound()) {

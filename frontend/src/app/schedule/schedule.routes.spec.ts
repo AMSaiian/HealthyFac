@@ -69,6 +69,29 @@ describe('schedule routes', () => {
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);
   });
 
+  it.each([
+    ['2026-11-21', '2026-11-21'],
+    ['bad', TODAY],
+    ['2026-02-30', TODAY],
+  ])('employeeScheduleRoute_WithDateQuery%s_RequestsThatDayOrToday', async (query, expectedDate) => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl(`/employees/e1/schedule?date=${query}`);
+    TestBed.tick();
+
+    await vi.waitFor(() => {
+      TestBed.tick();
+      const requests = http.match((request) => request.url === EMPLOYEE_DAY_URL);
+      const dates = requests.map((request) => request.request.params.get('date'));
+      expect(dates).toContain(expectedDate);
+      if (query !== expectedDate) {
+        expect(dates).not.toContain(query);
+      }
+    });
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);
+  });
+
   it('employeeScheduleRoute_WithUnknownEmployee_ShowsTheNotFoundPage', async () => {
     const http = setup();
     const harness = await RouterTestingHarness.create();

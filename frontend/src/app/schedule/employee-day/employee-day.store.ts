@@ -15,7 +15,7 @@ import type { Temporal } from '@shared/time/temporal';
 
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
-import { followToday, minuteTicker, todayOf, toRow } from '@schedule/schedule-time';
+import { followToday, minuteTicker, plainDateOrNull, todayOf, toRow } from '@schedule/schedule-time';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
@@ -74,6 +74,13 @@ export const EmployeeDayStore = signalStore(
     },
     setDate(date: Temporal.PlainDate): void {
       patchState(store, { date });
+    },
+    /** Opens the day of the query parameter `date`. A missing or invalid value keeps the shown day (today). */
+    openDay(value: string | undefined): void {
+      const date = plainDateOrNull(value);
+      if (date !== null) {
+        patchState(store, { date });
+      }
     },
     previousDay(): void {
       const date = store.date();

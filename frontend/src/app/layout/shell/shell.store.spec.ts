@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { Language } from '@shared/i18n/i18n.constants';
+import { RealtimeConnection } from '@shared/realtime/realtime-connection';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 
@@ -21,12 +22,20 @@ interface Setup {
   events: Subject<NavigationStart>;
   confirm: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;
+  stop: ReturnType<typeof vi.fn>;
 }
 
 function setup(options: { isAuthenticated: boolean; hasPermission: boolean; employeeId?: string | null }): Setup {
   const events = new Subject<NavigationStart>();
   const confirm = vi.fn();
-  const logout = vi.fn();
+  const calls: string[] = [];
+  const stop = vi.fn(() => {
+    calls.push('stop');
+    return Promise.resolve();
+  });
+  const logout = vi.fn(() => {
+    calls.push('logout');
+  });
   TestBed.configureTestingModule({
     providers: [
       ShellStore,
@@ -40,11 +49,12 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean; empl
           logout,
         },
       },
+      { provide: RealtimeConnection, useValue: { stop } },
       { provide: ConfirmationService, useValue: { confirm } },
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });
-  return { store: TestBed.inject(ShellStore), events, confirm, logout };
+  return { store: TestBed.inject(ShellStore), events, confirm, logout, stop };
 }
 
 const FILES_PATH = '/files';
@@ -113,13 +123,17 @@ describe('ShellStore', () => {
     expect(logout).not.toHaveBeenCalled();
   });
 
-  it('confirmSignOut_WhenAccepted_SignsOutOnce', () => {
-    const { store, confirm, logout } = setup({ isAuthenticated: true, hasPermission: true });
+  it('confirmSignOut_WhenAccepted_StopsTheConnectionAndThenSignsOutOnce', async () => {
+    const { store, confirm, logout, stop } = setup({ isAuthenticated: true, hasPermission: true });
     store.confirmSignOut();
 
     confirm.mock.calls[0][0].accept();
+    await vi.waitFor(() => {
+      expect(logout).toHaveBeenCalledOnce();
+    });
 
-    expect(logout).toHaveBeenCalledOnce();
+    expect(stop).toHaveBeenCalledOnce();
+    expect(stop.mock.invocationCallOrder[0]).toBeLessThan(logout.mock.invocationCallOrder[0]);
   });
 
   it('confirmSignOut_WhenRejected_DoesNotSignOut', () => {

@@ -22,6 +22,7 @@ import { apiBaseUrlInterceptor } from '@shared/http/api-base-url.interceptor';
 import { problemDetailsInterceptor } from '@shared/http/problem-details.interceptor';
 import { DEFAULT_LANGUAGE, TRANSLATION_PATH, TRANSLATION_SUFFIX } from '@shared/i18n/i18n.constants';
 import { TranslatedTitleStrategy } from '@shared/i18n/translated-title-strategy';
+import { RealtimeConnection } from '@shared/realtime/realtime-connection';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { authInterceptor } from '@shared/security/auth.interceptor';
 import { readCspNonce } from '@shared/security/csp-nonce';
@@ -39,7 +40,14 @@ export function createAppConfig(config: AppConfig): ApplicationConfig {
       { provide: APP_CONFIG, useValue: config },
       provideBrowserGlobalErrorListeners(),
       provideRouter(routes, withComponentInputBinding(), withAutoCleanupInjectors()),
-      provideAppInitializer(() => inject(AuthStore).init()),
+      provideAppInitializer(async () => {
+        const authStore = inject(AuthStore);
+        const realtimeConnection = inject(RealtimeConnection);
+        await authStore.init();
+        if (authStore.isAuthenticated()) {
+          void realtimeConnection.start();
+        }
+      }),
       provideHttpClient(withInterceptors([apiBaseUrlInterceptor, problemDetailsInterceptor, authInterceptor])),
       provideTranslateService({
         fallbackLang: DEFAULT_LANGUAGE,

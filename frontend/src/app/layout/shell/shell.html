@@ -22,6 +22,16 @@
   </ng-template>
   <ng-template #end>
     <div class="flex items-center gap-2">
+      @if (authStore.isAuthenticated()) {
+        <hf-notification-bell
+          [items]="notificationStore.items()"
+          [unreadCount]="notificationStore.unreadCount()"
+          [isOpen]="notificationStore.isBellOpen()"
+          (opened)="notificationStore.openBell(); notificationStore.markAllOpened()"
+          (closed)="notificationStore.closeBell()"
+          (jump)="notificationStore.jump($event)"
+        />
+      }
       <button
         pButton
         [pTooltip]="'LANGUAGE.' + (languageStore.language() | uppercase) | translate"
@@ -136,6 +146,36 @@
   </p-drawer>
 }
 <p-toast position="bottom-right" />
+<p-toast
+  key="notifications"
+  position="top-right"
+>
+  <ng-template
+    #message
+    let-message
+  >
+    <div class="flex w-full items-start gap-2">
+      <span class="min-w-0 flex-1 break-words">
+        {{ message.data.text }}
+      </span>
+      @if (hasJump(message.data.entry)) {
+        <button
+          pButton
+          [pTooltip]="'NOTIFICATIONS.JUMP' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'NOTIFICATIONS.JUMP' | translate"
+          (click)="notificationStore.jump(message.data.entry)"
+        >
+          <i class="pi pi-arrow-right"></i>
+        </button>
+      }
+    </div>
+  </ng-template>
+</p-toast>
 <p-confirmdialog
   [pt]="hiddenClosePt"
   [dismissableMask]="true"

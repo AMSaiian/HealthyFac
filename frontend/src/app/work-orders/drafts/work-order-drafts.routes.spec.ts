@@ -111,6 +111,47 @@ describe('work order drafts route', () => {
     });
   });
 
+  it('draftsRoute_WithDraftIdQuery_LoadsTheDraftAndOpensTheApplyDialog', async () => {
+    const { http } = setup([Permission.DraftsRead, Permission.DraftsWrite, Permission.WorkOrdersWrite]);
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl('/work-orders/drafts?draftId=d1');
+    await vi.waitFor(() => {
+      TestBed.tick();
+      http.match(SEARCH_URL).forEach((request) => request.flush({ items: [], totalCount: 0 }));
+      http.expectOne({ method: 'GET', url: DRAFT_URL }).flush(DRAFT);
+    });
+
+    const store = harness.routeDebugElement?.injector.get(WorkOrderDraftsGridStore) as InstanceType<
+      typeof WorkOrderDraftsGridStore
+    >;
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(WorkOrderDraftsPage);
+    expect(store.editedDraft()?.id).toBe('d1');
+  });
+
+  it.each([
+    ['a draft that is not pending', 200, { ...DRAFT, state: DraftState.Applied }, 'DRAFTS.CONFLICTS.DRAFT_NOT_PENDING'],
+    ['an answer 422', 422, null, 'DRAFTS.CONFLICTS.DRAFT_NOT_PENDING'],
+    ['an unknown draft', 404, null, 'ERRORS.HTTP.NOT_FOUND'],
+  ])('draftsRoute_WithDraftIdQueryFor%s_ShowsTheToastAndKeepsTheGrid', async (_name, status, body, key) => {
+    const { http, messages } = setup([Permission.DraftsRead, Permission.DraftsWrite, Permission.WorkOrdersWrite]);
+    const harness = await RouterTestingHarness.create();
+
+    await harness.navigateByUrl('/work-orders/drafts?draftId=d1');
+    await vi.waitFor(() => {
+      TestBed.tick();
+      http.match(SEARCH_URL).forEach((request) => request.flush({ items: [DRAFT], totalCount: 1 }));
+      http.expectOne({ method: 'GET', url: DRAFT_URL }).flush(body, { status, statusText: 'Answer' });
+    });
+
+    const store = harness.routeDebugElement?.injector.get(WorkOrderDraftsGridStore) as InstanceType<
+      typeof WorkOrderDraftsGridStore
+    >;
+    expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error', detail: key }));
+    expect(store.editedDraft()).toBeNull();
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(WorkOrderDraftsPage);
+  });
+
   it('draftsRoute_WithoutTheDraftsPermission_GoesHome', async () => {
     const { http } = setup([Permission.WorkOrdersRead]);
     const harness = await RouterTestingHarness.create();
