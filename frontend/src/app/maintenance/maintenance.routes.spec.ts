@@ -15,6 +15,7 @@ import { CasePage } from '@maintenance/detail/case-page/case-page';
 import { CasePageStore } from '@maintenance/detail/case-page-store/case-page.store';
 import { MAINTENANCE_ROUTES } from '@maintenance/maintenance.routes';
 import { CompanyStore } from '@shared/company/company.store';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const SEARCH_URL = '/api/insights/v1/cases/search';
 const CASE_URL = '/api/insights/v1/cases/c1';
@@ -48,6 +49,7 @@ function setup(permissions: readonly string[]): {
   const messages = { add: vi.fn() };
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(),
       provideRouter(
         [
           { path: 'maintenance', children: MAINTENANCE_ROUTES },

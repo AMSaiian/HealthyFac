@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTransportType, type HubConnection } from '@microsoft/signalr';
 
-import { HUB_CONNECTION_FACTORY, RealtimeConnection } from './realtime-connection';
+import { HUB_CONNECTION_FACTORY, RealtimeConnection, START_TIMEOUT_MILLISECONDS } from './realtime-connection';
 import { type RealtimeHint, type RealtimeNotification, RealtimeNotificationKind, RealtimeTopic } from './realtime';
 import { APP_CONFIG, type AppConfig } from '@shared/config/app-config';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
@@ -40,11 +40,23 @@ class FakeHub {
   closeHandler: ((error?: Error) => void) | undefined;
   isStarted = false;
   stopCount = 0;
-  startError: Error | null = null;
+  startBehavior: Error | null | 'pending' = null;
+  private _settlePendingStart: (() => void) | null = null;
+  private _resolvePendingStart: (() => void) | null = null;
+  private _isStartPending = false;
 
   start = vi.fn(() => {
-    if (this.startError !== null) {
-      return Promise.reject(this.startError);
+    if (this.startBehavior === 'pending') {
+      this._isStartPending = true;
+      return new Promise<void>((resolve) => {
+        this._resolvePendingStart = () => {
+          this._isStartPending = false;
+          resolve();
+        };
+      });
+    }
+    if (this.startBehavior !== null) {
+      return Promise.reject(this.startBehavior);
     }
     this.isStarted = true;
     return Promise.resolve();
@@ -52,8 +64,21 @@ class FakeHub {
   stop = vi.fn(() => {
     this.stopCount += 1;
     this.isStarted = false;
-    return Promise.resolve();
+    if (!this._isStartPending) {
+      return Promise.resolve();
+    }
+    // As the SignalR client does: a stop during a start resolves only after that start has ended.
+    return new Promise<void>((resolve) => {
+      this._settlePendingStart = resolve;
+    });
   });
+
+  /** Ends a pending start with success, as a slow network does. */
+  endPendingStart(): void {
+    this.isStarted = true;
+    this._resolvePendingStart?.();
+    this._settlePendingStart?.();
+  }
 
   on(method: string, handler: (payload?: unknown) => void): void {
     this.handlers.set(method, handler);
@@ -74,7 +99,7 @@ const RENEW_LEAD_MS = 30_000;
 
 describe('RealtimeConnection', () => {
   let hubs: FakeHub[];
-  let startErrors: (Error | null)[];
+  let startErrors: (Error | null | 'pending')[];
   let isAuthenticated: boolean;
   let calls: string[];
   let expiresAt: Temporal.Instant;
@@ -89,7 +114,7 @@ describe('RealtimeConnection', () => {
           useValue: () => {
             const hub = new FakeHub();
             calls.push('create');
-            hub.startError = startErrors.shift() ?? null;
+            hub.startBehavior = startErrors.shift() ?? null;
             hubs.push(hub);
             return hub as unknown as HubConnection;
           },
@@ -308,6 +333,65 @@ describe('RealtimeConnection', () => {
 
     expect(hubs).toHaveLength(3);
     expect(calls.filter((call) => call === 'refresh')).toHaveLength(1);
+  });
+
+  it('start_WhenTheStartNeverEnds_StopsTheConnectionAt30SecondsAndRetriesAfterTheFirstDelay', async () => {
+    startErrors.push('pending');
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const connection = createConnection();
+
+    void connection.start();
+    await vi.advanceTimersByTimeAsync(START_TIMEOUT_MILLISECONDS - 1);
+    expect(hubs[0].stopCount).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(hubs[0].stopCount).toBeGreaterThan(0);
+    expect(hubs).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(hubs).toHaveLength(2);
+    expect(hubs[1].isStarted).toBe(true);
+  });
+
+  it('start_WhenTheStartEndsAfter29Seconds_KeepsTheConnectionAndStartsNoSecondOne', async () => {
+    startErrors.push('pending');
+    const connection = createConnection();
+    void connection.start();
+    await vi.advanceTimersByTimeAsync(START_TIMEOUT_MILLISECONDS - 1000);
+
+    hubs[0].endPendingStart();
+    await vi.advanceTimersByTimeAsync(START_TIMEOUT_MILLISECONDS * 2);
+
+    expect(hubs).toHaveLength(1);
+    expect(hubs[0].stopCount).toBe(0);
+  });
+
+  it('renew_WhenTheNewStartNeverEnds_KeepsTheOldConnectionStopsThePendingOneAndRetries', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const connection = createConnection();
+    await connection.start();
+    startErrors.push('pending');
+
+    await vi.advanceTimersByTimeAsync(TOKEN_LIFETIME_MS - RENEW_LEAD_MS);
+    expect(hubs).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(START_TIMEOUT_MILLISECONDS);
+    expect(hubs[1].stopCount).toBeGreaterThan(0);
+    expect(hubs[0].stopCount).toBe(0);
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(hubs).toHaveLength(3);
+  });
+
+  it('stop_DuringAPendingStart_StartsNoNewConnectionAfter30Seconds', async () => {
+    startErrors.push('pending');
+    const connection = createConnection();
+    void connection.start();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await connection.stop();
+    await vi.advanceTimersByTimeAsync(START_TIMEOUT_MILLISECONDS * 3);
+
+    expect(hubs).toHaveLength(1);
+    expect(hubs[0].stopCount).toBeGreaterThan(0);
   });
 
   it('renew_WhenTheNewStartFails_KeepsTheFirstConnectionRunning', async () => {

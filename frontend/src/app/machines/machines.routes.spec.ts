@@ -19,6 +19,7 @@ import { MetricValueKind } from '@machines/metrics/metric-definition';
 import { StatusDefinitionsPage } from '@machines/statuses/list/status-definitions-page/status-definitions-page';
 import { MachineFilesPage } from '@machines/files/machine-files-page/machine-files-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const MACHINE_URL = '/api/core/v1/machines/m1';
 const MACHINES_SEARCH_URL = '/api/core/v1/machines/search';
@@ -76,6 +77,7 @@ function setup(isConfirmed: boolean): { http: HttpTestingController; confirm: Re
   );
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(),
       provideRouter(
         [
           { path: 'machines', children: MACHINES_ROUTES },

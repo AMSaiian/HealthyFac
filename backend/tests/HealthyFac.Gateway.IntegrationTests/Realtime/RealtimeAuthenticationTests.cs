@@ -32,6 +32,17 @@ public sealed class RealtimeAuthenticationTests(GatewayEnvironment environment) 
     }
 
     [Fact]
+    public async Task Connect_WithTokenWithoutEmployee_DoesNotComplete()
+    {
+        await using var gateway = _environment.CreateGateway(_core);
+        var token = gateway.Tokens.CreateToken(RealtimeTestData.Claims(Guid.NewGuid()) with { EmployeeId = null });
+
+        var act = async () => await RealtimeTestClient.ConnectAsync(gateway, token);
+
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    [Fact]
     public async Task Connect_WithoutToken_Returns401()
     {
         await using var gateway = _environment.CreateGateway(_core);

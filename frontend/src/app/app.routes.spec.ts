@@ -15,6 +15,7 @@ import { CasesPage } from '@maintenance/list/cases-page/cases-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
 
 import { routes } from './app.routes';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const ROUTE_LOAD_TIMEOUT = 10_000;
 const COMPANY_URL = '/api/core/v1/company';
@@ -28,6 +29,7 @@ const SERVER_ERROR = { status: 500, statusText: 'Server Error' };
 function setup(): HttpTestingController {
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(),
       provideRouter(routes),
       provideHttpClient(),
       provideHttpClientTesting(),

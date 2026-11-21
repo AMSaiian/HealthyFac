@@ -5,6 +5,8 @@ public static class InboxRealtimeTestData
     public const string MessageType = "test.v1:RealtimePush";
     public const string FailsOnceMarker = "fails once";
     public const string HandledText = "realtime handled";
+    public const string StartingCall = "starting";
+    public const string CommittedCall = "committed";
     public const string FailsOnceText = "realtime fails once";
     public const string RepeatedText = "realtime repeated";
     public const string UpdateCommand = "UPDATE";

@@ -2,8 +2,8 @@ using System.Threading.RateLimiting;
 using HealthyFac.Gateway.Web.RateLimiting.Fallback;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Configuration;
+using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.JsonWebTokens;
 using RedisRateLimiting;
 using StackExchange.Redis;
 
@@ -82,14 +82,10 @@ public static class RateLimitingExtensions
     private static string ClientAddress(HttpContext context) =>
         $"{AddressKeyPrefix}{context.Connection.RemoteIpAddress?.ToString() ?? UnknownClient}";
 
-    private static string UserOrClientAddress(HttpContext context)
-    {
-        var subject = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        return context.User.Identity?.IsAuthenticated == true && subject is not null
-            ? $"{UserKeyPrefix}{subject}"
+    private static string UserOrClientAddress(HttpContext context) =>
+        context.User.Identity?.IsAuthenticated == true && ActorClaimsReader.TryReadUserId(context.User, out var userId)
+            ? $"{UserKeyPrefix}{userId}"
             : ClientAddress(context);
-    }
 
     private static RateLimitPartition<string> PartitionByClient(
         HttpContext context,

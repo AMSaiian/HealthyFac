@@ -23,6 +23,11 @@ import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api'
 import { MachineActionType } from '@machines/machine-actions';
 
 import { MachineDraftsStore } from './machine-drafts.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 const SEARCH_URL = '/api/core/v1/machines/machine-1/drafts/search';
 const ATTEMPT_SEARCH_URL = '/api/core/v1/ingest-attempts/attempt-1/drafts/search';
@@ -58,6 +63,7 @@ interface SetupOptions {
 }
 
 describe('MachineDraftsStore', () => {
+  const realtime = createFakeRealtimeConnection();
   function setup(options: SetupOptions = {}): {
     store: InstanceType<typeof MachineDraftsStore>;
     http: HttpTestingController;
@@ -77,6 +83,7 @@ describe('MachineDraftsStore', () => {
     };
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         MachineDraftsStore,
         DraftsApi,
         MetricDefinitionsApi,
@@ -154,6 +161,46 @@ describe('MachineDraftsStore', () => {
     await TestBed.inject(ApplicationRef).whenStable();
     expect(store.drafts.value()?.totalCount).toBe(1);
   }
+
+  it('hint_WithTheAttemptOfTheDialog_LoadsTheAttemptDraftsOnceAfterOneSecond', async () => {
+    const { http } = await setup_loaded({ isAttempt: true });
+    vi.useFakeTimers();
+
+    realtime.hints$.next({ topic: RealtimeTopic.DefinitionDrafts, attemptId: 'attempt-1' });
+    realtime.hints$.next({ topic: RealtimeTopic.DefinitionDrafts, attemptId: 'attempt-1' });
+    await vi.advanceTimersByTimeAsync(1000);
+    TestBed.tick();
+    vi.useRealTimers();
+
+    expect(http.match((candidate) => candidate.url === ATTEMPT_SEARCH_URL)).toHaveLength(1);
+  });
+
+  it('hint_WithTheMachineOfTheDialog_LoadsTheMachineDraftsOnceAfterOneSecond', async () => {
+    const { http } = await setup_loaded();
+    vi.useFakeTimers();
+
+    realtime.hints$.next({ topic: RealtimeTopic.DefinitionDrafts, machineId: 'machine-1' });
+    await vi.advanceTimersByTimeAsync(1000);
+    TestBed.tick();
+    vi.useRealTimers();
+
+    expect(http.match((candidate) => candidate.url === SEARCH_URL)).toHaveLength(1);
+  });
+
+  it.each([{ attemptId: 'attempt-2' }, { machineId: 'machine-2' }, {}])(
+    'hint_WithAnotherScope_LoadsNothing',
+    async (ids) => {
+      const { http } = await setup_loaded({ isAttempt: true });
+      vi.useFakeTimers();
+
+      realtime.hints$.next({ topic: RealtimeTopic.DefinitionDrafts, ...ids });
+      await vi.advanceTimersByTimeAsync(5000);
+      TestBed.tick();
+      vi.useRealTimers();
+
+      http.expectNone((candidate) => candidate.url === ATTEMPT_SEARCH_URL);
+    },
+  );
 
   it('search_WithKindAndStateFilter_SendsBothSetsAndThePendingFirstSort', async () => {
     const { store, http } = setup();

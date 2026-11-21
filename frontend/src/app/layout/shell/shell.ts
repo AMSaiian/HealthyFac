@@ -18,7 +18,7 @@ import { LanguageStore } from '@shared/i18n/language.store';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 import { NavigationStore } from '@shared/loading/navigation.store';
 import { NotificationStore } from '@shared/notifications/notification.store';
-import { hasJump } from '@shared/notifications/notification.store.utils';
+import { hasJump, toastIconOf } from '@shared/notifications/notification.store.utils';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { HIDDEN_CLOSE_BUTTON_PT } from '@shared/theme/square-button-props';
 import { ThemeStore } from '@shared/theme/theme.store';
@@ -60,6 +60,8 @@ export class Shell {
   protected readonly authStore = inject(AuthStore);
   protected readonly navigationStore = inject(NavigationStore);
   protected readonly notificationStore = inject(NotificationStore);
+  protected readonly toastIconOf = toastIconOf;
+
   protected readonly hasJump = hasJump;
   protected readonly languages = Object.values(Language);
   protected readonly flagUrl = languageFlagUrl;

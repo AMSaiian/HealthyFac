@@ -67,7 +67,7 @@ describe('NotificationStore', () => {
 
     expect(store.entries()).toHaveLength(1);
     expect(toast).toHaveBeenCalledTimes(1);
-    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ key: 'notifications', life: 8000 }));
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ life: 8000, closable: false }));
   });
 
   it('items_AfterANotification_HoldTheEntryAndItsText', () => {
@@ -102,16 +102,74 @@ describe('NotificationStore', () => {
     expect(store.entries()[99].notification.notificationId).toBe('n-2');
   });
 
-  it('unreadCount_AfterMarkAllOpened_IsZero', () => {
+  it('receive_NewNotification_AddsAnUnreadEntry', () => {
+    const store = createStore();
+
+    notifications$.next(notification('n-1'));
+
+    expect(store.entries()[0].isRead).toBe(false);
+    expect(store.unreadCount()).toBe(1);
+  });
+
+  it('openBell_WithUnreadEntries_KeepsTheUnreadCount', () => {
+    const store = createStore();
+    notifications$.next(notification('n-1'));
+
+    store.openBell();
+
+    expect(store.unreadCount()).toBe(1);
+  });
+
+  it('markAsRead_ForOneEntry_LowersTheCountByOneAndKeepsTheEntry', () => {
     const store = createStore();
     notifications$.next(notification('n-1'));
     notifications$.next(notification('n-2'));
-    expect(store.unreadCount()).toBe(2);
 
-    store.markAllOpened();
+    store.markAsRead('n-1');
+
+    expect(store.unreadCount()).toBe(1);
+    expect(store.entries()).toHaveLength(2);
+    expect(store.entries().find((entry) => entry.notification.notificationId === 'n-1')?.isRead).toBe(true);
+  });
+
+  it('markAllAsRead_Always_SetsTheCountToZeroAndKeepsTheEntries', () => {
+    const store = createStore();
+    notifications$.next(notification('n-1'));
+    notifications$.next(notification('n-2'));
+
+    store.markAllAsRead();
 
     expect(store.unreadCount()).toBe(0);
     expect(store.entries()).toHaveLength(2);
+  });
+
+  it('dismiss_ForAnEntry_MarksItAsReadAndLowersTheCount', () => {
+    const store = createStore();
+    notifications$.next(notification('n-1'));
+    notifications$.next(notification('n-2'));
+
+    store.dismiss(store.entries()[0]);
+
+    expect(store.unreadCount()).toBe(1);
+    expect(store.entries()[0].isRead).toBe(true);
+  });
+
+  it('receive_ThenTheToastTimesOut_KeepsTheEntryUnread', () => {
+    const store = createStore();
+
+    notifications$.next(notification('n-1'));
+
+    expect(store.unreadCount()).toBe(1);
+  });
+
+  it('jump_ForAnEntry_MarksThatEntryAsReadOnly', () => {
+    const store = createStore();
+    notifications$.next(notification('n-1'));
+    notifications$.next(notification('n-2'));
+
+    store.jump(store.entries()[1]);
+
+    expect(store.entries().map((entry) => entry.isRead)).toEqual([false, true]);
   });
 
   it('receive_WithTheOwnActorSubject_AddsNothing', () => {
@@ -135,7 +193,7 @@ describe('NotificationStore', () => {
       data: { draftId: 'd-1', title: 'Draft' },
     } as RealtimeNotification;
 
-    store.jump({ notification: draft, isOpened: false });
+    store.jump({ notification: draft, isRead: false });
 
     expect(navigate).toHaveBeenCalledWith(['/work-orders/drafts'], { queryParams: { draftId: 'd-1' } });
     expect(store.isBellOpen()).toBe(false);
@@ -144,7 +202,7 @@ describe('NotificationStore', () => {
   it('jump_WithAnActionTarget_DispatchesTheAction', () => {
     const store = createStore();
 
-    store.jump({ notification: notification('n-1'), isOpened: false });
+    store.jump({ notification: notification('n-1'), isRead: false });
 
     expect(dispatch).toHaveBeenCalledWith({ type: WorkOrderActionType.Open, payload: { workOrderId: 'w-1' } });
   });
@@ -160,7 +218,7 @@ describe('NotificationStore', () => {
       data: { title: 'Pump' },
     } as RealtimeNotification;
 
-    store.jump({ notification: unassigned, isOpened: false });
+    store.jump({ notification: unassigned, isRead: false });
 
     expect(navigate).not.toHaveBeenCalled();
     expect(dispatch).not.toHaveBeenCalled();

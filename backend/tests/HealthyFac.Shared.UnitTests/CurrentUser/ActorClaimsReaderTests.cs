@@ -217,4 +217,28 @@ public sealed class ActorClaimsReaderTests
         actor.CompanyId.Should().Be(ActorTestData.CompanyId);
         actor.EmployeeId.Should().Be(ActorTestData.EmployeeId);
     }
+
+    [Fact]
+    public void TryReadUserId_WithAGuidSubject_ReturnsTheUserId()
+    {
+        var isRead = ActorClaimsReader.TryReadUserId(ActorClaimsTestData.ValidPrincipal, out var userId);
+
+        isRead.Should().BeTrue();
+        userId.Should().Be(ActorTestData.UserId);
+    }
+
+    [Theory]
+    [MemberData(nameof(ActorClaimsTestData.InvalidSubjects), MemberType = typeof(ActorClaimsTestData))]
+    public void TryReadUserId_WithAMissingOrNonGuidSubject_ReturnsFalse(string? subject)
+    {
+        var principal = ActorClaimsTestData.CreatePrincipal(
+            subject,
+            [ActorTestData.CompanyId.ToString()],
+            ActorTestData.EmployeeId.ToString());
+
+        var isRead = ActorClaimsReader.TryReadUserId(principal, out var userId);
+
+        isRead.Should().BeFalse();
+        userId.Should().Be(Guid.Empty);
+    }
 }

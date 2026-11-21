@@ -14,6 +14,7 @@ import { BOARD_STATUSES } from '@work-orders/board/board-store/board.store.utils
 import { BoardPage } from '@work-orders/board/board-page/board-page';
 import { WorkOrdersPage } from '@work-orders/list/work-orders-page/work-orders-page';
 import { WORK_ORDERS_ROUTES } from '@work-orders/work-orders.routes';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const SEARCH_URL = '/api/core/v1/work-orders/search';
 const SEARCH_BATCH_URL = `${SEARCH_URL}/batch`;
@@ -27,6 +28,7 @@ function setup(): HttpTestingController {
   vi.stubGlobal('ResizeObserver', ResizeObserverStub);
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(),
       provideRouter([{ path: 'work-orders', children: WORK_ORDERS_ROUTES }], withComponentInputBinding()),
       provideHttpClient(),
       provideHttpClientTesting(),

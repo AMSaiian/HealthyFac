@@ -19,7 +19,6 @@ import { FileActionType } from '@files/file-actions';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 
 export const MAX_NOTIFICATION_ENTRIES = 100;
-export const NOTIFICATION_TOAST_KEY = 'notifications';
 export const NOTIFICATION_TOAST_LIFE_MILLISECONDS = 8000;
 
 const MINUTES_PER_HOUR = 60;
@@ -34,7 +33,7 @@ const UNKNOWN_REASON_KEY = `${PROVISIONING_REASON_KEY_PREFIX}UNKNOWN`;
 
 export interface NotificationEntry {
   readonly notification: RealtimeNotification;
-  readonly isOpened: boolean;
+  readonly isRead: boolean;
 }
 
 /** An entry with its text, which the bell and the toast show. */
@@ -177,6 +176,22 @@ export function jumpOf(notification: RealtimeNotification): NotificationJump | n
   }
 }
 
+/** The PrimeNG message severity of an entry: a read entry looks muted. */
+export function messageSeverityOf(entry: NotificationEntry): 'info' | 'secondary' {
+  return entry.isRead ? 'secondary' : 'info';
+}
+
+const TOAST_ICONS: Readonly<Record<string, string>> = {
+  success: 'pi pi-check-circle',
+  warn: 'pi pi-exclamation-triangle',
+  error: 'pi pi-times-circle',
+};
+
+/** The icon classes of the default toast layout for a message severity. */
+export function toastIconOf(severity: string | undefined): string {
+  return TOAST_ICONS[severity ?? ''] ?? 'pi pi-info-circle';
+}
+
 /** Whether the entry has a jump target. */
 export function hasJump(entry: NotificationEntry): boolean {
   return jumpOf(entry.notification) !== null;
@@ -187,7 +202,7 @@ export function addEntry(
   entries: readonly NotificationEntry[],
   notification: RealtimeNotification,
 ): readonly NotificationEntry[] {
-  return [{ notification, isOpened: false }, ...entries].slice(0, MAX_NOTIFICATION_ENTRIES);
+  return [{ notification, isRead: false }, ...entries].slice(0, MAX_NOTIFICATION_ENTRIES);
 }
 
 export function hasNotification(entries: readonly NotificationEntry[], notificationId: string): boolean {

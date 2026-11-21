@@ -46,14 +46,19 @@ public sealed class RealtimeHubGroupsTests
         groups.JoinedGroups.Should().BeEquivalentTo(RealtimeHubTestData.WorkerGroups);
     }
 
-    [Fact]
-    public async Task OnConnectedAsync_WithoutOrganization_JoinsNoGroup()
+    [Theory]
+    [MemberData(nameof(RealtimeHubTestData.IncompleteUsers), MemberType = typeof(RealtimeHubTestData))]
+    public async Task OnConnectedAsync_WithATokenWithoutOrganizationOrEmployee_EndsTheConnectAndJoinsNoGroup(
+        string? organization,
+        bool hasEmployee
+    )
     {
         var groups = new RecordingGroupManager();
-        var hub = CreateHub(groups, RealtimeHubTestData.SupervisorPermissions, organization: null);
+        var hub = CreateHub(groups, RealtimeHubTestData.SupervisorPermissions, organization, hasEmployee: hasEmployee);
 
-        await hub.OnConnectedAsync();
+        var act = async () => await hub.OnConnectedAsync();
 
+        await act.Should().ThrowAsync<HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException>();
         groups.JoinedGroups.Should().BeEmpty();
     }
 
@@ -62,7 +67,12 @@ public sealed class RealtimeHubGroupsTests
     {
         var logger = new FakeLogger<RealtimeHub>();
         var groups = new ThrowingGroupManager(
-            new RedisConnectionException(ConnectionFailureType.UnableToConnect, message: "down"));
+            new RedisConnectionException(
+                ConnectionFailureType.UnableToConnect,
+                CommandFlags.None,
+                message: "down",
+                innerException: null,
+                CommandStatus.Unknown));
         var hub = CreateHub(groups, RealtimeHubTestData.SupervisorPermissions, RealtimeHubTestData.CompanyText, logger);
 
         await hub.OnConnectedAsync();
@@ -86,10 +96,11 @@ public sealed class RealtimeHubGroupsTests
         IGroupManager groups,
         IReadOnlyList<string> permissions,
         string? organization,
-        ILogger<RealtimeHub>? logger = null
+        ILogger<RealtimeHub>? logger = null,
+        bool hasEmployee = true
     )
     {
-        var user = RealtimeHubTestData.CreateUser(permissions, organization);
+        var user = RealtimeHubTestData.CreateUser(permissions, organization, hasEmployee);
 
         return new RealtimeHub(logger ?? new FakeLogger<RealtimeHub>())
         {

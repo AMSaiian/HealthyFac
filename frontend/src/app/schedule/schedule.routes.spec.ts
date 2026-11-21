@@ -15,6 +15,7 @@ import { Temporal } from '@shared/time/temporal';
 import { CompanyDayPage } from '@schedule/company-day/company-day-page/company-day-page';
 import { EmployeeDayPage } from '@schedule/employee-day/employee-day-page/employee-day-page';
 import { SCHEDULE_ROUTES } from '@schedule/schedule.routes';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const EMPLOYEE_DAY_URL = '/api/core/v1/employees/e1/schedule';
 const COMPANY_DAY_URL = '/api/core/v1/company/schedule';
@@ -30,6 +31,7 @@ function setup(hasPermission = true): HttpTestingController {
   vi.stubGlobal('ResizeObserver', ResizeObserverStub);
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(),
       provideRouter(
         [{ path: '', children: SCHEDULE_ROUTES }, { path: '', children: [] }, ...FALLBACK_ROUTES],
         withComponentInputBinding(),

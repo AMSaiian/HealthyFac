@@ -16,7 +16,6 @@ import {
   addEntry,
   hasNotification,
   jumpOf,
-  NOTIFICATION_TOAST_KEY,
   NOTIFICATION_TOAST_LIFE_MILLISECONDS,
   type NotificationEntry,
   type NotificationItem,
@@ -44,7 +43,7 @@ export const NotificationStore = signalStore(
     _language: inject(LanguageStore),
   })),
   withComputed((store) => ({
-    unreadCount: computed(() => store.entries().filter((entry) => !entry.isOpened).length),
+    unreadCount: computed(() => store.entries().filter((entry) => !entry.isRead).length),
     /** The entries with their text. The text follows the language of the app. */
     items: computed((): readonly NotificationItem[] => {
       const language = store._language.language();
@@ -61,16 +60,29 @@ export const NotificationStore = signalStore(
       const entries = addEntry(store.entries(), notification);
       patchState(store, { entries });
       store._messages.add({
-        key: NOTIFICATION_TOAST_KEY,
         severity: 'info',
         life: NOTIFICATION_TOAST_LIFE_MILLISECONDS,
+        closable: false,
         data: { entry: entries[0], text: textOf(store._translate, entries[0], store._language.language()) },
       });
     };
 
+    const markAsRead = (notificationId: string): void => {
+      patchState(store, {
+        entries: store
+          .entries()
+          .map((entry) => (entry.notification.notificationId === notificationId ? { ...entry, isRead: true } : entry)),
+      });
+    };
+
     return {
-      markAllOpened(): void {
-        patchState(store, { entries: store.entries().map((entry) => ({ ...entry, isOpened: true })) });
+      markAsRead,
+      /** The user closed the toast of the entry. The life timeout never calls it, so a timed out entry stays unread. */
+      dismiss(entry: NotificationEntry): void {
+        markAsRead(entry.notification.notificationId);
+      },
+      markAllAsRead(): void {
+        patchState(store, { entries: store.entries().map((entry) => ({ ...entry, isRead: true })) });
       },
       openBell(): void {
         patchState(store, { isBellOpen: true });
@@ -78,9 +90,10 @@ export const NotificationStore = signalStore(
       closeBell(): void {
         patchState(store, { isBellOpen: false });
       },
-      /** Runs the jump of an entry and closes the bell. An entry without a jump only closes it. */
+      /** Marks the entry as read, runs its jump, and closes the bell. An entry without a jump only closes it. */
       jump(entry: NotificationEntry): void {
         patchState(store, { isBellOpen: false });
+        markAsRead(entry.notification.notificationId);
         const target = jumpOf(entry.notification);
         if (target === null) {
           return;

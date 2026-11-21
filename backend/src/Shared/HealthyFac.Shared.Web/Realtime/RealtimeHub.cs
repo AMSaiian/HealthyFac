@@ -1,6 +1,5 @@
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Web.Authentication;
-using HealthyFac.Shared.Web.CurrentUser;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -29,12 +28,14 @@ public sealed class RealtimeHub(ILogger<RealtimeHub> logger) : Hub<IRealtimeClie
     public override async Task OnConnectedAsync()
     {
         var user = Context.User;
-        if (user is null || !ActorClaimsReader.TryReadCompanyId(user, out var companyId))
+        if (user is null)
         {
             await base.OnConnectedAsync();
 
             return;
         }
+
+        var companyId = ConnectionActor.Of(Context.Items, user).CompanyId!.Value;
 
         var permissions = user.FindAll(KeycloakClaimTypes.Permissions)
             .Select(claim => claim.Value)

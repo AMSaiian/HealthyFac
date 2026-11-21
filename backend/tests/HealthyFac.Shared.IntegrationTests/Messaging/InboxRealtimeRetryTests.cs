@@ -29,5 +29,11 @@ public sealed class InboxRealtimeRetryTests(InboxRealtimeRetryFixture fixture)
         _fixture.InjectedFailureCount.Should().BeGreaterThanOrEqualTo(expected: 1);
         calls.Should().HaveCount(expected: 2);
         _fixture.RealtimeQueue.Items.Should().ContainSingle();
+        _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.StartingCall)
+            .Should()
+            .BeGreaterThanOrEqualTo(expected: 2);
+        _fixture.InboxObserver.Calls.Count(call => call == InboxRealtimeTestData.CommittedCall)
+            .Should()
+            .Be(expected: 1);
     }
 }

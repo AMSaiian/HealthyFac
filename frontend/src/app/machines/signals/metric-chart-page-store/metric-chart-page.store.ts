@@ -1,8 +1,8 @@
 import { computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { debounceTime, map, type Observable, pipe, tap } from 'rxjs';
+import { debounceTime, EMPTY, interval, map, type Observable, pipe, switchMap, tap } from 'rxjs';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { skipErrorToast } from '@shared/http/http-error-key';
@@ -18,6 +18,7 @@ import {
   chartableMetrics,
   DEFAULT_RANGE,
   type LoadedHistory,
+  METRIC_CHART_RELOAD_INTERVAL_MS,
   RANGE_DEBOUNCE_MS,
   type RangeSelection,
   selectionBounds,
@@ -243,6 +244,28 @@ export const MetricChartPageStore = signalStore(
         store.startRefreshCooldown();
       },
     };
+  }),
+  withComputed((store) => ({
+    /** True while the range is a preset that ends now. A custom range, a zoom, and a pan all make it custom. */
+    isLiveRange: computed(() => store.machineId() !== null && store.range().kind === 'preset'),
+  })),
+  withHooks({
+    onInit(store) {
+      const reloadWhileLive = rxMethod<boolean>(
+        pipe(
+          switchMap((isLive) =>
+            isLive
+              ? interval(METRIC_CHART_RELOAD_INTERVAL_MS).pipe(
+                  tap(() => {
+                    store.history.reload();
+                  }),
+                )
+              : EMPTY,
+          ),
+        ),
+      );
+      reloadWhileLive(store.isLiveRange);
+    },
   }),
   withStoreDevtools('metric-chart-page'),
 );

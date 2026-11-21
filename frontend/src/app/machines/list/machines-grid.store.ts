@@ -23,6 +23,9 @@ import { toSearchBody } from '@machines/list/machine-query';
 import { INITIAL_GRID } from '@machines/list/machines-grid.store.utils';
 import { MachinesApi } from '@machines/machines-api';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const MACHINES_PATH = '/machines';
@@ -120,6 +123,9 @@ export const MachinesGridStore = signalStore(
     };
   }),
   withActionResultReload<{ machines: Reloadable }>([MachineActionType.Saved, DraftActionType.Changed], (store) => {
+    store.machines.reload();
+  }),
+  withRealtimeReload<{ machines: Reloadable }>([RealtimeTopic.Machines], (store) => {
     store.machines.reload();
   }),
   withStoreDevtools('machines-grid'),

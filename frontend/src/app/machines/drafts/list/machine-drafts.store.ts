@@ -42,6 +42,10 @@ import {
 import { DraftsApi } from '@machines/drafts/drafts-api';
 import { withDraftQuickApply } from '@machines/drafts/with-draft-quick-apply';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+import type { Reloadable } from '@shared/actions/with-action-result-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 export const INITIAL_DRAFT_FILTER: MachineDraftFilter = { kinds: [], states: [] };
@@ -410,5 +414,12 @@ export const MachineDraftsStore = signalStore(
       });
     },
   }),
+  withRealtimeReload<{ drafts: Reloadable; scope: () => DraftsScope | undefined }>(
+    [RealtimeTopic.DefinitionDrafts],
+    (store) => {
+      store.drafts.reload();
+    },
+    (store) => store.scope()?.id ?? null,
+  ),
   withStoreDevtools('machine-drafts'),
 );

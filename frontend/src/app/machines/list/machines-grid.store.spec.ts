@@ -15,6 +15,11 @@ import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
 
 import { MachinesGridStore } from './machines-grid.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 const EMPTY_PAGE = { items: [], totalCount: 0 };
 
@@ -40,12 +45,14 @@ interface Setup {
 }
 
 describe('MachinesGridStore', () => {
+  const realtime = createFakeRealtimeConnection();
   async function setup(options: { hasPermission?: boolean; isConfirmed?: boolean } = {}): Promise<Setup> {
     const messages = { add: vi.fn() };
     const search = vi.fn(() => of(EMPTY_PAGE));
     const remove = vi.fn(() => of(undefined));
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         MachinesGridStore,
         { provide: MachinesApi, useValue: { search, delete: remove } },
         { provide: MessageService, useValue: messages },
@@ -73,6 +80,22 @@ describe('MachinesGridStore', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('hint_OfTheMachinesTopic_ReloadsTheGridOnceAfterOneSecond', async () => {
+    const { search } = await setup();
+    vi.useFakeTimers();
+    const callsBefore = search.mock.calls.length;
+
+    realtime.hints$.next({ topic: RealtimeTopic.Machines });
+    await vi.advanceTimersByTimeAsync(999);
+    expect(search.mock.calls.length).toBe(callsBefore);
+    await vi.advanceTimersByTimeAsync(1);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    vi.useRealTimers();
+
+    expect(search.mock.calls.length - callsBefore).toBe(1);
   });
 
   it.each(

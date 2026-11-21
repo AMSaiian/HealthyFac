@@ -49,6 +49,8 @@ public static class ActorClaimsTestData
         return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "test"));
     }
 
+    public static TheoryData<string?> InvalidSubjects => new() { default(string), "not-a-guid" };
+
     public static ClaimsPrincipal ValidPrincipal => CreatePrincipal(
         ActorTestData.UserId.ToString(),
         [ActorTestData.CompanyId.ToString()],
