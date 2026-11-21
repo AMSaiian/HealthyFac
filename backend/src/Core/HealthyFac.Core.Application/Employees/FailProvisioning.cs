@@ -1,5 +1,7 @@
 using HealthyFac.Auth.Messaging.Identities;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -18,13 +20,16 @@ public sealed class FailProvisioningPreHandlerCheck : PassThroughPreHandlerCheck
 /// </summary>
 /// <param name="dbContext">Loads and saves the employee.</param>
 /// <param name="logger">Logs the reason of the failure.</param>
+/// <param name="notifier">Adds the real-time event of the failure. The inbox runner pushes it after the commit.</param>
 public sealed class FailProvisioningRequestHandler(
     ICoreDbContext dbContext,
-    ILogger<FailProvisioningRequestHandler> logger
+    ILogger<FailProvisioningRequestHandler> logger,
+    IRealtimeNotifier notifier
 ) : RequestHandler<IdentityProvisioningFailed>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly ILogger<FailProvisioningRequestHandler> _logger = logger;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         IdentityProvisioningFailed request,
@@ -51,5 +56,14 @@ public sealed class FailProvisioningRequestHandler(
 
         employee.MarkProvisioningFailed();
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _notifier.AddToGroup(
+            employee.CompanyId,
+            RealtimeNotificationKind.ProvisioningFailed,
+            new ProvisioningFailedData
+            {
+                EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                Reason = request.Reason,
+            });
     }
 }

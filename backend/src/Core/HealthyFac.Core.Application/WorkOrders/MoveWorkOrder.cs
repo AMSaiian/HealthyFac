@@ -1,10 +1,12 @@
 using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -61,24 +63,32 @@ public sealed class MoveWorkOrderPreHandlerCheck(ICurrentUserProvider currentUse
 /// </summary>
 /// <param name="dbContext">Loads and saves the work order.</param>
 /// <param name="scheduleChecks">Checks the slot.</param>
-public sealed class MoveWorkOrderRequestHandler(ICoreDbContext dbContext, ScheduleChecks scheduleChecks)
-    : RequestHandler<MoveWorkOrderRequest>
+public sealed class MoveWorkOrderRequestHandler(
+    ICoreDbContext dbContext,
+    ScheduleChecks scheduleChecks,
+    IRealtimeNotifier notifier
+) : RequestHandler<MoveWorkOrderRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly ScheduleChecks _scheduleChecks = scheduleChecks;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         MoveWorkOrderRequest request,
         CancellationToken cancellationToken
     )
     {
-        await _dbContext.RunInTransactionAsync(
+        var change = await _dbContext.RunInTransactionAsync(
             token => MoveAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+        _notifier.PushAssignmentChange(request.CompanyId, change);
     }
 
-    private async Task MoveAsync(MoveWorkOrderRequest request, CancellationToken cancellationToken)
+    private async Task<WorkOrderAssignmentChange> MoveAsync(
+        MoveWorkOrderRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var workOrder = await _dbContext.LoadForScheduleChangeAsync(
             request.CompanyId,
@@ -100,6 +110,7 @@ public sealed class MoveWorkOrderRequestHandler(ICoreDbContext dbContext, Schedu
             workOrder.Id,
             cancellationToken);
 
+        var oldAssigneeId = current.AssigneeId;
         var previousRevision = workOrder.CurrentRevision;
         workOrder.Move(assigneeId, request.PlannedStartLocal, startUtc);
         _dbContext.AddNewHistoryRows(workOrder, previousRevision);
@@ -112,5 +123,21 @@ public sealed class MoveWorkOrderRequestHandler(ICoreDbContext dbContext, Schedu
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
+
+        var oldAssigneeUserId = oldAssigneeId is { } oldId
+            ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
+            : null;
+        var newAssigneeUserId = await _dbContext.FindIdentityUserIdAsync(assigneeId, cancellationToken);
+
+        return new WorkOrderAssignmentChange
+        {
+            WorkOrderId = workOrder.Id,
+            Title = workOrder.Title,
+            OldAssigneeId = oldAssigneeId,
+            OldAssigneeUserId = oldAssigneeUserId,
+            NewAssigneeId = assigneeId,
+            NewAssigneeUserId = newAssigneeUserId,
+            PlannedStartLocal = request.PlannedStartLocal,
+        };
     }
 }

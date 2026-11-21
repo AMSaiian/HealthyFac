@@ -107,6 +107,8 @@ public static class BackgroundQueueTestHost
 {
     public static readonly TimeSpan Wait = TimeSpan.FromSeconds(seconds: 10);
 
+    public static readonly TimeSpan EnqueueLimit = TimeSpan.FromSeconds(seconds: 2);
+
     public static readonly ActivityContext ParentContext = new(
         ActivityTraceId.CreateFromString(idData: "0af7651916cd43dd8448eb211c80319c"),
         ActivitySpanId.CreateFromString(idData: "b7ad6b7169203331"),

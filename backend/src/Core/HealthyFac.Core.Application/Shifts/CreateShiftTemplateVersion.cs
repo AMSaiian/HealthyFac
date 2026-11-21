@@ -2,6 +2,7 @@ using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using FluentValidation.Results;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.Application.Shifts.ChangeChecks;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
@@ -10,6 +11,7 @@ using HealthyFac.Core.Domain.Shifts;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
@@ -72,11 +74,13 @@ public sealed class CreateShiftTemplateVersionPreHandlerCheck(
 /// <param name="reader">Loads the shift data.</param>
 /// <param name="guard">Rejects a change that breaks a rule.</param>
 /// <param name="timeProvider">Provides the current time.</param>
+/// <param name="notifier">Adds the real-time events after the save.</param>
 public sealed class CreateShiftTemplateVersionRequestHandler(
     ICoreDbContext dbContext,
     DayScheduleReader reader,
     ShiftChangeGuard guard,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : IRequestHandler<CreateShiftTemplateVersionRequest, CreateShiftTemplateVersionResponse>
 {
     private const string EffectiveFromKey = "effectiveFrom";
@@ -85,21 +89,26 @@ public sealed class CreateShiftTemplateVersionRequestHandler(
     private readonly DayScheduleReader _reader = reader;
     private readonly ShiftChangeGuard _guard = guard;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     public async Task<CreateShiftTemplateVersionResponse> HandleAsync(
         CreateShiftTemplateVersionRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var versionId = await _dbContext.RunInTransactionAsync(
+        var created = await _dbContext.RunInTransactionAsync(
             token => CreateAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+        _notifier.PushShiftChanged(request.CompanyId, created.Change);
 
-        return new CreateShiftTemplateVersionResponse { Id = versionId };
+        return new CreateShiftTemplateVersionResponse { Id = created.VersionId };
     }
 
-    private async Task<Guid> CreateAsync(CreateShiftTemplateVersionRequest request, CancellationToken cancellationToken)
+    private async Task<(Guid VersionId, ShiftChange Change)> CreateAsync(
+        CreateShiftTemplateVersionRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
@@ -143,6 +152,15 @@ public sealed class CreateShiftTemplateVersionRequestHandler(
             throw new ConflictException(ShiftErrors.Rejections.EffectiveFromTaken, exception);
         }
 
-        return version.Id;
+        var identityUserId = await _dbContext.FindIdentityUserIdAsync(request.EmployeeId, cancellationToken);
+
+        return (
+            version.Id,
+            new ShiftChange
+            {
+                EmployeeId = request.EmployeeId,
+                IdentityUserId = identityUserId,
+                Date = request.EffectiveFrom,
+            });
     }
 }

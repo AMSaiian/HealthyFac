@@ -44,6 +44,21 @@ public static class ShiftFixtureExtensions
             };
         }
 
+        public async Task<ShiftTenant> ArrangeUnprovisionedShiftTenantAsync()
+        {
+            var companyId = await fixture.CreateCompanyAsync(ShiftTestData.CompanyName);
+            var employeeId = await fixture.ArrangeUnprovisionedEmployeeAsync(
+                companyId,
+                new EmployeeSeedOptions
+                {
+                    Email = ShiftTestData.UnprovisionedEmail,
+                    FirstName = ShiftTestData.EmployeeFirstName,
+                    LastName = ShiftTestData.EmployeeLastName,
+                });
+
+            return new ShiftTenant { CompanyId = companyId, EmployeeId = employeeId, IdentityUserId = Guid.Empty };
+        }
+
         public async Task<Guid> CreateVersionAsync(
             ShiftTenant tenant,
             DateOnly effectiveFrom,

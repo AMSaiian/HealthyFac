@@ -1,11 +1,13 @@
 using System.Data;
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.ChangeChecks;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Application.Shifts.Scopes;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -59,25 +61,28 @@ public sealed class DeleteShiftOverridePreHandlerCheck(ICoreDbContext dbContext,
 public sealed class DeleteShiftOverrideRequestHandler(
     ICoreDbContext dbContext,
     DayScheduleReader reader,
-    ShiftChangeGuard guard
+    ShiftChangeGuard guard,
+    IRealtimeNotifier notifier
 ) : RequestHandler<DeleteShiftOverrideRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly DayScheduleReader _reader = reader;
     private readonly ShiftChangeGuard _guard = guard;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         DeleteShiftOverrideRequest request,
         CancellationToken cancellationToken
     )
     {
-        await _dbContext.RunInTransactionAsync(
+        var change = await _dbContext.RunInTransactionAsync(
             token => DeleteAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+        _notifier.PushShiftChanged(request.CompanyId, change);
     }
 
-    private async Task DeleteAsync(DeleteShiftOverrideRequest request, CancellationToken cancellationToken)
+    private async Task<ShiftChange> DeleteAsync(DeleteShiftOverrideRequest request, CancellationToken cancellationToken)
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var shifts = await _reader.LoadAsync(
@@ -106,5 +111,14 @@ public sealed class DeleteShiftOverrideRequestHandler(
         {
             throw new ConflictException(ShiftErrors.Rejections.OverrideChanged, exception);
         }
+
+        var identityUserId = await _dbContext.FindIdentityUserIdAsync(request.EmployeeId, cancellationToken);
+
+        return new ShiftChange
+        {
+            EmployeeId = request.EmployeeId,
+            IdentityUserId = identityUserId,
+            Date = request.Date,
+        };
     }
 }
