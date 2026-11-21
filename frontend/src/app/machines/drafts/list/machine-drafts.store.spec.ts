@@ -65,7 +65,6 @@ describe('MachineDraftsStore', () => {
       complete: ReturnType<typeof vi.fn>;
       cancel: ReturnType<typeof vi.fn>;
       dispatchChild: ReturnType<typeof vi.fn>;
-      rememberReturn: ReturnType<typeof vi.fn>;
     };
   } {
     const actions = {
@@ -73,7 +72,6 @@ describe('MachineDraftsStore', () => {
       cancel: vi.fn(),
       dispatchChild: vi.fn(() => Promise.resolve()),
       active: vi.fn(() => OPEN_DIALOG),
-      rememberReturn: vi.fn(),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -489,15 +487,14 @@ describe('MachineDraftsStore', () => {
     expect(actions.complete).not.toHaveBeenCalled();
   });
 
-  it('requestReview_ForMetricDraft_KeepsTheDialogForTheReturnAndOpensTheMetricsPage', async () => {
+  it('reviewMetricDrafts_NavigatesWithoutClosingTheDialog', async () => {
     const { store, http, actions } = setup();
     await load(http, store);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
     store.requestReview({ ...ITEM, kind: DraftKind.Metric });
 
-    expect(actions.rememberReturn).toHaveBeenCalledWith(expect.any(String), OPEN_DIALOG, '/machines/machine-1/metrics');
-    expect(actions.cancel).toHaveBeenCalledTimes(1);
+    expect(actions.cancel).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith(['/machines', 'machine-1', 'metrics'], {
       queryParams: { draftAttemptId: ITEM.attemptId },
     });

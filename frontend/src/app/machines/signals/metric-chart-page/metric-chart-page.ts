@@ -1,7 +1,6 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Popover } from 'primeng/popover';
@@ -18,6 +17,7 @@ import { PlainDateTimeRangePicker } from '@shared/time/pickers/plain-date-time-r
 import type { PlainDateTimeRange } from '@shared/time/plain-date-time-range';
 
 import { ThemeStore } from '@shared/theme/theme.store';
+import { HistoryStore } from '@shared/history/history.store';
 
 import { MetricChart } from '@machines/signals/metric-chart/metric-chart';
 import { limitsOf } from '@machines/signals/metric-chart/metric-chart.utils';
@@ -34,6 +34,7 @@ import { TimeBreakdown } from '@machines/signals/time-breakdown/time-breakdown';
 import { toPhaseRows, toStateRows } from '@machines/signals/time-breakdown/time-breakdown.utils';
 import { STATE_LABEL_KEYS } from '@machines/list/machine-grid/machine-grid.utils';
 import type { MachineState } from '@machines/machine';
+import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 
 const CHART_TAB = 'chart';
 const PHASES_TAB = 'phases';
@@ -48,7 +49,6 @@ const STATES_TAB = 'states';
     MetricChart,
     PlainDateTimeRangePicker,
     Popover,
-    RouterLink,
     Select,
     Tab,
     TabList,
@@ -68,6 +68,8 @@ export class MetricChartPage {
   protected readonly PHASES_TAB = PHASES_TAB;
   protected readonly STATES_TAB = STATES_TAB;
   protected readonly store = inject(MetricChartPageStore);
+  protected readonly history = inject(HistoryStore);
+  protected readonly returnTarget = MACHINES_RETURN_TARGET;
   protected readonly theme = inject(ThemeStore);
   private readonly _clock = inject(CLOCK);
   private readonly _translate = inject(TranslateService);

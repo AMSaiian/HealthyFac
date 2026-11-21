@@ -1,11 +1,16 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { APP_ACTION_HOSTS } from '@app/app-action-hosts';
+import { APP_ROUTER_FEATURES } from '@app/app-router';
+import { provideActionHosts } from '@shared/actions/action-registry';
+import { ActionStore } from '@shared/actions/action.store';
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -14,6 +19,7 @@ import { BOARD_STATUSES } from '@work-orders/board/board-store/board.store.utils
 import { BoardPage } from '@work-orders/board/board-page/board-page';
 import { WorkOrdersPage } from '@work-orders/list/work-orders-page/work-orders-page';
 import { WORK_ORDERS_ROUTES } from '@work-orders/work-orders.routes';
+import { WorkOrderActionType } from '@work-orders/work-order-actions';
 
 const SEARCH_URL = '/api/core/v1/work-orders/search';
 const SEARCH_BATCH_URL = `${SEARCH_URL}/batch`;
@@ -27,7 +33,9 @@ function setup(): HttpTestingController {
   vi.stubGlobal('ResizeObserver', ResizeObserverStub);
   TestBed.configureTestingModule({
     providers: [
-      provideRouter([{ path: 'work-orders', children: WORK_ORDERS_ROUTES }], withComponentInputBinding()),
+      provideRouter([{ path: 'work-orders', children: WORK_ORDERS_ROUTES }], ...APP_ROUTER_FEATURES),
+      provideFakePlatformNavigation(),
+      provideActionHosts(APP_ACTION_HOSTS),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
@@ -81,5 +89,29 @@ describe('work orders routes', () => {
       });
     });
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(BoardPage);
+  });
+
+  it('workOrdersRoute_DialogOverDrawer_KeepsCompose', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/work-orders');
+    TestBed.tick();
+    await vi.waitFor(() => expect(http.match(SEARCH_URL).length).toBeGreaterThan(0));
+    const actions = TestBed.inject(ActionStore);
+    const drawer = { type: WorkOrderActionType.Open, payload: { workOrderId: 'w1' } };
+    await actions.dispatch(drawer);
+    await vi.waitFor(() => expect(actions.active()).toEqual(drawer));
+
+    await actions.dispatchChild({
+      type: WorkOrderActionType.ChangeStatus,
+      payload: { workOrderId: 'w1', rowVersion: 3 },
+    });
+    const childType = actions.active()?.type;
+    actions.cancel();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(childType).toBe(WorkOrderActionType.ChangeStatus);
+    expect(actions.active()).toEqual(drawer);
+    expect(TestBed.inject(Router).url).toBe('/work-orders?compose=work-order:w1');
   });
 });

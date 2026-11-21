@@ -2,6 +2,8 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
+using HealthyFac.Insights.Domain.Cases;
+using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
@@ -16,9 +18,10 @@ namespace HealthyFac.Insights.Infrastructure.Database.Seeding;
 
 /// <summary>
 /// Creates the demo ingest results: the completed attempts, the ingested documents, and the chunks with their
-/// vectors, from <c>insights.json</c> and <c>insights-embeddings.json</c>. The rows belong to the test company and are
-/// created as the test supervisor. The seeder skips an attempt or a document whose ID exists, so a restart adds
-/// nothing. A document brings all its chunks, so a skipped document skips its chunks too.
+/// vectors, from <c>insights.json</c> and <c>insights-embeddings.json</c>. It also creates the open maintenance case
+/// with its drafted signal. The rows belong to the test company and are created as the test supervisor. The seeder
+/// skips an attempt, a document, or a case whose ID exists, so a restart adds nothing. A document brings all its
+/// chunks, so a skipped document skips its chunks too. A case brings its signals, so a skipped case skips them too.
 /// </summary>
 /// <remarks>
 /// One <c>SaveChangesAsync</c> stores every row, so a failure leaves nothing half stored. The seeder adds no outbox
@@ -43,7 +46,7 @@ public sealed class DemoIngestSeeder(
     private readonly DemoIngestSeedLocation _location = location;
 
     /// <summary>
-    /// Adds the missing attempts and documents with their chunks in one save.
+    /// Adds the missing attempts, documents with their chunks, and cases with their signals in one save.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
     /// requests.</param>
@@ -91,7 +94,58 @@ public sealed class DemoIngestSeeder(
             AddRun(dbContext, row, shift, seedFile.AgentToolCalls);
         }
 
+        var caseIds = seedFile.MaintenanceCases.Select(row => row.Id).ToList();
+        var existingCaseIds = await dbContext.MaintenanceCases
+            .Where(maintenanceCase => caseIds.Contains(maintenanceCase.Id))
+            .Select(maintenanceCase => maintenanceCase.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var row in seedFile.MaintenanceCases.Where(row => !existingCaseIds.Contains(row.Id)))
+        {
+            AddCase(dbContext, row, tenant.CompanyId, shift, seedFile.MachineSignals);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void AddCase(
+        InsightsDbContext dbContext,
+        DemoCaseRow row,
+        Guid companyId,
+        SeedTimeShift shift,
+        IReadOnlyList<DemoSignalRow> signalRows
+    )
+    {
+        if (!string.Equals(row.State, CaseState.Open.Value, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(DemoIngestSeedErrors.CaseNotOpen(row.Id));
+        }
+
+        var maintenanceCase = new MaintenanceCase(companyId, row.MachineId, shift.Shift(row.OpenedAt)!.Value);
+        dbContext.MaintenanceCases.Add(maintenanceCase).Property(nameof(MaintenanceCase.Id)).CurrentValue = row.Id;
+
+        foreach (var signalRow in signalRows.Where(signal => signal.CaseId == row.Id))
+        {
+            if (!string.Equals(signalRow.Coverage, SignalCoverage.Drafted.Value, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(DemoIngestSeedErrors.SignalNotDrafted(signalRow.Id));
+            }
+
+            var signal = new MachineSignal(
+                signalRow.Id,
+                signalRow.MachineId,
+                companyId,
+                new SignalChange
+                {
+                    Rule = SignalRule.FromValue(signalRow.Rule),
+                    Severity = SignalSeverity.FromValue(signalRow.Severity),
+                    State = SignalState.FromValue(signalRow.State),
+                    OpenedAt = shift.Shift(signalRow.OpenedAt)!.Value,
+                    Sequence = 1,
+                });
+            signal.MarkDrafted(signalRow.WorkOrderDraftId);
+            maintenanceCase.Add(signal);
+        }
     }
 
     private static void AddRun(

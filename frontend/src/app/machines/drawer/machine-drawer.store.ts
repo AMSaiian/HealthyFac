@@ -1,7 +1,7 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -9,7 +9,7 @@ import { catchError } from 'rxjs/operators';
 import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import { withDetailsMode } from '@shared/forms/with-details-mode';
-import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
 import { descriptionLinks } from '@shared/rich-text/file-image/description-links';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
@@ -161,6 +161,15 @@ export const MachineDrawerStore = signalStore(
         store._actions.cancel();
       },
     };
+  }),
+  withHooks({
+    onInit(store) {
+      effect(() => {
+        if (isHttpStatus(store.machine.error(), HttpStatusCode.NotFound)) {
+          store._actions.cancel();
+        }
+      });
+    },
   }),
   withStoreDevtools('machine-drawer'),
 );

@@ -1,11 +1,22 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import { computed, DestroyRef, effect, inject, type ResourceRef } from '@angular/core';
+import {
+  patchState,
+  signalStoreFeature,
+  type,
+  withComputed,
+  withHooks,
+  withMethods,
+  withProps,
+  withState,
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, finalize, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import type { ConfirmRequest } from '@shared/confirm/with-confirm';
+import { HistoryStore } from '@shared/history/history.store';
+import { formatCompose } from '@shared/history/history.store.utils';
 import { httpErrorKey } from '@shared/http/http-error-key';
 
 import { EmployeesApi } from '@employees/employees-api';
@@ -14,13 +25,14 @@ import type { OverrideFormValue } from '@employees/shifts/override-dialog/overri
 import type { VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 import {
   affectedOf,
-  type ShiftDialog,
+  SHIFT_OVERRIDE_COMPOSE_NAME,
+  SHIFT_VERSION_COMPOSE_NAME,
   toCreateBody,
   toOverrideBlocks,
+  toShiftDialog,
 } from '@employees/shifts/shifts-store/shifts.store.utils';
 
 interface DialogState {
-  dialog: ShiftDialog | null;
   affectedWorkOrders: readonly AffectedWorkOrder[];
   isSaving: boolean;
 }
@@ -51,8 +63,8 @@ export function withShiftsDialog() {
     {
       state: type<{ employeeId: string | null }>(),
       props: type<{
-        versions: { reload(): boolean };
-        overrides: { reload(): boolean };
+        versions: ResourceRef<readonly ShiftVersion[] | undefined>;
+        overrides: ResourceRef<readonly ShiftOverride[] | undefined>;
       }>(),
       methods: type<{
         _toastSuccess: (key: string) => void;
@@ -60,11 +72,24 @@ export function withShiftsDialog() {
         _confirmDestructive: (request: ConfirmRequest) => void;
       }>(),
     },
-    withState<DialogState>({ dialog: null, affectedWorkOrders: [], isSaving: false }),
+    withState<DialogState>({ affectedWorkOrders: [], isSaving: false }),
+    withProps(() => ({ _history: inject(HistoryStore) })),
+    withComputed((store) => ({
+      _requested: computed(() =>
+        toShiftDialog(
+          store._history.compose(),
+          store.versions.hasValue() ? store.versions.value() : null,
+          store.overrides.hasValue() ? store.overrides.value() : null,
+        ),
+      ),
+    })),
+    withComputed((store) => ({
+      dialog: computed(() => {
+        const requested = store._requested();
+        return requested === 'unknown' ? null : requested;
+      }),
+    })),
     withMethods((store) => ({
-      _setDialog(dialog: ShiftDialog | null): void {
-        patchState(store, { dialog });
-      },
       _setAffectedWorkOrders(affectedWorkOrders: readonly AffectedWorkOrder[]): void {
         patchState(store, { affectedWorkOrders });
       },
@@ -72,13 +97,14 @@ export function withShiftsDialog() {
         patchState(store, { isSaving });
       },
       openVersionDialog(version: ShiftVersion | null): void {
-        patchState(store, { dialog: { kind: 'version', version }, affectedWorkOrders: [] });
+        void store._history.openCompose(formatCompose(SHIFT_VERSION_COMPOSE_NAME, version?.id ?? null));
       },
       openOverrideDialog(override: ShiftOverride | null): void {
-        patchState(store, { dialog: { kind: 'override', override }, affectedWorkOrders: [] });
+        void store._history.openCompose(formatCompose(SHIFT_OVERRIDE_COMPOSE_NAME, override?.id ?? null));
       },
       closeDialog(): void {
-        patchState(store, { dialog: null, affectedWorkOrders: [] });
+        patchState(store, { affectedWorkOrders: [] });
+        void store._history.closeCompose();
       },
     })),
     withMethods((store) => {
@@ -111,7 +137,7 @@ export function withShiftsDialog() {
                     }),
                   );
                   if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.Conflict) {
-                    store._setDialog(null);
+                    store.closeDialog();
                     reloadAll();
                   }
                 }
@@ -187,6 +213,22 @@ export function withShiftsDialog() {
           }
         },
       };
+    }),
+    withHooks({
+      onInit(store) {
+        inject(DestroyRef).onDestroy(
+          store._history.registerComposeNames([SHIFT_VERSION_COMPOSE_NAME, SHIFT_OVERRIDE_COMPOSE_NAME]),
+        );
+        effect(() => {
+          store._history.compose();
+          patchState(store, { affectedWorkOrders: [] });
+        });
+        effect(() => {
+          if (store._requested() === 'unknown') {
+            void store._history.removeCompose();
+          }
+        });
+      },
     }),
   );
 }

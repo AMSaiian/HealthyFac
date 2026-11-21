@@ -1,10 +1,12 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of, Subject, throwError } from 'rxjs';
 
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
@@ -21,6 +23,9 @@ import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api'
 import { MachinesApi } from '@machines/machines-api';
 
 import { StatusDefinitionsGridStore } from './status-definitions-grid.store';
+
+@Component({ template: '', host: { class: 'contents' } })
+class Blank {}
 
 const MACHINE_ID = 'encrypted-machine-id';
 const OTHER_MACHINE_ID = 'other-encrypted-machine-id';
@@ -65,6 +70,8 @@ describe('StatusDefinitionsGridStore', () => {
             ),
           },
         },
+        provideRouter([{ path: '**', component: Blank }]),
+        provideFakePlatformNavigation(),
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         { provide: AuthStore, useValue: { hasPermission: () => options.hasPermission ?? true } },
         {
@@ -74,6 +81,7 @@ describe('StatusDefinitionsGridStore', () => {
       ],
     });
     const store = TestBed.inject(StatusDefinitionsGridStore);
+    await TestBed.inject(Router).navigateByUrl('/statuses');
     if (options.isMachineSet !== false) {
       store.openMachine(MACHINE_ID).subscribe();
     }
@@ -110,7 +118,6 @@ describe('StatusDefinitionsGridStore', () => {
     store.setPage(50, 10);
     store.setSort({ column: StatusDefinitionSortColumn.CreatedAt, direction: SortDirection.Descending });
     store.setColumns([StatusDefinitionColumn.Code]);
-    store.requestCreate();
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();
 
@@ -141,7 +148,6 @@ describe('StatusDefinitionsGridStore', () => {
 
     expectInitialSearch(search, secondMachineId);
     expect(store.visibleColumns()).toEqual(Object.values(StatusDefinitionColumn));
-    expect(store.editor()).toBeNull();
   });
 
   it('openMachine_WhileLoadIsPending_KeepsCurrentMachineAndSendsNoSearch', async () => {
@@ -188,6 +194,7 @@ describe('StatusDefinitionsGridStore', () => {
   it('reloadStatuses_KeepsTheEditorOpen', async () => {
     const { store, search } = await setup();
     store.requestUpdate(STATUS_DEFINITION.id);
+    await vi.waitFor(() => expect(store.editor()).not.toBeNull());
     const callsBefore = search.mock.calls.length;
 
     store.reloadStatuses();

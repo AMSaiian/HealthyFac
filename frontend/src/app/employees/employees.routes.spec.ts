@@ -1,12 +1,16 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, type TestRequest } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, withAutoCleanupInjectors, withComponentInputBinding } from '@angular/router';
+import { PlatformNavigation } from '@angular/common';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { APP_ROUTER_FEATURES } from '@app/app-router';
 import { EmployeeRole } from '@shared/employee/employee';
+import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -14,6 +18,7 @@ import { Temporal } from '@shared/time/temporal';
 import { EMPLOYEES_ROUTES } from '@employees/employees.routes';
 import { EmployeesPage } from '@employees/list/employees-page/employees-page';
 import { ShiftsPage } from '@employees/shifts/shifts-page/shifts-page';
+import { ShiftsStore } from '@employees/shifts/shifts-store/shifts.store';
 
 const EMPLOYEES_SEARCH_URL = '/api/core/v1/employees/search';
 const TEMPLATES_URL = '/api/core/v1/employees/e1/shift-templates';
@@ -34,9 +39,9 @@ function setup(hasPermission: boolean): HttpTestingController {
           { path: 'employees', children: EMPLOYEES_ROUTES },
           { path: '', children: [] },
         ],
-        withComponentInputBinding(),
-        withAutoCleanupInjectors(),
+        ...APP_ROUTER_FEATURES,
       ),
+      provideFakePlatformNavigation(),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
@@ -50,6 +55,19 @@ function setup(hasPermission: boolean): HttpTestingController {
     ],
   });
   return TestBed.inject(HttpTestingController);
+}
+
+async function openShifts(http: HttpTestingController, url: string): Promise<RouterTestingHarness> {
+  const harness = await RouterTestingHarness.create();
+  await harness.navigateByUrl(url);
+  TestBed.tick();
+  await vi.waitFor(() => {
+    TestBed.tick();
+    const requests = http.match((request) => request.url === TEMPLATES_URL || request.url === OVERRIDES_URL);
+    expect(requests.length).toBe(2);
+    requests.forEach((request) => request.flush([]));
+  });
+  return harness;
 }
 
 describe('employees routes', () => {
@@ -130,5 +148,29 @@ describe('employees routes', () => {
       expect(http.match((request) => request.url === OVERRIDES_URL).length).toBeGreaterThan(0);
     });
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(ShiftsPage);
+  });
+
+  it('shiftsRoute_ComposeOnLoad_OpensTheVersionDialog', async () => {
+    const http = setup(true);
+
+    const harness = await openShifts(http, '/employees/e1/shifts?compose=shift-version');
+    const store = harness.routeDebugElement?.injector.get(ShiftsStore);
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(store?.dialog()).toEqual({ kind: 'version', version: null });
+    expect(TestBed.inject(Router).url).toBe('/employees/e1/shifts?compose=shift-version');
+  });
+
+  it('shiftsRoute_UnknownOverrideId_RemovesCompose', async () => {
+    const http = setup(true);
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+
+    const harness = await openShifts(http, '/employees/e1/shifts?compose=shift-override:unknown');
+    const entryCount = navigation.entries().length;
+    const store = harness.routeDebugElement?.injector.get(ShiftsStore);
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/employees/e1/shifts'));
+
+    expect(store?.dialog()).toBeNull();
+    expect(navigation.entries().length).toBe(entryCount);
   });
 });

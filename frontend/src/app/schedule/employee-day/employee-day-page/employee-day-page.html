@@ -1,18 +1,19 @@
 <header class="flex flex-none flex-wrap items-center justify-between gap-2">
   <div class="flex min-w-0 items-center gap-2">
-    @if (store.canGoBack()) {
-      <a
+    @if (history.canReturn(returnTarget)) {
+      <button
         pButton
-        [pTooltip]="'SCHEDULE.BACK' | translate"
+        type="button"
+        [pTooltip]="'ACTIONS.BACK' | translate"
         tooltipPosition="bottom"
-        routerLink="/employees"
         severity="secondary"
         iconOnly
         [text]="true"
-        [attr.aria-label]="'SCHEDULE.BACK' | translate"
+        [attr.aria-label]="'ACTIONS.BACK' | translate"
+        (click)="history.back(returnTarget)"
       >
         <i class="pi pi-arrow-left"></i>
-      </a>
+      </button>
     }
     <h1 class="text-2xl font-bold">{{ 'SCHEDULE.EMPLOYEE_TITLE' | translate }}</h1>
   </div>

@@ -128,13 +128,13 @@ Read a full file only for a reference that points outside these parts.
   it frees the memory and keeps the data. `up` starts it again for Artur's test and `/fix`.
   Give the app URL and that `up` command in the report.
 - Layout checks (UI feature): look at each flow of the list in the browser in light mode
-  at 1024 x 600 and in dark mode at full HD (a flow that names other sizes gets those).
+  at 1280 x 600 and in dark mode at full HD (a flow that names other sizes gets those).
   Save no screenshot files. Use the `zoom` action for a detail (a chip, a border, a
   radius). Check each view:
   - no clipped text, control, or tag;
   - the same height for the controls of one row;
   - the same corner radius for the same component;
-  - no horizontal scroll and no overflow at 1024 x 600;
+  - no horizontal scroll and no overflow at 1280 x 600;
   - no overlay or tooltip clipped by its container;
   - readable in both themes.
   Each failure is a [CODE] finding with the flow, the size, and the theme.

@@ -5,6 +5,7 @@
   "TITLES": {
     "HOME": "Home",
     "NOT_FOUND": "Page not found",
+    "NETWORK_ERROR": "No connection",
     "MACHINES": "Machines",
     "STATUS_DEFINITIONS": "Statuses",
     "METRICS": "Metrics",
@@ -50,8 +51,11 @@
     }
   },
   "NOT_FOUND": {
-    "MESSAGE": "This page does not exist",
-    "BACK": "Go to the home page"
+    "MESSAGE": "The page does not exist, or you have no access to it",
+    "HOME": "Home"
+  },
+  "NETWORK_ERROR": {
+    "MESSAGE": "The page could not load. Check your connection and try again"
   },
   "ERRORS": {
     "UNEXPECTED": "An unexpected error occurred",
@@ -81,7 +85,7 @@
     "EDIT": "Edit",
     "RELOAD": "Reload",
     "RETRY": "Try again",
-    "BACK_TO_MACHINES": "Back to machines",
+    "BACK": "Back",
     "COLUMNS": "Columns",
     "ROW_ACTIONS": "Row actions",
     "TOOLTIPS": {
@@ -887,7 +891,6 @@
     "TODAY": "Today",
     "EMPTY": "No employees to show",
     "LOAD_FAILED": "The schedule did not load",
-    "BACK": "Back to employees",
     "TOOLTIPS": {
       "TODAY": "Go to today"
     }
@@ -953,7 +956,6 @@
       "TITLE": "Work orders outside the new shifts",
       "HINT": "Move or unassign these work orders first, then save again"
     },
-    "BACK": "Back to employees",
     "TOOLTIPS": {
       "ADD_BLOCK": "Add a work block to the day",
       "ADD_VERSION": "Add a weekly template from a date",
@@ -1324,7 +1326,6 @@
       "SHOW_ON_CHART": "Show on the dashboards chart",
       "OPEN_DASHBOARDS": "Open the dashboards of the machine",
       "OPEN": "Open the case",
-      "BACK": "Back to the cases",
       "CLOSE_CASE": "Close the case with a reason",
       "RUN_AGAIN": "Queue a new AI run for the case"
     },
@@ -1402,8 +1403,7 @@
       "APPLY": "Create a work order from the draft",
       "DISMISS": "Dismiss the draft without a work order",
       "APPLY_NO_RIGHT": "You need the right to write drafts and work orders to create a work order from a draft",
-      "DISMISS_NO_RIGHT": "You need the right to write drafts to dismiss a draft",
-      "BACK": "Back to the work orders"
+      "DISMISS_NO_RIGHT": "You need the right to write drafts to dismiss a draft"
     },
     "APPLY_DIALOG": {
       "TITLE": "Create work order from draft"

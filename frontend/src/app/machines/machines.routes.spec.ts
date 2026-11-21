@@ -3,12 +3,22 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, type TestRequest } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, withAutoCleanupInjectors, withComponentInputBinding } from '@angular/router';
+import { Location, PlatformNavigation } from '@angular/common';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { APP_ACTION_HOSTS } from '@app/app-action-hosts';
+import { APP_ROUTER_FEATURES } from '@app/app-router';
+import { provideActionHosts } from '@shared/actions/action-registry';
 import { ActionStore } from '@shared/actions/action.store';
+import { HistoryStore } from '@shared/history/history.store';
+import { reviewMetricDrafts } from '@machines/drafts/draft-review';
+import { MachineActionType } from '@machines/machine-actions';
+import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
+import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { CompanyStore } from '@shared/company/company.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { MachineState } from '@machines/machine';
@@ -16,6 +26,7 @@ import { MACHINES_ROUTES } from '@machines/machines.routes';
 import { MetricsPage } from '@machines/metrics/metrics-page/metrics-page';
 import { MetricsPageStore } from '@machines/metrics/metrics-page-store/metrics-page.store';
 import { MetricValueKind } from '@machines/metrics/metric-definition';
+import { StatusDefinitionsGridStore } from '@machines/statuses/list/status-definitions-grid.store';
 import { StatusDefinitionsPage } from '@machines/statuses/list/status-definitions-page/status-definitions-page';
 import { MachineFilesPage } from '@machines/files/machine-files-page/machine-files-page';
 import { MachinesPage } from '@machines/list/machines-page/machines-page';
@@ -82,9 +93,10 @@ function setup(isConfirmed: boolean): { http: HttpTestingController; confirm: Re
           { path: 'elsewhere', component: Elsewhere },
           { path: 'not-found', component: NotFoundStub },
         ],
-        withComponentInputBinding(),
-        withAutoCleanupInjectors(),
+        ...APP_ROUTER_FEATURES,
       ),
+      provideFakePlatformNavigation(),
+      provideActionHosts(APP_ACTION_HOSTS),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
@@ -271,6 +283,68 @@ describe('machines routes', () => {
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(StatusDefinitionsPage);
   });
 
+  async function openStatuses(
+    http: HttpTestingController,
+    url = '/machines/m1/statuses',
+  ): Promise<{
+    harness: RouterTestingHarness;
+    store: InstanceType<typeof StatusDefinitionsGridStore>;
+  }> {
+    vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl(url);
+    await flushWhenRequested(http, MACHINE_URL, MACHINE);
+    await navigation;
+    TestBed.tick();
+    await vi.waitFor(() => {
+      expect(http.match(STATUS_SEARCH_URL).length).toBeGreaterThan(0);
+    });
+    const store = harness.routeDebugElement?.injector.get(StatusDefinitionsGridStore);
+    return { harness, store: store as InstanceType<typeof StatusDefinitionsGridStore> };
+  }
+
+  it('statusesRoute_OpenNewAndStored_PushCompose', async () => {
+    const { http } = setup(true);
+    const { store } = await openStatuses(http);
+    const router = TestBed.inject(Router);
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+    const entryCount = navigation.entries().length;
+
+    store.requestCreate();
+    await vi.waitFor(() => expect(router.url).toBe('/machines/m1/statuses?compose=status'));
+    const createdEditor = store.editor();
+    store.closeEditor();
+    await vi.waitFor(() => expect(router.url).toBe('/machines/m1/statuses'));
+    store.requestUpdate('s1');
+    await vi.waitFor(() => expect(router.url).toBe('/machines/m1/statuses?compose=status:s1'));
+
+    expect(createdEditor).toEqual({ statusDefinitionId: null });
+    expect(store.editor()).toEqual({ statusDefinitionId: 's1' });
+    expect(navigation.entries().length).toBe(entryCount + 1);
+  });
+
+  it('statusesRoute_ComposeOnLoad_OpensTheDialog', async () => {
+    const { http } = setup(true);
+
+    const { store } = await openStatuses(http, '/machines/m1/statuses?compose=status:s1');
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(store.editor()).toEqual({ statusDefinitionId: 's1' });
+    expect(TestBed.inject(Router).url).toBe('/machines/m1/statuses?compose=status:s1');
+  });
+
+  it('statusesRoute_ComposeChange_RunsNoResolver', async () => {
+    const { http } = setup(true);
+    const { store } = await openStatuses(http);
+    http.match(STATUS_SEARCH_URL);
+
+    store.requestCreate();
+    await vi.waitFor(() => expect(store.editor()).not.toBeNull());
+    TestBed.tick();
+
+    http.expectNone(MACHINE_URL);
+  });
+
   it('filesRoute_OnOpen_LoadsTheMachineSearchesItsFilesAndActivatesThePage', async () => {
     vi.stubGlobal('ResizeObserver', ResizeObserverStub);
     const { http } = setup(true);
@@ -318,44 +392,30 @@ describe('machines routes', () => {
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(MachinesPage);
   });
 
-  it('metricsRoute_BackWithReturnPath_OpensTheStoredDialogOnThePageThatOpenedTheReview', async () => {
-    const { http } = setup(true);
-    const actions = TestBed.inject(ActionStore);
-    const dialog = { type: 'files.ingestSummary', payload: { fileId: 'f1' } };
+  it('metricsRoute_BackWithStagedChangesAndCancel_KeepsPageAndEntries', async () => {
+    const { http, confirm } = setup(false);
     await TestBed.inject(Router).navigateByUrl('/not-found');
-    actions.rememberReturn('/not-found', dialog, '/machines/m1/metrics');
     const harness = await openMetrics(http);
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+    const store = harness.routeDebugElement?.injector.get(MetricsPageStore);
+    store?.remove('a');
+    const urlsBefore = navigation.entries().map((entry) => entry.url);
+    const indexBefore = navigation.currentEntry.index;
 
-    harness.routeDebugElement?.injector.get(MetricsPageStore).back();
+    store?.back();
     await vi.waitFor(() => {
-      expect(TestBed.inject(Router).url).toBe('/not-found');
+      expect(confirm).toHaveBeenCalledTimes(1);
     });
 
-    expect(actions.active()).toEqual(dialog);
-    expect(actions.returnPath()).toBeNull();
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(MetricsPage);
+    expect(store?.hasChanges()).toBe(true);
+    expect(navigation.entries().map((entry) => entry.url)).toEqual(urlsBefore);
+    expect(navigation.currentEntry.index).toBe(indexBefore);
   });
 
-  it('metricsRoute_LeavingToAnotherPage_DropsTheReturnPath', async () => {
-    const { http } = setup(true);
-    const actions = TestBed.inject(ActionStore);
-    const dialog = { type: 'files.ingestSummary', payload: { fileId: 'f1' } };
-    await TestBed.inject(Router).navigateByUrl('/not-found');
-    actions.rememberReturn('/not-found', dialog, '/machines/m1/metrics');
-    await openMetrics(http);
-
-    await TestBed.inject(Router).navigateByUrl('/elsewhere');
-    await TestBed.inject(Router).navigateByUrl('/not-found');
-
-    expect(actions.returnPath()).toBeNull();
-    expect(actions.active()).toBeNull();
-  });
-
-  it('metricsRoute_ApplyChangesWithReturnPath_LeavesWithoutAskingAndOpensTheStoredDialog', async () => {
+  it('metricsRoute_ApplyChangesWithPreviousEntry_GoesBackWithoutTheLeaveQuestion', async () => {
     const { http, confirm } = setup(true);
-    const actions = TestBed.inject(ActionStore);
-    const dialog = { type: 'files.ingestSummary', payload: { fileId: 'f1' } };
     await TestBed.inject(Router).navigateByUrl('/not-found');
-    actions.rememberReturn('/not-found', dialog, '/machines/m1/metrics');
     const harness = await openMetrics(http);
     const store = harness.routeDebugElement?.injector.get(MetricsPageStore);
     store?.remove('a');
@@ -367,16 +427,11 @@ describe('machines routes', () => {
     });
 
     expect(confirm).not.toHaveBeenCalled();
-    expect(actions.active()).toEqual(dialog);
-    expect(actions.returnPath()).toBeNull();
   });
 
-  it('metricsRoute_DiscardWithReturnPath_AsksOnceAndOpensTheStoredDialog', async () => {
+  it('metricsRoute_DiscardWithPreviousEntry_AsksOnceAndGoesBack', async () => {
     const { http, confirm } = setup(true);
-    const actions = TestBed.inject(ActionStore);
-    const dialog = { type: 'files.ingestSummary', payload: { fileId: 'f1' } };
     await TestBed.inject(Router).navigateByUrl('/not-found');
-    actions.rememberReturn('/not-found', dialog, '/machines/m1/metrics');
     const harness = await openMetrics(http);
     const store = harness.routeDebugElement?.injector.get(MetricsPageStore);
     store?.remove('a');
@@ -387,15 +442,11 @@ describe('machines routes', () => {
     });
 
     expect(confirm).toHaveBeenCalledTimes(1);
-    expect(actions.active()).toEqual(dialog);
   });
 
-  it('metricsRoute_DiscardWithReturnPathAndPendingDrafts_AsksOnceAndOpensTheStoredDialog', async () => {
+  it('metricsRoute_DiscardWithPendingDraftsAndPreviousEntry_AsksOnceAndGoesBack', async () => {
     const { http, confirm } = setup(true);
-    const actions = TestBed.inject(ActionStore);
-    const dialog = { type: 'files.ingestSummary', payload: { fileId: 'f1' } };
     await TestBed.inject(Router).navigateByUrl('/not-found');
-    actions.rememberReturn('/not-found', dialog, '/machines/m1/metrics');
     const harness = await RouterTestingHarness.create();
     const navigation = harness.navigateByUrl('/machines/m1/metrics?draftAttemptId=a1');
     await flushWhenRequested(http, MACHINE_URL, MACHINE);
@@ -445,6 +496,135 @@ describe('machines routes', () => {
     });
 
     expect(confirm).toHaveBeenCalledTimes(1);
-    expect(actions.active()).toEqual(dialog);
+  });
+
+  describe('action drawers', () => {
+    const DRAWER = { type: MachineActionType.Update, payload: { machineId: 'm1' } };
+    const DRAFTS = { type: MachineActionType.Drafts, payload: { machineId: 'm1' } };
+
+    async function openList(http: HttpTestingController, url = '/machines'): Promise<RouterTestingHarness> {
+      vi.stubGlobal('ResizeObserver', ResizeObserverStub);
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(url);
+      TestBed.tick();
+      await vi.waitFor(() => {
+        expect(http.match(MACHINES_SEARCH_URL).length).toBeGreaterThan(0);
+      });
+      return harness;
+    }
+
+    function navigationOf(): FakePlatformNavigation {
+      return TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+    }
+
+    it('machinesRoute_OpenDrawer_PushesComposeAndKeepsGridState', async () => {
+      const { http } = setup(true);
+      const harness = await openList(http);
+      const store = Reflect.get(harness.routeDebugElement?.componentInstance, 'store');
+      store.setFilter({ name: 'lathe' });
+      TestBed.tick();
+      await vi.waitFor(() => {
+        expect(http.match(MACHINES_SEARCH_URL).length).toBeGreaterThan(0);
+      });
+      const entryCount = navigationOf().entries().length;
+      const actions = TestBed.inject(ActionStore);
+
+      await actions.dispatch(DRAWER);
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAWER));
+
+      expect(TestBed.inject(Router).url).toBe('/machines?compose=machine:m1');
+      expect(navigationOf().entries().length).toBe(entryCount + 1);
+      expect(JSON.stringify(store.filter())).toContain('lathe');
+      expect(http.match(MACHINES_SEARCH_URL).length).toBe(0);
+    });
+
+    it('machinesRoute_CloseDrawer_GoesBackOneEntry', async () => {
+      const { http } = setup(true);
+      await openList(http);
+      const actions = TestBed.inject(ActionStore);
+      await actions.dispatch(DRAWER);
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAWER));
+      const entryCount = navigationOf().entries().length;
+
+      actions.cancel();
+      await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/machines'));
+
+      expect(navigationOf().entries().length).toBe(entryCount);
+      expect(navigationOf().currentEntry.index).toBe(entryCount - 2);
+      expect(http.match(MACHINES_SEARCH_URL).length).toBe(0);
+    });
+
+    it('machinesRoute_BrowserBackOnDrawer_ClosesItWithoutResolver', async () => {
+      const { http } = setup(true);
+      await openList(http);
+      const actions = TestBed.inject(ActionStore);
+      await actions.dispatch(DRAWER);
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAWER));
+
+      TestBed.inject(Location).back();
+      await vi.waitFor(() => expect(actions.active()).toBeNull());
+
+      expect(TestBed.inject(Router).url).toBe('/machines');
+      http.expectNone(MACHINE_URL);
+      expect(http.match(MACHINES_SEARCH_URL).length).toBe(0);
+    });
+
+    it('machinesRoute_DeepLinkCompose_OpensAndClosesWithReplace', async () => {
+      const { http } = setup(true);
+      const actions = TestBed.inject(ActionStore);
+      await TestBed.inject(Router).navigateByUrl('/elsewhere');
+      await openList(http, '/machines?compose=machine:m1');
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAWER));
+      const entryCount = navigationOf().entries().length;
+
+      actions.cancel();
+      await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/machines'));
+
+      expect(navigationOf().entries().length).toBe(entryCount);
+    });
+
+    it('machinesRoute_DraftsListChild_OpensInMemoryAndReturns', async () => {
+      const { http } = setup(true);
+      await openList(http);
+      const actions = TestBed.inject(ActionStore);
+      await actions.dispatch(DRAFTS);
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAFTS));
+      const entryCount = navigationOf().entries().length;
+
+      await actions.dispatchChild({ type: MachineActionType.Create, payload: { draftId: 'd1' } });
+      const childType = actions.active()?.type;
+      actions.complete(MachineActionType.Saved);
+
+      expect(childType).toBe(MachineActionType.Create);
+      expect(actions.active()).toEqual(DRAFTS);
+      expect(actions.lastResult()?.type).toBe(MachineActionType.Saved);
+      expect(navigationOf().entries().length).toBe(entryCount);
+      expect(TestBed.inject(Router).url).toBe('/machines?compose=machine-drafts:m1');
+    });
+
+    it('machinesRoute_DraftsListToMetricsReview_BackReopensTheList', async () => {
+      const { http } = setup(true);
+      await openList(http);
+      const actions = TestBed.inject(ActionStore);
+      await actions.dispatch(DRAFTS);
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAFTS));
+
+      const navigation = reviewMetricDrafts(TestBed.inject(Router), 'm1', 'a1');
+      await flushWhenRequested(http, MACHINE_URL, MACHINE);
+      await navigation;
+      TestBed.tick();
+      await flushWhenRequested(http, DEFINITIONS_URL, DEFINITIONS);
+      await flushWhenRequested(http, UNITS_URL, { kinds: [] });
+      await flushWhenRequested(http, ATTEMPT_DRAFTS_URL, { groups: [] });
+      const activeOnMetrics = actions.active();
+      const entryCount = navigationOf().entries().length;
+
+      await TestBed.inject(HistoryStore).back(MACHINES_RETURN_TARGET);
+      await vi.waitFor(() => expect(actions.active()).toEqual(DRAFTS));
+
+      expect(activeOnMetrics).toBeNull();
+      expect(TestBed.inject(Router).url).toBe('/machines?compose=machine-drafts:m1');
+      expect(navigationOf().entries().length).toBe(entryCount);
+    });
   });
 });

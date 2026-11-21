@@ -1,18 +1,18 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { TranslateService } from '@ngx-translate/core';
+import { type Observable, of, tap } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { type Reloadable, withActionResultReload } from '@shared/actions/with-action-result-reload';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
-import { Permission } from '@shared/security/permissions';
 import type { ScheduleRow } from '@shared/schedule/schedule-row';
 import { CLOCK } from '@shared/time/clock';
 import type { Temporal } from '@shared/time/temporal';
 
+import type { DaySchedule } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
 import { followToday, minuteTicker, todayOf, toRow } from '@schedule/schedule-time';
@@ -27,7 +27,13 @@ interface EmployeeDayState {
   date: Temporal.PlainDate | null;
 }
 
-/** One day of one employee. The route provides it; the page passes the employee ID of the route. */
+interface PreloadedDay {
+  employeeId: string;
+  date: Temporal.PlainDate;
+  day: DaySchedule;
+}
+
+/** One day of one employee. The route provides it, and the route resolver opens the first day. */
 export const EmployeeDayStore = signalStore(
   withState<EmployeeDayState>({ employeeId: null, date: null }),
   withProps(() => ({
@@ -37,6 +43,7 @@ export const EmployeeDayStore = signalStore(
     _auth: inject(AuthStore),
     _employee: inject(EmployeeStore),
     _translate: inject(TranslateService),
+    _preloaded: { value: null as PreloadedDay | null },
   })),
   withProps((store) => ({
     now: minuteTicker(store._clock),
@@ -46,16 +53,17 @@ export const EmployeeDayStore = signalStore(
         const date = store.date();
         return employeeId === null || date === null ? undefined : { employeeId, date };
       },
-      stream: ({ params }) => store._api.employeeDay(params.employeeId, params.date.toString()),
+      stream: ({ params }) => {
+        const preloaded = store._preloaded.value;
+        store._preloaded.value = null;
+        return preloaded !== null && preloaded.employeeId === params.employeeId && preloaded.date.equals(params.date)
+          ? of(preloaded.day)
+          : store._api.employeeDay(params.employeeId, params.date.toString());
+      },
     }),
   })),
   withComputed((store) => ({
-    canGoBack: computed(() => store._auth.hasPermission(Permission.EmployeesRead)),
     hasFailed: computed(() => store.day.status() === 'error'),
-    isNotFound: computed(() => {
-      const error: unknown = store.day.error();
-      return error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound;
-    }),
     rows: computed((): readonly ScheduleRow[] => {
       const employeeId = store.employeeId();
       if (employeeId === null || !store.day.hasValue()) {
@@ -69,8 +77,18 @@ export const EmployeeDayStore = signalStore(
     }),
   })),
   withMethods((store) => ({
-    setEmployee(employeeId: string): void {
-      patchState(store, { employeeId });
+    /**
+     * Requests the day of today for the route resolver, keeps it, and then sets the employee and the date. The day
+     * resource takes the kept day instead of asking again, so the first day is requested once.
+     */
+    openDay(employeeId: string): Observable<DaySchedule> {
+      const date = todayOf(store._clock);
+      return store._api.employeeDay(employeeId, date.toString()).pipe(
+        tap((day) => {
+          store._preloaded.value = { employeeId, date, day };
+          patchState(store, { employeeId, date });
+        }),
+      );
     },
     setDate(date: Temporal.PlainDate): void {
       patchState(store, { date });
@@ -96,7 +114,6 @@ export const EmployeeDayStore = signalStore(
   })),
   withHooks({
     onInit(store) {
-      store.goToToday();
       let previousToday = todayOf(store._clock);
       effect(() => {
         store.now();

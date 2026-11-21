@@ -1,9 +1,28 @@
-<section class="m-4">
-  <p class="mb-4">{{ 'NOT_FOUND.MESSAGE' | translate }}</p>
-  <a
-    routerLink="/"
-    class="text-primary underline"
-  >
-    {{ 'NOT_FOUND.BACK' | translate }}
-  </a>
-</section>
+<p-card styleClass="text-center">
+  <div class="flex flex-col items-center gap-4">
+    <i class="pi pi-compass text-6xl text-primary"></i>
+    <h1 class="text-2xl font-bold">{{ 'TITLES.NOT_FOUND' | translate }}</h1>
+    <p class="text-muted-color">{{ 'NOT_FOUND.MESSAGE' | translate }}</p>
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <button
+        pButton
+        type="button"
+        severity="secondary"
+        [pTooltip]="'ACTIONS.BACK' | translate"
+        tooltipPosition="bottom"
+        (click)="history.back(returnTarget)"
+      >
+        {{ 'ACTIONS.BACK' | translate }}
+      </button>
+      <button
+        pButton
+        type="button"
+        [pTooltip]="'NOT_FOUND.HOME' | translate"
+        tooltipPosition="bottom"
+        (click)="goHome()"
+      >
+        {{ 'NOT_FOUND.HOME' | translate }}
+      </button>
+    </div>
+  </div>
+</p-card>

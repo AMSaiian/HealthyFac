@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Skeleton } from 'primeng/skeleton';
@@ -8,6 +7,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import { Temporal } from '@shared/time/temporal';
 import { delayedLoading } from '@shared/loading/delayed-loading';
+import { HistoryStore } from '@shared/history/history.store';
 
 import { OverrideDialog } from '@employees/shifts/override-dialog/override-dialog';
 import type { OverrideFormValue } from '@employees/shifts/override-dialog/override-dialog-schema';
@@ -16,9 +16,10 @@ import { summaryOf, toVersionFormValue, WEEKDAY_KEYS } from '@employees/shifts/s
 import { VersionDialog } from '@employees/shifts/version-dialog/version-dialog';
 import type { VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 import type { ShiftOverride, ShiftVersion, Weekday } from '@employees/shifts/shift';
+import { EMPLOYEES_RETURN_TARGET } from '@employees/employees-return-target';
 
 @Component({
-  imports: [ActionDialog, ButtonDirective, OverrideDialog, RouterLink, Skeleton, Tooltip, TranslatePipe, VersionDialog],
+  imports: [ActionDialog, ButtonDirective, OverrideDialog, Skeleton, Tooltip, TranslatePipe, VersionDialog],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-4' },
   selector: 'hf-shifts-page',
   templateUrl: './shifts-page.html',
@@ -27,6 +28,8 @@ export class ShiftsPage {
   readonly id = input.required<string>();
 
   protected readonly store = inject(ShiftsStore);
+  protected readonly history = inject(HistoryStore);
+  protected readonly returnTarget = EMPLOYEES_RETURN_TARGET;
   protected readonly showVersionsSkeleton = delayedLoading(this.store.versions.isLoading);
   protected readonly showOverridesSkeleton = delayedLoading(this.store.overrides.isLoading);
   protected readonly summaryOf = summaryOf;

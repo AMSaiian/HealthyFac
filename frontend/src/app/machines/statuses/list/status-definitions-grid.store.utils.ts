@@ -1,4 +1,5 @@
 import { DEFAULT_PAGE_SIZE } from '@shared/grid/requests/grid-limits';
+import { parseCompose } from '@shared/history/history.store.utils';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import type { GridStateInit } from '@shared/grid/with-grid-state';
 import { EMPTY_RANGE } from '@shared/time/plain-date-range';
@@ -33,4 +34,15 @@ export const INITIAL_GRID: GridStateInit<StatusDefinitionFilter, StatusDefinitio
 /** The dialog state of the page: `statusDefinitionId` is `null` for a new error code. */
 export interface ErrorCodeEditor {
   readonly statusDefinitionId: string | null;
+}
+
+export const STATUS_COMPOSE_NAME = 'status';
+
+/** Reads the dialog state from the `compose` value: `status` is a new error code, `status:<id>` a stored one. */
+export function toStatusEditor(compose: string | null): ErrorCodeEditor | null {
+  if (compose === null) {
+    return null;
+  }
+  const { name, id } = parseCompose(compose);
+  return name === STATUS_COMPOSE_NAME ? { statusDefinitionId: id } : null;
 }

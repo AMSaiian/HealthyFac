@@ -7,7 +7,7 @@
 #
 # Safety against other writers (other sessions edit the same checkout):
 # - One cleanup per checkout at a time: a named mutex (the same one that verify-changed.ps1 holds, so it is re-entrant).
-# - The cleanup runs on a private copy of backend/ (inside the .git directory), never on the live files. The result
+# - The cleanup runs on a private copy of backend/ (in cs/ of the main .git directory), never on the live files. The result
 #   replaces a live file only when that file still has the content hash that the script read before the copy. A file
 #   that changed during the run keeps the content of its other writer. A file that no longer exists is never
 #   created again. The script writes one output line for each file that it skipped.
@@ -73,8 +73,11 @@ try {
   $before = @{}
   foreach ($target in $targets) { $before[$target] = Get-FileHashText (Join-Path $repo $target) }
 
-  $shadowParent = [IO.Path]::GetFullPath((git rev-parse --git-path claude-cleanup-shadow), $repo)
-  $shadow = Join-Path $shadowParent ([Guid]::NewGuid().ToString('N'))
+  # The copy lives in a short folder: cs/ of the main .git directory, with an 8 character name. A long worktree name in
+  # the path makes JetBrains fail to load the deep test projects, and "Optimize using directives" then removes valid
+  # usings.
+  $shadowParent = Join-Path (git -C $repo rev-parse --path-format=absolute --git-common-dir) 'cs'
+  do { $shadow = Join-Path $shadowParent ([Guid]::NewGuid().ToString('N').Substring(0, 8)) } while (Test-Path -LiteralPath $shadow)
   New-Item -ItemType Directory -Force $shadow | Out-Null
   & robocopy (Join-Path $repo 'backend') (Join-Path $shadow 'backend') /E /XD bin obj artifacts node_modules .vs `
       /NFL /NDL /NJH /NJS /NP | Out-Null

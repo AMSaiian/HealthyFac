@@ -1,5 +1,7 @@
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
+using HealthyFac.Insights.Domain.Cases;
+using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
@@ -80,6 +82,38 @@ public sealed class DemoIngestSeedTests(InsightsFixture fixture)
             .Should()
             .Be(
                 (DemoIngestSeedFixtureExtensions.SeedTime - SeedTimeShift.NewestAge).UtcDateTime);
+    }
+
+    [Fact]
+    public async Task SeedAsync_OnAnEmptyDatabase_AddsTheCaseAndTheSignal()
+    {
+        await _fixture.RunDemoIngestSeedAsync();
+
+        var cases = await _fixture.LoadSeededCasesAsync();
+
+        var maintenanceCase = cases.Should().ContainSingle().Subject;
+        maintenanceCase.Id.Should().Be(DemoIngestSeedTestData.CaseId);
+        maintenanceCase.State.Should().Be(CaseState.Open);
+        maintenanceCase.MachineId.Should().Be(DemoIngestSeedTestData.MachineId);
+        maintenanceCase.CompanyId.Should().Be(DemoIngestSeedFixtureExtensions.CompanyId);
+        var signal = maintenanceCase.Signals.Should().ContainSingle().Subject;
+        signal.Id.Should().Be(DemoIngestSeedTestData.SignalId);
+        signal.CaseId.Should().Be(DemoIngestSeedTestData.CaseId);
+        signal.Coverage.Should().Be(SignalCoverage.Drafted);
+        signal.WorkOrderDraftId.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task SeedAsync_Twice_AddsTheCaseOnce()
+    {
+        await _fixture.RunDemoIngestSeedAsync();
+
+        await _fixture.RunDemoIngestSeedAsync();
+
+        var cases = await _fixture.LoadSeededCasesAsync();
+
+        cases.Should().ContainSingle();
+        cases.Single().Signals.Should().ContainSingle();
     }
 
     [Fact]

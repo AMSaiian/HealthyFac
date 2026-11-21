@@ -1,11 +1,17 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { PlatformNavigation } from '@angular/common';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { APP_ROUTER_FEATURES } from '@app/app-router';
+import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { HistoryStore } from '@shared/history/history.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 
@@ -14,6 +20,7 @@ import { WorkOrderDraftsGridStore } from '@work-orders/drafts/work-order-drafts-
 import { WorkOrderDraftsPage } from '@work-orders/drafts/work-order-drafts-page/work-order-drafts-page';
 import { WorkOrderCategory, WorkOrderPriority } from '@work-orders/work-order';
 import { WORK_ORDERS_ROUTES } from '@work-orders/work-orders.routes';
+import { WORK_ORDERS_RETURN_TARGET } from '@work-orders/work-orders-return-target';
 
 const SEARCH_URL = '/api/core/v1/work-order-drafts/search';
 const DRAFT_URL = '/api/core/v1/work-order-drafts/d1';
@@ -36,6 +43,9 @@ const DRAFT = {
   rowVersion: 7,
 };
 
+@Component({ template: '', host: { class: 'contents' } })
+class CaseStub {}
+
 class ResizeObserverStub {
   observe = vi.fn();
   unobserve = vi.fn();
@@ -55,10 +65,12 @@ function setup(permissions: readonly string[]): {
       provideRouter(
         [
           { path: 'work-orders', children: WORK_ORDERS_ROUTES },
+          { path: 'maintenance/cases/:id', component: CaseStub },
           { path: '', children: [] },
         ],
-        withComponentInputBinding(),
+        ...APP_ROUTER_FEATURES,
       ),
+      provideFakePlatformNavigation(),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
@@ -90,6 +102,21 @@ async function openDrafts(http: HttpTestingController): Promise<InstanceType<typ
 describe('work order drafts route', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('workOrderDraftsToCase_Back_ReturnsToTheDrafts', async () => {
+    const { http } = setup([Permission.DraftsRead]);
+    await openDrafts(http);
+    const router = TestBed.inject(Router);
+    const navigation = TestBed.inject(PlatformNavigation) as FakePlatformNavigation;
+    await router.navigateByUrl('/maintenance/cases/c1');
+    const entryCount = navigation.entries().length;
+
+    await TestBed.inject(HistoryStore).back(WORK_ORDERS_RETURN_TARGET);
+
+    expect(router.url).toBe('/work-orders/drafts');
+    expect(navigation.currentEntry.index).toBe(entryCount - 2);
+    expect(navigation.entries().length).toBe(entryCount);
   });
 
   it('draftsRoute_OnOpen_SearchesThePendingDraftsNewestFirst', async () => {

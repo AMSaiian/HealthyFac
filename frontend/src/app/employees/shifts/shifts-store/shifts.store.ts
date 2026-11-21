@@ -28,7 +28,6 @@ export const ShiftsStore = signalStore(
     const auth = inject(AuthStore);
     return {
       canManage: computed(() => auth.hasPermission(Permission.ShiftsManage)),
-      canGoBack: computed(() => auth.hasPermission(Permission.EmployeesRead)),
     };
   }),
   withMethods((store) => {

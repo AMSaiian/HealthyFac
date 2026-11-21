@@ -2,13 +2,12 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
-import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -68,7 +67,7 @@ describe('EmployeeDayStore', () => {
       ],
     });
     const store = TestBed.inject(EmployeeDayStore);
-    store.setEmployee('e1');
+    await firstValueFrom(store.openDay('e1'));
     await settle();
     return store;
   }
@@ -87,7 +86,7 @@ describe('EmployeeDayStore', () => {
 
     const [row] = store.rows();
 
-    expect(employeeDay).toHaveBeenCalledWith('e1', '2027-06-01');
+    expect(employeeDay).toHaveBeenCalledExactlyOnceWith('e1', '2027-06-01');
     expect(row.label).toBe('Ann Lee');
     expect(row.bars[0].start.toString()).toBe('2027-06-01T06:00:00Z');
   });
@@ -113,31 +112,36 @@ describe('EmployeeDayStore', () => {
     expect(employeeDay).toHaveBeenLastCalledWith('e1', '2027-06-02');
   });
 
-  it('isNotFound_With404_IsTrue', async () => {
-    employeeDay.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.NotFound })));
+  it('openDay_WithAFailingRequest_Fails', async () => {
+    employeeDay.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.InternalServerError })),
+    );
+    TestBed.configureTestingModule({
+      providers: [
+        EmployeeDayStore,
+        { provide: ScheduleApi, useValue: { employeeDay } },
+        { provide: ActionStore, useValue: { dispatch, lastResult } },
+        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        { provide: EmployeeStore, useValue: { id: () => 'e1', name: () => 'Ann Lee' } },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
+        { provide: CLOCK, useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' } },
+      ],
+    });
+    const store = TestBed.inject(EmployeeDayStore);
 
-    const store = await setup();
-
-    expect(store.isNotFound()).toBe(true);
-    expect(store.rows()).toEqual([]);
+    await expect(firstValueFrom(store.openDay('e1'))).rejects.toBeInstanceOf(HttpErrorResponse);
+    expect(store.employeeId()).toBeNull();
+    expect(store.date()).toBeNull();
   });
 
-  it('isNotFound_With500_IsFalse', async () => {
+  it('hasFailed_WhenTheNextDayFails_IsTrueAndTheRowsStayEmpty', async () => {
+    const store = await setup();
     employeeDay.mockReturnValue(
       throwError(() => new HttpErrorResponse({ status: HttpStatusCode.InternalServerError })),
     );
 
-    const store = await setup();
-
-    expect(store.isNotFound()).toBe(false);
-  });
-
-  it('hasFailed_With500_IsTrueAndTheRowsStayEmpty', async () => {
-    employeeDay.mockReturnValue(
-      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.InternalServerError })),
-    );
-
-    const store = await setup();
+    store.nextDay();
+    await settle();
 
     expect(store.hasFailed()).toBe(true);
     expect(store.rows()).toEqual([]);
@@ -159,18 +163,6 @@ describe('EmployeeDayStore', () => {
     store.openWorkOrder('wo-1');
 
     expect(dispatch).toHaveBeenCalledWith({ type: WorkOrderActionType.Open, payload: { workOrderId: 'wo-1' } });
-  });
-
-  it('canGoBack_WithEmployeesRead_IsTrue', async () => {
-    const store = await setup([Permission.EmployeesRead]);
-
-    expect(store.canGoBack()).toBe(true);
-  });
-
-  it('canGoBack_WithoutEmployeesRead_IsFalse', async () => {
-    const store = await setup();
-
-    expect(store.canGoBack()).toBe(false);
   });
 
   it('now_FirstTick_ComesAtTheNextFullMinute', async () => {

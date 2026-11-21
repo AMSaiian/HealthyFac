@@ -8,6 +8,7 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
+import { HistoryStore } from '@shared/history/history.store';
 
 import { SignalSeverity } from '@maintenance/case';
 import { AiLogPanel } from '@maintenance/detail/ai-log-panel/ai-log-panel';
@@ -20,6 +21,7 @@ import {
   SEVERITY_LABEL_KEYS,
   STATE_LABEL_KEYS,
 } from '@maintenance/list/cases-grid/cases-grid.utils';
+import { CASES_RETURN_TARGET } from '@maintenance/maintenance-return-target';
 
 const SUMMARY_TAB = 'summary';
 const SIGNALS_TAB = 'signals';
@@ -49,6 +51,8 @@ const AI_LOG_TAB = 'aiLog';
 })
 export class CasePage {
   protected readonly store = inject(CasePageStore);
+  protected readonly history = inject(HistoryStore);
+  protected readonly returnTarget = CASES_RETURN_TARGET;
   protected readonly aiUnavailableKey = AI_UNAVAILABLE_KEY;
   protected readonly SUMMARY_TAB = SUMMARY_TAB;
   protected readonly SIGNALS_TAB = SIGNALS_TAB;

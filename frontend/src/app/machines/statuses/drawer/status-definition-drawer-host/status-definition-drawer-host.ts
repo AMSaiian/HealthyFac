@@ -1,7 +1,9 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import { hasFormChanges } from '@shared/forms/form-changes';
+import { isHttpStatus } from '@shared/http/http-error-key';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { LoadingSpinner } from '@shared/loading/loading-spinner/loading-spinner';
 
@@ -62,6 +64,11 @@ export class StatusDefinitionDrawerHost {
   constructor() {
     effect(() => {
       this.store.start(this.machineId(), this.statusDefinitionId());
+    });
+    effect(() => {
+      if (isHttpStatus(this.store.statusDefinition.error(), HttpStatusCode.NotFound)) {
+        this.cancelled.emit();
+      }
     });
   }
 

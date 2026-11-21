@@ -119,7 +119,7 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   **Tests**).
 - If the feature changes the UI, the last step is a browser check list: one line per
   user-visible flow from the acceptance criteria, each with its expected result. Include
-  the edge flows (an unknown ID, a conflict, a long input, a failure, the 1024 x 600
+  the edge flows (an unknown ID, a conflict, a long input, a failure, the 1280 x 600
   window, back navigation). Never plan a deferred or manual-only browser check.
 - Put `## Acceptance Criteria Map` and `## Review Focus` after the cycles. A plan-wide
   `## Deviations` exists only in old plans.

@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.Infrastructure.Database.Seeding;
@@ -64,6 +65,9 @@ public static class DemoDraftSeedFixtureExtensions
                 Machines = await dbContext.MachineDrafts.AsNoTracking()
                     .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                     .ToListAsync(),
+                WorkOrders = await dbContext.WorkOrderDrafts.AsNoTracking()
+                    .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                    .ToListAsync(),
             };
         }
 
@@ -89,4 +93,6 @@ public static class DemoDraftSeedFixtureExtensions
 public sealed record DemoDrafts
 {
     public required IReadOnlyList<MachineDraft> Machines { get; init; }
+
+    public required IReadOnlyList<WorkOrderDraft> WorkOrders { get; init; }
 }

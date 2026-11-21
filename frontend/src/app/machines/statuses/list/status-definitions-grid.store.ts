@@ -1,12 +1,14 @@
-import { computed, inject } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { patchState, signalStore, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, exhaustMap, type Observable, pipe, tap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withGridState } from '@shared/grid/with-grid-state';
+import { HistoryStore } from '@shared/history/history.store';
+import { formatCompose } from '@shared/history/history.store.utils';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { skipErrorToast } from '@shared/http/http-error-key';
@@ -21,7 +23,11 @@ import type {
   StatusDefinitionSortColumn,
 } from '@machines/statuses/status-definition';
 import { toSearchBody } from '@machines/statuses/list/status-definition-query';
-import { type ErrorCodeEditor, INITIAL_GRID } from '@machines/statuses/list/status-definitions-grid.store.utils';
+import {
+  INITIAL_GRID,
+  STATUS_COMPOSE_NAME,
+  toStatusEditor,
+} from '@machines/statuses/list/status-definitions-grid.store.utils';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
 import { MachinesApi } from '@machines/machines-api';
 
@@ -30,23 +36,24 @@ import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 interface ScopeState {
   machineId: string | null;
   machine: Machine | null;
-  editor: ErrorCodeEditor | null;
 }
 
 export const StatusDefinitionsGridStore = signalStore(
   withGridState<StatusDefinitionFilter, StatusDefinitionSortColumn, StatusDefinitionColumn>(INITIAL_GRID),
-  withState<ScopeState>({ machineId: null, machine: null, editor: null }),
+  withState<ScopeState>({ machineId: null, machine: null }),
   withProps(() => ({
     _auth: inject(AuthStore),
     _clock: inject(CLOCK),
     _api: inject(StatusDefinitionsApi),
     _machinesApi: inject(MachinesApi),
+    _history: inject(HistoryStore),
   })),
   withToasts(),
   withConfirm(),
   withComputed((store) => ({
     canWrite: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsWrite)),
     canDelete: computed(() => store._auth.hasPermission(Permission.StatusDefinitionsDelete)),
+    editor: computed(() => toStatusEditor(store._history.compose())),
   })),
   withProps((store) => ({
     statuses: rxResource({
@@ -89,22 +96,22 @@ export const StatusDefinitionsGridStore = signalStore(
       openMachine(machineId: string): Observable<Machine> {
         return store._machinesApi.get(machineId, skipErrorToast()).pipe(
           tap((machine) => {
-            patchState(store, { machineId, machine, editor: null });
+            patchState(store, { machineId, machine });
             store.resetGrid();
           }),
         );
       },
       requestCreate(): void {
-        patchState(store, { editor: { statusDefinitionId: null } });
+        void store._history.openCompose(formatCompose(STATUS_COMPOSE_NAME));
       },
       requestUpdate(id: string): void {
-        patchState(store, { editor: { statusDefinitionId: id } });
+        void store._history.openCompose(formatCompose(STATUS_COMPOSE_NAME, id));
       },
       closeEditor(): void {
-        patchState(store, { editor: null });
+        void store._history.closeCompose();
       },
       onSaved(): void {
-        patchState(store, { editor: null });
+        void store._history.closeCompose();
         store.statuses.reload();
       },
       /** Loads the grid again and keeps the editor open: an update save leaves the dialog in view mode. */
@@ -123,6 +130,11 @@ export const StatusDefinitionsGridStore = signalStore(
         });
       },
     };
+  }),
+  withHooks({
+    onInit(store) {
+      inject(DestroyRef).onDestroy(store._history.registerComposeNames([STATUS_COMPOSE_NAME]));
+    },
   }),
   withStoreDevtools('status-definitions-grid'),
 );

@@ -1,4 +1,5 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { parseCompose } from '@shared/history/history.store.utils';
 
 import { Temporal } from '@shared/time/temporal';
 
@@ -14,9 +15,43 @@ import {
 import type { OverrideFormValue } from '@employees/shifts/override-dialog/override-dialog-schema';
 import type { VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 
+export const SHIFT_VERSION_COMPOSE_NAME = 'shift-version';
+export const SHIFT_OVERRIDE_COMPOSE_NAME = 'shift-override';
+
 export type ShiftDialog =
   | { readonly kind: 'version'; readonly version: ShiftVersion | null }
   | { readonly kind: 'override'; readonly override: ShiftOverride | null };
+
+/**
+ * Reads the dialog from the `compose` value. A new shift needs no list. A stored shift needs its list: the result is
+ * `null` while the list is not loaded (`null`), and `'unknown'` when the loaded list lacks the ID. Any other value
+ * gives `null`.
+ */
+export function toShiftDialog(
+  compose: string | null,
+  versions: readonly ShiftVersion[] | null,
+  overrides: readonly ShiftOverride[] | null,
+): ShiftDialog | null | 'unknown' {
+  if (compose === null) {
+    return null;
+  }
+  const { name, id } = parseCompose(compose);
+  if (name === SHIFT_VERSION_COMPOSE_NAME) {
+    if (id === null) {
+      return { kind: 'version', version: null };
+    }
+    const version = versions?.find((candidate) => candidate.id === id);
+    return versions === null ? null : version === undefined ? 'unknown' : { kind: 'version', version };
+  }
+  if (name === SHIFT_OVERRIDE_COMPOSE_NAME) {
+    if (id === null) {
+      return { kind: 'override', override: null };
+    }
+    const override = overrides?.find((candidate) => candidate.id === id);
+    return overrides === null ? null : override === undefined ? 'unknown' : { kind: 'override', override };
+  }
+  return null;
+}
 
 const TIME_LENGTH = 5;
 const WORK_ORDERS_KEY = 'workOrders';
