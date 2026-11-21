@@ -6,7 +6,7 @@ This document records the service boundaries and the decisions that connect the 
 
 | Service | Owns | Status |
 | --- | --- | --- |
-| **Gateway** (YARP) | The only public entry point. Routing, TLS, rate limiting, the edge JWT check, and the token revocation check. | Exists |
+| **Gateway** (YARP) | The only public entry point. Routing, TLS, rate limiting, the edge JWT check, and the token revocation check. It also hosts the realtime hub (see **Realtime**). | Exists |
 | **Auth** | A thin back channel to Keycloak: user provisioning, organization membership, and role assignment through the Keycloak Admin API. It also sets the language of the signed-in user (`PUT /api/auth/v1/me/locale`, the only public endpoint). It does not log users in or handle passwords. It may have its own tables when it needs them. | Exists |
 | **SPA host** | A small .NET host that serves the built web app, the runtime `/config.json`, and the index file with a content security policy nonce. It has no database and no authentication. | Exists |
 | **Core** | Business data: companies, employees, employee invites, roles, machines (with the gateway ID and the state history), the machine drafts, work orders (with their history), employee shifts, and campaigns. | Exists |
@@ -301,6 +301,35 @@ A temporary exception to "the gateway only routes": until a backend for the fron
 - The gateway never retries a request. A `POST` request is not idempotent, so the client decides on a retry.
 - The revocation check passes a request when Redis fails, and the same circuit breaker protects it.
 - The gateway skips a destination that the health checks mark unhealthy. It does not fall back to all destinations.
+
+## Realtime
+
+The web app gets live changes over one SignalR connection. A notification is never stored: a lost push is accepted.
+
+- **Hub:** the gateway hosts the one hub, `RealtimeHub`, at `/api/realtime/v1/hub`. This is the second exception to "the gateway only routes", next to the composed URLs (**Gateway Composition**). The mapped endpoint beats the YARP catch-all.
+- **Pushers:** Core, Insights, and Telemetry push through `IHubContext<RealtimeHub, IRealtimeClient>`. They register SignalR with the same Redis backplane (on the shared Redis multiplexer) and map no hub. Every gateway instance delivers to its own sockets. The hub uses the JSON protocol only, with the shared JSON options.
+- **Transport:** WebSockets only, without negotiate. One HTTP upgrade request makes one connection, so no sticky session is needed.
+- **Connect:** the browser sends the token as the `access_token` query parameter. The gateway reads it from the query only on the hub path. The connect passes the edge JWT check, the token revocation check, and the default rate limit for each user. An origin outside `Cors:AllowedOrigins`, or no origin, gets `403`. The gateway closes the connection when the token expires (`CloseOnAuthenticationExpiration`). A permission change reaches the socket at the next token expiry.
+- **Redaction:** no log entry, span, or span tag holds the `access_token` value.
+- **Use case groups:** the user ID of a connection is `sub`. At the connect, the hub adds the connection to the group of each notification kind and each hint topic whose permission the token holds. `RealtimeAudiences` (Shared.Application) maps each group kind and each topic to exactly one permission. A user-targeted kind has no entry. A new kind needs one map line.
+
+| Group | Name | Permission |
+| --- | --- | --- |
+| Kind `workOrderBlocked` | `company:{id}:kind:workOrderBlocked` | `work-orders:manage` |
+| Kind `workOrderDraftCreated` | `company:{id}:kind:workOrderDraftCreated` | `drafts:read` |
+| Kind `provisioningFailed` | `company:{id}:kind:provisioningFailed` | `employees:manage` |
+| Kind `maintenanceCaseOpened` | `company:{id}:kind:maintenanceCaseOpened` | `cases:read` |
+| Topic `workOrders` | `company:{id}:topic:workOrders` | `work-orders:read` |
+| Topic `schedule` | `company:{id}:topic:schedule` | `shifts:read` |
+| Topic `machines` | `company:{id}:topic:machines` | `machines:read` |
+| Topic `cases` | `company:{id}:topic:cases` | `cases:read` |
+| Topic `definitionDrafts` | `company:{id}:topic:definitionDrafts` | `definition-drafts:read` |
+
+- **Own action:** the user who made a change gets no entry for it. For a user target, the sender skips the push when the recipient is the actor. For a group target, the notification carries `actorSubject`, and the web app drops an entry with its own `sub`. Hints go to every tab, also the tabs of the actor. Each `AddToUser` and `AddToGroup` call names the rule with the required argument `isActorSkipped`: `true` for a direct action of the actor inside a request, `false` for a result that no user saw at that time (a worker end, an inbox handler, a side effect of the action). With `false`, the actor gets the user push, and a group notification has no `actorSubject`.
+- **Push after the commit:** a use case adds its events to the scoped `IRealtimeNotifier` after `SaveChangesAsync` or `RunInTransactionAsync` returned, never inside the operation. The execution strategy repeats the operation, so a push inside it could send twice. An HTTP use case or a worker then calls `Push()`. An inbox handler only adds events: the inbox runner calls `Push()` after it commits the row, and clears the events when the row rolls back.
+- **Background queue:** `Push()` is synchronous and only enqueues a `RealtimePush` into a typed background queue. The queue owns an unbounded channel, one handler for each item type, a new DI scope for each item, and the drain at stop. The handler sends through one Polly pipeline: 3 retries (200 ms, exponential, with jitter), then the shared Redis circuit breaker. While the breaker is open, an item drops at once. After the last retry, an item drops with one `Warning`. A use case never fails because of a push. At a stop, the sender drains until the host stop token fires, then drops the rest.
+- **Observability:** the meter `HealthyFac.Realtime` counts the pushes (tags: target and result) and records the push duration. The meter `HealthyFac.BackgroundQueues` has a length gauge for each item type. The span `Realtime.Push` covers one push. No tag, span, or log entry holds a user ID, a token, or a notification text.
+- **Redis down:** no push reaches a client. The gateway closes a new hub connection with an error, and the web app connects again with its reconnect delays. The readiness of the gateway reports `Degraded` with status `200`.
 
 ## Identity
 
