@@ -53,6 +53,7 @@ param()
 $include = ($args | Where-Object { $_ -like '--include=*' }) -replace '^--include=', ''
 $solution = $args[-1]
 $base = Split-Path $solution
+if ($env:FAKE_JB_SOLUTION_LOG) { Add-Content $env:FAKE_JB_SOLUTION_LOG $solution }
 if ($env:FAKE_JB_LOG) { Add-Content $env:FAKE_JB_LOG "start $([DateTime]::UtcNow.Ticks) $env:FAKE_JB_TAG" }
 if ($env:FAKE_JB_HOLD) {
   $deadline = [DateTime]::UtcNow.AddSeconds(180)
@@ -245,6 +246,29 @@ try {
   Assert-That (-not (Test-Cleaned $main 'A')) 'The hook of a worktree leaves the main checkout unchanged'
 
   $cleanup = Join-Path $HooksDir 'cleanup-changed.ps1'
+
+  Write-Host 'Short private copy'
+  $main = New-TestRepo 'short-main'
+  $longName = 'adjust-action-store-to-introduce-correct-return-actions'
+  $longFeature = Join-Path $work $longName
+  git -C $main worktree add -q $longFeature -b feature/long 2>&1 | Out-Null
+  Add-Content (Join-Path $longFeature 'backend/App/A.cs') '// edited in the worktree'
+  $commonDir = (git -C $longFeature rev-parse --path-format=absolute --git-common-dir)
+  $env:FAKE_JB_SOLUTION_LOG = Join-Path $work 'solution-short.log'
+  Invoke-Cleanup $cleanup $longFeature @('backend/App/A.cs')
+  Remove-Item Env:FAKE_JB_SOLUTION_LOG
+  $copyPath = [IO.Path]::GetFullPath((Get-Content (Join-Path $work 'solution-short.log') | Select-Object -First 1))
+  Assert-That ($copyPath.StartsWith([IO.Path]::GetFullPath((Join-Path $commonDir 'cs')), [StringComparison]::OrdinalIgnoreCase)) 'The cleanup copy lives under cs/ of the git common directory'
+  Assert-That (-not $copyPath.Contains($longName)) 'The path of the cleanup copy does not hold the worktree name'
+  Assert-That (Test-Cleaned $longFeature 'A') 'A file of the long-named worktree is cleaned'
+
+  Write-Host 'Proof: the copy under the old git path holds the worktree name'
+  $oldPathDir = New-ModifiedHooks 'old-copy-path' 'cleanup-changed.ps1' `
+    '--git-common-dir) ''cs''' '--git-path claude-cleanup-shadow) ''x'''
+  $env:FAKE_JB_SOLUTION_LOG = Join-Path $work 'solution-old.log'
+  Invoke-Cleanup (Join-Path $oldPathDir 'cleanup-changed.ps1') $longFeature @('backend/App/A.cs')
+  Remove-Item Env:FAKE_JB_SOLUTION_LOG
+  Assert-That ((Get-Content (Join-Path $work 'solution-old.log') | Select-Object -First 1).Contains($longName)) 'Proof: with the old copy path, the path holds the worktree name'
 
   Write-Host 'Lost update'
   $repo = New-TestRepo 'lost'
