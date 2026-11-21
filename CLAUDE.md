@@ -65,4 +65,5 @@ The Stop and SubagentStop hooks (`.claude/hooks/verify-changed.ps1`) reformat th
 *   The flow scripts (`tree-id.ps1`, `check-handoff.ps1`, `scripts/verify-stack.ps1`) act on the checkout that holds the script file too. Run the copy of the worktree that you work in.
 *   The hooks do nothing when the turn changed no file, at the stop of the reviewer subagent (or a session with `HEALTHYFAC_SESSION_ROLE=reviewer`), and at a stop of the main session while the executor subagent runs: the executor verifies its own files.
 *   The reviewer subagent writes only `review.md` outside the repo: its `PreToolUse` hook (`.claude/hooks/reviewer-write-scope.ps1`) denies every other file.
+*   In every session, the `PreToolUse` hook `.claude/hooks/handoff-write-guard.ps1` denies the known shell writes to spec.md, plan.md, and review.md.
 *   Sessions that share one checkout share its changed files. The script headers explain the lock, the skips, and the guard against other writers. `.claude/hooks/tests/hook-scope.tests.ps1` checks them.

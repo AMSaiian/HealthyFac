@@ -8,21 +8,21 @@
 # session started, and that root never changes during a session. The hook never reads the hook input cwd (the
 # session can move to a folder outside the checkout or into another checkout), CLAUDE_PROJECT_DIR, or a transcript.
 # So a session verifies its own checkout only: start each feature session in its feature worktree
-# (start-feature.ps1). The changed files are the files that git reports as changed in that checkout (git diff
-# --name-only HEAD plus the untracked files).
-# A changed file counts as new when its content hash differs from the hash saved at the previous stop. The hash
-# state lives in the git directory of the checkout, so uncommitted changes from earlier stops do not trigger a
-# rebuild. Limit: sessions that share one checkout share this state and these files. Give each session its own
-# worktree to separate them.
+# (start-feature.ps1).
+# State: each step (backend, frontend, keycloak-theme) keeps the tree ID of its last clean run in the git directory of
+# the checkout (claude-verify-<step>-tree.txt, Get-TreeId of checkout-helpers.ps1). The changed files of a step are the
+# paths of "git diff --name-only <that tree> <current tree>" that match its patterns, so uncommitted changes that an
+# earlier stop verified do not trigger a new run. Without a state tree (or when git gc pruned it), they are the files
+# changed since HEAD plus the untracked files. A failed step keeps its old tree, so the next stop checks every file that
+# changed since its last clean run again. Limit: sessions that share one checkout share this state and these files.
+# Give each session its own worktree to separate them.
 # One verification or cleanup per checkout runs at a time (named mutex), and the cleanup never overwrites a file
 # that another writer changed or deleted during the run (cleanup-changed.ps1).
-# The hook does nothing (no build, no cleanup, no report) when the working tree equals the fingerprint that
-# record-turn-start.ps1 stored at the start of the turn (UserPromptSubmit, by session_id), or the fingerprint of the
-# last clean verification of the checkout. The fingerprint is the git status plus the git hash of each listed file
-# (worktree-fingerprint.ps1).
+# The hook does nothing (no build, no cleanup, no report) when the tree ID of the working tree equals the one that
+# record-turn-start.ps1 stored at the start of the turn (UserPromptSubmit, by session_id), or the tree ID of the last
+# clean verification of the checkout (claude-verify-tree.txt).
 # The hook blocks once per stop attempt. When stop_hook_active is set, it reports and lets the turn end,
-# so a warning Claude cannot fix does not loop. Files with diagnostics stay out of the saved state,
-# so the next stop checks them again.
+# so a warning Claude cannot fix does not loop.
 # The reviewer never edits the repo, so the hook does nothing at the SubagentStop of the reviewer subagent (agent_type
 # "reviewer", .claude/agents/reviewer.md) and in a session started by hand with HEALTHYFAC_SESSION_ROLE=reviewer.
 # The Stop of the main session does nothing while an executor subagent is in flight (an entry of background_tasks with
@@ -30,7 +30,7 @@
 # its half-done edits would report them to the spec writer, which must not fix them.
 
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot 'worktree-fingerprint.ps1')
+. (Join-Path $PSScriptRoot 'checkout-helpers.ps1')
 . (Join-Path $PSScriptRoot 'command-line-batches.ps1')
 
 $hookInput = try { [Console]::In.ReadToEnd() | ConvertFrom-Json } catch { $null }
@@ -40,6 +40,8 @@ $isExecutorInFlight = $hookInput.hook_event_name -eq 'Stop' -and
   @($hookInput.background_tasks | Where-Object { $_.type -eq 'subagent' -and $_.agent_type -eq 'executor' }).Count -gt 0
 if ($isExecutorInFlight) { exit 0 }
 $solutionPath = 'backend/HealthyFac.slnx'
+$BackendPatterns = @('*.cs', '*.csproj', '*.props')
+$WebPatterns = @('*.ts', '*.html', '*.css', '*.json', '*.webmanifest')
 
 # The checkout (main or worktree) that holds the directory, in the backslash form that the build diagnostics use,
 # or nothing when the directory is not inside a checkout.
@@ -50,123 +52,69 @@ function Get-WorktreeRoot([string] $directory) {
   [IO.Path]::GetFullPath($root).TrimEnd([char]92, [char]47)
 }
 
-# The named mutex of a checkout, shared with cleanup-changed.ps1.
-function New-CheckoutMutex([string] $repo) {
-  $repoHash = [Convert]::ToHexString(
-    [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($repo.ToLowerInvariant())))
-  [Threading.Mutex]::new($false, "Local\HealthyFac-verify-$($repoHash.Substring(0, 16))")
+# The paths of one step (folder $step/, or backend/) that changed since the last clean run of the step, deleted paths
+# included. See the header for the state tree and the fallback.
+function Get-StepChanges([string] $repo, [string] $step, [string] $currentTree, [string[]] $patterns) {
+  $statePath = Get-GitStatePath $repo "claude-verify-$step-tree.txt"
+  $stateTree = if (Test-Path -LiteralPath $statePath) { (Get-Content -LiteralPath $statePath -Raw).Trim() }
+  $paths = $null
+  if ($stateTree) {
+    $diff = Get-GitLines $repo (@('diff', '--name-only', '--no-renames', $stateTree, $currentTree, '--') + $patterns)
+    if ($diff.ExitCode -eq 0) { $paths = $diff.Lines }
+  }
+  if ($null -eq $paths) {
+    $paths = @((Get-GitLines $repo (@('diff', '--name-only', '--no-renames', 'HEAD', '--') + $patterns)).Lines) +
+      @((Get-GitLines $repo (@('ls-files', '-o', '--exclude-standard', '--') + $patterns)).Lines)
+  }
+  @($paths | Where-Object { $_ -like "$step/*" -and $_ -notlike '*/package-lock.json' } | Sort-Object -Unique)
 }
 
-function Get-ChangedBackendFiles([string] $repo) {
-  $patterns = '*.cs', '*.csproj', '*.props'
-  $tracked = @(git diff --name-only HEAD -- $patterns 2>$null)
-  $untracked = @(git ls-files -o --exclude-standard -- $patterns 2>$null)
-
-  @($tracked + $untracked) |
-    Where-Object { $_ -like 'backend/*' } |
-    Sort-Object -Unique |
-    Where-Object { Test-Path (Join-Path $repo $_) }
+function Save-StepState([string] $repo, [string] $step, [string] $tree) {
+  $path = Get-GitStatePath $repo "claude-verify-$step-tree.txt"
+  New-Item -ItemType Directory -Force (Split-Path $path) | Out-Null
+  Set-Content -LiteralPath $path -Value $tree -Encoding utf8NoBOM
 }
 
-# The git content hash of each file. The paths go through stdin, so the command line stays short for any number of
-# files (command-line-batches.ps1).
-function Get-ContentHashes([string[]] $files) {
-  $hashes = @{}
-  if ($files.Count -eq 0) { return $hashes }
-  $values = @($files | git hash-object --stdin-paths)
-  for ($i = 0; $i -lt $files.Count; $i++) { $hashes[$files[$i]] = $values[$i] }
-  $hashes
+function Get-ExistingFiles([string] $repo, [string[]] $paths) {
+  @($paths | Where-Object { Test-Path -LiteralPath (Join-Path $repo $_) -PathType Leaf })
 }
 
-function Get-ChangedFrontendFiles([string] $repo, [string] $project = 'frontend') {
-  $patterns = '*.ts', '*.html', '*.css', '*.json', '*.webmanifest'
-  $tracked = @(git diff --name-only HEAD -- $patterns 2>$null)
-  $untracked = @(git ls-files -o --exclude-standard -- $patterns 2>$null)
-
-  @($tracked + $untracked) |
-    Where-Object { $_ -like "$project/*" -and $_ -notlike '*/package-lock.json' } |
-    Sort-Object -Unique |
-    Where-Object { Test-Path (Join-Path $repo $_) }
-}
-
-# Formats the changed files of a web project (frontend or keycloak-theme) with Prettier, then lints the project. The
-# hash state works as in Invoke-Verification, in its own file. A lint failure lists the ESLint output lines. The hook
-# runs no build or test.
-function Invoke-FrontendVerification([string] $repo, [string] $project = 'frontend') {
-  $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
+# Formats the changed files of a web project (frontend or keycloak-theme) with Prettier, then lints the project. A lint
+# failure lists the ESLint output lines. The hook runs no build or test.
+function Invoke-FrontendVerification([string] $repo, [string] $currentTree, [string] $project) {
+  $result = [pscustomobject]@{ Repo = $repo; Step = $project; Problems = @(); Notice = $null; IsSkipped = $false }
   $frontend = Join-Path $repo $project
-  if (-not (Test-Path (Join-Path $frontend 'node_modules'))) { return $result }
+  if (-not (Test-Path (Join-Path $frontend 'node_modules'))) { $result.IsSkipped = $true; return $result }
 
-  Push-Location $repo
+  $changed = @(Get-StepChanges $repo $project $currentTree $WebPatterns)
+  if ($changed.Count -eq 0) { return $result }
+  $touched = @(Get-ExistingFiles $repo $changed)
+
+  Push-Location $frontend
   try {
-    $statePath = [IO.Path]::GetFullPath((git rev-parse --git-path "claude-verify-$project-state.json"), $repo)
-    $saved = @{}
-    if (Test-Path $statePath) {
-      (Get-Content $statePath -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() |
-        ForEach-Object { $saved[$_.Key] = $_.Value }
+    $relative = @($touched | ForEach-Object { $_.Substring("$project/".Length) })
+    foreach ($batch in Split-ArgumentBatches $relative (Get-ArgumentBudget 'npx.cmd')) {
+      & npx prettier --write --ignore-unknown @batch 2>&1 | Out-Null
     }
-
-    $files = @(Get-ChangedFrontendFiles $repo $project)
-    $current = Get-ContentHashes $files
-    $touched = @($files | Where-Object { $saved[$_] -ne $current[$_] })
-    if ($touched.Count -eq 0) { return $result }
-
-    Push-Location $frontend
-    try {
-      $relative = @($touched | ForEach-Object { $_.Substring("$project/".Length) })
-      foreach ($batch in Split-ArgumentBatches $relative (Get-ArgumentBudget 'npx.cmd')) {
-        & npx prettier --write --ignore-unknown @batch 2>&1 | Out-Null
-      }
-      $output = & npm run lint 2>&1 | ForEach-Object { "$_" }
-      $lintFailed = $LASTEXITCODE -ne 0
-    }
-    finally { Pop-Location }
-
-    $state = Get-ContentHashes @(Get-ChangedFrontendFiles $repo $project)
-    if ($lintFailed) { $state = @{} }
-    New-Item -ItemType Directory -Force (Split-Path $statePath) | Out-Null
-    $state | ConvertTo-Json -Compress | Set-Content $statePath -Encoding utf8NoBOM
-
-    if ($lintFailed) {
-      $result.Problems = @("Lint failed (npm run lint in $project/):") +
-        @($output | Where-Object { $_ -match '\S' -and $_ -notmatch '^> ' } | Select-Object -First 40)
-    }
-    return $result
+    $output = & npm run lint 2>&1 | ForEach-Object { "$_" }
+    $lintFailed = $LASTEXITCODE -ne 0
   }
   finally { Pop-Location }
-}
 
-# Reports each line of the given C# files that is longer than max_line_length in .editorconfig, in the build
-# diagnostic format. The JetBrains formatter wraps only at syntax points, so a long string literal or a one-line XML
-# doc comment stays too long. The check skips the Migrations folders, because EF Core generates those files.
-function Get-LongLineDiagnostics([string] $repo, [string[]] $files) {
-  $editorConfig = Join-Path $repo '.editorconfig'
-  if (-not (Test-Path $editorConfig)) { return }
-  $setting = Select-String -LiteralPath $editorConfig -Pattern '^\s*max_line_length\s*=\s*(\d+)' |
-    Select-Object -First 1
-  if (-not $setting) { return }
-  $limit = [int]$setting.Matches[0].Groups[1].Value
-
-  foreach ($file in @($files | Where-Object { $_ -notlike '*/Migrations/*' })) {
-    $path = Join-Path $repo $file
-    if (-not (Test-Path -LiteralPath $path)) { continue }
-    $number = 0
-    foreach ($line in [IO.File]::ReadLines($path)) {
-      $number++
-      if ($line.Length -le $limit) { continue }
-      "$($file.Replace('/', '\'))($number,$($limit + 1)): error LINE_LENGTH: the line has $($line.Length) " +
-        "characters; .editorconfig max_line_length is $limit. Split the line."
-    }
+  if ($lintFailed) {
+    $result.Problems = @("Lint failed (npm run lint in $project/):") +
+      @($output | Where-Object { $_ -match '\S' -and $_ -notmatch '^> ' } | Select-Object -First 40)
   }
+  return $result
 }
 
 # Formats and builds one checkout. Returns its diagnostics (empty when clean) and a notice for the transcript.
-function Invoke-Verification([string] $repo) {
-  $result = [pscustomobject]@{ Repo = $repo; Problems = @(); Notice = $null }
+function Invoke-Verification([string] $repo, [string] $currentTree) {
+  $result = [pscustomobject]@{ Repo = $repo; Step = 'backend'; Problems = @(); Notice = $null; IsSkipped = $false }
   $solution = Join-Path $repo $solutionPath
 
   # Parallel subagents can stop at the same time. A named mutex per checkout runs one verification at a time, so
-  # two builds do not lock each other's output files and two runs do not overwrite the hash state. The wait stays
+  # two builds do not lock each other's output files and two runs do not overwrite the state. The wait stays
   # below the hook timeout. A run that the hook timeout kills leaves the mutex abandoned, and the next run takes it.
   $lock = New-CheckoutMutex $repo
   $lockWait = [TimeSpan]::FromSeconds(480)
@@ -175,26 +123,15 @@ function Invoke-Verification([string] $repo) {
     $lock.Dispose()
     $result.Notice = "Verification of $repo skipped: another run held the lock for " +
       "$($lockWait.TotalSeconds) seconds. The next stop checks the files again."
+    $result.IsSkipped = $true
     return $result
   }
 
   Push-Location $repo
   try {
-    # --git-path is relative in the main checkout and absolute in a worktree (.git/worktrees/<name>/).
-    $statePath = [IO.Path]::GetFullPath((git rev-parse --git-path claude-verify-state.json), $repo)
-    $saved = @{}
-    if (Test-Path $statePath) {
-      (Get-Content $statePath -Raw | ConvertFrom-Json -AsHashtable).GetEnumerator() |
-        ForEach-Object { $saved[$_.Key] = $_.Value }
-    }
-
-    $files = @(Get-ChangedBackendFiles $repo)
-    $current = Get-ContentHashes $files
-
-    $touched = @($files | Where-Object { $saved[$_] -ne $current[$_] })
-    $deleted = @($saved.Keys | Where-Object { -not (Test-Path (Join-Path $repo $_)) })
-
-    if ($touched.Count -eq 0 -and $deleted.Count -eq 0) { return $result }
+    $changed = @(Get-StepChanges $repo 'backend' $currentTree $BackendPatterns)
+    if ($changed.Count -eq 0) { return $result }
+    $touched = @(Get-ExistingFiles $repo $changed)
 
     $touchedCode = @($touched | Where-Object { $_ -like '*.cs' })
     if ($touchedCode.Count -gt 0) {
@@ -212,26 +149,16 @@ function Invoke-Verification([string] $repo) {
     $buildFailed = $LASTEXITCODE -ne 0
 
     $touchedPaths = $touched | ForEach-Object { (Join-Path $repo $_).Replace('/', '\').ToLowerInvariant() }
-    $flagged = [Collections.Generic.HashSet[string]]::new()
-
     $diagnostics = @($output |
       Where-Object { $_ -match '^(?<file>.+?)\(\d+,\d+\): (warning|error) ' } |
       Where-Object { $buildFailed -or $touchedPaths -contains $Matches.file.ToLowerInvariant() } |
-      ForEach-Object {
-        $line = ($_ -replace ' \[[^\]]+\]$', '').Replace("$repo\", '')
-        [void]$flagged.Add(($line -replace '\(\d+,\d+\): .*$', '').Replace('\', '/'))
-        $line
-      } |
+      ForEach-Object { ($_ -replace ' \[[^\]]+\]$', '').Replace("$repo\", '') } |
       Sort-Object -Unique)
 
-    $longLines = @(Get-LongLineDiagnostics $repo $touchedCode)
-    foreach ($line in $longLines) { [void]$flagged.Add(($line -replace '\(\d+,\d+\): .*$', '').Replace('\', '/')) }
-
-    $state = Get-ContentHashes @(Get-ChangedBackendFiles $repo)
-    if ($buildFailed) { $state = @{} }
-    foreach ($file in $flagged) { $state.Remove($file) }
-    New-Item -ItemType Directory -Force (Split-Path $statePath) | Out-Null
-    $state | ConvertTo-Json -Compress | Set-Content $statePath -Encoding utf8NoBOM
+    $longLines = @(Get-LongLines -Repo $repo -Files $touchedCode | ForEach-Object {
+        "$($_.File.Replace('/', '\'))($($_.Line),$($_.Limit + 1)): error LINE_LENGTH: the line has $($_.Length) " +
+        "characters; .editorconfig max_line_length is $($_.Limit). Split the line."
+      })
 
     if ($buildFailed -and $diagnostics.Count -eq 0) { $diagnostics = @($output | Select-Object -Last 20) }
     $result.Problems = @($diagnostics + $longLines)
@@ -248,18 +175,22 @@ $worktree = Get-WorktreeRoot $PSScriptRoot
 if (-not $worktree -or -not (Test-Path (Join-Path $worktree $solutionPath))) { exit 0 }
 
 # The skip: no file changed since the start of the turn, or since the last clean verification.
-$fingerprint = Get-WorktreeFingerprint $worktree
-$turnPath = if ($hookInput.session_id) { Get-TurnFingerprintPath $worktree $hookInput.session_id }
-$verifiedPath = Get-GitStatePath $worktree 'claude-verify-fingerprint.txt'
+$currentTree = try { Get-TreeId -Repo $worktree } catch { $null }
+if (-not $currentTree) {
+  Write-Output "Verification of $worktree skipped: git could not read the tree of the checkout."
+  exit 0
+}
+$turnPath = if ($hookInput.session_id) { Get-TurnTreePath $worktree $hookInput.session_id }
+$verifiedPath = Get-GitStatePath $worktree 'claude-verify-tree.txt'
 $isUnchangedInTurn = $turnPath -and (Test-Path -LiteralPath $turnPath) -and
-  ((Get-Content -LiteralPath $turnPath -Raw).Trim() -eq $fingerprint)
+  ((Get-Content -LiteralPath $turnPath -Raw).Trim() -eq $currentTree)
 $isUnchangedSinceVerified = (Test-Path -LiteralPath $verifiedPath) -and
-  ((Get-Content -LiteralPath $verifiedPath -Raw).Trim() -eq $fingerprint)
+  ((Get-Content -LiteralPath $verifiedPath -Raw).Trim() -eq $currentTree)
 if ($isUnchangedInTurn -or $isUnchangedSinceVerified) { exit 0 }
 
-# One lock around the whole run: the frontend step formats live files and writes its own state, so it belongs to the
-# same critical section as the backend step. The mutex is re-entrant, so Invoke-Verification and the cleanup take it
-# again in the same thread.
+# One lock around the whole run: the frontend step formats live files, and the state is saved from the tree after
+# every step, so both belong to the same critical section as the backend step. The mutex is re-entrant, so
+# Invoke-Verification and the cleanup take it again in the same thread.
 $outerLock = New-CheckoutMutex $worktree
 $hasOuterLock = try { $outerLock.WaitOne([TimeSpan]::FromSeconds(480)) } catch [Threading.AbandonedMutexException] { $true }
 if (-not $hasOuterLock) {
@@ -269,22 +200,27 @@ if (-not $hasOuterLock) {
 }
 try {
   $results = @(
-    Invoke-Verification $worktree
-    Invoke-FrontendVerification $worktree 'frontend'
-    Invoke-FrontendVerification $worktree 'keycloak-theme')
+    Invoke-Verification $worktree $currentTree
+    Invoke-FrontendVerification $worktree $currentTree 'frontend'
+    Invoke-FrontendVerification $worktree $currentTree 'keycloak-theme')
+  $failed = @($results | Where-Object { $_.Problems.Count -gt 0 })
+  $finalTree = try { Get-TreeId -Repo $worktree } catch { $null }
+  if ($finalTree) {
+    foreach ($result in @($results | Where-Object { -not $_.IsSkipped -and $_.Problems.Count -eq 0 })) {
+      Save-StepState $worktree $result.Step $finalTree
+    }
+    if ($failed.Count -eq 0) {
+      New-Item -ItemType Directory -Force (Split-Path $verifiedPath) | Out-Null
+      Set-Content -LiteralPath $verifiedPath -Value $finalTree -Encoding utf8NoBOM
+    }
+  }
 }
 finally {
   $outerLock.ReleaseMutex()
   $outerLock.Dispose()
 }
 $results | Where-Object Notice | ForEach-Object { Write-Output $_.Notice }
-
-$failed = @($results | Where-Object { $_.Problems.Count -gt 0 })
-if ($failed.Count -eq 0) {
-  New-Item -ItemType Directory -Force (Split-Path $verifiedPath) | Out-Null
-  Set-Content -LiteralPath $verifiedPath -Value (Get-WorktreeFingerprint $worktree) -Encoding utf8NoBOM
-  exit 0
-}
+if ($failed.Count -eq 0) { exit 0 }
 
 $report = @(
   'The build, the line length check, or the frontend lint reports problems in the changed files of the checkout. ' +

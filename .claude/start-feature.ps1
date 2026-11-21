@@ -14,6 +14,8 @@
 #   worktree too when the branch has none.
 # The tab opens with the Windows Terminal profile -TerminalProfile (name or GUID), runs pwsh with the user profile, and
 # stays open after claude exits. --chrome gives the session and its subagents Claude in Chrome for the browser checks.
+# --effort high sets the effort of the spec session (new and resumed); the executor and the reviewer set their own in
+# their frontmatter (.claude/agents/).
 # Usage, from any folder (the script finds the repo from its own location):
 #   pwsh .claude/start-feature.ps1 late-fees
 #   pwsh .claude/start-feature.ps1 late-fees -Resume
@@ -54,4 +56,4 @@ $start = if ($Resume) { "--resume '$session'" } else { "--name '$session' --mode
 
 # The tab command holds no semicolon: Windows Terminal reads a semicolon as the separator of its own commands and
 # would start the text after it as a new tab.
-wt -w 0 new-tab -p $TerminalProfile -d $worktree --title "$Feature spec" pwsh -NoExit -Command "claude --chrome $start"
+wt -w 0 new-tab -p $TerminalProfile -d $worktree --title "$Feature spec" pwsh -NoExit -Command "claude --chrome --effort high $start"

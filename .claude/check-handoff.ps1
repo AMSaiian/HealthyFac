@@ -3,26 +3,24 @@
 # (.claude/agents/executor.md, Handoff).
 # Usage: pwsh .claude/check-handoff.ps1 <feature folder> [-Repo <path>] [-Base <ref>] [-Cycle <N>]
 #        [-MainBranch <name>] [-FormatScript <path>]
-# Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the merge base of HEAD and -MainBranch (develop), so a main branch
-# that moved adds no files of other features; -Cycle is the Cycle: line of plan.md (the highest cycle when plan.md
-# has none); -FormatScript is
-# format-changed.ps1 next to this file.
+# Defaults: -Repo is the checkout that holds this script file (not the current folder); -Base is the merge base of
+# HEAD and -MainBranch (develop), so a main branch that moved adds no files of other features; -Cycle is the Cycle:
+# line of plan.md (the highest cycle when plan.md has none); -FormatScript is format-changed.ps1 next to this file.
 # Output: one line for each problem. Exit code 1 when there is one.
-# It runs the format script on the changed files first, so it can change files: each changed file is a problem.
+# It runs the format script on the changed files first, so it can change files: each changed file is a problem. After
+# run-area.ps1, the format script skips the files that it formatted at the same tree.
 # Problems:
 # - a step of the cycle that is not [x] or [~];
 # - a step whose text says TDD, Red, or "Proof required", with no Red: or Proof: line in its own block (under the step);
 # - a Deviations entry of the cycle that holds a Red: or Proof: line, or that only logs a run ("Step N: done");
-# - a changed or untracked file whose path or file name is in no "Files:" line and no Deviations entry of any cycle
-#   (the base holds the earlier cycles of the branch too);
+# - a changed or untracked file whose path or file name is in no "Files:" line and no "#### Deviations" entry of any
+#   cycle (the base holds the earlier cycles of the branch too);
 # - a file that the format script changed, and each note of a skipped cleanup;
 # - a line of a changed C# file (outside Migrations/) that is longer than max_line_length of .editorconfig;
 # - a failing script test, when the change touches the flow scripts, the rules, the hooks, or the verify stack;
 # - a test area (tree-id.ps1 -Area backend|frontend) that differs from the base and has no "Full run <area>: tree <id>"
-#   line with its current tree in plan.md. A cycle with only legacy "Full run: tree <id>" lines keeps the old check:
-#   the last one must equal the whole current tree.
-# The Deviations of the cycle are the bullets under "#### Deviations" in the cycle section, plus the bullets of the
-# plan-wide "## Deviations" (old plans) that start with a step of the cycle or name the cycle in their first 80 characters.
+#   line with its current tree in plan.md.
+# The Deviations of the cycle are the bullets under "#### Deviations" in the cycle section.
 param(
   [Parameter(Mandatory = $true)][string]$Folder,
   [string]$Repo = (git -C $PSScriptRoot rev-parse --show-toplevel),
@@ -34,6 +32,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'plan-sections.ps1')
+. (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
 $Areas = @('backend', 'frontend')
 # The test script of each group of tool files (paths relative to the repo; the first pattern that matches a changed
 # file runs the script once).
@@ -47,7 +46,6 @@ $ScriptTests = [ordered]@{
 $planPath = Join-Path $Folder 'plan.md'
 if (-not (Test-Path -LiteralPath $planPath)) { Write-Error "No file: $planPath"; exit 1 }
 $planLines = Get-Content -LiteralPath $planPath
-$treeScript = Join-Path $PSScriptRoot 'tree-id.ps1'
 
 if (-not $Base) {
   $Base = (git -C $Repo merge-base HEAD $MainBranch 2>$null)
@@ -59,25 +57,7 @@ $planCycle = Get-PlanCycle $planLines $Cycle
 $Cycle = $planCycle.Number
 $section = $planCycle.Section
 $steps = @(Get-CycleSteps $section)
-$stepNumbers = $steps | ForEach-Object Number
-
-$legacyDeviations = [Collections.Generic.List[string]]::new()
-$isInDeviations = $false
-foreach ($line in $planLines) {
-  if ($line -match '^## ') { $isInDeviations = $line -match '^## Deviations'; continue }
-  if (-not $isInDeviations -or $line -notmatch '^(\*|-)\s+') { continue }
-  $start = $line.Substring(0, [Math]::Min(80, $line.Length))
-  $range = [regex]::Match($start, '^(?:\*|-)\s+Steps?\s+(\d+)(?:\s*[-–]\s*(\d+))?')
-  $isStepEntry = $false
-  if ($range.Success) {
-    $first = [int]$range.Groups[1].Value
-    $last = if ($range.Groups[2].Success) { [int]$range.Groups[2].Value } else { $first }
-    $isStepEntry = [bool]($stepNumbers | Where-Object { [int]$_ -ge $first -and [int]$_ -le $last })
-  }
-  if ($isStepEntry -or $start -match "(?i)\bcycle $Cycle\b") { $legacyDeviations.Add($line) }
-}
-$deviationLines = @(Get-CycleDeviations $section) + @($legacyDeviations)
-$deviationText = $deviationLines -join "`n"
+$deviationLines = @(Get-CycleDeviations $section)
 
 $problems = [Collections.Generic.List[string]]::new()
 
@@ -104,12 +84,12 @@ foreach ($line in $deviationLines) {
 }
 
 # The default base holds the earlier cycles of the branch too, so a file that any cycle names (a Files: line or a
-# Deviations entry) is known.
+# "#### Deviations" entry) is known.
 $planFilesText = ($planLines | Where-Object { $_ -match 'Files:' }) -join "`n"
 $planDeviationLines = [Collections.Generic.List[string]]::new()
 $isInAnyDeviations = $false
 foreach ($line in $planLines) {
-  if ($line -match '^#{2,4} ') { $isInAnyDeviations = $line -match '^#{2,4} Deviations'; continue }
+  if ($line -match '^#{1,4} ') { $isInAnyDeviations = $line -match '^#### Deviations\s*$'; continue }
   if ($isInAnyDeviations) { $planDeviationLines.Add($line) }
 }
 $knownText = ($planFilesText + "`n" + ($planDeviationLines -join "`n")).Replace('\', '/')
@@ -136,21 +116,8 @@ if ($existing.Count -gt 0 -and $FormatScript -and (Test-Path -LiteralPath $Forma
   }
 }
 
-$editorConfig = Join-Path $Repo '.editorconfig'
-$limitMatch = if (Test-Path -LiteralPath $editorConfig) {
-  Select-String -LiteralPath $editorConfig -Pattern '^\s*max_line_length\s*=\s*(\d+)' | Select-Object -First 1
-}
-if ($limitMatch) {
-  $limit = [int]$limitMatch.Matches[0].Groups[1].Value
-  foreach ($path in @($existing | Where-Object { $_ -like '*.cs' -and $_ -notmatch '(^|/)Migrations/' })) {
-    $number = 0
-    foreach ($line in [IO.File]::ReadLines((Join-Path $Repo $path))) {
-      $number++
-      if ($line.Length -gt $limit) {
-        $problems.Add("${path}:$number has $($line.Length) characters; max_line_length is $limit. Split the line.")
-      }
-    }
-  }
+foreach ($line in @(Get-LongLines -Repo $Repo -Files $existing)) {
+  $problems.Add("$($line.File):$($line.Line) has $($line.Length) characters; max_line_length is $($line.Limit). Split the line.")
 }
 
 foreach ($test in $ScriptTests.Keys) {
@@ -163,27 +130,17 @@ foreach ($test in $ScriptTests.Keys) {
   }
 }
 
-$sectionText = $section -join "`n"
-$legacyRuns = [regex]::Matches($sectionText + "`n" + $deviationText, 'Full run:\s*tree\s+([0-9a-f]{40})')
 $areaRuns = [regex]::Matches(($planLines -join "`n"), 'Full run (backend|frontend):\s*tree\s+([0-9a-f]{40})')
-$cycleAreaRuns = [regex]::Matches($sectionText + "`n" + $deviationText, 'Full run (backend|frontend):\s*tree\s+([0-9a-f]{40})')
-
-if ($cycleAreaRuns.Count -eq 0 -and $legacyRuns.Count -gt 0) {
-  $current = (& $treeScript -Repo $Repo)
-  $recorded = $legacyRuns[$legacyRuns.Count - 1].Groups[1].Value
-  if ($recorded -ne $current) { $problems.Add("The Full run: tree $recorded is not the current tree $current. Run the full suite again.") }
-} else {
-  foreach ($area in $Areas) {
-    $current = (& $treeScript -Repo $Repo -Area $area)
-    $atBase = (& $treeScript -Repo $Repo -Area $area -Ref $Base)
-    if ($current -eq $atBase) { continue }
-    $tested = @($areaRuns | Where-Object { $_.Groups[1].Value -eq $area } | ForEach-Object { $_.Groups[2].Value })
-    if ($current -in $tested) { continue }
-    if ($tested.Count -eq 0) {
-      $problems.Add("Cycle ${Cycle}: the $area area changed since the base, but plan.md has no 'Full run ${area}: tree <id>' line.")
-    } else {
-      $problems.Add("The last Full run ${area}: tree $($tested[-1]) is not the current $area tree $current. Run the $area full suite again.")
-    }
+foreach ($area in $Areas) {
+  $current = Get-TreeId -Repo $Repo -Area $area
+  $atBase = Get-TreeId -Repo $Repo -Area $area -Ref $Base
+  if ($current -eq $atBase) { continue }
+  $tested = @($areaRuns | Where-Object { $_.Groups[1].Value -eq $area } | ForEach-Object { $_.Groups[2].Value })
+  if ($current -in $tested) { continue }
+  if ($tested.Count -eq 0) {
+    $problems.Add("Cycle ${Cycle}: the $area area changed since the base, but plan.md has no 'Full run ${area}: tree <id>' line.")
+  } else {
+    $problems.Add("The last Full run ${area}: tree $($tested[-1]) is not the current $area tree $current. Run the $area full suite again.")
   }
 }
 

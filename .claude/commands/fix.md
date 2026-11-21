@@ -66,8 +66,7 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - The log holds the sign-in password. Never repeat it. Give me the log path.
 
 ## Log
-- `plan.md`, `#### Deviations` of the open cycle (an old plan: `## Deviations`), one entry
-  per call: `*   Inline fix, cycle N (Artur, YYYY-MM-DD: "<my words>"): <each change with its
+- `plan.md`, `#### Deviations` of the open cycle, one entry per call: `*   Inline fix, cycle N (Artur, YYYY-MM-DD: "<my words>"): <each change with its
   files>.` N is the `Cycle:` line. The words "cycle N" let `check-handoff.ps1` count the files.
 - `spec.md`: when an item changes what a line describes (a layout, a text, a control),
   update that line in place and add a line to `## Changes` (`spec.md` command).
