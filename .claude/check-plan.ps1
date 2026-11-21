@@ -11,6 +11,8 @@
 # - a step names "spec.md" or "the spec" outside the Spec line (the step is not self-contained); the repo path
 #   ".claude/commands/spec.md" is exempt;
 # - a step whose Files: line names a test file, without "TDD", "Proof required", or "No proof: <reason>" in its block;
+# - a step whose Verify: bullet asks for a full run ("full", at most 2 words, then run, suite, area, or commands): the
+#   executor runs the full run of each area once per cycle (run-area.ps1);
 # - the cycle has no "#### Deviations" heading (the cycle keeps its own Deviations, so one range read holds them);
 # - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused);
 # - the Commit lines of the cycle ("Commit <tooling|docs|code>: <subject>"): none, an unknown group, 2 lines for one
@@ -77,6 +79,8 @@ if (-not $specLine) {
 $steps = @(Get-CycleSteps $section)
 
 $TestFilePattern = '(?i)(^|[/`\s])tests?/|\.spec\.ts\b|Tests?\.cs\b|\.tests\.ps1\b'
+$FullRunPattern = '(?i)\bfull(?:\W+\w+){0,2}\W+(?:runs?|suites?|areas?|commands)\b'
+$VerifyLinePattern = '^\s*(?:[*-]\s+)?\**Verify\**:'
 foreach ($step in $steps) {
   $text = $step.Lines -join "`n"
   $textWithoutCommand = $text -replace '(?i)\.claude/commands/spec\.md', ''
@@ -86,6 +90,10 @@ foreach ($step in $steps) {
   $filesText = ($step.Lines | Where-Object { $_ -match 'Files:' }) -join "`n"
   if ($filesText -match $TestFilePattern -and $text -cnotmatch '\bTDD\b|\bProof required\b|\bNo proof:') {
     $problems.Add("Cycle ${Cycle}: Step $($step.Number) changes a test file, but says neither TDD, Proof required, nor No proof: <reason>.")
+  }
+  $verifyText = ($step.Lines | Where-Object { $_ -match $VerifyLinePattern }) -join "`n"
+  if ($verifyText -match $FullRunPattern) {
+    $problems.Add("Cycle ${Cycle}: Step $($step.Number) asks for a full run in its Verify line. Name test filters; the executor runs the full run once.")
   }
 }
 

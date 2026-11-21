@@ -11,6 +11,12 @@
 #   Stop with only a shell task in flight runs the cleanup.
 # - Reviewer write scope: the reviewer PreToolUse hook allows review.md outside the repo and denies a repo file, a
 #   review.md inside the repo or one of its worktrees, another file outside the repo, and a call without a file.
+# - Handoff write guard: the PreToolUse hook of every session denies each listed shell write form on spec.md, plan.md,
+#   and review.md, and allows the reads, a read redirected to another file, .claude/commands/spec.md, and the flow
+#   scripts.
+# - Step state: after a clean stop, the next stop cleans only the files changed since then; after a lint failure, the
+#   next stop formats the same files again; an edit of a file with a non-ASCII name changes the turn tree ID, and the
+#   Stop hook cleans that file.
 # - Checkout: the hook verifies the checkout that holds its script file. With the session folder (cwd) in checkout 2,
 #   outside every checkout, or with CLAUDE_PROJECT_DIR on checkout 2, the hook of checkout 1 cleans checkout 1 only.
 #   The hook of a git worktree cleans the worktree and leaves the main checkout unchanged.
@@ -18,14 +24,14 @@
 # - Deleted file: a file deleted during the cleanup is not created again.
 # - Skipped cleanup: a failed restore of the private copy prints a "Cleanup skipped" line and cleans nothing.
 # - Frontend: the step formats changed files, including .webmanifest.
-#   A lint line without a capital S reaches the output. A turn fingerprint file older than 1 day goes.
+#   A lint line without a capital S reaches the output. A turn tree file older than 1 day goes.
 # - Long file lists: with 400 changed files in each area (longer than one command line), the hook passes, and the
-#   cleanup and Prettier change every file. The proofs pass the whole list on one command line.
+#   cleanup and Prettier change every file. The proofs pass the whole list to jb or Prettier on one command line.
 # - Lock: two cleanups of one checkout run one after the other; cleanups of two checkouts run at the same time.
 #   The cases compare the order of logged events, never durations.
-# - Proof: the turn skip case, the checkout case, and the two guard cases run once more with the skip, the script
-#   checkout, or the guard switched off in a copy
-#   of the hook scripts. The checks must then show the difference, which proves that the skip or the guard causes it.
+# - Proof: the turn skip case, the checkout case, the two guard cases, and the two step state cases run once more with
+#   the skip, the script checkout, the guard, or the state rule switched off in a copy of the hook scripts. The checks
+#   must then show the difference, which proves that the switched-off line causes it.
 # Run:  pwsh .claude/hooks/tests/hook-scope.tests.ps1
 # It exits 1 when a check fails.
 
@@ -154,7 +160,7 @@ try {
 
   $repo = New-TestRepo 'turn-verified'
   [void](Invoke-Hook $repo 's1')
-  Assert-That (Test-Cleaned $repo 'A') 'A first Stop without a stored fingerprint runs the cleanup'
+  Assert-That (Test-Cleaned $repo 'A') 'A first Stop without a stored turn tree runs the cleanup'
   $result = Invoke-Hook $repo 's2'
   $count = ([regex]::Matches((Get-Content (Join-Path $repo 'backend/App/A.cs') -Raw), [regex]::Escape($marker))).Count
   Assert-That ($result.ExitCode -eq 0 -and -not $result.Output -and $count -eq 1) 'A Stop on a working tree that was verified already does nothing'
@@ -213,6 +219,55 @@ try {
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a notebook in the repo'
   $result = Invoke-Hook $repo 's1' $HooksDir 'reviewer-write-scope.ps1' -fields @{ hook_event_name = 'PreToolUse'; tool_name = 'Write' }
   Assert-That ($result.ExitCode -eq 2) 'The reviewer write hook denies a call without a file'
+
+  Write-Host 'Handoff write guard'
+  $repo = New-TestRepo 'handoff-guard'
+  $handoff = 'E:/specs/HealthyFac/feature'
+  function Invoke-ShellHook([string] $script, [string] $command, [string] $tool = 'Bash') {
+    Invoke-Hook $repo 's1' $HooksDir $script -fields @{
+      hook_event_name = 'PreToolUse'; tool_name = $tool; tool_input = @{ command = $command } }
+  }
+  $denied = @(
+    @('a > redirect', "echo x > $handoff/plan.md"),
+    @('a >> redirect', "echo x >> `"$handoff/review.md`""),
+    @('tee', "echo x | tee -a $handoff/plan.md"),
+    @('sed -i', "sed -i 's/a/b/' $handoff/plan.md"),
+    @('perl -i', "perl -i -pe 's/a/b/' $handoff/plan.md"),
+    @('Set-Content', "Set-Content $handoff/plan.md 'x'"),
+    @('Add-Content', "Add-Content $handoff/review.md 'x'"),
+    @('Out-File', "'x' | Out-File $handoff/plan.md"),
+    @('writeFileSync', "node -e `"require('fs').writeFileSync('$handoff/plan.md', 'x')`""),
+    @('appendFileSync', "node -e `"require('fs').appendFileSync('$handoff/plan.md', 'x')`""),
+    @('write_text', "python -c `"import pathlib; pathlib.Path('$handoff/spec.md').write_text('x')`""),
+    @('.write(', "python - <<'E'`np='$handoff/plan.md'`ns=open(p).read()`nopen(p, 'w').write(s)`nE"),
+    @('WriteAllText', "[IO.File]::WriteAllText('$handoff/plan.md', 'x')"),
+    @('WriteAllLines', "[IO.File]::WriteAllLines('$handoff/plan.md', @('x'))"),
+    @('mv', "mv /tmp/x.md $handoff/plan.md"),
+    @('cp', "cp /tmp/x.md $handoff/review.md"),
+    @('rm', "rm $handoff/review.md"),
+    @('Move-Item', "Move-Item x.md $handoff/plan.md"),
+    @('Copy-Item', "Copy-Item x.md $handoff/spec.md"),
+    @('Remove-Item', "Remove-Item $handoff/plan.md"))
+  foreach ($case in $denied) {
+    $result = Invoke-ShellHook 'handoff-write-guard.ps1' $case[1]
+    Assert-That ($result.ExitCode -eq 2 -and $result.Output -match 'Edit tool') "The handoff guard denies $($case[0]) on a handoff file"
+  }
+  $result = Invoke-ShellHook 'handoff-write-guard.ps1' "Set-Content $handoff/plan.md 'x'" 'PowerShell'
+  Assert-That ($result.ExitCode -eq 2) 'The handoff guard denies a write in the PowerShell tool'
+  $allowed = @(
+    @('cat', "cat $handoff/plan.md"),
+    @('grep', "grep -n 'Step' $handoff/plan.md"),
+    @('head', "head -20 $handoff/plan.md"),
+    @('Get-Content', "Get-Content $handoff/plan.md -TotalCount 20"),
+    @('Select-String', "Select-String -Path $handoff/plan.md -Pattern 'Step'"),
+    @('a read redirected to another file', "grep x $handoff/plan.md > /tmp/out.txt 2>&1"),
+    @('sed -i on .claude/commands/spec.md', "sed -i 's/a/b/' .claude/commands/spec.md"),
+    @('check-handoff on the folder', "pwsh .claude/check-handoff.ps1 $handoff"),
+    @('check-review-routing on review.md', "pwsh .claude/check-review-routing.ps1 $handoff/review.md"))
+  foreach ($case in $allowed) {
+    $result = Invoke-ShellHook 'handoff-write-guard.ps1' $case[1]
+    Assert-That ($result.ExitCode -eq 0) "The handoff guard allows $($case[0])"
+  }
 
   Write-Host 'Checkout resolved from the hook script'
   $first = New-TestRepo 'checkout-one'
@@ -375,26 +430,34 @@ try {
   $result = Measure-TwoCleanups $one $two 'backend/App/A.cs' -WaitForSecondStart
   Assert-That ($result.Runs -eq 2 -and $result.IsOverlapping) 'Cleanups of two checkouts do not wait for each other'
 
-  Write-Host 'Fingerprint of non-ASCII paths'
-  . (Join-Path $HooksDir 'worktree-fingerprint.ps1')
-  $repo = New-TestRepo 'fingerprint'
+  Write-Host 'Turn tree of non-ASCII paths'
+  . (Join-Path $HooksDir 'checkout-helpers.ps1')
+  $repo = New-TestRepo 'turn-tree-ascii'
   $odd = Join-Path $repo "backend/App/$([char]0x00DC)ber.cs"
   [IO.File]::WriteAllText($odd, 'namespace Test; public class Uber { }')
-  $fingerprintBefore = Get-WorktreeFingerprint $repo
+  $treeBefore = Get-TreeId -Repo $repo
   [IO.File]::WriteAllText($odd, 'namespace Test; public class Uber { public int X; }')
-  $fingerprintAfter = Get-WorktreeFingerprint $repo
-  Assert-That ($fingerprintBefore -ne $fingerprintAfter) 'An edit of an untracked file with a non-ASCII name changes the fingerprint'
-  function Get-OldFingerprint([string] $repo) {
-    $status = @(git -C $repo status --porcelain=v1 -uall 2>$null)
-    $paths = @($status | ForEach-Object { $_.Substring(3).Trim('"') } | Where-Object { Test-Path -LiteralPath (Join-Path $repo $_) -PathType Leaf })
-    $hashes = if ($paths.Count -gt 0) { @($paths | git -C $repo hash-object --stdin-paths 2>$null) } else { @() }
-    (($status + $hashes) -join "`n")
+  $treeAfter = Get-TreeId -Repo $repo
+  Assert-That ($treeBefore -match '^[0-9a-f]{40}$' -and $treeBefore -ne $treeAfter) 'An edit of an untracked file with a non-ASCII name changes the turn tree ID'
+  [void](Invoke-Hook $repo 's1')
+  Assert-That (Test-Cleaned $repo "$([char]0x00DC)ber") 'The Stop hook cleans an edited file with a non-ASCII name'
+
+  Write-Host 'Step state as a tree'
+  function Get-MarkCount([string] $path, [string] $mark) {
+    ([regex]::Matches((Get-Content $path -Raw), [regex]::Escape($mark))).Count
   }
-  [IO.File]::WriteAllText($odd, 'namespace Test; public class Uber { }')
-  $oldBefore = Get-OldFingerprint $repo
-  [IO.File]::WriteAllText($odd, 'namespace Test; public class Uber { public int X; }')
-  $oldAfter = Get-OldFingerprint $repo
-  Assert-That ($oldBefore -eq $oldAfter) 'Proof: the old parsing without -z keeps the fingerprint after the same edit'
+  $repo = New-TestRepo 'state-tree'
+  [void](Invoke-Hook $repo 's1')
+  Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the clean stop'
+  [void](Invoke-Hook $repo 's2')
+  Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/B.cs') $marker) -eq 2 -and
+    (Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 1) 'After a clean stop, the next stop cleans only the files changed since then'
+  $noState = New-ModifiedHooks 'no-step-state' 'verify-changed.ps1' 'Save-StepState $worktree $result.Step $finalTree' '$null = $result'
+  $repo = New-TestRepo 'proof-state-tree'
+  [void](Invoke-Hook $repo 's1' $noState)
+  Add-Content (Join-Path $repo 'backend/App/B.cs') '// edited after the clean stop'
+  [void](Invoke-Hook $repo 's2' $noState)
+  Assert-That ((Get-MarkCount (Join-Path $repo 'backend/App/A.cs') $marker) -eq 2) 'Proof: without the saved step tree, the next stop cleans the unchanged file again'
 
   Write-Host 'Frontend Prettier and lint'
   function New-FrontendRepo([string] $name) {
@@ -436,6 +499,22 @@ try {
   Remove-Item Env:FAKE_LINT_OUTPUT
   Assert-That (-not $result.Output.Contains($lintLine)) 'Proof: with the old pattern S, the same lint line is lost'
 
+  Write-Host 'Failed step keeps its tree'
+  $repo = New-FrontendRepo 'lint-keeps-tree'
+  $env:FAKE_LINT_OUTPUT = $lintLine
+  [void](Invoke-Hook $repo)
+  Remove-Item Env:FAKE_LINT_OUTPUT
+  [void](Invoke-Hook $repo)
+  Assert-That ((Get-MarkCount (Join-Path $repo 'frontend/src/a.ts') '// PRETTIER') -eq 2) 'After a lint failure, the next stop formats the same files again'
+  $failedSaves = New-ModifiedHooks 'failed-saves-tree' 'verify-changed.ps1' `
+    '-not $_.IsSkipped -and $_.Problems.Count -eq 0 })' '-not $_.IsSkipped })'
+  $repo = New-FrontendRepo 'proof-lint-keeps-tree'
+  $env:FAKE_LINT_OUTPUT = $lintLine
+  [void](Invoke-Hook $repo 'test' $failedSaves)
+  Remove-Item Env:FAKE_LINT_OUTPUT
+  [void](Invoke-Hook $repo 'test' $failedSaves)
+  Assert-That ((Get-MarkCount (Join-Path $repo 'frontend/src/a.ts') '// PRETTIER') -eq 1) 'Proof: when a failed step saves its tree, the next stop skips its files'
+
   Write-Host 'Long file lists'
   function New-LongListRepo([string] $name) {
     $repo = New-FrontendRepo $name
@@ -459,12 +538,6 @@ try {
   Assert-That ((Get-UnmarkedCount $repo 'backend/App/generated*/*.cs' $marker) -eq 0) 'The cleanup cleans each of 400 changed C# files'
   Assert-That ((Get-UnmarkedCount $repo 'frontend/src/generated*/*.ts' '// PRETTIER') -eq 0) 'Prettier formats each of 400 changed frontend files'
 
-  $oneHashCall = New-ModifiedHooks 'one-hash-call' 'verify-changed.ps1' `
-    '@($files | git hash-object --stdin-paths)' '@(git hash-object -- $files)'
-  $repo = New-LongListRepo 'proof-one-hash-call'
-  $result = Invoke-Hook $repo 'test' $oneHashCall
-  Assert-That ($result.ExitCode -ne 0 -and $result.Output -match 'StandardOutputEncoding|too long') 'Proof: with the file list on the git command line, the hook fails'
-
   $oneJbCall = New-ModifiedHooks 'one-jb-call' 'cleanup-changed.ps1' `
     'Split-ArgumentBatches $includes (Get-ArgumentBudget $jb)' ', $includes'
   $repo = New-LongListRepo 'proof-one-jb-call'
@@ -477,17 +550,17 @@ try {
   [void](Invoke-Hook $repo 'test' $onePrettierCall)
   Assert-That ((Get-UnmarkedCount $repo 'frontend/src/generated*/*.ts' '// PRETTIER') -eq 400) 'Proof: with one Prettier call for all files, no file is formatted'
 
-  Write-Host 'Stale turn fingerprints'
+  Write-Host 'Stale turn trees'
   $repo = New-TestRepo 'stale-turns'
-  $turnOld = Get-TurnFingerprintPath $repo 'ended-session'
-  $turnRecent = Get-TurnFingerprintPath $repo 'recent-session'
+  $turnOld = Get-TurnTreePath $repo 'ended-session'
+  $turnRecent = Get-TurnTreePath $repo 'recent-session'
   New-Item -ItemType Directory -Force (Split-Path $turnOld) | Out-Null
   foreach ($path in $turnOld, $turnRecent) { Set-Content $path 'x' }
   (Get-Item $turnOld).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-2)
   (Get-Item $turnRecent).LastWriteTimeUtc = [DateTime]::UtcNow.AddHours(-23)
   [void](Invoke-Hook $repo 'new-session' $HooksDir 'record-turn-start.ps1')
-  Assert-That (-not (Test-Path $turnOld)) 'A turn fingerprint file older than 1 day is deleted at the start of a turn'
-  Assert-That ((Test-Path $turnRecent) -and (Test-Path (Get-TurnFingerprintPath $repo 'new-session'))) 'A younger turn fingerprint file and the new one stay'
+  Assert-That (-not (Test-Path $turnOld)) 'A turn tree file older than 1 day is deleted at the start of a turn'
+  Assert-That ((Test-Path $turnRecent) -and (Test-Path (Get-TurnTreePath $repo 'new-session'))) 'A younger turn tree file and the new one stay'
 }
 finally {
   Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue

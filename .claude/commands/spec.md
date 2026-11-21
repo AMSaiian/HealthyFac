@@ -97,7 +97,8 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   needs (names, tags, values, cases); never write "as in the spec". Each `Files:` line
   names every file by its repo path, a new file too; never by prose or by folder. Each
   step's `Verify` names a test filter, never a whole project, unless the step changes
-  shared fixtures.
+  shared fixtures. A `Verify` never asks for a full run: the executor runs the full run of
+  each area once per cycle (`run-area.ps1`), and `check-plan.ps1` fails on it.
 - Write only facts in a step (names, paths, values, cases, the order). The reasons stay in
   spec.md. Never ask the executor for a log that the diff shows (e.g., the changed members).
 - Run `pwsh .claude/check-plan.ps1 <feature folder> -Cycle <N>` once for each planned cycle
@@ -121,8 +122,7 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   user-visible flow from the acceptance criteria, each with its expected result. Include
   the edge flows (an unknown ID, a conflict, a long input, a failure, the 1280 x 600
   window, back navigation). Never plan a deferred or manual-only browser check.
-- Put `## Acceptance Criteria Map` and `## Review Focus` after the cycles. A plan-wide
-  `## Deviations` exists only in old plans.
+- Put `## Acceptance Criteria Map` and `## Review Focus` after the cycles.
 
 ## Plan Check
 `check-plan.ps1` checks the structure only. Before you show me plan.md, and before each new

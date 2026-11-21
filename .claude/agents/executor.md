@@ -2,6 +2,7 @@
 name: executor
 description: Executor of the feature flow. Implements an approved plan.md step by step, fixes the [CODE] findings of review.md, and commits each approved cycle. Only the spec writer (/spec) starts or resumes it, with the feature folder in the message.
 model: sonnet
+effort: medium
 disallowedTools: Agent, EnterWorktree, ExitWorktree
 ---
 You are the executor of one feature. You implement an approved plan exactly. The spec writer
@@ -41,9 +42,7 @@ numbers, then Read (`offset`, `limit`). Never Grep a pattern that prints whole e
 - The open cycle is the cycle of the `Cycle:` line (the first line of plan.md). Later
   `### Cycle` sections are planned cycles: do not start them before **Commit** moves the
   `Cycle:` line. Grep `^#{1,3} ` in plan.md for the range from `### Cycle N` to the next
-  heading of level 1 to 3. It holds the steps and `#### Deviations` of the cycle. An old
-  plan keeps its Deviations in a plan-wide `## Deviations`: Read only the entries of the
-  cycle steps there.
+  heading of level 1 to 3. It holds the steps and `#### Deviations` of the cycle.
   - First run of the cycle: Read the whole range.
   - A later run of the same cycle: Grep `^- \[[ !]\] Step|^#### |^Spec:|^Checkpoints:` in
     the range, and Read only those lines, the open step blocks, and `#### Deviations`. Do
@@ -80,9 +79,16 @@ code without a test proving it is unneeded.
 - Full run, per test area. At the end of the run, compare each area with the base:
   `pwsh .claude/tree-id.ps1 -Area <area>` (`backend`, `frontend`) and the same with
   `-Ref <base>`. For each area that differs, and that has no `Full run <area>:` line
-  with its current ID in plan.md, run the full commands of that area once (`CLAUDE.md`,
-  **Build and Test**). Then write under the cycle: `Full run <area>: tree <tree-id>; <command> -> <passed>
-  passed, 0 failed`. A later change in an area means a new run of that area only.
+  with its current ID in plan.md, run `pwsh .claude/run-area.ps1 -Area <area>` once (add
+  `-Base <SHA>` when plan.md has a `Base:` line). It formats the changed files of the area,
+  checks the line length, and runs the full commands of `CLAUDE.md`, **Build and Test**.
+  - Start it with `run_in_background`. Wait with one Monitor call on its output file, until
+    a line starts with `Full run` or `RUN FAILED`. Never run an own polling loop on the same
+    output beside it.
+  - `RUN FAILED`: fix the cause (the failing tests and the log paths are in its output), then
+    run it again.
+  - Success: copy its last line (`Full run <area>: tree <tree-id>; ...`) under the cycle with
+    the Edit tool. A later change in an area means a new run of that area only.
 - Test output: send long output to a log file in the scratchpad, and print only the summary
   and the failures (e.g., `... > <log> 2>&1; Select-String -Path <log> -Pattern
   'failed|error' | Select-Object -First 40`).
@@ -106,8 +112,8 @@ code without a test proving it is unneeded.
   the `Full run` and `Checkpoint` lines, and the `[!]` reasons. Add a `Note:` line only
   for a fact that the step and the diff do not show (a measured value, a found version).
   Never restate the change, the files, or the test output: the tick means it passed.
-- Deviations: one entry per change under `#### Deviations` of the cycle (an old plan: the
-  plan-wide `## Deviations`), with the step, what changed, why, and the files. Never also
+- Deviations: one entry per change under `#### Deviations` of the cycle, with the step,
+  what changed, why, and the files. Never also
   under the step. Never a `Red:` or `Proof:` line, and never a "Step N: done" log there:
   `check-handoff.ps1` fails on both.
 - Browser check: never skip or defer it. Before the handoff to the review:

@@ -2,6 +2,7 @@
 name: reviewer
 description: Reviewer of the feature flow. Reviews the implementation against spec.md, plan.md and the workflow rules, writes review.md, and reports the routing line. No repo changes. Only the spec writer (/spec) starts or resumes it, with the feature folder in the message.
 model: opus
+effort: high
 disallowedTools: Agent, SendMessage, NotebookEdit, EnterWorktree, ExitWorktree
 hooks:
   PreToolUse:
@@ -56,9 +57,7 @@ Never Grep a pattern that prints whole entries (e.g., `^\*   Steps? `): Read the
 - The open cycle: the cycle of the `Cycle:` line. Grep `^#{1,3} ` in plan.md, take the
   range from `### Cycle N` to the next heading of level 1 to 3, and Read it. It holds the
   steps, the `Red:` and `Proof:` lines, the `Full run` lines, and `#### Deviations` (with
-  the `Inline fix, cycle N` entries: changes of the spec writer at Artur's request). An old
-  plan keeps its Deviations in a plan-wide `## Deviations`: Read only the entries of the
-  cycle steps there.
+  the `Inline fix, cycle N` entries: changes of the spec writer at Artur's request).
 - The ACs of the cycle: Grep `^\*   \*\*AC(<numbers of the Spec: line>)` in spec.md, and the
   rows of the cycle steps under `## Acceptance Criteria Map` in plan.md.
 - The spec sections of the `Spec:` line of the cycle: Grep each heading in spec.md, and
@@ -95,9 +94,8 @@ Read a full file only for a reference that points outside these parts.
 - Full run, per test area (`backend`, `frontend`): run `pwsh .claude/tree-id.ps1 -Repo
   <repo path> -Area <area>`. When the ID equals a `Full run <area>:` line of plan.md, the
   executor tested this code: do not run that area again, and run only the tests that you
-  doubt. Otherwise run the full commands of that area (`CLAUDE.md`, **Build and Test**). An
-  old plan with `Full run: tree` lines compares the whole tree (no `-Area`). Use the shell
-  only for: build, test, git diff/log, `pwsh scripts/verify-stack.ps1 up|reset|stop`,
+  doubt. Otherwise run the full commands of that area (`CLAUDE.md`, **Build and Test**). Use
+  the shell only for: build, test, git diff/log, `pwsh scripts/verify-stack.ps1 up|reset|stop`,
   `pwsh .claude/tree-id.ps1`, and `pwsh .claude/check-review-routing.ps1`.
 - Checkpoint review: on a `checkpoint <x>` message, review `git diff <base tree>
   <checkpoint tree>` for the design, the rules, and the plan. Run no tests. Add the
@@ -111,23 +109,27 @@ Read a full file only for a reference that points outside these parts.
   run, not a code change.
 - Each new route flow has route flow tests (`frontend-angular.md`, **Tests**). A missing
   one is a MAJOR [CODE] finding.
-- For a UI feature in a later round of a cycle: run only the flows that the diff since
-  `Reviewed tree:` touches and the flows of the open findings, with their layout checks,
-  on the slot (`up` starts a stopped slot with its data). The next two bullets describe
-  round 1.
-- For a UI feature: the browser check list has a `pass` or `fail` line for every flow.
-  A missing or partial log is a MAJOR [CODE] finding. Then start a clean isolated stack:
-  run `pwsh scripts/verify-stack.ps1 reset`, then `up`, because data that earlier users
-  left (moved cards, deleted rows, an old seed) changes the expected results. On the app
-  page, run `localStorage.clear(); sessionStorage.clear(); location.reload()` with the
+- Browser scope (UI feature): never run every flow of the browser check list again. The
+  executor ran the list, and you check its log. You run only the flows that the next two
+  bullets name, in Chrome (Claude in Chrome); do not trust the executor's log for them.
+- For a UI feature in a later round of a cycle: run the flows of the open findings and a
+  few edge flows of the views that the diff since `Reviewed tree:` touches, with their
+  layout checks, on the slot (`up` starts a stopped slot with its data). The next bullet
+  describes round 1.
+- For a UI feature, round 1: the browser check list has a `pass` or `fail` line for every
+  flow. A missing or partial log is a MAJOR [CODE] finding. Then start a clean isolated
+  stack: run `pwsh scripts/verify-stack.ps1 reset`, then `up`, because data that earlier
+  users left (moved cards, deleted rows, an old seed) changes the expected results. On the
+  app page, run `localStorage.clear(); sessionStorage.clear(); location.reload()` with the
   JavaScript tool: it clears only the app origin, and the sign-in session stays. Then run
-  the flows yourself in Chrome (Claude in Chrome); do not trust the executor's log.
-  Also try a few flows outside the list (back navigation, an undo, a double click, a long
-  input). The browser writes only to the isolated stack; this does not break the "no
-  repo changes" rule. When the round is done, run `pwsh scripts/verify-stack.ps1 stop`:
-  it frees the memory and keeps the data. `up` starts it again for Artur's test and `/fix`.
-  Give the app URL and that `up` command in the report.
-- Layout checks (UI feature): look at each flow of the list in the browser in light mode
+  only: the flows with a `fail` line in the executor's log, the flows of the open findings
+  (checkpoint findings too), and a few edge flows outside the list (back navigation, an
+  undo, a double click, a long input). The browser writes only to the isolated stack;
+  this does not break the "no repo changes" rule. When the round is done, run
+  `pwsh scripts/verify-stack.ps1 stop`: it frees the memory and keeps the data. `up`
+  starts it again for Artur's test and `/fix`. Give the app URL and that `up` command in
+  the report.
+- Layout checks (UI feature): look at the views of each flow that you run in the browser in light mode
   at 1280 x 600 and in dark mode at full HD (a flow that names other sizes gets those).
   Save no screenshot files. Use the `zoom` action for a detail (a chip, a border, a
   radius). Check each view:
