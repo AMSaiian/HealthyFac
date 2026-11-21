@@ -2,12 +2,14 @@ using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Shared.Domain.Time;
@@ -81,7 +83,8 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
     OwnEmployeeResolver ownEmployee,
     DayScheduleReader reader,
     ICurrentUserProvider currentUser,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<ChangeWorkOrderStatusRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
@@ -89,26 +92,26 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
     private readonly DayScheduleReader _reader = reader;
     private readonly ICurrentUserProvider _currentUser = currentUser;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         ChangeWorkOrderStatusRequest request,
         CancellationToken cancellationToken
     )
     {
-        if (request.Status == WorkOrderStatus.Completed)
-        {
-            await _dbContext.RunInTransactionAsync(
+        var change = request.Status == WorkOrderStatus.Completed
+            ? await _dbContext.RunInTransactionAsync(
                 token => ChangeAsync(request, token),
                 IsolationLevel.Serializable,
-                cancellationToken);
-
-            return;
-        }
-
-        await ChangeAsync(request, cancellationToken);
+                cancellationToken)
+            : await ChangeAsync(request, cancellationToken);
+        _notifier.PushStatusChange(request.CompanyId, change);
     }
 
-    private async Task ChangeAsync(ChangeWorkOrderStatusRequest request, CancellationToken cancellationToken)
+    private async Task<WorkOrderStatusChange> ChangeAsync(
+        ChangeWorkOrderStatusRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var ownEmployeeId = request.Scope == AccessScope.Own
             ? await _ownEmployee.FindIdAsync(cancellationToken)
@@ -130,9 +133,11 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
         var changedOrders = new List<WorkOrder> { workOrder };
         var previousRevisions = new Dictionary<Guid, int> { [workOrder.Id] = previousRevision };
 
+        IReadOnlyList<WorkOrderSlideMove> slideMoves = [];
         if (request.Status == WorkOrderStatus.Completed)
         {
-            await SlideAsync(request, workOrder, current, changedOrders, previousRevisions, cancellationToken);
+            slideMoves = await SlideAsync(
+                request, workOrder, current, changedOrders, previousRevisions, cancellationToken);
         }
 
         foreach (var changedOrder in changedOrders)
@@ -149,6 +154,14 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
+
+        return new WorkOrderStatusChange
+        {
+            WorkOrderId = workOrder.Id,
+            Title = workOrder.Title,
+            Status = request.Status,
+            SlideMoves = slideMoves,
+        };
     }
 
     private static void EnsureAllowed(
@@ -173,7 +186,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
         }
     }
 
-    private async Task SlideAsync(
+    private async Task<IReadOnlyList<WorkOrderSlideMove>> SlideAsync(
         ChangeWorkOrderStatusRequest request,
         WorkOrder completed,
         WorkOrderHistory previous,
@@ -220,16 +233,19 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
             shifts.Resolve(date, date).Single(),
             zone);
 
+        var assigneeUserId = moves.Count == 0
+            ? null
+            : await _dbContext.FindIdentityUserIdAsync(assigneeId, cancellationToken);
+        var slideMoves = new List<WorkOrderSlideMove>();
         foreach (var move in moves)
         {
             var order = others.Single(candidate => candidate.Id == move.WorkOrderId);
             previousRevisions[order.Id] = order.CurrentRevision;
+            DateTime? newStartLocal = null;
             if (move.NewStartUtc is { } newStartUtc)
             {
-                order.Move(
-                    assigneeId,
-                    TimeZoneInfo.ConvertTimeFromUtc(newStartUtc, zone),
-                    newStartUtc);
+                newStartLocal = TimeZoneInfo.ConvertTimeFromUtc(newStartUtc, zone);
+                order.Move(assigneeId, newStartLocal.Value, newStartUtc);
             }
             else
             {
@@ -237,7 +253,17 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
             }
 
             changedOrders.Add(order);
+            slideMoves.Add(
+                new WorkOrderSlideMove
+                {
+                    WorkOrderId = order.Id,
+                    Title = order.Title,
+                    AssigneeUserId = assigneeUserId,
+                    NewStartLocal = newStartLocal,
+                });
         }
+
+        return slideMoves;
     }
 
     private static SlideWorkOrder ToSlideWorkOrder(WorkOrder order) =>

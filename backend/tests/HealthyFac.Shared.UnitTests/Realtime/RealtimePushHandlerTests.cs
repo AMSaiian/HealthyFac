@@ -21,9 +21,15 @@ public sealed class RealtimePushHandlerTests
         await fixture.HandleAsync(RealtimePushHandlerTestData.UserPush());
 
         var measurement = pushes.GetMeasurementSnapshot().Should().ContainSingle().Subject;
+        var duration = durations.GetMeasurementSnapshot().Should().ContainSingle().Subject;
+
         fixture.Client.SendCount.Should().Be(expected: 4);
         fixture.Logger.Collector.GetSnapshot().Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
+
         measurement.Tags[key: "realtime.result"].Should().Be(expected: "failed");
+
+        duration.Tags[key: "realtime.result"].Should().Be(expected: "failed");
+        duration.Value.Should().BeGreaterThanOrEqualTo(RealtimePushHandlerTestData.MinimumRetrySeconds);
     }
 
     [Fact]
@@ -43,10 +49,15 @@ public sealed class RealtimePushHandlerTests
         await fixture.HandleAsync(RealtimePushHandlerTestData.UserPush());
 
         var measurement = pushes.GetMeasurementSnapshot().Should().ContainSingle().Subject;
+        var duration = durations.GetMeasurementSnapshot().Should().ContainSingle().Subject;
+
         fixture.Client.SendCount.Should().Be(expected: 0);
         attempts.Count.Should().Be(expected: 1);
         fixture.Logger.Collector.GetSnapshot().Should().BeEmpty();
+
         measurement.Tags[key: "realtime.result"].Should().Be(expected: "dropped");
+
+        duration.Tags[key: "realtime.result"].Should().Be(expected: "dropped");
     }
 
     [Fact]
@@ -60,16 +71,19 @@ public sealed class RealtimePushHandlerTests
 
         var measurement = pushes.GetMeasurementSnapshot().Should().ContainSingle().Subject;
         var duration = durations.GetMeasurementSnapshot().Should().ContainSingle().Subject;
+
         fixture.Client.SendCount.Should().Be(expected: 1);
-        duration.Tags[key: "realtime.target"].Should().Be(expected: "shiftChanged");
-        duration.Tags[key: "realtime.result"].Should().Be(expected: "sent");
-        duration.Tags.Values.Select(value => value?.ToString())
-            .Should()
-            .NotContain(value => value!.Contains(RealtimePushHandlerTestData.UserId.ToString()));
         fixture.Clients.UserCalls.Should().Equal(RealtimePushHandlerTestData.UserId.ToString());
+
         measurement.Tags[key: "realtime.target"].Should().Be(expected: "shiftChanged");
         measurement.Tags[key: "realtime.result"].Should().Be(expected: "sent");
         measurement.Tags.Values.Select(value => value?.ToString())
+            .Should()
+            .NotContain(value => value!.Contains(RealtimePushHandlerTestData.UserId.ToString()));
+
+        duration.Tags[key: "realtime.target"].Should().Be(expected: "shiftChanged");
+        duration.Tags[key: "realtime.result"].Should().Be(expected: "sent");
+        duration.Tags.Values.Select(value => value?.ToString())
             .Should()
             .NotContain(value => value!.Contains(RealtimePushHandlerTestData.UserId.ToString()));
     }

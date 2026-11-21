@@ -4,6 +4,7 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -55,17 +56,20 @@ public sealed class DeactivateEmployeePreHandlerCheck(ICurrentUserProvider curre
 /// <param name="currentUser">Reads the user who deactivates.</param>
 /// <param name="outbox">Queues the message for the Auth service.</param>
 /// <param name="timeProvider">Provides the time of the deactivation.</param>
+/// <param name="notifier">Adds the end of the web sessions of the user after the save.</param>
 public sealed class DeactivateEmployeeRequestHandler(
     ICoreDbContext dbContext,
     ICurrentUserProvider currentUser,
     IOutbox outbox,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<DeactivateEmployeeRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly ICurrentUserProvider _currentUser = currentUser;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         DeactivateEmployeeRequest request,
@@ -105,6 +109,12 @@ public sealed class DeactivateEmployeeRequestHandler(
         catch (DbUpdateConcurrencyException exception)
         {
             throw new ConflictException(EmployeeProvisioningErrors.Rejections.EmployeeChanged, exception);
+        }
+
+        if (employee.IdentityUserId is { } identityUserId)
+        {
+            _notifier.AddSessionEnd(identityUserId);
+            _notifier.Push();
         }
     }
 }

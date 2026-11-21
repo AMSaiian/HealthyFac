@@ -1,11 +1,13 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -69,13 +71,15 @@ public sealed class ChangeMachineStatePreHandlerCheck(ICurrentUserProvider curre
 public sealed class ChangeMachineStateRequestHandler(
     ICoreDbContext dbContext,
     IOutbox outbox,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 )
     : RequestHandler<ChangeMachineStateRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         ChangeMachineStateRequest request,
@@ -110,5 +114,7 @@ public sealed class ChangeMachineStateRequestHandler(
         {
             throw new ConflictException(MachineErrors.MachineChanged, exception);
         }
+
+        _notifier.PushMachinesHint(request.CompanyId);
     }
 }

@@ -57,7 +57,8 @@ public sealed class BackgroundQueueTests
         queue.Enqueue(new QueueTestItem { Number = 1 }, default(ActivityContext));
         await log.Started.Task.WaitAsync(BackgroundQueueTestHost.Wait, TestContext.Current.CancellationToken);
 
-        queue.Enqueue(new QueueTestItem { Number = 2 }, default(ActivityContext));
+        await Task.Run(() => queue.Enqueue(new QueueTestItem { Number = 2 }, default(ActivityContext)))
+            .WaitAsync(BackgroundQueueTestHost.EnqueueLimit, TestContext.Current.CancellationToken);
         var count = provider.GetRequiredService<BackgroundQueue<QueueTestItem>>().Count;
         log.Gate.SetResult();
         await BackgroundQueueTestHost.StopAsync(provider, TestContext.Current.CancellationToken);

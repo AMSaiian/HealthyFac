@@ -5,6 +5,7 @@ using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Email;
@@ -40,6 +41,8 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
     public ControllableTimeProvider Clock { get; } = new();
 
     public TransactionCounter Transactions { get; } = new();
+
+    public RetryOnceInterceptor RetryOnce { get; } = new();
 
     public IServiceScopeFactory ScopeFactory =>
         new InitializationActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
@@ -81,7 +84,8 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
         services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
-        services.ConfigureDbContext<CoreDbContext>(options => options.AddInterceptors(SaveGate, Transactions));
+        services.ConfigureDbContext<CoreDbContext>(options =>
+            options.AddInterceptors(SaveGate, Transactions, RetryOnce));
         services.AddSingleton<IEmailSender>(EmailSender);
         var otherHostedServices = services
             .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
@@ -110,6 +114,7 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         await _resetter.ResetAsync();
         EmailSender.Reset();
         RealtimeQueue.Clear();
+        RetryOnce.Disarm();
 
         using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();

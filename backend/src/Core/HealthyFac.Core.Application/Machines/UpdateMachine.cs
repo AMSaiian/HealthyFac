@@ -2,12 +2,14 @@ using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using HealthyFac.Core.Application.Companies;
 using HealthyFac.Core.Application.Machines.States;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -91,7 +93,8 @@ public sealed class UpdateMachineRequestHandler(
     ICoreDbContext dbContext,
     IOutbox outbox,
     TimeProvider timeProvider,
-    CompanyZoneReader companyZoneReader
+    CompanyZoneReader companyZoneReader,
+    IRealtimeNotifier notifier
 )
     : RequestHandler<UpdateMachineRequest>
 {
@@ -99,6 +102,7 @@ public sealed class UpdateMachineRequestHandler(
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly CompanyZoneReader _companyZoneReader = companyZoneReader;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         UpdateMachineRequest request,
@@ -119,7 +123,8 @@ public sealed class UpdateMachineRequestHandler(
         var isRenamed = machine.Name != request.Name;
         var isGoLiveChanged = machine.ExpectedGoLiveOn != request.ExpectedGoLiveOn;
         machine.Update(request.Name, request.SerialNumber, request.Description, request.ExpectedGoLiveOn);
-        MachineStateChanges.Apply(_dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
+        var isStateChanged = MachineStateChanges.Apply(
+            _dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
 
         var isSerialNumberTaken = await _dbContext.Machines.AnyAsync(
             candidate => candidate.CompanyId == machine.CompanyId
@@ -173,6 +178,11 @@ public sealed class UpdateMachineRequestHandler(
         catch (DbUpdateConcurrencyException exception)
         {
             throw new ConflictException(MachineErrors.MachineChanged, exception);
+        }
+
+        if (isStateChanged)
+        {
+            _notifier.PushMachinesHint(request.CompanyId);
         }
     }
 }

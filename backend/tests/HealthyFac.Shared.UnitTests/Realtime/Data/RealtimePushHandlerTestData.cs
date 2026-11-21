@@ -184,6 +184,9 @@ public sealed class PushHandlerFixture : IDisposable
 
 public static class RealtimePushHandlerTestData
 {
+    /// <summary>The three retry delays of the push without jitter: 200, 400, and 800 milliseconds.</summary>
+    public const double MinimumRetrySeconds = 1.4;
+
     public static readonly DateTimeOffset Now = new(
         year: 2026, month: 11, day: 20, hour: 10, minute: 0, second: 0, TimeSpan.Zero);
 

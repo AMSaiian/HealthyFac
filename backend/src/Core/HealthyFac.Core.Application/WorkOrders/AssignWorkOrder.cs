@@ -1,10 +1,12 @@
 using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -58,24 +60,32 @@ public sealed class AssignWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 /// </summary>
 /// <param name="dbContext">Loads and saves the work order.</param>
 /// <param name="scheduleChecks">Checks the slot.</param>
-public sealed class AssignWorkOrderRequestHandler(ICoreDbContext dbContext, ScheduleChecks scheduleChecks)
-    : RequestHandler<AssignWorkOrderRequest>
+public sealed class AssignWorkOrderRequestHandler(
+    ICoreDbContext dbContext,
+    ScheduleChecks scheduleChecks,
+    IRealtimeNotifier notifier
+) : RequestHandler<AssignWorkOrderRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly ScheduleChecks _scheduleChecks = scheduleChecks;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         AssignWorkOrderRequest request,
         CancellationToken cancellationToken
     )
     {
-        await _dbContext.RunInTransactionAsync(
+        var change = await _dbContext.RunInTransactionAsync(
             token => AssignAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+        _notifier.PushAssignmentChange(request.CompanyId, change);
     }
 
-    private async Task AssignAsync(AssignWorkOrderRequest request, CancellationToken cancellationToken)
+    private async Task<WorkOrderAssignmentChange> AssignAsync(
+        AssignWorkOrderRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var workOrder = await _dbContext.LoadForScheduleChangeAsync(
             request.CompanyId,
@@ -107,5 +117,16 @@ public sealed class AssignWorkOrderRequestHandler(ICoreDbContext dbContext, Sche
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
+
+        var assigneeUserId = await _dbContext.FindIdentityUserIdAsync(request.AssigneeId, cancellationToken);
+
+        return new WorkOrderAssignmentChange
+        {
+            WorkOrderId = workOrder.Id,
+            Title = workOrder.Title,
+            NewAssigneeId = request.AssigneeId,
+            NewAssigneeUserId = assigneeUserId,
+            PlannedStartLocal = request.PlannedStartLocal,
+        };
     }
 }

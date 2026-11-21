@@ -1,9 +1,11 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -48,10 +50,11 @@ public sealed class UnassignWorkOrderPreHandlerCheck(ICurrentUserProvider curren
 /// the slot, so it needs no schedule rule and one plain save.
 /// </summary>
 /// <param name="dbContext">Loads and saves the work order.</param>
-public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext)
+public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext, IRealtimeNotifier notifier)
     : RequestHandler<UnassignWorkOrderRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         UnassignWorkOrderRequest request,
@@ -68,6 +71,10 @@ public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext)
             throw new UnprocessableException(WorkOrderErrors.Rejections.NotScheduled);
         }
 
+        var oldAssigneeId = workOrder.Current.AssigneeId;
+        var oldAssigneeUserId = oldAssigneeId is { } oldId
+            ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
+            : null;
         var previousRevision = workOrder.CurrentRevision;
         workOrder.Unassign();
         _dbContext.AddNewHistoryRows(workOrder, previousRevision);
@@ -80,5 +87,15 @@ public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext)
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
+
+        _notifier.PushAssignmentChange(
+            request.CompanyId,
+            new WorkOrderAssignmentChange
+            {
+                WorkOrderId = workOrder.Id,
+                Title = workOrder.Title,
+                OldAssigneeId = oldAssigneeId,
+                OldAssigneeUserId = oldAssigneeUserId,
+            });
     }
 }
