@@ -1,9 +1,11 @@
 using System.Data;
 using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -91,11 +93,15 @@ public sealed class CreateWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 /// </summary>
 /// <param name="dbContext">Saves the work order.</param>
 /// <param name="creation">Runs the create rules and adds the work order.</param>
-public sealed class CreateWorkOrderRequestHandler(ICoreDbContext dbContext, WorkOrderCreation creation)
-    : IRequestHandler<CreateWorkOrderRequest, CreateWorkOrderResponse>
+public sealed class CreateWorkOrderRequestHandler(
+    ICoreDbContext dbContext,
+    WorkOrderCreation creation,
+    IRealtimeNotifier notifier
+) : IRequestHandler<CreateWorkOrderRequest, CreateWorkOrderResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly WorkOrderCreation _creation = creation;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     public async Task<CreateWorkOrderResponse> HandleAsync(
         CreateWorkOrderRequest request,
@@ -110,6 +116,7 @@ public sealed class CreateWorkOrderRequestHandler(ICoreDbContext dbContext, Work
                 IsolationLevel.Serializable,
                 cancellationToken)
             : await CreateAndSaveAsync(request, cancellationToken);
+        _notifier.PushWorkOrdersHint(request.CompanyId);
 
         return new CreateWorkOrderResponse { Id = workOrderId };
     }

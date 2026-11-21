@@ -1,0 +1,92 @@
+<p-overlaybadge
+  severity="danger"
+  badgeSize="small"
+  styleClass="hf-bell-badge"
+  [value]="unreadCount()"
+  [badgeDisabled]="unreadCount() === 0"
+>
+  <button
+    pButton
+    [pTooltip]="'NOTIFICATIONS.BELL.TITLE' | translate"
+    tooltipPosition="bottom"
+    type="button"
+    iconOnly
+    severity="secondary"
+    [text]="true"
+    [attr.aria-label]="'NOTIFICATIONS.BELL.TITLE' | translate"
+    (click)="popover().toggle($event)"
+  >
+    <i class="pi pi-bell"></i>
+  </button>
+</p-overlaybadge>
+<p-popover
+  appendTo="body"
+  (onShow)="opened.emit()"
+  (onHide)="closed.emit()"
+>
+  <div class="flex max-h-96 w-96 flex-col gap-2">
+    <div class="flex flex-none items-center justify-between gap-2">
+      <span class="font-semibold">{{ 'NOTIFICATIONS.BELL.TITLE' | translate }}</span>
+      <button
+        pButton
+        [pTooltip]="'NOTIFICATIONS.BELL.MARK_ALL_AS_READ' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        [disabled]="unreadCount() === 0"
+        (click)="markAllAsRead.emit()"
+      >
+        <i class="pi pi-check-circle"></i>
+        {{ 'NOTIFICATIONS.BELL.MARK_ALL_AS_READ' | translate }}
+      </button>
+    </div>
+    <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+      @for (item of items(); track item.entry.notification.notificationId) {
+        <p-message
+          class="flex-none"
+          icon="pi pi-bell"
+          [severity]="messageSeverityOf(item.entry)"
+        >
+          <div class="flex w-full items-start gap-2">
+            <div class="flex min-w-0 flex-1 flex-col">
+              <span class="break-words">{{ item.text }}</span>
+              <span class="text-sm text-muted-color">{{ item.entry.notification.occurredAt | localDateTime }}</span>
+            </div>
+            @if (hasJump(item.entry)) {
+              <button
+                pButton
+                [pTooltip]="'NOTIFICATIONS.JUMP' | translate"
+                tooltipPosition="bottom"
+                type="button"
+                iconOnly
+                severity="secondary"
+                [text]="true"
+                [attr.aria-label]="'NOTIFICATIONS.JUMP' | translate"
+                (click)="jump.emit(item.entry)"
+              >
+                <i class="pi pi-arrow-right"></i>
+              </button>
+            }
+            @if (!item.entry.isRead) {
+              <button
+                pButton
+                [pTooltip]="'NOTIFICATIONS.MARK_AS_READ' | translate"
+                tooltipPosition="bottom"
+                type="button"
+                iconOnly
+                severity="secondary"
+                [text]="true"
+                [attr.aria-label]="'NOTIFICATIONS.MARK_AS_READ' | translate"
+                (click)="markAsRead.emit(item.entry.notification.notificationId)"
+              >
+                <i class="pi pi-check"></i>
+              </button>
+            }
+          </div>
+        </p-message>
+      } @empty {
+        <span class="p-2 text-muted-color">{{ 'NOTIFICATIONS.BELL.EMPTY' | translate }}</span>
+      }
+    </div>
+  </div>
+</p-popover>

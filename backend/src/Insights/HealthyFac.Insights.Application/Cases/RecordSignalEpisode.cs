@@ -1,6 +1,8 @@
 using HealthyFac.Insights.Application.Agents.Runs;
+using HealthyFac.Insights.Application.Realtime;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Telemetry.Messaging.Signals;
@@ -34,15 +36,18 @@ public sealed class RecordSignalEpisodePreHandlerCheck : PassThroughPreHandlerCh
 /// <param name="dbContext">Loads and changes the signals and the cases.</param>
 /// <param name="runQueue">Queues the triage run.</param>
 /// <param name="timeProvider">Provides the time of the case and the run.</param>
+/// <param name="notifier">Adds the case events after the save. The inbox runner pushes them after the commit.</param>
 public sealed class RecordSignalEpisodeRequestHandler(
     IInsightsDbContext dbContext,
     AgentRunQueue runQueue,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<SignalEpisodeChanged>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly AgentRunQueue _runQueue = runQueue;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override Task HandleInternalAsync(SignalEpisodeChanged request, CancellationToken cancellationToken) =>
         RecordAsync(request, cancellationToken);
@@ -92,13 +97,15 @@ public sealed class RecordSignalEpisodeRequestHandler(
 
         var caseOfSignal = await PlaceAsync(signal, isNewSignal, hasBeenDismissed, cancellationToken);
 
+        var isResolved = false;
+
         if (signal.State == SignalState.Resolved && signal.CaseId is { } caseId)
         {
             var resolvedCase = await _dbContext.MaintenanceCases
                 .Include(candidate => candidate.Signals)
                 .SingleAsync(candidate => candidate.Id == caseId, cancellationToken);
             MarkCaseTouched(resolvedCase);
-            resolvedCase.ResolveIfDone(now);
+            isResolved = resolvedCase.ResolveIfDone(now);
         }
 
         if (signal.IsOpen && wasUncoveredOrDismissed && caseOfSignal is { } openCase)
@@ -106,7 +113,22 @@ public sealed class RecordSignalEpisodeRequestHandler(
             await _runQueue.QueueTriageAsync(openCase.Id, now, cancellationToken);
         }
 
+        var isNewCase = caseOfSignal is not null && _dbContext.Entry(caseOfSignal).State == EntityState.Added;
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (isNewCase)
+        {
+            _notifier.AddToGroup(
+                message.CompanyId,
+                RealtimeNotificationKind.MaintenanceCaseOpened,
+                new MaintenanceCaseOpenedData { CaseId = caseOfSignal!.Id, Severity = signal.Severity },
+                isActorSkipped: false);
+        }
+
+        if (isNewCase || isResolved)
+        {
+            _notifier.AddCasesHint(message.CompanyId, signal.CaseId!.Value);
+        }
     }
 
     private async Task<MaintenanceCase?> PlaceAsync(

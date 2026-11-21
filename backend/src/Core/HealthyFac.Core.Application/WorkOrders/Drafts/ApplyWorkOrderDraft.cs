@@ -1,6 +1,7 @@
 using System.Data;
 using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Messaging.WorkOrders;
@@ -8,6 +9,7 @@ using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -108,13 +110,15 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
     ICoreDbContext dbContext,
     WorkOrderCreation creation,
     IOutbox outbox,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : IRequestHandler<ApplyWorkOrderDraftRequest, ApplyWorkOrderDraftResponse>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly WorkOrderCreation _creation = creation;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     public async Task<ApplyWorkOrderDraftResponse> HandleAsync(
         ApplyWorkOrderDraftRequest request,
@@ -129,6 +133,7 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
                     IsolationLevel.Serializable,
                     cancellationToken)
                 : await ApplyAsync(request, cancellationToken);
+            _notifier.PushWorkOrdersHint(request.CompanyId);
 
             return new ApplyWorkOrderDraftResponse { WorkOrderId = workOrderId };
         }

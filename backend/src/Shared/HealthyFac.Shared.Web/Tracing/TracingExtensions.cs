@@ -47,6 +47,7 @@ public static class TracingExtensions
                         .AddSource(ObservabilityConstants.Sources.Messaging)
                         .AddSource(ObservabilityConstants.Sources.Rendering)
                         .AddSource(ObservabilityConstants.Sources.Email)
+                        .AddSource(ObservabilityConstants.Sources.Realtime)
                         .AddSource(MailKit.Telemetry.SmtpClient.ActivitySourceName)
                         .AddSource(options.AdditionalSources)
                         .AddAspNetCoreInstrumentation()

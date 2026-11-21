@@ -1,8 +1,10 @@
 using FluentValidation;
+using HealthyFac.Insights.Application.Realtime;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -51,11 +53,16 @@ public sealed class CloseCaseByUserPreHandlerCheck(ICurrentUserProvider currentU
 /// </summary>
 /// <param name="dbContext">Loads and saves the case.</param>
 /// <param name="timeProvider">Provides the close time.</param>
-public sealed class CloseCaseByUserRequestHandler(IInsightsDbContext dbContext, TimeProvider timeProvider)
-    : RequestHandler<CloseCaseByUserRequest>
+/// <param name="notifier">Adds the case hint after the save.</param>
+public sealed class CloseCaseByUserRequestHandler(
+    IInsightsDbContext dbContext,
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
+) : RequestHandler<CloseCaseByUserRequest>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         CloseCaseByUserRequest request,
@@ -76,5 +83,8 @@ public sealed class CloseCaseByUserRequestHandler(IInsightsDbContext dbContext, 
 
         maintenanceCase.Close(request.Reason, _timeProvider.GetUtcNow().UtcDateTime);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _notifier.AddCasesHint(request.CompanyId, maintenanceCase.Id);
+        _notifier.Push();
     }
 }

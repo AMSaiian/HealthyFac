@@ -1,10 +1,12 @@
 using HealthyFac.Insights.Application.Agents.Tools.Writes;
+using HealthyFac.Insights.Application.Realtime;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Insights.Application.Agents.Runs;
@@ -24,17 +26,20 @@ namespace HealthyFac.Insights.Application.Agents.Runs;
 /// <param name="outbox">Stores the proposal messages with the changes.</param>
 /// <param name="timeProvider">Provides the end time of the run.</param>
 /// <param name="queue">Queues the triage run after a case change.</param>
+/// <param name="notifier">Adds the case hint after each save that ends a run. The caller pushes it.</param>
 public sealed class RunCommit(
     IInsightsDbContext dbContext,
     IOutbox outbox,
     TimeProvider timeProvider,
-    AgentRunQueue queue
+    AgentRunQueue queue,
+    IRealtimeNotifier notifier
 )
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly AgentRunQueue _queue = queue;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     /// <summary>
     /// Commits the buffered actions of the run and completes it.
@@ -73,6 +78,8 @@ public sealed class RunCommit(
 
         run.Complete(now, verdict, verdictReason, inputTokens, outputTokens);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _notifier.AddCasesHint(maintenanceCase.CompanyId, maintenanceCase.Id);
     }
 
     /// <summary>
@@ -87,10 +94,14 @@ public sealed class RunCommit(
     {
         var run = await DiscardAndFailAsync(runId, errorCode, cancellationToken);
 
-        if (run is not null)
+        if (run is null)
         {
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
         }
+
+        var companyId = await FindCompanyIdAsync(run, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        AddCasesHint(companyId, run);
     }
 
     /// <summary>
@@ -116,10 +127,14 @@ public sealed class RunCommit(
         var run = await DiscardAndFailAsync(
             runId, errorCode, cancellationToken, verdictReason, inputTokens, outputTokens);
 
-        if (run is not null)
+        if (run is null)
         {
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            return;
         }
+
+        var companyId = await FindCompanyIdAsync(run, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        AddCasesHint(companyId, run);
     }
 
     /// <summary>
@@ -151,6 +166,24 @@ public sealed class RunCommit(
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _notifier.AddCasesHint(maintenanceCase.CompanyId, caseId);
+    }
+
+    private async Task<Guid?> FindCompanyIdAsync(AgentRun run, CancellationToken cancellationToken) =>
+        run.CaseId is { } caseId
+            ? await _dbContext.MaintenanceCases
+                .Where(candidate => candidate.Id == caseId)
+                .Select(candidate => (Guid?)candidate.CompanyId)
+                .SingleOrDefaultAsync(cancellationToken)
+            : null;
+
+    private void AddCasesHint(Guid? companyId, AgentRun run)
+    {
+        if (companyId is { } company && run.CaseId is { } caseId)
+        {
+            _notifier.AddCasesHint(company, caseId);
+        }
     }
 
     private async Task<AgentRun?> DiscardAndFailAsync(

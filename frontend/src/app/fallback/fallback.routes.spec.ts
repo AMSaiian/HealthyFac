@@ -13,6 +13,7 @@ import { APP_ROUTER_FEATURES } from '@app/app-router';
 import { NETWORK_ERROR_PATH, NETWORK_ERROR_URL, NOT_FOUND_URL } from '@shared/http/fallback-urls';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CompanyStore } from '@shared/company/company.store';
 
@@ -44,6 +45,7 @@ function setup(addressBarPath = '/'): {
         ...APP_ROUTER_FEATURES,
       ),
       provideFakePlatformNavigation(),
+      provideFakeRealtimeConnection(),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),

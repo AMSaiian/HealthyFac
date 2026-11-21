@@ -2,10 +2,12 @@ using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.RichText;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
@@ -98,13 +100,15 @@ public sealed class UpdateWorkOrderRequestHandler(
     ICoreDbContext dbContext,
     OwnEmployeeResolver ownEmployee,
     ScheduleChecks scheduleChecks,
-    ICurrentUserProvider currentUser
+    ICurrentUserProvider currentUser,
+    IRealtimeNotifier notifier
 ) : RequestHandler<UpdateWorkOrderRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly OwnEmployeeResolver _ownEmployee = ownEmployee;
     private readonly ScheduleChecks _scheduleChecks = scheduleChecks;
     private readonly ICurrentUserProvider _currentUser = currentUser;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         UpdateWorkOrderRequest request,
@@ -123,20 +127,19 @@ public sealed class UpdateWorkOrderRequestHandler(
                             row.Revision == candidate.CurrentRevision && row.AssigneeId != null),
                     cancellationToken);
 
-        if (isSlotCheckNeeded)
-        {
-            await _dbContext.RunInTransactionAsync(
+        var change = isSlotCheckNeeded
+            ? await _dbContext.RunInTransactionAsync(
                 token => UpdateAsync(request, token),
                 IsolationLevel.Serializable,
-                cancellationToken);
-        }
-        else
-        {
-            await _dbContext.RunInTransactionAsync(token => UpdateAsync(request, token), cancellationToken);
-        }
+                cancellationToken)
+            : await _dbContext.RunInTransactionAsync(token => UpdateAsync(request, token), cancellationToken);
+        _notifier.PushEstimateChange(request.CompanyId, change);
     }
 
-    private async Task UpdateAsync(UpdateWorkOrderRequest request, CancellationToken cancellationToken)
+    private async Task<WorkOrderEstimateChange> UpdateAsync(
+        UpdateWorkOrderRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var ownEmployeeId = request.Scope == AccessScope.Own
             ? await _ownEmployee.FindIdAsync(cancellationToken)
@@ -153,6 +156,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         await EnsureMachineAsync(request, workOrder, cancellationToken);
 
         var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
+        var oldEstimate = workOrder.Estimate;
         if (estimate != workOrder.Estimate)
         {
             await EnsureEstimateAsync(request, workOrder, estimate, cancellationToken);
@@ -168,6 +172,20 @@ public sealed class UpdateWorkOrderRequestHandler(
         _dbContext.WorkOrderFiles.AddRange(
             workOrder.Files.Where(link => _dbContext.Entry(link).State == EntityState.Detached));
         await SaveAsync(cancellationToken);
+
+        var assigneeId = workOrder.Current.AssigneeId;
+        var assigneeUserId = assigneeId is { } assignee && estimate != oldEstimate
+            ? await _dbContext.FindIdentityUserIdAsync(assignee, cancellationToken)
+            : null;
+
+        return new WorkOrderEstimateChange
+        {
+            WorkOrderId = workOrder.Id,
+            Title = workOrder.Title,
+            AssigneeUserId = assigneeUserId,
+            OldEstimate = oldEstimate,
+            NewEstimate = estimate,
+        };
     }
 
     private async Task SaveAsync(CancellationToken cancellationToken)

@@ -68,6 +68,17 @@ public static class InboxFixtureExtensions
             return fixture.Recorder.CallsFor(text);
         }
 
+        public async Task MakeInboxRowDueAsync(Guid messageId)
+        {
+            using var scope = fixture.CreateScope();
+
+            await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>()
+                .InboxMessages
+                .Where(message => message.Id == messageId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(
+                    message => message.NextAttemptOn, InboxTestData.Now));
+        }
+
         public async Task<InboxMessage> ReadInboxRowAsync(Guid messageId)
         {
             using var scope = fixture.CreateScope();

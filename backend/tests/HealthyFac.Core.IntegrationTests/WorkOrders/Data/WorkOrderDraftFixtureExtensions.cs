@@ -53,18 +53,37 @@ public static class WorkOrderDraftFixtureExtensions
         /// <returns>The state of the inbox row after the run.</returns>
         public async Task<InboxRowOutcome> ReceiveWorkOrderDraftThroughInboxAsync(WorkOrderDraftProposed message)
         {
-            var messageId = Guid.CreateVersion7();
             var advisor = KnownActors.ForServiceFlow(ServiceName.Insights, flow: "advisor", message.CompanyId);
+
+            return await fixture.ReceiveThroughInboxAsync(
+                WorkOrderDraftProposed.MessageType,
+                JsonSerializer.Serialize(message, MessagingJsonOptions.Instance),
+                advisor.UserId,
+                message.CompanyId);
+        }
+
+        /// <summary>
+        /// Stores a message as an inbox row of the given actor and lets the real inbox processor handle it, so the
+        /// handler runs with the actor and the company that the inbox restores, and the runner pushes the events
+        /// after the commit.
+        /// </summary>
+        /// <param name="messageType">The stable contract name of the message.</param>
+        /// <param name="payload">The JSON payload of the message.</param>
+        /// <param name="actorUserId">The actor ID of the row.</param>
+        /// <param name="companyId">The company of the row.</param>
+        /// <returns>The state of the inbox row after the run.</returns>
+        public async Task<InboxRowOutcome> ReceiveThroughInboxAsync(
+            string messageType,
+            string payload,
+            Guid actorUserId,
+            Guid companyId
+        )
+        {
+            var messageId = Guid.CreateVersion7();
             using (var scope = fixture.ScopeFactory.CreateScope())
             {
                 await scope.ServiceProvider.GetRequiredService<IInbox>()
-                    .TryAddAsync(
-                        messageId,
-                        WorkOrderDraftProposed.MessageType,
-                        JsonSerializer.Serialize(message, MessagingJsonOptions.Instance),
-                        traceParent: null,
-                        advisor.UserId,
-                        message.CompanyId);
+                    .TryAddAsync(messageId, messageType, payload, traceParent: null, actorUserId, companyId);
             }
 
             var processor = fixture.GetSingleton<IEnumerable<IHostedService>>()

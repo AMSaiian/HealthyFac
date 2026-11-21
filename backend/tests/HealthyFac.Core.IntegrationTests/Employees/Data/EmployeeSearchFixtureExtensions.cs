@@ -22,6 +22,23 @@ public static class EmployeeSearchFixtureExtensions
     {
         public async Task<EmployeeSeed> ArrangeEmployeeAsync(Guid companyId, EmployeeSeedOptions options)
         {
+            var employeeId = await fixture.ArrangeUnprovisionedEmployeeAsync(companyId, options);
+
+            var identityUserId = Guid.CreateVersion7();
+            await fixture.CompleteProvisioningAsync(employeeId, identityUserId);
+            if (options.IsDeactivated)
+            {
+                await fixture.ChangeEmployeeAsync(employeeId, employee => employee.Deactivate());
+            }
+
+            return new EmployeeSeed { EmployeeId = employeeId, IdentityUserId = identityUserId };
+        }
+
+        /// <summary>
+        /// Accepts an invite and stops there, so the employee has no identity user yet.
+        /// </summary>
+        public async Task<Guid> ArrangeUnprovisionedEmployeeAsync(Guid companyId, EmployeeSeedOptions options)
+        {
             var inviteId = await fixture.CreateInviteWithRoleAsync(
                 companyId,
                 options.Email,
@@ -42,14 +59,7 @@ public static class EmployeeSearchFixtureExtensions
                         LastName = options.LastName,
                     });
 
-            var identityUserId = Guid.CreateVersion7();
-            await fixture.CompleteProvisioningAsync(response.EmployeeId, identityUserId);
-            if (options.IsDeactivated)
-            {
-                await fixture.ChangeEmployeeAsync(response.EmployeeId, employee => employee.Deactivate());
-            }
-
-            return new EmployeeSeed { EmployeeId = response.EmployeeId, IdentityUserId = identityUserId };
+            return response.EmployeeId;
         }
 
         public async Task<Guid> CreateInviteWithRoleAsync(

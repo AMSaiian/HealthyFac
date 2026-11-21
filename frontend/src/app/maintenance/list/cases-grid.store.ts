@@ -3,6 +3,10 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { signalStore, withComputed, withMethods, withProps } from '@ngrx/signals';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+import type { Reloadable } from '@shared/actions/with-action-result-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { withGridState } from '@shared/grid/with-grid-state';
 import { createLookup } from '@shared/lookups/create-lookup';
@@ -58,5 +62,8 @@ export const CasesGridStore = signalStore(
       void store._router.navigate([CASES_PATH, id]);
     },
   })),
+  withRealtimeReload<{ cases: Reloadable }>([RealtimeTopic.Cases], (store) => {
+    store.cases.reload();
+  }),
   withStoreDevtools('cases-grid'),
 );

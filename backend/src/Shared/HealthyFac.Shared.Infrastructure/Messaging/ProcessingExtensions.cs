@@ -16,6 +16,7 @@ public static class ProcessingExtensions
         /// work of one message. Call it after <c>AddMessagingTransport</c>, because the publisher uses the Rebus
         /// bus and the processors read the messaging options. It also registers the messaging metrics and the
         /// backlog sampler that feeds their gauges.
+        /// The inbox runner calls the <c>IInboxUnitObserver</c> instances that a feature registers.
         /// </summary>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
         public IServiceCollection AddMessageProcessors()

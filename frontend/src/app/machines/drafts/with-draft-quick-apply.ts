@@ -20,6 +20,7 @@ import {
   EMPTY,
   exhaustMap,
   expand,
+  filter,
   finalize,
   from,
   map,
@@ -27,8 +28,10 @@ import {
   type Observable,
   of,
   pipe,
+  race,
   retry,
   switchMap,
+  take,
   tap,
   throwError,
   timer,
@@ -39,6 +42,8 @@ import { catchError } from 'rxjs/operators';
 import { setFilter } from '@shared/grid/requests/grid-filters';
 import { type KeysetPosition, SortDirection } from '@shared/grid/requests/grid-request';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { RealtimeConnection } from '@shared/realtime/realtime-connection';
 
 import {
   type AttemptDraftGroup,
@@ -103,7 +108,8 @@ export interface QuickApplyState {
 /**
  * Telemetry learns of a new machine through a message from Core, so its endpoints answer `404` for a short time
  * after the machine create. The first Telemetry call of a step asks again with a doubling wait (about 15 seconds in
- * all), then the step fails with `MachineNotReadyError`. The drafts stay pending.
+ * all), then the step fails with `MachineNotReadyError`. The drafts stay pending. A `definitionDrafts` hint for the
+ * attempt or the machine of the apply ends a wait at once, and the next try runs.
  */
 class MachineNotReadyError extends Error {}
 
@@ -121,13 +127,21 @@ function isConflictError(error: unknown): boolean {
   return error instanceof HttpErrorResponse && error.status === HttpStatusCode.Conflict;
 }
 
-/** Asks again on `404` (the new machine may not have reached Telemetry yet), then fails with `MachineNotReadyError`. */
-function retryWhileMachineUnknown<T>(): MonoTypeOperatorFunction<T> {
+/** The wait before a try: the doubling delay, or the next hint of `wake$`, whichever comes first. */
+function machineSyncWait$(retryCount: number, wake$: Observable<unknown>): Observable<unknown> {
+  return race(timer(machineSyncDelayMs(retryCount)), wake$);
+}
+
+/**
+ * Asks again on `404` (the new machine may not have reached Telemetry yet), then fails with `MachineNotReadyError`.
+ * `wake$` ends a wait early.
+ */
+function retryWhileMachineUnknown<T>(wake$: Observable<unknown>): MonoTypeOperatorFunction<T> {
   return pipe(
     retry({
       count: MACHINE_SYNC_RETRY_COUNT,
       delay: (error: unknown, retryCount: number) =>
-        isNotFoundError(error) ? timer(machineSyncDelayMs(retryCount)) : throwError(() => error),
+        isNotFoundError(error) ? machineSyncWait$(retryCount, wake$) : throwError(() => error),
     }),
     catchError((error: unknown) => throwError(() => (isNotFoundError(error) ? new MachineNotReadyError() : error))),
   );
@@ -224,6 +238,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
       _quickMessages: MessageService;
       _quickTranslate: TranslateService;
       _quickUnitsApi: MetricUnitsApi;
+      _quickRealtime: RealtimeConnection;
       units: ResourceRef<MetricUnitsResponse | undefined>;
       isQuickBusy: Signal<boolean>;
       quickReasons: Signal<Readonly<Record<string, string | null>>>;
@@ -253,6 +268,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
       _quickMessages: inject(MessageService),
       _quickTranslate: inject(TranslateService),
       _quickUnitsApi: inject(MetricUnitsApi),
+      _quickRealtime: inject(RealtimeConnection),
     })),
     withProps((store) => ({
       units: rxResource({ stream: () => store._quickUnitsApi.getUnits() }),
@@ -285,6 +301,18 @@ export function withDraftQuickApply(): SignalStoreFeature<
     }),
     withMethods((store) => {
       const options = skipErrorToast();
+
+      /** The next `definitionDrafts` hint for the attempt or the machine of the apply. */
+      const wakeOnHint$ = (ids: { readonly attemptId?: string; readonly machineId?: string }): Observable<unknown> =>
+        store._quickRealtime.hints$.pipe(
+          filter(
+            (hint) =>
+              hint.topic === RealtimeTopic.DefinitionDrafts &&
+              ((ids.attemptId !== undefined && hint.attemptId === ids.attemptId) ||
+                (ids.machineId !== undefined && hint.machineId === ids.machineId)),
+          ),
+          take(1),
+        );
       const catalog = (): ReturnType<typeof store.units.value> | undefined =>
         store.units.hasValue() ? store.units.value() : undefined;
 
@@ -355,7 +383,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
         progress: Progress,
       ): Observable<void> =>
         rateLimited$(() => store._quickMetricsApi.getDefinitions(machineId, options)).pipe(
-          retryWhileMachineUnknown(),
+          retryWhileMachineUnknown(wakeOnHint$({ machineId })),
           switchMap((response) => {
             const staged = stageMetricDrafts(itemsFromDefinitions(response.definitions), 0, drafts, catalog());
             const net = netChanges(staged.items);
@@ -389,7 +417,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
             rateLimited$(() =>
               store._quickStatusesApi.apply(machineId, { items: part.map(toBatchChange) }, options),
             ).pipe(
-              retryWhileMachineUnknown(),
+              retryWhileMachineUnknown(wakeOnHint$({ machineId })),
               tap(() => {
                 progress.applied += part.length;
               }),
@@ -410,7 +438,7 @@ export function withDraftQuickApply(): SignalStoreFeature<
           return of(undefined);
         }
         return rateLimited$(() => store._quickDraftsApi.applyPhaseDraft(machineId, draft.id, body, options)).pipe(
-          retryWhileMachineUnknown(),
+          retryWhileMachineUnknown(wakeOnHint$({ machineId })),
           tap(() => {
             progress.applied += 1;
           }),
@@ -482,7 +510,9 @@ export function withDraftQuickApply(): SignalStoreFeature<
           retry({
             count: MACHINE_SYNC_RETRY_COUNT,
             delay: (error: unknown, retryCount: number) =>
-              error instanceof DraftsNotMovedError ? timer(machineSyncDelayMs(retryCount)) : throwError(() => error),
+              error instanceof DraftsNotMovedError
+                ? machineSyncWait$(retryCount, wakeOnHint$({ attemptId, machineId }))
+                : throwError(() => error),
           }),
           catchError((error: unknown) =>
             throwError(() => (error instanceof DraftsNotMovedError ? new MachineNotReadyError() : error)),

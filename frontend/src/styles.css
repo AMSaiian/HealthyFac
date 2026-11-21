@@ -23,6 +23,12 @@
     min-width: 0;
   }
 
+  .p-badge.hf-bell-badge {
+    inset-block-start: 0.25rem;
+    inset-inline-end: 0.25rem;
+    transform: none;
+  }
+
   .hf-field-label {
     font-weight: 600;
   }

@@ -2,6 +2,7 @@ using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
 using FluentValidation.Results;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.Application.Shifts.ChangeChecks;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
@@ -11,6 +12,7 @@ using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -78,7 +80,8 @@ public sealed class SetShiftOverrideRequestHandler(
     ICoreDbContext dbContext,
     DayScheduleReader reader,
     ShiftChangeGuard guard,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<SetShiftOverrideRequest>
 {
     private const string DateKey = "date";
@@ -87,19 +90,21 @@ public sealed class SetShiftOverrideRequestHandler(
     private readonly DayScheduleReader _reader = reader;
     private readonly ShiftChangeGuard _guard = guard;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         SetShiftOverrideRequest request,
         CancellationToken cancellationToken
     )
     {
-        await _dbContext.RunInTransactionAsync(
+        var change = await _dbContext.RunInTransactionAsync(
             token => SetAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+        _notifier.PushShiftChanged(request.CompanyId, change);
     }
 
-    private async Task SetAsync(SetShiftOverrideRequest request, CancellationToken cancellationToken)
+    private async Task<ShiftChange> SetAsync(SetShiftOverrideRequest request, CancellationToken cancellationToken)
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var shifts = await _reader.LoadAsync(
@@ -140,6 +145,15 @@ public sealed class SetShiftOverrideRequestHandler(
         {
             throw new ConflictException(ShiftErrors.Rejections.OverrideChanged, exception);
         }
+
+        var identityUserId = await _dbContext.FindIdentityUserIdAsync(request.EmployeeId, cancellationToken);
+
+        return new ShiftChange
+        {
+            EmployeeId = request.EmployeeId,
+            IdentityUserId = identityUserId,
+            Date = request.Date,
+        };
     }
 
     private void ReplaceByCreate(SetShiftOverrideRequest request, EmployeeShifts shifts, List<BlockTimes> times)

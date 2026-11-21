@@ -1,5 +1,7 @@
 using System.Diagnostics.Metrics;
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -7,9 +9,11 @@ using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Infrastructure.Persistence;
+using HealthyFac.Shared.Infrastructure.Realtime;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Logging;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Realtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +52,10 @@ public class TransportFixture : IAsyncLifetime
 
     public CancellationTrigger CancellationTrigger { get; } = new();
 
+    public RecordingRealtimeQueue RealtimeQueue { get; } = new();
+
+    public RecordingInboxObserver InboxObserver { get; } = new();
+
     /// <summary>
     /// The meter factory of the test host. A <c>MetricCollector</c> on it reads only the measurements of this host.
     /// </summary>
@@ -83,12 +91,17 @@ public class TransportFixture : IAsyncLifetime
         builder.Services.AddScoped<InboxMessageRunner>();
         builder.Services.AddSingleton(Recorder);
         builder.Services.AddSingleton(CancellationTrigger);
+        builder.Services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
+        builder.Services.AddScoped<IRealtimeNotifier, RealtimeNotifier>();
+        builder.Services.AddScoped<IInboxUnitObserver, RealtimeInboxObserver>();
+        builder.Services.AddSingleton<IInboxUnitObserver>(InboxObserver);
         builder.Services.AddMessagingMetrics();
         builder.Services.AddUseCases(SharedIntegrationTestsAssembly.Instance);
         builder.Services.AddIntegrationMessage<TestPing>();
         builder.Services.AddIntegrationMessage<TestRecorded>();
         builder.Services.AddIntegrationMessage<TestFailing>();
         builder.Services.AddIntegrationMessage<TestCancelling>();
+        builder.Services.AddIntegrationMessage<TestRealtimePush>();
         ConfigureServices(builder.Services);
 
         _host = builder.Build();
@@ -164,6 +177,8 @@ public class TransportFixture : IAsyncLifetime
         Recorder.Reset();
         Logs.Reset();
         CancellationTrigger.Reset();
+        RealtimeQueue.Clear();
+        InboxObserver.Reset();
     }
 
     public IServiceScope CreateScope(ActorContext? actor = null) =>

@@ -22,6 +22,18 @@
   </ng-template>
   <ng-template #end>
     <div class="flex items-center gap-2">
+      @if (authStore.isAuthenticated()) {
+        <hf-notification-bell
+          [items]="notificationStore.items()"
+          [unreadCount]="notificationStore.unreadCount()"
+          [isOpen]="notificationStore.isBellOpen()"
+          (opened)="notificationStore.openBell()"
+          (markAsRead)="notificationStore.markAsRead($event)"
+          (markAllAsRead)="notificationStore.markAllAsRead()"
+          (closed)="notificationStore.closeBell()"
+          (jump)="notificationStore.jump($event)"
+        />
+      }
       <button
         pButton
         [pTooltip]="'LANGUAGE.' + (languageStore.language() | uppercase) | translate"
@@ -135,7 +147,62 @@
     </nav>
   </p-drawer>
 }
-<p-toast position="bottom-right" />
+<p-toast position="bottom-right">
+  <ng-template
+    #message
+    let-message
+    let-closeFn="closeFn"
+  >
+    @if (message.data?.entry) {
+      <div class="flex w-full items-start gap-2">
+        <i class="pi pi-bell mt-1"></i>
+        <span class="min-w-0 flex-1 break-words">
+          {{ message.data.text }}
+        </span>
+        @if (hasJump(message.data.entry)) {
+          <button
+            pButton
+            [pTooltip]="'NOTIFICATIONS.JUMP' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            iconOnly
+            severity="secondary"
+            [text]="true"
+            [attr.aria-label]="'NOTIFICATIONS.JUMP' | translate"
+            (click)="notificationStore.jump(message.data.entry)"
+          >
+            <i class="pi pi-arrow-right"></i>
+          </button>
+        }
+        <button
+          pButton
+          [pTooltip]="'NOTIFICATIONS.DISMISS' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'NOTIFICATIONS.DISMISS' | translate"
+          (click)="notificationStore.dismiss(message.data.entry); closeFn($event)"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    } @else {
+      <div class="flex w-full items-start gap-2">
+        <i [class]="toastIconOf(message.severity) + ' mt-1'"></i>
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+          @if (message.summary) {
+            <span class="font-semibold">{{ message.summary }}</span>
+          }
+          @if (message.detail) {
+            <span class="break-words">{{ message.detail }}</span>
+          }
+        </div>
+      </div>
+    }
+  </ng-template>
+</p-toast>
 <p-confirmdialog
   [pt]="hiddenClosePt"
   [dismissableMask]="true"

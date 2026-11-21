@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, effect, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -19,10 +19,19 @@ import { EMPLOYEES_RETURN_TARGET } from '@employees/employees-return-target';
   templateUrl: './employee-day-page.html',
 })
 export class EmployeeDayPage {
+  /** The query parameter `date` (`yyyy-MM-dd`): the day to show. The route resolver opens the first one. */
+  readonly date = input<string>();
+
   protected readonly store = inject(EmployeeDayStore);
   protected readonly history = inject(HistoryStore);
   protected readonly returnTarget = EMPLOYEES_RETURN_TARGET;
   protected readonly clock = inject(CLOCK);
+
+  constructor() {
+    effect(() => {
+      this.store.showDay(this.date());
+    });
+  }
 
   protected onDate(date: Temporal.PlainDate | null): void {
     if (date !== null) {

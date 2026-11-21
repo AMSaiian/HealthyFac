@@ -2,7 +2,6 @@ using System.Net.Http.Headers;
 using HealthyFac.Shared.Application.CurrentUser;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace HealthyFac.Shared.Web.CurrentUser;
 
@@ -33,10 +32,11 @@ internal sealed class HttpIncomingAccessTokenAccessor(IHttpContextAccessor httpC
 
     public Guid? TryGetUserId()
     {
-        var subject = _httpContextAccessor.HttpContext?.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var user = _httpContextAccessor.HttpContext?.User;
 
-        return TryGetUserAccessToken() is not null
-            && Guid.TryParse(subject, out var userId)
+        return user is not null
+            && TryGetUserAccessToken() is not null
+            && ActorClaimsReader.TryReadUserId(user, out var userId)
                 ? userId
                 : null;
     }

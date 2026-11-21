@@ -1,9 +1,11 @@
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -43,10 +45,12 @@ public sealed class WorkOrderDraftProposedPreHandlerCheck(ICoreDbContext dbConte
 /// a repeat delivery finds the draft and stores nothing new ("find, else create").
 /// </summary>
 /// <param name="dbContext">Finds the draft and saves the new one.</param>
-public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbContext)
+/// <param name="notifier">Adds the real-time event of a new draft. The inbox runner pushes it after the commit.</param>
+public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbContext, IRealtimeNotifier notifier)
     : RequestHandler<WorkOrderDraftProposed>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         WorkOrderDraftProposed request,
@@ -75,5 +79,11 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
                 WorkOrderCategory.FromValue(request.Category),
                 request.EstimateMinutes));
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _notifier.AddToGroup(
+            request.CompanyId,
+            RealtimeNotificationKind.WorkOrderDraftCreated,
+            new WorkOrderDraftCreatedData { DraftId = request.DraftId, Title = request.Title },
+            isActorSkipped: false);
     }
 }

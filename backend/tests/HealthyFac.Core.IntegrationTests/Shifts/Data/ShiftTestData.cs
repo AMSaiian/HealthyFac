@@ -17,6 +17,7 @@ public static class ShiftTestData
     public const string OtherFirstName = "Olga";
     public const string OtherEmail = "shift.other@plant.com";
     public const string DeactivatedEmail = "shift.gone@plant.com";
+    public const string UnprovisionedEmail = "shift.unprovisioned@plant.com";
     public const string TimeFormat = "HH:mm";
     public const string Morning = "08:00-12:00";
     public const string Afternoon = "13:00-17:00";

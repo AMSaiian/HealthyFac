@@ -18,6 +18,9 @@ import { toSearchBody } from '@work-orders/list/work-order-query';
 import { INITIAL_GRID } from '@work-orders/list/work-orders-grid.store.utils';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 type RowActionType =
@@ -86,6 +89,9 @@ export const WorkOrdersGridStore = signalStore(
     },
   })),
   withActionResultReload<{ workOrders: Reloadable }>(RELOAD_RESULT_TYPES, (store) => {
+    store.workOrders.reload();
+  }),
+  withRealtimeReload<{ workOrders: Reloadable }>([RealtimeTopic.WorkOrders], (store) => {
     store.workOrders.reload();
   }),
   withStoreDevtools('work-orders-grid'),

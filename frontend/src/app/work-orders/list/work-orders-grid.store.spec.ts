@@ -21,6 +21,12 @@ import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 import { WorkOrdersGridStore } from './work-orders-grid.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  type FakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 const EMPTY_PAGE = { items: [], totalCount: 0 };
 
@@ -45,6 +51,7 @@ const ROW: WorkOrderRow = {
 
 describe('WorkOrdersGridStore', () => {
   const lastResult = signal<ActionResult | null>(null);
+  let realtime: FakeRealtimeConnection;
   const dispatch = vi.fn();
   const search = vi.fn();
   const employees = vi.fn();
@@ -55,6 +62,7 @@ describe('WorkOrdersGridStore', () => {
   ): Promise<InstanceType<typeof WorkOrdersGridStore>> {
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         WorkOrdersGridStore,
         { provide: WorkOrdersApi, useValue: { search } },
         { provide: LookupsApi, useValue: { employees, machines } },
@@ -83,6 +91,7 @@ describe('WorkOrdersGridStore', () => {
   }
 
   beforeEach(() => {
+    realtime = createFakeRealtimeConnection();
     lastResult.set(null);
     dispatch.mockReset();
     search.mockReset().mockReturnValue(of(EMPTY_PAGE));
@@ -100,6 +109,22 @@ describe('WorkOrdersGridStore', () => {
 
     return search.mock.calls.length - callsBefore;
   }
+
+  it('hint_OfTheWorkOrdersTopic_ReloadsTheListOnceAfterOneSecond', async () => {
+    await setup();
+    vi.useFakeTimers();
+    const callsBefore = search.mock.calls.length;
+
+    realtime.hints$.next({ topic: RealtimeTopic.WorkOrders });
+    await vi.advanceTimersByTimeAsync(999);
+    expect(search.mock.calls.length).toBe(callsBefore);
+    await vi.advanceTimersByTimeAsync(1);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    vi.useRealTimers();
+
+    expect(search.mock.calls.length - callsBefore).toBe(1);
+  });
 
   it.each([
     [true, true],

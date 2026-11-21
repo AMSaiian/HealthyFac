@@ -6,6 +6,7 @@ import { filter } from 'rxjs';
 
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { EmployeeStore } from '@shared/employee/employee.store';
+import { RealtimeConnection } from '@shared/realtime/realtime-connection';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 
 import { SHELL_NAV_ITEMS, type ShellNavItem, visibleNavItems } from './shell.store.utils';
@@ -17,6 +18,7 @@ export const ShellStore = signalStore(
   withProps(() => ({
     _auth: inject(AuthStore),
     _employee: inject(EmployeeStore),
+    _realtime: inject(RealtimeConnection),
     _router: inject(Router),
   })),
   withConfirm(),
@@ -35,7 +37,7 @@ export const ShellStore = signalStore(
     closeMenu(): void {
       patchState(store, { isMenuOpen: false });
     },
-    /** Asks for a confirmation and signs out only after the accept. */
+    /** Asks for a confirmation and signs out only after the accept. The real-time connection stops first. */
     confirmSignOut(): void {
       store._confirm({
         headerKey: 'SHELL.SIGN_OUT_CONFIRM.HEADER',
@@ -43,7 +45,7 @@ export const ShellStore = signalStore(
         acceptKey: 'SHELL.SIGN_OUT_CONFIRM.ACCEPT',
         icon: 'pi pi-sign-out',
         onAccept: () => {
-          store._auth.logout();
+          void store._realtime.stop().then(() => store._auth.logout());
         },
       });
     },

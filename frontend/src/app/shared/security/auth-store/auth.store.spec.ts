@@ -320,4 +320,38 @@ describe('AuthStore', () => {
 
     expect(store.permissions()).toEqual([Permission.MachinesRead]);
   });
+
+  it('subject_WithSession_ReturnsTheKeycloakSubject', () => {
+    keycloak.subject = 'subject-1';
+    const store = createStore();
+
+    expect(store.subject()).toBe('subject-1');
+  });
+
+  it('subject_WithoutSession_ReturnsNull', () => {
+    const store = createStore();
+
+    expect(store.subject()).toBeNull();
+  });
+
+  it('tokenExpiresAt_WithExpClaim_ReturnsMilliseconds', () => {
+    keycloak.tokenParsed = { exp: 1_800_000_000 };
+    const store = createStore();
+
+    expect(store.tokenExpiresAt()?.epochMilliseconds).toBe(1_800_000_000_000);
+  });
+
+  it('tokenExpiresAt_WithATimeSkew_ReturnsTheExpiryOnTheBrowserClock', () => {
+    keycloak.tokenParsed = { exp: 1_800_000_000 };
+    keycloak.timeSkew = 5;
+    const store = createStore();
+
+    expect(store.tokenExpiresAt()?.epochMilliseconds).toBe(1_800_000_005_000);
+  });
+
+  it('tokenExpiresAt_WithoutExpClaim_ReturnsNull', () => {
+    const store = createStore();
+
+    expect(store.tokenExpiresAt()).toBeNull();
+  });
 });

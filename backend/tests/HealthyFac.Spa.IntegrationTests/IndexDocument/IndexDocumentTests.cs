@@ -1,3 +1,4 @@
+using HealthyFac.Spa.IntegrationTests.IndexDocument.Data;
 using HealthyFac.Spa.Web.IndexDocument.Csp;
 
 namespace HealthyFac.Spa.IntegrationTests.IndexDocument;
@@ -18,7 +19,8 @@ public sealed class IndexDocumentTests
                 "default-src 'self'; script-src 'self' 'nonce-abc123'; style-src-elem 'self' 'nonce-abc123'; "
                 + "style-src-attr 'unsafe-inline'; img-src 'self' data: https://api.healthyfac.test; "
                 + "font-src 'self'; "
-                + "connect-src 'self' https://api.healthyfac.test https://auth.healthyfac.test; "
+                + "connect-src 'self' https://api.healthyfac.test wss://api.healthyfac.test "
+                + "https://auth.healthyfac.test; "
                 + "frame-src 'self' https://auth.healthyfac.test; base-uri 'self'; form-action 'self'; "
                 + "frame-ancestors 'none'; object-src 'none'");
     }
@@ -31,9 +33,21 @@ public sealed class IndexDocumentTests
             new Uri(ApiBaseUrl),
             new Uri($"{AuthOrigin}/realms"));
 
-        policy.Should().Contain($"connect-src 'self' {ApiBaseUrl} {AuthOrigin};");
+        policy.Should().Contain($"connect-src 'self' {ApiBaseUrl} wss://api.healthyfac.test {AuthOrigin};");
         policy.Should().Contain($"frame-src 'self' {AuthOrigin};");
         policy.Should().Contain(expected: "frame-ancestors 'none'");
+    }
+
+    [Theory]
+    [MemberData(nameof(IndexDocumentTestData.WebSocketOrigins), MemberType = typeof(IndexDocumentTestData))]
+    public void Build_WithApiUrl_AllowsItsWebSocketOriginInConnectSrc(
+        string apiBaseUrl,
+        string expectedConnectSrc
+    )
+    {
+        var policy = ContentSecurityPolicy.Build(Nonce, new Uri(apiBaseUrl), new Uri(AuthOrigin));
+
+        policy.Should().Contain(expectedConnectSrc);
     }
 
     [Fact]

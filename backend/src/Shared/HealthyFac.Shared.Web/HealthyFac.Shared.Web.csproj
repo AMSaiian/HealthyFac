@@ -11,6 +11,7 @@
         <PackageReference Include="Grpc.AspNetCore.Server.Reflection" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" />
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />

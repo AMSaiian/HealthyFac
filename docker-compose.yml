@@ -286,6 +286,8 @@ services:
       Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
       Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
+      # The real-time push goes through the Redis backplane of the gateway hub.
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host, so only
     # this machine reaches it. The container port equals HealthEndpoints:Port in appsettings.json.
     ports:
@@ -300,6 +302,8 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+      redis:
+        condition: service_started
       lgtm:
         condition: service_healthy
 
@@ -403,6 +407,8 @@ services:
       MqttIntake__Password: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
       # The test company ID of Core. The seed machines of the seed data file belong to this company.
       Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
+      # The real-time push goes through the Redis backplane of the gateway hub.
+      Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
     ports:
       - "${TELEMETRY_PORT:-8083}:8080"
@@ -416,6 +422,8 @@ services:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
+      redis:
+        condition: service_started
       lgtm:
         condition: service_healthy
 

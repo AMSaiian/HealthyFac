@@ -12,6 +12,9 @@ import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
 import { followToday, minuteTicker, todayOf, toRow } from '@schedule/schedule-time';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 const RELOAD_RESULT_TYPES: readonly string[] = [WorkOrderActionType.Saved, WorkOrderActionType.Conflict];
@@ -89,6 +92,9 @@ export const CompanyDayStore = signalStore(
     },
   }),
   withActionResultReload<{ day: Reloadable }>(RELOAD_RESULT_TYPES, (store) => {
+    store.day.reload();
+  }),
+  withRealtimeReload<{ day: Reloadable }>([RealtimeTopic.WorkOrders, RealtimeTopic.Schedule], (store) => {
     store.day.reload();
   }),
   withStoreDevtools('company-day'),

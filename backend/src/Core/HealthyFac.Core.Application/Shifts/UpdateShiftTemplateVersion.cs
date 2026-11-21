@@ -1,5 +1,6 @@
 using System.Data;
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.Application.Shifts.ChangeChecks;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
@@ -7,6 +8,7 @@ using HealthyFac.Core.Application.Shifts.Scopes;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -71,26 +73,32 @@ public sealed class UpdateShiftTemplateVersionRequestHandler(
     ICoreDbContext dbContext,
     DayScheduleReader reader,
     ShiftChangeGuard guard,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<UpdateShiftTemplateVersionRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly DayScheduleReader _reader = reader;
     private readonly ShiftChangeGuard _guard = guard;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         UpdateShiftTemplateVersionRequest request,
         CancellationToken cancellationToken
     )
     {
-        await _dbContext.RunInTransactionAsync(
+        var change = await _dbContext.RunInTransactionAsync(
             token => UpdateAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+        _notifier.PushShiftChanged(request.CompanyId, change);
     }
 
-    private async Task UpdateAsync(UpdateShiftTemplateVersionRequest request, CancellationToken cancellationToken)
+    private async Task<ShiftChange> UpdateAsync(
+        UpdateShiftTemplateVersionRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
@@ -132,5 +140,14 @@ public sealed class UpdateShiftTemplateVersionRequestHandler(
         {
             throw new ConflictException(ShiftErrors.Rejections.VersionChanged, exception);
         }
+
+        var identityUserId = await _dbContext.FindIdentityUserIdAsync(request.EmployeeId, cancellationToken);
+
+        return new ShiftChange
+        {
+            EmployeeId = request.EmployeeId,
+            IdentityUserId = identityUserId,
+            Date = version.EffectiveFrom,
+        };
     }
 }

@@ -5,11 +5,15 @@ using HealthyFac.Core.Infrastructure;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
+using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Email;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Testing.Containers;
 using HealthyFac.Testing.Persistence;
+using HealthyFac.Testing.Realtime;
 using HealthyFac.Testing.Resetting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,9 +36,13 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
 
     public ConcurrentSaveGate SaveGate { get; } = new();
 
+    public RecordingRealtimeQueue RealtimeQueue { get; } = new();
+
     public ControllableTimeProvider Clock { get; } = new();
 
     public TransactionCounter Transactions { get; } = new();
+
+    public RetryOnceInterceptor RetryOnce { get; } = new();
 
     public IServiceScopeFactory ScopeFactory =>
         new InitializationActorScopeFactory(_services.GetRequiredService<IServiceScopeFactory>());
@@ -75,7 +83,9 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddActorContext();
         services.AddApplicationServices();
         services.AddInfrastructureServices(configuration, environment);
-        services.ConfigureDbContext<CoreDbContext>(options => options.AddInterceptors(SaveGate, Transactions));
+        services.AddSingleton<IBackgroundQueue<RealtimePush>>(RealtimeQueue);
+        services.ConfigureDbContext<CoreDbContext>(options =>
+            options.AddInterceptors(SaveGate, Transactions, RetryOnce));
         services.AddSingleton<IEmailSender>(EmailSender);
         var otherHostedServices = services
             .Where(descriptor => descriptor.ServiceType == typeof(IHostedService)
@@ -103,6 +113,8 @@ public sealed class CoreDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
         Clock.Release();
         await _resetter.ResetAsync();
         EmailSender.Reset();
+        RealtimeQueue.Clear();
+        RetryOnce.Disarm();
 
         using var scope = ScopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ICoreDbInitializer>().SeedRequiredDataAsync();

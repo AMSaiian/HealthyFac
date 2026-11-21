@@ -39,6 +39,35 @@
       "CHOOSE_LANGUAGE": "Switch the app to this language"
     }
   },
+  "NOTIFICATIONS": {
+    "BELL": {
+      "TITLE": "Notifications",
+      "EMPTY": "No notifications yet",
+      "MARK_ALL_AS_READ": "Mark all as read"
+    },
+    "MARK_AS_READ": "Mark as read",
+    "PROVISIONING_REASONS": {
+      "ORGANIZATION_NOT_FOUND": "the company is not set up in the sign-in system",
+      "EMAIL_ALREADY_REGISTERED": "the email is already registered",
+      "ROLE_NOT_FOUND": "the role is missing in the sign-in system",
+      "UNKNOWN": "an unknown error"
+    },
+    "DISMISS": "Close this notification and mark it as read",
+    "JUMP": "Open",
+    "KINDS": {
+      "SHIFT_CHANGED": "Your shift on {{date}} changed",
+      "WORK_ORDER_ASSIGNED": "You were assigned \"{{title}}\"",
+      "WORK_ORDER_UNASSIGNED": "You were unassigned from \"{{title}}\"",
+      "WORK_ORDER_ESTIMATE_CHANGED": "The estimate of \"{{title}}\" changed from {{oldMinutes}} to {{newMinutes}} minutes",
+      "WORK_ORDER_RESCHEDULED": "\"{{title}}\" was moved to {{plannedStartLocal}}",
+      "WORK_ORDER_RETURNED_TO_BACKLOG": "\"{{title}}\" returned to the backlog",
+      "INGEST_FINISHED": "The ingest of {{fileName}} ended: {{state}}",
+      "WORK_ORDER_BLOCKED": "\"{{title}}\" is blocked",
+      "WORK_ORDER_DRAFT_CREATED": "A new work order draft: \"{{title}}\"",
+      "PROVISIONING_FAILED": "The account of {{employeeName}} could not be created: {{reason}}",
+      "MAINTENANCE_CASE_OPENED": "A maintenance case was opened ({{severity}})"
+    }
+  },
   "LANGUAGE": {
     "EN": "English",
     "UK": "Українська"

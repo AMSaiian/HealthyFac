@@ -20,6 +20,7 @@ import { CompanyDayPage } from '@schedule/company-day/company-day-page/company-d
 import { EmployeeDayStore } from '@schedule/employee-day/employee-day.store';
 import { EmployeeDayPage } from '@schedule/employee-day/employee-day-page/employee-day-page';
 import { SCHEDULE_ROUTES } from '@schedule/schedule.routes';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const EMPLOYEE_DAY_URL = '/api/core/v1/employees/e1/schedule';
 const COMPANY_DAY_URL = '/api/core/v1/company/schedule';
@@ -37,6 +38,7 @@ function setup(hasPermission = true): HttpTestingController {
   vi.stubGlobal('ResizeObserver', ResizeObserverStub);
   TestBed.configureTestingModule({
     providers: [
+      provideFakeRealtimeConnection(),
       provideRouter(
         [{ path: '', children: SCHEDULE_ROUTES }, { path: '', children: [] }, ...FALLBACK_ROUTES],
         withComponentInputBinding(),
@@ -74,6 +76,52 @@ describe('schedule routes', () => {
     });
     await navigation;
     TestBed.tick();
+    TestBed.tick();
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);
+    http.expectNone((request) => request.url === EMPLOYEE_DAY_URL);
+  });
+
+  it.each([
+    ['2026-11-21', '2026-11-21'],
+    ['bad', TODAY],
+    ['2026-02-30', TODAY],
+  ])('employeeDayRoute_WithDateQuery%s_RequestsThatDayOrTodayOnce', async (query, expectedDate) => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+
+    const navigation = harness.navigateByUrl(`/employees/e1/schedule?date=${query}`);
+    await vi.waitFor(() => {
+      const request = http.expectOne((candidate) => candidate.url === EMPLOYEE_DAY_URL);
+      expect(request.request.params.get('date')).toBe(expectedDate);
+      request.flush({ ...DAY, date: expectedDate });
+    });
+    await navigation;
+    TestBed.tick();
+    TestBed.tick();
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);
+    http.expectNone((request) => request.url === EMPLOYEE_DAY_URL);
+  });
+
+  it('employeeDayRoute_DateQueryChangesOnThePage_RequestsThatDayOnce', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+    const navigation = harness.navigateByUrl('/employees/e1/schedule');
+    await vi.waitFor(() => {
+      http.expectOne((request) => request.url === EMPLOYEE_DAY_URL).flush(DAY);
+    });
+    await navigation;
+    TestBed.tick();
+
+    await harness.navigateByUrl(`/employees/e1/schedule?date=${NEXT_DAY}`);
+    TestBed.tick();
+    await vi.waitFor(() => {
+      TestBed.tick();
+      const request = http.expectOne((candidate) => candidate.url === EMPLOYEE_DAY_URL);
+      expect(request.request.params.get('date')).toBe(NEXT_DAY);
+      request.flush({ ...DAY, date: NEXT_DAY });
+    });
     TestBed.tick();
 
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(EmployeeDayPage);

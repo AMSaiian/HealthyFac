@@ -18,6 +18,11 @@ import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 import { BoardStore } from './board.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 
 function rowIn(status: WorkOrderStatus): WorkOrderRow {
   return {
@@ -41,6 +46,7 @@ function rowIn(status: WorkOrderStatus): WorkOrderRow {
 }
 
 describe('BoardStore', () => {
+  const realtime = createFakeRealtimeConnection();
   const lastResult = signal<ActionResult | null>(null);
   const active = signal<AppAction | null>(null);
   const filter = signal(INITIAL_FILTER);
@@ -61,6 +67,7 @@ describe('BoardStore', () => {
   async function setup(options: { canManage?: boolean } = {}): Promise<InstanceType<typeof BoardStore>> {
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         BoardStore,
         { provide: WorkOrdersGridStore, useValue: { filter, setFilter } },
         { provide: WorkOrdersApi, useValue: { searchBatch, changeStatus } },
@@ -92,6 +99,20 @@ describe('BoardStore', () => {
     searchBatch.mockClear();
     changeStatus.mockReset().mockReturnValue(of(undefined));
     add.mockReset();
+  });
+
+  it('hint_OfTheWorkOrdersTopic_ReloadsEveryColumnOnceAfterOneSecond', async () => {
+    await setup();
+    vi.useFakeTimers();
+    const callsBefore = search.mock.calls.length;
+
+    realtime.hints$.next({ topic: RealtimeTopic.WorkOrders });
+    realtime.hints$.next({ topic: RealtimeTopic.WorkOrders });
+    await vi.advanceTimersByTimeAsync(1000);
+    await settle();
+    vi.useRealTimers();
+
+    expect(search.mock.calls.length - callsBefore).toBe(6);
   });
 
   it('reloadAll_OnFirstLoad_SearchesEveryColumnWithTodayForTheScheduledOnes', async () => {

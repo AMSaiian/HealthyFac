@@ -1,0 +1,24 @@
+using HealthyFac.Insights.IntegrationTests.Database;
+using HealthyFac.Insights.IntegrationTests.Database.Data;
+using HealthyFac.Shared.Application.Realtime;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace HealthyFac.Insights.IntegrationTests.Realtime;
+
+[Collection(InsightsCollection.Name)]
+public sealed class RealtimeRegistrationTests(InsightsFixture fixture)
+{
+    private readonly InsightsFixture _fixture = fixture;
+
+    [Fact]
+    public void Notifier_WithAHintPushed_ReachesTheRealtimeQueue()
+    {
+        using var scope = _fixture.ScopeFactory.CreateScope();
+        var notifier = scope.ServiceProvider.GetRequiredService<IRealtimeNotifier>();
+        notifier.AddHint(Guid.NewGuid(), new RealtimeHint { Topic = RealtimeTopic.Machines });
+
+        notifier.Push();
+
+        _fixture.RealtimeQueue.Items.Should().ContainSingle();
+    }
+}

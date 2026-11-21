@@ -1,9 +1,11 @@
 using FluentValidation;
+using HealthyFac.Insights.Application.Realtime;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -52,15 +54,18 @@ public sealed class CancelIngestAttemptPreHandlerCheck(ICurrentUserProvider curr
 /// <param name="dbContext">Loads the attempt and saves the change.</param>
 /// <param name="outbox">Stores the message with the change.</param>
 /// <param name="timeProvider">Provides the time of the change.</param>
+/// <param name="notifier">Adds the end event after the save. The notifier skips it for the user who cancels.</param>
 public sealed class CancelIngestAttemptRequestHandler(
     IInsightsDbContext dbContext,
     IOutbox outbox,
-    TimeProvider timeProvider
+    TimeProvider timeProvider,
+    IRealtimeNotifier notifier
 ) : RequestHandler<CancelIngestAttemptRequest>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly IOutbox _outbox = outbox;
     private readonly TimeProvider _timeProvider = timeProvider;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         CancelIngestAttemptRequest request,
@@ -95,5 +100,13 @@ public sealed class CancelIngestAttemptRequestHandler(
         {
             throw new ConflictException(IngestErrors.IngestChanged, exception);
         }
+
+        _notifier.AddIngestFinished(
+            attempt.CreatedBy,
+            attempt.Id,
+            attempt.FileName,
+            IngestState.Interrupted,
+            isActorSkipped: true);
+        _notifier.Push();
     }
 }

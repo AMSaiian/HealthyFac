@@ -1,7 +1,9 @@
 using HealthyFac.Core.Messaging.Drafts;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using HealthyFac.Telemetry.Application.DefinitionDrafts.Following;
+using HealthyFac.Telemetry.Application.Realtime;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
@@ -18,11 +20,13 @@ public sealed class ResolveDefinitionDraftsPreHandlerCheck : PassThroughPreHandl
 /// <param name="proposalEntries">Finds the entries and moves their drafts.</param>
 public sealed class ResolveDefinitionDraftsRequestHandler(
     ITelemetryDbContext dbContext,
-    ProposalEntries proposalEntries
+    ProposalEntries proposalEntries,
+    IRealtimeNotifier notifier
 ) : RequestHandler<DraftsResolved>
 {
     private readonly ITelemetryDbContext _dbContext = dbContext;
     private readonly ProposalEntries _proposalEntries = proposalEntries;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(DraftsResolved request, CancellationToken cancellationToken)
     {
@@ -55,5 +59,11 @@ public sealed class ResolveDefinitionDraftsRequestHandler(
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var machineIds = request.Entries.Select(resolved => resolved.MachineId).Distinct().ToList();
+        foreach (var machineId in machineIds)
+        {
+            _notifier.AddDefinitionDraftsHint(request.CompanyId, request.AttemptId, machineId);
+        }
     }
 }

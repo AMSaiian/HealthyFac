@@ -1,7 +1,9 @@
 using FluentValidation;
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 using Microsoft.EntityFrameworkCore;
@@ -48,9 +50,11 @@ public sealed class DeleteWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 /// deleted ones.
 /// </summary>
 /// <param name="dbContext">Loads the work order and saves the removal.</param>
-public sealed class DeleteWorkOrderRequestHandler(ICoreDbContext dbContext) : RequestHandler<DeleteWorkOrderRequest>
+public sealed class DeleteWorkOrderRequestHandler(ICoreDbContext dbContext, IRealtimeNotifier notifier)
+    : RequestHandler<DeleteWorkOrderRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
+    private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
         DeleteWorkOrderRequest request,
@@ -75,5 +79,7 @@ public sealed class DeleteWorkOrderRequestHandler(ICoreDbContext dbContext) : Re
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
+
+        _notifier.PushWorkOrdersHint(request.CompanyId);
     }
 }
