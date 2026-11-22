@@ -7,9 +7,10 @@ import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { Permission } from '@shared/security/permissions';
 import { withToasts } from '@shared/toasts/with-toasts';
 
-import type { ShiftVersion } from '@employees/shifts/shift';
-import { isEditableVersion } from '@employees/shifts/shifts-store/shifts.store.utils';
+import type { ShiftOverride, ShiftVersion } from '@employees/shifts/shift';
+import { isEditableOverride, isEditableVersion } from '@employees/shifts/shifts-store/shifts.store.utils';
 import { withShiftsDialog } from '@employees/shifts/shifts-store/shifts.dialog.slice';
+import { withShiftsPrefill } from '@employees/shifts/shifts-store/shifts.prefill.slice';
 import { withShiftsSelection } from '@employees/shifts/shifts-store/shifts.selection.slice';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 
@@ -24,6 +25,7 @@ export const ShiftsStore = signalStore(
   withConfirm(),
   withShiftsSelection(),
   withShiftsDialog(),
+  withShiftsPrefill(),
   withComputed(() => {
     const auth = inject(AuthStore);
     return {
@@ -35,6 +37,9 @@ export const ShiftsStore = signalStore(
     return {
       isEditable(version: ShiftVersion): boolean {
         return store.canManage() && isEditableVersion(version, store.today());
+      },
+      isOverrideEditable(override: ShiftOverride): boolean {
+        return store.canManage() && isEditableOverride(override, store.today());
       },
       openWorkOrder(id: string): void {
         void actions.dispatch({ type: WorkOrderActionType.Open, payload: { workOrderId: id } });

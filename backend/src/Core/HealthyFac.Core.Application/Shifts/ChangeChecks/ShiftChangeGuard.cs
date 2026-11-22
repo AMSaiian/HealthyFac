@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HealthyFac.Core.Application.Shifts.ChangeChecks;
 
 /// <summary>
-/// Rejects a shift change that breaks the past part of today or leaves a future scheduled work order outside the
+/// Rejects a shift change that breaks the past part of today or leaves an unfinished scheduled work order outside the
 /// blocks. Nothing moves automatically: the caller changes nothing when the guard throws.
 /// </summary>
 /// <param name="dbContext">Reads the scheduled work orders of the employee.</param>
@@ -21,8 +21,8 @@ public sealed class ShiftChangeGuard(ICoreDbContext dbContext, TimeProvider time
 
     /// <summary>
     /// Compares the day schedules before and after a change. For today, the ended blocks and the start of a running
-    /// block must stay. Then every scheduled work order of the employee that starts at or after now, and is not
-    /// completed, must still fit one block of its day.
+    /// block must stay. Then every scheduled, not completed work order of the employee whose planned end is
+    /// after now must still fit one block of its day.
     /// </summary>
     /// <param name="companyId">The company of the employee.</param>
     /// <param name="employeeId">The employee whose shifts change.</param>
@@ -88,7 +88,7 @@ public sealed class ShiftChangeGuard(ICoreDbContext dbContext, TimeProvider time
                     && row.AssigneeId == employeeId
                     && row.Status != WorkOrderStatus.Backlog
                     && row.Status != WorkOrderStatus.Completed
-                    && row.PlannedStartUtc >= nowUtc
+                    && row.PlannedStartUtc + workOrder.Estimate > nowUtc
                 select new
                 {
                     workOrder.Id,

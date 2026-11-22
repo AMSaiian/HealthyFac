@@ -40,6 +40,21 @@ public sealed class ShiftInputTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task CreateVersion_WithSevenBlocksOnADay_Returns201()
+    {
+        var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var claims = _fixture.CreateShiftClaims(supervisor.IdentityUserId, ShiftApiTestData.ManagePermission);
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post,
+            ShiftApiTestData.TemplatesPath(supervisor.EncryptedId),
+            claims,
+            _fixture.CreateVersionBody(ShiftApiTestData.SevenBlocks, ShiftApiTestData.EffectiveFromDaysAhead));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
     public async Task DeleteOverride_WithoutRowVersion_Returns400()
     {
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);

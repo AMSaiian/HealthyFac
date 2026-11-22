@@ -4,6 +4,8 @@ using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.ChangeChecks;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Application.Shifts.Scopes;
+using HealthyFac.Core.Domain.Shifts.DaySchedules;
+using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -51,23 +53,28 @@ public sealed class DeleteShiftOverridePreHandlerCheck(ICoreDbContext dbContext,
 }
 
 /// <summary>
-/// Deletes the override of a date with its blocks in one save, so the date returns to the template. The cascade
-/// removes the loaded blocks, and the save interceptor turns each removal into a soft delete. The change runs in one
-/// serializable transaction with the same guard as the other shift changes.
+/// Deletes the override of a date, so the date returns to the template. A delete of a later date removes the override
+/// with its blocks in one save: the cascade removes the loaded blocks, and the save interceptor turns each removal
+/// into a soft delete. A delete of today keeps the past part of the override and returns the rest to the template
+/// (<see cref="TodayOverrideMerge"/>); the override row stays when the result differs from the template. The change
+/// runs in one serializable transaction with the same guard as the other shift changes.
 /// </summary>
 /// <param name="dbContext">Saves the change.</param>
 /// <param name="reader">Loads the shift data.</param>
 /// <param name="guard">Rejects a change that breaks a rule.</param>
+/// <param name="timeProvider">Provides the current time.</param>
 public sealed class DeleteShiftOverrideRequestHandler(
     ICoreDbContext dbContext,
     DayScheduleReader reader,
     ShiftChangeGuard guard,
+    TimeProvider timeProvider,
     IRealtimeNotifier notifier
 ) : RequestHandler<DeleteShiftOverrideRequest>
 {
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly DayScheduleReader _reader = reader;
     private readonly ShiftChangeGuard _guard = guard;
+    private readonly TimeProvider _timeProvider = timeProvider;
     private readonly IRealtimeNotifier _notifier = notifier;
 
     protected override async Task HandleInternalAsync(
@@ -92,14 +99,37 @@ public sealed class DeleteShiftOverrideRequestHandler(
             request.Date,
             isTracked: true,
             cancellationToken);
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        ShiftDateRules.EnsureNotPast(request.Date, shifts.LocalDateOf(nowUtc));
         var existing = shifts.Overrides.SingleOrDefault()
             ?? throw new NotFoundException(ShiftErrors.Rejections.OverrideNotFound);
 
         var before = shifts.Resolve(request.Date, request.Date);
         _dbContext.Entry(existing).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
-        _dbContext.ShiftOverrides.Remove(existing);
         shifts.Overrides.Remove(existing);
-        var after = shifts.Resolve(request.Date, request.Date);
+        var template = shifts.Resolve(request.Date, request.Date);
+        var keptBlocks = shifts.LocalDateOf(nowUtc) == request.Date
+            ? TodayOverrideMerge.Merge(
+                before.Single().Blocks.ToList(),
+                template.Single().Blocks.ToList(),
+                nowUtc,
+                SlotRules.RoundUpToGrid(nowUtc))
+            : null;
+
+        IReadOnlyList<DaySchedule> after;
+        if (keptBlocks is null || IsSameInstants(keptBlocks, template.Single().Blocks))
+        {
+            _dbContext.ShiftOverrides.Remove(existing);
+            after = template;
+        }
+        else
+        {
+            existing.ReplaceBlocks(keptBlocks.Select(block => ToLocalTimes(block, zone)));
+            _dbContext.ShiftOverrideBlocks.AddRange(existing.Blocks);
+            _dbContext.Entry(existing).State = EntityState.Modified;
+            shifts.Overrides.Add(existing);
+            after = shifts.Resolve(request.Date, request.Date);
+        }
 
         await _guard.EnsureAsync(request.CompanyId, request.EmployeeId, zone, before, after, cancellationToken);
 
@@ -121,4 +151,15 @@ public sealed class DeleteShiftOverrideRequestHandler(
             Date = request.Date,
         };
     }
+
+    private static bool IsSameInstants(IReadOnlyList<DayBlock> first, IReadOnlyList<DayBlock> second) =>
+        first.Select(block => (block.StartUtc, block.EndUtc))
+            .SequenceEqual(second.Select(block => (block.StartUtc, block.EndUtc)));
+
+    private static BlockTimes ToLocalTimes(DayBlock block, TimeZoneInfo zone) =>
+        new()
+        {
+            Start = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(block.StartUtc, zone)),
+            End = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(block.EndUtc, zone)),
+        };
 }

@@ -28,9 +28,6 @@ public static class ShiftErrors
         public static readonly string RangeTooLong =
             $"The range has at most {ShiftValidationConstants.MaxOverrideRangeDays} days.";
 
-        public static readonly string TooManyBlocks =
-            $"A day has at most {ShiftValidationConstants.MaxBlocksPerDay} blocks.";
-
         public static readonly string BlockOffGrid =
             $"Block times must be a multiple of {SlotRules.GridStep.TotalMinutes} minutes.";
 

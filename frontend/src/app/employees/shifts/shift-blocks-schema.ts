@@ -1,6 +1,6 @@
-import { array, type infer as Infer, maxLength, object, refine, regex, string } from 'zod/mini';
+import { array, type infer as Infer, object, refine, regex, string } from 'zod/mini';
 
-import { BLOCK_GRID_MINUTES, BLOCK_LATEST_END, MAX_BLOCKS_PER_DAY } from '@employees/shifts/shift-limits';
+import { BLOCK_GRID_MINUTES, BLOCK_LATEST_END } from '@employees/shifts/shift-limits';
 
 export const TIME_FORMAT_ERROR_KEY = 'SHIFTS.ERRORS.TIME_FORMAT';
 export const GRID_ERROR_KEY = 'SHIFTS.ERRORS.GRID';
@@ -8,7 +8,6 @@ export const LATEST_END_ERROR_KEY = 'SHIFTS.ERRORS.LATEST_END';
 export const END_AFTER_START_ERROR_KEY = 'SHIFTS.ERRORS.END_AFTER_START';
 export const UNSORTED_ERROR_KEY = 'SHIFTS.ERRORS.UNSORTED';
 export const OVERLAP_ERROR_KEY = 'SHIFTS.ERRORS.OVERLAP';
-export const TOO_MANY_ERROR_KEY = 'SHIFTS.ERRORS.TOO_MANY';
 
 const TIME_PATTERN = /^\d{2}:\d{2}$/;
 const MINUTES_PER_HOUR = 60;
@@ -33,9 +32,8 @@ export const shiftBlockSchema = object({ start: timeText, end: timeText }).check
   refine((block) => block.end > block.start, END_AFTER_START_ERROR_KEY),
 );
 
-/** The blocks of one day: at most 6, sorted by start, without overlap. An empty list is a day without work. */
+/** The blocks of one day: sorted by start, without overlap. An empty list is a day without work. */
 export const shiftBlockListSchema = array(shiftBlockSchema).check(
-  maxLength(MAX_BLOCKS_PER_DAY, TOO_MANY_ERROR_KEY),
   refine(
     (blocks) => blocks.every((block, index) => index === 0 || block.start >= blocks[index - 1].start),
     UNSORTED_ERROR_KEY,

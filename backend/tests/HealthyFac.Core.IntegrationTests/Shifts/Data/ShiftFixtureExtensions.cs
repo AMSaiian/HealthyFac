@@ -157,6 +157,18 @@ public static class ShiftFixtureExtensions
                     });
         }
 
+        public async Task ChangeWorkOrderStatusAsync(Guid workOrderId, WorkOrderStatus status)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+            var workOrder = await dbContext.WorkOrders
+                .Include(candidate => candidate.History)
+                .SingleAsync(candidate => candidate.Id == workOrderId);
+
+            workOrder.ChangeStatus(status);
+            await dbContext.SaveChangesAsync();
+        }
+
         public async Task<uint> LoadOverrideRowVersionAsync(Guid employeeId, DateOnly date)
         {
             using var scope = fixture.ScopeFactory.CreateScope();

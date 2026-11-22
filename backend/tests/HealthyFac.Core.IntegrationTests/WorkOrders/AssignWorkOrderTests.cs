@@ -1,5 +1,4 @@
 using HealthyFac.Core.Application.Authorization;
-using HealthyFac.Core.Application.Shifts;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
@@ -30,6 +29,24 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
         workOrder.CurrentRevision.Should().Be(expected: 2);
         workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
         workOrder.Current.AssigneeId.Should().Be(tenant.EmployeeId);
+    }
+
+    [Fact]
+    public async Task AssignWorkOrder_ToTheOnCallBlockOfToday_AddsStagedRow()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "22:02"));
+        await _fixture.SetOverrideAsync(tenant, ShiftTestData.Today, ShiftTestData.Blocks("22:05-23:55"));
+        var created = await _fixture.CreateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company, estimateMinutes: 30));
+
+        await AssignOnAsync(tenant, created.Id, ShiftTestData.Today, time: "22:05");
+
+        var workOrder = await _fixture.LoadWorkOrderAsync(created.Id);
+
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
     }
 
     [Fact]
@@ -91,7 +108,7 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
 
         var act = () => AssignOnAsync(tenant, workOrderId, ShiftTestData.Today.AddDays(dayOffset), time);
 
-        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
+        await act.Should().ThrowAsync<AppValidationException>(caseName);
     }
 
     [Fact]

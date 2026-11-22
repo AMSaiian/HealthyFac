@@ -1,0 +1,11 @@
+<h3 class="font-bold">{{ 'SHIFTS.AFFECTED.TITLE' | translate }}</h3>
+<small class="text-muted-color">{{ 'SHIFTS.AFFECTED.HINT' | translate }}</small>
+@for (workOrder of workOrders(); track workOrder.id) {
+  <button
+    type="button"
+    class="text-primary cursor-pointer text-left hover:underline"
+    (click)="opened.emit(workOrder.id)"
+  >
+    {{ workOrder.title }} · {{ workOrder.plannedStartLocal.replace('T', ' ').slice(0, 16) }}
+  </button>
+}

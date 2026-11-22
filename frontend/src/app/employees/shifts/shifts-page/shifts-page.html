@@ -141,7 +141,7 @@
             override.blocks.length > 0 ? summaryOf(override.blocks) : ('SHIFTS.DIALOG.DAY_OFF' | translate)
           }}</span>
         </span>
-        @if (store.canManage()) {
+        @if (store.isOverrideEditable(override)) {
           <div class="flex items-center gap-1">
             <button
               pButton
@@ -191,19 +191,10 @@
     (cancelled)="store.closeDialog()"
   >
     @if (store.affectedWorkOrders().length > 0) {
-      <section class="hf-list-item mb-4 flex flex-col gap-1">
-        <h3 class="font-bold">{{ 'SHIFTS.AFFECTED.TITLE' | translate }}</h3>
-        <small class="text-muted-color">{{ 'SHIFTS.AFFECTED.HINT' | translate }}</small>
-        @for (workOrder of store.affectedWorkOrders(); track workOrder.id) {
-          <button
-            type="button"
-            class="text-primary cursor-pointer text-left hover:underline"
-            (click)="store.openWorkOrder(workOrder.id)"
-          >
-            {{ workOrder.title }} · {{ workOrder.plannedStartLocal.replace('T', ' ').slice(0, 16) }}
-          </button>
-        }
-      </section>
+      <hf-affected-work-orders
+        [workOrders]="store.affectedWorkOrders()"
+        (opened)="store.openWorkOrder($event)"
+      />
     }
     @if (dialog.kind === 'version') {
       <hf-version-dialog
@@ -217,10 +208,26 @@
       <hf-override-dialog
         [initialValue]="overrideInitial()"
         [isEdit]="dialog.override !== null"
-        [minDate]="tomorrow()"
+        [minDate]="store.today()"
+        [now]="dialogNow()"
+        [timeZoneId]="clock.timeZoneId()"
+        [loadedBlocks]="store.prefillBlocks()"
+        [isLoading]="store.isPrefillLoading()"
         (valueChange)="onOverride($event)"
         (validityChange)="onValidity($event)"
       />
     }
+  </hf-action-dialog>
+}
+@if (store.dialog() === null && store.affectedWorkOrders().length > 0) {
+  <hf-action-dialog
+    title="SHIFTS.AFFECTED.DELETE_TITLE"
+    [isSaveShown]="false"
+    (cancelled)="store.clearAffected()"
+  >
+    <hf-affected-work-orders
+      [workOrders]="store.affectedWorkOrders()"
+      (opened)="store.openWorkOrder($event)"
+    />
   </hf-action-dialog>
 }

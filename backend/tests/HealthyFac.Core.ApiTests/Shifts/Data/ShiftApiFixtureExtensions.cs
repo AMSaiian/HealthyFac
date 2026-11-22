@@ -92,29 +92,11 @@ public static class ShiftApiFixtureExtensions
             return await client.SendAsync(request);
         }
 
-        public string CreateVersionBody(string blockRange, int daysAhead)
-        {
-            var effectiveFrom = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(daysAhead);
-            var parts = blockRange.Split(separator: '-');
-            var days = new JsonArray();
-            foreach (var weekday in new[]
-                { "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday" })
-            {
-                days.Add(
-                    new JsonObject
-                    {
-                        [propertyName: "weekday"] = weekday,
-                        [propertyName: "blocks"] = new JsonArray(
-                            new JsonObject { [propertyName: "start"] = parts[0], [propertyName: "end"] = parts[1] }),
-                    });
-            }
+        public string CreateVersionBody(string blockRange, int daysAhead) =>
+            ShiftApiTestData.VersionBody([blockRange], daysAhead);
 
-            return new JsonObject
-            {
-                [propertyName: "effectiveFrom"] = effectiveFrom.ToString(format: "yyyy-MM-dd"),
-                [propertyName: "days"] = days,
-            }.ToJsonString();
-        }
+        public string CreateVersionBody(IReadOnlyList<string> blockRanges, int daysAhead) =>
+            ShiftApiTestData.VersionBody(blockRanges, daysAhead);
 
         public async Task<string> ArrangeVersionAsync(ShiftApiEmployee employee, TestTokenClaims claims)
         {

@@ -30,6 +30,7 @@ import { versionFormSchema } from '@employees/shifts/version-dialog/version-dial
 import type { VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 
 import { WORK_ORDER_COMPOSE, WorkOrderActionType } from '@work-orders/work-order-actions';
+import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 import { ShiftsStore } from './shifts.store';
 
@@ -67,6 +68,7 @@ describe('ShiftsStore', () => {
   const deleteVersion = vi.fn();
   const setOverride = vi.fn();
   const deleteOverride = vi.fn();
+  const daySchedule = vi.fn();
   const add = vi.fn();
   const confirm = vi.fn();
 
@@ -93,6 +95,7 @@ describe('ShiftsStore', () => {
             deleteOverride,
           },
         },
+        { provide: WorkOrdersApi, useValue: { daySchedule } },
         { provide: AuthStore, useValue: { hasPermission: () => true } },
         provideRouter([{ path: '**', component: Blank }]),
         provideFakePlatformNavigation(),
@@ -143,6 +146,15 @@ describe('ShiftsStore', () => {
     for (const mock of [createVersion, updateVersion, deleteVersion, setOverride, deleteOverride]) {
       mock.mockReset().mockReturnValue(of(undefined));
     }
+    daySchedule.mockReset().mockReturnValue(
+      of({
+        date: '2027-06-02',
+        timeZoneId: 'Europe/Kyiv',
+        source: 'template',
+        blocks: [{ startLocal: '08:00:00', endLocal: '17:00:00', startUtc: '', endUtc: '' }],
+        workOrders: [],
+      }),
+    );
     add.mockReset();
     confirm.mockClear();
   });
@@ -286,12 +298,118 @@ describe('ShiftsStore', () => {
     expect(deleteOverride).not.toHaveBeenCalled();
   });
 
+  it('requestDeleteOverride_With422AndWorkOrders_KeepsTheAffectedListAndNoToast', async () => {
+    deleteOverride.mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: HttpStatusCode.UnprocessableEntity,
+            error: {
+              workOrders: [
+                { id: 'wo-1', title: 'Replace filter', plannedStartLocal: '2027-06-10T09:00:00' },
+                { id: 'wo-2', title: 'Check seal', plannedStartLocal: '2027-06-10T11:00:00' },
+              ],
+            },
+          }),
+      ),
+    );
+    const store = await setup({ isConfirmed: true });
+
+    store.requestDeleteOverride(OVERRIDE);
+    await settle();
+
+    expect(store.dialog()).toBeNull();
+    expect(store.affectedWorkOrders()).toHaveLength(2);
+    expect(add).not.toHaveBeenCalled();
+  });
+
+  it('requestDeleteOverride_With422WithoutWorkOrders_ShowsTheRuleToast', async () => {
+    deleteOverride.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: HttpStatusCode.UnprocessableEntity, error: {} })),
+    );
+    const store = await setup({ isConfirmed: true });
+
+    store.requestDeleteOverride(OVERRIDE);
+    await settle();
+
+    expect(store.affectedWorkOrders()).toEqual([]);
+    expect(add).toHaveBeenCalledWith(expect.objectContaining({ detail: 'SHIFTS.TOASTS.RULE' }));
+  });
+
+  it('openOverrideDialog_ForANewOverride_LoadsTheBlocksOfTomorrow', async () => {
+    const store = await setup();
+
+    store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.prefillBlocks()).toEqual([{ start: '08:00', end: '17:00' }]));
+
+    expect(daySchedule).toHaveBeenCalledWith('e1', '2027-06-02');
+  });
+
+  it('setPrefillDate_WithAnotherDate_LoadsTheBlocksOfThatDate', async () => {
+    const store = await setup();
+    store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.prefillBlocks()).not.toBeNull());
+
+    store.setPrefillDate(Temporal.PlainDate.from('2027-06-05'));
+
+    await vi.waitFor(() => expect(daySchedule).toHaveBeenLastCalledWith('e1', '2027-06-05'));
+  });
+
+  it('setPrefillDate_WithTheDateInUse_LoadsNothingAgain', async () => {
+    const store = await setup();
+    store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.prefillBlocks()).not.toBeNull());
+    const before = daySchedule.mock.calls.length;
+
+    store.setPrefillDate(Temporal.PlainDate.from('2027-06-02'));
+    await settle();
+
+    expect(daySchedule.mock.calls.length).toBe(before);
+  });
+
+  it('openOverrideDialog_ForAStoredOverride_LoadsNoDay', async () => {
+    const store = await setup();
+
+    store.openOverrideDialog(OVERRIDE);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
+    await settle();
+
+    expect(daySchedule).not.toHaveBeenCalled();
+    expect(store.prefillBlocks()).toBeNull();
+  });
+
   it('isEditable_ForAVersionThatTookEffect_IsFalse', async () => {
     const store = await setup();
 
     expect(store.isEditable(VERSION)).toBe(true);
     expect(store.isEditable({ ...VERSION, effectiveFrom: '2027-06-01' })).toBe(false);
     expect(store.isEditable({ ...VERSION, effectiveFrom: '2027-05-01' })).toBe(false);
+  });
+
+  it('isOverrideEditable_ForAPastOverride_IsFalseAndForTodayAndLaterIsTrue', async () => {
+    const store = await setup();
+
+    expect(store.isOverrideEditable({ ...OVERRIDE, date: '2027-05-31' })).toBe(false);
+    expect(store.isOverrideEditable({ ...OVERRIDE, date: '2027-06-01' })).toBe(true);
+    expect(store.isOverrideEditable(OVERRIDE)).toBe(true);
+  });
+
+  it('requestDeleteOverride_ForToday_AsksWithTheTodayMessage', async () => {
+    const store = await setup({ isConfirmed: false });
+
+    store.requestDeleteOverride({ ...OVERRIDE, date: '2027-06-01' });
+
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ message: 'SHIFTS.CONFIRM.DELETE_TODAY_MESSAGE' }));
+  });
+
+  it('requestDeleteOverride_ForALaterDate_AsksWithTheTemplateMessage', async () => {
+    const store = await setup({ isConfirmed: false });
+
+    store.requestDeleteOverride(OVERRIDE);
+
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'SHIFTS.CONFIRM.DELETE_OVERRIDE_MESSAGE' }),
+    );
   });
 
   it('openOverrideDialog_AfterAFailedVersionSave_ClearsTheAffectedList', async () => {

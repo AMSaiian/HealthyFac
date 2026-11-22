@@ -956,7 +956,8 @@
       "START": "start",
       "END": "end",
       "DAY_OFF": "Day off",
-      "INVALID": "Fix the blocks and the date first"
+      "INVALID": "Fix the blocks and the date first",
+      "LOADING": "Loading the blocks of the day"
     },
     "ERRORS": {
       "TIME_FORMAT": "Use the format HH:mm",
@@ -965,9 +966,9 @@
       "END_AFTER_START": "A block must end after it starts",
       "UNSORTED": "Sort the blocks by their start",
       "OVERLAP": "Blocks must not overlap",
-      "TOO_MANY": "A day has at most 6 blocks",
       "DAYS": "The template needs all 7 weekdays",
-      "DATE_REQUIRED": "Choose a date"
+      "DATE_REQUIRED": "Choose a date",
+      "START_BEFORE_NOW": "A block cannot start before now"
     },
     "TOASTS": {
       "SAVED": "The shifts were saved",
@@ -979,11 +980,13 @@
       "DELETE_VERSION_HEADER": "Delete weekly template",
       "DELETE_VERSION_MESSAGE": "Delete this weekly template? This cannot be undone",
       "DELETE_OVERRIDE_HEADER": "Delete override",
-      "DELETE_OVERRIDE_MESSAGE": "Delete this override? The weekly template applies again"
+      "DELETE_OVERRIDE_MESSAGE": "Delete this override? The weekly template applies again",
+      "DELETE_TODAY_MESSAGE": "The part of today that already passed stays. From now on, the day follows the template"
     },
     "AFFECTED": {
       "TITLE": "Work orders outside the new shifts",
-      "HINT": "Move or unassign these work orders first, then save again"
+      "HINT": "Move or unassign these work orders first, then save again",
+      "DELETE_TITLE": "The override cannot be deleted"
     },
     "TOOLTIPS": {
       "ADD_BLOCK": "Add a work block to the day",

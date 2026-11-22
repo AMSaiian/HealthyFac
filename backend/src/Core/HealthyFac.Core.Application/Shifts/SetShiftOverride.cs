@@ -1,7 +1,6 @@
 using System.Data;
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
-using FluentValidation.Results;
 using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.Application.Shifts.ChangeChecks;
@@ -84,8 +83,6 @@ public sealed class SetShiftOverrideRequestHandler(
     IRealtimeNotifier notifier
 ) : RequestHandler<SetShiftOverrideRequest>
 {
-    private const string DateKey = "date";
-
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly DayScheduleReader _reader = reader;
     private readonly ShiftChangeGuard _guard = guard;
@@ -115,11 +112,7 @@ public sealed class SetShiftOverrideRequestHandler(
             isTracked: true,
             cancellationToken);
         var today = shifts.LocalDateOf(_timeProvider.GetUtcNow().UtcDateTime);
-        if (request.Date < today || request.Date > today.AddDays(ShiftValidationConstants.MaxDaysAhead))
-        {
-            throw new AppValidationException(
-                [new ValidationFailure(DateKey, ShiftErrors.Validation.DateOutOfRange)]);
-        }
+        ShiftDateRules.EnsureInRange(request.Date, today);
 
         var before = shifts.Resolve(request.Date, request.Date);
         var times = request.Blocks.Select(block => block.ToTimes()).ToList();

@@ -131,6 +131,11 @@ export function isEditableVersion(version: ShiftVersion, today: Temporal.PlainDa
   return version.effectiveFrom > today.toString();
 }
 
+/** An override may change on today and later dates. An override of a past date is history. */
+export function isEditableOverride(override: ShiftOverride, today: Temporal.PlainDate): boolean {
+  return override.date >= today.toString();
+}
+
 /** The blocks of a day as text, e.g. `08:00-12:00, 13:00-17:00`. */
 export function summaryOf(blocks: readonly ShiftBlock[]): string {
   return blocks.map((block) => `${block.start}-${block.end}`).join(', ');
