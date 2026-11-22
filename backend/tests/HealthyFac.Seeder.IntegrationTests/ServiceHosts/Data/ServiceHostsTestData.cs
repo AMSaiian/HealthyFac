@@ -5,6 +5,11 @@ namespace HealthyFac.Seeder.IntegrationTests.ServiceHosts.Data;
 public static class ServiceHostsTestData
 {
     public const int RoleCount = 2;
+    public const string ClientsPathFormat = "admin/realms/{0}/clients";
+    public const string AuthClientId = "healthyfac-auth";
+    public const string TokenLifespanAttribute = "access.token.lifespan";
+    public const int ShortLifespanSeconds = 2;
+    public static readonly TimeSpan ClockJump = TimeSpan.FromDays(days: 30);
     public static readonly TimeSpan ClockTolerance = TimeSpan.FromMilliseconds(milliseconds: 100);
     public const string BlobUrlKey = "Services:document:FileStorage:PublicBlobBaseUrl";
     public const string OverrideBlobUrl = "https://override.test/blobs";

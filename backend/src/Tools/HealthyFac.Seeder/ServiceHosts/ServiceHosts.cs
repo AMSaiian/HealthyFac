@@ -1,14 +1,19 @@
+using HealthyFac.Core.Application.Employees.SendEmployeeInviteEmail;
 using HealthyFac.Seeder.Relay;
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
+using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AuthApplication = HealthyFac.Auth.Application.ConfigureServices;
 using AuthInfrastructure = HealthyFac.Auth.Infrastructure.ConfigureServices;
@@ -86,7 +91,8 @@ public sealed class ServiceHosts : IAsyncDisposable
                 baseDirectory,
                 CoreApplication.AddApplicationServices,
                 CoreInfrastructure.AddInfrastructureServices,
-                CoreInitialization.InitializeDatabaseAsync),
+                CoreInitialization.InitializeDatabaseAsync,
+                (services, _) => services.AddScoped<IEmployeeInviteEmailBuilder, SeedInviteEmailBuilder>()),
             Build(
                 ServiceName.Telemetry,
                 rootConfiguration,
@@ -135,6 +141,39 @@ public sealed class ServiceHosts : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Gives the service token parts the system clock. The seed clock moves minutes or days at each event, while the
+    /// token lifetime and the lock timeout are real time: on the seed clock a token would count as expired at once,
+    /// or a lock wait could never end. Every other part keeps the seed clock. A host without service tokens is kept.
+    /// </summary>
+    /// <param name="services">The registrations of the host, after the infrastructure registrations.</param>
+    private static void UseRealClockForServiceTokens(IServiceCollection services)
+    {
+        if (!services.Any(descriptor => descriptor.ServiceType == typeof(TokenStore)))
+        {
+            return;
+        }
+
+        services.Replace(
+            ServiceDescriptor.Singleton(provider => new TokenEndpointClient(
+                provider.GetRequiredService<IHttpClientFactory>(),
+                provider.GetRequiredService<IOptions<ServiceTokenOptions>>(),
+                TimeProvider.System,
+                Random.Shared)));
+        services.Replace(
+            ServiceDescriptor.Singleton(provider => new TokenStore(
+                provider.GetRequiredService<ITokenCacheStorage>(),
+                TimeProvider.System,
+                provider.GetRequiredService<IOptions<ServiceTokenOptions>>(),
+                provider.GetRequiredService<IOptions<ServiceOptions>>(),
+                provider.GetRequiredService<ILogger<TokenStore>>())));
+        services.Replace(
+            ServiceDescriptor.Singleton(provider => new ServiceTokenCache(
+                provider.GetRequiredService<TokenEndpointClient>(),
+                provider.GetRequiredService<TokenStore>(),
+                provider.GetRequiredService<IOptions<ServiceOptions>>())));
+    }
+
     private static ServiceHost Build(
         ServiceName name,
         IConfiguration rootConfiguration,
@@ -166,6 +205,7 @@ public sealed class ServiceHosts : IAsyncDisposable
         addApplication(services);
         addInfrastructure(services, configuration, environment);
         services.Replace(ServiceDescriptor.Singleton<IBackgroundQueue<RealtimePush>, DiscardingRealtimeQueue>());
+        UseRealClockForServiceTokens(services);
 
         var provider = services.BuildServiceProvider(validateScopes: true);
         try

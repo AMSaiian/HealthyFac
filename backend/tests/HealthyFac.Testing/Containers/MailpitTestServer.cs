@@ -72,6 +72,13 @@ public sealed class MailpitTestServer : IAsyncDisposable
             .ToList();
     }
 
+    /// <summary>Deletes every stored message, so a test counts only the emails of its own run.</summary>
+    public async Task DeleteMessagesAsync()
+    {
+        using var response = await _client.DeleteAsync(MessagesPath);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<string> GetMessageTextAsync(string id)
     {
         var message = await GetMessageDetailAsync(id);

@@ -2,6 +2,7 @@ using HealthyFac.Auth.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.Database;
+using HealthyFac.Seeder.Accounts;
 using HealthyFac.Seeder.ServiceHosts;
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Telemetry.Infrastructure.Database;
@@ -27,6 +28,8 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
     private readonly AzuriteTestStorage _storage = new();
     private readonly MailpitTestServer _mailpit = new();
     private readonly RedisTestServer _redis = new();
+    private readonly KeycloakTestServer _keycloak = new();
+    private readonly List<Guid> _organizations = [];
 
     private SeederHosts _hosts = null!;
     private IReadOnlyList<DatabaseResetter>? _resetters;
@@ -51,7 +54,12 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
 
     public async ValueTask InitializeAsync()
     {
-        await Task.WhenAll(_database.StartAsync(), _storage.StartAsync(), _mailpit.StartAsync(), _redis.StartAsync());
+        await Task.WhenAll(
+            _database.StartAsync(),
+            _storage.StartAsync(),
+            _mailpit.StartAsync(),
+            _redis.StartAsync(),
+            _keycloak.StartAsync(SeederTestData.RealmEnvironment));
 
         _hosts = SeederHosts.Create(CreateConfiguration(CreateSettings()), Clock, AppContext.BaseDirectory);
     }
@@ -85,6 +93,18 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
     {
         var moment = EnterNextMoment(item: "initialization");
         await Task.WhenAll(_hosts.All.Select(host => host.InitializeAsync(cancellationToken)));
+        await CreateResettersAsync();
+
+        return moment;
+    }
+
+    /// <summary>
+    /// Keeps a resetter for each database. Call it after the schemas exist, so the reset deletes the rows of a test
+    /// that initialized the hosts itself.
+    /// </summary>
+    /// <returns>A task that completes when the resetters exist.</returns>
+    public async Task CreateResettersAsync()
+    {
         _resetters ??=
         [
             await CreateResetterAsync<CoreDbContext>(_hosts.Core, service: "core"),
@@ -93,7 +113,6 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
             await CreateResetterAsync<InsightsDbContext>(_hosts.Insights, service: "insights"),
             await CreateResetterAsync<AuthDbContext>(_hosts.Auth, service: "auth"),
         ];
-        return moment;
     }
 
     /// <summary>Deletes every row of the 5 databases and clears Redis, so the next test starts on empty tables.
@@ -105,6 +124,11 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
             await Task.WhenAll(_resetters.Select(resetter => resetter.ResetAsync()));
         }
 
+        await _mailpit.DeleteMessagesAsync();
+        await _keycloak.DeleteTestIdentitiesAsync();
+        await DeleteTrackedOrganizationsAsync();
+        Clock.Reset();
+        _momentIndex = 0;
         await _redis.FlushAsync();
     }
 
@@ -115,6 +139,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
         await _storage.DisposeAsync();
         await _mailpit.DisposeAsync();
         await _redis.DisposeAsync();
+        await _keycloak.DisposeAsync();
     }
 
     private async Task<DatabaseResetter> CreateResetterAsync<TContext>(ServiceHost host, string service)
@@ -128,6 +153,25 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
         }.ConnectionString;
 
         return await DatabaseResetter.CreateAsync(connectionString, context);
+    }
+
+    public KeycloakTestServer Keycloak => _keycloak;
+
+    public MailpitTestServer Mailpit => _mailpit;
+
+    /// <summary>Remembers a company whose Keycloak organization the reset deletes.</summary>
+    /// <param name="companyId">The company ID.</param>
+    public void TrackOrganization(Guid companyId) => _organizations.Add(companyId);
+
+    private async Task DeleteTrackedOrganizationsAsync()
+    {
+        var accounts = new KeycloakAccounts(_hosts.Auth);
+        foreach (var companyId in _organizations)
+        {
+            await accounts.DeleteOrganizationWithMembersAsync(companyId, CancellationToken.None);
+        }
+
+        _organizations.Clear();
     }
 
     private static string DatabaseName(string service) => $"seeder_{service}";
@@ -182,13 +226,17 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
                 Set(key: "Gemini:TriageModel", value: "test-triage-model");
                 break;
             case "auth":
-                Set(key: "KeycloakAdmin:BaseAddress", SeederTestData.UnusedUrl);
+                Set(key: "KeycloakAdmin:BaseAddress", _keycloak.BaseAddress.TrimEnd(trimChar: '/'));
                 Set(key: "KeycloakAdmin:Realm", SeederTestData.KeycloakRealm);
                 Set(key: "KeycloakAdmin:SpaClientId", value: "healthyfac-spa");
-                Set(key: "KeycloakAdmin:SpaBaseUrl", SeederTestData.SpaBaseUrl);
-                Set(key: "ServiceTokens:TokenEndpoint", $"{SeederTestData.UnusedUrl}/token");
+                Set(key: "KeycloakAdmin:SpaBaseUrl", SeederTestData.KeycloakSpaUrl);
+                Set(
+                    key: "ServiceTokens:TokenEndpoint",
+                    string.Format(
+                        SeederTestData.TokenPathFormat, _keycloak.BaseAddress.TrimEnd(trimChar: '/'),
+                        SeederTestData.KeycloakRealm));
                 Set(key: "ServiceTokens:ClientId", value: "healthyfac-auth");
-                Set(key: "ServiceTokens:ClientSecret", SeederTestData.UnusedSecret);
+                Set(key: "ServiceTokens:ClientSecret", SeederTestData.AuthClientSecret);
                 break;
         }
     }

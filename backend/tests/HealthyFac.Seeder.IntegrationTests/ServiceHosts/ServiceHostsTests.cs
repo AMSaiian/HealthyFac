@@ -188,4 +188,45 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         sent.OccurredOn.Should().BeCloseTo(moment.UtcDateTime, ServiceHostsTestData.ClockTolerance);
         insightsInbox.Single(message => message.Id == sent.Id).ProcessedOn.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task GetTokenAsync_AfterTheSeedClockJumps30Days_ReturnsTheCachedToken()
+    {
+        var moment = _fixture.EnterNextMoment(item: "token");
+        var first = await _fixture.GetAuthTokenAsync(TestContext.Current.CancellationToken);
+        _fixture.Clock.Enter(moment.Add(ServiceHostsTestData.ClockJump), item: "token-later");
+
+        var second = await _fixture.GetAuthTokenAsync(TestContext.Current.CancellationToken);
+
+        second.Should().Be(first);
+    }
+
+    [Fact]
+    public async Task GetTokenAsync_AfterTheRealLifetimeEnded_FetchesANewToken()
+    {
+        _fixture.EnterNextMoment(item: "token");
+        await _fixture.SetAuthClientTokenLifespanAsync(ServiceHostsTestData.ShortLifespanSeconds);
+        try
+        {
+            var first = await _fixture.GetAuthTokenAsync(TestContext.Current.CancellationToken);
+
+            var second = await _fixture.GetAuthTokenAsync(TestContext.Current.CancellationToken);
+
+            second.Should().NotBe(first);
+        }
+        finally
+        {
+            await _fixture.SetAuthClientTokenLifespanAsync(seconds: null);
+        }
+    }
+
+    [Fact]
+    public void GetUtcNow_OnTheAuthHostAfterEnter_ReturnsTheSeedMoment()
+    {
+        var moment = _fixture.EnterNextMoment(item: "clock");
+
+        var read = _fixture.Hosts.Auth.GetService<TimeProvider>().GetUtcNow();
+
+        read.Should().Be(moment);
+    }
 }

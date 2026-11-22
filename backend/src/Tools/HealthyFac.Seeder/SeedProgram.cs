@@ -1,3 +1,5 @@
+using HealthyFac.Seeder.Accounts;
+using HealthyFac.Seeder.People;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.ServiceHosts;
 using HealthyFac.Seeder.Timeline;
@@ -13,7 +15,6 @@ public static class SeedProgram
 {
     public const string ResetArgument = "--reset";
     public const string SeedFolderName = "seed/demo";
-    public const string CompanyZoneId = "Europe/Kyiv";
 
     private const int Success = 0;
     private const int Failure = 1;
@@ -62,13 +63,14 @@ public static class SeedProgram
     private static async Task RunJobAsync(TextWriter output, string baseDirectory, CancellationToken cancellationToken)
     {
         var anchor = DateTimeOffset.UtcNow;
-        var zone = TimeZoneInfo.FindSystemTimeZoneById(CompanyZoneId);
         var clock = new SeedClock();
         var configuration = new ConfigurationBuilder().AddEnvironmentVariables().Build();
 
         await using var hosts = ServiceHosts.ServiceHosts.Create(configuration, clock, baseDirectory);
         var folder = new SeedFolder(Path.Combine(baseDirectory, SeedFolderName));
-        var events = SeedPlan.Load(SeedParts.Create(hosts), folder);
+        var people = new PeoplePart(hosts, new KeycloakAccounts(hosts.Auth));
+        var events = SeedPlan.Load(SeedParts.Create(people), folder);
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(people.CompanyZoneId);
 
         var check = new SeedCheck(
             anchor,

@@ -32,6 +32,12 @@ public sealed class ServiceHost : IAsyncDisposable
 
     public ServiceName Name { get; }
 
+    /// <summary>Resolves a singleton of the host. Tests reach the token parts and the clock through it.</summary>
+    /// <typeparam name="TService">The service type.</typeparam>
+    /// <returns>The service.</returns>
+    internal TService GetService<TService>()
+        where TService : notnull => _provider.GetRequiredService<TService>();
+
     /// <summary>The message types that the service handles.</summary>
     internal IntegrationMessageRegistry MessageRegistry => _provider.GetRequiredService<IntegrationMessageRegistry>();
 

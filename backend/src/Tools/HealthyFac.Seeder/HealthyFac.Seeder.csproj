@@ -21,6 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Content Include="..\..\..\seed\demo\*.json" Link="seed\demo\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
         <Content Include="..\..\Core\HealthyFac.Core.Web\appsettings.json" Link="services\core\appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
         <Content Include="..\..\Telemetry\HealthyFac.Telemetry.Web\appsettings.json" Link="services\telemetry\appsettings.json" CopyToOutputDirectory="PreserveNewest"/>
         <Content Include="..\..\Document\HealthyFac.Document.Web\appsettings.json" Link="services\document\appsettings.json" CopyToOutputDirectory="PreserveNewest"/>

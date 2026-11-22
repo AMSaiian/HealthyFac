@@ -1,0 +1,116 @@
+{
+  "company": {
+    "id": "019b4c00-0000-7000-8000-00000000c001",
+    "name": "Kalyna Precision Works",
+    "timeZoneId": "Europe/Kyiv",
+    "createdAt": "d-61 08:00"
+  },
+  "password": "Kalyna-Demo-2026!",
+  "people": [
+    {
+      "key": "nadiia",
+      "firstName": "Nadiia",
+      "lastName": "Kravets",
+      "email": "nadiia.kravets@kalyna-works.test",
+      "role": "supervisor",
+      "invitedAt": "d-61 08:05",
+      "invitedBy": null,
+      "acceptedAt": "d-60 09:00"
+    },
+    {
+      "key": "taras",
+      "firstName": "Taras",
+      "lastName": "Hnatiuk",
+      "email": "taras.hnatiuk@kalyna-works.test",
+      "role": "supervisor",
+      "invitedAt": "d-60 10:00",
+      "invitedBy": "nadiia",
+      "acceptedAt": "d-60 14:00"
+    },
+    {
+      "key": "andrii",
+      "firstName": "Andrii",
+      "lastName": "Kovalchuk",
+      "email": "andrii.kovalchuk@kalyna-works.test",
+      "role": "worker",
+      "invitedAt": "d-46 10:00",
+      "invitedBy": "nadiia",
+      "acceptedAt": "d-45 09:00"
+    },
+    {
+      "key": "iryna",
+      "firstName": "Iryna",
+      "lastName": "Savchenko",
+      "email": "iryna.savchenko@kalyna-works.test",
+      "role": "worker",
+      "invitedAt": "d-41 10:00",
+      "invitedBy": "taras",
+      "acceptedAt": "d-40 09:00"
+    },
+    {
+      "key": "maksym",
+      "firstName": "Maksym",
+      "lastName": "Lysenko",
+      "email": "maksym.lysenko@kalyna-works.test",
+      "role": "worker",
+      "invitedAt": "d-36 10:00",
+      "invitedBy": "nadiia",
+      "acceptedAt": "d-35 09:00"
+    },
+    {
+      "key": "sofiia",
+      "firstName": "Sofiia",
+      "lastName": "Bondar",
+      "email": "sofiia.bondar@kalyna-works.test",
+      "role": "worker",
+      "invitedAt": "d-31 10:00",
+      "invitedBy": "taras",
+      "acceptedAt": "d-30 09:00"
+    },
+    {
+      "key": "petro",
+      "firstName": "Petro",
+      "lastName": "Melnyk",
+      "email": "petro.melnyk@kalyna-works.test",
+      "role": "worker",
+      "invitedAt": "d-21 10:00",
+      "invitedBy": "nadiia",
+      "acceptedAt": "d-20 09:00"
+    }
+  ],
+  "openInvites": [
+    {
+      "email": "oksana.tkachenko@kalyna-works.test",
+      "role": "worker",
+      "invitedBy": "taras",
+      "invitedAt": "d-1 10:00"
+    },
+    {
+      "email": "yurii.shevchuk@kalyna-works.test",
+      "role": "worker",
+      "invitedBy": "nadiia",
+      "invitedAt": "h-2"
+    }
+  ],
+  "shiftOverrides": [
+    {
+      "person": "petro",
+      "day": "wd+1 00:00",
+      "blocks": [],
+      "setBy": "nadiia",
+      "setAt": "d-3 11:00"
+    },
+    {
+      "person": "sofiia",
+      "day": "wd+2 00:00",
+      "blocks": [
+        {
+          "from": "08:00",
+          "to": "12:00"
+        }
+      ],
+      "setBy": "taras",
+      "setAt": "d-2 15:00"
+    }
+  ]
+}

@@ -13,6 +13,27 @@ public static class SeederTestData
     public const string SpaBaseUrl = "https://app.test";
     public const string PublicBlobBaseUrl = "https://api.healthyfac.test/api/document/blobs";
 
+    public const string AuthClientSecret = "test-auth-client-secret";
+    public const string KeycloakSpaUrl = "http://localhost:4200";
+    public const string TokenPathFormat = "{0}/realms/{1}/protocol/openid-connect/token";
+    public const string SupervisorEmail = "supervisor@healthyfac.local";
+    public const string SupervisorPassword = "Sup3rvisor-Passw0rd!";
+
+    public static readonly IReadOnlyDictionary<string, string> RealmEnvironment = new Dictionary<string, string>
+    {
+        [key: "HEALTHYFAC_SPA_URL"] = KeycloakSpaUrl,
+        [key: "HEALTHYFAC_TEST_COMPANY_ID"] = "0190f3a0-0000-7000-8000-000000000001",
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID"] = "0190f3a0-0000-7000-8000-000000000002",
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID"] = "0190f3a0-0000-7000-8000-000000000003",
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_EMAIL"] = SupervisorEmail,
+        [key: "HEALTHYFAC_TEST_SUPERVISOR_PASSWORD"] = SupervisorPassword,
+        [key: "KEYCLOAK_AUTH_CLIENT_SECRET"] = AuthClientSecret,
+        [key: "KEYCLOAK_CORE_CLIENT_SECRET"] = "test-core-client-secret",
+        [key: "KEYCLOAK_TELEMETRY_CLIENT_SECRET"] = "test-telemetry-client-secret",
+        [key: "KEYCLOAK_DOCUMENT_CLIENT_SECRET"] = "test-document-client-secret",
+        [key: "KEYCLOAK_INSIGHTS_CLIENT_SECRET"] = "test-insights-client-secret",
+    };
+
     public static readonly DateTimeOffset FirstMoment = new(
         year: 2027, month: 3, day: 24, hour: 7, minute: 0, second: 0, TimeSpan.Zero);
 

@@ -70,4 +70,15 @@ public sealed class SeedClock : TimeProvider
     }
 
     public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+
+    /// <summary>Forgets every moment, so a test starts a new timeline. Tests reach it by InternalsVisibleTo.</summary>
+    internal void Reset()
+    {
+        lock (_lock)
+        {
+            _lastRead = null;
+            _enteredMoment = null;
+            _previousMoment = null;
+        }
+    }
 }
