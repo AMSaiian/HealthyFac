@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using HealthyFac.Core.Application.Drafts;
 using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Insights.Messaging.Drafts;
@@ -62,6 +64,12 @@ public sealed class MachinesPart : ISeedPart
     public Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken) =>
         _actions[SeedItem.KeyOf(seedEvent.Item)](context, cancellationToken);
 
+    /// <summary>
+    /// Gives each metric key or status code its own stand-in ID for the check, because the phase rules reject a
+    /// phase that names one metric twice.
+    /// </summary>
+    private static Guid CheckDefinitionId(string name) => new(MD5.HashData(Encoding.UTF8.GetBytes(name)));
+
     private static string MachineKey(string key) => $"{key}{MachinesConstants.MachineSuffix}";
 
     private static string UserKey(string person) => $"{person}{PeopleConstants.UserSuffix}";
@@ -99,7 +107,6 @@ public sealed class MachinesPart : ISeedPart
         _actions[key] = (context, cancellationToken) =>
             ApplyDefinitionsAsync(machine, item, context, cancellationToken);
         var draft = FindDraft(machine, item);
-        Func<string, Guid> checkId = _ => PeopleConstants.CheckId;
 
         return new SeedEvent
         {
@@ -119,7 +126,13 @@ public sealed class MachinesPart : ISeedPart
                 .. draft.Phases.Select(phase => Request(
                     ServiceName.Telemetry,
                     PhaseRequest(
-                        draft, phase, item, PeopleConstants.CheckId, PeopleConstants.CheckId, checkId, checkId))),
+                        draft,
+                        phase,
+                        item,
+                        PeopleConstants.CheckId,
+                        PeopleConstants.CheckId,
+                        CheckDefinitionId,
+                        CheckDefinitionId))),
             ],
         };
     }

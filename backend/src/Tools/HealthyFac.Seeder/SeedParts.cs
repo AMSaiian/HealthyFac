@@ -3,6 +3,7 @@ using HealthyFac.Seeder.Ingest;
 using HealthyFac.Seeder.Machines;
 using HealthyFac.Seeder.People;
 using HealthyFac.Seeder.Timeline;
+using HealthyFac.Seeder.WorkOrders;
 
 namespace HealthyFac.Seeder;
 
@@ -14,5 +15,5 @@ public static class SeedParts
     /// <param name="people">The people part. The company zone comes from its file.</param>
     /// <returns>The parts. Each cycle adds its part here.</returns>
     public static IReadOnlyList<ISeedPart> Create(ServiceHosts.ServiceHosts hosts, PeoplePart people) =>
-        [people, new IngestPart(hosts), new MachinesPart(hosts), new CasesPart(hosts)];
+        [people, new IngestPart(hosts), new MachinesPart(hosts), new CasesPart(hosts), new WorkOrdersPart(hosts)];
 }

@@ -14,18 +14,22 @@ public static class SeedRunFixtureExtensions
     {
         public async Task<SeedContext> RunPartsAsync(
             Func<SeederFixture, IReadOnlyList<ISeedPart>> createParts,
-            CancellationToken cancellationToken
+            CancellationToken cancellationToken,
+            DateTimeOffset? anchor = null,
+            string? seedFolder = null
         )
         {
+            var seedAnchor = anchor ?? PeopleTestData.Anchor;
             var zone = TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId);
-            fixture.TrackOrganization(PeopleTestData.CompanyId);
-            var folder = new SeedFolder(Path.Combine(AppContext.BaseDirectory, PeopleTestData.SeedFolder));
+            var folder = new SeedFolder(
+                seedFolder ?? Path.Combine(AppContext.BaseDirectory, PeopleTestData.SeedFolder));
             var events = SeedPlan.Load(createParts(fixture), folder);
-            var context = new SeedContext { Anchor = PeopleTestData.Anchor, Zone = zone };
+            fixture.TrackOrganization(PeopleTestData.CompanyId);
+            var context = new SeedContext { Anchor = seedAnchor, Zone = zone };
             var relay = fixture.Hosts.CreateRelay();
             var runner = new TimelineRunner(
                 fixture.Clock,
-                PeopleTestData.Anchor,
+                seedAnchor,
                 zone,
                 async token =>
                 {
@@ -55,8 +59,16 @@ public static class SeedRunFixtureExtensions
                 ],
                 cancellationToken);
 
-        public Task<SeedContext> RunFullSeedAsync(CancellationToken cancellationToken) =>
-            fixture.RunPartsAsync(current => SeedParts.Create(current.Hosts, People(current)), cancellationToken);
+        public Task<SeedContext> RunFullSeedAsync(
+            CancellationToken cancellationToken,
+            DateTimeOffset? anchor = null,
+            string? seedFolder = null
+        ) =>
+            fixture.RunPartsAsync(
+                current => SeedParts.Create(current.Hosts, People(current)),
+                cancellationToken,
+                anchor,
+                seedFolder);
     }
 
     public static PeoplePart People(SeederFixture fixture) =>

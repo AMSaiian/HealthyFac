@@ -31,13 +31,18 @@ public sealed class CasesPart : ISeedPart
     public IReadOnlyList<SeedEvent> ReadEvents(SeedFolder folder)
     {
         _file = folder.Read<CasesFile>(CasesConstants.FileName);
+        var item = SeedItem.Of(CasesConstants.FileName, CasesConstants.CaseKey);
+        if (_file.Signal.Coverage != SignalCoverage.Drafted)
+        {
+            throw new SeedFileException(CasesErrors.CoverageNotSupported(item, _file.Signal.Coverage.Value));
+        }
 
         return
         [
             new SeedEvent
             {
                 At = _file.Case.OpenedAt,
-                Item = SeedItem.Of(CasesConstants.FileName, CasesConstants.CaseKey),
+                Item = item,
                 Creates = [CasesConstants.CaseKey],
                 Uses = [PeopleConstants.CompanyKey, $"{_file.Case.Machine}{CasesConstants.MachineSuffix}"],
             },

@@ -1,0 +1,277 @@
+{
+  "workOrders": [
+    {
+      "key": "pump-seal",
+      "title": "Replace the mechanical seal of the pump",
+      "description": "<p>The mechanical seal leaks at the drive end. Replace the seal and the O-rings.</p><p>Check the shaft sleeve for wear before the assembly.</p>",
+      "priority": "high",
+      "category": "repair",
+      "machine": "pump",
+      "estimateMinutes": 180,
+      "createdAt": "wd-6 15:00",
+      "createdBy": "nadiia",
+      "assignment": {
+        "at": "wd-6 15:05",
+        "by": "nadiia",
+        "assignee": "andrii",
+        "plannedStart": "wd-4 08:00"
+      },
+      "statusChanges": [
+        {
+          "at": "wd-4 08:05",
+          "by": "andrii",
+          "status": "inProgress"
+        },
+        {
+          "at": "wd-4 11:00",
+          "by": "andrii",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "key": "lathe-lubrication",
+      "title": "Check the central lubrication of the MTC-420",
+      "description": "<p>Check the oil level and the pressure of the central lubrication.</p><p>Look for blocked lines at the slide ways.</p>",
+      "priority": "medium",
+      "category": "preventive",
+      "machine": "lathe",
+      "estimateMinutes": 60,
+      "createdAt": "wd-5 15:00",
+      "createdBy": "taras",
+      "assignment": {
+        "at": "wd-5 15:05",
+        "by": "taras",
+        "assignee": "iryna",
+        "plannedStart": "wd-3 09:00"
+      },
+      "statusChanges": [
+        {
+          "at": "wd-3 09:05",
+          "by": "iryna",
+          "status": "inProgress"
+        },
+        {
+          "at": "wd-3 10:00",
+          "by": "iryna",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "key": "compressor-filter",
+      "title": "Measure the pressure drop of the compressor air filter",
+      "description": "<p>Measure the pressure drop over the intake air filter at full load.</p><p>Write the value in the work order. Replace the filter above the limit.</p>",
+      "priority": "medium",
+      "category": "inspection",
+      "machine": "compressor",
+      "estimateMinutes": 120,
+      "createdAt": "wd-4 15:00",
+      "createdBy": "nadiia",
+      "assignment": {
+        "at": "wd-4 15:05",
+        "by": "nadiia",
+        "assignee": "maksym",
+        "plannedStart": "wd-2 13:00"
+      },
+      "statusChanges": [
+        {
+          "at": "wd-2 13:05",
+          "by": "maksym",
+          "status": "inProgress"
+        },
+        {
+          "at": "wd-2 15:00",
+          "by": "maksym",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "key": "skid-markings",
+      "title": "Repaint the floor safety markings at the pump skid",
+      "description": "<p>The yellow markings around the pump skid are worn.</p><p>Repaint the lines and the walkway symbols.</p>",
+      "priority": "low",
+      "category": "other",
+      "machine": "pump",
+      "estimateMinutes": 120,
+      "createdAt": "wd-5 15:00",
+      "createdBy": "taras",
+      "assignment": {
+        "at": "wd-5 15:05",
+        "by": "taras",
+        "assignee": "petro",
+        "plannedStart": "wd-3 14:00"
+      },
+      "statusChanges": [
+        {
+          "at": "wd-4 16:00",
+          "by": "taras",
+          "status": "rejected"
+        }
+      ]
+    },
+    {
+      "key": "pump-coupling",
+      "title": "Realign the coupling of the pump and the motor",
+      "description": "<p>The vibration at the coupling grew. Realign the pump and the motor with the laser tool.</p><p>Check the coupling inserts.</p>",
+      "priority": "medium",
+      "category": "repair",
+      "machine": "pump",
+      "estimateMinutes": 240,
+      "createdAt": "wd-3 15:00",
+      "createdBy": "nadiia",
+      "assignment": {
+        "at": "wd-3 15:05",
+        "by": "nadiia",
+        "assignee": "andrii",
+        "plannedStart": "wd-1 13:00"
+      },
+      "statusChanges": [
+        {
+          "at": "wd-1 13:05",
+          "by": "andrii",
+          "status": "inProgress"
+        }
+      ]
+    },
+    {
+      "key": "turret-seal",
+      "title": "Replace the worn turret clamping seal",
+      "description": "<p>The clamping seal of the turret leaks hydraulic oil.</p><p>Replace the seal and test the clamping pressure.</p>",
+      "priority": "high",
+      "category": "repair",
+      "machine": "lathe",
+      "estimateMinutes": 120,
+      "createdAt": "wd-3 15:00",
+      "createdBy": "taras",
+      "assignment": {
+        "at": "wd-3 15:05",
+        "by": "taras",
+        "assignee": "petro",
+        "plannedStart": "wd-1 10:00"
+      },
+      "statusChanges": [
+        {
+          "at": "wd-1 10:30",
+          "by": "petro",
+          "status": "blocked"
+        }
+      ]
+    },
+    {
+      "key": "coolant-check",
+      "title": "Check the coolant concentration and top up",
+      "description": "<p>Measure the concentration of the coolant with the refractometer.</p><p>Top up the coolant tank to the mark.</p>",
+      "priority": "medium",
+      "category": "preventive",
+      "machine": "lathe",
+      "estimateMinutes": 90,
+      "createdAt": "wd-1 15:00",
+      "createdBy": "nadiia",
+      "assignment": {
+        "at": "wd-1 15:05",
+        "by": "nadiia",
+        "assignee": "sofiia",
+        "plannedStart": "wd+0 08:00"
+      },
+      "statusChanges": []
+    },
+    {
+      "key": "condensate-trap",
+      "title": "Drain the condensate trap and check the separator",
+      "description": "<p>Drain the condensate trap of the compressor and check the oil separator.</p><p>Note the amount of water.</p>",
+      "priority": "medium",
+      "category": "preventive",
+      "machine": "compressor",
+      "estimateMinutes": 60,
+      "createdAt": "wd-1 15:00",
+      "createdBy": "taras",
+      "assignment": {
+        "at": "wd-1 15:05",
+        "by": "taras",
+        "assignee": "maksym",
+        "plannedStart": "wd+0 13:00"
+      },
+      "statusChanges": []
+    },
+    {
+      "key": "bearing-vibration",
+      "title": "Measure the vibration of the pump bearings",
+      "description": "<p>Measure the vibration at both bearings of the pump with the handheld meter.</p><p>Compare the values with the limits of the manual.</p>",
+      "priority": "high",
+      "category": "inspection",
+      "machine": "pump",
+      "estimateMinutes": 60,
+      "createdAt": "wd-1 15:00",
+      "createdBy": "nadiia",
+      "assignment": {
+        "at": "wd-1 15:05",
+        "by": "nadiia",
+        "assignee": "andrii",
+        "plannedStart": "wd+1 09:00"
+      },
+      "statusChanges": []
+    },
+    {
+      "key": "spindle-sensor",
+      "title": "Calibrate the spindle speed sensor",
+      "description": "<p>Calibrate the speed sensor of the spindle with the reference tachometer.</p><p>Write the deviation in the work order.</p>",
+      "priority": "medium",
+      "category": "inspection",
+      "machine": "lathe",
+      "estimateMinutes": 90,
+      "createdAt": "wd-1 15:00",
+      "createdBy": "taras",
+      "assignment": {
+        "at": "wd-1 15:05",
+        "by": "taras",
+        "assignee": "iryna",
+        "plannedStart": "wd+2 13:00"
+      },
+      "statusChanges": []
+    },
+    {
+      "key": "compressor-oil",
+      "title": "Change the compressor oil and the oil filter",
+      "description": "<p>Change the oil and the oil filter of the compressor.</p><p>Send a sample of the old oil to the lab.</p>",
+      "priority": "high",
+      "category": "preventive",
+      "machine": "compressor",
+      "estimateMinutes": 180,
+      "createdAt": "wd-1 15:00",
+      "createdBy": "nadiia",
+      "assignment": {
+        "at": "wd-1 15:05",
+        "by": "nadiia",
+        "assignee": "maksym",
+        "plannedStart": "wd+3 08:00"
+      },
+      "statusChanges": []
+    },
+    {
+      "key": "wear-rings",
+      "title": "Order spare wear rings for the pump",
+      "description": "<p>Order a set of wear rings for the pump as a spare part.</p><p>Ask the supplier for the delivery time.</p>",
+      "priority": "low",
+      "category": "other",
+      "machine": "pump",
+      "estimateMinutes": 60,
+      "createdAt": "d-7 11:00",
+      "createdBy": "taras",
+      "statusChanges": []
+    },
+    {
+      "key": "conveyor-guard",
+      "title": "Fit a new guard on the chip conveyor",
+      "description": "<p>The guard on the chip conveyor of the lathe is bent.</p><p>Fit a new guard before the next shift change.</p>",
+      "priority": "medium",
+      "category": "repair",
+      "machine": "lathe",
+      "estimateMinutes": 90,
+      "createdAt": "d-2 14:00",
+      "createdBy": "nadiia",
+      "statusChanges": []
+    }
+  ]
+}
