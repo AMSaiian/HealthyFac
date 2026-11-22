@@ -1,0 +1,182 @@
+using HealthyFac.Seeder.Relay;
+using HealthyFac.Seeder.Timeline;
+using HealthyFac.Shared.Application.BackgroundQueues;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
+using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.IdEncryption;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using AuthApplication = HealthyFac.Auth.Application.ConfigureServices;
+using AuthInfrastructure = HealthyFac.Auth.Infrastructure.ConfigureServices;
+using AuthInitialization = HealthyFac.Auth.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
+using CoreApplication = HealthyFac.Core.Application.ConfigureServices;
+using CoreInfrastructure = HealthyFac.Core.Infrastructure.ConfigureServices;
+using CoreInitialization = HealthyFac.Core.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
+using DocumentApplication = HealthyFac.Document.Application.ConfigureServices;
+using DocumentInfrastructure = HealthyFac.Document.Infrastructure.ConfigureServices;
+using DocumentInitialization =
+    HealthyFac.Document.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
+using InsightsApplication = HealthyFac.Insights.Application.ConfigureServices;
+using InsightsInfrastructure = HealthyFac.Insights.Infrastructure.ConfigureServices;
+using InsightsInitialization =
+    HealthyFac.Insights.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
+using TelemetryApplication = HealthyFac.Telemetry.Application.ConfigureServices;
+using TelemetryInfrastructure = HealthyFac.Telemetry.Infrastructure.ConfigureServices;
+using TelemetryInitialization =
+    HealthyFac.Telemetry.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
+
+namespace HealthyFac.Seeder.ServiceHosts;
+
+/// <summary>
+/// The 5 service hosts of the seed job. Each host reads the settings of its Web project, the deployment file of its
+/// service, and the keys <c>Services:&lt;Name&gt;:*</c> of the root configuration (the environment variables
+/// <c>Services__&lt;Name&gt;__*</c>), in this order, so a later source overrides an earlier one. The settings file
+/// of the environment (<c>appsettings.Development.json</c>) comes after <c>appsettings.json</c>, as in the services.
+/// </summary>
+public sealed class ServiceHosts : IAsyncDisposable
+{
+    private const string SettingsFileName = "appsettings.json";
+    private const string DeploymentFileName = "appsettings.Deployment.json";
+    private const string ServicesDirectory = "services";
+    private const string SectionPrefix = "Services";
+
+    private ServiceHosts(
+        ServiceHost core,
+        ServiceHost telemetry,
+        ServiceHost document,
+        ServiceHost insights,
+        ServiceHost auth
+    )
+    {
+        Core = core;
+        Telemetry = telemetry;
+        Document = document;
+        Insights = insights;
+        Auth = auth;
+        All = [core, telemetry, document, insights, auth];
+    }
+
+    public ServiceHost Core { get; }
+
+    public ServiceHost Telemetry { get; }
+
+    public ServiceHost Document { get; }
+
+    public ServiceHost Insights { get; }
+
+    public ServiceHost Auth { get; }
+
+    public IReadOnlyList<ServiceHost> All { get; }
+
+    /// <summary>Builds the 5 hosts. No host starts a hosted service.</summary>
+    /// <param name="rootConfiguration">The configuration that holds the <c>Services:&lt;Name&gt;:*</c> keys.</param>
+    /// <param name="clock">The clock that every host uses as its <see cref="TimeProvider"/>.</param>
+    /// <param name="baseDirectory">The directory that holds the <c>services</c> folder.</param>
+    /// <returns>The hosts.</returns>
+    public static ServiceHosts Create(IConfiguration rootConfiguration, SeedClock clock, string baseDirectory) =>
+        new(
+            Build(
+                ServiceName.Core,
+                rootConfiguration,
+                clock,
+                baseDirectory,
+                CoreApplication.AddApplicationServices,
+                CoreInfrastructure.AddInfrastructureServices,
+                CoreInitialization.InitializeDatabaseAsync),
+            Build(
+                ServiceName.Telemetry,
+                rootConfiguration,
+                clock,
+                baseDirectory,
+                TelemetryApplication.AddApplicationServices,
+                TelemetryInfrastructure.AddInfrastructureServices,
+                TelemetryInitialization.InitializeDatabaseAsync),
+            Build(
+                ServiceName.Document,
+                rootConfiguration,
+                clock,
+                baseDirectory,
+                DocumentApplication.AddApplicationServices,
+                DocumentInfrastructure.AddInfrastructureServices,
+                DocumentInitialization.InitializeDatabaseAsync,
+                (services, configuration) => services.AddIdEncryptor(configuration)),
+            Build(
+                ServiceName.Insights,
+                rootConfiguration,
+                clock,
+                baseDirectory,
+                InsightsApplication.AddApplicationServices,
+                InsightsInfrastructure.AddInfrastructureServices,
+                InsightsInitialization.InitializeDatabaseAsync,
+                (services, configuration) => services.AddIdEncryptor(configuration)),
+            Build(
+                ServiceName.Auth,
+                rootConfiguration,
+                clock,
+                baseDirectory,
+                AuthApplication.AddApplicationServices,
+                AuthInfrastructure.AddInfrastructureServices,
+                AuthInitialization.InitializeDatabaseAsync));
+
+    /// <summary>Creates the relay over the databases of the 5 hosts.</summary>
+    /// <returns>The relay.</returns>
+    public MessageRelay CreateRelay() =>
+        new(All.Select(host => (IRelayEndpoint)new DatabaseRelayEndpoint(host)).ToList());
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var host in All)
+        {
+            await host.DisposeAsync();
+        }
+    }
+
+    private static ServiceHost Build(
+        ServiceName name,
+        IConfiguration rootConfiguration,
+        SeedClock clock,
+        string baseDirectory,
+        Func<IServiceCollection, IServiceCollection> addApplication,
+        Func<IServiceCollection, IConfiguration, IHostEnvironment, IServiceCollection> addInfrastructure,
+        Func<IServiceProvider, CancellationToken, Task> initialize,
+        Action<IServiceCollection, IConfiguration>? addExtras = null
+    )
+    {
+        var environment = new SeederHostEnvironment { ContentRootPath = baseDirectory };
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(baseDirectory)
+            .AddJsonFile(Path.Combine(ServicesDirectory, name.Value, SettingsFileName), optional: false)
+            .AddJsonFile(
+                Path.Combine(ServicesDirectory, name.Value, $"appsettings.{environment.EnvironmentName}.json"),
+                optional: false)
+            .AddJsonFile(Path.Combine(ServicesDirectory, name.Value, DeploymentFileName), optional: true)
+            .AddConfiguration(rootConfiguration.GetSection($"{SectionPrefix}:{name.Value}"))
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddSingleton<TimeProvider>(clock);
+        services.AddLogging();
+        services.AddSingleton<IHostEnvironment>(environment);
+        services.AddActorContext();
+        addExtras?.Invoke(services, configuration);
+        addApplication(services);
+        addInfrastructure(services, configuration, environment);
+        services.Replace(ServiceDescriptor.Singleton<IBackgroundQueue<RealtimePush>, DiscardingRealtimeQueue>());
+
+        var provider = services.BuildServiceProvider(validateScopes: true);
+        try
+        {
+            provider.GetService<IStartupValidator>()?.Validate();
+        }
+        catch (OptionsValidationException exception)
+        {
+            throw new InvalidOperationException(ServiceHostErrors.HostBuildFailed(name.Value, exception.Message));
+        }
+
+        return new ServiceHost(name, provider, initialize);
+    }
+}
