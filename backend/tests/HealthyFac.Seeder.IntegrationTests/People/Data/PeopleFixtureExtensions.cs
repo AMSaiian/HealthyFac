@@ -17,29 +17,8 @@ public static class PeopleFixtureExtensions
 {
     extension(SeederFixture fixture)
     {
-        public async Task<SeedContext> RunPeopleSeedAsync(CancellationToken cancellationToken)
-        {
-            var zone = TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId);
-            fixture.TrackOrganization(PeopleTestData.CompanyId);
-            var events = await fixture.LoadPeopleEventsAsync();
-            var context = new SeedContext { Anchor = PeopleTestData.Anchor, Zone = zone };
-            var relay = fixture.Hosts.CreateRelay();
-            var runner = new TimelineRunner(
-                fixture.Clock,
-                PeopleTestData.Anchor,
-                zone,
-                async token =>
-                {
-                    await Task.WhenAll(fixture.Hosts.All.Select(host => host.InitializeAsync(token)));
-                    await fixture.CreateResettersAsync();
-                },
-                relay.RunAsync,
-                _ => { });
-
-            await runner.RunAsync(events, context, cancellationToken);
-
-            return context;
-        }
+        public Task<SeedContext> RunPeopleSeedAsync(CancellationToken cancellationToken) =>
+            fixture.RunPartsAsync(current => [SeedRunFixtureExtensions.People(current)], cancellationToken);
 
         public Task<IReadOnlyList<PlannedEvent>> LoadPeopleEventsAsync()
         {

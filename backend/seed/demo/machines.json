@@ -1,0 +1,29 @@
+{
+  "machines": [
+    {
+      "key": "pump",
+      "draftId": "01a1efd2-392e-7c40-b3d3-a2b4d64932ba",
+      "appliedBy": "nadiia",
+      "appliedAt": "d-14 10:30",
+      "expectedGoLiveOn": "d-10"
+    },
+    {
+      "key": "lathe",
+      "draftId": "01a1efdf-c3ff-7a50-83e6-71c4e937c891",
+      "appliedBy": "nadiia",
+      "appliedAt": "d-14 10:35",
+      "expectedGoLiveOn": "d-10"
+    },
+    {
+      "key": "compressor",
+      "draftId": "01a1efe1-62f4-7d31-82c9-5b72b7cdb76b",
+      "appliedBy": "nadiia",
+      "appliedAt": "d-14 10:40",
+      "expectedGoLiveOn": "d-10"
+    }
+  ],
+  "stateChanges": [
+    { "machine": "compressor", "changedBy": "maksym", "at": "wd-2 13:00", "state": "inMaintenance" },
+    { "machine": "compressor", "changedBy": "maksym", "at": "wd-1 10:00", "state": "operational" }
+  ]
+}

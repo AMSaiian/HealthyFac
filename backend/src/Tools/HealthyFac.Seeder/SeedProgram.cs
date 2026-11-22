@@ -69,7 +69,7 @@ public static class SeedProgram
         await using var hosts = ServiceHosts.ServiceHosts.Create(configuration, clock, baseDirectory);
         var folder = new SeedFolder(Path.Combine(baseDirectory, SeedFolderName));
         var people = new PeoplePart(hosts, new KeycloakAccounts(hosts.Auth));
-        var events = SeedPlan.Load(SeedParts.Create(people), folder);
+        var events = SeedPlan.Load(SeedParts.Create(hosts, people), folder);
         var zone = TimeZoneInfo.FindSystemTimeZoneById(people.CompanyZoneId);
 
         var check = new SeedCheck(

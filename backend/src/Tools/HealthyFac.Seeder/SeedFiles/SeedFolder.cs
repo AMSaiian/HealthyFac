@@ -45,6 +45,21 @@ public sealed class SeedFolder
         }
     }
 
+    /// <summary>Reads a binary file of the seed folder (a document to upload).</summary>
+    /// <param name="relativePath">The path relative to the seed folder.</param>
+    /// <returns>The content of the file.</returns>
+    /// <exception cref="SeedFileException">
+    /// Thrown by <see cref="SeedFileErrors"/> when the file does not exist.
+    /// </exception>
+    public byte[] ReadBytes(string relativePath)
+    {
+        var path = Path.Combine(_path, relativePath);
+
+        return File.Exists(path)
+            ? File.ReadAllBytes(path)
+            : throw new SeedFileException(SeedFileErrors.FileMissing(path));
+    }
+
     private static JsonSerializerOptions CreateOptions()
     {
         var options = new JsonSerializerOptions(MessagingJsonOptions.Instance)
