@@ -9,4 +9,19 @@
   hourFormat="24"
   (ngModelChange)="onPickerChange($event)"
   (onBlur)="touch.emit()"
-/>
+  (onMonthChange)="onViewChange($event)"
+  (onYearChange)="onViewChange($event)"
+  (onShow)="shown.emit()"
+>
+  @if (dateTemplate(); as template) {
+    <ng-template
+      #date
+      let-date
+    >
+      <ng-container
+        [ngTemplateOutlet]="template"
+        [ngTemplateOutletContext]="{ $implicit: date }"
+      />
+    </ng-template>
+  }
+</p-datepicker>

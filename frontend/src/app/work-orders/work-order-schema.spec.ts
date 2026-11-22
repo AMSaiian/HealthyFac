@@ -17,6 +17,8 @@ const VALID: WorkOrderFormValue = {
   machineId: null,
   estimateMinutes: 60,
   fileIds: [],
+  assigneeId: null,
+  start: null,
 };
 
 function firstMessage(value: unknown): string | undefined {

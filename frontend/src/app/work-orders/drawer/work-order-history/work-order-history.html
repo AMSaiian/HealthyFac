@@ -1,27 +1,52 @@
-@if (showSkeleton()) {
-  <p-skeleton height="3rem" />
-} @else if (newestFirst().length === 0) {
-  @if (!isLoading()) {
-    <small class="text-muted-color">{{ 'WORK_ORDERS.HISTORY.EMPTY' | translate }}</small>
-  }
-} @else {
-  <ol class="flex flex-col gap-2">
-    @for (row of newestFirst(); track row.revision) {
-      <li class="hf-list-item flex flex-col gap-1">
-        <div class="flex items-center justify-between gap-2">
-          <p-tag
-            [class]="'hf-status-' + row.status"
-            [value]="statusKey(row.status) | translate"
-          />
-          <small class="text-muted-color">{{ row.createdAt | localDateTime }}</small>
-        </div>
-        <small>
-          {{ 'WORK_ORDERS.HISTORY.ASSIGNEE' | translate }}: {{ row.assigneeName ?? '—' }}
-          @if (row.plannedStartUtc) {
-            · {{ 'WORK_ORDERS.HISTORY.PLANNED_START' | translate }}: {{ row.plannedStartUtc | localDateTime }}
-          }
-        </small>
-      </li>
+<div class="min-h-0 flex-1 overflow-y-auto">
+  @if (showSkeleton()) {
+    <p-skeleton height="3rem" />
+  } @else if (newestFirst().length === 0) {
+    @if (!isLoading()) {
+      <small class="text-muted-color">{{ 'WORK_ORDERS.HISTORY.EMPTY' | translate }}</small>
     }
-  </ol>
-}
+  } @else {
+    <ol class="flex flex-col gap-2">
+      @for (entry of newestFirst(); track entry.row.revision) {
+        @let row = entry.row;
+        <li class="hf-list-item flex flex-col gap-1">
+          <div class="flex items-center justify-between gap-2">
+            <p-tag
+              [class]="'hf-status-' + row.status"
+              [value]="statusKey(row.status) | translate"
+            />
+            <small class="text-muted-color">{{ row.createdAt | localDateTime }}</small>
+          </div>
+          <small>
+            {{ 'WORK_ORDERS.HISTORY.ASSIGNEE' | translate }}: {{ row.assigneeName ?? '—' }}
+            @if (row.plannedStartUtc) {
+              · {{ 'WORK_ORDERS.HISTORY.PLANNED_START' | translate }}: {{ row.plannedStartUtc | localDateTime }}
+            }
+          </small>
+          @if (entry.estimateChange; as change) {
+            <small>
+              {{
+                'WORK_ORDERS.HISTORY.ESTIMATE_CHANGED'
+                  | translate
+                    : {
+                        old: change.oldMinutes + estimateSuffix,
+                        new: change.newMinutes + estimateSuffix,
+                      }
+              }}
+            </small>
+          }
+        </li>
+      }
+    </ol>
+  }
+</div>
+<p-paginator
+  class="flex-none"
+  [first]="first()"
+  [rows]="pageSize"
+  [totalRecords]="totalCount()"
+  [showPageLinks]="false"
+  [showFirstLastIcon]="false"
+  [pt]="paginatorPt()"
+  (onPageChange)="onPage($event)"
+/>

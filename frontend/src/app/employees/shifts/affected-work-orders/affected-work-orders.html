@@ -1,5 +1,7 @@
-<h3 class="font-bold">{{ 'SHIFTS.AFFECTED.TITLE' | translate }}</h3>
-<small class="text-muted-color">{{ 'SHIFTS.AFFECTED.HINT' | translate }}</small>
+@if (titleKey(); as title) {
+  <h3 class="font-bold">{{ title | translate }}</h3>
+}
+<small class="text-muted-color">{{ hintKey() | translate }}</small>
 @for (workOrder of workOrders(); track workOrder.id) {
   <button
     type="button"

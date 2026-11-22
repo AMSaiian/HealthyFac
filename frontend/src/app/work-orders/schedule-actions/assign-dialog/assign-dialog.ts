@@ -1,103 +1,45 @@
-import { Component, effect, input, linkedSignal, output } from '@angular/core';
-import { type FieldTree, form, FormField, validateStandardSchema } from '@angular/forms/signals';
-import { TranslatePipe } from '@ngx-translate/core';
-import { ButtonDirective } from 'primeng/button';
-import { Select } from 'primeng/select';
-import { Tooltip } from 'primeng/tooltip';
+import { Component, input, output } from '@angular/core';
 
-import { isFieldInvalid } from '@shared/forms/field-state';
-import { delayedLoading } from '@shared/loading/delayed-loading';
-import { keepSelectedOptions, type LookupOption, type LookupRequest } from '@shared/lookups/lookup-options';
-import { PlainDateTimePicker } from '@shared/time/pickers/plain-date-time-picker/plain-date-time-picker';
+import type { LookupOption, LookupRequest } from '@shared/lookups/lookup-options';
 import type { Temporal } from '@shared/time/temporal';
 
-import { assignFormSchema, type AssignFormValue } from './assign-dialog-schema';
-import { GRID_STEP_MINUTES } from '@work-orders/schedule-actions/slot-prefill';
-import { Divider } from 'primeng/divider';
-
-export interface AssignSelection {
-  readonly assigneeId: string;
-  readonly date: Temporal.PlainDate;
-}
+import {
+  AssignmentPicker,
+  type DaysRequest,
+  type SpansRequest,
+} from '@work-orders/assignment-picker/assignment-picker';
+import type { AssignmentValue } from '@work-orders/assignment-picker/assignment-picker.utils';
+import type { FreeSpan, ScheduleDay } from '@work-orders/work-order';
 
 /**
- * Tells whether two selections name the same person and day. The store reloads the day schedule for each new
- * selection object, so an equal one must not be emitted again.
+ * The person and the start of an assign or a move. The estimate of the work order is fixed here. Both values are
+ * required: the dialog reports its value as valid only when the person and the start are set.
  */
-function isSameSelection(first: AssignSelection | null, second: AssignSelection | null): boolean {
-  if (first === null || second === null) {
-    return first === second;
-  }
-  return first.assigneeId === second.assigneeId && first.date.equals(second.date);
-}
-
-/** The people and the start of an assign or move. The suggestion is the first free start of the chosen day. */
 @Component({
-  imports: [Divider, ButtonDirective, FormField, PlainDateTimePicker, Select, Tooltip, TranslatePipe],
+  imports: [AssignmentPicker],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-assign-dialog',
   templateUrl: './assign-dialog.html',
 })
 export class AssignDialog {
-  readonly initialValue = input.required<AssignFormValue>();
+  readonly initialValue = input.required<AssignmentValue>();
+  readonly estimateMinutes = input.required<number | null>();
   readonly employees = input.required<LookupOption[]>();
   readonly isEmployeesLoading = input(false);
-  protected readonly showEmployeesLoading = delayedLoading(this.isEmployeesLoading);
-  readonly suggestion = input<Temporal.PlainDateTime | null>(null);
-  readonly hasNoFreeStart = input(false);
+  readonly days = input<readonly ScheduleDay[] | null>(null);
+  readonly isDaysLoading = input(false);
+  readonly spans = input<readonly FreeSpan[] | null>(null);
+  readonly isSpansLoading = input(false);
+  readonly today = input.required<Temporal.PlainDate>();
 
-  readonly valueChange = output<AssignFormValue>();
+  readonly valueChange = output<AssignmentValue>();
   readonly validityChange = output<boolean>();
-  readonly selectionChange = output<AssignSelection | null>();
   readonly employeeLookupRequested = output<LookupRequest>();
+  readonly daysRequested = output<DaysRequest>();
+  readonly spansRequested = output<SpansRequest>();
 
-  protected readonly stepMinute = GRID_STEP_MINUTES;
-
-  protected readonly model = linkedSignal<AssignFormValue>(() => ({ ...this.initialValue() }));
-  protected readonly employeeOptions = keepSelectedOptions(this.employees, () => [this.model().assigneeId]);
-  protected readonly assignForm = form(this.model, (path) => {
-    validateStandardSchema(path, assignFormSchema);
-  });
-
-  private _lastApplied: Temporal.PlainDateTime | null = null;
-  private _lastSelection: AssignSelection | null = null;
-
-  constructor() {
-    effect(() => {
-      this.valueChange.emit(this.model());
-    });
-    effect(() => {
-      this.validityChange.emit(this.assignForm().valid());
-    });
-    effect(() => {
-      const { assigneeId, start } = this.model();
-      const selection = assigneeId === '' || start === null ? null : { assigneeId, date: start.toPlainDate() };
-      if (!isSameSelection(this._lastSelection, selection)) {
-        this._lastSelection = selection;
-        this.selectionChange.emit(selection);
-      }
-    });
-    effect(() => {
-      const suggestion = this.suggestion();
-      const start = this.model().start;
-      if (suggestion !== null && (start === null || this._lastApplied === null || start.equals(this._lastApplied))) {
-        this._lastApplied = suggestion;
-        if (start === null || !start.equals(suggestion)) {
-          this.model.update((value) => ({ ...value, start: suggestion }));
-        }
-      }
-    });
-  }
-
-  protected useSuggestion(): void {
-    const suggestion = this.suggestion();
-    if (suggestion !== null) {
-      this._lastApplied = suggestion;
-      this.model.update((value) => ({ ...value, start: suggestion }));
-    }
-  }
-
-  protected isShown(field: FieldTree<unknown>): boolean {
-    return isFieldInvalid({ isInvalid: field().invalid(), isTouched: field().touched() });
+  protected onValue(value: AssignmentValue): void {
+    this.valueChange.emit(value);
+    this.validityChange.emit(value.assigneeId !== null && value.start !== null);
   }
 }

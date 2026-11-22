@@ -14,6 +14,30 @@ public static class WorkOrderTestData
         year: 2027, month: 3, day: 29, hour: 14, minute: 0, second: 0);
 
     public static readonly DateTime LaterStartUtc = new(year: 2027, month: 3, day: 29, hour: 11, minute: 0, second: 0);
+
+    public static readonly WorkOrderSlot FirstSlot = new()
+    {
+        AssigneeId = AssigneeId,
+        PlannedStartLocal = StartLocal,
+        PlannedStartUtc = StartUtc,
+    };
+
+    public static readonly WorkOrderSlot LaterSlot = new()
+    {
+        AssigneeId = AssigneeId,
+        PlannedStartLocal = LaterStartLocal,
+        PlannedStartUtc = LaterStartUtc,
+    };
+
+    public static readonly WorkOrderSlot OtherAssigneeSlot = new()
+    {
+        AssigneeId = OtherAssigneeId,
+        PlannedStartLocal = StartLocal,
+        PlannedStartUtc = StartUtc,
+    };
+
+    public static readonly TimeSpan OneHour = TimeSpan.FromHours(value: 1);
+    public static readonly TimeSpan TwoHours = TimeSpan.FromHours(value: 2);
     public static readonly Guid FileA = Guid.Parse(input: "3c9f4085-ad61-4eb1-a044-5c6d8fab2e34");
     public static readonly Guid FileB = Guid.Parse(input: "4da05196-be72-4fc2-b155-6d7e9abc3f45");
     public static readonly Guid FileC = Guid.Parse(input: "5eb162a7-cf83-40d3-8266-7e8fabcd4056");
@@ -22,6 +46,19 @@ public static class WorkOrderTestData
     {
         { "ToBacklog", WorkOrderStatus.Backlog },
         { "ToCurrentStatus", WorkOrderStatus.Staged },
+    };
+
+    public static TheoryData<string, WorkOrder, WorkOrderSlot?, TimeSpan, WorkOrderScheduleChange, int>
+        RescheduleCases => new()
+    {
+        { "AssignFromBacklog", CreateBacklog(), FirstSlot, OneHour, WorkOrderScheduleChange.Assign, 2 },
+        { "BacklogStaysBacklog", CreateBacklog(), null, OneHour, WorkOrderScheduleChange.None, 1 },
+        { "BacklogWithNewEstimate", CreateBacklog(), null, TwoHours, WorkOrderScheduleChange.EstimateOnly, 2 },
+        { "MoveToAnotherStart", CreateStaged(), LaterSlot, OneHour, WorkOrderScheduleChange.Move, 3 },
+        { "MoveToAnotherAssignee", CreateStaged(), OtherAssigneeSlot, OneHour, WorkOrderScheduleChange.Move, 3 },
+        { "UnassignWithoutSlot", CreateStaged(), null, OneHour, WorkOrderScheduleChange.Unassign, 3 },
+        { "EstimateOnly", CreateStaged(), FirstSlot, TwoHours, WorkOrderScheduleChange.EstimateOnly, 3 },
+        { "NothingChanged", CreateStaged(), FirstSlot, OneHour, WorkOrderScheduleChange.None, 2 },
     };
 
     public static WorkOrder CreateBacklog() =>

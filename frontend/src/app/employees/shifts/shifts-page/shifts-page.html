@@ -227,6 +227,8 @@
   >
     <hf-affected-work-orders
       [workOrders]="store.affectedWorkOrders()"
+      hintKey="SHIFTS.AFFECTED.DELETE_HINT"
+      [titleKey]="null"
       (opened)="store.openWorkOrder($event)"
     />
   </hf-action-dialog>

@@ -10,23 +10,16 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import type { ConfirmRequest } from '@shared/confirm/with-confirm';
 import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
-import { createLookup } from '@shared/lookups/create-lookup';
-import { type LookupOption, mergeLookupOptions } from '@shared/lookups/lookup-options';
-import { LookupsApi } from '@shared/lookups/lookups-api';
-import { CLOCK } from '@shared/time/clock';
-import { Temporal } from '@shared/time/temporal';
 
-import type { DaySchedule, WorkOrderStatus } from '@work-orders/work-order';
+import type { AssignmentValue } from '@work-orders/assignment-picker/assignment-picker.utils';
+import type { WorkOrderStatus } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
-import type { AssignFormValue } from '@work-orders/schedule-actions/assign-dialog/assign-dialog-schema';
-import { firstFreeStart, toPrefillDay } from '@work-orders/schedule-actions/slot-prefill';
-import { CHANGEABLE_STATUSES, payloadOf, type Selection } from './schedule-actions.store.utils';
+import { CHANGEABLE_STATUSES, payloadOf } from './schedule-actions.store.utils';
 
 interface ActionState {
   action: AppAction | null;
-  selection: Selection | null;
   isConfirmationShown: boolean;
   isSaving: boolean;
 }
@@ -63,7 +56,7 @@ export function withScheduleActionsAction() {
         _confirmDestructive: (request: ConfirmRequest) => void;
       }>(),
     },
-    withState<ActionState>({ action: null, selection: null, isConfirmationShown: false, isSaving: false }),
+    withState<ActionState>({ action: null, isConfirmationShown: false, isSaving: false }),
     withComputed((store) => ({
       type: computed(() => store.action()?.type ?? null),
       workOrderId: computed(() => payloadOf(store.action()).workOrderId),
@@ -77,72 +70,24 @@ export function withScheduleActionsAction() {
     })),
     withProps((store) => {
       const api = inject(WorkOrdersApi);
-      const lookups = inject(LookupsApi);
       return {
         workOrder: rxResource({
           params: () => store.workOrderId(),
           stream: ({ params }) => api.get(params),
         }),
-        employeeLookup: createLookup((search) => lookups.employees(search)),
-        daySchedule: rxResource({
-          params: () => {
-            const selection = store.selection();
-            return selection === null ? undefined : selection;
-          },
-          stream: ({ params }): Observable<DaySchedule> => api.daySchedule(params.assigneeId, params.date.toString()),
-        }),
       };
     }),
     withComputed((store) => {
-      const clock = inject(CLOCK);
       return {
         statusOptions: computed((): readonly WorkOrderStatus[] => {
           const current = store.workOrder.hasValue() ? store.workOrder.value().status : null;
           return CHANGEABLE_STATUSES.filter((status) => status !== current);
         }),
-        suggestion: computed((): Temporal.PlainDateTime | null => {
-          if (!store.daySchedule.hasValue() || !store.workOrder.hasValue()) {
-            return null;
-          }
-          const start = firstFreeStart(
-            toPrefillDay(store.daySchedule.value(), store.workOrderId()),
-            store.workOrder.value().estimateMinutes,
-            clock.now(),
-          );
-          return start === null ? null : start.toZonedDateTimeISO(clock.timeZoneId()).toPlainDateTime();
-        }),
-        initialAssignValue: computed((): { assigneeId: string; start: Temporal.PlainDateTime | null } | null => {
-          if (!store.isScheduleDialog() || !store.workOrder.hasValue()) {
-            return null;
-          }
-          const workOrder = store.workOrder.value();
-          const zone = clock.timeZoneId();
-          const start =
-            store.type() === WorkOrderActionType.Move && workOrder.plannedStartLocal !== null
-              ? Temporal.PlainDateTime.from(workOrder.plannedStartLocal)
-              : clock.now().toZonedDateTimeISO(zone).toPlainDate().toPlainDateTime();
-          return { assigneeId: store.type() === WorkOrderActionType.Move ? (workOrder.assigneeId ?? '') : '', start };
-        }),
       };
     }),
-    withComputed((store) => ({
-      hasNoFreeStart: computed(() => store.daySchedule.hasValue() && store.suggestion() === null),
-      employeeOptions: computed((): LookupOption[] => {
-        const current = store.workOrder.hasValue() ? store.workOrder.value() : null;
-        return mergeLookupOptions(
-          store.type() === WorkOrderActionType.Move && current?.assigneeId != null
-            ? [{ id: current.assigneeId, displayName: current.assigneeName ?? current.assigneeId, isDeleted: false }]
-            : [],
-          store.employeeLookup.options(),
-        );
-      }),
-    })),
     withMethods((store) => ({
       start(action: AppAction): void {
         patchState(store, { action, isConfirmationShown: false });
-      },
-      select(selection: Selection | null): void {
-        patchState(store, { selection });
       },
       _showConfirmation(): void {
         patchState(store, { isConfirmationShown: true });
@@ -219,17 +164,15 @@ export function withScheduleActionsAction() {
             });
           }
         },
-        submitSchedule(value: AssignFormValue): void {
+        submitSchedule(value: AssignmentValue): void {
           const { id, rowVersion } = idAndVersion();
-          const start = value.start?.toString();
-          if (start === undefined) {
+          if (value.assigneeId === null || value.start === null) {
             return;
           }
+          const body = { assigneeId: value.assigneeId, plannedStartLocal: value.start.toString(), rowVersion };
           run({
             request$:
-              store.type() === WorkOrderActionType.Move
-                ? api.move(id, { assigneeId: value.assigneeId, plannedStartLocal: start, rowVersion }, options)
-                : api.assign(id, { assigneeId: value.assigneeId, plannedStartLocal: start, rowVersion }, options),
+              store.type() === WorkOrderActionType.Move ? api.move(id, body, options) : api.assign(id, body, options),
             isDialogOpen: true,
           });
         },

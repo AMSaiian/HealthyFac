@@ -489,6 +489,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     assignee_id = table.Column<Guid>(type: "uuid", nullable: true),
                     planned_start_local = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     planned_start_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    estimate = table.Column<TimeSpan>(type: "interval", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     created_by = table.Column<Guid>(type: "uuid", nullable: false),

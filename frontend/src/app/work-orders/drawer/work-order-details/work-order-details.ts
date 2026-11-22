@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { EMPTY_CELL } from '@shared/grid/table/grid-display';
@@ -20,11 +20,15 @@ import { Divider } from 'primeng/divider';
 export class WorkOrderDetails {
   readonly value = input.required<WorkOrderFormValue>();
   readonly machineName = input<string | null>(null);
+  readonly assigneeName = input<string | null>(null);
   readonly fileEntries = input.required<readonly FileEntry[]>();
   readonly isFilesLoading = input(false);
   readonly descriptionLinks = input<ReadonlyMap<string, string>>(new Map());
 
   protected readonly emptyCell = EMPTY_CELL;
+  protected readonly startText = computed(
+    () => this.value().start?.toString({ smallestUnit: 'minute' }).replace('T', ' ') ?? null,
+  );
   protected readonly estimateSuffix = ESTIMATE_SUFFIX;
   protected readonly priorityLabelKeys = PRIORITY_LABEL_KEYS;
   protected readonly categoryLabelKeys = CATEGORY_LABEL_KEYS;

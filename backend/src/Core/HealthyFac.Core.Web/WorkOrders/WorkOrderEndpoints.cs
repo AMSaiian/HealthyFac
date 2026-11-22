@@ -205,11 +205,11 @@ public static class WorkOrderEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<IReadOnlyList<WorkOrderHistoryResponse>>> GetHistoryAsync(
+    private static async Task<Ok<WorkOrderHistoryPageResponse>> GetHistoryAsync(
         [AsParameters] GetWorkOrderHistoryRequest request,
         ClaimsPrincipal user,
         ICurrentUserProvider currentUser,
-        IRequestHandler<ApplicationGetWorkOrderHistoryRequest, IReadOnlyList<WorkOrderHistoryResponse>> handler,
+        IRequestHandler<ApplicationGetWorkOrderHistoryRequest, WorkOrderHistoryPageResponse> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )

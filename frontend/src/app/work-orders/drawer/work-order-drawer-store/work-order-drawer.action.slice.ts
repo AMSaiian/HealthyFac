@@ -26,12 +26,15 @@ import { Permission } from '@shared/security/permissions';
 import { type WorkOrder, WorkOrderStatus } from '@work-orders/work-order';
 import { type SavedDetail, WorkOrderActionType } from '@work-orders/work-order-actions';
 import type { WorkOrderFormValue } from '@work-orders/work-order-schema';
+import { HISTORY_PAGE_SIZE } from '@work-orders/work-order-limits';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 import { payloadOf, toCreateBody, toUpdateBody } from './work-order-drawer.store.utils';
 
 interface ActionState {
   action: AppAction | null;
   isHistoryActive: boolean;
+  /** The `after` revisions of the pages that the user moved through. Empty means the first page. */
+  historyAfters: readonly number[];
   isSaving: boolean;
 }
 
@@ -50,7 +53,7 @@ export function withWorkOrderDrawerAction() {
         view: () => void;
       }>(),
     },
-    withState<ActionState>({ action: null, isHistoryActive: false, isSaving: false }),
+    withState<ActionState>({ action: null, isHistoryActive: false, historyAfters: [], isSaving: false }),
     withComputed((store) => {
       const auth = inject(AuthStore);
       return {
@@ -58,6 +61,8 @@ export function withWorkOrderDrawerAction() {
         workOrderId: computed(() => payloadOf(store.action()).workOrderId),
         canManage: computed(() => auth.hasPermission(Permission.WorkOrdersManage)),
         canWrite: computed(() => auth.hasPermission(Permission.WorkOrdersWrite)),
+        historyPageIndex: computed(() => store.historyAfters().length),
+        historyAfter: computed(() => store.historyAfters().at(-1)),
       };
     }),
     withProps((store) => {
@@ -68,8 +73,11 @@ export function withWorkOrderDrawerAction() {
           stream: ({ params }) => api.get(params),
         }),
         history: rxResource({
-          params: () => (store.isHistoryActive() ? store.workOrderId() : undefined),
-          stream: ({ params }) => api.history(params),
+          params: () =>
+            store.isHistoryActive() && store.workOrderId() !== undefined
+              ? { id: store.workOrderId() ?? '', after: store.historyAfter() }
+              : undefined,
+          stream: ({ params }) => api.history(params.id, HISTORY_PAGE_SIZE, params.after),
         }),
       };
     }),
@@ -87,7 +95,7 @@ export function withWorkOrderDrawerAction() {
     })),
     withMethods((store) => ({
       start(action: AppAction): void {
-        patchState(store, { action, isHistoryActive: false });
+        patchState(store, { action, isHistoryActive: false, historyAfters: [] });
         store._startMode(payloadOf(action).workOrderId !== undefined);
       },
       cancelEdit(): void {
@@ -96,6 +104,21 @@ export function withWorkOrderDrawerAction() {
       /** Starts the loading of the history: the History tab calls it when it opens, so a closed tab sends no request. */
       activateHistory(): void {
         patchState(store, { isHistoryActive: true });
+      },
+      /** Shows the page after the shown one. `nextAfter` is the `nextAfter` of the shown page. */
+      nextHistoryPage(nextAfter: number): void {
+        patchState(store, (state) => ({ historyAfters: [...state.historyAfters, nextAfter] }));
+      },
+      previousHistoryPage(): void {
+        patchState(store, (state) => ({ historyAfters: state.historyAfters.slice(0, -1) }));
+      },
+      /** Loads the first page again, also when the user stands on a later page. */
+      _reloadHistory(): void {
+        if (store.historyAfters().length === 0) {
+          store.history.reload();
+          return;
+        }
+        patchState(store, { historyAfters: [] });
       },
       _setSaving(isSaving: boolean): void {
         patchState(store, { isSaving });
@@ -120,7 +143,7 @@ export function withWorkOrderDrawerAction() {
         if (isHttpStatus(error, HttpStatusCode.Conflict)) {
           store._toastError('WORK_ORDERS.TOASTS.CONFLICT');
           store.workOrder.reload();
-          store.history.reload();
+          store._reloadHistory();
           return;
         }
         store._toastError(httpErrorKey(error, { [HttpStatusCode.UnprocessableEntity]: 'WORK_ORDERS.TOASTS.RULE' }));
@@ -137,7 +160,7 @@ export function withWorkOrderDrawerAction() {
                     store._toastSuccess('WORK_ORDERS.TOASTS.UPDATED');
                     actions.notify(WorkOrderActionType.Saved);
                     store.workOrder.reload();
-                    store.history.reload();
+                    store._reloadHistory();
                     store.view();
                   } else {
                     store._toastSuccess('WORK_ORDERS.TOASTS.CREATED');

@@ -74,6 +74,23 @@
     color: var(--p-text-muted-color);
   }
 
+  .hf-day-fits {
+    background-color: var(--p-schedule-day-fits);
+  }
+
+  .hf-day-tooShort {
+    background-color: var(--p-schedule-day-too-short);
+  }
+
+  .hf-day-busy {
+    background-color: var(--p-schedule-day-busy);
+  }
+
+  .hf-day-dayOff {
+    color: var(--p-text-muted-color);
+    background-color: var(--p-schedule-day-day-off);
+  }
+
   .hf-status-backlog {
     color: var(--p-surface-0);
     background-color: var(--p-work-order-status-backlog);

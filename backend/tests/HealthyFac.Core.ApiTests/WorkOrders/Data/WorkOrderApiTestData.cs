@@ -26,6 +26,13 @@ public static class WorkOrderApiTestData
     public const string Afternoon = "13:00-17:00";
     public const string SearchBody = "{\"offset\":0,\"limit\":50,\"filter\":{}}";
 
+    public static TheoryData<string, string> InvalidHistoryLimits => new()
+    {
+        { "LimitZero", "?limit=0" },
+        { "LimitAboveMaximum", "?limit=101" },
+        { "LimitMissing", string.Empty },
+    };
+
     public static TheoryData<string, string, string> WorkerWriteRoutes => new()
     {
         { "Assign", "PUT", BasePath + "/{id}/assignee" },

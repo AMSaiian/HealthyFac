@@ -29,4 +29,27 @@ public static class ShiftRouteIds
             throw new NotFoundException(ShiftErrors.Rejections.EmployeeNotFound, exception);
         }
     }
+
+    /// <summary>
+    /// Decrypts an optional ID of a query. A missing, malformed, or foreign token names nothing, so it is ignored.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID from the query, or <see langword="null"/>.</param>
+    /// <param name="idEncryptor">Decrypts the ID.</param>
+    /// <returns>The ID, or <see langword="null"/> when the token is missing or not valid.</returns>
+    public static Guid? TryDecrypt(string? encryptedId, IIdEncryptor idEncryptor)
+    {
+        if (string.IsNullOrEmpty(encryptedId))
+        {
+            return null;
+        }
+
+        try
+        {
+            return idEncryptor.Decrypt(encryptedId);
+        }
+        catch (Exception exception) when (exception is FormatException or CryptographicException)
+        {
+            return null;
+        }
+    }
 }

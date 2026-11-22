@@ -56,7 +56,8 @@ public static class WorkOrderFixtureExtensions
                     WorkOrderStatus.Backlog,
                     assigneeId: null,
                     plannedStartLocal: null,
-                    plannedStartUtc: null));
+                    plannedStartUtc: null,
+                    TimeSpan.FromHours(value: 1)));
             await dbContext.SaveChangesAsync();
         }
 

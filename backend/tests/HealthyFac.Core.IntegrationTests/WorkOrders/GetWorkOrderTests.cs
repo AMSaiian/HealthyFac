@@ -92,21 +92,66 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
                 assigneeId: tenant.EmployeeId,
                 plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.ScheduledTime)));
 
-        var history = await _fixture.ReadAsAsync<GetWorkOrderHistoryRequest, IReadOnlyList<WorkOrderHistoryResponse>>(
-            tenant.CompanyId,
-            tenant.IdentityUserId,
-            new GetWorkOrderHistoryRequest
-            {
-                CompanyId = tenant.CompanyId,
-                Id = created.Id,
-                Scope = AccessScope.Company,
-            });
+        var page = await ReadHistoryAsync(tenant, created.Id, limit: 10);
+        var history = page.Items;
 
         history.Select(row => row.Revision).Should().Equal(2, 1);
         history[index: 0].Status.Should().Be(WorkOrderStatus.Staged);
         history[index: 0].AssigneeName.Should().Contain(ShiftTestData.EmployeeFirstName);
         history[index: 1].Status.Should().Be(WorkOrderStatus.Backlog);
         history[index: 1].CreatedBy.Should().Be(tenant.IdentityUserId);
+        history.Select(row => row.EstimateMinutes).Should().Equal(WorkOrderTestData.OneHour, WorkOrderTestData.OneHour);
+    }
+
+    [Fact]
+    public async Task GetWorkOrderHistory_With23Rows_PagesByRevisionWithNextAfter()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        var created = await _fixture.CreateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company));
+        for (var step = 1; step <= 22; step++)
+        {
+            var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(created.Id);
+            await _fixture.UpdateWorkOrderAsync(
+                tenant.CompanyId,
+                tenant.IdentityUserId,
+                WorkOrderTestData.UpdateRequest(
+                    tenant.CompanyId,
+                    AccessScope.Company,
+                    created.Id,
+                    rowVersion,
+                    [],
+                    WorkOrderTestData.OneHour + step * 5));
+        }
+
+        var first = await ReadHistoryAsync(tenant, created.Id, limit: 10);
+        var second = await ReadHistoryAsync(tenant, created.Id, limit: 10, first.NextAfter);
+        var third = await ReadHistoryAsync(tenant, created.Id, limit: 10, second.NextAfter);
+
+        first.Items.Select(row => row.Revision).Should().Equal(Enumerable.Range(start: 14, count: 10).Reverse());
+        first.NextAfter.Should().Be(expected: 14);
+        second.Items.Select(row => row.Revision).Should().Equal(Enumerable.Range(start: 4, count: 10).Reverse());
+        second.NextAfter.Should().Be(expected: 4);
+        third.Items.Select(row => row.Revision).Should().Equal(3, 2, 1);
+        third.NextAfter.Should().BeNull();
+        new[] { first, second, third }.Select(page => page.TotalCount).Should().OnlyContain(count => count == 23);
+    }
+
+    [Fact]
+    public async Task GetWorkOrderHistory_WithExactlyOnePage_HasNoNextAfter()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        var created = await _fixture.CreateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company));
+
+        var page = await ReadHistoryAsync(tenant, created.Id, limit: 1);
+
+        page.Items.Should().ContainSingle();
+        page.NextAfter.Should().BeNull();
     }
 
     [Fact]
@@ -129,6 +174,24 @@ public sealed class GetWorkOrderTests(CoreDatabaseFixture fixture)
         response.MachineName.Should().Be(WorkOrderTestData.MachineName);
         response.IsMachineDeleted.Should().BeTrue();
     }
+
+    private Task<WorkOrderHistoryPageResponse> ReadHistoryAsync(
+        ShiftTenant tenant,
+        Guid workOrderId,
+        int limit,
+        int? after = null
+    ) =>
+        _fixture.ReadAsAsync<GetWorkOrderHistoryRequest, WorkOrderHistoryPageResponse>(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            new GetWorkOrderHistoryRequest
+            {
+                CompanyId = tenant.CompanyId,
+                Id = workOrderId,
+                Limit = limit,
+                After = after,
+                Scope = AccessScope.Company,
+            });
 
     private Task<WorkOrderResponse> GetAsync(ShiftTenant tenant, Guid workOrderId, AccessScope scope) =>
         _fixture.ReadAsAsync<GetWorkOrderRequest, WorkOrderResponse>(

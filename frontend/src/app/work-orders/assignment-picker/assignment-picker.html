@@ -1,0 +1,117 @@
+<div class="flex flex-col gap-1">
+  <label
+    class="hf-field-label"
+    for="picker-assignee"
+    >{{ 'WORK_ORDERS.SCHEDULE.ASSIGNEE' | translate }}</label
+  >
+  <p-select
+    inputId="picker-assignee"
+    optionLabel="displayName"
+    optionValue="id"
+    appendTo="body"
+    [filter]="!isReadOnly()"
+    [showClear]="!isReadOnly()"
+    [disabled]="isReadOnly()"
+    [loading]="showEmployeesLoading()"
+    [options]="employeeOptions()"
+    [formField]="selectionForm.assigneeId"
+    (onShow)="employeeLookupRequested.emit({ text: '', isImmediate: true })"
+    (onFilter)="employeeLookupRequested.emit({ text: $event.filter ?? '', isImmediate: false })"
+    [placeholder]="'WORK_ORDERS.SCHEDULE.ASSIGNEE_PLACEHOLDER' | translate"
+  />
+</div>
+<p-divider />
+@if (isReadOnly()) {
+  <div class="flex flex-col gap-1">
+    <label
+      class="hf-field-label"
+      for="picker-start-text"
+      >{{ 'WORK_ORDERS.SCHEDULE.START' | translate }}</label
+    >
+    <input
+      pInputText
+      id="picker-start-text"
+      readonly
+      [value]="startText()"
+    />
+  </div>
+} @else {
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'WORK_ORDERS.PICKER.DAY' | translate }}</span>
+    <hf-plain-date-picker
+      [min]="today()"
+      [disabled]="isDayPickerDisabled()"
+      [value]="day()"
+      [dateTemplate]="dayCell"
+      (valueChange)="onDayChange($event)"
+      (monthChange)="onViewChange($event)"
+      (shown)="onPanelShow()"
+    />
+    <ng-template
+      #dayCell
+      let-date
+    >
+      <span
+        class="flex size-full items-center justify-center rounded-full"
+        [class]="cellClass(date)"
+        [attr.aria-label]="cellAria(date)"
+        >{{ date.day }}</span
+      >
+    </ng-template>
+    @if (showDaysLoading()) {
+      <div class="flex min-h-8">
+        <hf-loading-spinner />
+      </div>
+    }
+    @if (isDayPickerDisabled()) {
+      <small class="text-muted-color">{{ 'WORK_ORDERS.PICKER.SELECT_ESTIMATE_FIRST' | translate }}</small>
+    }
+  </div>
+  <p-divider />
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'WORK_ORDERS.PICKER.SPANS' | translate }}</span>
+    @if (spanRows(); as rows) {
+      @if (rows.length === 0) {
+        <small class="text-muted-color">{{ 'WORK_ORDERS.PICKER.NO_SPANS' | translate }}</small>
+      }
+      <div class="flex flex-wrap gap-2">
+        @for (row of rows; track row.span.startLocal) {
+          <button
+            pButton
+            type="button"
+            size="small"
+            [severity]="row.isTooShort ? 'warn' : row.isChosen ? undefined : 'secondary'"
+            [class.opacity-60]="row.isTooShort"
+            [class.cursor-not-allowed]="row.isTooShort"
+            [attr.aria-disabled]="row.isTooShort"
+            [pTooltip]="
+              (row.isTooShort ? 'WORK_ORDERS.PICKER.SPAN_TOO_SHORT' : 'WORK_ORDERS.PICKER.SPAN_CHOOSE') | translate
+            "
+            tooltipPosition="bottom"
+            (click)="chooseSpan(row)"
+          >
+            {{ row.startText }} - {{ row.endText }} ({{
+              'WORK_ORDERS.PICKER.SPAN_LENGTH' | translate: { minutes: row.minutes }
+            }})
+          </button>
+        }
+      </div>
+    } @else if (showSpansLoading()) {
+      <div class="flex min-h-12">
+        <hf-loading-spinner />
+      </div>
+    }
+  </div>
+  <p-divider />
+  <div class="flex flex-col gap-1">
+    <span class="hf-field-label">{{ 'WORK_ORDERS.PICKER.TIME' | translate }}</span>
+    <hf-plain-time-picker
+      [value]="timeValue()"
+      [min]="bounds()?.earliest"
+      [max]="bounds()?.latest"
+      [stepMinute]="stepMinute"
+      [disabled]="isTimePickerDisabled()"
+      (valueChange)="onTimeChange($event)"
+    />
+  </div>
+}

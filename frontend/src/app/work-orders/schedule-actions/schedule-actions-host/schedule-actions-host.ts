@@ -14,8 +14,8 @@ import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
-import { AssignDialog, type AssignSelection } from '@work-orders/schedule-actions/assign-dialog/assign-dialog';
-import type { AssignFormValue } from '@work-orders/schedule-actions/assign-dialog/assign-dialog-schema';
+import type { AssignmentValue } from '@work-orders/assignment-picker/assignment-picker.utils';
+import { AssignDialog } from '@work-orders/schedule-actions/assign-dialog/assign-dialog';
 import { ScheduleActionsStore } from '@work-orders/schedule-actions/schedule-actions-store/schedule-actions.store';
 
 @Component({
@@ -44,7 +44,7 @@ export class ScheduleActionsHost {
   });
   protected readonly statusChoice = signal<WorkOrderStatus | null>(null);
 
-  private readonly _current = signal<AssignFormValue | null>(null);
+  private readonly _current = signal<AssignmentValue | null>(null);
   private readonly _isValid = signal(false);
 
   protected readonly saveDisabledReason = computed((): string | null => {
@@ -68,10 +68,6 @@ export class ScheduleActionsHost {
     });
   }
 
-  protected onSelection(selection: AssignSelection | null): void {
-    this.store.select(selection);
-  }
-
   protected onSave(): void {
     if (this.saveDisabledReason() !== null) {
       return;
@@ -85,7 +81,7 @@ export class ScheduleActionsHost {
     }
   }
 
-  protected onValue(value: AssignFormValue): void {
+  protected onValue(value: AssignmentValue): void {
     this._current.set(value);
   }
 

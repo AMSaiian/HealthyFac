@@ -38,6 +38,14 @@ public record UpdateWorkOrderRequest : IRequest
 
     public required IReadOnlyList<Guid> FileIds { get; init; }
 
+    /// <summary>
+    /// The assignee after the save, or <see langword="null"/> for none. It goes with <see cref="PlannedStartLocal"/>.
+    /// </summary>
+    public Guid? AssigneeId { get; init; }
+
+    /// <summary>The planned start as a time in the company zone, or <see langword="null"/> for none.</summary>
+    public DateTime? PlannedStartLocal { get; init; }
+
     /// <summary>The row version that the client read. The save fails when the work order changed since.</summary>
     public required uint RowVersion { get; init; }
 }
@@ -61,6 +69,10 @@ public class UpdateWorkOrderRequestValidator : AbstractValidator<UpdateWorkOrder
         RuleFor(request => request.EstimateMinutes).IsWorkOrderEstimate();
 
         RuleFor(request => request.FileIds).IsWorkOrderFileList();
+
+        RuleFor(request => request)
+            .Must(request => request.AssigneeId is null == request.PlannedStartLocal is null)
+            .WithMessage(WorkOrderErrors.Validation.AssigneeAndStartTogether);
     }
 }
 
@@ -79,11 +91,12 @@ public sealed class UpdateWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 
 /// <summary>
 /// Changes the data of a work order that the access scope reaches: title, description, priority, category, machine,
-/// files, and estimate. The own scope may not change the estimate. A new estimate of a scheduled work order runs the
-/// slot rules (work block and overlap) in one serializable transaction; every other change runs in one transaction with
-/// the default isolation. The handler sets the original row version from the request and marks the work order
-/// modified, so a change of the files alone also checks and changes <c>xmin</c>. A stale row version ends in the
-/// conflict (409).
+/// files, estimate, and the schedule (assignee and start). A schedule change or a new estimate of a scheduled work
+/// order runs the schedule rules (assignee, grid and range, work block, overlap) in one serializable transaction, and
+/// adds one history row with all new values; every other change runs in one transaction with the default isolation.
+/// The own scope may not change the estimate or the schedule. The handler sets the original row version from the
+/// request and marks the work order modified, so a change of the files alone also checks and changes <c>xmin</c>. A
+/// stale row version ends in the conflict (409).
 /// </summary>
 /// <remarks>
 /// The operation saves twice: the first save holds only the work order row (always an <c>UPDATE</c> with the
@@ -94,7 +107,7 @@ public sealed class UpdateWorkOrderPreHandlerCheck(ICurrentUserProvider currentU
 /// </remarks>
 /// <param name="dbContext">Loads and saves the work order.</param>
 /// <param name="ownEmployee">Finds the employee of the actor for the own scope.</param>
-/// <param name="scheduleChecks">Checks the slot of a longer or shorter estimate.</param>
+/// <param name="scheduleChecks">Checks the slot of a new schedule or estimate.</param>
 /// <param name="currentUser">Reads the actor.</param>
 public sealed class UpdateWorkOrderRequestHandler(
     ICoreDbContext dbContext,
@@ -116,30 +129,34 @@ public sealed class UpdateWorkOrderRequestHandler(
     )
     {
         var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
-        var isSlotCheckNeeded = request.Scope == AccessScope.Company
-            && await _dbContext.WorkOrders
-                .AsNoTracking()
-                .AnyAsync(
-                    candidate => candidate.Id == request.Id
-                        && candidate.CompanyId == request.CompanyId
-                        && candidate.Estimate != estimate
-                        && candidate.History.Any(row =>
-                            row.Revision == candidate.CurrentRevision && row.AssigneeId != null),
-                    cancellationToken);
+        var stored = await (from row in _dbContext.WorkOrderHistories.AsNoTracking()
+                join workOrder in _dbContext.WorkOrders.AsNoTracking() on row.WorkOrderId equals workOrder.Id
+                where workOrder.Id == request.Id
+                    && workOrder.CompanyId == request.CompanyId
+                    && row.Revision == workOrder.CurrentRevision
+                select new { workOrder.Estimate, row.AssigneeId, row.PlannedStartLocal })
+            .SingleOrDefaultAsync(cancellationToken);
+        var isScheduleCheckNeeded = request.Scope == AccessScope.Company
+            && stored is not null
+            && ((stored.AssigneeId is not null && stored.Estimate != estimate)
+                || request.AssigneeId != stored.AssigneeId
+                || request.PlannedStartLocal != stored.PlannedStartLocal);
 
-        var change = isSlotCheckNeeded
+        var change = isScheduleCheckNeeded
             ? await _dbContext.RunInTransactionAsync(
                 token => UpdateAsync(request, token),
                 IsolationLevel.Serializable,
                 cancellationToken)
             : await _dbContext.RunInTransactionAsync(token => UpdateAsync(request, token), cancellationToken);
-        _notifier.PushEstimateChange(request.CompanyId, change);
+        if (change.Assignment is { } assignment)
+        {
+            _notifier.PushAssignmentChange(request.CompanyId, assignment);
+        }
+
+        _notifier.PushEstimateChange(request.CompanyId, change.Estimate);
     }
 
-    private async Task<WorkOrderEstimateChange> UpdateAsync(
-        UpdateWorkOrderRequest request,
-        CancellationToken cancellationToken
-    )
+    private async Task<UpdateChange> UpdateAsync(UpdateWorkOrderRequest request, CancellationToken cancellationToken)
     {
         var ownEmployeeId = request.Scope == AccessScope.Own
             ? await _ownEmployee.FindIdAsync(cancellationToken)
@@ -157,11 +174,13 @@ public sealed class UpdateWorkOrderRequestHandler(
 
         var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
         var oldEstimate = workOrder.Estimate;
-        if (estimate != workOrder.Estimate)
-        {
-            await EnsureEstimateAsync(request, workOrder, estimate, cancellationToken);
-            workOrder.ChangeEstimate(estimate);
-        }
+        var oldRow = workOrder.Current;
+        var oldAssigneeId = oldRow.AssigneeId;
+        var slot = await EnsureScheduleAsync(request, workOrder, estimate, cancellationToken);
+
+        var previousRevision = workOrder.CurrentRevision;
+        var scheduleChange = workOrder.Reschedule(slot, estimate);
+        _dbContext.AddNewHistoryRows(workOrder, previousRevision);
 
         _dbContext.Entry(workOrder).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
         workOrder.Update(request.Title, request.Description, request.Priority, request.Category, request.MachineId);
@@ -177,14 +196,24 @@ public sealed class UpdateWorkOrderRequestHandler(
         var assigneeUserId = assigneeId is { } assignee && estimate != oldEstimate
             ? await _dbContext.FindIdentityUserIdAsync(assignee, cancellationToken)
             : null;
+        var assignment = await BuildAssignmentChangeAsync(
+            workOrder,
+            scheduleChange,
+            oldAssigneeId,
+            slot,
+            cancellationToken);
 
-        return new WorkOrderEstimateChange
+        return new UpdateChange
         {
-            WorkOrderId = workOrder.Id,
-            Title = workOrder.Title,
-            AssigneeUserId = assigneeUserId,
-            OldEstimate = oldEstimate,
-            NewEstimate = estimate,
+            Estimate = new WorkOrderEstimateChange
+            {
+                WorkOrderId = workOrder.Id,
+                Title = workOrder.Title,
+                AssigneeUserId = assigneeUserId,
+                OldEstimate = oldEstimate,
+                NewEstimate = estimate,
+            },
+            Assignment = assignment,
         };
     }
 
@@ -198,6 +227,86 @@ public sealed class UpdateWorkOrderRequestHandler(
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
+    }
+
+    private async Task<WorkOrderAssignmentChange?> BuildAssignmentChangeAsync(
+        WorkOrder workOrder,
+        WorkOrderScheduleChange scheduleChange,
+        Guid? oldAssigneeId,
+        WorkOrderSlot? slot,
+        CancellationToken cancellationToken
+    )
+    {
+        if (scheduleChange is not (WorkOrderScheduleChange.Assign
+            or WorkOrderScheduleChange.Move
+            or WorkOrderScheduleChange.Unassign))
+        {
+            return null;
+        }
+
+        var oldAssigneeUserId = oldAssigneeId is { } oldId
+            ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
+            : null;
+        var newAssigneeUserId = slot is not null
+            ? await _dbContext.FindIdentityUserIdAsync(slot.AssigneeId, cancellationToken)
+            : null;
+
+        return new WorkOrderAssignmentChange
+        {
+            WorkOrderId = workOrder.Id,
+            Title = workOrder.Title,
+            OldAssigneeId = oldAssigneeId,
+            OldAssigneeUserId = oldAssigneeUserId,
+            NewAssigneeId = slot?.AssigneeId,
+            NewAssigneeUserId = newAssigneeUserId,
+            PlannedStartLocal = slot?.PlannedStartLocal,
+        };
+    }
+
+    private async Task<WorkOrderSlot?> EnsureScheduleAsync(
+        UpdateWorkOrderRequest request,
+        WorkOrder workOrder,
+        TimeSpan estimate,
+        CancellationToken cancellationToken
+    )
+    {
+        var current = workOrder.Current;
+        var isSlotChanged = request.AssigneeId != current.AssigneeId
+            || request.PlannedStartLocal != current.PlannedStartLocal;
+        var isEstimateChanged = estimate != workOrder.Estimate;
+        if (request.Scope == AccessScope.Own && (isSlotChanged || isEstimateChanged))
+        {
+            throw new ForbiddenAccessException(WorkOrderErrors.Rejections.OwnScopeForbidden);
+        }
+
+        if (request.AssigneeId is not { } assigneeId || request.PlannedStartLocal is not { } startLocal)
+        {
+            return null;
+        }
+
+        var startUtc = isSlotChanged
+            ? await _scheduleChecks.EnsureAsync(
+                request.CompanyId,
+                assigneeId,
+                startLocal,
+                estimate,
+                workOrder.Id,
+                cancellationToken)
+            : current.PlannedStartUtc!.Value;
+        if (!isSlotChanged && isEstimateChanged)
+        {
+            await _scheduleChecks.EnsureSlotAsync(
+                request.CompanyId,
+                assigneeId,
+                startLocal,
+                startUtc,
+                estimate,
+                workOrder.Id,
+                cancellationToken);
+        }
+
+        return new WorkOrderSlot
+            { AssigneeId = assigneeId, PlannedStartLocal = startLocal, PlannedStartUtc = startUtc };
     }
 
     private async Task EnsureMachineAsync(
@@ -220,29 +329,10 @@ public sealed class UpdateWorkOrderRequestHandler(
         }
     }
 
-    private async Task EnsureEstimateAsync(
-        UpdateWorkOrderRequest request,
-        WorkOrder workOrder,
-        TimeSpan estimate,
-        CancellationToken cancellationToken
-    )
+    private sealed record UpdateChange
     {
-        if (request.Scope == AccessScope.Own)
-        {
-            throw new ForbiddenAccessException(WorkOrderErrors.Rejections.OwnScopeForbidden);
-        }
+        public required WorkOrderEstimateChange Estimate { get; init; }
 
-        var current = workOrder.Current;
-        if (current is { AssigneeId: { } assigneeId, PlannedStartLocal: { } startLocal, PlannedStartUtc: { } startUtc })
-        {
-            await _scheduleChecks.EnsureSlotAsync(
-                request.CompanyId,
-                assigneeId,
-                startLocal,
-                startUtc,
-                estimate,
-                workOrder.Id,
-                cancellationToken);
-        }
+        public WorkOrderAssignmentChange? Assignment { get; init; }
     }
 }

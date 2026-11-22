@@ -21,6 +21,10 @@ public record UpdateWorkOrderRequest
 
     public required IReadOnlyList<Guid> FileIds { get; init; }
 
+    public Guid? AssigneeId { get; init; }
+
+    public DateTime? PlannedStartLocal { get; init; }
+
     public required uint RowVersion { get; init; }
 }
 
@@ -46,6 +50,8 @@ public static class UpdateWorkOrderRequestExtensions
                 MachineId = request.MachineId,
                 EstimateMinutes = request.EstimateMinutes,
                 FileIds = request.FileIds,
+                AssigneeId = request.AssigneeId,
+                PlannedStartLocal = request.PlannedStartLocal,
                 RowVersion = request.RowVersion,
             };
     }

@@ -71,10 +71,10 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
 
         var response = await _fixture.SendShiftRequestAsync(
             new HttpMethod(method),
-            pathTemplate.Replace("{employeeId}", worker.EncryptedId),
+            pathTemplate.Replace(oldValue: "{employeeId}", worker.EncryptedId),
             claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Fact]
@@ -128,5 +128,56 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
             HttpMethod.Get, ShiftApiTestData.SchedulePath(ShiftApiTestData.MalformedId), claims);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Lookups_WithWorkerTokenForOwnEmployee_Return200()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
+
+        var days = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            ShiftApiTestData.ScheduleDaysPath(worker.EncryptedId, ShiftApiTestData.Date, ShiftApiTestData.Date),
+            claims);
+        var spans = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get, ShiftApiTestData.FreeSpansPath(worker.EncryptedId, ShiftApiTestData.Date), claims);
+
+        days.StatusCode.Should().Be(HttpStatusCode.OK);
+        spans.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Lookups_WithWorkerTokenForOtherEmployee_Return404()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var other = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.OtherEmail);
+        var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
+
+        var days = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            ShiftApiTestData.ScheduleDaysPath(other.EncryptedId, ShiftApiTestData.Date, ShiftApiTestData.Date),
+            claims);
+        var spans = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get, ShiftApiTestData.FreeSpansPath(other.EncryptedId, ShiftApiTestData.Date), claims);
+
+        days.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        spans.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Lookups_WithoutToken_Return401()
+    {
+        using var client = _fixture.CreateClient();
+
+        var days = await client.GetAsync(
+            ShiftApiTestData.ScheduleDaysPath(employeeId: "any", ShiftApiTestData.Date, ShiftApiTestData.Date),
+            TestContext.Current.CancellationToken);
+        var spans = await client.GetAsync(
+            ShiftApiTestData.FreeSpansPath(employeeId: "any", ShiftApiTestData.Date),
+            TestContext.Current.CancellationToken);
+
+        days.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        spans.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

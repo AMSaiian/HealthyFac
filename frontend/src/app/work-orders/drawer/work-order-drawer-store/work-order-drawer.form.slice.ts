@@ -9,9 +9,10 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
-import { createLookup } from '@shared/lookups/create-lookup';
+import { createLookup, type Lookup } from '@shared/lookups/create-lookup';
 import { type LookupOption, mergeLookupOptions } from '@shared/lookups/lookup-options';
 import { LookupsApi } from '@shared/lookups/lookups-api';
+import { CLOCK } from '@shared/time/clock';
 
 import { FilesApi } from '@files/files-api';
 import { type WorkOrder } from '@work-orders/work-order';
@@ -41,6 +42,7 @@ export function withWorkOrderDrawerForm() {
         canWrite: Signal<boolean>;
         isViewMode: Signal<boolean>;
         workOrder: ResourceRef<WorkOrder | undefined>;
+        assigneeLookup: Lookup;
       }>(),
       methods: type<{ _toastError: (key: string) => void }>(),
     },
@@ -76,7 +78,21 @@ export function withWorkOrderDrawerForm() {
     })),
     withComputed((store) => {
       const employee = inject(EmployeeStore);
+      const clock = inject(CLOCK);
       return {
+        /** The picker shows for a supervisor, and as read-only text for a worker who views or edits a work order. */
+        isScheduleShown: computed(() => store.canManage() || store.isUpdate()),
+        isScheduleReadOnly: computed(() => !store.canManage()),
+        today: computed(() => clock.now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
+        assigneeOptions: computed((): LookupOption[] => {
+          const current = store.workOrder.hasValue() ? store.workOrder.value() : null;
+          return mergeLookupOptions(
+            current?.assigneeId == null
+              ? []
+              : [{ id: current.assigneeId, displayName: current.assigneeName ?? current.assigneeId, isDeleted: false }],
+            store.assigneeLookup.options(),
+          );
+        }),
         /**
          * The status change is open to a supervisor, and to a worker for own assigned work orders. It needs view
          * mode: the status dialog does not carry unsaved form changes.

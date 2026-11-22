@@ -10,13 +10,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
-import {
-  type DaySchedule,
-  type WorkOrder,
-  WorkOrderCategory,
-  WorkOrderPriority,
-  WorkOrderStatus,
-} from '@work-orders/work-order';
+import { type WorkOrder, WorkOrderCategory, WorkOrderPriority, WorkOrderStatus } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
@@ -43,29 +37,6 @@ const WORK_ORDER: WorkOrder = {
   createdAt: '2027-05-01T08:00:00Z',
 };
 
-const DAY: DaySchedule = {
-  date: '2027-06-01',
-  timeZoneId: 'Europe/Kyiv',
-  source: 'template',
-  blocks: [
-    { startLocal: '08:00', endLocal: '12:00', startUtc: '2027-06-01T05:00:00Z', endUtc: '2027-06-01T09:00:00Z' },
-  ],
-  workOrders: [
-    {
-      id: 'other',
-      title: 'Other',
-      status: WorkOrderStatus.Staged,
-      priority: WorkOrderPriority.Low,
-      plannedStartLocal: '2027-06-01T08:00:00',
-      plannedStartUtc: '2027-06-01T05:00:00Z',
-      estimateMinutes: 60,
-      occupancyEndUtc: '2027-06-01T06:00:00Z',
-      isDelayed: false,
-      rowVersion: 1,
-    },
-  ],
-};
-
 describe('ScheduleActionsStore', () => {
   const get = vi.fn();
   const assign = vi.fn();
@@ -73,7 +44,8 @@ describe('ScheduleActionsStore', () => {
   const unassign = vi.fn();
   const changeStatus = vi.fn();
   const remove = vi.fn();
-  const daySchedule = vi.fn();
+  const scheduleDays = vi.fn();
+  const freeSpans = vi.fn();
   const complete = vi.fn();
   const cancel = vi.fn();
   const add = vi.fn();
@@ -95,7 +67,8 @@ describe('ScheduleActionsStore', () => {
             unassign,
             changeStatus,
             delete: remove,
-            daySchedule,
+            scheduleDays,
+            freeSpans,
           },
         },
         { provide: LookupsApi, useValue: { employees: () => of([]) } },
@@ -128,7 +101,8 @@ describe('ScheduleActionsStore', () => {
     for (const mock of [assign, move, unassign, changeStatus, remove]) {
       mock.mockReset().mockReturnValue(of(undefined));
     }
-    daySchedule.mockReset().mockReturnValue(of(DAY));
+    scheduleDays.mockReset().mockReturnValue(of({ timeZoneId: 'Europe/Kyiv', days: [] }));
+    freeSpans.mockReset().mockReturnValue(of({ date: '2027-06-01', timeZoneId: 'Europe/Kyiv', spans: [] }));
     complete.mockReset();
     cancel.mockReset();
     add.mockReset();
@@ -245,37 +219,30 @@ describe('ScheduleActionsStore', () => {
     expect(options).toContain(WorkOrderStatus.InProgress);
   });
 
-  it('suggestion_OnAMoveInsideItsOwnOldSlot_GivesThatStart', async () => {
-    daySchedule.mockReturnValue(
-      of({
-        ...DAY,
-        workOrders: [
-          {
-            ...DAY.workOrders[0],
-            id: 'wo-1',
-            plannedStartUtc: '2027-06-01T05:00:00Z',
-            occupancyEndUtc: '2027-06-01T06:00:00Z',
-          },
-        ],
-      }),
-    );
+  it('initialAssignValue_OnAMove_IsTheStoredAssigneeAndStart', async () => {
     const store = await setup(WorkOrderActionType.Move);
 
-    store.select({ assigneeId: 'e1', date: Temporal.PlainDate.from('2027-06-01') });
-    TestBed.tick();
-    await TestBed.inject(ApplicationRef).whenStable();
+    const value = store.initialAssignValue();
 
-    expect(store.suggestion()?.toString()).toBe('2027-06-01T08:00:00');
+    expect(value?.assigneeId).toBe('e1');
+    expect(value?.start?.toString()).toBe('2027-06-01T09:00:00');
   });
 
-  it('suggestion_WithSelection_IsTheFirstFreeStartOfTheDay', async () => {
+  it('initialAssignValue_OnAnAssign_IsEmpty', async () => {
     const store = await setup(WorkOrderActionType.Assign);
 
-    store.select({ assigneeId: 'e2', date: Temporal.PlainDate.from('2027-06-01') });
-    TestBed.tick();
-    await TestBed.inject(ApplicationRef).whenStable();
+    expect(store.initialAssignValue()).toEqual({ assigneeId: null, start: null });
+  });
 
-    expect(store.suggestion()?.toString()).toBe('2027-06-01T09:00:00');
-    expect(store.hasNoFreeStart()).toBe(false);
+  it('loadDays_OnAMove_PassesTheEditedWorkOrderToLeaveItsOwnSlotFree', async () => {
+    const store = await setup(WorkOrderActionType.Move);
+
+    store.loadDays({
+      assigneeId: 'e1',
+      from: Temporal.PlainDate.from('2027-05-31'),
+      to: Temporal.PlainDate.from('2027-07-11'),
+    });
+
+    expect(scheduleDays).toHaveBeenCalledWith('e1', '2027-05-31', '2027-07-11', 'wo-1');
   });
 });

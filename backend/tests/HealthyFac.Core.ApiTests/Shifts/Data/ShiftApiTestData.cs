@@ -13,6 +13,7 @@ public static class ShiftApiTestData
     public const string ManagePermission = "shifts:manage";
     public const string EmployeesReadPermission = "employees:read";
     public const string Date = "2027-04-12";
+    public const string EarlierDate = "2027-04-11";
     public const string MalformedDate = "not-a-date";
     public const string MalformedId = "not-an-id";
     public const string EmptyBlockList = "[]";
@@ -52,6 +53,12 @@ public static class ShiftApiTestData
         $"v1/employees/{employeeId}/shift-overrides?from={Date}&to={Date}";
 
     public static string OverridePath(string employeeId) => $"v1/employees/{employeeId}/shift-overrides/{Date}";
+
+    public static string ScheduleDaysPath(string employeeId, string from, string to) =>
+        $"v1/employees/{employeeId}/schedule/days?from={from}&to={to}";
+
+    public static string FreeSpansPath(string employeeId, string date) =>
+        $"v1/employees/{employeeId}/schedule/free-spans?date={date}";
 
     public static string SchedulePath(string employeeId) => $"v1/employees/{employeeId}/schedule?date={Date}";
 

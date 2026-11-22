@@ -55,6 +55,49 @@ public sealed class ShiftInputTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task ScheduleDays_WithEndBeforeStart_Returns400()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            ShiftApiTestData.ScheduleDaysPath(worker.EncryptedId, ShiftApiTestData.Date, ShiftApiTestData.EarlierDate),
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ScheduleDays_WithMalformedDate_Returns400()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            ShiftApiTestData.ScheduleDaysPath(
+                worker.EncryptedId, ShiftApiTestData.MalformedDate, ShiftApiTestData.Date),
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task FreeSpans_WithMalformedDate_Returns400()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var claims = _fixture.CreateShiftClaims(worker.IdentityUserId, ShiftApiTestData.ReadPermission);
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            ShiftApiTestData.FreeSpansPath(worker.EncryptedId, ShiftApiTestData.MalformedDate),
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task DeleteOverride_WithoutRowVersion_Returns400()
     {
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);

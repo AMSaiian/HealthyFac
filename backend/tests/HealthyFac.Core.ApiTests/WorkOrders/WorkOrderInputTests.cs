@@ -172,6 +172,30 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task Update_WithAnAssigneeWithoutAStart_Returns400()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(WorkOrderApiTestData.WorkerEmail);
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+        var order = await _fixture.ReadOrderAsync(claims, id);
+        var body = new JsonObject
+        {
+            [propertyName: "title"] = WorkOrderApiTestData.Title,
+            [propertyName: "priority"] = "low",
+            [propertyName: "category"] = "repair",
+            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            [propertyName: "fileIds"] = new JsonArray(),
+            [propertyName: "assigneeId"] = worker.EncryptedId,
+            [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+        }.ToJsonString();
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Put, $"{WorkOrderApiTestData.BasePath}/{id}", claims, body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task OverrideThatOrphansAWorkOrder_Returns422WithEncryptedWorkOrderIds()
     {
         var worker = await _fixture.ArrangeActiveEmployeeAsync(WorkOrderApiTestData.WorkerEmail);
@@ -195,6 +219,21 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
 
         listed.Should().ContainSingle();
         listed[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(id);
+    }
+
+    [Theory]
+    [MemberData(nameof(WorkOrderApiTestData.InvalidHistoryLimits), MemberType = typeof(WorkOrderApiTestData))]
+    public async Task History_WithoutAValidLimit_Returns400(string caseName, string query)
+    {
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            $"{WorkOrderApiTestData.BasePath}/{id}/history{query}",
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     private static string UpdateBody(uint rowVersion) =>

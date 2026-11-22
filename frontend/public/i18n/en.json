@@ -821,7 +821,6 @@
       "TAB_HISTORY": "Show the changes of the work order",
       "ATTACH_NEW": "Upload a new file and attach it",
       "ATTACH_EXISTING": "Attach a file that is stored already",
-      "USE_SUGGESTION": "Fill the start with the suggested time",
       "ADD_NEW": "Create a work order",
       "DRAFTS": "Show the work order drafts of the maintenance cases"
     },
@@ -867,12 +866,27 @@
       "COMPANY_FILES": "Company files",
       "MACHINE_FILES": "Machine files",
       "EMPTY": "No files to attach",
-      "ATTACH": "Attach"
+      "ATTACH": "Attach",
+      "DAY": "Day",
+      "SPANS": "Free spans",
+      "TIME": "Start time",
+      "SPAN_TOO_SHORT": "This span is shorter than the estimate",
+      "SPAN_CHOOSE": "Start at the beginning of this span",
+      "SELECT_ESTIMATE_FIRST": "Set the estimate and the assignee first",
+      "NO_SPANS": "No free span on this day",
+      "SPAN_LENGTH": "{{minutes}} min",
+      "LABELS": {
+        "FITS": "Fits the estimate",
+        "TOO_SHORT": "Free time is shorter than the estimate",
+        "BUSY": "Fully booked",
+        "DAY_OFF": "Day off"
+      }
     },
     "HISTORY": {
       "EMPTY": "No history yet",
       "ASSIGNEE": "Assignee",
-      "PLANNED_START": "Planned start"
+      "PLANNED_START": "Planned start",
+      "ESTIMATE_CHANGED": "Estimate: {{old}} -> {{new}}"
     },
     "TOASTS": {
       "CREATED": "The work order was created",
@@ -890,11 +904,7 @@
       "START": "Planned start",
       "STATUS": "New status",
       "PICK_STATUS": "Choose a status",
-      "SUGGESTED": "First free start",
-      "USE_SUGGESTION": "Use",
-      "NO_FREE_START": "No free start is left on this day",
       "ERRORS": {
-        "ASSIGNEE_REQUIRED": "Choose a person",
         "START_REQUIRED": "Choose a start"
       }
     },
@@ -986,7 +996,8 @@
     "AFFECTED": {
       "TITLE": "Work orders outside the new shifts",
       "HINT": "Move or unassign these work orders first, then save again",
-      "DELETE_TITLE": "The override cannot be deleted"
+      "DELETE_TITLE": "The override cannot be deleted",
+      "DELETE_HINT": "Move, unassign, or complete these work orders first, then delete the override again"
     },
     "TOOLTIPS": {
       "ADD_BLOCK": "Add a work block to the day",

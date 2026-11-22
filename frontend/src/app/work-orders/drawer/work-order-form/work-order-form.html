@@ -121,6 +121,26 @@
     />
   </div>
 </div>
+@if (isScheduleShown() && today(); as todayDate) {
+  <p-divider />
+  <hf-assignment-picker
+    [estimateMinutes]="model().estimateMinutes"
+    [employees]="employees()"
+    [isEmployeesLoading]="isEmployeesLoading()"
+    [days]="days()"
+    [isDaysLoading]="isDaysLoading()"
+    [spans]="spans()"
+    [isSpansLoading]="isSpansLoading()"
+    [today]="todayDate"
+    [initialValue]="pickerInitial()"
+    [isReadOnly]="isScheduleReadOnly()"
+    (valueChange)="onScheduleChange($event)"
+    (validityChange)="onScheduleValidity($event)"
+    (employeeLookupRequested)="employeeLookupRequested.emit($event)"
+    (daysRequested)="daysRequested.emit($event)"
+    (spansRequested)="spansRequested.emit($event)"
+  />
+}
 <p-divider />
 <div class="flex flex-col gap-1">
   <span class="hf-field-label">{{ 'WORK_ORDERS.FORM.DESCRIPTION' | translate }}</span>

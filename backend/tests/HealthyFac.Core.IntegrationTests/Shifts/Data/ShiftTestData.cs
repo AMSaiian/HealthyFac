@@ -11,6 +11,7 @@ public static class ShiftTestData
 {
     public const string ZoneId = "Europe/Kyiv";
     public const string CompanyName = "Shift Plant";
+    public const string OtherCompanyName = "Other Shift Plant";
     public const string EmployeeEmail = "shift.worker@plant.com";
     public const string EmployeeFirstName = "Sam";
     public const string EmployeeLastName = "Shifter";

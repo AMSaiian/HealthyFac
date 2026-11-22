@@ -11,6 +11,7 @@ import { DetailsMode } from '@shared/forms/with-details-mode';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { Temporal } from '@shared/time/temporal';
 import { Permission } from '@shared/security/permissions';
 
 import { FilesApi } from '@files/files-api';
@@ -26,7 +27,7 @@ import type { WorkOrderFormValue } from '@work-orders/work-order-schema';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 import { WorkOrderDrawerStore } from './work-order-drawer.store';
-import { fileEntries, toUpdateBody } from './work-order-drawer.store.utils';
+import { fileEntries, toCreateBody, toUpdateBody } from './work-order-drawer.store.utils';
 
 const WORK_ORDER: WorkOrder = {
   id: 'wo-1',
@@ -57,6 +58,8 @@ const FORM_VALUE: WorkOrderFormValue = {
   machineId: null,
   estimateMinutes: 90,
   fileIds: ['f2', 'f3'],
+  assigneeId: 'e1',
+  start: Temporal.PlainDateTime.from('2027-03-28T09:00:00'),
 };
 
 function lookedUp(id: string): LookedUpFile {
@@ -75,6 +78,69 @@ describe('toUpdateBody', () => {
     const body = toUpdateBody(FORM_VALUE, WORK_ORDER, true);
 
     expect(body.estimateMinutes).toBe(90);
+  });
+});
+
+describe('toUpdateBody schedule', () => {
+  it.each([
+    { name: 'NoChange', value: FORM_VALUE, assigneeId: 'e1', plannedStartLocal: '2027-03-28T09:00:00' },
+    {
+      name: 'Move',
+      value: { ...FORM_VALUE, start: Temporal.PlainDateTime.from('2027-03-29T10:00:00') },
+      assigneeId: 'e1',
+      plannedStartLocal: '2027-03-29T10:00:00',
+    },
+    {
+      name: 'AnotherAssignee',
+      value: { ...FORM_VALUE, assigneeId: 'e2' },
+      assigneeId: 'e2',
+      plannedStartLocal: '2027-03-28T09:00:00',
+    },
+    {
+      name: 'Unassign',
+      value: { ...FORM_VALUE, assigneeId: null, start: null },
+      assigneeId: null,
+      plannedStartLocal: null,
+    },
+  ])('toUpdateBody_$name_SendsTheAssigneeAndTheStart', ({ value, assigneeId, plannedStartLocal }) => {
+    const body = toUpdateBody(value, WORK_ORDER, true);
+
+    expect(body.assigneeId).toBe(assigneeId);
+    expect(body.plannedStartLocal).toBe(plannedStartLocal);
+  });
+
+  it('toUpdateBody_OfAWorker_SendsTheCurrentSlotNotTheEditedOne', () => {
+    const edited = { ...FORM_VALUE, assigneeId: 'e2', start: Temporal.PlainDateTime.from('2027-04-01T10:00:00') };
+
+    const body = toUpdateBody(edited, WORK_ORDER, false);
+
+    expect(body.assigneeId).toBe('e1');
+    expect(body.plannedStartLocal).toBe('2027-03-28T09:00:00');
+  });
+
+  it('toUpdateBody_OfABacklogWorkOrderWithoutSlot_SendsBothNull', () => {
+    const backlog = { ...WORK_ORDER, assigneeId: null, plannedStartLocal: null };
+
+    const body = toUpdateBody({ ...FORM_VALUE, assigneeId: null, start: null }, backlog, true);
+
+    expect(body.assigneeId).toBeNull();
+    expect(body.plannedStartLocal).toBeNull();
+  });
+});
+
+describe('toCreateBody schedule', () => {
+  it('toCreateBody_WithAssigneeAndStart_SendsBoth', () => {
+    const body = toCreateBody(FORM_VALUE);
+
+    expect(body.assigneeId).toBe('e1');
+    expect(body.plannedStartLocal).toBe('2027-03-28T09:00:00');
+  });
+
+  it('toCreateBody_WithoutAssignee_SendsNeither', () => {
+    const body = toCreateBody({ ...FORM_VALUE, assigneeId: null, start: null });
+
+    expect(body).not.toHaveProperty('assigneeId');
+    expect(body).not.toHaveProperty('plannedStartLocal');
   });
 });
 
@@ -150,7 +216,7 @@ describe('WorkOrderDrawerStore', () => {
     notify.mockReset();
     dispatch.mockReset();
     cancelAction.mockReset();
-    history.mockReset().mockReturnValue(of([]));
+    history.mockReset().mockReturnValue(of({ items: [], totalCount: 0, nextAfter: null }));
     add.mockReset();
   });
 
@@ -255,10 +321,21 @@ describe('WorkOrderDrawerStore', () => {
   it('save_OnCreate_CallsCreateWithoutAssignee', async () => {
     const store = await setup({ isUpdate: false });
 
-    store.save(FORM_VALUE);
+    store.save({ ...FORM_VALUE, assigneeId: null, start: null });
 
     expect(create).toHaveBeenCalledTimes(1);
     expect(create.mock.calls[0][0]).not.toHaveProperty('assigneeId');
+  });
+
+  it('save_OnCreateWithAssigneeAndStart_CallsCreateWithBoth', async () => {
+    const store = await setup({ isUpdate: false });
+
+    store.save(FORM_VALUE);
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      assigneeId: 'e1',
+      plannedStartLocal: '2027-03-28T09:00:00',
+    });
   });
 
   it('save_OnCreate_CompletesWithTheBacklogStatusOfTheNewWorkOrder', async () => {
@@ -283,6 +360,52 @@ describe('WorkOrderDrawerStore', () => {
     await TestBed.inject(ApplicationRef).whenStable();
 
     expect(history).toHaveBeenCalledTimes(1);
+  });
+
+  it('activateHistory_OnOpen_LoadsTheFirstPageWithTenRowsAndNoAfter', async () => {
+    const store = await setup({ canManage: true });
+
+    store.activateHistory();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(history).toHaveBeenCalledWith('wo-1', 10, undefined);
+  });
+
+  it('nextHistoryPage_ThenPrevious_SendsTheAfterOfThePageAndGoesBackWithoutAnotherQuery', async () => {
+    const store = await setup({ canManage: true });
+    store.activateHistory();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    store.nextHistoryPage(14);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    const pageIndexAfterNext = store.historyPageIndex();
+    store.previousHistoryPage();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(history).toHaveBeenNthCalledWith(2, 'wo-1', 10, 14);
+    expect(pageIndexAfterNext).toBe(1);
+    expect(store.historyPageIndex()).toBe(0);
+    expect(history).toHaveBeenLastCalledWith('wo-1', 10, undefined);
+  });
+
+  it('save_OnAnEditFromTheSecondHistoryPage_ReloadsTheFirstPage', async () => {
+    const store = await setup({ canManage: true });
+    store.activateHistory();
+    store.nextHistoryPage(14);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    history.mockClear();
+
+    store.save(FORM_VALUE);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store.historyPageIndex()).toBe(0);
+    expect(history).toHaveBeenCalledWith('wo-1', 10, undefined);
   });
 
   it.each(

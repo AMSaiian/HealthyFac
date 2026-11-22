@@ -20,6 +20,8 @@ public static class WorkOrderTestData
     public const string MachineSerialNumber = "WO-LATHE-7";
     public const string OtherMachineSerialNumber = "WO-LATHE-8";
     public const string DeactivatedEmail = "gone.worker@example.com";
+
+    public const string OtherAssigneeEmail = "other.assignee@example.com";
     public const string ScheduledTime = "09:00";
     public const string OverlappingTime = "09:30";
     public const string LunchTime = "12:30";
@@ -66,7 +68,9 @@ public static class WorkOrderTestData
         uint rowVersion,
         IReadOnlyList<Guid> fileIds,
         int estimateMinutes = OneHour,
-        string title = ChangedTitle
+        string title = ChangedTitle,
+        Guid? assigneeId = null,
+        DateTime? plannedStartLocal = null
     ) =>
         new()
         {
@@ -78,6 +82,8 @@ public static class WorkOrderTestData
             Category = WorkOrderCategory.Inspection,
             EstimateMinutes = estimateMinutes,
             FileIds = fileIds,
+            AssigneeId = assigneeId,
+            PlannedStartLocal = plannedStartLocal,
             RowVersion = rowVersion,
         };
 

@@ -8,12 +8,14 @@ import type {
   CreateWorkOrderBody,
   CreateWorkOrderResponse,
   DaySchedule,
+  FreeSpans,
   LookupFilesResponse,
   MoveBody,
+  ScheduleDays,
   SearchWorkOrdersBody,
   UpdateWorkOrderBody,
   WorkOrder,
-  WorkOrderHistoryRow,
+  WorkOrderHistoryPage,
   WorkOrdersPage,
 } from '@work-orders/work-order';
 
@@ -23,12 +25,19 @@ const WORK_ORDERS_SEARCH_BATCH_URL = `${WORK_ORDERS_SEARCH_URL}/batch`;
 const FILES_LOOKUP_URL = '/api/document/v1/files/lookup';
 const EMPLOYEES_URL = '/api/core/v1/employees';
 const SCHEDULE_SEGMENT = 'schedule';
+const SCHEDULE_DAYS_SEGMENT = 'days';
+const FREE_SPANS_SEGMENT = 'free-spans';
 const DATE_PARAMETER = 'date';
+const FROM_PARAMETER = 'from';
+const TO_PARAMETER = 'to';
+const EXCLUDE_WORK_ORDER_PARAMETER = 'excludeWorkOrderId';
 const STATUS_SEGMENT = 'status';
 const HISTORY_SEGMENT = 'history';
 const ASSIGNEE_SEGMENT = 'assignee';
 const MOVE_SEGMENT = 'move';
 const ROW_VERSION_PARAMETER = 'rowVersion';
+const LIMIT_PARAMETER = 'limit';
+const AFTER_PARAMETER = 'after';
 
 interface WriteOptions {
   readonly context?: HttpContext;
@@ -65,8 +74,13 @@ export class WorkOrdersApi {
     return this._http.get<WorkOrder>(workOrderUrl(id), options);
   }
 
-  history(id: string): Observable<readonly WorkOrderHistoryRow[]> {
-    return this._http.get<readonly WorkOrderHistoryRow[]>(`${workOrderUrl(id)}/${HISTORY_SEGMENT}`);
+  /** Reads one page of the history: `limit` rows with a revision below `after`, or the newest rows without it. */
+  history(id: string, limit: number, after?: number): Observable<WorkOrderHistoryPage> {
+    let params = new HttpParams().set(LIMIT_PARAMETER, limit);
+    if (after !== undefined) {
+      params = params.set(AFTER_PARAMETER, after);
+    }
+    return this._http.get<WorkOrderHistoryPage>(`${workOrderUrl(id)}/${HISTORY_SEGMENT}`, { params });
   }
 
   create(body: CreateWorkOrderBody, options?: WriteOptions): Observable<CreateWorkOrderResponse> {
@@ -105,6 +119,35 @@ export class WorkOrdersApi {
     return this._http.get<DaySchedule>(`${EMPLOYEES_URL}/${encodeURIComponent(employeeId)}/${SCHEDULE_SEGMENT}`, {
       params: new HttpParams().set(DATE_PARAMETER, date),
     });
+  }
+
+  /**
+   * The summary of each day from `from` to `to` of one employee: the longest free span. `excludeWorkOrderId` leaves
+   * the edited work order out of the load. Needs `shifts:read`.
+   */
+  scheduleDays(employeeId: string, from: string, to: string, excludeWorkOrderId?: string): Observable<ScheduleDays> {
+    let params = new HttpParams().set(FROM_PARAMETER, from).set(TO_PARAMETER, to);
+    if (excludeWorkOrderId) {
+      params = params.set(EXCLUDE_WORK_ORDER_PARAMETER, excludeWorkOrderId);
+    }
+
+    return this._http.get<ScheduleDays>(
+      `${EMPLOYEES_URL}/${encodeURIComponent(employeeId)}/${SCHEDULE_SEGMENT}/${SCHEDULE_DAYS_SEGMENT}`,
+      { params },
+    );
+  }
+
+  /** The free spans of one day of one employee. `excludeWorkOrderId` leaves the edited work order out. */
+  freeSpans(employeeId: string, date: string, excludeWorkOrderId?: string): Observable<FreeSpans> {
+    let params = new HttpParams().set(DATE_PARAMETER, date);
+    if (excludeWorkOrderId) {
+      params = params.set(EXCLUDE_WORK_ORDER_PARAMETER, excludeWorkOrderId);
+    }
+
+    return this._http.get<FreeSpans>(
+      `${EMPLOYEES_URL}/${encodeURIComponent(employeeId)}/${SCHEDULE_SEGMENT}/${FREE_SPANS_SEGMENT}`,
+      { params },
+    );
   }
 
   lookupFiles(ids: readonly string[]): Observable<LookupFilesResponse> {

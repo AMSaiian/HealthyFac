@@ -2,7 +2,6 @@ using FluentValidation.Results;
 using HealthyFac.Core.Application.Shifts;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.Employees;
-using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Domain.Time;
@@ -16,14 +15,20 @@ namespace HealthyFac.Core.Application.WorkOrders;
 /// </summary>
 /// <param name="dbContext">Reads the employee and the other work orders.</param>
 /// <param name="reader">Loads the shifts of the assignee.</param>
+/// <param name="occupancyReader">Reads the occupancies of the other work orders of the assignee.</param>
 /// <param name="timeProvider">Provides the current time.</param>
-public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader reader, TimeProvider timeProvider)
+public sealed class ScheduleChecks(
+    ICoreDbContext dbContext,
+    DayScheduleReader reader,
+    EmployeeOccupancyReader occupancyReader,
+    TimeProvider timeProvider
+)
 {
     private const string PlannedStartKey = "plannedStart";
-    private const int OccupancyLookbackHours = 36;
 
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly DayScheduleReader _reader = reader;
+    private readonly EmployeeOccupancyReader _occupancyReader = occupancyReader;
     private readonly TimeProvider _timeProvider = timeProvider;
 
     /// <summary>
@@ -99,7 +104,13 @@ public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader r
             throw new UnprocessableException(WorkOrderErrors.Rejections.OutsideShift);
         }
 
-        var occupied = await ReadOccupanciesAsync(companyId, assigneeId, slot, cancellationToken);
+        var occupied = await _occupancyReader.ReadAsync(
+            companyId,
+            assigneeId,
+            slot.StartUtc,
+            slot.EndUtc,
+            excludeWorkOrderId: null,
+            cancellationToken);
         if (SlotRules.Overlaps(slot, occupied))
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.SlotTaken);
@@ -151,40 +162,4 @@ public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader r
 
     private static AppValidationException Invalid(string message) =>
         new([new ValidationFailure(PlannedStartKey, message)]);
-
-    private async Task<List<Occupancy>> ReadOccupanciesAsync(
-        Guid companyId,
-        Guid assigneeId,
-        Occupancy slot,
-        CancellationToken cancellationToken
-    )
-    {
-        var fromUtc = slot.StartUtc.AddHours(-OccupancyLookbackHours);
-
-        var rows = await (from row in _dbContext.WorkOrderHistories.AsNoTracking()
-                join workOrder in _dbContext.WorkOrders.AsNoTracking() on row.WorkOrderId equals workOrder.Id
-                where workOrder.CompanyId == companyId
-                    && row.Revision == workOrder.CurrentRevision
-                    && row.AssigneeId == assigneeId
-                    && row.Status != WorkOrderStatus.Backlog
-                    && row.PlannedStartUtc >= fromUtc
-                    && row.PlannedStartUtc < slot.EndUtc
-                select new
-                {
-                    workOrder.Id,
-                    workOrder.Estimate,
-                    row.Status,
-                    row.PlannedStartUtc,
-                    ChangedAt = row.CreatedAt,
-                })
-            .ToListAsync(cancellationToken);
-
-        return rows
-            .Select(row => Occupancy.Of(
-                row.Id,
-                row.PlannedStartUtc!.Value,
-                row.Estimate,
-                row.Status == WorkOrderStatus.Completed ? row.ChangedAt : null))
-            .ToList();
-    }
 }
