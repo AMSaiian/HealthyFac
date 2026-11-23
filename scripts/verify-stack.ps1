@@ -151,6 +151,7 @@ function Invoke-Compose {
 
 # Reads the values after Compose resolved both env files, so the script never parses them itself.
 function Get-ResolvedConfig {
+  $signIn = Get-SeedSignIn -Path (Join-Path $repo 'backend/seed/demo/company.json')
   $json = & docker @composeArgs config --format json
   if ($LASTEXITCODE -ne 0) { Write-Error 'docker compose config failed. Check .env and .env.verify.' }
   $config = $json | ConvertFrom-Json
@@ -159,8 +160,9 @@ function Get-ResolvedConfig {
     SpaUrl          = $spaUrl.AbsoluteUri.TrimEnd('/')
     GatewayPort     = [int]($config.services.gateway.ports | Select-Object -First 1).published
     MailpitPort     = [int]($config.services.mailpit.ports | Select-Object -First 1).published
-    SupervisorEmail = $config.services.core.environment.Seeding__DevelopmentData__TestTenant__SupervisorEmail
-    SupervisorPassword = $config.services.'keycloak-config'.environment.HEALTHYFAC_TEST_SUPERVISOR_PASSWORD
+    SupervisorEmail = $signIn.SupervisorEmail
+    WorkerEmail     = $signIn.WorkerEmail
+    SignInPassword  = $signIn.Password
   }
 }
 
@@ -304,11 +306,12 @@ switch ($Command) {
     Invoke-Compose up -d --build
     Wait-Ready
     Wait-AppAnswers $config.SpaUrl
-    # The test supervisor is a development-only account of the seeded test tenant; the agent needs it to sign in.
+    # The demo accounts are development-only accounts that the seed job creates; the agent needs them to sign in.
     Write-Host ''
     Write-Host "The verify stack is ready (slot $slotNumber)." -ForegroundColor Green
     Write-Host "App:     $($config.SpaUrl)"
-    Write-Host "Sign in: $($config.SupervisorEmail) / $($config.SupervisorPassword)"
+    Write-Host "Sign in: $($config.SupervisorEmail) / $($config.SignInPassword)"
+    Write-Host "Worker:  $($config.WorkerEmail) / $($config.SignInPassword)"
     Write-Host "Mailpit: http://localhost:$($config.MailpitPort)"
     Write-Host "Grafana: http://localhost:$($values.GrafanaPort) (admin / admin)"
     Write-Host "RabbitMQ: http://localhost:$($values.RabbitMqUiPort)"

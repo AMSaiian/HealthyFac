@@ -60,7 +60,7 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 - Never run `reset` or `down` between fixes. The data that the reviewer or I left is fine
   for a fix check. A stopped slot starts again with `up`, with its data.
 - Run `reset`, then `up`, only when the slot is stale: the diff since the slot started
-  changes `Migrations/`, `Seeding/`, or `docker/keycloak/realm/` (an edited migration or
+  changes `Migrations/`, `backend/seed/demo/`, `backend/src/Tools/HealthyFac.Seeder/`, or `docker/keycloak/realm/` (an edited migration or
   a changed seed does not apply to an existing database), or the slot started on an
   earlier day (the seeded work orders and invites are tied to the seed day). Tell me why.
 - The log holds the sign-in password. Never repeat it. Give me the log path.
