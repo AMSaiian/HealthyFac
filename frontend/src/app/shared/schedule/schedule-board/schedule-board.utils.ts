@@ -135,9 +135,14 @@ export function withLiveEnds(bars: readonly ScheduleBar[], now: Temporal.Instant
   return bars.map((bar) => (bar.isRunning === true ? { ...bar, end: later(bar.end, now) } : bar));
 }
 
-/** A cut bar and a completed bar cannot be dragged or resized. */
-export function isBarLocked(item: PlacedBar): boolean {
-  return item.bar.isLocked === true || item.isCutStart || item.isCutEnd;
+/** A cut bar and a completed bar cannot be resized (or dragged). */
+export function canResizeBar(item: PlacedBar): boolean {
+  return item.bar.isLocked !== true && !item.isCutStart && !item.isCutEnd;
+}
+
+/** A work order in progress keeps its start, so its bar cannot be dragged. It can still be resized. */
+export function canDragBar(item: PlacedBar): boolean {
+  return canResizeBar(item) && item.bar.isRunning !== true;
 }
 
 /**

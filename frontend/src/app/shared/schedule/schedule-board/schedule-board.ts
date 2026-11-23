@@ -36,6 +36,8 @@ import {
   barLeftCss,
   barTopCss,
   barWidthCss,
+  canDragBar,
+  canResizeBar,
   columnWidthOf,
   createClickGuard,
   createDwell,
@@ -46,7 +48,6 @@ import {
   gapsOf,
   HOUR_LABEL_WIDTH_REM,
   hourLabelsOf,
-  isBarLocked,
   isSkeletonShown,
   LANE_GAP_REM,
   LANE_HEIGHT_REM,
@@ -254,8 +255,12 @@ export class ScheduleBoard {
     return describeBar(bar, this.timeZoneId(), this._shownDate());
   }
 
-  protected isLocked(item: PlacedBar): boolean {
-    return isBarLocked(item);
+  protected canDrag(item: PlacedBar): boolean {
+    return canDragBar(item);
+  }
+
+  protected canResize(item: PlacedBar): boolean {
+    return canResizeBar(item);
   }
 
   protected startDate(bar: ScheduleBar): string {

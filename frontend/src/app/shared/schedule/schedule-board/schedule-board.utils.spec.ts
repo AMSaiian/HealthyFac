@@ -3,10 +3,11 @@ import { Temporal } from '@shared/time/temporal';
 
 import {
   axisOf,
+  canDragBar,
+  canResizeBar,
   describeBar,
   gapsOf,
   hourLabelsOf,
-  isBarLocked,
   lengthMs,
   nowPercentOf,
   placeBars,
@@ -217,17 +218,36 @@ describe('bars across days', () => {
     ])('placeBars_ForABar%s_SetsTheCutFlagsAndTheLock', (_name, start, end, isCutStart, isCutEnd, isLocked) => {
       const { placed } = placeBars([bar('a', start, end)], NORMAL);
 
-      expect([placed[0].isCutStart, placed[0].isCutEnd, isBarLocked(placed[0])]).toEqual([
+      expect([placed[0].isCutStart, placed[0].isCutEnd, !canResizeBar(placed[0])]).toEqual([
         isCutStart,
         isCutEnd,
         isLocked,
       ]);
     });
 
-    it('isBarLocked_ForACompletedBarInsideTheDay_IsLocked', () => {
+    it('canResizeBar_ForACompletedBarInsideTheDay_IsFalse', () => {
       const { placed } = placeBars([{ ...bar('a', '2027-06-01T09:00', '2027-06-01T10:00'), isLocked: true }], NORMAL);
 
-      expect(isBarLocked(placed[0])).toBe(true);
+      expect(canResizeBar(placed[0])).toBe(false);
+    });
+
+    it.each([
+      ['Staged', {}, true, true],
+      ['InProgress', { isRunning: true }, false, true],
+      ['Completed', { isLocked: true }, false, false],
+    ])('canDragBar_ForA%sBar_GivesTheDragAndTheResizeRights', (_name, flags, canDrag, canResize) => {
+      const { placed } = placeBars([{ ...bar('a', '2027-06-01T09:00', '2027-06-01T10:00'), ...flags }], NORMAL);
+
+      expect([canDragBar(placed[0]), canResizeBar(placed[0])]).toEqual([canDrag, canResize]);
+    });
+
+    it('canDragBar_ForACutRunningBar_IsFalseForBoth', () => {
+      const { placed } = placeBars(
+        [{ ...running('2027-05-31T22:00', '2027-06-01T01:00', '2027-06-01T02:00') }],
+        NORMAL,
+      );
+
+      expect([canDragBar(placed[0]), canResizeBar(placed[0])]).toEqual([false, false]);
     });
   });
 

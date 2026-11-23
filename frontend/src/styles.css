@@ -1,4 +1,4 @@
-@layer theme, base, primeng, components, utilities;
+@layer cdk-resets, theme, base, primeng, components, utilities;
 
 @import '@fontsource/oxygen/300.css';
 @import '@fontsource/oxygen/400.css';

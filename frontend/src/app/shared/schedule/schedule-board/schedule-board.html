@@ -154,10 +154,10 @@
             [class]="barClasses(entry.item.bar)"
             [class.hf-bar-overrun]="entry.item.overrunStartPercent !== null"
             [style.--hf-overrun-start]="overrunStart(entry.item)"
-            [cdkDragDisabled]="isLocked(entry.item)"
-            [style.left]="barLeft(entry.item)"
+            [cdkDragDisabled]="!canDrag(entry.item)"
+            [style.--hf-bar-left]="barLeft(entry.item)"
             [style.width]="barWidth(entry.item)"
-            [style.top]="entry.top"
+            [style.--hf-bar-top]="entry.top"
             [attr.aria-label]="entry.item.bar.title + ', ' + describe(entry.item.bar)"
             [pTooltip]="tooltip(entry.item.bar)"
             tooltipStyleClass="whitespace-pre-line"
@@ -194,7 +194,7 @@
                 {{ entry.item.bar.title }}
               </div>
             </ng-template>
-            @if (!isLocked(entry.item)) {
+            @if (canResize(entry.item)) {
               <span
                 class="hf-resize-handle"
                 (pointerdown)="onResizeStart($event, entry.item)"

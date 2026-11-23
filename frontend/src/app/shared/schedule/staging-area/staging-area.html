@@ -7,15 +7,17 @@
     <div
       cdkDrag
       cdkDragPreviewContainer="global"
-      class="hf-status-backlog rounded-border flex max-w-full min-w-min flex-none cursor-grab items-stretch overflow-hidden text-xs leading-6 text-white"
+      class="hf-status-backlog rounded-border flex max-w-full min-w-12 flex-none cursor-grab items-stretch overflow-hidden text-xs leading-6 text-white"
       role="button"
       tabindex="0"
       [style.width.px]="card.previewWidthPx"
       [style.height.rem]="laneHeightRem"
       [attr.aria-label]="card.tooltip"
       [pTooltip]="card.tooltip"
+      tooltipPosition="left"
       tooltipStyleClass="whitespace-pre-line"
-      (cdkDragStarted)="dragStarted.emit()"
+      [tooltipDisabled]="isDragging()"
+      (cdkDragStarted)="onDragStarted()"
       (cdkDragMoved)="dragMoved.emit($event.pointerPosition)"
       (cdkDragEnded)="onDragEnded($event, card.item.id)"
       (click)="onClick(card.item.id)"
@@ -25,8 +27,7 @@
         class="w-1.5 flex-none"
         [class]="card.item.priorityClass"
       ></span>
-      <span class="flex-none px-2 whitespace-nowrap">{{ card.estimate.key | translate: card.estimate.params }}</span>
-      <span class="w-0 min-w-0 flex-1 truncate pr-2">{{ card.item.title }}</span>
+      <span class="w-0 min-w-0 flex-1 truncate px-2">{{ card.item.title }}</span>
       <ng-template cdkDragPreview>
         <div
           class="hf-status-backlog rounded-border -mt-3 truncate px-2 text-xs leading-6 text-white shadow-lg"

@@ -1,5 +1,5 @@
 import { CDK_DRAG_CONFIG, CdkDrag, type CdkDragEnd, CdkDragPreview, CdkDropList } from '@angular/cdk/drag-drop';
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -51,16 +51,23 @@ export class StagingArea {
   protected readonly cards = computed(() =>
     this.workOrders().map((item) => ({
       item,
-      estimate: estimateTextOf(item.estimateMinutes),
       tooltip: this._tooltipOf(item),
       previewWidthPx: previewWidthOf(item.estimateMinutes, this.axis(), this.axisWidthPx()),
     })),
   );
 
   private readonly _translate = inject(TranslateService);
+  protected readonly isDragging = signal(false);
+
   private readonly _clickGuard = createClickGuard();
 
+  protected onDragStarted(): void {
+    this.isDragging.set(true);
+    this.dragStarted.emit();
+  }
+
   protected onDragEnded(event: CdkDragEnd, id: string): void {
+    this.isDragging.set(false);
     this._clickGuard.markDragged();
     const card = this.cards().find((entry) => entry.item.id === id);
     const previewLeftPx = event.dropPoint.x - (card?.previewWidthPx ?? 0) / 2;

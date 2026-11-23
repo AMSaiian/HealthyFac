@@ -113,6 +113,8 @@
 }
 
 .hf-schedule-bar {
+  left: var(--hf-bar-left);
+  top: var(--hf-bar-top);
   height: var(--hf-schedule-lane-height);
   pointer-events: auto;
 }
