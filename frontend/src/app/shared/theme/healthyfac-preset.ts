@@ -99,6 +99,10 @@ export const HealthyFacPreset = definePreset(Lara, {
       busy: 'light-dark({red.200}, {red.800})',
       dayOff: 'light-dark({surface.100}, {surface.800})',
     },
+    backlogDrawer: {
+      background: 'light-dark({surface.100}, {surface.800})',
+      shadow: 'light-dark(rgb(0 0 0 / 0.25), rgb(0 0 0 / 0.6))',
+    },
     scheduleBar: {
       pending: 'light-dark({sky.600}, {sky.400})',
       conflict: 'light-dark({red.600}, {red.400})',
