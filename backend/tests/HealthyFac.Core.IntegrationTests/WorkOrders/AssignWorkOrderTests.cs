@@ -230,6 +230,66 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
         await act.Should().ThrowAsync<ConflictException>();
     }
 
+    [Fact]
+    public async Task UnassignWorkOrder_OfACompletedWorkOrder_Returns422AndKeepsTheStatusAndTheHistory()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var workOrderId = await CreateCompletedAsync(tenant);
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+        var rowsBefore = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        var act = () => RunAsync(
+            tenant,
+            new UnassignWorkOrderRequest { CompanyId = tenant.CompanyId, Id = workOrderId, RowVersion = rowVersion });
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        var workOrder = await _fixture.LoadWorkOrderAsync(workOrderId);
+        var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.Completed);
+        rowsAfter.Should().Be(rowsBefore);
+    }
+
+    [Fact]
+    public async Task MoveWorkOrder_OfACompletedWorkOrder_Returns422AndKeepsTheHistory()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var workOrderId = await CreateCompletedAsync(tenant);
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+        var rowsBefore = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        var act = () => RunAsync(
+            tenant,
+            new MoveWorkOrderRequest
+            {
+                CompanyId = tenant.CompanyId,
+                Id = workOrderId,
+                PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.InTwoDays, WorkOrderTestData.NextTime),
+                RowVersion = rowVersion,
+            });
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        rowsAfter.Should().Be(rowsBefore);
+    }
+
+    private async Task<Guid> CreateCompletedAsync(ShiftTenant tenant)
+    {
+        var workOrderId = await CreateBacklogAsync(tenant);
+        await AssignAsync(tenant, workOrderId, WorkOrderTestData.ScheduledTime);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, workOrderId, WorkOrderStatus.InProgress);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, workOrderId, WorkOrderStatus.Completed);
+
+        return workOrderId;
+    }
+
     private async Task<ShiftTenant> ArrangeTenantAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();

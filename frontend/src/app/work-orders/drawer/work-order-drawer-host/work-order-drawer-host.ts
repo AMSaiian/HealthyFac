@@ -86,7 +86,6 @@ export class WorkOrderDrawerHost {
     }
     return this.hasNoChanges() ? 'WORK_ORDERS.FORM.NO_CHANGES' : null;
   });
-  protected readonly isEstimateReadOnly = computed(() => this.store.isUpdate() && !this.store.canManage());
   protected readonly history = computed(() => (this.store.history.hasValue() ? this.store.history.value() : null));
   protected readonly historyRows = computed(() => this.history()?.items ?? []);
   protected readonly historyTotal = computed(() => this.history()?.totalCount ?? 0);

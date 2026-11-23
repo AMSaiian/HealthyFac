@@ -71,6 +71,11 @@ public sealed class UnassignWorkOrderRequestHandler(ICoreDbContext dbContext, IR
             throw new UnprocessableException(WorkOrderErrors.Rejections.NotScheduled);
         }
 
+        if (workOrder.Current.Status == WorkOrderStatus.Completed)
+        {
+            throw new UnprocessableException(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        }
+
         var oldAssigneeId = workOrder.Current.AssigneeId;
         var oldAssigneeUserId = oldAssigneeId is { } oldId
             ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)

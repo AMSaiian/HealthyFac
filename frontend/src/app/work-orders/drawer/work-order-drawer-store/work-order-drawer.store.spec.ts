@@ -426,6 +426,31 @@ describe('WorkOrderDrawerStore', () => {
     expect(store.canChangeStatus()).toBe(true);
   });
 
+  it('isScheduleReadOnly_ForASupervisorWithACompletedWorkOrder_IsTrueAndTheEstimateIsReadOnly', async () => {
+    get.mockReturnValue(of({ ...WORK_ORDER, status: WorkOrderStatus.Completed }));
+
+    const store = await setup({ canManage: true, canWrite: true });
+
+    expect(store.isScheduleLocked()).toBe(true);
+    expect(store.isScheduleReadOnly()).toBe(true);
+    expect(store.isEstimateReadOnly()).toBe(true);
+  });
+
+  it('isScheduleReadOnly_ForASupervisorWithAStagedWorkOrder_IsFalseAndTheEstimateIsEditable', async () => {
+    const store = await setup({ canManage: true, canWrite: true });
+
+    expect(store.isScheduleLocked()).toBe(false);
+    expect(store.isScheduleReadOnly()).toBe(false);
+    expect(store.isEstimateReadOnly()).toBe(false);
+  });
+
+  it('isScheduleReadOnly_ForAWorkerWithAStagedWorkOrder_IsTrue', async () => {
+    const store = await setup({ canWrite: true });
+
+    expect(store.isScheduleReadOnly()).toBe(true);
+    expect(store.isEstimateReadOnly()).toBe(true);
+  });
+
   it('canChangeStatus_InEditMode_IsFalse', async () => {
     const store = await setup({ canManage: true });
     store.edit();

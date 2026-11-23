@@ -235,6 +235,11 @@ public sealed class UpdateWorkOrderRequestHandler(
         var isSlotChanged = request.AssigneeId != current.AssigneeId
             || request.PlannedStartLocal != current.PlannedStartLocal;
         var isEstimateChanged = estimate != workOrder.Estimate;
+        if (current.Status == WorkOrderStatus.Completed && (isSlotChanged || isEstimateChanged))
+        {
+            throw new UnprocessableException(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        }
+
         if (request.Scope == AccessScope.Own && (isSlotChanged || isEstimateChanged))
         {
             throw new ForbiddenAccessException(WorkOrderErrors.Rejections.OwnScopeForbidden);

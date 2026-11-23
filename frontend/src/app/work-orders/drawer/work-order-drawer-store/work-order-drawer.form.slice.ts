@@ -15,7 +15,7 @@ import { LookupsApi } from '@shared/lookups/lookups-api';
 import { CLOCK } from '@shared/time/clock';
 
 import { FilesApi } from '@files/files-api';
-import { type WorkOrder } from '@work-orders/work-order';
+import { type WorkOrder, WorkOrderStatus } from '@work-orders/work-order';
 import { statusTargets } from '@work-orders/board/board-store/board.store.utils';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 import { WorkOrderActionType, type WorkOrderRowActionPayload } from '@work-orders/work-order-actions';
@@ -82,7 +82,10 @@ export function withWorkOrderDrawerForm() {
       return {
         /** The picker shows for a supervisor, and as read-only text for a worker who views or edits a work order. */
         isScheduleShown: computed(() => store.canManage() || store.isUpdate()),
-        isScheduleReadOnly: computed(() => !store.canManage()),
+        /** A completed work order keeps its estimate, assignee, and start: the backend rejects a change of them. */
+        isScheduleLocked: computed(
+          () => store.workOrder.hasValue() && store.workOrder.value().status === WorkOrderStatus.Completed,
+        ),
         today: computed(() => clock.now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
         assigneeOptions: computed((): LookupOption[] => {
           const current = store.workOrder.hasValue() ? store.workOrder.value() : null;
@@ -114,6 +117,12 @@ export function withWorkOrderDrawerForm() {
         }),
       };
     }),
+    withComputed((store) => ({
+      /** A supervisor edits the schedule of an open work order; a worker and a completed work order only read it. */
+      isScheduleReadOnly: computed(() => !store.canManage() || store.isScheduleLocked()),
+      /** The estimate of an existing work order is for a supervisor, and not for a completed one. */
+      isEstimateReadOnly: computed(() => store.isUpdate() && (!store.canManage() || store.isScheduleLocked())),
+    })),
     withMethods((store) => {
       const actions = inject(ActionStore);
       const files = inject(FilesApi);

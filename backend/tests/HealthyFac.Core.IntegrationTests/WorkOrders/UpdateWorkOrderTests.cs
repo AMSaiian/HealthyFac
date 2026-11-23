@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Authorization;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
@@ -12,6 +13,9 @@ namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 [Collection(CoreWorkOrdersCollection.Name)]
 public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
 {
+    private static readonly DateTimeOffset LateCompletionAt =
+        ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "10:40");
+
     private readonly CoreDatabaseFixture _fixture = fixture;
 
     [Fact]
@@ -463,6 +467,111 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
                 estimateMinutes,
                 assigneeId: assigneeId,
                 plannedStartLocal: time is null ? null : ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time)));
+
+    [Fact]
+    public async Task UpdateWorkOrder_OfACompletedWorkOrderWithAnotherEstimate_Returns422AndKeepsTheOccupancyEnd()
+    {
+        var (tenant, workOrderId) = await ArrangeLateCompletedAsync();
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+        var rowsBefore = await _fixture.CountHistoryRowsAsync(workOrderId);
+        _fixture.Clock.Freeze(LateCompletionAt.AddDays(days: 1));
+
+        var act = () => _fixture.UpdateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.UpdateRequest(
+                tenant.CompanyId,
+                AccessScope.Company,
+                workOrderId,
+                rowVersion,
+                [],
+                WorkOrderTestData.LongerEstimate,
+                assigneeId: tenant.EmployeeId,
+                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "09:00")));
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
+        var day = await ReadDayAsync(tenant);
+
+        rowsAfter.Should().Be(rowsBefore);
+        day.WorkOrders.Should().ContainSingle().Which.OccupancyEndUtc.Should().Be(LateCompletionAt.UtcDateTime);
+    }
+
+    [Fact]
+    public async Task UpdateWorkOrder_OfACompletedWorkOrderWithAnotherStart_Returns422()
+    {
+        var (tenant, workOrderId) = await ArrangeLateCompletedAsync();
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+
+        var act = () => _fixture.UpdateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.UpdateRequest(
+                tenant.CompanyId,
+                AccessScope.Company,
+                workOrderId,
+                rowVersion,
+                [],
+                assigneeId: tenant.EmployeeId,
+                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "13:00")));
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+    }
+
+    [Fact]
+    public async Task UpdateWorkOrder_OfACompletedWorkOrderWithOnlyAnotherTitle_SavesWithoutAHistoryRow()
+    {
+        var (tenant, workOrderId) = await ArrangeLateCompletedAsync();
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+        var rowsBefore = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        await _fixture.UpdateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.UpdateRequest(
+                tenant.CompanyId,
+                AccessScope.Company,
+                workOrderId,
+                rowVersion,
+                [],
+                assigneeId: tenant.EmployeeId,
+                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "09:00")));
+
+        var workOrder = await _fixture.LoadWorkOrderAsync(workOrderId);
+        var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        workOrder.Title.Should().Be(WorkOrderTestData.ChangedTitle);
+        rowsAfter.Should().Be(rowsBefore);
+    }
+
+    private async Task<(ShiftTenant Tenant, Guid WorkOrderId)> ArrangeLateCompletedAsync()
+    {
+        var tenant = await ArrangeScheduledTenantAsync();
+        var created = await CreateScheduledAsync(tenant, time: "09:00");
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, created.Id, WorkOrderStatus.InProgress);
+        _fixture.Clock.Freeze(LateCompletionAt);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, created.Id, WorkOrderStatus.Completed);
+
+        return (tenant, created.Id);
+    }
+
+    private Task<DayScheduleResponse> ReadDayAsync(ShiftTenant tenant) =>
+        _fixture.ReadAsAsync<GetEmployeeDayScheduleRequest, DayScheduleResponse>(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            new GetEmployeeDayScheduleRequest
+            {
+                CompanyId = tenant.CompanyId,
+                EmployeeId = tenant.EmployeeId,
+                Date = ShiftTestData.Tomorrow,
+                Scope = AccessScope.Company,
+            });
 
     private async Task<ShiftTenant> ArrangeScheduledTenantAsync()
     {

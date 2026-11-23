@@ -101,6 +101,11 @@ public sealed class MoveWorkOrderRequestHandler(
             throw new UnprocessableException(WorkOrderErrors.Rejections.NotScheduled);
         }
 
+        if (current.Status == WorkOrderStatus.Completed)
+        {
+            throw new UnprocessableException(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        }
+
         var assigneeId = request.AssigneeId ?? current.AssigneeId!.Value;
         var startUtc = await _scheduleChecks.EnsureAsync(
             request.CompanyId,
