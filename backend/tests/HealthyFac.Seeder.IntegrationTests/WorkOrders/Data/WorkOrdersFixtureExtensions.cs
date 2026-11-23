@@ -5,6 +5,7 @@ using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.Timeline;
+using HealthyFac.Shared.Application.Grids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,15 +30,20 @@ public static class WorkOrdersFixtureExtensions
             SeedContext context,
             Guid orderId,
             CancellationToken cancellationToken
-        ) =>
-            await fixture.Hosts.Core.SendAsync<GetWorkOrderHistoryRequest, IReadOnlyList<WorkOrderHistoryResponse>>(
+        )
+        {
+            var page = await fixture.Hosts.Core.SendAsync<GetWorkOrderHistoryRequest, WorkOrderHistoryPageResponse>(
                 context.GetActor(person: "nadiia"),
                 new GetWorkOrderHistoryRequest
                 {
                     CompanyId = PeopleTestData.CompanyId,
                     Id = orderId,
+                    Limit = GridValidationConstants.MaxLimit,
                     Scope = AccessScope.Company,
                 },
                 cancellationToken);
+
+            return page.Items;
+        }
     }
 }

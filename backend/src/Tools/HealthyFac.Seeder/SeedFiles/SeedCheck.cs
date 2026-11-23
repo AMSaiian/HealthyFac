@@ -13,6 +13,7 @@ public sealed class SeedCheck
     private readonly DateTimeOffset _anchor;
     private readonly TimeZoneInfo _zone;
     private readonly Func<SeedRequest, CancellationToken, Task<IReadOnlyList<string>>> _validate;
+    private readonly string? _completionItem;
 
     /// <summary>Creates a check.</summary>
     /// <param name="anchor">The start of the job.</param>
@@ -20,15 +21,21 @@ public sealed class SeedCheck
     /// <param name="validate">
     /// Runs the validator of the owning service on a request, without a database call. It returns the failure texts.
     /// </param>
+    /// <param name="completionItem">
+    /// The item of the event that the completion marker belongs to. No event may sort after it, because a run that
+    /// stops after the marker would read as complete. <see langword="null"/> turns the rule off.
+    /// </param>
     public SeedCheck(
         DateTimeOffset anchor,
         TimeZoneInfo zone,
-        Func<SeedRequest, CancellationToken, Task<IReadOnlyList<string>>> validate
+        Func<SeedRequest, CancellationToken, Task<IReadOnlyList<string>>> validate,
+        string? completionItem = null
     )
     {
         _anchor = anchor;
         _zone = zone;
         _validate = validate;
+        _completionItem = completionItem;
     }
 
     /// <summary>Checks the events.</summary>
@@ -54,6 +61,7 @@ public sealed class SeedCheck
 
         var order = moments.OrderBy(entry => entry.At).Select(entry => entry.Event).ToList();
         CheckKeys(events, order, failures);
+        CheckCompletionIsLast(order, failures);
         foreach (var seedEvent in events)
         {
             await CheckRequestsAsync(seedEvent, failures, cancellationToken);
@@ -113,6 +121,32 @@ public sealed class SeedCheck
                 }
             }
         }
+    }
+
+    private void CheckCompletionIsLast(IReadOnlyList<SeedEvent> order, List<SeedCheckFailure> failures)
+    {
+        if (_completionItem is null)
+        {
+            return;
+        }
+
+        var markerIndex = order.ToList().FindIndex(seedEvent => seedEvent.Item == _completionItem);
+        if (markerIndex < 0)
+        {
+            failures.Add(
+                new SeedCheckFailure
+                {
+                    File = SeedItem.FileOf(_completionItem),
+                    Item = _completionItem,
+                    Rule = SeedFileErrors.CompletionEventMissing(_completionItem),
+                });
+
+            return;
+        }
+
+        failures.AddRange(
+            order.Skip(markerIndex + 1)
+                .Select(seedEvent => Failure(seedEvent, SeedFileErrors.EventAfterCompletion(_completionItem))));
     }
 
     private async Task CheckRequestsAsync(

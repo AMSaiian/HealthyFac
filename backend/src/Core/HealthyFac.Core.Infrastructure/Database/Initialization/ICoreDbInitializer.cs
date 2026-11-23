@@ -1,7 +1,7 @@
 namespace HealthyFac.Core.Infrastructure.Database.Initialization;
 
 /// <summary>
-/// Defines database initialization and data seeding operations.
+/// Defines database initialization operations: the schema and the required data.
 /// </summary>
 public interface ICoreDbInitializer
 {
@@ -20,12 +20,4 @@ public interface ICoreDbInitializer
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SeedRequiredDataAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-    /// <summary>
-    /// Seeds optional development and test data into the database.
-    /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
-    /// requests.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

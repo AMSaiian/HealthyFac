@@ -45,7 +45,7 @@ public sealed class WorkOrdersPart : ISeedPart
                 events.Add(AssignEvent(order, assignment));
             }
 
-            events.AddRange(order.StatusChanges.Select(change => StatusEvent(order, change)));
+            events.AddRange(order.StatusChanges.Select((change, index) => StatusEvent(order, change, index)));
         }
 
         return events;
@@ -111,16 +111,17 @@ public sealed class WorkOrdersPart : ISeedPart
         };
     }
 
-    private SeedEvent StatusEvent(WorkOrderSeed order, StatusChangeSeed change)
+    private SeedEvent StatusEvent(WorkOrderSeed order, StatusChangeSeed change, int index)
     {
-        var key = $"{order.Key}{WorkOrdersConstants.StatusSuffix}{change.Status.Value}";
+        var key = $"{order.Key}{WorkOrdersConstants.StatusSuffix}{index}.{change.Status.Value}";
         var item = SeedItem.Of(WorkOrdersConstants.FileName, key);
         if (order.Assignment is null)
         {
             throw new SeedFileException(WorkOrdersErrors.StatusNeedsAssignment(item));
         }
 
-        _actions[key] = (context, cancellationToken) => ChangeStatusAsync(order, change, context, cancellationToken);
+        _actions[key] = (context, cancellationToken) =>
+            ChangeStatusAsync(order, change, item, context, cancellationToken);
 
         return new SeedEvent
         {
@@ -130,7 +131,8 @@ public sealed class WorkOrdersPart : ISeedPart
             Uses = [AssignedKey(order), UserKey(change.By)],
             Requests =
             [
-                CoreRequest(StatusRequest(change, PeopleConstants.CheckId, PeopleConstants.CheckId, rowVersion: 0)),
+                CoreRequest(
+                    StatusRequest(change, item, PeopleConstants.CheckId, PeopleConstants.CheckId, rowVersion: 0)),
             ],
         };
     }
@@ -178,6 +180,7 @@ public sealed class WorkOrdersPart : ISeedPart
 
     private ChangeWorkOrderStatusRequest StatusRequest(
         StatusChangeSeed change,
+        string item,
         Guid companyId,
         Guid orderId,
         uint rowVersion
@@ -185,7 +188,7 @@ public sealed class WorkOrdersPart : ISeedPart
         new()
         {
             CompanyId = companyId,
-            Scope = ScopeOf(change.By, WorkOrdersConstants.FileName),
+            Scope = ScopeOf(change.By, item),
             Id = orderId,
             Status = change.Status,
             RowVersion = rowVersion,
@@ -230,6 +233,7 @@ public sealed class WorkOrdersPart : ISeedPart
     private async Task ChangeStatusAsync(
         WorkOrderSeed order,
         StatusChangeSeed change,
+        string item,
         SeedContext context,
         CancellationToken cancellationToken
     )
@@ -239,7 +243,7 @@ public sealed class WorkOrdersPart : ISeedPart
 
         await _hosts.Core.SendAsync(
             context.GetActor(change.By),
-            StatusRequest(change, context.GetId(PeopleConstants.CompanyKey), orderId, rowVersion),
+            StatusRequest(change, item, context.GetId(PeopleConstants.CompanyKey), orderId, rowVersion),
             cancellationToken);
     }
 

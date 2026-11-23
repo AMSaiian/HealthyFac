@@ -1,7 +1,6 @@
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
-using HealthyFac.Telemetry.Infrastructure.Database.Seeding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -17,9 +16,8 @@ public static class DatabaseInitializationExtensions
     extension(IServiceProvider services)
     {
         /// <summary>
-        /// Applies database migrations (Development only), seeds the required data, then seeds the optional
-        /// data when the seeding section enables it. The scope runs as the database initialization actor of the
-        /// service, so seeded rows carry its ID.
+        /// Applies database migrations (Development only), then seeds the required data. The scope runs as the
+        /// database initialization actor of the service, so seeded rows carry its ID.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
         /// requests.</param>
@@ -32,15 +30,9 @@ public static class DatabaseInitializationExtensions
                         services.GetRequiredService<IOptions<ServiceOptions>>().Value.ToServiceName()));
 
             var initializer = scope.ServiceProvider.GetRequiredService<ITelemetryDbInitializer>();
-            var seedingOptions = scope.ServiceProvider.GetRequiredService<IOptions<SeedingOptions>>().Value;
 
             await initializer.ApplyDatabaseStructureAsync(cancellationToken);
             await initializer.SeedRequiredDataAsync(cancellationToken);
-
-            if (seedingOptions.IsOptionalDataSeeded)
-            {
-                await initializer.SeedOptionalDataAsync(cancellationToken);
-            }
         }
     }
 }

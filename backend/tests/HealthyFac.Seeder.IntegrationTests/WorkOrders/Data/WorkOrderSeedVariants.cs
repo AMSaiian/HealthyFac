@@ -38,6 +38,32 @@ public static class WorkOrderSeedVariants
                         [propertyName: "status"] = "inProgress",
                     }));
 
+    public static string CoolantCheckWithRepeatedStatus() =>
+        Create(
+            WorkOrdersFile,
+            root =>
+            {
+                var changes = FindOrder(root, key: "coolant-check")[propertyName: "statusChanges"]!.AsArray();
+                changes.Add(
+                    new JsonObject
+                    {
+                        [propertyName: "at"] = "wd-1 15:10", [propertyName: "by"] = "sofiia",
+                        [propertyName: "status"] = "inProgress",
+                    });
+                changes.Add(
+                    new JsonObject
+                    {
+                        [propertyName: "at"] = "wd-1 15:20", [propertyName: "by"] = "sofiia",
+                        [propertyName: "status"] = "blocked",
+                    });
+                changes.Add(
+                    new JsonObject
+                    {
+                        [propertyName: "at"] = "wd-1 15:30", [propertyName: "by"] = "nadiia",
+                        [propertyName: "status"] = "inProgress",
+                    });
+            });
+
     public static string PumpDraftAppliedTwice() =>
         Create(
             MachinesFile,

@@ -37,7 +37,7 @@ services:
         frontend: ./frontend
     image: healthyfac/keycloak:local
     restart: unless-stopped
-    command: ["start-dev", "--http-port=8080", "--import-realm"]
+    command: ["start-dev", "--http-port=8080"]
     stop_signal: SIGTERM
     stop_grace_period: 30s
     security_opt:
@@ -47,10 +47,6 @@ services:
     # No read_only: start-dev builds the server at each start and writes the build output to /opt/keycloak/lib/quarkus
     # (verified: "Read-only file system" for transformed-bytecode.jar). A tmpfs on that folder would hide the files that
     # the image holds there. The root and the capabilities are dropped instead.
-    # The import only creates the realm and the supervisor with the fixed ID on a fresh database, because only the import
-    # keeps a fixed user ID. The import skips a realm that exists. The keycloak-config job applies everything else.
-    volumes:
-      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
@@ -69,9 +65,6 @@ services:
       KC_HOSTNAME_ADMIN: http://localhost:${KEYCLOAK_PORT:-8081}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
-      # Keycloak replaces each placeholder of the bootstrap file with the variable of the same name.
-      HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
     ports:
       - "${KEYCLOAK_PORT:-8081}:8080"
     # The image has no curl. Bash opens a TCP connection to the management port and reads the readiness answer.
@@ -92,8 +85,8 @@ services:
       mailpit:
         condition: service_healthy
 
-  # The job applies docker/keycloak/realm/healthyfac-realm.json and then docker/keycloak/dev/healthyfac-test-tenant.json
-  # to the running Keycloak and exits. It changes only the differences. After you change a file, run
+  # The job applies docker/keycloak/realm/healthyfac-realm.json to the running Keycloak and exits. It changes only the
+  # differences. The seed job creates the company organization and the demo users, so no file lists them. After you change a file, run
   # `docker compose up keycloak-config`.
   keycloak-config:
     container_name: healthyfac-keycloak-config
@@ -109,13 +102,12 @@ services:
     stop_grace_period: 30s
     volumes:
       - ./docker/keycloak/realm:/config/realm:ro
-      - ./docker/keycloak/dev:/config/dev:ro
     environment:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_USER: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env}
       KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
       KEYCLOAK_AVAILABILITYCHECK_ENABLED: "true"
-      IMPORT_FILES_LOCATIONS: /config/realm/healthyfac-realm.json,/config/dev/healthyfac-test-tenant.json
+      IMPORT_FILES_LOCATIONS: /config/realm/healthyfac-realm.json
       # The files hold the plain placeholder ${NAME}, which Keycloak also reads in the bootstrap import. The job
       # leaves the Keycloak message placeholders (${username}) unchanged. The option no longer stops on a missing
       # variable; the ":?" checks below stop Compose instead.
@@ -130,11 +122,6 @@ services:
       # supervisor) that the file does not list.
       IMPORT_USERS_MERGEROLES: "true"
       HEALTHYFAC_SPA_URL: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
-      HEALTHYFAC_TEST_COMPANY_ID: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_EMAIL: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
-      HEALTHYFAC_TEST_SUPERVISOR_PASSWORD: ${HEALTHYFAC_TEST_SUPERVISOR_PASSWORD:?set HEALTHYFAC_TEST_SUPERVISOR_PASSWORD in .env}
       KEYCLOAK_AUTH_CLIENT_SECRET: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
       KEYCLOAK_CORE_CLIENT_SECRET: ${KEYCLOAK_CORE_CLIENT_SECRET:?set KEYCLOAK_CORE_CLIENT_SECRET in .env}
       KEYCLOAK_TELEMETRY_CLIENT_SECRET: ${KEYCLOAK_TELEMETRY_CLIENT_SECRET:?set KEYCLOAK_TELEMETRY_CLIENT_SECRET in .env}
@@ -262,8 +249,6 @@ services:
       # The fixed values of the Compose network (docker/config/README.md). The service reads the file as
       # appsettings.Deployment.json; an environment variable below still overrides it.
       - ./docker/config/core.json:/app/appsettings.Deployment.json:ro
-      # The seed data file (company name, supervisor name, seed machines). Core reads it in Development only.
-      - ./backend/seed:/app/seed:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
@@ -278,14 +263,6 @@ services:
       # The issuer is the public URL of the realm (the gateway). Core reads the metadata and the signing keys from
       # the internal address of Keycloak (docker/config/core.json).
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      # The test company and supervisor. Keycloak imports the same values (see the keycloak service), so the
-      # supervisor can sign in. Core seeds them only when IsOptionalDataSeeded is true (the Development default).
-      # true deletes the Core business data, outbox, and inbox, and seeds again on every start.
-      Seeding__DevelopmentData__IsRecreationForced: ${HEALTHYFAC_SEED_RECREATE:-false}
-      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
-      Seeding__DevelopmentData__TestTenant__SupervisorEmployeeId: ${HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID:?set HEALTHYFAC_TEST_SUPERVISOR_EMPLOYEE_ID in .env}
-      Seeding__DevelopmentData__TestTenant__SupervisorEmail: ${HEALTHYFAC_TEST_SUPERVISOR_EMAIL:?set HEALTHYFAC_TEST_SUPERVISOR_EMAIL in .env}
       # The real-time push goes through the Redis backplane of the gateway hub.
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host, so only
@@ -298,6 +275,8 @@ services:
         condition: service_healthy
       keycloak-config:
         condition: service_completed_successfully
+      seeder:
+        condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
       mailpit:
@@ -306,6 +285,86 @@ services:
         condition: service_started
       lgtm:
         condition: service_healthy
+
+  # The seed job. It runs the use cases of the 5 services against their databases, creates the company organization and
+  # the demo users in Keycloak, and exits. The 5 services start after it ends with exit code 0. A second start
+  # prints "The demo seed is complete." and changes nothing. `docker compose run --rm seeder --reset` empties the
+  # seed data and seeds again (stop the 5 services first). The fixed values are the mounted files of docker/config; the
+  # keys below hold only secrets and machine values. The job reads them as Services__<Name>__*.
+  seeder:
+    container_name: healthyfac-seeder
+    build:
+      context: ./backend
+      dockerfile: src/Tools/HealthyFac.Seeder/Dockerfile
+    image: healthyfac/seeder:local
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    volumes:
+      - ./backend/seed/demo:/app/seed/demo:ro
+      - ./docker/config/core.json:/app/services/core/appsettings.Deployment.json:ro
+      - ./docker/config/telemetry.json:/app/services/telemetry/appsettings.Deployment.json:ro
+      - ./docker/config/document.json:/app/services/document/appsettings.Deployment.json:ro
+      - ./docker/config/insights.json:/app/services/insights/appsettings.Deployment.json:ro
+      - ./docker/config/auth.json:/app/services/auth/appsettings.Deployment.json:ro
+    environment:
+      Services__Core__ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-healthyfac_core};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Services__Core__ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Services__Core__Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Services__Core__InviteTokens__Keys__0__Secret: ${InviteTokens__Keys__0__Secret:?set InviteTokens__Keys__0__Secret in .env}
+      Services__Core__InviteLinks__SpaBaseUrl: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      Services__Telemetry__ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_telemetry;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Services__Telemetry__ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Services__Telemetry__Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Services__Telemetry__IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      Services__Telemetry__MqttIntake__Password: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
+      Services__Document__ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_document;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Services__Document__ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Services__Document__Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Services__Document__IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      Services__Document__FileStorage__PublicBlobBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}/api/document/blobs
+      Services__Insights__ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_insights;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Services__Insights__ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Services__Insights__Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Services__Insights__IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
+      Services__Insights__ServiceTokens__ClientSecret: ${KEYCLOAK_INSIGHTS_CLIENT_SECRET:?set KEYCLOAK_INSIGHTS_CLIENT_SECRET in .env}
+      Services__Insights__Docling__ApiKey: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
+      Services__Insights__Gemini__ProjectId: ${GEMINI_PROJECT_ID:?set GEMINI_PROJECT_ID in .env}
+      Services__Insights__Gemini__Location: ${GEMINI_LOCATION:?set GEMINI_LOCATION in .env}
+      Services__Insights__Gemini__ChatModel: ${GEMINI_CHAT_MODEL:?set GEMINI_CHAT_MODEL in .env}
+      Services__Insights__Gemini__TriageModel: ${GEMINI_TRIAGE_MODEL:?set GEMINI_TRIAGE_MODEL in .env}
+      Services__Insights__Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      Services__Auth__ConnectionStrings__Database: >-
+        Host=postgres;Port=5432;Database=healthyfac_auth;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Services__Auth__ConnectionStrings__RabbitMq: >-
+        amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      Services__Auth__Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
+      Services__Auth__KeycloakAdmin__SpaBaseUrl: ${HEALTHYFAC_SPA_URL:-https://app.healthyfac.test:4200}
+      Services__Auth__ServiceTokens__ClientSecret: ${KEYCLOAK_AUTH_CLIENT_SECRET:?set KEYCLOAK_AUTH_CLIENT_SECRET in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      keycloak-config:
+        condition: service_completed_successfully
 
   # The job hashes the passwords of .env into the data volume and gives the volume to the broker user, then it exits.
   mosquitto-init:
@@ -389,8 +448,6 @@ services:
     volumes:
       - telemetry-logs:/app/logs
       - ./docker/config/telemetry.json:/app/appsettings.Deployment.json:ro
-      # The seed data file (seed machines). Telemetry reads it in Development only.
-      - ./backend/seed:/app/seed:ro
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
     environment:
@@ -405,8 +462,6 @@ services:
       # from the internal address of Keycloak (docker/config/telemetry.json).
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
       MqttIntake__Password: ${MOSQUITTO_TELEMETRY_PASSWORD:?set MOSQUITTO_TELEMETRY_PASSWORD in .env}
-      # The test company ID of Core. The seed machines of the seed data file belong to this company.
-      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
       # The real-time push goes through the Redis backplane of the gateway hub.
       Redis__ConnectionString: redis:6379,password=${REDIS_PASSWORD}
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
@@ -417,6 +472,8 @@ services:
       postgres:
         condition: service_healthy
       keycloak-config:
+        condition: service_completed_successfully
+      seeder:
         condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
@@ -520,8 +577,6 @@ services:
     volumes:
       - document-logs:/app/logs
       - ./docker/config/document.json:/app/appsettings.Deployment.json:ro
-      # The seed data file (seed machines). Document reads it in Development only.
-      - ./backend/seed:/app/seed:ro
     # Uploads above 64 KiB buffer to ASPNETCORE_TEMP. The size holds one attachment of 100 MiB with room for the
     # parallel uploads that the concurrency limit allows.
     tmpfs:
@@ -536,10 +591,6 @@ services:
       ConnectionStrings__RabbitMq: >-
         amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       Jwt__Issuer: ${HEALTHYFAC_AUTH_URL:-https://auth.healthyfac.test}/realms/healthyfac
-      # The test tenant ID of Core. The seed machines of the seed data file belong to its company.
-      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      # The demo files are created as the test supervisor.
-      Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       FileStorage__PublicBlobBaseUrl: ${HEALTHYFAC_API_URL:-https://api.healthyfac.test}/api/document/blobs
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
     ports:
@@ -549,6 +600,8 @@ services:
       postgres:
         condition: service_healthy
       keycloak-config:
+        condition: service_completed_successfully
+      seeder:
         condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
@@ -574,8 +627,6 @@ services:
     volumes:
       - insights-logs:/app/logs
       - ./docker/config/insights.json:/app/appsettings.Deployment.json:ro
-      # The seed data file and the demo ingest snapshot. Insights reads them in Development only.
-      - ./backend/seed:/app/seed:ro
       # The Application Default Credentials file of the developer. Vertex AI reads it through
       # GOOGLE_APPLICATION_CREDENTIALS. Mount it read-only. It never enters an image or the build context.
       - ${GCLOUD_ADC_FILE:?set GCLOUD_ADC_FILE in .env}:/run/secrets/gcloud-adc.json:ro
@@ -597,9 +648,6 @@ services:
       Gemini__TriageModel: ${GEMINI_TRIAGE_MODEL:?set GEMINI_TRIAGE_MODEL in .env}
       Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
       Docling__ApiKey: ${DOCLING_API_KEY:?set DOCLING_API_KEY in .env}
-      # The test company and supervisor of Core. The demo ingest results belong to them.
-      Seeding__DevelopmentData__TestTenant__CompanyId: ${HEALTHYFAC_TEST_COMPANY_ID:?set HEALTHYFAC_TEST_COMPANY_ID in .env}
-      Seeding__DevelopmentData__TestTenant__SupervisorIdentityId: ${HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID:?set HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID in .env}
       IdEncryption__Keys__0__Key: ${IdEncryption__Keys__0__Key:?set IdEncryption__Keys__0__Key in .env}
     # The health port (8090 in the container) is internal. It binds to the loopback address of the host.
     ports:
@@ -609,6 +657,8 @@ services:
       postgres:
         condition: service_healthy
       keycloak-config:
+        condition: service_completed_successfully
+      seeder:
         condition: service_completed_successfully
       rabbitmq:
         condition: service_healthy
@@ -716,6 +766,8 @@ services:
       lgtm:
         condition: service_healthy
       keycloak-config:
+        condition: service_completed_successfully
+      seeder:
         condition: service_completed_successfully
       redis:
         condition: service_started

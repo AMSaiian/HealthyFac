@@ -32,11 +32,9 @@ public sealed class KeycloakTestServer : IAsyncDisposable
     private const string AdminClientId = "admin-cli";
     private const string MasterRealmName = "master";
     private const string RealmName = "healthyfac";
-    private const string BootstrapDirectory = "import";
     private const string BootstrapFileName = "healthyfac-test-bootstrap.json";
     private const string RealmDirectory = "realm";
     private const string RealmFileName = "healthyfac-realm.json";
-    private const string TestTenantDirectory = "dev";
     private const string TestTenantFileName = "healthyfac-test-tenant.json";
     private const string KeycloakVariablePrefix = "KC_";
     private const string SupervisorIdentityIdVariable = "HEALTHYFAC_TEST_SUPERVISOR_IDENTITY_ID";
@@ -130,7 +128,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
             .WithExtraHost(HostGatewayName, HostGatewayAddress)
             .WithNetwork(network)
             .WithNetworkAliases(KeycloakNetworkAlias)
-            .WithRealm(KeycloakFiles.Find(BootstrapDirectory, BootstrapFileName))
+            .WithRealm(KeycloakFiles.FindTestFile(BootstrapFileName))
             .WithEnvironment(environment.Where(IsKeycloakVariable).ToDictionary())
             .Build();
         await _container.StartAsync();
@@ -138,7 +136,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         var jobBuilder = new ContainerBuilder(TestImages.KeycloakConfigCli)
             .WithNetwork(network)
             .WithResourceMapping(KeycloakFiles.Find(RealmDirectory, RealmFileName), $"{ConfigDirectory}/")
-            .WithResourceMapping(KeycloakFiles.Find(TestTenantDirectory, TestTenantFileName), $"{ConfigDirectory}/")
+            .WithResourceMapping(KeycloakFiles.FindTestFile(TestTenantFileName), $"{ConfigDirectory}/")
             .WithEnvironment(name: "KEYCLOAK_URL", KeycloakInternalAddress)
             .WithEnvironment(name: "KEYCLOAK_USER", AdminUsername)
             .WithEnvironment(name: "KEYCLOAK_PASSWORD", AdminPassword)

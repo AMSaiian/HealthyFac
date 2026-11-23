@@ -13,6 +13,10 @@ public static class SeedCheckTestData
 
     public static readonly object InvalidRequest = new();
 
+    public const string CompletionItem = "ingest.json#last";
+    public const string MissingCompletionItem = "ingest.json#absent";
+    public const string LateItem = "orders.json#late";
+
     public static TheoryData<string, IReadOnlyList<SeedEvent>, string, string> FailingCases => new()
     {
         {
@@ -88,6 +92,20 @@ public static class SeedCheckTestData
         Event(file: "machines.json", key: "machine-2", at: "d-1 09:00", ["machine-2"]),
         Event(file: "orders.json", key: "order-2", at: "d-1 09:00", uses: ["machine-2"]),
         Event(file: "people.json", key: "anna", at: "d-4 09:00", credentials: [("anna", "Kalyna-Demo-2026!")]),
+    ];
+
+    public static IReadOnlyList<SeedEvent> EventsWithAnEventAfterTheMarker =>
+    [
+        Event(file: "people.json", key: "anna", at: "d-4 09:00"),
+        Event(file: "ingest.json", key: "last", at: "d-2 09:00"),
+        Event(file: "orders.json", key: "late", at: "d-1 09:00"),
+    ];
+
+    public static IReadOnlyList<SeedEvent> EventsEndingWithTheMarker =>
+    [
+        Event(file: "people.json", key: "anna", at: "d-4 09:00"),
+        Event(file: "orders.json", key: "early", at: "d-3 09:00"),
+        Event(file: "ingest.json", key: "last", at: "d-2 09:00"),
     ];
 
     public static Task<IReadOnlyList<string>> ValidateAsync(SeedRequest request, CancellationToken cancellationToken)

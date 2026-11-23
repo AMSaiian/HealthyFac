@@ -15,22 +15,28 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using AuthApplication = HealthyFac.Auth.Application.ConfigureServices;
 using AuthInfrastructure = HealthyFac.Auth.Infrastructure.ConfigureServices;
+using AuthDatabaseConstants = HealthyFac.Auth.Infrastructure.Database.DatabaseConstants;
 using AuthInitialization = HealthyFac.Auth.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
 using CoreApplication = HealthyFac.Core.Application.ConfigureServices;
 using CoreInfrastructure = HealthyFac.Core.Infrastructure.ConfigureServices;
+using CoreDatabaseConstants = HealthyFac.Core.Infrastructure.Database.DatabaseConstants;
 using CoreInitialization = HealthyFac.Core.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
 using DocumentApplication = HealthyFac.Document.Application.ConfigureServices;
 using DocumentInfrastructure = HealthyFac.Document.Infrastructure.ConfigureServices;
+using DocumentDatabaseConstants = HealthyFac.Document.Infrastructure.Database.DatabaseConstants;
 using DocumentInitialization =
     HealthyFac.Document.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
 using InsightsApplication = HealthyFac.Insights.Application.ConfigureServices;
 using InsightsInfrastructure = HealthyFac.Insights.Infrastructure.ConfigureServices;
+using InsightsDatabaseConstants = HealthyFac.Insights.Infrastructure.Database.DatabaseConstants;
 using InsightsInitialization =
     HealthyFac.Insights.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
 using TelemetryApplication = HealthyFac.Telemetry.Application.ConfigureServices;
 using TelemetryInfrastructure = HealthyFac.Telemetry.Infrastructure.ConfigureServices;
+using TelemetryDatabaseConstants = HealthyFac.Telemetry.Infrastructure.Database.DatabaseConstants;
 using TelemetryInitialization =
     HealthyFac.Telemetry.Infrastructure.Database.Initialization.DatabaseInitializationExtensions;
 
@@ -86,6 +92,7 @@ public sealed class ServiceHosts : IAsyncDisposable
         new(
             Build(
                 ServiceName.Core,
+                CoreDatabaseConstants.ConnectionStringName,
                 rootConfiguration,
                 clock,
                 baseDirectory,
@@ -95,6 +102,7 @@ public sealed class ServiceHosts : IAsyncDisposable
                 (services, _) => services.AddScoped<IEmployeeInviteEmailBuilder, SeedInviteEmailBuilder>()),
             Build(
                 ServiceName.Telemetry,
+                TelemetryDatabaseConstants.ConnectionStringName,
                 rootConfiguration,
                 clock,
                 baseDirectory,
@@ -103,6 +111,7 @@ public sealed class ServiceHosts : IAsyncDisposable
                 TelemetryInitialization.InitializeDatabaseAsync),
             Build(
                 ServiceName.Document,
+                DocumentDatabaseConstants.ConnectionStringName,
                 rootConfiguration,
                 clock,
                 baseDirectory,
@@ -112,6 +121,7 @@ public sealed class ServiceHosts : IAsyncDisposable
                 (services, configuration) => services.AddIdEncryptor(configuration)),
             Build(
                 ServiceName.Insights,
+                InsightsDatabaseConstants.ConnectionStringName,
                 rootConfiguration,
                 clock,
                 baseDirectory,
@@ -121,6 +131,7 @@ public sealed class ServiceHosts : IAsyncDisposable
                 (services, configuration) => services.AddIdEncryptor(configuration)),
             Build(
                 ServiceName.Auth,
+                AuthDatabaseConstants.ConnectionStringName,
                 rootConfiguration,
                 clock,
                 baseDirectory,
@@ -174,8 +185,30 @@ public sealed class ServiceHosts : IAsyncDisposable
                 provider.GetRequiredService<IOptions<ServiceOptions>>())));
     }
 
+    private static IConfiguration NameDatabaseSessions(IConfiguration configuration, string connectionStringName)
+    {
+        var connectionStringKey = ConfigurationPath.Combine(
+            SeederProcess.ConnectionStringsSection, connectionStringName);
+        var connectionString = configuration[connectionStringKey];
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            return configuration;
+        }
+
+        var named = new NpgsqlConnectionStringBuilder(connectionString)
+        {
+            ApplicationName = SeederProcess.ApplicationName,
+        }.ConnectionString;
+
+        return new ConfigurationBuilder()
+            .AddConfiguration(configuration)
+            .AddInMemoryCollection(new Dictionary<string, string?> { [connectionStringKey] = named })
+            .Build();
+    }
+
     private static ServiceHost Build(
         ServiceName name,
+        string connectionStringName,
         IConfiguration rootConfiguration,
         SeedClock clock,
         string baseDirectory,
@@ -186,7 +219,7 @@ public sealed class ServiceHosts : IAsyncDisposable
     )
     {
         var environment = new SeederHostEnvironment { ContentRootPath = baseDirectory };
-        var configuration = new ConfigurationBuilder()
+        var built = new ConfigurationBuilder()
             .SetBasePath(baseDirectory)
             .AddJsonFile(Path.Combine(ServicesDirectory, name.Value, SettingsFileName), optional: false)
             .AddJsonFile(
@@ -195,6 +228,7 @@ public sealed class ServiceHosts : IAsyncDisposable
             .AddJsonFile(Path.Combine(ServicesDirectory, name.Value, DeploymentFileName), optional: true)
             .AddConfiguration(rootConfiguration.GetSection($"{SectionPrefix}:{name.Value}"))
             .Build();
+        var configuration = NameDatabaseSessions(built, connectionStringName);
 
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(clock);

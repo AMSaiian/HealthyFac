@@ -39,6 +39,10 @@ services:
     ports: !override
       - "127.0.0.1:${MAILPIT_UI_PORT:?run scripts/verify-stack.ps1}:8025"
 
+  seeder:
+    container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-seeder
+    image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/seeder:local
+
   core:
     container_name: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}-core
     image: healthyfac-verify-${VERIFY_SLOT:?run scripts/verify-stack.ps1}/core:local

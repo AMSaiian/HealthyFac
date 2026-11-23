@@ -31,8 +31,7 @@
   <ItemGroup>
     <None Include="..\HealthyFac.Core.IntegrationTests\appsettings.Test.json" Link="appsettings.Core.Test.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\HealthyFac.Telemetry.IntegrationTests\appsettings.Test.json" Link="appsettings.Telemetry.Test.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\seed\demo-ingest\core.json" Link="demo-ingest\core.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\seed\demo-ingest\telemetry.json" Link="demo-ingest\telemetry.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\seed\demo\ingest\set-1.json" Link="seed\demo\ingest\set-1.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

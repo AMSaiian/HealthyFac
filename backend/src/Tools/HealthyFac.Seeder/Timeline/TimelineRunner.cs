@@ -20,6 +20,7 @@ public sealed class TimelineRunner
     private readonly Func<CancellationToken, Task> _initializeAsync;
     private readonly Func<string, CancellationToken, Task> _relayAsync;
     private readonly Action<string> _log;
+    private readonly Func<CancellationToken, Task<bool>>? _continueAfterInitializeAsync;
 
     /// <summary>Creates a runner.</summary>
     /// <param name="clock">The clock of the service hosts.</param>
@@ -28,13 +29,16 @@ public sealed class TimelineRunner
     /// <param name="initializeAsync">Initializes the 5 databases (the migrations and the required data).</param>
     /// <param name="relayAsync">Relays the pending messages. The argument is the item of the event.</param>
     /// <param name="log">Writes one line of the log. A line holds event items, never a password or a token.</param>
+    /// <param name="continueAfterInitializeAsync">Runs after the initialization. A result of <see langword="false"/>
+    /// ends the run before the first event.</param>
     public TimelineRunner(
         SeedClock clock,
         DateTimeOffset anchor,
         TimeZoneInfo zone,
         Func<CancellationToken, Task> initializeAsync,
         Func<string, CancellationToken, Task> relayAsync,
-        Action<string> log
+        Action<string> log,
+        Func<CancellationToken, Task<bool>>? continueAfterInitializeAsync = null
     )
     {
         _clock = clock;
@@ -43,6 +47,7 @@ public sealed class TimelineRunner
         _initializeAsync = initializeAsync;
         _relayAsync = relayAsync;
         _log = log;
+        _continueAfterInitializeAsync = continueAfterInitializeAsync;
     }
 
     /// <summary>Runs the events.</summary>
@@ -67,6 +72,10 @@ public sealed class TimelineRunner
             .ToList();
 
         await InitializeAsync(ordered.Count > 0 ? ordered[index: 0].At : _anchor, cancellationToken);
+        if (_continueAfterInitializeAsync is not null && !await _continueAfterInitializeAsync(cancellationToken))
+        {
+            return;
+        }
 
         foreach (var (planned, at) in ordered)
         {

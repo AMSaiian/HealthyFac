@@ -15,12 +15,15 @@ public sealed class FullSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
-    public async Task RunAsync_OnASaturday_PassesTheCheckAndSeedsTheCountsOfTheDemo()
+    [Theory]
+    [MemberData(nameof(FullSeedTestData.Anchors), MemberType = typeof(FullSeedTestData))]
+    public async Task RunAsync_OnAnAnchorDay_PassesTheCheckAndSeedsTheCountsAndStatusesOfTheDemo(
+        string name,
+        DateTimeOffset anchor
+    )
     {
-        var failures = await _fixture.CheckFullSeedAsync(
-            FullSeedTestData.SaturdayAnchor, TestContext.Current.CancellationToken);
-        await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, FullSeedTestData.SaturdayAnchor);
+        var failures = await _fixture.CheckFullSeedAsync(anchor, TestContext.Current.CancellationToken);
+        await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, anchor);
 
         var employees = await _fixture.LoadEmployeesAsync();
         var invites = await _fixture.LoadInvitesAsync();
@@ -31,7 +34,7 @@ public sealed class FullSeedTests(SeederFixture fixture)
         var workOrderDraft = await _fixture.LoadWorkOrderDraftAsync();
         var workOrders = await _fixture.LoadWorkOrdersAsync();
         var company = await _fixture.LoadCompanyAsync();
-        failures.Should().BeEmpty();
+        failures.Should().BeEmpty(name);
         company.Id.Should().Be(PeopleTestData.CompanyId);
         employees.Should()
             .HaveCount(FullSeedTestData.EmployeeCount)
@@ -47,6 +50,10 @@ public sealed class FullSeedTests(SeederFixture fixture)
             .Be(FullSeedTestData.AppliedMachineDraftCount);
         workOrderDraft.Id.Should().Be(CasesTestData.DraftId);
         workOrders.Should().HaveCount(FullSeedTestData.WorkOrderCount);
+        workOrders.GroupBy(order => order.Current.Status)
+            .ToDictionary(group => group.Key, group => group.Count())
+            .Should()
+            .BeEquivalentTo(WorkOrdersTestData.StatusCounts);
     }
 
     [Fact]

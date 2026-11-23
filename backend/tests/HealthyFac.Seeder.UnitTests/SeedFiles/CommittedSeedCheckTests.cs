@@ -15,9 +15,10 @@ public sealed class CommittedSeedCheckTests
     [MemberData(nameof(CommittedSeedTestData.Anchors), MemberType = typeof(CommittedSeedTestData))]
     public async Task Run_OnTheCommittedSeed_ReturnsNoFailureForAnyAnchorDay(string name, DateTimeOffset anchor)
     {
-        var events = LoadEvents(CommittedSeedTestData.CommittedFolder());
+        var folder = CommittedSeedTestData.CommittedFolder();
+        var events = LoadEvents(folder);
 
-        var failures = await RunCheckAsync(events, anchor);
+        var failures = await RunCheckAsync(folder, events, anchor);
 
         failures.Should().BeEmpty(name);
     }
@@ -30,7 +31,7 @@ public sealed class CommittedSeedCheckTests
             root => root[propertyName: "machines"]![index: 0]![propertyName: "appliedBy"] = "nobody");
         var events = LoadEvents(folder);
 
-        var failures = await RunCheckAsync(events, CommittedSeedTestData.WednesdayAnchor);
+        var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor);
 
         failures.Should()
             .Contain(failure => failure.Item.StartsWith("machines.json#pump") && failure.Rule.Contains("nobody"));
@@ -44,7 +45,7 @@ public sealed class CommittedSeedCheckTests
             root => CommittedSeedTestData.FindOrder(root, key: "wear-rings")[propertyName: "createdAt"] = "wd+2 15:00");
         var events = LoadEvents(folder);
 
-        var failures = await RunCheckAsync(events, CommittedSeedTestData.WednesdayAnchor);
+        var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor);
 
         failures.Should()
             .Contain(failure => failure.Item == "work-orders.json#wear-rings.created"
@@ -61,7 +62,7 @@ public sealed class CommittedSeedCheckTests
                     [propertyName: "at"] = "wd-7 15:05");
         var events = LoadEvents(folder);
 
-        var failures = await RunCheckAsync(events, CommittedSeedTestData.WednesdayAnchor);
+        var failures = await RunCheckAsync(folder, events, CommittedSeedTestData.WednesdayAnchor);
 
         failures.Should()
             .Contain(failure => failure.Item == "work-orders.json#pump-seal.assigned"
@@ -95,11 +96,16 @@ public sealed class CommittedSeedCheckTests
     }
 
     private static Task<IReadOnlyList<SeedCheckFailure>> RunCheckAsync(
+        SeedFolder folder,
         IReadOnlyList<SeedEvent> events,
         DateTimeOffset anchor
     )
     {
-        var check = new SeedCheck(anchor, CommittedSeedTestData.Zone, SeedCheckTestData.ValidateAsync);
+        var check = new SeedCheck(
+            anchor,
+            CommittedSeedTestData.Zone,
+            SeedCheckTestData.ValidateAsync,
+            SeedCompletion.FindMarkerItem(folder));
 
         return check.RunAsync(events, CancellationToken.None);
     }

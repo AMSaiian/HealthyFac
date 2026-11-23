@@ -5,8 +5,6 @@ using HealthyFac.Core.Application.Employees.InviteLinks;
 using HealthyFac.Core.Application.Employees.InviteTokens;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.Infrastructure.Database.Initialization;
-using HealthyFac.Core.Infrastructure.Database.Seeding;
-using HealthyFac.Core.Infrastructure.Database.Seeding.DemoDrafts;
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Core.Messaging.Employees;
 using HealthyFac.Insights.Messaging.Drafts;
@@ -20,7 +18,6 @@ using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Realtime;
 using HealthyFac.Shared.Infrastructure.RichText;
-using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Shared.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -103,11 +100,6 @@ public static class ConfigureServices
             services.AddIntegrationMessage<DraftsProposed>();
             services.AddIntegrationMessage<WorkOrderDraftProposed>();
 
-            services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
-                SeedingOptions.SectionName, configuration);
-            services.AddScoped<CoreDevelopmentDataSeeder>();
-            services.AddSingleton(DemoIngestSeedLocation.FromApplicationBase());
-            services.AddSingleton<DemoDraftSeeder>();
             services.AddScoped<ICoreDbInitializer, CoreDbInitializer>();
 
             return services;

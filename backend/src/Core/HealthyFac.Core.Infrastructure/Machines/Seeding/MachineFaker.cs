@@ -1,6 +1,5 @@
 using Bogus;
 using HealthyFac.Core.Domain.Machines;
-using HealthyFac.Core.Infrastructure.Database.Seeding;
 using HealthyFac.Shared.Domain.Gateways;
 
 namespace HealthyFac.Core.Infrastructure.Machines.Seeding;
@@ -11,6 +10,11 @@ namespace HealthyFac.Core.Infrastructure.Machines.Seeding;
 /// </summary>
 internal sealed class MachineFaker : Faker<Machine>
 {
+    private const int MinStartDaysBeforeNow = 30;
+    private const int MaxStartDaysBeforeNow = 365;
+    private const double MinChangeShare = 0.1;
+    private const double MaxChangeShare = 0.9;
+
     private static readonly IReadOnlyList<IReadOnlyList<MachineState>> ChangedStatesByCycleIndex =
     [
         [],
@@ -50,8 +54,8 @@ internal sealed class MachineFaker : Faker<Machine>
             var firstStartedAt = now
                 - TimeSpan.FromDays(
                     faker.Random.Double(
-                        SeedingValidationConstants.StateHistory.MinStartDaysBeforeNow,
-                        SeedingValidationConstants.StateHistory.MaxStartDaysBeforeNow));
+                        MinStartDaysBeforeNow,
+                        MaxStartDaysBeforeNow));
             var machine = new Machine(
                 companyId,
                 GatewayIds.Create(),
@@ -69,8 +73,8 @@ internal sealed class MachineFaker : Faker<Machine>
             {
                 previousStartedAt += (now - previousStartedAt)
                     * faker.Random.Double(
-                        SeedingValidationConstants.StateHistory.MinChangeShare,
-                        SeedingValidationConstants.StateHistory.MaxChangeShare);
+                        MinChangeShare,
+                        MaxChangeShare);
                 machine.ChangeState(state, previousStartedAt);
             }
 

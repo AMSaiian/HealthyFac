@@ -41,6 +41,5 @@ public static class DocumentApiTestData
             [key: "IdEncryption:Keys:0:Prefix"] = "v1_",
             [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
             [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
-            [key: "Seeding:IsOptionalDataSeeded"] = bool.FalseString,
         };
 }

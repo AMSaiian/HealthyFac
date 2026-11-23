@@ -150,6 +150,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
         var connectionString = new NpgsqlConnectionStringBuilder(_database.ConnectionString)
         {
             Database = DatabaseName(service),
+            Pooling = false,
         }.ConnectionString;
 
         return await DatabaseResetter.CreateAsync(connectionString, context);
@@ -158,6 +159,13 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
     public KeycloakTestServer Keycloak => _keycloak;
 
     public MailpitTestServer Mailpit => _mailpit;
+
+    /// <summary>Builds the connection string of the database of a service.</summary>
+    /// <param name="service">The service name (<c>core</c>, <c>telemetry</c>, ...).</param>
+    /// <returns>The connection string.</returns>
+    public string ConnectionStringOf(string service) =>
+        new NpgsqlConnectionStringBuilder(_database.ConnectionString) { Database = DatabaseName(service) }
+            .ConnectionString;
 
     /// <summary>Remembers a company whose Keycloak organization the reset deletes.</summary>
     /// <param name="companyId">The company ID.</param>
@@ -195,7 +203,6 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
         Set(key: "ConnectionStrings:Database", database.ConnectionString);
         Set(key: "ConnectionStrings:RabbitMq", SeederTestData.RabbitMqUnused);
         Set(key: "Redis:ConnectionString", _redis.ConnectionString);
-        Set(key: "Seeding:IsOptionalDataSeeded", value: "false");
 
         switch (service)
         {

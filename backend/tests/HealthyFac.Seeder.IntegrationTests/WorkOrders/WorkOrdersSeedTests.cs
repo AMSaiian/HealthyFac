@@ -1,6 +1,7 @@
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Seeder.SeedFiles;
 
 namespace HealthyFac.Seeder.IntegrationTests.WorkOrders;
 
@@ -73,14 +74,34 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
     }
 
     [Fact]
-    public async Task RunAsync_WithAStatusChangeOnABacklogOrder_StopsWithTheOrderKey()
+    public async Task RunAsync_WithTheSameStatusTwiceInOneOrder_StoresEachChangeWithItsActor()
+    {
+        var folder = WorkOrderSeedVariants.CoolantCheckWithRepeatedStatus();
+
+        var context = await _fixture.RunFullSeedAsync(
+            TestContext.Current.CancellationToken, WorkOrdersTestData.Anchor, folder);
+
+        var orders = await _fixture.LoadWorkOrdersAsync();
+        var order = orders.Single(candidate => candidate.Title == WorkOrdersTestData.CoolantCheckTitle);
+        var rows = await _fixture.LoadHistoryAsync(context, order.Id, TestContext.Current.CancellationToken);
+        var history = rows.OrderBy(row => row.Revision).ToList();
+        history.Select(row => row.Status).Should().Equal(WorkOrdersTestData.RepeatedStatuses);
+        history.Select(row => row.CreatedBy)
+            .Should()
+            .Equal(WorkOrdersTestData.RepeatedActors.Select(actor => context.GetActor(actor).UserId));
+    }
+
+    [Fact]
+    public async Task RunAsync_WithAStatusChangeOnABacklogOrder_StopsWithTheItemAndTheRule()
     {
         var folder = WorkOrderSeedVariants.StatusChangeOnBacklogOrder();
 
         var act = () => _fixture.RunFullSeedAsync(
             TestContext.Current.CancellationToken, WorkOrdersTestData.Anchor, folder);
 
-        await act.Should().ThrowAsync<Exception>().WithMessage(expectedWildcardPattern: "*wear-rings*");
+        await act.Should()
+            .ThrowAsync<SeedFileException>()
+            .WithMessage($"*{WorkOrdersTestData.BacklogStatusItem}*{WorkOrdersTestData.NoAssignmentRule}*");
     }
 
     [Fact]

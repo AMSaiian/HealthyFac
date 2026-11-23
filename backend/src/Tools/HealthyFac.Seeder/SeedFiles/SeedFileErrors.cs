@@ -14,6 +14,13 @@ public static class SeedFileErrors
     public static string KeyUsedBeforeCreated(string key, string creatorItem) =>
         $"The key {key} is used before the event {creatorItem} creates it.";
 
+    public static string EventAfterCompletion(string completionItem) =>
+        $"The event runs after the completion marker event {completionItem}. The marker event must be the last event.";
+
+    public static string CompletionEventMissing(string completionItem) =>
+        $"No event has the completion marker item {completionItem}. "
+        + "The check cannot confirm that the marker event is last.";
+
     public static string RequestInvalid(string reason) => $"The request is not valid: {reason}";
 
     public static string FileInvalid(string path, string? jsonPath, string reason) =>
