@@ -249,6 +249,17 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
     }
 
     [Fact]
+    public void Registrations_OfEveryHost_HoldNoTypeOfARebusAssembly()
+    {
+        var rebusRegistrations = _fixture.Hosts.All.SelectMany(host => host.Registrations)
+            .Where(descriptor => descriptor.ServiceType != typeof(IBus) && descriptor.IsFromRebusAssembly())
+            .Select(descriptor => descriptor.ServiceType.FullName)
+            .ToList();
+
+        rebusRegistrations.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Publish_OnTheBusOfEveryHost_ThrowsTheNoMessageBusError()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);

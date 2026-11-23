@@ -14,6 +14,23 @@ namespace HealthyFac.Seeder.IntegrationTests.ServiceHosts.Data;
 
 public static class ServiceHostsFixtureExtensions
 {
+    private const string RebusAssemblyPrefix = "Rebus";
+
+    extension(ServiceDescriptor descriptor)
+    {
+        /// <summary>Tells whether the service type or the implementation type comes from a Rebus assembly.</summary>
+        public bool IsFromRebusAssembly() =>
+            new[]
+                {
+                    descriptor.ServiceType, descriptor.ImplementationType, descriptor.ImplementationInstance?.GetType(),
+                }
+                .Any(type => type?.Assembly.GetName()
+                        .Name?.StartsWith(
+                            RebusAssemblyPrefix,
+                            StringComparison.Ordinal)
+                    == true);
+    }
+
     extension(SeederFixture fixture)
     {
         public async Task<int> CountRolesAsync()

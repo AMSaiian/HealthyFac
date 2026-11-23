@@ -22,15 +22,20 @@ public sealed class ServiceHost : IAsyncDisposable
     internal ServiceHost(
         ServiceName name,
         ServiceProvider provider,
+        IReadOnlyList<ServiceDescriptor> registrations,
         Func<IServiceProvider, CancellationToken, Task> initialize
     )
     {
         Name = name;
         _provider = provider;
+        Registrations = registrations;
         _initialize = initialize;
     }
 
     public ServiceName Name { get; }
+
+    /// <summary>The registrations of the host. Tests check which types the host registers.</summary>
+    internal IReadOnlyList<ServiceDescriptor> Registrations { get; }
 
     /// <summary>Resolves a singleton of the host. Tests reach the token parts and the clock through it.</summary>
     /// <typeparam name="TService">The service type.</typeparam>

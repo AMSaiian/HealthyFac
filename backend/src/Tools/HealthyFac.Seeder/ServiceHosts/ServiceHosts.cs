@@ -55,6 +55,7 @@ public sealed class ServiceHosts : IAsyncDisposable
     private const string DeploymentFileName = "appsettings.Deployment.json";
     private const string ServicesDirectory = "services";
     private const string SectionPrefix = "Services";
+    private const string RebusAssemblyPrefix = "Rebus";
 
     private ServiceHosts(
         ServiceHost core,
@@ -154,6 +155,29 @@ public sealed class ServiceHosts : IAsyncDisposable
     }
 
     /// <summary>
+    /// Removes every registration whose service type or implementation type comes from a Rebus assembly. The shared
+    /// <c>Add...</c> methods register Rebus, and a bus build alone declares the broker queues. The job never sends
+    /// through the broker, so no seed step needs a Rebus type.
+    /// </summary>
+    /// <param name="services">The registrations of the host, after the infrastructure registrations.</param>
+    private static void RemoveRebusRegistrations(IServiceCollection services)
+    {
+        var rebusDescriptors = services.Where(IsFromRebusAssembly).ToList();
+        foreach (var descriptor in rebusDescriptors)
+        {
+            services.Remove(descriptor);
+        }
+    }
+
+    private static bool IsFromRebusAssembly(ServiceDescriptor descriptor) =>
+        new[] { descriptor.ServiceType, descriptor.ImplementationType, descriptor.ImplementationInstance?.GetType() }
+            .Any(type => type?.Assembly.GetName()
+                    .Name?.StartsWith(
+                        RebusAssemblyPrefix,
+                        StringComparison.Ordinal)
+                == true);
+
+    /// <summary>
     /// Gives the service token parts the system clock. The seed clock moves minutes or days at each event, while the
     /// token lifetime and the lock timeout are real time: on the seed clock a token would count as expired at once,
     /// or a lock wait could never end. Every other part keeps the seed clock. A host without service tokens is kept.
@@ -239,6 +263,7 @@ public sealed class ServiceHosts : IAsyncDisposable
         addExtras?.Invoke(services, configuration);
         addApplication(services);
         addInfrastructure(services, configuration, environment);
+        RemoveRebusRegistrations(services);
         services.RemoveAll<IHostedService>();
         services.Replace(ServiceDescriptor.Singleton<IBus, NoMessageBus>());
         services.Replace(ServiceDescriptor.Singleton<IBackgroundQueue<RealtimePush>, DiscardingRealtimeQueue>());
@@ -254,6 +279,6 @@ public sealed class ServiceHosts : IAsyncDisposable
             throw new InvalidOperationException(ServiceHostErrors.HostBuildFailed(name.Value, exception.Message));
         }
 
-        return new ServiceHost(name, provider, initialize);
+        return new ServiceHost(name, provider, services.ToList(), initialize);
     }
 }
