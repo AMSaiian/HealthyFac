@@ -18,6 +18,7 @@ import { ViewHeader } from '@work-orders/view-header/view-header';
 import {
   BACKLOG_DRAWER_CLASS,
   BACKLOG_DRAWER_REM,
+  BACKLOG_DRAWER_TOKENS,
   BACKLOG_TOGGLE_ATTRIBUTE,
   backlogDrawerStateOf,
   backlogPointerActionOf,
@@ -61,6 +62,7 @@ export class SchedulePage {
   protected readonly isStagingDragActive = signal(false);
   protected readonly isClosingQuietly = signal(false);
   protected readonly drawerClass = BACKLOG_DRAWER_CLASS;
+  protected readonly drawerTokens = BACKLOG_DRAWER_TOKENS;
   protected readonly isBoardDragActive = signal(false);
 
   protected readonly axis = computed(() => {

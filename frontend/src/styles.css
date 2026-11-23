@@ -53,12 +53,6 @@
     opacity: 0.35;
   }
 
-  .hf-backlog-drawer {
-    border-left: 1px solid var(--p-content-border-color);
-    background-color: var(--p-backlog-drawer-background);
-    box-shadow: -0.5rem 0 1rem -0.5rem var(--p-backlog-drawer-shadow);
-  }
-
   .hf-backlog-hidden {
     visibility: hidden;
   }

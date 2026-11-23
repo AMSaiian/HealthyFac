@@ -48,7 +48,17 @@ export function isBacklogOpenAfterDrag(isOpen: boolean, event: BacklogDragEvent)
   return event === 'boardDragEnded' ? isOpen : false;
 }
 
+/** The hook of the outside-click check. No CSS reads it. */
 export const BACKLOG_DRAWER_CLASS = 'hf-backlog-drawer';
+
+/** The look of the backlog drawer: the colors are the preset tokens `backlogDrawer.*`. Only this drawer uses it. */
+export const BACKLOG_DRAWER_TOKENS = {
+  root: {
+    background: '{backlog.drawer.background}',
+    borderColor: '{content.border.color}',
+    shadow: '-0.5rem 0 1rem -0.5rem {backlog.drawer.shadow}',
+  },
+};
 export const BACKLOG_TOGGLE_ATTRIBUTE = 'data-backlog-toggle';
 
 /**
