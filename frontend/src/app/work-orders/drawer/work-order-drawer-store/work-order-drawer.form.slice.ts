@@ -13,6 +13,7 @@ import { createLookup, type Lookup } from '@shared/lookups/create-lookup';
 import { type LookupOption, mergeLookupOptions } from '@shared/lookups/lookup-options';
 import { LookupsApi } from '@shared/lookups/lookups-api';
 import { CLOCK } from '@shared/time/clock';
+import { minuteTicker } from '@shared/time/clock-ticks';
 
 import { FilesApi } from '@files/files-api';
 import { type WorkOrder, WorkOrderStatus } from '@work-orders/work-order';
@@ -79,6 +80,7 @@ export function withWorkOrderDrawerForm() {
     withComputed((store) => {
       const employee = inject(EmployeeStore);
       const clock = inject(CLOCK);
+      const now = minuteTicker(clock);
       return {
         /** The picker shows for a supervisor, and as read-only text for a worker who views or edits a work order. */
         isScheduleShown: computed(() => store.canManage() || store.isUpdate()),
@@ -86,7 +88,7 @@ export function withWorkOrderDrawerForm() {
         isScheduleLocked: computed(
           () => store.workOrder.hasValue() && store.workOrder.value().status === WorkOrderStatus.Completed,
         ),
-        today: computed(() => clock.now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
+        today: computed(() => now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
         assigneeOptions: computed((): LookupOption[] => {
           const current = store.workOrder.hasValue() ? store.workOrder.value() : null;
           return mergeLookupOptions(

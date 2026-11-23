@@ -5,6 +5,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 import type { Lookup } from '@shared/lookups/create-lookup';
 import { type LookupOption, mergeLookupOptions } from '@shared/lookups/lookup-options';
 import { CLOCK } from '@shared/time/clock';
+import { minuteTicker } from '@shared/time/clock-ticks';
 import { Temporal } from '@shared/time/temporal';
 import { inject } from '@angular/core';
 
@@ -28,9 +29,10 @@ export function withSchedulePickerValues() {
     },
     withComputed((store) => {
       const clock = inject(CLOCK);
+      const now = minuteTicker(clock);
       return {
         estimateMinutes: computed(() => (store.workOrder.hasValue() ? store.workOrder.value().estimateMinutes : null)),
-        today: computed(() => clock.now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
+        today: computed(() => now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
         /** A move starts at the stored slot, an assign with nothing chosen. */
         initialAssignValue: computed((): AssignmentValue | null => {
           if (!store.isScheduleDialog() || !store.workOrder.hasValue()) {

@@ -50,6 +50,7 @@ describe('ScheduleActionsStore', () => {
   const cancel = vi.fn();
   const add = vi.fn();
   const confirm = vi.fn();
+  let currentNow = Temporal.Instant.from('2027-06-01T04:00:00Z');
 
   async function setup(
     type: string,
@@ -85,7 +86,7 @@ describe('ScheduleActionsStore', () => {
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         {
           provide: CLOCK,
-          useValue: { now: () => Temporal.Instant.from('2027-06-01T04:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },
+          useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' },
         },
       ],
     });
@@ -107,6 +108,24 @@ describe('ScheduleActionsStore', () => {
     cancel.mockReset();
     add.mockReset();
     confirm.mockClear();
+    currentNow = Temporal.Instant.from('2027-06-01T04:00:00Z');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('today_AfterMidnightInTheCompanyZone_MovesToTheNextDayWithinOneMinute', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearInterval', 'clearTimeout'] });
+    currentNow = Temporal.Instant.from('2027-06-01T20:59:30Z');
+    const store = await setup(WorkOrderActionType.Assign);
+    const todayBefore = store.today().toString();
+
+    currentNow = Temporal.Instant.from('2027-06-01T21:00:00Z');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(todayBefore).toBe('2027-06-01');
+    expect(store.today().toString()).toBe('2027-06-02');
   });
 
   it('submitSchedule_OnAssign_SendsAssigneeStartAndRowVersion', async () => {

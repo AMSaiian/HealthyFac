@@ -16,6 +16,7 @@ import {
   createFakeRealtimeConnection,
   provideFakeRealtimeConnection,
 } from '@shared/realtime/testing/fake-realtime-connection';
+import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import { Permission } from '@shared/security/permissions';
 
@@ -168,6 +169,7 @@ describe('WorkOrderDrawerStore', () => {
   const notify = vi.fn();
   const add = vi.fn();
   const dispatch = vi.fn();
+  let currentNow = Temporal.Instant.from('2027-06-01T04:00:00Z');
   const history = vi.fn();
   const cancelAction = vi.fn();
   const realtime = createFakeRealtimeConnection();
@@ -203,6 +205,7 @@ describe('WorkOrderDrawerStore', () => {
         { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
         { provide: MessageService, useValue: { add } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
+        { provide: CLOCK, useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' } },
       ],
     });
     const store = TestBed.inject(WorkOrderDrawerStore);
@@ -225,6 +228,23 @@ describe('WorkOrderDrawerStore', () => {
     cancelAction.mockReset();
     history.mockReset().mockReturnValue(of({ items: [], totalCount: 0, nextAfter: null }));
     add.mockReset();
+    currentNow = Temporal.Instant.from('2027-06-01T04:00:00Z');
+  });
+
+  it('today_AfterMidnightInTheCompanyZone_MovesToTheNextDayWithinOneMinute', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearInterval', 'clearTimeout'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    currentNow = Temporal.Instant.from('2027-06-01T20:59:30Z');
+    const store = await setup({ canManage: true });
+    const todayBefore = store.today().toString();
+
+    currentNow = Temporal.Instant.from('2027-06-01T21:00:00Z');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(todayBefore).toBe('2027-06-01');
+    expect(store.today().toString()).toBe('2027-06-02');
   });
 
   it('start_WhenTheWorkOrderIsNotFound_ClosesTheDrawer', async () => {
