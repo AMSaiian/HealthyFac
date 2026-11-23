@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { patchState, signalStoreFeature, withComputed, withMethods, withProps, withState } from '@ngrx/signals';
 
 import { CLOCK } from '@shared/time/clock';
+import { minuteTicker } from '@shared/time/clock-ticks';
 import type { Temporal } from '@shared/time/temporal';
 
 import { EmployeesApi } from '@employees/employees-api';
@@ -19,8 +20,9 @@ export function withShiftsSelection() {
     withState<SelectionState>({ employeeId: null, month: null }),
     withComputed(() => {
       const clock = inject(CLOCK);
+      const now = minuteTicker(clock);
       return {
-        today: computed(() => clock.now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
+        today: computed(() => now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate()),
       };
     }),
     withProps((store) => {

@@ -71,6 +71,7 @@ describe('ShiftsStore', () => {
   const daySchedule = vi.fn();
   const add = vi.fn();
   const confirm = vi.fn();
+  let currentNow = Temporal.Instant.from('2027-06-01T09:00:00Z');
 
   async function settle(): Promise<void> {
     TestBed.tick();
@@ -126,7 +127,7 @@ describe('ShiftsStore', () => {
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         {
           provide: CLOCK,
-          useValue: { now: () => Temporal.Instant.from('2027-06-01T09:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },
+          useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' },
         },
       ],
     });
@@ -157,6 +158,11 @@ describe('ShiftsStore', () => {
     );
     add.mockReset();
     confirm.mockClear();
+    currentNow = Temporal.Instant.from('2027-06-01T09:00:00Z');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('setEmployee_OnFirstLoad_ReadsTheVersionsAndTheOverridesOfTheCurrentMonth', async () => {
@@ -384,6 +390,26 @@ describe('ShiftsStore', () => {
     expect(store.isEditable(VERSION)).toBe(true);
     expect(store.isEditable({ ...VERSION, effectiveFrom: '2027-06-01' })).toBe(false);
     expect(store.isEditable({ ...VERSION, effectiveFrom: '2027-05-01' })).toBe(false);
+  });
+
+  it('today_AfterMidnightInTheCompanyZone_MovesToTheNextDayWithinOneMinute', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearInterval', 'clearTimeout'] });
+    currentNow = Temporal.Instant.from('2027-06-01T20:59:30Z');
+    const store = await setup({ isConfirmed: false });
+    const todayOverride = { ...OVERRIDE, date: '2027-06-01' };
+    const nextDayOverride = { ...OVERRIDE, date: '2027-06-02' };
+    const todayBefore = store.today().toString();
+    const isTodayEditableBefore = store.isOverrideEditable(todayOverride);
+
+    currentNow = Temporal.Instant.from('2027-06-01T21:00:00Z');
+    await vi.advanceTimersByTimeAsync(30_000);
+    store.requestDeleteOverride(nextDayOverride);
+
+    expect(todayBefore).toBe('2027-06-01');
+    expect(isTodayEditableBefore).toBe(true);
+    expect(store.today().toString()).toBe('2027-06-02');
+    expect(store.isOverrideEditable(todayOverride)).toBe(false);
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ message: 'SHIFTS.CONFIRM.DELETE_TODAY_MESSAGE' }));
   });
 
   it('isOverrideEditable_ForAPastOverride_IsFalseAndForTodayAndLaterIsTrue', async () => {
