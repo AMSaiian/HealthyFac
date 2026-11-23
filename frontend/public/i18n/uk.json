@@ -923,6 +923,11 @@
     "DRAFTS": "Чернетки",
     "SCHEDULE_TAB": {
       "STAGING": "Беклог",
+      "STAGING_EMPTY": "Немає нарядів у беклозі за цими фільтрами",
+      "BACKLOG_TOGGLE": "Беклог ({{count}})",
+      "ESTIMATE_MINUTES": "{{minutes}} хв",
+      "ESTIMATE_HOURS": "{{hours}} год",
+      "ESTIMATE_HOURS_MINUTES": "{{hours}} год {{minutes}} хв",
       "MORE": "Показано {{count}} із {{total}} нарядів у беклозі. Звузьте фільтри, щоб побачити решту",
       "PENDING": "Змін у черзі: {{count}}",
       "APPLY": "Застосувати",
@@ -934,7 +939,8 @@
         "APPLY_NOTHING": "Спершу перемістіть або змініть тривалість наряду",
         "APPLY_BLOCKED": "Спершу виправте позначені конфлікти або залиште не більше 100 змін",
         "DISCARD": "Скасувати всі зміни в черзі",
-        "DISCARD_DISABLED": "Змін у черзі немає"
+        "DISCARD_DISABLED": "Змін у черзі немає",
+        "BACKLOG_TOGGLE": "Показати або сховати беклог"
       },
       "CONFIRM": {
         "DISCARD_HEADER": "Скасування змін",

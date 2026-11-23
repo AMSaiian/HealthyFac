@@ -923,6 +923,11 @@
     "DRAFTS": "Drafts",
     "SCHEDULE_TAB": {
       "STAGING": "Backlog",
+      "STAGING_EMPTY": "No backlog work orders for these filters",
+      "BACKLOG_TOGGLE": "Backlog ({{count}})",
+      "ESTIMATE_MINUTES": "{{minutes}} min",
+      "ESTIMATE_HOURS": "{{hours}} h",
+      "ESTIMATE_HOURS_MINUTES": "{{hours}} h {{minutes}} min",
       "MORE": "Showing {{count}} of {{total}} backlog work orders. Narrow the filters to see the rest",
       "PENDING": "{{count}} pending changes",
       "APPLY": "Apply",
@@ -934,7 +939,8 @@
         "APPLY_NOTHING": "Move or resize a work order first",
         "APPLY_BLOCKED": "Fix the marked conflicts first, or keep to 100 changes",
         "DISCARD": "Drop all pending changes",
-        "DISCARD_DISABLED": "There are no pending changes"
+        "DISCARD_DISABLED": "There are no pending changes",
+        "BACKLOG_TOGGLE": "Show or hide the backlog"
       },
       "CONFIRM": {
         "DISCARD_HEADER": "Discard changes",

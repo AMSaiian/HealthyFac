@@ -1,35 +1,31 @@
-import { CdkDrag, type CdkDragEnd } from '@angular/cdk/drag-drop';
+import { CDK_DRAG_CONFIG, CdkDrag, type CdkDragEnd, CdkDragPreview, CdkDropList } from '@angular/cdk/drag-drop';
 import { Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { Tooltip } from 'primeng/tooltip';
+import { Tag } from 'primeng/tag';
 
-import type { Axis } from '@shared/schedule/schedule-board/schedule-board.utils';
 import {
+  type Axis,
+  createClickGuard,
+  DRAG_PREVIEW_Z_INDEX,
   LANE_HEIGHT_REM,
-  NAME_COLUMN_REM,
-  ROW_PADDING_REM,
 } from '@shared/schedule/schedule-board/schedule-board.utils';
-import {
-  packLanes,
-  stagingBarTopRem,
-  stagingHeightRem,
-  type StagingItem,
-} from '@shared/schedule/staging-area/staging-area.utils';
+import { estimateTextOf, previewWidthOf, type StagingItem } from '@shared/schedule/staging-area/staging-area.utils';
 
 export interface StagingRelease {
   readonly workOrderId: string;
-  /** The left edge of the dragged bar in client pixels. */
-  readonly barLeftPx: number;
+  /** The left edge of the drag preview in client pixels. */
+  readonly previewLeftPx: number;
   readonly pointer: { readonly x: number; readonly y: number };
 }
 
 /**
- * The backlog work orders of the schedule tab as bars as wide as their estimate on the axis scale. A bar drags to a
- * row of the board; the board reports a row bar that lands here. The area only reports the release of a bar.
+ * The backlog work orders of the schedule tab as cards. A card drags to a row of the board with a preview as wide as
+ * its estimate on the board axis. The board reports a row bar that lands here. The area only reports the drag.
  */
 @Component({
-  imports: [CdkDrag, Tooltip, TranslatePipe],
+  imports: [CdkDrag, CdkDragPreview, CdkDropList, Tag, TranslatePipe],
   host: { class: 'flex min-h-0 min-w-0 flex-col', 'data-staging': '' },
+  providers: [{ provide: CDK_DRAG_CONFIG, useValue: { zIndex: DRAG_PREVIEW_Z_INDEX } }],
   selector: 'hf-staging-area',
   templateUrl: './staging-area.html',
 })
@@ -37,21 +33,36 @@ export class StagingArea {
   readonly workOrders = input.required<readonly StagingItem[]>();
   readonly totalCount = input(0);
   readonly axis = input.required<Axis>();
+  /** The width of the board axis in pixels. It gives the width of a drag preview. */
+  readonly axisWidthPx = input(0);
 
+  readonly dragStarted = output<void>();
+  readonly dragMoved = output<{ readonly x: number; readonly y: number }>();
   readonly barReleased = output<StagingRelease>();
   readonly workOrderClick = output<string>();
 
-  protected readonly nameColumnRem = NAME_COLUMN_REM;
-  protected readonly rowPaddingRem = ROW_PADDING_REM;
   protected readonly laneHeightRem = LANE_HEIGHT_REM;
-  protected readonly barTopRem = stagingBarTopRem;
-  protected readonly heightRem = stagingHeightRem;
-  protected readonly layout = computed(() => packLanes(this.workOrders(), this.axis()));
   protected readonly isMoreAvailable = computed(() => this.totalCount() > this.workOrders().length);
+  protected readonly cards = computed(() =>
+    this.workOrders().map((item) => ({
+      item,
+      estimate: estimateTextOf(item.estimateMinutes),
+      previewWidthPx: previewWidthOf(item.estimateMinutes, this.axis(), this.axisWidthPx()),
+    })),
+  );
+
+  private readonly _clickGuard = createClickGuard();
 
   protected onDragEnded(event: CdkDragEnd, id: string): void {
-    const rect = event.source.element.nativeElement.getBoundingClientRect();
-    event.source.reset();
-    this.barReleased.emit({ workOrderId: id, barLeftPx: rect.left, pointer: event.dropPoint });
+    this._clickGuard.markDragged();
+    const card = this.cards().find((entry) => entry.item.id === id);
+    const previewLeftPx = event.dropPoint.x - (card?.previewWidthPx ?? 0) / 2;
+    this.barReleased.emit({ workOrderId: id, previewLeftPx, pointer: event.dropPoint });
+  }
+
+  protected onClick(id: string): void {
+    if (!this._clickGuard.isBlocked()) {
+      this.workOrderClick.emit(id);
+    }
   }
 }

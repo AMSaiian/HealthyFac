@@ -1,8 +1,8 @@
-import { Component, computed, inject, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Drawer } from 'primeng/drawer';
 import { Message } from 'primeng/message';
-import { Splitter, SplitterPanel } from 'primeng/splitter';
 import { Tooltip } from 'primeng/tooltip';
 
 import { ScheduleBoard } from '@shared/schedule/schedule-board/schedule-board';
@@ -15,19 +15,15 @@ import type { Temporal } from '@shared/time/temporal';
 import { WorkOrdersGridStore } from '@work-orders/list/work-orders-grid.store';
 import { ScheduleStore } from '@work-orders/schedule/schedule-store/schedule.store';
 import { ViewHeader } from '@work-orders/view-header/view-header';
-
-const STAGING_PANEL_SIZE = 25;
-const BOARD_PANEL_SIZE = 75;
-const MIN_PANEL_SIZE = 10;
+import { BACKLOG_DRAWER_REM, contentPaddingRemOf, stagingCardOf } from './schedule-page.utils';
 
 @Component({
   imports: [
     ButtonDirective,
+    Drawer,
     Message,
     PlainDatePicker,
     ScheduleBoard,
-    Splitter,
-    SplitterPanel,
     StagingArea,
     Tooltip,
     TranslatePipe,
@@ -41,17 +37,30 @@ export class SchedulePage {
   protected readonly store = inject(ScheduleStore);
   protected readonly grid = inject(WorkOrdersGridStore);
   protected readonly clock = inject(CLOCK);
-  protected readonly stagingSize = STAGING_PANEL_SIZE;
-  protected readonly boardSize = BOARD_PANEL_SIZE;
-  protected readonly minSize = MIN_PANEL_SIZE;
+  /** Places the drawer inside the content region, so it covers neither the shell header nor the board hours. */
+  protected readonly drawerStyle = {
+    position: 'absolute',
+    top: '0',
+    right: '0',
+    bottom: '0',
+    height: 'auto',
+    width: `${BACKLOG_DRAWER_REM}rem`,
+  };
+  protected readonly isStagingDragActive = signal(false);
 
   protected readonly axis = computed(() => {
     const date = this.store.date();
     return date === null ? null : axisOf(date, this.clock.timeZoneId());
   });
   protected readonly failures = computed(() => new Map(Object.entries(this.store.failures())));
+  protected readonly stagingCards = computed(() => this.store.stagingItems().map(stagingCardOf));
+  /** The page keeps the width of the open drawer free at its right, so the drawer covers no hour of the board. */
+  protected readonly contentPaddingRem = computed(() =>
+    contentPaddingRemOf(this.store.canManage(), this.store.isBacklogOpen()),
+  );
 
   private readonly _board = viewChild(ScheduleBoard);
+  protected readonly axisWidthPx = computed(() => this._board()?.axisWidthPx() ?? 0);
 
   protected onDate(date: Temporal.PlainDate | null): void {
     if (date !== null) {
@@ -67,7 +76,12 @@ export class SchedulePage {
     }
   }
 
+  protected onStagingMove(pointer: { readonly x: number; readonly y: number }): void {
+    this._board()?.trackExternalDrag(pointer);
+  }
+
   protected onStagingRelease(release: StagingRelease): void {
-    this._board()?.placeExternal(release.workOrderId, release.barLeftPx, release.pointer);
+    this.isStagingDragActive.set(false);
+    this._board()?.placeExternal(release.workOrderId, release.previewLeftPx, release.pointer);
   }
 }

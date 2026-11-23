@@ -1,38 +1,50 @@
-<div class="flex min-h-0 flex-1 overflow-y-auto">
-  <div
-    class="text-muted-color flex-none px-3.5 text-sm"
-    [style.width.rem]="nameColumnRem"
-    [style.padding-block.rem]="rowPaddingRem"
-  >
-    {{ 'WORK_ORDERS.SCHEDULE_TAB.STAGING' | translate }}
-  </div>
-  <div
-    class="relative min-w-0 flex-1"
-    [style.padding-block.rem]="rowPaddingRem"
-  >
-    @for (entry of layout().packed; track entry.item.id) {
-      <div
-        cdkDrag
-        class="hf-status-backlog absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6"
-        [style.left.%]="entry.left"
-        [style.width.%]="entry.width"
-        [style.top.rem]="barTopRem(entry.lane)"
-        [style.height.rem]="laneHeightRem"
-        [pTooltip]="entry.item.title"
-        (cdkDragEnded)="onDragEnded($event, entry.item.id)"
-        role="button"
-        tabindex="0"
-        (click)="workOrderClick.emit(entry.item.id)"
-        (keydown.enter)="workOrderClick.emit(entry.item.id)"
-      >
-        {{ entry.item.title }}
+<div
+  cdkDropList
+  cdkDropListSortingDisabled
+  class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1"
+>
+  @for (card of cards(); track card.item.id) {
+    <article
+      cdkDrag
+      cdkDragPreviewContainer="global"
+      class="hf-list-item bg-surface-0 dark:bg-surface-900 flex flex-none cursor-grab flex-col gap-1 shadow-sm"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="card.item.title"
+      (cdkDragStarted)="dragStarted.emit()"
+      (cdkDragMoved)="dragMoved.emit($event.pointerPosition)"
+      (cdkDragEnded)="onDragEnded($event, card.item.id)"
+      (click)="onClick(card.item.id)"
+      (keydown.enter)="onClick(card.item.id)"
+    >
+      <div class="flex min-w-0 items-center gap-2">
+        <p-tag
+          class="flex-none"
+          [class]="card.item.priorityClass"
+          [value]="card.item.priorityKey | translate"
+        />
+        <span class="text-muted-color min-w-0 truncate text-xs">{{
+          card.estimate.key | translate: card.estimate.params
+        }}</span>
       </div>
-    }
-    <div [style.height.rem]="heightRem(layout().laneCount)"></div>
-  </div>
+      <span class="line-clamp-2 font-bold">{{ card.item.title }}</span>
+      <ng-template cdkDragPreview>
+        <div
+          class="hf-status-backlog rounded-border -mt-3 truncate px-2 text-xs leading-6 text-white shadow-lg"
+          [style.height.rem]="laneHeightRem"
+          [style.width.px]="card.previewWidthPx"
+          [style.margin-left.px]="-card.previewWidthPx / 2"
+        >
+          {{ card.item.title }}
+        </div>
+      </ng-template>
+    </article>
+  } @empty {
+    <p class="text-muted-color p-3 text-sm">{{ 'WORK_ORDERS.SCHEDULE_TAB.STAGING_EMPTY' | translate }}</p>
+  }
 </div>
 @if (isMoreAvailable()) {
-  <p class="text-muted-color flex-none px-3.5 pb-2 text-sm">
+  <p class="text-muted-color flex-none px-3 py-2 text-sm">
     {{ 'WORK_ORDERS.SCHEDULE_TAB.MORE' | translate: { count: workOrders().length, total: totalCount() } }}
   </p>
 }

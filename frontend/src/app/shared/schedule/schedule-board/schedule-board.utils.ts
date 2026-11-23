@@ -226,3 +226,108 @@ export function barTopCss(rowLaneCounts: readonly number[], rowIndex: number, la
     lane * (LANE_HEIGHT_REM + LANE_GAP_REM);
   return `calc(${rem}rem + ${rowIndex}px)`;
 }
+
+/** The inset of a bar inside its slot on each side in rem. Two bars that touch show a gap. */
+export const BAR_INSET_REM = 0.0625;
+
+/** The stacking order of the drag preview. It is above the PrimeNG overlays, such as the backlog drawer. */
+export const DRAG_PREVIEW_Z_INDEX = 10_000;
+
+/** The width of an hour label in rem: the text "00:00" in the small font with a little room. */
+export const HOUR_LABEL_WIDTH_REM = 2.5;
+
+/** The start of a bar that a drop gives: the left edge of the preview on the axis, snapped to the grid. */
+export function dropStartOf(
+  previewLeftPx: number,
+  axisArea: { readonly left: number; readonly width: number },
+  axis: Axis,
+  now: Temporal.Instant,
+): Temporal.Instant | null {
+  if (axisArea.width <= 0) {
+    return null;
+  }
+  const percent = ((previewLeftPx - axisArea.left) / axisArea.width) * PERCENT;
+  const start = snapToGrid(instantAt(percent, axis));
+  return Temporal.Instant.compare(start, now) < 0 ? null : start;
+}
+
+/**
+ * Tells for each hour label whether it shows. All labels show when a column is at least as wide as a label. A narrower
+ * column shows only the labels of the even hours, so the labels do not touch.
+ */
+export function shownHourLabels(hourCount: number, columnWidthPx: number, labelWidthPx: number): boolean[] {
+  const isEveryHour = columnWidthPx >= labelWidthPx;
+  return Array.from({ length: hourCount }, (_, index) => isEveryHour || index % 2 === 0);
+}
+
+/** The width of the hour columns in pixels, from the width of the board and the width of the name column. */
+export function columnWidthOf(boardWidthPx: number, nameColumnPx: number, hourCount: number): number {
+  return hourCount > 0 ? Math.max(0, boardWidthPx - nameColumnPx) / hourCount : 0;
+}
+
+/** The `left` of a bar inside its slot: the slot start in percent plus the inset. */
+export function barLeftCss(leftPercent: number): string {
+  return `calc(${leftPercent}% + ${BAR_INSET_REM}rem)`;
+}
+
+/** The `width` of a bar inside its slot: the slot width in percent minus the inset on both sides. */
+export function barWidthCss(widthPercent: number): string {
+  return `calc(${widthPercent}% - ${2 * BAR_INSET_REM}rem)`;
+}
+
+/** What a drop does: unassign a bar that lands on the backlog, or place a work order on a row at a start. */
+export type DropOutcome =
+  | { readonly kind: 'unassign' }
+  | { readonly kind: 'place'; readonly rowId: string; readonly start: Temporal.Instant }
+  | null;
+
+/**
+ * Decides a drop from what lies under the pointer. A bar of the board that lands on the backlog unassigns. A work
+ * order that lands on a row starts where the left edge of the preview lies, unless that start is before now.
+ */
+export function dropOutcomeOf(
+  target: DropTarget,
+  isFromBoard: boolean,
+  previewLeftPx: number,
+  axisArea: { readonly left: number; readonly width: number },
+  axis: Axis,
+  now: Temporal.Instant,
+): DropOutcome {
+  if (target?.kind === 'staging') {
+    return isFromBoard ? { kind: 'unassign' } : null;
+  }
+  if (target?.kind === 'row') {
+    const start = dropStartOf(previewLeftPx, axisArea, axis, now);
+    return start === null ? null : { kind: 'place', rowId: target.rowId, start };
+  }
+  return null;
+}
+
+/** The value to draw: the previous one while a drag holds the board, so the rows stay in the page. */
+export function shownWhileHolding<T>(next: T, previous: T | undefined, isHolding: boolean): T {
+  return isHolding && previous !== undefined ? previous : next;
+}
+
+/** The skeleton shows while the day loads, but never while a drag runs. */
+export function isSkeletonShown(isDelayedLoading: boolean, isDragActive: boolean): boolean {
+  return isDelayedLoading && !isDragActive;
+}
+
+/** The day switch areas show on an editable board while any drag runs, also a drag from the backlog. */
+export function areDayAreasShown(isEditable: boolean, isDragging: boolean, isExternalDragActive: boolean): boolean {
+  return isEditable && (isDragging || isExternalDragActive);
+}
+
+/** A click that ends a drag opens nothing: the guard blocks clicks until the end of the current task. */
+export function createClickGuard(): { markDragged(): void; isBlocked(): boolean } {
+  let isDragged = false;
+  return {
+    markDragged(): void {
+      isDragged = true;
+      setTimeout(() => {
+        isDragged = false;
+      });
+    },
+    isBlocked: () => isDragged,
+  };
+}

@@ -49,6 +49,10 @@
     @apply rounded-border border border-surface p-3;
   }
 
+  .cdk-drag-placeholder {
+    opacity: 0.35;
+  }
+
   .hf-menu-danger .p-menu-item-link,
   .hf-menu-danger .p-menu-item-icon,
   .hf-menu-danger .p-menu-item-label,

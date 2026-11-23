@@ -6,15 +6,18 @@
   [style.--hf-schedule-lane-gap.rem]="laneGapRem"
 >
   <div
+    #header
     class="hf-schedule-header"
     [style.--hf-schedule-hours]="hours().length"
   >
     <div class="hf-schedule-header-title">{{ 'SCHEDULE.EMPLOYEE' | translate }}</div>
     @for (hour of hours(); track $index) {
       <div
-        class="flex h-14 items-center justify-center border-r border-(--p-schedule-board-border-color) last:border-r-0"
+        class="flex h-8 items-center justify-center border-r border-(--p-schedule-board-border-color) last:border-r-0"
       >
-        <span class="text-muted-color origin-center rotate-45 text-xs font-normal whitespace-nowrap">{{ hour }}</span>
+        @if (shownLabels()[$index]) {
+          <span class="text-muted-color text-xs font-normal whitespace-nowrap">{{ hour }}</span>
+        }
       </div>
     }
   </div>
@@ -96,8 +99,8 @@
                         type="button"
                         class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
                         [class]="item.bar.colorClass"
-                        [style.left.%]="item.left"
-                        [style.width.%]="item.width"
+                        [style.left]="barLeft(item)"
+                        [style.width]="barWidth(item)"
                         [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
                         [pTooltip]="tooltip(item.bar)"
                         tooltipStyleClass="whitespace-pre-line"
@@ -123,21 +126,25 @@
     @if (isEditable()) {
       <div
         #overlay
+        cdkDropList
+        cdkDropListSortingDisabled
         class="hf-schedule-overlay"
       >
         @for (entry of flatBars(); track entry.item.bar.id) {
           <div
             cdkDrag
+            cdkDragPreviewContainer="global"
             class="hf-schedule-bar absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6 text-white"
             [class]="barClasses(entry.item.bar)"
             [cdkDragDisabled]="entry.item.bar.isLocked === true"
-            [style.left.%]="entry.item.left"
-            [style.width.%]="entry.item.width"
+            [style.left]="barLeft(entry.item)"
+            [style.width]="barWidth(entry.item)"
             [style.top]="entry.top"
             [attr.aria-label]="entry.item.bar.title + ', ' + describe(entry.item.bar)"
             [pTooltip]="tooltip(entry.item.bar)"
             tooltipStyleClass="whitespace-pre-line"
-            (cdkDragStarted)="onDragStarted(entry, $event)"
+            (pointerdown)="onBarPointerDown($event)"
+            (cdkDragStarted)="onDragStarted(entry)"
             (cdkDragMoved)="onDragMoved($event)"
             (cdkDragEnded)="onDragEnded($event, entry.item.bar)"
             role="button"
@@ -146,6 +153,17 @@
             (keydown.enter)="onBarClick(entry.item.bar.id)"
           >
             {{ entry.item.bar.title }}
+            <ng-template cdkDragPreview>
+              <div
+                class="rounded-border -mt-3 truncate px-2 text-xs leading-6 text-white shadow-lg"
+                [class]="barClasses(entry.item.bar)"
+                [style.height.rem]="laneHeightRem"
+                [style.width.px]="previewWidthPx(entry.item)"
+                [style.margin-left.px]="-grabOffsetPx()"
+              >
+                {{ entry.item.bar.title }}
+              </div>
+            </ng-template>
             @if (entry.item.bar.isLocked !== true) {
               <span
                 class="hf-resize-handle"
@@ -157,7 +175,7 @@
       </div>
     }
   </div>
-  @if (isEditable() && isDragging()) {
+  @if (showDayAreas()) {
     <div
       class="hf-day-area hf-day-area-previous"
       data-day-area="previous"

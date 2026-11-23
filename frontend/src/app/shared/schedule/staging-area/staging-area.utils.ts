@@ -1,55 +1,40 @@
-import {
-  type Axis,
-  LANE_GAP_REM,
-  LANE_HEIGHT_REM,
-  ROW_PADDING_REM,
-  widthPercentOf,
-} from '@shared/schedule/schedule-board/schedule-board.utils';
+import { type Axis, widthPercentOf } from '@shared/schedule/schedule-board/schedule-board.utils';
 
-const FULL_WIDTH_PERCENT = 100;
+const MINUTES_PER_HOUR = 60;
+const PERCENT = 100;
+/** The narrowest drag preview in pixels. A very short estimate stays visible. */
+const MIN_PREVIEW_PX = 8;
 
+/** A backlog work order as the staging area shows it. The page maps the priority to a label key and a color class. */
 export interface StagingItem {
   readonly id: string;
   readonly title: string;
   readonly estimateMinutes: number;
+  /** The translation key of the priority label. */
+  readonly priorityKey: string;
+  /** The CSS class that colors the priority tag. */
+  readonly priorityClass: string;
 }
 
-export interface PackedStagingItem {
-  readonly item: StagingItem;
-  readonly left: number;
-  readonly width: number;
-  readonly lane: number;
+export interface EstimateText {
+  readonly key: string;
+  readonly params: { readonly hours: number; readonly minutes: number };
 }
 
-/**
- * Packs the staging bars from the left into lanes. A bar is as wide as its estimate on the axis scale (capped at the
- * lane width). A bar that no longer fits the rest of the lane starts the next lane.
- */
-export function packLanes(
-  items: readonly StagingItem[],
-  axis: Axis,
-): { packed: PackedStagingItem[]; laneCount: number } {
-  const packed: PackedStagingItem[] = [];
-  let lane = 0;
-  let cursor = 0;
-  for (const item of items) {
-    const width = Math.min(FULL_WIDTH_PERCENT, widthPercentOf(item.estimateMinutes, axis));
-    if (cursor > 0 && cursor + width > FULL_WIDTH_PERCENT) {
-      lane += 1;
-      cursor = 0;
-    }
-    packed.push({ item, left: cursor, width, lane });
-    cursor += width;
-  }
-  return { packed, laneCount: Math.max(1, lane + 1) };
+/** The estimate as a translation key with its parameters: minutes only, whole hours, or hours and minutes. */
+export function estimateTextOf(estimateMinutes: number): EstimateText {
+  const hours = Math.floor(estimateMinutes / MINUTES_PER_HOUR);
+  const minutes = estimateMinutes % MINUTES_PER_HOUR;
+  const key =
+    hours === 0
+      ? 'WORK_ORDERS.SCHEDULE_TAB.ESTIMATE_MINUTES'
+      : minutes === 0
+        ? 'WORK_ORDERS.SCHEDULE_TAB.ESTIMATE_HOURS'
+        : 'WORK_ORDERS.SCHEDULE_TAB.ESTIMATE_HOURS_MINUTES';
+  return { key, params: { hours, minutes } };
 }
 
-/** The top of a bar in the staging area in rem: the row padding and the lanes above it. */
-export function stagingBarTopRem(lane: number): number {
-  return ROW_PADDING_REM + lane * (LANE_HEIGHT_REM + LANE_GAP_REM);
-}
-
-/** The height of the lanes in rem. It keeps the area as tall as its bars. */
-export function stagingHeightRem(laneCount: number): number {
-  return laneCount * LANE_HEIGHT_REM + (laneCount - 1) * LANE_GAP_REM;
+/** The width of the drag preview of a card in pixels: the estimate on the scale of the board axis. */
+export function previewWidthOf(estimateMinutes: number, axis: Axis, axisWidthPx: number): number {
+  return Math.max(MIN_PREVIEW_PX, (widthPercentOf(estimateMinutes, axis) / PERCENT) * axisWidthPx);
 }

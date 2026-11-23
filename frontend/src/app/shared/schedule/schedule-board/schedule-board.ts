@@ -1,7 +1,15 @@
-import { CdkDrag, type CdkDragEnd, type CdkDragMove, type CdkDragStart } from '@angular/cdk/drag-drop';
+import {
+  CDK_DRAG_CONFIG,
+  CdkDrag,
+  type CdkDragEnd,
+  type CdkDragMove,
+  CdkDragPreview,
+  CdkDropList,
+} from '@angular/cdk/drag-drop';
 import {
   Component,
   computed,
+  effect,
   type ElementRef,
   inject,
   input,
@@ -19,17 +27,25 @@ import { isEmptyResult } from '@shared/grid/table/grid-display';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import type { ScheduleBar, ScheduleRow } from '@shared/schedule/schedule-row';
-import { Temporal } from '@shared/time/temporal';
+import type { Temporal } from '@shared/time/temporal';
 
 import {
+  areDayAreasShown,
   axisOf,
+  barLeftCss,
   barTopCss,
+  barWidthCss,
+  columnWidthOf,
+  createClickGuard,
   createDwell,
   describeBar,
+  DRAG_PREVIEW_Z_INDEX,
+  dropOutcomeOf,
   dropTargetOf,
   gapsOf,
+  HOUR_LABEL_WIDTH_REM,
   hourLabelsOf,
-  instantAt,
+  isSkeletonShown,
   LANE_GAP_REM,
   LANE_HEIGHT_REM,
   minutesOfWidth,
@@ -38,8 +54,9 @@ import {
   placeBars,
   type PlacedBar,
   ROW_PADDING_REM,
+  shownHourLabels,
+  shownWhileHolding,
   skeletonRowCount,
-  snapToGrid,
   tooltipOf,
 } from '@shared/schedule/schedule-board/schedule-board.utils';
 
@@ -64,15 +81,18 @@ const DAY_AREA_ATTRIBUTE = 'data-day-area';
 const PREVIOUS_AREA = 'previous';
 const NEXT_AREA = 'next';
 const PERCENT = 100;
+const DEFAULT_ROOT_FONT_PX = 16;
 
 /**
  * Shows the day of several people as rows on one time axis: the work blocks, the work orders, and "now". An editable
  * board also lets the user drag a bar to another row or time, resize it, and move the day while a drag runs. The board
- * only reports the gestures; the page decides what they change.
+ * only reports the gestures; the page decides what they change. The bars of an editable board live in one drop list
+ * above the rows, so a drag shows a floating preview, and the row under the pointer decides the drop.
  */
 @Component({
-  imports: [CdkDrag, EmptyState, Message, Skeleton, Tooltip, TranslatePipe],
+  imports: [CdkDrag, CdkDragPreview, CdkDropList, EmptyState, Message, Skeleton, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 min-w-0 flex-col' },
+  providers: [{ provide: CDK_DRAG_CONFIG, useValue: { zIndex: DRAG_PREVIEW_Z_INDEX } }],
   selector: 'hf-schedule-board',
   styleUrl: './schedule-board.css',
   templateUrl: './schedule-board.html',
@@ -86,6 +106,8 @@ export class ScheduleBoard {
   readonly timeZoneId = input.required<string>();
   readonly now = input.required<Temporal.Instant>();
   readonly isEditable = input(false);
+  /** Whether a drag that started outside the board (the backlog) runs. It shows the day switch areas. */
+  readonly isExternalDragActive = input(false);
   readonly pendingIds = input<ReadonlySet<string>>(new Set());
   readonly conflictIds = input<ReadonlySet<string>>(new Set());
   /** The translation key of the reason that the server gave for each failed work order. */
@@ -97,20 +119,57 @@ export class ScheduleBoard {
   readonly barUnassigned = output<string>();
   readonly daySwitchRequested = output<-1 | 1>();
 
-  protected readonly axis = computed(() => axisOf(this.date(), this.timeZoneId()));
-  protected readonly hours = computed(() => hourLabelsOf(this.axis(), this.timeZoneId()));
-  protected readonly nowPercent = computed(() => nowPercentOf(this.now(), this.axis()));
-  protected readonly showSkeleton = delayedLoading(this.isLoading);
-  protected readonly showEmpty = computed(() =>
-    isEmptyResult({ rows: this.rows(), isLoading: this.isLoading(), hasLoaded: this.hasLoaded() }),
-  );
   protected readonly isDragging = signal(false);
+  protected readonly isDragActive = computed(() => this.isDragging() || this.isExternalDragActive());
+  protected readonly showDayAreas = computed(() =>
+    areDayAreasShown(this.isEditable(), this.isDragging(), this.isExternalDragActive()),
+  );
   protected readonly nameColumnRem = NAME_COLUMN_REM;
   protected readonly rowPaddingRem = ROW_PADDING_REM;
   protected readonly laneHeightRem = LANE_HEIGHT_REM;
   protected readonly laneGapRem = LANE_GAP_REM;
+  /** The distance in pixels from the left edge of the grabbed bar to the pointer. The preview keeps it. */
+  protected readonly grabOffsetPx = signal(0);
+
+  /**
+   * The rows and the date that the board draws. A drag that runs while the next day loads keeps the previous ones, so
+   * the rows stay in the page and the scroll position and the dragged bar stay where they are.
+   */
+  private readonly _isHolding = computed(() => this.isDragActive() && this.isLoading());
+  private readonly _shownRows = linkedSignal<
+    { rows: readonly ScheduleRow[]; isHolding: boolean },
+    readonly ScheduleRow[]
+  >({
+    source: () => ({ rows: this.rows(), isHolding: this._isHolding() }),
+    computation: (source, previous) => shownWhileHolding(source.rows, previous?.value, source.isHolding),
+  });
+  private readonly _shownDate = linkedSignal<{ date: Temporal.PlainDate; isHolding: boolean }, Temporal.PlainDate>({
+    source: () => ({ date: this.date(), isHolding: this._isHolding() }),
+    computation: (source, previous) => shownWhileHolding(source.date, previous?.value, source.isHolding),
+  });
+  private readonly _delayedLoading = delayedLoading(this.isLoading);
+  private readonly _axisWidth = signal(0);
+  private readonly _rootFontPx = signal(DEFAULT_ROOT_FONT_PX);
+
+  protected readonly axis = computed(() => axisOf(this._shownDate(), this.timeZoneId()));
+  protected readonly hours = computed(() => hourLabelsOf(this.axis(), this.timeZoneId()));
+  protected readonly nowPercent = computed(() => nowPercentOf(this.now(), this.axis()));
+  protected readonly showSkeleton = computed(() => isSkeletonShown(this._delayedLoading(), this.isDragActive()));
+  protected readonly showEmpty = computed(() =>
+    isEmptyResult({ rows: this._shownRows(), isLoading: this.isLoading(), hasLoaded: this.hasLoaded() }),
+  );
+  protected readonly shownLabels = computed(() =>
+    shownHourLabels(
+      this.hours().length,
+      columnWidthOf(this._axisWidth() + this._nameColumnPx(), this._nameColumnPx(), this.hours().length),
+      HOUR_LABEL_WIDTH_REM * this._rootFontPx(),
+    ),
+  );
+  /** The width of the time axis in pixels. The page gives it to the backlog for the width of a drag preview. */
+  readonly axisWidthPx = this._axisWidth.asReadonly();
+
   private readonly _lastRowCount = linkedSignal<readonly ScheduleRow[], number>({
-    source: this.rows,
+    source: this._shownRows,
     computation: (rows, previous) => (rows.length > 0 ? rows.length : (previous?.value ?? 0)),
   });
   protected readonly skeletonRowIndexes = computed(() =>
@@ -119,13 +178,14 @@ export class ScheduleBoard {
 
   private readonly _translate = inject(TranslateService);
   private readonly _overlay = viewChild<ElementRef<HTMLElement>>('overlay');
+  private readonly _header = viewChild<ElementRef<HTMLElement>>('header');
   private readonly _draggedBar = signal<FlatBar | null>(null);
-  private _justDragged = false;
+  private readonly _clickGuard = createClickGuard();
   private readonly _previousDwell = createDwell(() => this.daySwitchRequested.emit(-1));
   private readonly _nextDwell = createDwell(() => this.daySwitchRequested.emit(1));
 
   protected readonly layouts = computed(() =>
-    this.rows().map((row) => {
+    this._shownRows().map((row) => {
       const { placed, laneCount } = placeBars(row.bars, this.axis());
       return {
         row,
@@ -155,6 +215,30 @@ export class ScheduleBoard {
       : flat;
   });
 
+  constructor() {
+    effect((onCleanup) => {
+      const header = this._header()?.nativeElement;
+      if (header === undefined || typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      const observer = new ResizeObserver(() => this._measure(header));
+      observer.observe(header);
+      onCleanup(() => observer.disconnect());
+    });
+  }
+
+  protected barLeft(item: PlacedBar): string {
+    return barLeftCss(item.left);
+  }
+
+  protected barWidth(item: PlacedBar): string {
+    return barWidthCss(item.width);
+  }
+
+  protected previewWidthPx(item: PlacedBar): number {
+    return (item.width / PERCENT) * this._axisWidth();
+  }
+
   protected tooltip(bar: ScheduleBar): string {
     const failure = this.failures().get(bar.id);
     const text = tooltipOf(bar, this._translate.instant(bar.statusKey), this.timeZoneId());
@@ -178,49 +262,47 @@ export class ScheduleBoard {
   }
 
   protected onBarClick(id: string): void {
-    if (!this._justDragged) {
+    if (!this._clickGuard.isBlocked()) {
       this.workOrderClick.emit(id);
     }
   }
 
-  protected onDragStarted(entry: FlatBar, event: CdkDragStart): void {
-    void event;
+  protected onBarPointerDown(event: PointerEvent): void {
+    const bar = event.currentTarget as HTMLElement;
+    const rect = bar.getBoundingClientRect();
+    this.grabOffsetPx.set(Math.min(rect.width, Math.max(0, event.clientX - rect.left)));
+  }
+
+  protected onDragStarted(entry: FlatBar): void {
     this._draggedBar.set(entry);
     this.isDragging.set(true);
   }
 
   protected onDragMoved(event: CdkDragMove): void {
-    const areas = document.elementsFromPoint(event.pointerPosition.x, event.pointerPosition.y);
-    const area = areas
-      .map((element) => element.closest(`[${DAY_AREA_ATTRIBUTE}]`)?.getAttribute(DAY_AREA_ATTRIBUTE))
-      .find((value) => value !== null && value !== undefined);
-    this._updateDwell(area ?? null);
+    this.trackExternalDrag(event.pointerPosition);
   }
 
   protected onDragEnded(event: CdkDragEnd, bar: ScheduleBar): void {
     this._updateDwell(null);
     this.isDragging.set(false);
     this._draggedBar.set(null);
-    this._justDragged = true;
-    setTimeout(() => {
-      this._justDragged = false;
-    });
-    const rect = event.source.element.nativeElement.getBoundingClientRect();
-    const target = dropTargetOf(document.elementsFromPoint(event.dropPoint.x, event.dropPoint.y));
-    event.source.reset();
-    if (target?.kind === 'staging') {
-      this.barUnassigned.emit(bar.id);
-    } else if (target?.kind === 'row') {
-      this._dropAt(bar.id, target.rowId, rect.left);
-    }
+    this._clickGuard.markDragged();
+    this._dropAt(bar.id, true, event.dropPoint.x - this.grabOffsetPx(), event.dropPoint);
   }
 
-  /** Places a bar from outside the board (the staging area): the row under the pointer and the left edge of the bar. */
-  placeExternal(workOrderId: string, barLeftPx: number, pointer: { x: number; y: number }): void {
-    const target = dropTargetOf(document.elementsFromPoint(pointer.x, pointer.y));
-    if (target?.kind === 'row') {
-      this._dropAt(workOrderId, target.rowId, barLeftPx);
-    }
+  /** Follows the pointer of a drag that runs outside the board (the backlog): the day switch areas count the dwell. */
+  trackExternalDrag(pointer: { readonly x: number; readonly y: number }): void {
+    const areas = document.elementsFromPoint(pointer.x, pointer.y);
+    const area = areas
+      .map((element) => element.closest(`[${DAY_AREA_ATTRIBUTE}]`)?.getAttribute(DAY_AREA_ATTRIBUTE))
+      .find((value) => value !== null && value !== undefined);
+    this._updateDwell(area ?? null);
+  }
+
+  /** Places a bar from outside the board (the backlog): the row under the pointer and the left edge of the preview. */
+  placeExternal(workOrderId: string, previewLeftPx: number, pointer: { x: number; y: number }): void {
+    this._updateDwell(null);
+    this._dropAt(workOrderId, false, previewLeftPx, pointer);
   }
 
   protected onResizeStart(event: PointerEvent, item: PlacedBar): void {
@@ -244,10 +326,7 @@ export class ScheduleBoard {
       handle.removeEventListener('pointerup', onUp);
       handle.releasePointerCapture(up.pointerId);
       bar.style.removeProperty('width');
-      this._justDragged = true;
-      setTimeout(() => {
-        this._justDragged = false;
-      });
+      this._clickGuard.markDragged();
       this.barResized.emit({
         workOrderId: item.bar.id,
         estimateMinutes: minutesOfWidth(widthPercent(up.clientX), this.axis()),
@@ -257,18 +336,40 @@ export class ScheduleBoard {
     handle.addEventListener('pointerup', onUp);
   }
 
-  private _dropAt(workOrderId: string, rowId: string, barLeftPx: number): void {
+  private _nameColumnPx(): number {
+    return NAME_COLUMN_REM * this._rootFontPx();
+  }
+
+  private _measure(header: HTMLElement): void {
+    const rootFontPx = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const fontPx = Number.isFinite(rootFontPx) && rootFontPx > 0 ? rootFontPx : DEFAULT_ROOT_FONT_PX;
+    this._rootFontPx.set(fontPx);
+    this._axisWidth.set(Math.max(0, header.getBoundingClientRect().width - NAME_COLUMN_REM * fontPx));
+  }
+
+  private _dropAt(
+    workOrderId: string,
+    isFromBoard: boolean,
+    previewLeftPx: number,
+    pointer: { readonly x: number; readonly y: number },
+  ): void {
     const overlay = this._overlay()?.nativeElement;
     if (overlay === undefined) {
       return;
     }
-    const rect = overlay.getBoundingClientRect();
-    const percent = ((barLeftPx - rect.left) / rect.width) * PERCENT;
-    const startInstant = snapToGrid(instantAt(percent, this.axis()));
-    if (Temporal.Instant.compare(startInstant, this.now()) < 0) {
-      return;
+    const outcome = dropOutcomeOf(
+      dropTargetOf(document.elementsFromPoint(pointer.x, pointer.y)),
+      isFromBoard,
+      previewLeftPx,
+      overlay.getBoundingClientRect(),
+      this.axis(),
+      this.now(),
+    );
+    if (outcome?.kind === 'unassign') {
+      this.barUnassigned.emit(workOrderId);
+    } else if (outcome?.kind === 'place') {
+      this.barDropped.emit({ workOrderId, assigneeId: outcome.rowId, startInstant: outcome.start });
     }
-    this.barDropped.emit({ workOrderId, assigneeId: rowId, startInstant });
   }
 
   private _updateDwell(area: string | null): void {

@@ -47,6 +47,8 @@ interface PendingState {
   visited: Readonly<Record<string, readonly ScheduleRow[]>>;
   /** Whether a hint came while changes were pending. The tab keeps the changes and tells the user. */
   isChangedRemotely: boolean;
+  /** Whether the backlog drawer is open. It opens with the page and keeps its state when changes are discarded. */
+  isBacklogOpen: boolean;
 }
 
 export interface BarDrop {
@@ -60,7 +62,13 @@ export interface BarResize {
   readonly estimateMinutes: number;
 }
 
-const EMPTY_PENDING: PendingState = { pending: [], known: {}, visited: {}, isChangedRemotely: false };
+const EMPTY_PENDING: PendingState = {
+  pending: [],
+  known: {},
+  visited: {},
+  isChangedRemotely: false,
+  isBacklogOpen: true,
+};
 
 function stagingBodyOf(filter: WorkOrderFilter): SearchWorkOrdersBody {
   return {
@@ -116,9 +124,12 @@ export function withSchedulePending() {
       });
       const backlog = computed(() =>
         store.staging.hasValue()
-          ? store.staging
-              .value()
-              .items.map((item) => ({ id: item.id, title: item.title, estimateMinutes: item.estimateMinutes }))
+          ? store.staging.value().items.map((item) => ({
+              id: item.id,
+              title: item.title,
+              priority: item.priority,
+              estimateMinutes: item.estimateMinutes,
+            }))
           : [],
       );
       return {
@@ -165,6 +176,12 @@ export function withSchedulePending() {
           store.day.reload();
           store.staging.reload();
         },
+        setBacklogOpen(isOpen: boolean): void {
+          patchState(store, { isBacklogOpen: isOpen });
+        },
+        toggleBacklog(): void {
+          patchState(store, (state) => ({ isBacklogOpen: !state.isBacklogOpen }));
+        },
         clearPending(): void {
           patchState(store, { pending: [], visited: {}, isChangedRemotely: false });
         },
@@ -194,6 +211,7 @@ export function withSchedulePending() {
                   id: workOrder.id,
                   title: workOrder.title,
                   status: workOrder.status,
+                  priority: workOrder.priority,
                   rowVersion: workOrder.rowVersion,
                   estimateMinutes: workOrder.estimateMinutes,
                   assigneeId: employee.employeeId,
@@ -219,6 +237,7 @@ export function withSchedulePending() {
                 id: item.id,
                 title: item.title,
                 status: item.status,
+                priority: item.priority,
                 rowVersion: item.rowVersion,
                 estimateMinutes: item.estimateMinutes,
                 assigneeId: null,

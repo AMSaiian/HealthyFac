@@ -131,7 +131,14 @@ describe('ScheduleStore', () => {
       { ...COMPANY_DAY.employees[1], day: { ...COMPANY_DAY.employees[1].day, blocks: [shiftBlock] } },
     ],
   };
-  const backlogRow = { id: 'w9', title: 'w9', status: 'backlog', estimateMinutes: 30, rowVersion: 2 };
+  const backlogRow = {
+    id: 'w9',
+    title: 'w9',
+    status: 'backlog',
+    priority: 'high',
+    estimateMinutes: 30,
+    rowVersion: 2,
+  };
   const when = (hours: number): Temporal.Instant => Temporal.Instant.from(`2027-06-01T0${hours}:00:00Z`);
 
   beforeEach(() => {
@@ -349,6 +356,26 @@ describe('ScheduleStore', () => {
       ['w9', 'e2', 2],
     ]);
     expect(store.stagingItems()).toEqual([]);
+  });
+
+  it('toggleBacklog_OnAFreshStore_StartsOpenAndClosesThenOpensAgain', async () => {
+    const store = await setup();
+    const initial = store.isBacklogOpen();
+
+    store.toggleBacklog();
+    const afterFirst = store.isBacklogOpen();
+    store.setBacklogOpen(true);
+
+    expect(initial).toBe(true);
+    expect(afterFirst).toBe(false);
+    expect(store.isBacklogOpen()).toBe(true);
+  });
+
+  it('stagingItems_OfABacklogWorkOrder_CarriesItsPriority', async () => {
+    search.mockReturnValue(of({ items: [backlogRow], totalCount: 1 }));
+    const store = await setup();
+
+    expect(store.stagingItems().map((item) => [item.id, item.priority])).toEqual([['w9', 'high']]);
   });
 
   it('apply_WithPendingEntries_SendsThemAndClearsAndReloadsOnSuccess', async () => {

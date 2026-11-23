@@ -2,7 +2,7 @@ import { axisOf } from '@shared/schedule/schedule-board/schedule-board.utils';
 import type { ScheduleBar, ScheduleRow } from '@shared/schedule/schedule-row';
 import { Temporal } from '@shared/time/temporal';
 
-import { WorkOrderStatus } from '@work-orders/work-order';
+import { WorkOrderPriority, WorkOrderStatus } from '@work-orders/work-order';
 import {
   applyPending,
   canApply,
@@ -32,6 +32,7 @@ function known(id: string, assigneeId: string | null, start: string | null, esti
     id,
     title: id,
     status: assigneeId === null ? WorkOrderStatus.Backlog : WorkOrderStatus.Staged,
+    priority: WorkOrderPriority.Medium,
     rowVersion: 3,
     estimateMinutes: estimate,
     assigneeId,
@@ -242,8 +243,8 @@ describe('schedule store utils', () => {
 
   describe('stagingOf', () => {
     const backlog = [
-      { id: 'w3', title: 'w3', estimateMinutes: 60 },
-      { id: 'w4', title: 'w4', estimateMinutes: 30 },
+      { id: 'w3', title: 'w3', priority: WorkOrderPriority.Low, estimateMinutes: 60 },
+      { id: 'w4', title: 'w4', priority: WorkOrderPriority.High, estimateMinutes: 30 },
     ];
     const knownMap = new Map([['w1', known('w1', 'e1', '09:00:00')]]);
 

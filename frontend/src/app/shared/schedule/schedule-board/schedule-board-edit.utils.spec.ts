@@ -1,15 +1,25 @@
 import { Temporal } from '@shared/time/temporal';
 
 import {
+  areDayAreasShown,
   axisOf,
+  barLeftCss,
   barTopCss,
+  barWidthCss,
+  columnWidthOf,
+  createClickGuard,
   createDwell,
   DAY_SWITCH_DWELL_MS,
+  dropOutcomeOf,
+  dropStartOf,
   dropTargetOf,
   instantAt,
+  isSkeletonShown,
   minutesOfWidth,
   ROW_ATTRIBUTE,
   rowHeightRem,
+  shownHourLabels,
+  shownWhileHolding,
   snapToGrid,
   STAGING_ATTRIBUTE,
   widthPercentOf,
@@ -131,6 +141,143 @@ describe('schedule board edit utils', () => {
 
     it('barTopCss_ForTheSecondLaneOfTheSecondRow_SumsTheRowsAboveAndTheLaneOffset', () => {
       expect(barTopCss([2, 1], 1, 0)).toBe(`calc(${rowHeightRem(2) + 0.9375}rem + 1px)`);
+    });
+  });
+
+  describe('dropStartOf', () => {
+    const axis = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+    const area = { left: 100, width: 2400 };
+    const now = Temporal.Instant.from('2027-06-01T05:00:00Z');
+
+    it('dropStartOf_ForAPreviewLeftEdgeOnTheAxis_GivesTheSnappedStart', () => {
+      const start = dropStartOf(100 + 1013, area, axis, now);
+
+      expect(start === null ? null : localTime(start)).toBe('2027-06-01T10:10');
+    });
+
+    it('dropStartOf_ForALeftEdgeBeforeNow_GivesNothing', () => {
+      expect(dropStartOf(100 + 200, area, axis, now)).toBeNull();
+    });
+
+    it('dropStartOf_ForAnAxisWithNoWidth_GivesNothing', () => {
+      expect(dropStartOf(100, { left: 100, width: 0 }, axis, now)).toBeNull();
+    });
+  });
+
+  describe('shownHourLabels', () => {
+    it('shownHourLabels_ForColumnsAsWideAsTheLabel_ShowsEveryLabel', () => {
+      expect(shownHourLabels(4, 40, 40)).toEqual([true, true, true, true]);
+    });
+
+    it('shownHourLabels_ForNarrowColumns_ShowsOnlyTheEvenHours', () => {
+      expect(shownHourLabels(4, 39, 40)).toEqual([true, false, true, false]);
+    });
+  });
+
+  describe('columnWidthOf', () => {
+    it('columnWidthOf_ForABoardWithTheNameColumn_DividesTheRest', () => {
+      expect(columnWidthOf(1360, 160, 24)).toBe(50);
+    });
+
+    it('columnWidthOf_ForNoHours_IsZero', () => {
+      expect(columnWidthOf(1360, 160, 0)).toBe(0);
+    });
+  });
+
+  describe('barLeftCss and barWidthCss', () => {
+    it('barLeftCss_ForASlot_StartsOneInsetInsideIt', () => {
+      expect(barLeftCss(25)).toBe('calc(25% + 0.0625rem)');
+    });
+
+    it('barWidthCss_ForASlot_LeavesAnInsetOnBothSides', () => {
+      expect(barWidthCss(10)).toBe('calc(10% - 0.125rem)');
+    });
+  });
+});
+
+describe('drop and drag decisions', () => {
+  const axis = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+  const area = { left: 100, width: 2400 };
+  const now = Temporal.Instant.from('2027-06-01T05:00:00Z');
+  const row = { kind: 'row', rowId: 'e1' } as const;
+  const staging = { kind: 'staging' } as const;
+
+  describe('dropOutcomeOf', () => {
+    it('dropOutcomeOf_ForABoardBarOnTheBacklog_Unassigns', () => {
+      expect(dropOutcomeOf(staging, true, 0, area, axis, now)).toEqual({ kind: 'unassign' });
+    });
+
+    it('dropOutcomeOf_ForABacklogCardOnTheBacklog_DoesNothing', () => {
+      expect(dropOutcomeOf(staging, false, 0, area, axis, now)).toBeNull();
+    });
+
+    it('dropOutcomeOf_ForABacklogCardOnARow_PlacesItAtTheSnappedStart', () => {
+      const outcome = dropOutcomeOf(row, false, 100 + 1013, area, axis, now);
+
+      expect(outcome?.kind).toBe('place');
+      expect(outcome?.kind === 'place' ? [outcome.rowId, localTime(outcome.start)] : null).toEqual([
+        'e1',
+        '2027-06-01T10:10',
+      ]);
+    });
+
+    it('dropOutcomeOf_ForARowAndAStartBeforeNow_DoesNothing', () => {
+      expect(dropOutcomeOf(row, true, 100 + 200, area, axis, now)).toBeNull();
+    });
+
+    it('dropOutcomeOf_ForNothingUnderThePointer_DoesNothing', () => {
+      expect(dropOutcomeOf(null, true, 0, area, axis, now)).toBeNull();
+    });
+  });
+
+  describe('shownWhileHolding', () => {
+    it('shownWhileHolding_WhileADragHoldsTheBoard_KeepsThePreviousRows', () => {
+      expect(shownWhileHolding(['new'], ['old'], true)).toEqual(['old']);
+    });
+
+    it('shownWhileHolding_WithoutADrag_ShowsTheNextRows', () => {
+      expect(shownWhileHolding(['new'], ['old'], false)).toEqual(['new']);
+    });
+
+    it('shownWhileHolding_WithNoPreviousRows_ShowsTheNextRows', () => {
+      expect(shownWhileHolding(['new'], undefined, true)).toEqual(['new']);
+    });
+  });
+
+  describe('isSkeletonShown', () => {
+    it.each([
+      ['LoadingWithoutADrag', true, false, true],
+      ['LoadingDuringADrag', true, true, false],
+      ['NotLoading', false, false, false],
+    ])('isSkeletonShown_For%s_Decides', (_name, isLoading, isDragActive, expected) => {
+      expect(isSkeletonShown(isLoading, isDragActive)).toBe(expected);
+    });
+  });
+
+  describe('areDayAreasShown', () => {
+    it.each([
+      ['BoardDrag', true, true, false, true],
+      ['BacklogDrag', true, false, true, true],
+      ['NoDrag', true, false, false, false],
+      ['ReadOnlyBoard', false, true, true, false],
+    ])('areDayAreasShown_For%s_Decides', (_name, isEditable, isDragging, isExternal, expected) => {
+      expect(areDayAreasShown(isEditable, isDragging, isExternal)).toBe(expected);
+    });
+  });
+
+  describe('createClickGuard', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('createClickGuard_AfterADrag_BlocksTheClickUntilTheTaskEnds', async () => {
+      vi.useFakeTimers();
+      const guard = createClickGuard();
+
+      guard.markDragged();
+      const isBlockedAfterDrag = guard.isBlocked();
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(isBlockedAfterDrag).toBe(true);
+      expect(guard.isBlocked()).toBe(false);
     });
   });
 });

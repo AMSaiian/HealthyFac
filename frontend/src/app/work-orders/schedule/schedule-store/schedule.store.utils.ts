@@ -3,7 +3,7 @@ import type { ScheduleBar, ScheduleBlock, ScheduleRow } from '@shared/schedule/s
 import { Temporal } from '@shared/time/temporal';
 
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
-import { type ScheduleChangeBody, WorkOrderStatus } from '@work-orders/work-order';
+import { type ScheduleChangeBody, type WorkOrderPriority, WorkOrderStatus } from '@work-orders/work-order';
 import { SCHEDULE_APPLY_MAX_CHANGES } from '@work-orders/work-order-limits';
 
 /** A work order as the server last showed it: the base of every pending change. */
@@ -11,6 +11,7 @@ export interface KnownWorkOrder {
   readonly id: string;
   readonly title: string;
   readonly status: WorkOrderStatus;
+  readonly priority: WorkOrderPriority;
   readonly rowVersion: number;
   readonly estimateMinutes: number;
   readonly assigneeId: string | null;
@@ -25,6 +26,7 @@ export type ChangeTarget = Pick<PendingChange, 'assigneeId' | 'plannedStartLocal
 export interface StagingWorkOrder {
   readonly id: string;
   readonly title: string;
+  readonly priority: WorkOrderPriority;
   readonly estimateMinutes: number;
 }
 
@@ -175,7 +177,9 @@ export function stagingOf(
     .filter((entry) => entry.assigneeId === null && !backlog.some((item) => item.id === entry.workOrderId))
     .flatMap((entry) => {
       const base = known.get(entry.workOrderId);
-      return base === undefined ? [] : [{ id: base.id, title: base.title, estimateMinutes: entry.estimateMinutes }];
+      return base === undefined
+        ? []
+        : [{ id: base.id, title: base.title, priority: base.priority, estimateMinutes: entry.estimateMinutes }];
     });
   return [...returned, ...remaining];
 }
