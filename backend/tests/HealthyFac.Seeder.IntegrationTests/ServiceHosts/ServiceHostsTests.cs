@@ -10,6 +10,8 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Telemetry.Messaging.MetricUnits;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Rebus.Bus;
 using SeederHosts = HealthyFac.Seeder.ServiceHosts.ServiceHosts;
 
 namespace HealthyFac.Seeder.IntegrationTests.ServiceHosts;
@@ -228,5 +230,37 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         var read = _fixture.Hosts.Auth.GetService<TimeProvider>().GetUtcNow();
 
         read.Should().Be(moment);
+    }
+
+    [Fact]
+    public async Task GetServices_OnEveryHost_ReturnsNoHostedService()
+    {
+        await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
+
+        var hostedServiceCounts = _fixture.Hosts.All.Select(host =>
+            {
+                using var scope = host.CreateScope(ServiceHostsTestData.Actor);
+
+                return scope.ServiceProvider.GetServices<IHostedService>().Count();
+            })
+            .ToList();
+
+        hostedServiceCounts.Should().AllBeEquivalentTo(expectation: 0);
+    }
+
+    [Fact]
+    public async Task Publish_OnTheBusOfEveryHost_ThrowsTheNoMessageBusError()
+    {
+        await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
+
+        foreach (var host in _fixture.Hosts.All)
+        {
+            using var scope = host.CreateScope(ServiceHostsTestData.Actor);
+            var bus = scope.ServiceProvider.GetRequiredService<IBus>();
+
+            var act = () => bus.Publish(new object());
+
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage(ServiceHostErrors.NoMessageBus);
+        }
     }
 }

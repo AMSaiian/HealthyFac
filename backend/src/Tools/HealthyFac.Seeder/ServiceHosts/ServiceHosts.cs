@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Rebus.Bus;
 using AuthApplication = HealthyFac.Auth.Application.ConfigureServices;
 using AuthInfrastructure = HealthyFac.Auth.Infrastructure.ConfigureServices;
 using AuthDatabaseConstants = HealthyFac.Auth.Infrastructure.Database.DatabaseConstants;
@@ -238,6 +239,8 @@ public sealed class ServiceHosts : IAsyncDisposable
         addExtras?.Invoke(services, configuration);
         addApplication(services);
         addInfrastructure(services, configuration, environment);
+        services.RemoveAll<IHostedService>();
+        services.Replace(ServiceDescriptor.Singleton<IBus, NoMessageBus>());
         services.Replace(ServiceDescriptor.Singleton<IBackgroundQueue<RealtimePush>, DiscardingRealtimeQueue>());
         UseRealClockForServiceTokens(services);
 
