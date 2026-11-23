@@ -25,13 +25,15 @@ export function stagingCardOf(item: {
 /**
  * The state of the backlog drawer. It is mounted while it is open, and also while a drag from the backlog runs, so the
  * dragged chip stays in the page until the drag ends (the CDK ends a drag whose source leaves the page). A drag that
- * runs while the drawer is closed keeps it mounted but hidden.
+ * runs while the drawer is closed keeps it mounted but hidden. After such a drag the drawer stays hidden while it closes
+ * (`isClosingQuietly`), so no closing motion shows. A close by the button or by a click outside keeps its motion.
  */
 export function backlogDrawerStateOf(
   isOpen: boolean,
   isBacklogDragActive: boolean,
+  isClosingQuietly: boolean,
 ): { readonly isMounted: boolean; readonly isHidden: boolean } {
-  return { isMounted: isOpen || isBacklogDragActive, isHidden: !isOpen && isBacklogDragActive };
+  return { isMounted: isOpen || isBacklogDragActive, isHidden: !isOpen && (isBacklogDragActive || isClosingQuietly) };
 }
 
 /** The band over the toolbar row that returns a work order to the backlog: shown while a bar of the board drags. */
@@ -44,4 +46,18 @@ export type BacklogDragEvent = 'backlogDragStarted' | 'boardDragStarted' | 'boar
 /** The open state of the backlog drawer after a drag event: a drag start closes it, and the end of a board drag keeps it. */
 export function isBacklogOpenAfterDrag(isOpen: boolean, event: BacklogDragEvent): boolean {
   return event === 'boardDragEnded' ? isOpen : false;
+}
+
+export const BACKLOG_DRAWER_CLASS = 'hf-backlog-drawer';
+export const BACKLOG_TOGGLE_ATTRIBUTE = 'data-backlog-toggle';
+
+/**
+ * What a pointer down does to the open backlog drawer: inside the drawer it stays, on the toggle button the button
+ * toggles it, and anywhere else it closes the drawer.
+ */
+export function backlogPointerActionOf(isInsideDrawer: boolean, isOnToggle: boolean): 'stay' | 'toggle' | 'close' {
+  if (isInsideDrawer) {
+    return 'stay';
+  }
+  return isOnToggle ? 'toggle' : 'close';
 }

@@ -145,6 +145,7 @@
         cdkDropList
         cdkDropListSortingDisabled
         class="hf-schedule-overlay"
+        [class.hf-placeholder-hidden]="!isPlaceholderVisible()"
       >
         @for (entry of flatBars(); track entry.item.bar.id) {
           <div
@@ -215,13 +216,13 @@
   </div>
   @if (showDayAreas()) {
     <div
-      class="hf-day-area hf-day-area-previous"
+      class="hf-day-area hf-drop-area hf-day-area-previous"
       data-day-area="previous"
     >
       <i class="pi pi-chevron-left"></i>
     </div>
     <div
-      class="hf-day-area hf-day-area-next"
+      class="hf-day-area hf-drop-area hf-day-area-next"
       data-day-area="next"
     >
       <i class="pi pi-chevron-right"></i>

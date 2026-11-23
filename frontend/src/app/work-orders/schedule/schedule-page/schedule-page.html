@@ -55,6 +55,7 @@
           </span>
           <button
             pButton
+            data-backlog-toggle
             [pTooltip]="'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.BACKLOG_TOGGLE' | translate"
             tooltipPosition="bottom"
             type="button"
@@ -102,7 +103,7 @@
       @if (isReturnBandVisible()) {
         <div
           data-staging
-          class="rounded-border text-primary bg-primary/20 absolute inset-0 z-10 flex items-center justify-center font-medium"
+          class="hf-drop-area rounded-border text-primary absolute inset-0 z-10 flex items-center justify-center font-medium"
         >
           {{ 'WORK_ORDERS.SCHEDULE_TAB.DROP_TO_BACKLOG' | translate }}
         </div>
@@ -152,7 +153,8 @@
           [showCloseIcon]="false"
           [blockScroll]="false"
           [header]="'WORK_ORDERS.SCHEDULE_TAB.STAGING' | translate"
-          [styleClass]="drawerState().isHidden ? 'hf-backlog-hidden' : ''"
+          [styleClass]="drawerState().isHidden ? drawerClass + ' hf-backlog-hidden' : drawerClass"
+          (onShow)="onDrawerShown()"
           [style]="drawerStyle"
         >
           @if (axis(); as axis) {

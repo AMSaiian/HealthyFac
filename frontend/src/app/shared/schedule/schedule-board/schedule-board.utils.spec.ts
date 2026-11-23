@@ -7,7 +7,9 @@ import {
   canResizeBar,
   describeBar,
   gapsOf,
+  grabOffsetOf,
   hourLabelsOf,
+  isPlaceholderShown,
   isPreviewConflict,
   laneUnderOf,
   leftPxOf,
@@ -354,14 +356,14 @@ describe('preview snapping', () => {
   describe('isPreviewConflict', () => {
     const blocks = [{ start: at('2027-06-01T08:00'), end: at('2027-06-01T17:00') }];
     const others = [{ start: at('2027-06-01T10:00'), end: at('2027-06-01T11:00') }];
-    const now = at('2027-06-01T07:00');
+    const now = at('2027-06-01T08:30');
 
     it.each([
-      ['FitsInABlockWithoutOverlap', '2027-06-01T08:00', '2027-06-01T09:00', false],
+      ['FitsInABlockWithoutOverlap', '2027-06-01T08:30', '2027-06-01T09:30', false],
       ['TouchesAnotherBar', '2027-06-01T09:00', '2027-06-01T10:00', false],
       ['OverlapsAnotherBar', '2027-06-01T09:30', '2027-06-01T10:30', true],
       ['LeavesEveryBlock', '2027-06-01T16:30', '2027-06-01T17:30', true],
-      ['StartsBeforeNow', '2027-06-01T06:30', '2027-06-01T07:30', true],
+      ['StartsBeforeNow', '2027-06-01T08:00', '2027-06-01T09:00', true],
     ])('isPreviewConflict_ForASlotThat%s_Decides', (_name, start, end, isConflict) => {
       expect(isPreviewConflict({ start: at(start), end: at(end) }, blocks, others, now)).toBe(isConflict);
     });
@@ -369,5 +371,27 @@ describe('preview snapping', () => {
 
   it('minutesOfBar_ForABarOfOneAndAHalfHours_Gives90', () => {
     expect(minutesOfBar(bar('a', '2027-06-01T09:00', '2027-06-01T10:30'))).toBe(90);
+  });
+});
+
+describe('grabOffsetOf', () => {
+  it.each([
+    ['InsideTheElement', 130, 30],
+    ['LeftOfTheElement', 90, 0],
+    ['RightOfTheElement', 400, 200],
+  ])('grabOffsetOf_ForAPointer%s_IsClampedToTheElement', (_name, clientX, offset) => {
+    expect(grabOffsetOf(clientX, { left: 100, width: 200 })).toBe(offset);
+  });
+});
+
+describe('isPlaceholderShown', () => {
+  const source = Temporal.PlainDate.from('2027-06-01');
+
+  it.each([
+    ['NoDragRuns', null, Temporal.PlainDate.from('2027-06-02'), true],
+    ['TheSourceDayIsShown', source, Temporal.PlainDate.from('2027-06-01'), true],
+    ['AnotherDayIsShown', source, Temporal.PlainDate.from('2027-06-02'), false],
+  ])('isPlaceholderShown_When%s_Decides', (_name, sourceDate, shownDate, isShown) => {
+    expect(isPlaceholderShown(shownDate, sourceDate)).toBe(isShown);
   });
 });

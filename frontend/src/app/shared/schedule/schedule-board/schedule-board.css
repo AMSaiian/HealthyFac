@@ -153,9 +153,6 @@
   width: 3rem;
   align-items: center;
   justify-content: center;
-  background: var(--p-highlight-background);
-  color: var(--p-text-color);
-  opacity: 0.85;
 }
 
 .hf-day-area-previous {
@@ -189,4 +186,8 @@
 
 .hf-cut-end {
   right: 0;
+}
+
+.hf-placeholder-hidden .cdk-drag-placeholder {
+  visibility: hidden;
 }

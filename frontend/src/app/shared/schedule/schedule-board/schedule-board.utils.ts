@@ -495,3 +495,13 @@ export interface PreviewDrag {
   readonly slot: PreviewSlot | null;
   readonly point: Point;
 }
+
+/** The grab point of a drag inside the element: the pointer position from its left edge, from 0 to its width. */
+export function grabOffsetOf(clientX: number, rect: { readonly left: number; readonly width: number }): number {
+  return Math.min(rect.width, Math.max(0, clientX - rect.left));
+}
+
+/** The placeholder of a dragged bar shows only on the day where the drag began: a day switch hides it. */
+export function isPlaceholderShown(shownDate: Temporal.PlainDate, sourceDate: Temporal.PlainDate | null): boolean {
+  return sourceDate === null || shownDate.equals(sourceDate);
+}

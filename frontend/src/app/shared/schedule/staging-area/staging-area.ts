@@ -7,6 +7,7 @@ import {
   type Axis,
   createClickGuard,
   DRAG_PREVIEW_Z_INDEX,
+  grabOffsetOf,
   LANE_HEIGHT_REM,
   type Point,
   type PreviewDrag,
@@ -87,7 +88,7 @@ export class StagingArea {
   protected onPointerDown(event: PointerEvent, item: StagingItem): void {
     this._holding = { estimateMinutes: item.estimateMinutes };
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.grabOffsetPx.set(Math.min(rect.width, Math.max(0, event.clientX - rect.left)));
+    this.grabOffsetPx.set(grabOffsetOf(event.clientX, rect));
   }
 
   protected onDragMoved(pointer: Point): void {

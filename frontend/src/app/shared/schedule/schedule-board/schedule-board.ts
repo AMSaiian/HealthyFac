@@ -46,8 +46,10 @@ import {
   dropOutcomeOf,
   dropTargetOf,
   gapsOf,
+  grabOffsetOf,
   HOUR_LABEL_WIDTH_REM,
   hourLabelsOf,
+  isPlaceholderShown,
   isPreviewConflict,
   isSkeletonShown,
   LANE_GAP_REM,
@@ -150,6 +152,9 @@ export class ScheduleBoard {
   protected readonly grabOffsetPx = signal(0);
   /** The snapped slot under the preview of the running drag, or `null` outside every row. */
   protected readonly previewSlot = signal<PreviewSlot | null>(null);
+  protected readonly isPlaceholderVisible = computed(() =>
+    isPlaceholderShown(this._shownDate(), this._dragSourceDate()),
+  );
 
   /** The point that the CDK takes as the pointer of a board bar: on the snapped slot while the pointer is over a row. */
   protected readonly constrain = (point: Point): Point => {
@@ -207,6 +212,7 @@ export class ScheduleBoard {
   private readonly _header = viewChild<ElementRef<HTMLElement>>('header');
   private readonly _draggedBar = signal<FlatBar | null>(null);
   private _holdingBar: ScheduleBar | null = null;
+  private readonly _dragSourceDate = signal<Temporal.PlainDate | null>(null);
   private readonly _clickGuard = createClickGuard();
   private readonly _previousDwell = createDwell(() => this.daySwitchRequested.emit(-1));
   private readonly _nextDwell = createDwell(() => this.daySwitchRequested.emit(1));
@@ -318,10 +324,11 @@ export class ScheduleBoard {
     this._holdingBar = bar;
     const element = event.currentTarget as HTMLElement;
     const rect = element.getBoundingClientRect();
-    this.grabOffsetPx.set(Math.min(rect.width, Math.max(0, event.clientX - rect.left)));
+    this.grabOffsetPx.set(grabOffsetOf(event.clientX, rect));
   }
 
   protected onDragStarted(entry: FlatBar): void {
+    this._dragSourceDate.set(this._shownDate());
     this._draggedBar.set(entry);
     this.isDragging.set(true);
     this.dragActiveChange.emit(true);
@@ -338,6 +345,7 @@ export class ScheduleBoard {
   }
 
   protected onDragEnded(event: CdkDragEnd, bar: ScheduleBar): void {
+    this._dragSourceDate.set(null);
     this.previewSlot.set(null);
     this._updateDwell(null);
     this.isDragging.set(false);

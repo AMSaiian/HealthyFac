@@ -1,6 +1,12 @@
 import { WorkOrderPriority } from '@work-orders/work-order';
 
-import { backlogDrawerStateOf, isBacklogOpenAfterDrag, isReturnBandShown, stagingCardOf } from './schedule-page.utils';
+import {
+  backlogDrawerStateOf,
+  backlogPointerActionOf,
+  isBacklogOpenAfterDrag,
+  isReturnBandShown,
+  stagingCardOf,
+} from './schedule-page.utils';
 
 describe('stagingCardOf', () => {
   it('stagingCardOf_ForAHighPriorityWorkOrder_GivesTheLabelKeyAndTheColorClass', () => {
@@ -18,12 +24,14 @@ describe('stagingCardOf', () => {
 
 describe('backlogDrawerStateOf', () => {
   it.each([
-    ['OpenWithoutADrag', true, false, true, false],
-    ['ClosedWithoutADrag', false, false, false, false],
-    ['ClosedDuringABacklogDrag', false, true, true, true],
-    ['OpenDuringABacklogDrag', true, true, true, false],
-  ])('backlogDrawerStateOf_For%s_Decides', (_name, isOpen, isDragActive, isMounted, isHidden) => {
-    expect(backlogDrawerStateOf(isOpen, isDragActive)).toEqual({ isMounted, isHidden });
+    ['OpenWithoutADrag', true, false, false, true, false],
+    ['ClosedWithoutADrag', false, false, false, false, false],
+    ['ClosedDuringABacklogDrag', false, true, false, true, true],
+    ['OpenDuringABacklogDrag', true, true, false, true, false],
+    ['ClosedAfterABacklogDrag', false, false, true, false, true],
+    ['OpenedAfterABacklogDrag', true, false, true, true, false],
+  ])('backlogDrawerStateOf_For%s_Decides', (_name, isOpen, isDragActive, isClosingQuietly, isMounted, isHidden) => {
+    expect(backlogDrawerStateOf(isOpen, isDragActive, isClosingQuietly)).toEqual({ isMounted, isHidden });
   });
 });
 
@@ -46,5 +54,15 @@ describe('isReturnBandShown', () => {
     ['ADragWithoutManageRights', true, false, false],
   ])('isReturnBandShown_For%s_Decides', (_name, isDragActive, canManage, isShown) => {
     expect(isReturnBandShown(isDragActive, canManage)).toBe(isShown);
+  });
+});
+
+describe('backlogPointerActionOf', () => {
+  it.each([
+    ['InsideTheDrawer', true, false, 'stay'],
+    ['OnTheToggleButton', false, true, 'toggle'],
+    ['OnTheBoard', false, false, 'close'],
+  ] as const)('backlogPointerActionOf_For%s_Decides', (_name, isInsideDrawer, isOnToggle, expected) => {
+    expect(backlogPointerActionOf(isInsideDrawer, isOnToggle)).toBe(expected);
   });
 });

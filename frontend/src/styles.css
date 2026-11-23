@@ -53,6 +53,12 @@
     opacity: 0.35;
   }
 
+  .hf-backlog-drawer {
+    border-left: 1px solid var(--p-content-border-color);
+    background-color: color-mix(in srgb, var(--p-primary-color) 6%, var(--p-content-background));
+    box-shadow: -0.5rem 0 1rem -0.5rem rgb(0 0 0 / 0.3);
+  }
+
   .hf-backlog-hidden {
     visibility: hidden;
   }
@@ -131,6 +137,11 @@
 
   .hf-preview-conflict {
     background-color: var(--p-schedule-bar-conflict);
+  }
+
+  .hf-drop-area {
+    background-color: color-mix(in srgb, var(--p-primary-color) 22%, var(--p-content-background));
+    color: var(--p-text-color);
   }
 
   .hf-file-type-pdf {
