@@ -262,11 +262,11 @@ export function resizeHandleRightPercent(item: PlacedBar): number {
 
 /**
  * The estimate in minutes of a bar whose planned end is dragged to a pointer position in percent of the axis: the time
- * from the planned start (which can lie before the axis start) to the pointer, snapped to the grid and clamped to the
- * allowed range.
+ * from the planned start (which can lie before the axis start) to the pointer, kept inside the axis, snapped to the grid
+ * and clamped to the allowed range.
  */
 export function resizeEstimateOf(plannedStart: Temporal.Instant, pointerPercent: number, axis: Axis): number {
-  const snapped = snapToGrid(instantAt(pointerPercent, axis));
+  const snapped = snapToGrid(instantAt(clamp(pointerPercent), axis));
   const minutes = (snapped.epochMilliseconds - plannedStart.epochMilliseconds) / MS_PER_MINUTE;
   const onGrid = Math.round(minutes / SCHEDULE_GRID_MINUTES) * SCHEDULE_GRID_MINUTES;
   return Math.min(RESIZE_MAX_MINUTES, Math.max(RESIZE_MIN_MINUTES, onGrid));

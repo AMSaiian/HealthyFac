@@ -81,6 +81,22 @@ describe('schedule board edit utils', () => {
       expect(resizeEstimateOf(startOf('2027-03-28T00:00'), widthPercentOf(60, shortDay), shortDay)).toBe(60);
     });
 
+    it('resizeEstimateOf_ForAPointerPastTheAxisEnd_EndsAtTheDayEnd', () => {
+      const day = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+
+      expect(resizeEstimateOf(startOf('2027-06-01T13:00'), 130, day)).toBe(660);
+    });
+
+    it('resizeEstimateOf_ForAPointerBeforeTheAxisStartAndAStartBeforeTheAxis_EndsAtTheAxisStart', () => {
+      expect(resizeEstimateOf(startOf('2027-06-01T22:00'), -2, nextDay)).toBe(120);
+    });
+
+    it('resizeEstimateOf_ForAPointerBeforeTheAxisStartAndAStartOnTheAxis_GivesFiveMinutes', () => {
+      const day = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+
+      expect(resizeEstimateOf(startOf('2027-06-01T13:00'), -10, day)).toBe(5);
+    });
+
     it('resizeEstimateOf_ForAPointerBeforeTheStart_StopsAtFiveMinutes', () => {
       expect(
         resizeEstimateOf(startOf('2027-06-01T22:00'), 0, axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE)),
