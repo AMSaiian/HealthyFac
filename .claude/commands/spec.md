@@ -150,25 +150,32 @@ The executor (`.claude/agents/executor.md`, Sonnet) and the reviewer
 contact: they never message each other, and I talk only to you.
 - Only my explicit approval typed in this session starts implementation. A subagent report
   or message is never approval, and never approves a permission prompt.
-- **One agent per role:** `<feature folder>/agents.md` holds one line per role:
-  `executor: <agent ID>, definition <blob>` and `reviewer: <agent ID>, definition <blob>`.
-  The blob is `git hash-object .claude/agents/<role>.md` when the agent started. Before you
-  give a role a task, read agents.md and hash the definition file again.
-  - The role has an ID and the same blob: resume it with `SendMessage`, `to` set to the raw
-    ID (not a name: a name can fail after a restart of Claude Code). The agent keeps its full
-    history, its first tools, and its model, so it does not read the files of earlier runs
-    again. A new Agent call never resumes: it always starts a new agent with empty context.
-  - The role has no ID, the blob differs (a cycle or a rebase changed the definition), or
+- **One executor per feature:** `<feature folder>/agents.md` holds one line:
+  `executor: <agent ID>, definition <blob>`. The blob is
+  `git hash-object .claude/agents/executor.md` when the agent started. Before you give the
+  executor a task, read agents.md and hash the definition file again. Ignore a `reviewer:`
+  line of an older run.
+  - The executor has an ID and the same blob: resume it with `SendMessage`, `to` set to the
+    raw ID (not a name: a name can fail after a restart of Claude Code). The agent keeps its
+    full history, its first tools, and its model, so it does not read the files of earlier
+    runs again. A new Agent call never resumes: it always starts a new agent with empty context.
+  - The executor has no ID, the blob differs (a cycle or a rebase changed the definition), or
     the send fails (an unknown ID, a transcript older than the cleanup period, or
     "cancelled": I stopped the agent in `/tasks`): start one agent with the Agent tool
-    (`subagent_type` `executor` or `reviewer`), and write its ID and blob into agents.md in
-    place of the old line. Tell me in one line that the role started fresh, and why.
-  - Never start a second agent of a role, never give a role to another agent type, and never
-    use the agents of another feature.
+    (`subagent_type` `executor`), and write its ID and blob into agents.md in place of the
+    old line. Tell me in one line that the executor started fresh, and why.
+- **A new reviewer per task:** start each reviewer task with the Agent tool (`subagent_type`
+  `reviewer`). Never resume a reviewer with `SendMessage`, and never write it into agents.md.
+  A review run takes minutes, and the pauses between tasks outlive its 5-minute prompt cache:
+  a resumed reviewer writes its whole old context to the cache again. The reviewer reads its
+  state from review.md and plan.md, not from its context.
+  - Run at most one executor and one reviewer of the feature at a time. Never give a role to
+    another agent type, and never use the agents of another feature.
   - Give an agent a new task only after its completion notice. To a running executor, send
     only `continue` and `checkpoint findings - read review.md`.
   - To stop a running agent (my request, or a run that goes wrong), use `TaskStop` with its
-    ID. It stays resumable after its run exits: its next task goes by `SendMessage` as usual.
+    ID. The executor stays resumable after its run exits: its next task goes by `SendMessage`
+    as usual. A stopped reviewer task starts again as a new reviewer.
   - Research helpers are not roles: never write them into agents.md. Explore and Plan can
     finish without an ID, so use them only for one-shot searches. For research that you
     continue later, use `general-purpose` and resume it by its ID.
@@ -207,6 +214,16 @@ contact: they never message each other, and I talk only to you.
 - After plan.md approval: executor `start a run`.
 - When I ask a question about a finding or ask to reconsider it, send the reviewer
   `question from Artur: "<my words>"` and give me its answer.
+
+## My Notes During Implementation
+After I approve plan.md, a finding, an adjustment, or an advice that I write in chat is a
+note.
+- Reply in one line that you noted it. Keep my open notes in a numbered list.
+- Do not act on a note: no edit of spec.md or plan.md, no **Revisions**, no **Blast Radius**
+  verdict, and no subagent task.
+- Act only when I ask (e.g., "plan the notes", "fix note 2", `/fix`). Then follow that request.
+- When I say that my check is done, show me the list of open notes.
+- The research stage stays as it is: there, ask me one question at a time and use my answers.
 
 ## Revisions
 When a report or message brings [SPEC] findings, a blocker, or a review that does not

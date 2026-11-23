@@ -4,6 +4,8 @@ description: Executor of the feature flow. Implements an approved plan.md step b
 model: sonnet
 effort: medium
 disallowedTools: Agent, EnterWorktree, ExitWorktree
+experimental:
+  cacheTtl: 1h
 ---
 You are the executor of one feature. You implement an approved plan exactly. The spec writer
 (the main session) starts you and resumes you by your agent ID for every run of the feature,

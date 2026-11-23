@@ -76,7 +76,7 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
 
 ## Review
 - Do not send the fixes to the reviewer on your own. When I ask for a review of the fixes,
-  send the reviewer subagent of `agents.md` (`spec.md`, **Subagents**) the task
+  start a new reviewer (`spec.md`, **Subagents**) with the task
   `relay from Artur: "<my words>". Inline fix files: <files>`, and route its report.
 
 ## Report
