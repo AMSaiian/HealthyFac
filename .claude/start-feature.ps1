@@ -10,8 +10,8 @@
 # - Without -Resume: creates the worktree <main checkout>-worktrees\<feature> on the branch feature/<feature> from
 #   -MainBranch when the branch has no worktree yet, then starts the session '<feature>-spec' with '/spec <feature>'.
 # - With -Resume: reopens the session by name (claude --resume '<feature>-spec'), in the worktree of the branch. The
-#   resumed session can resume its subagents by their agent IDs (agents.md in the feature folder). It creates the
-#   worktree too when the branch has none.
+#   resumed session can resume its executor by its agent ID (agents.md in the feature folder); each reviewer task
+#   starts a new reviewer. It creates the worktree too when the branch has none.
 # The tab opens with the Windows Terminal profile -TerminalProfile (name or GUID), runs pwsh with the user profile, and
 # stays open after claude exits. --chrome gives the session and its subagents Claude in Chrome for the browser checks.
 # --effort high sets the effort of the spec session (new and resumed); the executor and the reviewer set their own in
