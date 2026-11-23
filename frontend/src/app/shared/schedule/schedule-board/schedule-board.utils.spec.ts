@@ -6,12 +6,14 @@ import {
   describeBar,
   gapsOf,
   hourLabelsOf,
+  isBarLocked,
   lengthMs,
   nowPercentOf,
   placeBars,
   segmentOf,
   skeletonRowCount,
   tooltipOf,
+  withLiveEnds,
 } from './schedule-board.utils';
 
 const ZONE = 'Europe/Kyiv';
@@ -171,5 +173,103 @@ describe('tooltipOf', () => {
     const text = tooltipOf(bar('a', '2027-06-01T09:00', '2027-06-01T10:30'), 'Staged', ZONE);
 
     expect(text.split('\n')).toEqual(['a', 'Staged · 09:00 - 10:30 (+03:00)']);
+  });
+});
+
+describe('bars across days', () => {
+  const running = (start: string, plannedEnd: string, end: string): ScheduleBar => ({
+    ...bar('r', start, end),
+    isRunning: true,
+    plannedEnd: at(plannedEnd),
+  });
+
+  describe('withLiveEnds', () => {
+    it('withLiveEnds_ForARunningBarPastItsEnd_EndsItAtNow', () => {
+      const [live] = withLiveEnds(
+        [running('2027-06-01T09:00', '2027-06-01T10:00', '2027-06-01T10:00')],
+        at('2027-06-01T12:00'),
+      );
+
+      expect(live.end.equals(at('2027-06-01T12:00'))).toBe(true);
+    });
+
+    it('withLiveEnds_ForARunningBarBeforeItsEnd_KeepsTheEnd', () => {
+      const [live] = withLiveEnds(
+        [running('2027-06-01T09:00', '2027-06-01T11:00', '2027-06-01T11:00')],
+        at('2027-06-01T10:00'),
+      );
+
+      expect(live.end.equals(at('2027-06-01T11:00'))).toBe(true);
+    });
+
+    it('withLiveEnds_ForABarThatIsNotRunning_KeepsTheEnd', () => {
+      const [live] = withLiveEnds([bar('a', '2027-06-01T09:00', '2027-06-01T10:00')], at('2027-06-01T12:00'));
+
+      expect(live.end.equals(at('2027-06-01T10:00'))).toBe(true);
+    });
+  });
+
+  describe('placeBars cut flags and locks', () => {
+    it.each([
+      ['StartsBeforeTheDay', '2027-05-31T22:00', '2027-06-01T02:00', true, false, true],
+      ['EndsAfterTheDay', '2027-06-01T22:00', '2027-06-02T02:00', false, true, true],
+      ['InsideTheDay', '2027-06-01T09:00', '2027-06-01T10:00', false, false, false],
+    ])('placeBars_ForABar%s_SetsTheCutFlagsAndTheLock', (_name, start, end, isCutStart, isCutEnd, isLocked) => {
+      const { placed } = placeBars([bar('a', start, end)], NORMAL);
+
+      expect([placed[0].isCutStart, placed[0].isCutEnd, isBarLocked(placed[0])]).toEqual([
+        isCutStart,
+        isCutEnd,
+        isLocked,
+      ]);
+    });
+
+    it('isBarLocked_ForACompletedBarInsideTheDay_IsLocked', () => {
+      const { placed } = placeBars([{ ...bar('a', '2027-06-01T09:00', '2027-06-01T10:00'), isLocked: true }], NORMAL);
+
+      expect(isBarLocked(placed[0])).toBe(true);
+    });
+  });
+
+  describe('overrun part', () => {
+    it('placeBars_ForARunningBarPastItsPlannedEnd_GivesTheOverrunStartInPercentOfTheBar', () => {
+      const { placed } = placeBars([running('2027-06-01T09:00', '2027-06-01T10:00', '2027-06-01T13:00')], NORMAL);
+
+      expect(placed[0].overrunStartPercent).toBeCloseTo(25);
+    });
+
+    it('placeBars_ForARunningBarCutAtTheStartAndPastItsPlannedEnd_StartsTheOverrunAtTheLeftEdge', () => {
+      const { placed } = placeBars([running('2027-05-31T20:00', '2027-05-31T22:00', '2027-06-01T02:00')], NORMAL);
+
+      expect(placed[0].overrunStartPercent).toBe(0);
+    });
+
+    it('placeBars_ForARunningBarBeforeItsPlannedEnd_HasNoOverrun', () => {
+      const { placed } = placeBars([running('2027-06-01T09:00', '2027-06-01T11:00', '2027-06-01T10:00')], NORMAL);
+
+      expect(placed[0].overrunStartPercent).toBeNull();
+    });
+  });
+
+  describe('describeBar with dates', () => {
+    it('describeBar_ForABarThatStartsOnAnotherDate_ShowsBothDates', () => {
+      const text = describeBar(
+        bar('a', '2027-05-31T22:00', '2027-06-01T02:00'),
+        ZONE,
+        Temporal.PlainDate.from('2027-06-01'),
+      );
+
+      expect(text).toBe('2027-05-31 22:00 - 2027-06-01 02:00 (+03:00)');
+    });
+
+    it('describeBar_ForABarInsideTheDate_ShowsOnlyTheTimes', () => {
+      const text = describeBar(
+        bar('a', '2027-06-01T09:00', '2027-06-01T10:00'),
+        ZONE,
+        Temporal.PlainDate.from('2027-06-01'),
+      );
+
+      expect(text).toBe('09:00 - 10:00 (+03:00)');
+    });
   });
 });

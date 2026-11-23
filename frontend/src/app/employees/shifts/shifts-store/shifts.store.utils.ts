@@ -3,6 +3,8 @@ import { parseCompose } from '@shared/history/history.store.utils';
 
 import { Temporal } from '@shared/time/temporal';
 
+import { DayScheduleSource } from '@work-orders/work-order';
+
 import {
   type AffectedWorkOrder,
   type CreateVersionBody,
@@ -139,4 +141,9 @@ export function isEditableOverride(override: ShiftOverride, today: Temporal.Plai
 /** The blocks of a day as text, e.g. `08:00-12:00, 13:00-17:00`. */
 export function summaryOf(blocks: readonly ShiftBlock[]): string {
   return blocks.map((block) => `${block.start}-${block.end}`).join(', ');
+}
+
+/** A new override cannot take a date that has an override: the user edits that override. Edit mode is never blocked. */
+export function isOverrideDateTaken(isCreate: boolean, source: DayScheduleSource | null): boolean {
+  return isCreate && source === DayScheduleSource.Override;
 }

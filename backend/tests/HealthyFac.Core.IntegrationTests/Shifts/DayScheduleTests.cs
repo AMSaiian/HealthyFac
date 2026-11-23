@@ -13,6 +13,8 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
     private static readonly DateOnly SpringDstDate = new(year: 2027, month: 3, day: 28);
     private static readonly DateOnly AutumnDstDate = new(year: 2027, month: 10, day: 31);
 
+    private static readonly DateOnly Yesterday = ShiftTestData.Today.AddDays(value: -1);
+
     private readonly CoreDatabaseFixture _fixture = fixture;
 
     [Fact]
@@ -103,6 +105,55 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
         var day = await ReadDayAsync(tenant, ShiftTestData.Today);
 
         day.WorkOrders.Select(order => order.IsDelayed).Should().Equal(true, false);
+    }
+
+    [Fact]
+    public async Task GetEmployeeDaySchedule_WithAnInProgressWorkOrderFromYesterday_ListsItAndEndsItAtNow()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "14:00"));
+        var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "15:00", minutes: 120);
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "15:30"));
+        await _fixture.ChangeWorkOrderStatusAsync(workOrderId, WorkOrderStatus.InProgress);
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "10:00"));
+
+        var day = await ReadDayAsync(tenant, ShiftTestData.Today);
+
+        var workOrder = day.WorkOrders.Should().ContainSingle().Which;
+        workOrder.Status.Should().Be(WorkOrderStatus.InProgress);
+        workOrder.OccupancyEndUtc.Should().Be(ShiftTestData.NowAt(time: "10:00").UtcDateTime);
+    }
+
+    [Fact]
+    public async Task GetEmployeeDaySchedule_WithAWorkOrderCompletedLateAfterMidnight_ListsItUntilTheCompletion()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "20:00"));
+        var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "22:00", minutes: 30);
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "01:00"));
+        await _fixture.CompleteWorkOrderAsync(workOrderId);
+
+        var day = await ReadDayAsync(tenant, ShiftTestData.Today);
+
+        var workOrder = day.WorkOrders.Should().ContainSingle().Which;
+        workOrder.Status.Should().Be(WorkOrderStatus.Completed);
+        workOrder.OccupancyEndUtc.Should().Be(ShiftTestData.NowAt(time: "01:00").UtcDateTime);
+    }
+
+    [Fact]
+    public async Task GetEmployeeDaySchedule_WithWorkOrdersThatEndedBeforeTheDate_DoesNotListThem()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "08:00"));
+        var completedId = await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "09:00", minutes: 30);
+        await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "11:00", minutes: 30);
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "09:20"));
+        await _fixture.CompleteWorkOrderAsync(completedId);
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "10:00"));
+
+        var day = await ReadDayAsync(tenant, ShiftTestData.Today);
+
+        day.WorkOrders.Should().BeEmpty();
     }
 
     [Fact]

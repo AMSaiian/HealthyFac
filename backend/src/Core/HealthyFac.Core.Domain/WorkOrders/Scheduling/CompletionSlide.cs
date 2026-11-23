@@ -3,29 +3,29 @@ using HealthyFac.Core.Domain.Shifts.DaySchedules;
 namespace HealthyFac.Core.Domain.WorkOrders.Scheduling;
 
 /// <summary>
-/// Plans how the later work orders of the day move when a work order completes after its planned end.
+/// Plans how the later work orders move when a work order completes after its planned end.
 /// </summary>
 public static class CompletionSlide
 {
     /// <summary>
     /// Plans the moves. The slide runs only when the completion moment <c>C</c> is after the planned end <c>E</c>
-    /// of the completed work order. Its scope is the other work orders of the same assignee on the same local date
-    /// <c>D</c>, at or after the planned start of the completed one, in planned start order. Work orders in
-    /// progress or completed are fixed and keep their slot. Staged, blocked, and rejected ones are movable. The
-    /// cursor starts at <c>C</c>. For each movable work order, the earliest start on the grid at or after the later
-    /// of its own start and the cursor is the candidate, and the slot must fit one block of <c>D</c> and overlap no
-    /// fixed work order and no work order that this slide placed. A candidate that differs from the own start is a
-    /// move, and the cursor goes to its end. A work order without a fitting start goes to the backlog, and the
-    /// cursor stays. A completion on a later local date than <c>D</c> sends every movable work order of <c>D</c> to
-    /// the backlog.
+    /// of the completed work order. Its scope is the other work orders of the same assignee at or after the planned
+    /// start of the completed one, up to the local date <c>CD</c> of the day schedule (the completion date), in
+    /// planned start order. Work orders in progress or completed are fixed and keep their slot. Staged, blocked, and
+    /// rejected ones are movable. A movable work order on a date before <c>CD</c> goes to the backlog. On <c>CD</c>,
+    /// the cursor starts at <c>C</c>. For each movable work order, the earliest start on the grid at or after the
+    /// later of its own start and the cursor is the candidate, and the slot must fit one block of <c>CD</c> and
+    /// overlap no fixed work order and no work order that this slide placed. A candidate that differs from the own
+    /// start is a move, and the cursor goes to its end. A work order without a fitting start goes to the backlog,
+    /// and the cursor stays. A work order on a date after <c>CD</c> is not in the scope.
     /// </summary>
     /// <param name="completed">The work order that completes.</param>
     /// <param name="completedAtUtc">The completion moment.</param>
     /// <param name="scheduled">
-    /// The scheduled work orders of the assignee with a planned start on <paramref name="day"/>, without
-    /// <paramref name="completed"/>.
+    /// The scheduled work orders of the assignee from the planned start date of the completed one to
+    /// <paramref name="day"/>, without <paramref name="completed"/>.
     /// </param>
-    /// <param name="day">The resolved day <c>D</c> of the planned start of the completed work order.</param>
+    /// <param name="day">The resolved day <c>CD</c>: the local date of the completion moment.</param>
     /// <param name="zone">The time zone of the company.</param>
     /// <returns>The moves, in the order of the work orders. A work order that keeps its start has no move.</returns>
     public static IReadOnlyList<SlideMove> Plan(
@@ -47,12 +47,6 @@ public static class CompletionSlide
             .OrderBy(order => order.PlannedStartUtc)
             .ThenBy(order => order.Id)
             .ToList();
-        var completedLocalDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(completedAtUtc, zone));
-        if (completedLocalDate > day.Date)
-        {
-            return movable.Select(order => new SlideMove { WorkOrderId = order.Id }).ToList();
-        }
-
         var occupied = scheduled
             .Where(order => !IsMovable(order))
             .Select(order => Occupancy.Of(order.Id, order.PlannedStartUtc, order.Estimate, order.CompletedAtUtc))
@@ -63,6 +57,19 @@ public static class CompletionSlide
         var cursorUtc = completedAtUtc;
         foreach (var order in movable)
         {
+            var orderDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(order.PlannedStartUtc, zone));
+            if (orderDate > day.Date)
+            {
+                continue;
+            }
+
+            if (orderDate < day.Date)
+            {
+                moves.Add(new SlideMove { WorkOrderId = order.Id });
+
+                continue;
+            }
+
             var fromUtc = order.PlannedStartUtc > cursorUtc ? order.PlannedStartUtc : cursorUtc;
             var startUtc = FindStart(SlotRules.RoundUpToGrid(fromUtc), order, day, occupied);
             if (startUtc is not { } found)

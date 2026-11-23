@@ -28,6 +28,8 @@ export function toBars(workOrders: readonly DayScheduleWorkOrder[]): ScheduleBar
     statusKey: STATUS_LABEL_KEYS[workOrder.status],
     colorClass: `${STATUS_CLASS_PREFIX}${workOrder.status}`,
     isLocked: workOrder.status === WorkOrderStatus.Completed,
+    isRunning: workOrder.status === WorkOrderStatus.InProgress,
+    plannedEnd: Temporal.Instant.from(workOrder.plannedStartUtc).add({ minutes: workOrder.estimateMinutes }),
   }));
 }
 

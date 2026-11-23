@@ -4,6 +4,7 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Shared.Application.Realtime;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
@@ -65,6 +66,40 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Complete_OnALaterDate_SendsEarlierDatesToTheBacklogAndSlidesTheCompletionDate()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var finishing = await CreateAssignedAsync(tenant, time: "09:00");
+        var tomorrow = await CreateAssignedAsync(tenant, time: "10:00");
+        var clashing = await CreateAssignedAsync(tenant, time: "09:00", ShiftTestData.InTwoDays);
+        var untouched = await CreateAssignedAsync(tenant, time: "11:00", ShiftTestData.InTwoDays);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.InTwoDays, time: "10:00"));
+        _fixture.RealtimeQueue.Clear();
+
+        await _fixture.ChangeStatusAsync(tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.Completed);
+
+        var hintedIds = _fixture.RealtimeQueue.Items
+            .Select(item => item.Push.Hint)
+            .OfType<RealtimeHint>()
+            .Where(hint => hint.Topic == RealtimeTopic.WorkOrders)
+            .Select(hint => hint.WorkOrderId!.Value)
+            .ToList();
+        var sentBack = await _fixture.LoadWorkOrderAsync(tomorrow);
+        var slid = await _fixture.LoadWorkOrderAsync(clashing);
+        var kept = await _fixture.LoadWorkOrderAsync(untouched);
+
+        hintedIds.Should().BeEquivalentTo([finishing, tomorrow, clashing]);
+        sentBack.Current.Status.Should().Be(WorkOrderStatus.Backlog);
+        sentBack.CurrentRevision.Should().Be(expected: 3);
+        slid.Current.PlannedStartLocal.Should().Be(ShiftTestData.LocalStart(ShiftTestData.InTwoDays, time: "10:00"));
+        slid.CurrentRevision.Should().Be(expected: 3);
+        kept.Current.PlannedStartLocal.Should().Be(ShiftTestData.LocalStart(ShiftTestData.InTwoDays, time: "11:00"));
+        kept.CurrentRevision.Should().Be(expected: 2);
+    }
+
+    [Fact]
     public async Task Complete_Early_MovesNothing()
     {
         var tenant = await ArrangeTenantAsync();
@@ -122,7 +157,7 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         return tenant;
     }
 
-    private async Task<Guid> CreateAssignedAsync(ShiftTenant tenant, string time)
+    private async Task<Guid> CreateAssignedAsync(ShiftTenant tenant, string time, DateOnly? date = null)
     {
         var created = await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
@@ -131,7 +166,7 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
                 tenant.CompanyId,
                 AccessScope.Company,
                 assigneeId: tenant.EmployeeId,
-                plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time)));
+                plannedStartLocal: ShiftTestData.LocalStart(date ?? ShiftTestData.Tomorrow, time)));
 
         return created.Id;
     }

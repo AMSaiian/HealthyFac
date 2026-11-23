@@ -213,6 +213,7 @@
         [timeZoneId]="clock.timeZoneId()"
         [loadedBlocks]="store.prefillBlocks()"
         [isLoading]="store.isPrefillLoading()"
+        [isDateTaken]="store.isDateTaken()"
         (valueChange)="onOverride($event)"
         (validityChange)="onValidity($event)"
       />

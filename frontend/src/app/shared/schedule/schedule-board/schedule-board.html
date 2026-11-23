@@ -99,6 +99,8 @@
                         type="button"
                         class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
                         [class]="item.bar.colorClass"
+                        [class.hf-bar-overrun]="item.overrunStartPercent !== null"
+                        [style.--hf-overrun-start]="overrunStart(item)"
                         [style.left]="barLeft(item)"
                         [style.width]="barWidth(item)"
                         [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
@@ -107,6 +109,20 @@
                         (click)="workOrderClick.emit(item.bar.id)"
                       >
                         {{ item.bar.title }}
+                        @if (item.isCutStart) {
+                          <i
+                            class="pi pi-angle-double-left hf-cut-mark hf-cut-start"
+                            [pTooltip]="
+                              'SCHEDULE.CONTINUES_FROM' | translate: { date: startDate(item.bar) | plainDate }
+                            "
+                          ></i>
+                        }
+                        @if (item.isCutEnd) {
+                          <i
+                            class="pi pi-angle-double-right hf-cut-mark hf-cut-end"
+                            [pTooltip]="'SCHEDULE.CONTINUES_ON' | translate: { date: endDate(item.bar) | plainDate }"
+                          ></i>
+                        }
                       </button>
                     }
                   }
@@ -136,7 +152,9 @@
             cdkDragPreviewContainer="global"
             class="hf-schedule-bar absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6 text-white"
             [class]="barClasses(entry.item.bar)"
-            [cdkDragDisabled]="entry.item.bar.isLocked === true"
+            [class.hf-bar-overrun]="entry.item.overrunStartPercent !== null"
+            [style.--hf-overrun-start]="overrunStart(entry.item)"
+            [cdkDragDisabled]="isLocked(entry.item)"
             [style.left]="barLeft(entry.item)"
             [style.width]="barWidth(entry.item)"
             [style.top]="entry.top"
@@ -153,6 +171,18 @@
             (keydown.enter)="onBarClick(entry.item.bar.id)"
           >
             {{ entry.item.bar.title }}
+            @if (entry.item.isCutStart) {
+              <i
+                class="pi pi-angle-double-left hf-cut-mark hf-cut-start"
+                [pTooltip]="'SCHEDULE.CONTINUES_FROM' | translate: { date: startDate(entry.item.bar) | plainDate }"
+              ></i>
+            }
+            @if (entry.item.isCutEnd) {
+              <i
+                class="pi pi-angle-double-right hf-cut-mark hf-cut-end"
+                [pTooltip]="'SCHEDULE.CONTINUES_ON' | translate: { date: endDate(entry.item.bar) | plainDate }"
+              ></i>
+            }
             <ng-template cdkDragPreview>
               <div
                 class="rounded-border -mt-3 truncate px-2 text-xs leading-6 text-white shadow-lg"
@@ -164,7 +194,7 @@
                 {{ entry.item.bar.title }}
               </div>
             </ng-template>
-            @if (entry.item.bar.isLocked !== true) {
+            @if (!isLocked(entry.item)) {
               <span
                 class="hf-resize-handle"
                 (pointerdown)="onResizeStart($event, entry.item)"

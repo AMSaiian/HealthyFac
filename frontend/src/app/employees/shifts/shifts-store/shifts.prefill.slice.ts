@@ -15,7 +15,7 @@ import type { HistoryStore } from '@shared/history/history.store';
 import type { Temporal } from '@shared/time/temporal';
 
 import type { ShiftBlock } from '@employees/shifts/shift';
-import { cutSeconds, type ShiftDialog } from '@employees/shifts/shifts-store/shifts.store.utils';
+import { cutSeconds, isOverrideDateTaken, type ShiftDialog } from '@employees/shifts/shifts-store/shifts.store.utils';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 interface PrefillState {
@@ -54,16 +54,33 @@ export function withShiftsPrefill() {
         }),
       };
     }),
-    withComputed((store) => ({
-      isPrefillLoading: computed(() => store._prefill.isLoading()),
-      prefillBlocks: computed((): readonly ShiftBlock[] | null =>
-        store._prefill.hasValue()
-          ? store._prefill
-              .value()
-              .blocks.map((block) => ({ start: cutSeconds(block.startLocal), end: cutSeconds(block.endLocal) }))
-          : null,
-      ),
-    })),
+    withComputed((store) => {
+      const isDateTaken = computed(() => {
+        const dialog = store.dialog();
+        return (
+          dialog?.kind === 'override' &&
+          isOverrideDateTaken(
+            dialog.override === null,
+            store._prefill.hasValue() ? store._prefill.value().source : null,
+          )
+        );
+      });
+      return {
+        isPrefillLoading: computed(() => store._prefill.isLoading()),
+        /** Whether the chosen date of a new override already has an override. The dialog tells the user to edit it. */
+        isDateTaken,
+        prefillBlocks: computed((): readonly ShiftBlock[] | null => {
+          if (!store._prefill.hasValue()) {
+            return null;
+          }
+          return isDateTaken()
+            ? []
+            : store._prefill
+                .value()
+                .blocks.map((block) => ({ start: cutSeconds(block.startLocal), end: cutSeconds(block.endLocal) }));
+        }),
+      };
+    }),
     withMethods((store) => ({
       setPrefillDate(date: Temporal.PlainDate | null): void {
         const current = store.prefillDate() ?? store.today().add({ days: 1 });

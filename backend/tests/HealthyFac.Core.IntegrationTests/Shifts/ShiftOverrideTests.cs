@@ -230,6 +230,34 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task SetOverride_WithoutARowVersionOnADateWithAnOverride_ThrowsOverrideExistsAndChangesNothing()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        await _fixture.SetOverrideAsync(tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks(ShiftTestData.Afternoon));
+
+        var act = () => _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks(ShiftTestData.ShortMorning));
+
+        await act.Should().ThrowAsync<ConflictException>().WithMessage(ShiftErrors.Rejections.OverrideExists);
+        var day = await _fixture.ResolveDayAsync(tenant, ShiftTestData.Tomorrow);
+
+        day.Blocks.Select(block => $"{block.Start:HH:mm}-{block.End:HH:mm}").Should().Equal(ShiftTestData.Afternoon);
+    }
+
+    [Fact]
+    public async Task SetOverride_WithARowVersionOnADateWithoutAnOverride_ThrowsOverrideChanged()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
+        var act = () => _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks(ShiftTestData.Afternoon), rowVersion: 1);
+
+        await act.Should().ThrowAsync<ConflictException>().WithMessage(ShiftErrors.Rejections.OverrideChanged);
+    }
+
+    [Fact]
     public async Task DeleteOverride_WithStaleRowVersion_ThrowsConflictAndKeepsTheOverride()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
@@ -462,7 +490,38 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
 
         day.Blocks.Select(block => $"{block.Start:HH:mm}-{block.End:HH:mm}")
             .Should()
-            .Equal("08:00-10:00", "10:00-12:00", "13:05-17:00");
+            .Equal("08:00-12:00", "13:05-17:00");
+    }
+
+    [Fact]
+    public async Task SetOverride_WithTouchingBlocks_StoresOneJoinedBlock()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
+        await _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks("08:00-12:00", "12:00-13:00", "13:05-14:00"));
+
+        var day = await _fixture.ResolveDayAsync(tenant, ShiftTestData.Tomorrow);
+
+        day.Blocks.Select(block => $"{block.Start:HH:mm}-{block.End:HH:mm}")
+            .Should()
+            .Equal("08:00-13:00", "13:05-14:00");
+    }
+
+    [Fact]
+    public async Task SetOverride_ForTodayThatAddsABlockTouchingAnEndedBlock_StoresOneJoinedBlock()
+    {
+        var tenant = await ArrangeTodayAsync(time: "12:00", ShiftTestData.Morning, ShiftTestData.Afternoon);
+        await _fixture.SeedOverrideAsync(tenant.EmployeeId, ShiftTestData.Today, ShiftTestData.Morning);
+        var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Today);
+
+        await _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Today, ShiftTestData.Blocks(ShiftTestData.Morning, "12:00-17:00"), rowVersion);
+
+        var day = await _fixture.ResolveDayAsync(tenant, ShiftTestData.Today);
+
+        day.Blocks.Select(block => $"{block.Start:HH:mm}-{block.End:HH:mm}").Should().Equal("08:00-17:00");
     }
 
     [Fact]

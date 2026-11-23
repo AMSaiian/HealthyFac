@@ -168,6 +168,13 @@ export interface DayScheduleBlock {
   readonly endUtc: string;
 }
 
+/** The source of the blocks of a day: the weekly template, an override of the date, or no shift. */
+export enum DayScheduleSource {
+  Template = 'template',
+  Override = 'override',
+  None = 'none',
+}
+
 export interface DayScheduleWorkOrder {
   readonly id: string;
   readonly title: string;
@@ -213,7 +220,7 @@ export interface FreeSpans {
 export interface DaySchedule {
   readonly date: string;
   readonly timeZoneId: string;
-  readonly source: string;
+  readonly source: DayScheduleSource;
   readonly blocks: readonly DayScheduleBlock[];
   readonly workOrders: readonly DayScheduleWorkOrder[];
 }

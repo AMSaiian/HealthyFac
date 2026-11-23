@@ -15,7 +15,7 @@ import { AuthStore } from '@shared/security/auth-store/auth.store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
-import type { DaySchedule } from '@work-orders/work-order';
+import { type DaySchedule, DayScheduleSource } from '@work-orders/work-order';
 import { EmployeeDayStore } from '@schedule/employee-day/employee-day.store';
 import { EmployeeDayPage } from '@schedule/employee-day/employee-day-page/employee-day-page';
 import { SCHEDULE_ROUTES } from '@schedule/schedule.routes';
@@ -24,7 +24,13 @@ import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-rea
 const EMPLOYEE_DAY_URL = '/api/core/v1/employees/e1/schedule';
 const TODAY = '2026-01-01';
 const NEXT_DAY = '2026-01-02';
-const DAY: DaySchedule = { date: TODAY, timeZoneId: 'Europe/Kyiv', source: 'template', blocks: [], workOrders: [] };
+const DAY: DaySchedule = {
+  date: TODAY,
+  timeZoneId: 'Europe/Kyiv',
+  source: DayScheduleSource.Template,
+  blocks: [],
+  workOrders: [],
+};
 
 class ResizeObserverStub {
   observe = vi.fn();

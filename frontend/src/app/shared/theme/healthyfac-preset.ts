@@ -103,6 +103,7 @@ export const HealthyFacPreset = definePreset(Lara, {
       pending: 'light-dark({sky.600}, {sky.400})',
       conflict: 'light-dark({red.600}, {red.400})',
       failed: 'light-dark({orange.600}, {orange.400})',
+      overrun: 'light-dark({amber.500}, {amber.400})',
     },
     workOrderPriority: {
       low: '{sky.500}',

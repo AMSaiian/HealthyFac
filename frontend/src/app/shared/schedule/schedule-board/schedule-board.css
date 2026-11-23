@@ -163,3 +163,28 @@
 .hf-day-area-next {
   right: 0;
 }
+
+.hf-bar-overrun {
+  background-image: linear-gradient(
+    to right,
+    transparent var(--hf-overrun-start),
+    var(--p-schedule-bar-overrun) var(--hf-overrun-start)
+  );
+}
+
+.hf-cut-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.hf-cut-start {
+  left: 0;
+}
+
+.hf-cut-end {
+  right: 0;
+}

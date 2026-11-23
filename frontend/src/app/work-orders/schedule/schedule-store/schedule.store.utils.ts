@@ -94,6 +94,8 @@ function barOf(known: KnownWorkOrder, change: PendingChange, timeZoneId: string)
     statusKey: STATUS_LABEL_KEYS[status],
     colorClass: `hf-status-${status}`,
     isLocked: status === WorkOrderStatus.Completed,
+    isRunning: status === WorkOrderStatus.InProgress,
+    plannedEnd: start.add({ minutes: change.estimateMinutes }),
   };
 }
 

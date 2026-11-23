@@ -65,7 +65,8 @@ public sealed class ChangeWorkOrderStatusPreHandlerCheck(ICurrentUserProvider cu
 /// <summary>
 /// Changes the status of a scheduled work order: the new history row copies the assignee and the planned start. Any
 /// status but completed is one plain save. A completion runs in one serializable transaction: the later work orders of
-/// the same assignee on the same local date slide when the completion is late (<see cref="CompletionSlide"/>), and the
+/// the same assignee, from the planned date to the completion date, move when the completion is late
+/// (<see cref="CompletionSlide"/>), and the
 /// completion and every move are saved together. A stale row version, or a parallel change that takes the same
 /// revision, ends in the conflict (409).
 /// </summary>
@@ -199,8 +200,10 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var completedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
         var date = DateOnly.FromDateTime(previous.PlannedStartLocal!.Value);
+        var completionDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(completedAtUtc, zone));
+        var lastDate = completionDate > date ? completionDate : date;
         var dayStartUtc = LocalTimes.ToUtc(date.ToDateTime(TimeOnly.MinValue), zone);
-        var dayEndUtc = LocalTimes.ToUtc(date.AddDays(value: 1).ToDateTime(TimeOnly.MinValue), zone);
+        var dayEndUtc = LocalTimes.ToUtc(lastDate.AddDays(value: 1).ToDateTime(TimeOnly.MinValue), zone);
 
         var others = await _dbContext.WorkOrders
             .Where(candidate => candidate.CompanyId == request.CompanyId
@@ -219,7 +222,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
                 select row)
             .LoadAsync(cancellationToken);
 
-        var shifts = await _reader.LoadAsync(assigneeId, zone, date, date, isTracked: false, cancellationToken);
+        var shifts = await _reader.LoadAsync(assigneeId, zone, date, lastDate, isTracked: false, cancellationToken);
         var moves = CompletionSlide.Plan(
             new SlideWorkOrder
             {
@@ -230,7 +233,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
             },
             completedAtUtc,
             others.Select(ToSlideWorkOrder).ToList(),
-            shifts.Resolve(date, date).Single(),
+            shifts.Resolve(lastDate, lastDate).Single(),
             zone);
 
         var assigneeUserId = moves.Count == 0

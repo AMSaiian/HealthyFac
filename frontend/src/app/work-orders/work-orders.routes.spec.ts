@@ -20,6 +20,7 @@ import { BOARD_STATUSES } from '@work-orders/board/board-store/board.store.utils
 import { BoardPage } from '@work-orders/board/board-page/board-page';
 import { WorkOrdersPage } from '@work-orders/list/work-orders-page/work-orders-page';
 import { WORK_ORDERS_ROUTES } from '@work-orders/work-orders.routes';
+import { DayScheduleSource } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { SchedulePage } from '@work-orders/schedule/schedule-page/schedule-page';
 import { SCHEDULE_ROUTES } from '@schedule/schedule.routes';
@@ -32,7 +33,13 @@ const OWN_EMPLOYEE_URL = '/api/core/v1/employees/me';
 const OWN_SCHEDULE_URL = '/api/core/v1/employees/e1/schedule';
 const TODAY = '2026-01-01';
 const OWN_EMPLOYEE = { id: 'e1', firstName: 'Ann', lastName: 'Lee', roleCode: 'worker' };
-const OWN_DAY = { date: TODAY, timeZoneId: 'Europe/Kyiv', source: 'template', blocks: [], workOrders: [] };
+const OWN_DAY = {
+  date: TODAY,
+  timeZoneId: 'Europe/Kyiv',
+  source: DayScheduleSource.Template,
+  blocks: [],
+  workOrders: [],
+};
 class ResizeObserverStub {
   observe = vi.fn();
   unobserve = vi.fn();

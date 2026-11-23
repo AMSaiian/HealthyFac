@@ -20,6 +20,12 @@ export interface PlacedBar {
   readonly left: number;
   readonly width: number;
   readonly lane: number;
+  /** The bar starts before the axis: the start edge is cut. */
+  readonly isCutStart: boolean;
+  /** The bar ends after the axis: the end edge is cut. */
+  readonly isCutEnd: boolean;
+  /** Where the overrun part of a running bar begins, in percent of the bar width, or `null` when there is none. */
+  readonly overrunStartPercent: number | null;
 }
 
 const PERCENT = 100;
@@ -106,9 +112,51 @@ export function placeBars(bars: readonly ScheduleBar[], axis: Axis): { placed: P
       lane = laneEnds.length;
     }
     laneEnds[lane] = bar.end;
-    placed.push({ bar, left: segment.left, width: segment.width, lane });
+    placed.push({
+      bar,
+      left: segment.left,
+      width: segment.width,
+      lane,
+      isCutStart: percentOf(bar.start, axis) < 0,
+      isCutEnd: percentOf(bar.end, axis) > PERCENT,
+      overrunStartPercent: overrunStartPercentOf(bar, segment, axis),
+    });
   }
   return { placed, laneCount: Math.max(1, laneEnds.length) };
+}
+
+/** The later of two instants. */
+function later(first: Temporal.Instant, second: Temporal.Instant): Temporal.Instant {
+  return Temporal.Instant.compare(first, second) >= 0 ? first : second;
+}
+
+/** A bar of a work order in progress ends at the later of its end and now. Every other bar keeps its end. */
+export function withLiveEnds(bars: readonly ScheduleBar[], now: Temporal.Instant): ScheduleBar[] {
+  return bars.map((bar) => (bar.isRunning === true ? { ...bar, end: later(bar.end, now) } : bar));
+}
+
+/** A cut bar and a completed bar cannot be dragged or resized. */
+export function isBarLocked(item: PlacedBar): boolean {
+  return item.bar.isLocked === true || item.isCutStart || item.isCutEnd;
+}
+
+/**
+ * Where the overrun part of a running bar begins, in percent of the width of the drawn bar: the part from the planned
+ * end to the live end. It is `null` for a bar that is not running or has not passed its planned end on the axis.
+ */
+export function overrunStartPercentOf(bar: ScheduleBar, segment: Segment, axis: Axis): number | null {
+  if (
+    bar.isRunning !== true ||
+    bar.plannedEnd === undefined ||
+    Temporal.Instant.compare(bar.end, bar.plannedEnd) <= 0
+  ) {
+    return null;
+  }
+  const plannedPercent = clamp(percentOf(bar.plannedEnd, axis));
+  if (plannedPercent >= segment.left + segment.width) {
+    return null;
+  }
+  return ((plannedPercent - segment.left) / segment.width) * PERCENT;
 }
 
 /** The position of "now" on the axis in percent, or `null` when now is not on the day. */
@@ -123,15 +171,29 @@ export function skeletonRowCount(previousCount: number): number {
 }
 
 /** The tooltip of a bar on two lines: the title, then the status, the local range, and the offset. */
-export function tooltipOf(bar: ScheduleBar, statusLabel: string, timeZoneId: string): string {
-  return `${bar.title}\n${statusLabel} · ${describeBar(bar, timeZoneId)}`;
+export function tooltipOf(
+  bar: ScheduleBar,
+  statusLabel: string,
+  timeZoneId: string,
+  axisDate?: Temporal.PlainDate,
+): string {
+  return `${bar.title}\n${statusLabel} · ${describeBar(bar, timeZoneId, axisDate)}`;
 }
 
-/** The local start and end of a bar with the offset of the zone, e.g. `09:00 - 10:00 (+03:00)`. */
-export function describeBar(bar: ScheduleBar, timeZoneId: string): string {
+/**
+ * The local start and end of a bar with the offset of the zone, e.g. `09:00 - 10:00 (+03:00)`. When the start or the
+ * end lies on another date than `axisDate`, both times show their dates.
+ */
+export function describeBar(bar: ScheduleBar, timeZoneId: string, axisDate?: Temporal.PlainDate): string {
   const start = bar.start.toZonedDateTimeISO(timeZoneId);
   const end = bar.end.toZonedDateTimeISO(timeZoneId);
-  const time = (value: Temporal.ZonedDateTime): string => value.toPlainTime().toString({ smallestUnit: 'minute' });
+  const isOtherDate = (value: Temporal.ZonedDateTime): boolean =>
+    axisDate !== undefined && !value.toPlainDate().equals(axisDate);
+  const hasDates = isOtherDate(start) || isOtherDate(end);
+  const time = (value: Temporal.ZonedDateTime): string => {
+    const text = value.toPlainTime().toString({ smallestUnit: 'minute' });
+    return hasDates ? `${value.toPlainDate().toString()} ${text}` : text;
+  };
   return `${time(start)} - ${time(end)} (${start.offset})`;
 }
 

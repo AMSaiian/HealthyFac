@@ -165,7 +165,7 @@ public sealed class SetShiftOverrideRequestHandler(
     {
         if (request.RowVersion is not { } rowVersion)
         {
-            throw new ConflictException(ShiftErrors.Rejections.OverrideChanged);
+            throw new ConflictException(ShiftErrors.Rejections.OverrideExists);
         }
 
         _dbContext.Entry(existing).Property(stored => stored.RowVersion).OriginalValue = rowVersion;

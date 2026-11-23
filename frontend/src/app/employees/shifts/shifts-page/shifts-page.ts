@@ -73,7 +73,13 @@ export class ShiftsPage {
         };
   });
   protected readonly saveReason = computed((): string | null =>
-    this.store.isPrefillLoading() ? 'SHIFTS.DIALOG.LOADING' : this._isValid() ? null : 'SHIFTS.DIALOG.INVALID',
+    this.store.isPrefillLoading()
+      ? 'SHIFTS.DIALOG.LOADING'
+      : this.store.isDateTaken()
+        ? 'SHIFTS.ERRORS.OVERRIDE_EXISTS'
+        : this._isValid()
+          ? null
+          : 'SHIFTS.DIALOG.INVALID',
   );
 
   constructor() {

@@ -27,6 +27,7 @@ import { isEmptyResult } from '@shared/grid/table/grid-display';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { EmptyState } from '@shared/loading/empty-state/empty-state';
 import type { ScheduleBar, ScheduleRow } from '@shared/schedule/schedule-row';
+import { PlainDatePipe } from '@shared/time/plain-date.pipe';
 import type { Temporal } from '@shared/time/temporal';
 
 import {
@@ -45,6 +46,7 @@ import {
   gapsOf,
   HOUR_LABEL_WIDTH_REM,
   hourLabelsOf,
+  isBarLocked,
   isSkeletonShown,
   LANE_GAP_REM,
   LANE_HEIGHT_REM,
@@ -58,6 +60,7 @@ import {
   shownWhileHolding,
   skeletonRowCount,
   tooltipOf,
+  withLiveEnds,
 } from '@shared/schedule/schedule-board/schedule-board.utils';
 
 export interface BarDropEvent {
@@ -90,7 +93,7 @@ const DEFAULT_ROOT_FONT_PX = 16;
  * above the rows, so a drag shows a floating preview, and the row under the pointer decides the drop.
  */
 @Component({
-  imports: [CdkDrag, CdkDragPreview, CdkDropList, EmptyState, Message, Skeleton, Tooltip, TranslatePipe],
+  imports: [CdkDrag, CdkDragPreview, CdkDropList, EmptyState, Message, PlainDatePipe, Skeleton, Tooltip, TranslatePipe],
   host: { class: 'flex min-h-0 min-w-0 flex-col' },
   providers: [{ provide: CDK_DRAG_CONFIG, useValue: { zIndex: DRAG_PREVIEW_Z_INDEX } }],
   selector: 'hf-schedule-board',
@@ -186,7 +189,7 @@ export class ScheduleBoard {
 
   protected readonly layouts = computed(() =>
     this._shownRows().map((row) => {
-      const { placed, laneCount } = placeBars(row.bars, this.axis());
+      const { placed, laneCount } = placeBars(withLiveEnds(row.bars, this.now()), this.axis());
       return {
         row,
         placed,
@@ -241,12 +244,28 @@ export class ScheduleBoard {
 
   protected tooltip(bar: ScheduleBar): string {
     const failure = this.failures().get(bar.id);
-    const text = tooltipOf(bar, this._translate.instant(bar.statusKey), this.timeZoneId());
+    const text = tooltipOf(bar, this._translate.instant(bar.statusKey), this.timeZoneId(), this._shownDate());
     return failure === undefined ? text : `${text}\n${this._translate.instant(failure)}`;
   }
 
   protected describe(bar: ScheduleBar): string {
-    return describeBar(bar, this.timeZoneId());
+    return describeBar(bar, this.timeZoneId(), this._shownDate());
+  }
+
+  protected isLocked(item: PlacedBar): boolean {
+    return isBarLocked(item);
+  }
+
+  protected startDate(bar: ScheduleBar): string {
+    return bar.start.toZonedDateTimeISO(this.timeZoneId()).toPlainDate().toString();
+  }
+
+  protected endDate(bar: ScheduleBar): string {
+    return bar.end.toZonedDateTimeISO(this.timeZoneId()).toPlainDate().toString();
+  }
+
+  protected overrunStart(item: PlacedBar): string | null {
+    return item.overrunStartPercent === null ? null : `${item.overrunStartPercent}%`;
   }
 
   protected barClasses(bar: ScheduleBar): string {

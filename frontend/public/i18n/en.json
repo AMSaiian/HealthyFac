@@ -970,6 +970,8 @@
     "PREVIOUS_DAY": "Previous day",
     "NEXT_DAY": "Next day",
     "TODAY": "Today",
+    "CONTINUES_FROM": "Continues from {{date}}",
+    "CONTINUES_ON": "Continues on {{date}}",
     "EMPTY": "No employees to show",
     "LOAD_FAILED": "The schedule did not load",
     "TOOLTIPS": {
@@ -1020,7 +1022,8 @@
       "OVERLAP": "Blocks must not overlap",
       "DAYS": "The template needs all 7 weekdays",
       "DATE_REQUIRED": "Choose a date",
-      "START_BEFORE_NOW": "A block cannot start before now"
+      "START_BEFORE_NOW": "A block cannot start before now",
+      "OVERRIDE_EXISTS": "This date already has an override. Close this dialog and use Edit in the list"
     },
     "TOASTS": {
       "SAVED": "The shifts were saved",

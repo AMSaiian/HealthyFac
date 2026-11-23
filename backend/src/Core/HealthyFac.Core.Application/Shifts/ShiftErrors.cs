@@ -48,5 +48,6 @@ public static class ShiftErrors
         public const string EffectiveFromTaken = "The employee already has a version for this date.";
         public const string OverrideNotFound = "The employee has no override for this date.";
         public const string OverrideChanged = "The override changed at the same time. Reload it and try again.";
+        public const string OverrideExists = "This date already has an override. Edit it instead.";
     }
 }

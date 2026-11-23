@@ -7,7 +7,9 @@ namespace HealthyFac.Core.Application.Shifts.DaySchedules;
 
 /// <summary>
 /// Builds the day responses of one or several employees for one local date. The employee day and the company day share
-/// it, so both resolve the blocks and read the work orders the same way.
+/// it, so both resolve the blocks and read the work orders the same way. A work order that started on an earlier date
+/// is listed when it overlaps the date: it ends after the date start, it is in progress (it ends at now), or it
+/// completed after the date start.
 /// </summary>
 /// <param name="dbContext">Reads the shifts and the work orders.</param>
 /// <param name="reader">Reads the zone of the company.</param>
@@ -101,8 +103,10 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
                     && row.Revision == workOrder.CurrentRevision
                     && employeeIds.Contains(row.AssigneeId!.Value)
                     && row.Status != WorkOrderStatus.Backlog
-                    && row.PlannedStartUtc >= dayStartUtc
                     && row.PlannedStartUtc < dayEndUtc
+                    && (row.PlannedStartUtc + workOrder.Estimate > dayStartUtc
+                        || (row.Status == WorkOrderStatus.InProgress && nowUtc > dayStartUtc)
+                        || (row.Status == WorkOrderStatus.Completed && row.CreatedAt > dayStartUtc))
                 orderby row.PlannedStartUtc, workOrder.Id
                 select new
                 {
@@ -123,6 +127,7 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
             {
                 var plannedEndUtc = row.PlannedStartUtc!.Value + row.Estimate;
                 var isLateCompletion = row.Status == WorkOrderStatus.Completed && row.ChangedAt > plannedEndUtc;
+                var isRunningPastEnd = row.Status == WorkOrderStatus.InProgress && nowUtc > plannedEndUtc;
 
                 return new AssignedWorkOrder
                 {
@@ -136,7 +141,7 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
                         PlannedStartLocal = row.PlannedStartLocal!.Value,
                         PlannedStartUtc = row.PlannedStartUtc.Value,
                         EstimateMinutes = (int)row.Estimate.TotalMinutes,
-                        OccupancyEndUtc = isLateCompletion ? row.ChangedAt : plannedEndUtc,
+                        OccupancyEndUtc = isLateCompletion ? row.ChangedAt : isRunningPastEnd ? nowUtc : plannedEndUtc,
                         IsDelayed = row.Status == WorkOrderStatus.Staged && row.PlannedStartUtc < nowUtc,
                         RowVersion = row.RowVersion,
                     },

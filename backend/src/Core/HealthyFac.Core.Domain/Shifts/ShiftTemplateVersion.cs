@@ -65,5 +65,6 @@ public class ShiftTemplateVersion : IEntity, IAuditable, ISoftDeletable, IVersio
     }
 
     private void AddBlocks(IEnumerable<(Weekday Weekday, BlockTimes Times)> blocks) =>
-        _blocks.AddRange(blocks.Select(block => new ShiftTemplateBlock(Id, block.Weekday, block.Times)));
+        _blocks.AddRange(
+            BlockJoin.JoinPerWeekday(blocks).Select(block => new ShiftTemplateBlock(Id, block.Weekday, block.Times)));
 }

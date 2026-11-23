@@ -25,6 +25,9 @@
     (blocksChange)="setBlocks($event)"
   />
 }
+@if (isDateTaken()) {
+  <small class="text-red-500">{{ 'SHIFTS.ERRORS.OVERRIDE_EXISTS' | translate }}</small>
+}
 @for (message of messages(); track message) {
   <small class="text-red-500">{{ message | translate }}</small>
 }

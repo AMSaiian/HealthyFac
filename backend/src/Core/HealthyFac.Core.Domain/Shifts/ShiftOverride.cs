@@ -16,7 +16,7 @@ public class ShiftOverride : IEntity, IAuditable, ISoftDeletable, IVersioned
     /// </summary>
     /// <param name="employeeId">The employee of the override. It never changes.</param>
     /// <param name="date">The local date of the company. It never changes.</param>
-    /// <param name="blocks">The blocks of the day. An empty list is a day off.</param>
+    /// <param name="blocks">The blocks of the day. Touching blocks join. An empty list is a day off.</param>
     public ShiftOverride(Guid employeeId, DateOnly date, IEnumerable<BlockTimes> blocks)
         : this(employeeId, date)
     {
@@ -59,5 +59,5 @@ public class ShiftOverride : IEntity, IAuditable, ISoftDeletable, IVersioned
     }
 
     private void AddBlocks(IEnumerable<BlockTimes> blocks) =>
-        _blocks.AddRange(blocks.Select(times => new ShiftOverrideBlock(Id, times)));
+        _blocks.AddRange(BlockJoin.Join(blocks).Select(times => new ShiftOverrideBlock(Id, times)));
 }

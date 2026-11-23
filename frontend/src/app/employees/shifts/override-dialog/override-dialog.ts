@@ -31,6 +31,8 @@ export class OverrideDialog {
   /** The blocks of the chosen date for a new override, or `null` while they load. */
   readonly loadedBlocks = input<readonly ShiftBlock[] | null>(null);
   readonly isLoading = input(false);
+  /** Whether the chosen date of a new override already has an override. */
+  readonly isDateTaken = input(false);
 
   readonly valueChange = output<OverrideFormValue>();
   readonly validityChange = output<boolean>();

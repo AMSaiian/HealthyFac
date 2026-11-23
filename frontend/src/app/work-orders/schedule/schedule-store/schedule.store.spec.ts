@@ -12,6 +12,7 @@ import type { ActionResult } from '@shared/actions/app-action';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
+import { DayScheduleSource } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { WorkOrdersGridStore } from '@work-orders/list/work-orders-grid.store';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
@@ -42,13 +43,25 @@ const COMPANY_DAY: CompanyDaySchedule = {
       employeeId: 'e1',
       firstName: 'Ann',
       lastName: 'Lee',
-      day: { date: '2027-06-01', timeZoneId: 'Europe/Kyiv', source: 'template', blocks: [], workOrders: [] },
+      day: {
+        date: '2027-06-01',
+        timeZoneId: 'Europe/Kyiv',
+        source: DayScheduleSource.Template,
+        blocks: [],
+        workOrders: [],
+      },
     },
     {
       employeeId: 'e2',
       firstName: 'Bo',
       lastName: 'Kim',
-      day: { date: '2027-06-01', timeZoneId: 'Europe/Kyiv', source: 'template', blocks: [], workOrders: [] },
+      day: {
+        date: '2027-06-01',
+        timeZoneId: 'Europe/Kyiv',
+        source: DayScheduleSource.Template,
+        blocks: [],
+        workOrders: [],
+      },
     },
   ],
 };

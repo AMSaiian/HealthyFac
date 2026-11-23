@@ -110,6 +110,18 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task FreeSpans_ForAnOverrideWithTouchingBlocks_GivesOneSpanAcrossTheJoin()
+    {
+        var tenant = await ArrangeAsync(time: "09:30", ShiftTestData.Morning, Afternoon);
+        await _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks("08:00-12:00", "12:00-13:00"));
+
+        var response = await SpansAsync(tenant, ShiftTestData.Tomorrow);
+
+        response.Spans.Select(span => $"{span.StartLocal:HH:mm}-{span.EndLocal:HH:mm}").Should().Equal("08:00-13:00");
+    }
+
+    [Fact]
     public async Task FreeSpans_WithAWorkOrder_SplitsTheBlockAndKeepsTheBoundsOnTheGrid()
     {
         var tenant = await ArrangeAsync(time: "09:30", ShiftTestData.Morning);

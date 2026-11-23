@@ -50,6 +50,21 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task AssignWorkOrder_AcrossTheJoinOfTwoTouchingBlocks_AddsStagedRow()
+    {
+        var tenant = await ArrangeTenantAsync();
+        await _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks("08:00-12:00", "12:00-13:00"));
+        var workOrderId = await CreateBacklogAsync(tenant);
+
+        await AssignAsync(tenant, workOrderId, time: "11:30");
+
+        var workOrder = await _fixture.LoadWorkOrderAsync(workOrderId);
+
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
+    }
+
+    [Fact]
     public async Task AssignWorkOrder_OfScheduledWorkOrder_ThrowsNotInBacklog()
     {
         var tenant = await ArrangeTenantAsync();

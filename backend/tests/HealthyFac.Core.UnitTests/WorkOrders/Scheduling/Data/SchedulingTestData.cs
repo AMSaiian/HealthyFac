@@ -31,6 +31,39 @@ public static class SchedulingTestData
                         { Start = new TimeOnly(hour: 13, minute: 0), End = new TimeOnly(hour: 17, minute: 0) },
                 ]));
 
+    public static DaySchedule DayAfter(int days)
+    {
+        var date = Date.AddDays(days);
+
+        return DayScheduleResolver.Resolve(
+            date,
+            Zone,
+            [],
+            new ShiftOverride(
+                Guid.Empty,
+                date,
+                [
+                    new BlockTimes
+                        { Start = new TimeOnly(hour: 8, minute: 0), End = new TimeOnly(hour: 12, minute: 0) },
+                    new BlockTimes
+                        { Start = new TimeOnly(hour: 13, minute: 0), End = new TimeOnly(hour: 17, minute: 0) },
+                ]));
+    }
+
+    public static DateTime AtAfter(int days, string time) =>
+        LocalTimes.ToUtc(
+            Date.AddDays(days).ToDateTime(TimeOnly.ParseExact(time, TimeFormat, CultureInfo.InvariantCulture)),
+            Zone);
+
+    public static SlideWorkOrder OrderAfter(int number, WorkOrderStatus status, int days, string start, int minutes) =>
+        new()
+        {
+            Id = Id(number),
+            Status = status,
+            PlannedStartUtc = AtAfter(days, start),
+            Estimate = TimeSpan.FromMinutes(minutes),
+        };
+
     public static DateTime At(string time) =>
         LocalTimes.ToUtc(
             Date.ToDateTime(TimeOnly.ParseExact(time, TimeFormat, CultureInfo.InvariantCulture)),

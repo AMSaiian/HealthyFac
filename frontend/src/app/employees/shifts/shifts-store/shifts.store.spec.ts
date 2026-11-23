@@ -21,6 +21,7 @@ import { type ShiftOverride, type ShiftVersion, Weekday } from '@employees/shift
 import {
   affectedOf,
   emptyDays,
+  isOverrideDateTaken,
   monthRange,
   normalizeVersion,
   toShiftDialog,
@@ -29,6 +30,7 @@ import {
 import { versionFormSchema } from '@employees/shifts/version-dialog/version-dialog-schema';
 import type { VersionFormValue } from '@employees/shifts/version-dialog/version-dialog-schema';
 
+import { DayScheduleSource } from '@work-orders/work-order';
 import { WORK_ORDER_COMPOSE, WorkOrderActionType } from '@work-orders/work-order-actions';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
@@ -151,7 +153,7 @@ describe('ShiftsStore', () => {
       of({
         date: '2027-06-02',
         timeZoneId: 'Europe/Kyiv',
-        source: 'template',
+        source: DayScheduleSource.Template,
         blocks: [{ startLocal: '08:00:00', endLocal: '17:00:00', startUtc: '', endUtc: '' }],
         workOrders: [],
       }),
@@ -361,6 +363,44 @@ describe('ShiftsStore', () => {
     await vi.waitFor(() => expect(daySchedule).toHaveBeenLastCalledWith('e1', '2027-06-05'));
   });
 
+  it('openOverrideDialog_ForANewOverrideOnADateWithAnOverride_BlocksTheDateAndKeepsTheBlocksEmpty', async () => {
+    daySchedule.mockReturnValue(
+      of({
+        date: '2027-06-02',
+        timeZoneId: 'Europe/Kyiv',
+        source: DayScheduleSource.Override,
+        blocks: [{ startLocal: '08:00:00' }],
+        workOrders: [],
+      }),
+    );
+    const store = await setup();
+
+    store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.prefillBlocks()).toEqual([]));
+
+    expect(store.isDateTaken()).toBe(true);
+  });
+
+  it('setPrefillDate_FromATakenDateToAFreeDate_ClearsTheBlock', async () => {
+    daySchedule.mockReturnValueOnce(
+      of({
+        date: '2027-06-02',
+        timeZoneId: 'Europe/Kyiv',
+        source: DayScheduleSource.Override,
+        blocks: [],
+        workOrders: [],
+      }),
+    );
+    const store = await setup();
+    store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.isDateTaken()).toBe(true));
+
+    store.setPrefillDate(Temporal.PlainDate.from('2027-06-05'));
+
+    await vi.waitFor(() => expect(store.prefillBlocks()).toEqual([{ start: '08:00', end: '17:00' }]));
+    expect(store.isDateTaken()).toBe(false);
+  });
+
   it('setPrefillDate_WithTheDateInUse_LoadsNothingAgain', async () => {
     const store = await setup();
     store.openOverrideDialog(null);
@@ -530,5 +570,16 @@ describe('shift utils', () => {
     const result = affectedOf(new HttpErrorResponse({ status: HttpStatusCode.Conflict, error: { workOrders: [] } }));
 
     expect(result).toBeNull();
+  });
+});
+
+describe('isOverrideDateTaken', () => {
+  it.each([
+    ['CreateOnADateWithAnOverride', true, DayScheduleSource.Override, true],
+    ['EditOfAnOverride', false, DayScheduleSource.Override, false],
+    ['CreateOnATemplateDay', true, DayScheduleSource.Template, false],
+    ['CreateBeforeTheDayLoads', true, null, false],
+  ])('isOverrideDateTaken_For%s_Decides', (_name, isCreate, source, expected) => {
+    expect(isOverrideDateTaken(isCreate, source)).toBe(expected);
   });
 });
