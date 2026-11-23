@@ -4,6 +4,7 @@ import { PlatformNavigation } from '@angular/common';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -71,6 +72,7 @@ function setup(permissions: readonly string[]): {
         ...APP_ROUTER_FEATURES,
       ),
       provideFakePlatformNavigation(),
+      provideFakeRealtimeConnection(),
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),

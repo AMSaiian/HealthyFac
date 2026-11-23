@@ -7,6 +7,9 @@ import { withAssignmentLookups } from '@work-orders/assignment-picker/with-assig
 import { withWorkOrderDrawerAction } from './work-order-drawer.action.slice';
 import { withWorkOrderDrawerForm } from './work-order-drawer.form.slice';
 
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
+
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
 /**
@@ -19,5 +22,12 @@ export const WorkOrderDrawerStore = signalStore(
   withWorkOrderDrawerAction(),
   withAssignmentLookups(),
   withWorkOrderDrawerForm(),
+  withRealtimeReload<{ reloadFromHint: () => void; workOrderId: () => string | undefined }>(
+    [RealtimeTopic.WorkOrders],
+    (store) => {
+      store.reloadFromHint();
+    },
+    (store) => store.workOrderId() ?? null,
+  ),
   withStoreDevtools('work-order-drawer'),
 );

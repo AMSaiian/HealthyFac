@@ -80,6 +80,6 @@ public sealed class DeleteWorkOrderRequestHandler(ICoreDbContext dbContext, IRea
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
 
-        _notifier.PushWorkOrdersHint(request.CompanyId);
+        _notifier.PushWorkOrdersHint(request.CompanyId, request.Id);
     }
 }

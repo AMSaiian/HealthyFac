@@ -135,13 +135,10 @@ public sealed class ApplyScheduleChangesRequestHandler(
             cancellationToken);
         foreach (var notification in applied.Notifications)
         {
-            if (notification.Assignment is { } assignment)
-            {
-                _notifier.PushAssignmentChange(request.CompanyId, assignment);
-            }
-
-            _notifier.PushEstimateChange(request.CompanyId, notification.Estimate);
+            _notifier.AddScheduleChange(request.CompanyId, notification.Assignment, notification.Estimate);
         }
+
+        _notifier.Push();
 
         return new ApplyScheduleChangesResponse { WorkOrders = applied.WorkOrders };
     }

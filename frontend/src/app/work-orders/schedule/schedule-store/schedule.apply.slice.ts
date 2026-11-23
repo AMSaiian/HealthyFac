@@ -68,7 +68,7 @@ export function withScheduleApply() {
               catchError((error: unknown) => {
                 patchState(store, { isApplying: false });
                 if (isHttpStatus(error, HttpStatusCode.Conflict)) {
-                  store._toastError('WORK_ORDERS.TOASTS.CONFLICT');
+                  store._toastError('WORK_ORDERS.SCHEDULE_TAB.CONFLICT');
                 } else if (isHttpStatus(error, HttpStatusCode.UnprocessableEntity)) {
                   patchState(store, { failures: failuresOf(error) });
                   store._toastError('WORK_ORDERS.SCHEDULE_TAB.REJECTED');

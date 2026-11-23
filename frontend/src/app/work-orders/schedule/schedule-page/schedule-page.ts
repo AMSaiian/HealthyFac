@@ -1,6 +1,7 @@
 import { Component, computed, inject, viewChild } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Message } from 'primeng/message';
 import { Splitter, SplitterPanel } from 'primeng/splitter';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -22,6 +23,7 @@ const MIN_PANEL_SIZE = 10;
 @Component({
   imports: [
     ButtonDirective,
+    Message,
     PlainDatePicker,
     ScheduleBoard,
     Splitter,

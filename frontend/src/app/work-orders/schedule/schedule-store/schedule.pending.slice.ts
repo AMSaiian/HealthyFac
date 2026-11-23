@@ -45,6 +45,8 @@ interface PendingState {
   pending: readonly PendingChange[];
   known: Readonly<Record<string, KnownWorkOrder>>;
   visited: Readonly<Record<string, readonly ScheduleRow[]>>;
+  /** Whether a hint came while changes were pending. The tab keeps the changes and tells the user. */
+  isChangedRemotely: boolean;
 }
 
 export interface BarDrop {
@@ -58,7 +60,7 @@ export interface BarResize {
   readonly estimateMinutes: number;
 }
 
-const EMPTY_PENDING: PendingState = { pending: [], known: {}, visited: {} };
+const EMPTY_PENDING: PendingState = { pending: [], known: {}, visited: {}, isChangedRemotely: false };
 
 function stagingBodyOf(filter: WorkOrderFilter): SearchWorkOrdersBody {
   return {
@@ -164,7 +166,16 @@ export function withSchedulePending() {
           store.staging.reload();
         },
         clearPending(): void {
-          patchState(store, { pending: [], visited: {} });
+          patchState(store, { pending: [], visited: {}, isChangedRemotely: false });
+        },
+        /** Reloads the day and the staging area, or holds the reload while changes are pending. */
+        reloadOrHold(): void {
+          if (store.pending().length > 0) {
+            patchState(store, { isChangedRemotely: true });
+            return;
+          }
+          store.day.reload();
+          store.staging.reload();
         },
       };
     }),

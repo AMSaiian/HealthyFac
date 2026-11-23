@@ -11,6 +11,11 @@ import { DetailsMode } from '@shared/forms/with-details-mode';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
 import { Temporal } from '@shared/time/temporal';
 import { Permission } from '@shared/security/permissions';
 
@@ -165,12 +170,14 @@ describe('WorkOrderDrawerStore', () => {
   const dispatch = vi.fn();
   const history = vi.fn();
   const cancelAction = vi.fn();
+  const realtime = createFakeRealtimeConnection();
 
   async function setup(
     options: { canManage?: boolean; canWrite?: boolean; employeeId?: string | null; isUpdate?: boolean } = {},
   ): Promise<InstanceType<typeof WorkOrderDrawerStore>> {
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         WorkOrderDrawerStore,
         {
           provide: WorkOrdersApi,
@@ -502,5 +509,115 @@ describe('WorkOrderDrawerStore', () => {
 
     expect(store.mode()).toBe(DetailsMode.Edit);
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  describe('hints', () => {
+    async function settle(): Promise<void> {
+      TestBed.tick();
+      await TestBed.inject(ApplicationRef).whenStable();
+    }
+
+    async function hint(workOrderId: string | undefined): Promise<void> {
+      vi.useFakeTimers();
+      realtime.hints$.next({ topic: RealtimeTopic.WorkOrders, workOrderId });
+      await vi.advanceTimersByTimeAsync(1000);
+      vi.useRealTimers();
+      await settle();
+    }
+
+    afterEach(() => vi.useRealTimers());
+
+    it('hint_WithTheOpenWorkOrderInViewMode_ReloadsTheWorkOrder', async () => {
+      await setup({ canManage: true });
+      const before = get.mock.calls.length;
+
+      await hint('wo-1');
+
+      expect(get.mock.calls.length - before).toBe(1);
+    });
+
+    it('hint_WithAnotherWorkOrder_DoesNothing', async () => {
+      await setup({ canManage: true });
+      const before = get.mock.calls.length;
+
+      await hint('wo-2');
+
+      expect(get.mock.calls.length - before).toBe(0);
+    });
+
+    it('hint_InEditModeWithUnsavedEdits_KeepsTheFormAndShowsTheMessage', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      store.setHasUnsavedEdits(true);
+      const before = get.mock.calls.length;
+
+      await hint('wo-1');
+
+      expect(get.mock.calls.length - before).toBe(0);
+      expect(store.isChangedRemotely()).toBe(true);
+    });
+
+    it('hint_InEditModeWithoutEdits_ReloadsTheWorkOrder', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      const before = get.mock.calls.length;
+
+      await hint('wo-1');
+
+      expect(get.mock.calls.length - before).toBe(1);
+      expect(store.isChangedRemotely()).toBe(false);
+    });
+
+    it('save_With409AfterARemoteChange_ClearsTheMessage', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      store.setHasUnsavedEdits(true);
+      await hint('wo-1');
+      update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict })));
+
+      store.save(FORM_VALUE);
+      await settle();
+
+      expect(store.isChangedRemotely()).toBe(false);
+    });
+
+    it('cancelEdit_AfterARemoteChange_ClearsTheMessageAndReloads', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      store.setHasUnsavedEdits(true);
+      await hint('wo-1');
+      const before = get.mock.calls.length;
+
+      store.cancelEdit();
+      await settle();
+
+      expect(store.isChangedRemotely()).toBe(false);
+      expect(get.mock.calls.length - before).toBe(1);
+    });
+
+    it('hint_WithTheHistoryOnTheSecondPage_LoadsTheFirstPageWithoutAfter', async () => {
+      const store = await setup({ canManage: true });
+      store.activateHistory();
+      store.nextHistoryPage(14);
+      await settle();
+      history.mockClear();
+
+      await hint('wo-1');
+
+      expect(store.historyPageIndex()).toBe(0);
+      expect(history).toHaveBeenCalledWith('wo-1', 10, undefined);
+    });
+
+    it('hint_WithAnotherWorkOrderOnTheSecondHistoryPage_LoadsNoHistory', async () => {
+      const store = await setup({ canManage: true });
+      store.activateHistory();
+      store.nextHistoryPage(14);
+      await settle();
+      history.mockClear();
+
+      await hint('wo-2');
+
+      expect(history).not.toHaveBeenCalled();
+    });
   });
 });

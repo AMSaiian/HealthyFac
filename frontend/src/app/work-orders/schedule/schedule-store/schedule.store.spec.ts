@@ -61,6 +61,7 @@ describe('ScheduleStore', () => {
   const search = vi.fn();
   const applySchedule = vi.fn();
   const confirm = vi.fn();
+  const add = vi.fn();
   const canManage = signal(true);
   const employeeResource = {
     hasValue: () => true,
@@ -84,7 +85,7 @@ describe('ScheduleStore', () => {
         { provide: WorkOrdersGridStore, useValue: { filter: signal(EMPTY_FILTER) } },
         { provide: AuthStore, useValue: { hasPermission: () => canManage() } },
         { provide: EmployeeStore, useValue: { employee: employeeResource } },
-        { provide: MessageService, useValue: { add: vi.fn() } },
+        { provide: MessageService, useValue: { add } },
         { provide: ConfirmationService, useValue: { confirm } },
         { provide: ActionStore, useValue: { dispatch: vi.fn(), lastResult } },
         {
@@ -141,6 +142,7 @@ describe('ScheduleStore', () => {
     search.mockReset().mockReturnValue(of({ items: [], totalCount: 0 }));
     applySchedule.mockReset();
     confirm.mockReset();
+    add.mockReset();
     canManage.set(true);
   });
 
@@ -413,5 +415,81 @@ describe('ScheduleStore', () => {
 
     expect(store.pending()).toEqual([]);
     expect(companyDay.mock.calls.length).toBeGreaterThan(loads);
+  });
+
+  it('apply_With409_ShowsTheApplyConflictToastAndKeepsTheEntries', async () => {
+    companyDay.mockReturnValue(of(dayWithOrder));
+    applySchedule.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict })));
+    const store = await setup();
+    store.resizeBar({ workOrderId: 'w1', estimateMinutes: 120 });
+
+    store.apply();
+    await settle();
+
+    expect(add.mock.calls[0][0].detail).toBe('WORK_ORDERS.SCHEDULE_TAB.CONFLICT');
+    expect(store.pending().length).toBe(1);
+  });
+
+  describe('hints with pending changes', () => {
+    async function hint(): Promise<void> {
+      vi.useFakeTimers();
+      realtime.hints$.next({ topic: RealtimeTopic.WorkOrders, workOrderId: 'w1' });
+      await vi.advanceTimersByTimeAsync(1000);
+      vi.useRealTimers();
+      await settle();
+    }
+
+    it('hint_WithPendingChanges_ShowsTheMessageAndSendsNoRequest', async () => {
+      companyDay.mockReturnValue(of(dayWithOrder));
+      const store = await setup();
+      store.resizeBar({ workOrderId: 'w1', estimateMinutes: 120 });
+      const days = companyDay.mock.calls.length;
+      const searches = search.mock.calls.length;
+
+      await hint();
+
+      expect(store.isChangedRemotely()).toBe(true);
+      expect(companyDay.mock.calls.length - days).toBe(0);
+      expect(search.mock.calls.length - searches).toBe(0);
+    });
+
+    it('hint_WithoutPendingChanges_ReloadsTheDayAndTheStagingAndShowsNoMessage', async () => {
+      companyDay.mockReturnValue(of(dayWithOrder));
+      const store = await setup();
+      const days = companyDay.mock.calls.length;
+      const searches = search.mock.calls.length;
+
+      await hint();
+
+      expect(store.isChangedRemotely()).toBe(false);
+      expect(companyDay.mock.calls.length - days).toBe(1);
+      expect(search.mock.calls.length - searches).toBe(1);
+    });
+
+    it('discard_AfterAHeldHint_ClearsTheMessage', async () => {
+      companyDay.mockReturnValue(of(dayWithOrder));
+      confirm.mockImplementation((request: { accept: () => void }) => request.accept());
+      const store = await setup();
+      store.resizeBar({ workOrderId: 'w1', estimateMinutes: 120 });
+      await hint();
+
+      store.discard();
+      await settle();
+
+      expect(store.isChangedRemotely()).toBe(false);
+    });
+
+    it('lastResult_WithSavedTypeAndPendingChanges_ShowsTheMessageAndSendsNoRequest', async () => {
+      companyDay.mockReturnValue(of(dayWithOrder));
+      const store = await setup();
+      store.resizeBar({ workOrderId: 'w1', estimateMinutes: 120 });
+      const days = companyDay.mock.calls.length;
+
+      lastResult.set({ type: WorkOrderActionType.Saved, sequence: 1 });
+      await settle();
+
+      expect(store.isChangedRemotely()).toBe(true);
+      expect(companyDay.mock.calls.length - days).toBe(0);
+    });
   });
 });

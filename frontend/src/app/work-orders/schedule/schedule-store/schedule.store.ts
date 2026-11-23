@@ -26,11 +26,11 @@ export const ScheduleStore = signalStore(
   withScheduleDay(),
   withSchedulePending(),
   withScheduleApply(),
-  withActionResultReload<{ reloadAll: () => void }>(RELOAD_RESULT_TYPES, (store) => {
-    store.reloadAll();
+  withActionResultReload<{ reloadOrHold: () => void }>(RELOAD_RESULT_TYPES, (store) => {
+    store.reloadOrHold();
   }),
-  withRealtimeReload<{ reloadAll: () => void }>([RealtimeTopic.WorkOrders, RealtimeTopic.Schedule], (store) => {
-    store.reloadAll();
+  withRealtimeReload<{ reloadOrHold: () => void }>([RealtimeTopic.WorkOrders, RealtimeTopic.Schedule], (store) => {
+    store.reloadOrHold();
   }),
   withStoreDevtools('schedule'),
 );

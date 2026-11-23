@@ -950,7 +950,12 @@
         "START_OUT_OF_RANGE": "The start is in the past or too far ahead",
         "OUTSIDE_SHIFT": "The work order does not fit one work block",
         "SLOT_TAKEN": "The slot overlaps another work order"
-      }
+      },
+      "CHANGED": "The schedule changed. Apply or discard to see it",
+      "CONFLICT": "Another user changed some of these work orders. Discard to load the new data, then plan again"
+    },
+    "DRAWER": {
+      "CHANGED": "This work order changed. Save to get a conflict, or cancel to see the new data"
     }
   },
   "SCHEDULE": {

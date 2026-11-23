@@ -148,12 +148,7 @@ public sealed class UpdateWorkOrderRequestHandler(
                 IsolationLevel.Serializable,
                 cancellationToken)
             : await _dbContext.RunInTransactionAsync(token => UpdateAsync(request, token), cancellationToken);
-        if (change.Assignment is { } assignment)
-        {
-            _notifier.PushAssignmentChange(request.CompanyId, assignment);
-        }
-
-        _notifier.PushEstimateChange(request.CompanyId, change.Estimate);
+        _notifier.PushScheduleChange(request.CompanyId, change.Assignment, change.Estimate);
     }
 
     private async Task<UpdateChange> UpdateAsync(UpdateWorkOrderRequest request, CancellationToken cancellationToken)

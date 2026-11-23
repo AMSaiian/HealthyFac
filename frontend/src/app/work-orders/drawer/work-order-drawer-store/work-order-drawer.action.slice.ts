@@ -36,6 +36,10 @@ interface ActionState {
   /** The `after` revisions of the pages that the user moved through. Empty means the first page. */
   historyAfters: readonly number[];
   isSaving: boolean;
+  /** Whether the form of the open work order holds changes that the user did not save. The host sets it. */
+  hasUnsavedEdits: boolean;
+  /** Whether the work order changed on the server while the user edited it. The form keeps its changes. */
+  isChangedRemotely: boolean;
 }
 
 /**
@@ -45,7 +49,7 @@ interface ActionState {
 export function withWorkOrderDrawerAction() {
   return signalStoreFeature(
     {
-      props: type<{ isViewMode: Signal<boolean> }>(),
+      props: type<{ isViewMode: Signal<boolean>; isEditMode: Signal<boolean> }>(),
       methods: type<{
         _toastSuccess: (key: string) => void;
         _toastError: (key: string) => void;
@@ -53,7 +57,14 @@ export function withWorkOrderDrawerAction() {
         view: () => void;
       }>(),
     },
-    withState<ActionState>({ action: null, isHistoryActive: false, historyAfters: [], isSaving: false }),
+    withState<ActionState>({
+      action: null,
+      isHistoryActive: false,
+      historyAfters: [],
+      isSaving: false,
+      hasUnsavedEdits: false,
+      isChangedRemotely: false,
+    }),
     withComputed((store) => {
       const auth = inject(AuthStore);
       return {
@@ -95,11 +106,17 @@ export function withWorkOrderDrawerAction() {
     })),
     withMethods((store) => ({
       start(action: AppAction): void {
-        patchState(store, { action, isHistoryActive: false, historyAfters: [] });
+        patchState(store, {
+          action,
+          isHistoryActive: false,
+          historyAfters: [],
+          hasUnsavedEdits: false,
+          isChangedRemotely: false,
+        });
         store._startMode(payloadOf(action).workOrderId !== undefined);
       },
-      cancelEdit(): void {
-        store.view();
+      setHasUnsavedEdits(hasUnsavedEdits: boolean): void {
+        patchState(store, { hasUnsavedEdits });
       },
       /** Starts the loading of the history: the History tab calls it when it opens, so a closed tab sends no request. */
       activateHistory(): void {
@@ -142,6 +159,7 @@ export function withWorkOrderDrawerAction() {
       const handleFailure = (error: unknown): void => {
         if (isHttpStatus(error, HttpStatusCode.Conflict)) {
           store._toastError('WORK_ORDERS.TOASTS.CONFLICT');
+          patchState(store, { isChangedRemotely: false });
           store.workOrder.reload();
           store._reloadHistory();
           return;
@@ -159,6 +177,7 @@ export function withWorkOrderDrawerAction() {
                   if (store.isUpdate()) {
                     store._toastSuccess('WORK_ORDERS.TOASTS.UPDATED');
                     actions.notify(WorkOrderActionType.Saved);
+                    patchState(store, { hasUnsavedEdits: false, isChangedRemotely: false });
                     store.workOrder.reload();
                     store._reloadHistory();
                     store.view();
@@ -180,6 +199,27 @@ export function withWorkOrderDrawerAction() {
         ),
         cancel(): void {
           actions.cancel();
+        },
+        cancelEdit(): void {
+          const wasChangedRemotely = store.isChangedRemotely();
+          patchState(store, { hasUnsavedEdits: false, isChangedRemotely: false });
+          store.view();
+          if (wasChangedRemotely) {
+            store.workOrder.reload();
+            store._reloadHistory();
+          }
+        },
+        /**
+         * Reacts to a hint of the open work order: a view reloads the work order and its history (the first page); an
+         * edit with unsaved changes keeps the form and shows a message instead.
+         */
+        reloadFromHint(): void {
+          if (store.isEditMode() && store.hasUnsavedEdits()) {
+            patchState(store, { isChangedRemotely: true });
+            return;
+          }
+          store.workOrder.reload();
+          store._reloadHistory();
         },
       };
     }),

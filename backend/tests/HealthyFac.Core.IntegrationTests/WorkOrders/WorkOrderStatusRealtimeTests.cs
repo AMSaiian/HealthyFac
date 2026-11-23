@@ -82,7 +82,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var returned = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
         returned.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderReturnedToBacklog);
         returned.Notification.Data.Should().BeEquivalentTo(new WorkOrderTitleData { Title = WorkOrderTestData.Title });
-        pushes.Should().HaveCount(expected: 2);
+        pushes.Should().HaveCount(expected: 3);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         rescheduled.Select(push => ((WorkOrderRescheduledData)push.Notification!.Data).WorkOrderId)
             .Should()
             .BeEquivalentTo([next, afternoon]);
-        pushes.Should().HaveCount(expected: 3);
+        pushes.Should().HaveCount(expected: 5);
     }
 
     [Fact]

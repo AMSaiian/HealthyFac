@@ -90,6 +90,15 @@
         </div>
       }
     </div>
+    @if (store.isChangedRemotely()) {
+      <p-message
+        class="flex-none"
+        severity="warn"
+        icon="pi pi-exclamation-triangle"
+      >
+        {{ 'WORK_ORDERS.SCHEDULE_TAB.CHANGED' | translate }}
+      </p-message>
+    }
     @if (store.date(); as date) {
       @if (store.canManage() && axis(); as axis) {
         <p-splitter

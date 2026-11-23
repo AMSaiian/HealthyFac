@@ -13,6 +13,15 @@
   (cancelled)="store.cancel()"
 >
   @if (store.prefilledValue(); as initial) {
+    @if (store.isChangedRemotely()) {
+      <p-message
+        class="mb-2"
+        severity="warn"
+        icon="pi pi-exclamation-triangle"
+      >
+        {{ 'WORK_ORDERS.DRAWER.CHANGED' | translate }}
+      </p-message>
+    }
     @if (store.isViewMode() && store.isUpdate() && store.workOrder.hasValue()) {
       <div class="mb-2 flex items-center justify-between gap-2">
         <p-tag

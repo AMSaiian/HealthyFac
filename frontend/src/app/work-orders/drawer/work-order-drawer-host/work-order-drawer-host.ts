@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Message } from 'primeng/message';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
@@ -30,6 +31,7 @@ const HISTORY_TAB = 'history';
     ButtonDirective,
     FilePickerDialog,
     LoadingSpinner,
+    Message,
     Tab,
     TabList,
     TabPanel,
@@ -99,6 +101,11 @@ export class WorkOrderDrawerHost {
   constructor() {
     effect(() => {
       this.store.start(this.action());
+    });
+    effect(() => {
+      this.store.setHasUnsavedEdits(
+        this.store.isUpdate() && this.store.isEditMode() && this._current() !== null && !this.hasNoChanges(),
+      );
     });
     effect(() => {
       if (this.tab() === HISTORY_TAB) {
