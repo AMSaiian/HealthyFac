@@ -123,6 +123,30 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
         response.TimeZoneId.Should().Be(ShiftTestData.ZoneId);
     }
 
+    [Fact]
+    public async Task GetCompanyDaySchedule_WithSeveralVersionsPerEmployee_ResolvesTheVersionInForceOfEachEmployee()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        var other = await _fixture.ArrangeOtherEmployeeAsync(tenant.CompanyId, ShiftTestData.OtherEmail);
+        var date = new DateOnly(year: 2027, month: 4, day: 12);
+        await _fixture.SeedVersionAsync(tenant.EmployeeId, new DateOnly(year: 2027, month: 1, day: 1), "08:00-12:00");
+        await _fixture.SeedVersionAsync(tenant.EmployeeId, new DateOnly(year: 2027, month: 3, day: 1), "09:00-11:00");
+        await _fixture.SeedVersionAsync(tenant.EmployeeId, new DateOnly(year: 2027, month: 6, day: 1), "13:00-17:00");
+        await _fixture.SeedVersionAsync(other.EmployeeId, new DateOnly(year: 2027, month: 2, day: 1), "10:00-12:00");
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
+        var response = await _fixture.ReadAsAsync<GetCompanyDayScheduleRequest, CompanyDayScheduleResponse>(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            new GetCompanyDayScheduleRequest { CompanyId = tenant.CompanyId, Date = date });
+
+        var starts = response.Employees.ToDictionary(
+            employee => employee.EmployeeId,
+            employee => employee.Day.Blocks.Single().StartLocal);
+        starts[tenant.EmployeeId].Should().Be(new TimeOnly(hour: 9, minute: 0));
+        starts[other.EmployeeId].Should().Be(new TimeOnly(hour: 10, minute: 0));
+    }
+
     private Task<DayScheduleResponse> ReadDayAsync(ShiftTenant tenant, DateOnly date) =>
         _fixture.ReadAsAsync<GetEmployeeDayScheduleRequest, DayScheduleResponse>(
             tenant.CompanyId,

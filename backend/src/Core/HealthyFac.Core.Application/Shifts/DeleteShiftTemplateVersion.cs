@@ -95,7 +95,7 @@ public sealed class DeleteShiftTemplateVersionRequestHandler(
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
-        var shifts = await _reader.LoadAsync(
+        var shifts = await _reader.LoadWithAllVersionsAsync(
             request.EmployeeId,
             zone,
             DateOnly.FromDateTime(nowUtc).AddDays(value: -2),

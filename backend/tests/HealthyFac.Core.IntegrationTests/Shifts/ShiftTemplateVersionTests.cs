@@ -159,6 +159,46 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task UpdateVersion_OfAVersionOlderThanTheNewestPastOne_ThrowsUnprocessable()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        var olderId = await _fixture.SeedVersionAsync(
+            tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -30), ShiftTestData.Morning);
+        await _fixture.SeedVersionAsync(
+            tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -10), ShiftTestData.Afternoon);
+        var rowVersion = await _fixture.LoadRowVersionAsync(olderId);
+
+        var act = () => _fixture.UpdateVersionAsync(
+            tenant,
+            olderId,
+            ShiftTestData.WorkWeek(ShiftTestData.Afternoon),
+            rowVersion);
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(ShiftErrors.Rejections.VersionInEffect);
+    }
+
+    [Fact]
+    public async Task DeleteVersion_OfAVersionOlderThanTheNewestPastOne_ThrowsUnprocessable()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+        var olderId = await _fixture.SeedVersionAsync(
+            tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -30), ShiftTestData.Morning);
+        await _fixture.SeedVersionAsync(
+            tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -10), ShiftTestData.Afternoon);
+        var rowVersion = await _fixture.LoadRowVersionAsync(olderId);
+
+        var act = () => _fixture.DeleteVersionAsync(tenant, olderId, rowVersion);
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(ShiftErrors.Rejections.VersionInEffect);
+    }
+
+    [Fact]
     public async Task UpdateVersion_Always_SoftDeletesTheReplacedBlocks()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();

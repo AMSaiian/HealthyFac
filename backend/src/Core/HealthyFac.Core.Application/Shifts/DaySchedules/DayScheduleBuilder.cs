@@ -35,9 +35,10 @@ public sealed class DayScheduleBuilder(ICoreDbContext dbContext, DayScheduleRead
     {
         var zone = await _reader.GetZoneAsync(companyId, cancellationToken);
         var versions = await _dbContext.ShiftTemplateVersions
+            .Where(version => employeeIds.Contains(version.EmployeeId))
+            .InForceBetween(date, date)
             .AsNoTracking()
             .Include(version => version.Blocks)
-            .Where(version => employeeIds.Contains(version.EmployeeId))
             .ToListAsync(cancellationToken);
         var overrides = await _dbContext.ShiftOverrides
             .AsNoTracking()

@@ -29,7 +29,28 @@ public sealed class DayScheduleReader(ICoreDbContext dbContext, CompanyZoneReade
     }
 
     /// <summary>
-    /// Loads every template version of the employee and the overrides of a date range, with their blocks.
+    /// Loads the template versions in force for a date range and the overrides of the range, with their blocks.
+    /// </summary>
+    /// <param name="employeeId">The employee.</param>
+    /// <param name="zone">The zone of the company.</param>
+    /// <param name="from">The first date to load.</param>
+    /// <param name="to">The last date to load. The caller resolves no date outside the range.</param>
+    /// <param name="isTracked">Whether the entities are tracked, so the use case can change them.</param>
+    /// <param name="cancellationToken">Cancels the queries.</param>
+    /// <returns>The shift data of the employee.</returns>
+    public Task<EmployeeShifts> LoadAsync(
+        Guid employeeId,
+        TimeZoneInfo zone,
+        DateOnly from,
+        DateOnly to,
+        bool isTracked,
+        CancellationToken cancellationToken
+    ) =>
+        LoadCoreAsync(employeeId, zone, from, to, isRangeOnly: true, isTracked, cancellationToken);
+
+    /// <summary>
+    /// Loads every template version of the employee and the overrides of a date range, with their blocks. The template
+    /// version use cases need the versions outside the range to tell a past version from a missing one.
     /// </summary>
     /// <param name="employeeId">The employee.</param>
     /// <param name="zone">The zone of the company.</param>
@@ -38,24 +59,35 @@ public sealed class DayScheduleReader(ICoreDbContext dbContext, CompanyZoneReade
     /// <param name="isTracked">Whether the entities are tracked, so the use case can change them.</param>
     /// <param name="cancellationToken">Cancels the queries.</param>
     /// <returns>The shift data of the employee.</returns>
-    public async Task<EmployeeShifts> LoadAsync(
+    public Task<EmployeeShifts> LoadWithAllVersionsAsync(
         Guid employeeId,
         TimeZoneInfo zone,
         DateOnly overridesFrom,
         DateOnly overridesTo,
         bool isTracked,
         CancellationToken cancellationToken
+    ) =>
+        LoadCoreAsync(employeeId, zone, overridesFrom, overridesTo, isRangeOnly: false, isTracked, cancellationToken);
+
+    private async Task<EmployeeShifts> LoadCoreAsync(
+        Guid employeeId,
+        TimeZoneInfo zone,
+        DateOnly from,
+        DateOnly to,
+        bool isRangeOnly,
+        bool isTracked,
+        CancellationToken cancellationToken
     )
     {
-        var versions = _dbContext.ShiftTemplateVersions
+        var employeeVersions = _dbContext.ShiftTemplateVersions.Where(version => version.EmployeeId == employeeId);
+        var versions = (isRangeOnly ? employeeVersions.InForceBetween(from, to) : employeeVersions)
             .Include(version => version.Blocks.OrderBy(block => block.Id))
-            .Where(version => version.EmployeeId == employeeId)
             .OrderBy(version => version.Id);
         var overrides = _dbContext.ShiftOverrides
             .Include(shiftOverride => shiftOverride.Blocks.OrderBy(block => block.Id))
             .Where(shiftOverride => shiftOverride.EmployeeId == employeeId
-                && shiftOverride.Date >= overridesFrom
-                && shiftOverride.Date <= overridesTo)
+                && shiftOverride.Date >= from
+                && shiftOverride.Date <= to)
             .OrderBy(shiftOverride => shiftOverride.Id);
 
         return new EmployeeShifts
