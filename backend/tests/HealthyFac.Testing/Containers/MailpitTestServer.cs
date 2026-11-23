@@ -1,7 +1,8 @@
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
+using HealthyFac.Testing.Http;
 
 namespace HealthyFac.Testing.Containers;
 
@@ -62,7 +63,7 @@ public sealed class MailpitTestServer : IAsyncDisposable
 
     public async Task<IReadOnlyList<MailpitMessage>> GetMessagesAsync()
     {
-        var list = await _client.GetFromJsonAsync<MailpitMessageList>(MessagesPath);
+        var list = await _client.GetJsonAsync<MailpitMessageList>(MessagesPath, CancellationToken.None);
 
         return list!.Messages
             .Select(message => new MailpitMessage(
@@ -76,7 +77,7 @@ public sealed class MailpitTestServer : IAsyncDisposable
     public async Task DeleteMessagesAsync()
     {
         using var response = await _client.DeleteAsync(MessagesPath);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(CancellationToken.None);
     }
 
     public async Task<string> GetMessageTextAsync(string id)
@@ -111,7 +112,8 @@ public sealed class MailpitTestServer : IAsyncDisposable
 
     private async Task<MailpitMessageDetail> GetMessageDetailAsync(string id)
     {
-        var message = await _client.GetFromJsonAsync<MailpitMessageDetail>(string.Format(MessagePathFormat, id));
+        var message = await _client.GetJsonAsync<MailpitMessageDetail>(
+            string.Format(MessagePathFormat, id), CancellationToken.None);
 
         return message!;
     }

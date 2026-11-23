@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Http;
 
 namespace HealthyFac.Auth.IntegrationTests.Keycloak.Data;
 
@@ -16,7 +18,7 @@ public sealed class KeycloakAdminApi(KeycloakTestServer server)
     public async Task<T> GetAsync<T>(string path)
     {
         using var client = await CreateClientAsync();
-        var body = await client.GetFromJsonAsync<T>(path);
+        var body = await client.GetJsonAsync<T>(path, TestContext.Current.CancellationToken);
 
         return body!;
     }
@@ -26,7 +28,7 @@ public sealed class KeycloakAdminApi(KeycloakTestServer server)
         using var client = await CreateClientAsync();
         using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
         using var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task<HttpClient> CreateClientAsync()

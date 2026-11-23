@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Auth.Application.Identities.IdentityAdmin;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Testing.Containers;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -56,7 +57,7 @@ public static class AccountsFixtureExtensions
                         [key: "password"] = password,
                         [key: "scope"] = "openid organization",
                     }));
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             var body = await response.Content.ReadFromJsonAsync<JsonObject>();
             var token = body![AccountsTestData.AccessTokenProperty]!.GetValue<string>();

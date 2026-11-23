@@ -3,6 +3,7 @@ using Azure.Storage.Blobs;
 using HealthyFac.Seeder.IntegrationTests.FullSeed.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Ingest.Data;
+using HealthyFac.Testing.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -86,7 +87,7 @@ public static class SeedCompletionFixtureExtensions
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Keycloak.BaseAddress) };
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", token);
             var path = string.Format(SeedCompletionTestData.UserCountPath, SeederTestData.KeycloakRealm);
-            var count = await client.GetStringAsync(path);
+            var count = await client.GetTextAsync(path, TestContext.Current.CancellationToken);
 
             return int.Parse(count);
         }

@@ -1,11 +1,11 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using HealthyFac.MachineSimulator.IntegrationTests.Control.Data;
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation;
 using HealthyFac.MachineSimulator.IntegrationTests.Simulation.Data;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.Testing.Http;
 
 namespace HealthyFac.MachineSimulator.IntegrationTests.Control;
 
@@ -28,8 +28,8 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
         await _fixture.DiscoverAsync();
         using var client = _fixture.Factory.CreateClient();
 
-        var machines = await client.GetFromJsonAsync<JsonElement>(
-            requestUri: "/machines",
+        var machines = await client.GetJsonAsync<JsonElement>(
+            path: "/machines",
             TestContext.Current.CancellationToken);
 
         machines.EnumerateArray()
@@ -44,7 +44,7 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
         var machine = await _fixture.ArrangeRunningMachineAsync(ScenarioBinding.CncSerialNumber);
         using var client = _fixture.Factory.CreateClient();
 
-        var item = await client.GetFromJsonAsync<JsonElement>(
+        var item = await client.GetJsonAsync<JsonElement>(
             ControlApiTestData.MachineRoute(machine.MachineId),
             TestContext.Current.CancellationToken);
 
@@ -150,7 +150,7 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
             ControlApiTestData.ModeRoute(machine.MachineId, ControlApiTestData.SpindleModule),
             ControlApiTestData.ModeBody(ControlApiTestData.FailureMode));
 
-        var item = await client.GetFromJsonAsync<JsonElement>(
+        var item = await client.GetJsonAsync<JsonElement>(
             ControlApiTestData.MachineRoute(machine.MachineId),
             TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);

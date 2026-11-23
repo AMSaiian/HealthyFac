@@ -3,8 +3,10 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using HealthyFac.Telemetry.Infrastructure.Database;
+using HealthyFac.Testing.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,13 +45,14 @@ public static class ServiceHostsFixtureExtensions
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken);
             var path = string.Format(ServiceHostsTestData.ClientsPathFormat, SeederTestData.KeycloakRealm);
             var clients =
-                await client.GetFromJsonAsync<JsonArray>($"{path}?clientId={ServiceHostsTestData.AuthClientId}");
+                await client.GetJsonAsync<JsonArray>(
+                    $"{path}?clientId={ServiceHostsTestData.AuthClientId}", TestContext.Current.CancellationToken);
             var authClient = clients![index: 0]!.AsObject();
             var attributes = authClient[propertyName: "attributes"]!.AsObject();
             attributes[ServiceHostsTestData.TokenLifespanAttribute] = seconds?.ToString();
 
             using var response = await client.PutAsJsonAsync($"{path}/{authClient[propertyName: "id"]}", authClient);
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
     }
 }

@@ -1,5 +1,6 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
+using HealthyFac.Testing.Http;
 using Microsoft.AspNetCore.TestHost;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;
@@ -12,7 +13,7 @@ public sealed class ActorContextMiddlewareTests
         using var host = await ActorHostFactory.StartAsync();
         using var client = host.GetTestClient();
 
-        var userId = await client.GetStringAsync(ActorHostFactory.UserIdPath, TestContext.Current.CancellationToken);
+        var userId = await client.GetTextAsync(ActorHostFactory.UserIdPath, TestContext.Current.CancellationToken);
 
         userId.Should().Be(KnownActorsTestData.AnonymousId.ToString());
     }
@@ -23,7 +24,7 @@ public sealed class ActorContextMiddlewareTests
         using var host = await ActorHostFactory.StartAsync(ActorClaimsTestData.ValidPrincipal);
         using var client = host.GetTestClient();
 
-        var userId = await client.GetStringAsync(ActorHostFactory.UserIdPath, TestContext.Current.CancellationToken);
+        var userId = await client.GetTextAsync(ActorHostFactory.UserIdPath, TestContext.Current.CancellationToken);
 
         userId.Should().Be(ActorTestData.UserId.ToString());
     }

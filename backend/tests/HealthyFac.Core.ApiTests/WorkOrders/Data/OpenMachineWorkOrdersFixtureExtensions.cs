@@ -8,6 +8,7 @@ using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Testing.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -88,7 +89,7 @@ public static class OpenMachineWorkOrdersFixtureExtensions
                 $"{WorkOrderApiTestData.BasePath}/{encryptedId}/status",
                 claims,
                 body.ToJsonString());
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
 
         public async Task<HttpResponseMessage> ListOpenOrdersAsync(

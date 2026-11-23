@@ -6,6 +6,7 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using Testcontainers.Keycloak;
 
 namespace HealthyFac.Testing.Containers;
@@ -188,7 +189,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
                     [key: "username"] = AdminUsername,
                     [key: "password"] = AdminPassword,
                 }));
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(CancellationToken.None);
 
         var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
@@ -222,7 +223,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         };
 
         using var response = await _client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(CancellationToken.None);
 
         _createdClientIds.Enqueue(response.Headers.Location!.Segments[^1]);
 
@@ -291,7 +292,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         };
 
         using var response = await _client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(CancellationToken.None);
 
         var users = await response.Content.ReadFromJsonAsync<JsonArray>();
 
@@ -306,7 +307,7 @@ public sealed class KeycloakTestServer : IAsyncDisposable
         };
 
         using var response = await _client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(CancellationToken.None);
     }
 
     private static bool IsKeycloakSetting(KeyValuePair<string, string> entry) =>
