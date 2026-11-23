@@ -23,6 +23,16 @@ export interface PlacedBar {
 }
 
 const PERCENT = 100;
+const MS_PER_MINUTE = 60_000;
+const MINUTES_PER_HOUR = 60;
+
+/** The grid of planned starts and estimates in minutes. The backend rounds to the same grid. */
+export const SCHEDULE_GRID_MINUTES = 5;
+/** The shortest and the longest estimate that a resize may give, in minutes. The backend checks the same limits. */
+export const RESIZE_MIN_MINUTES = 5;
+export const RESIZE_MAX_MINUTES = 12 * MINUTES_PER_HOUR;
+/** How long a pointer rests on a day switch area before the day changes, in milliseconds. */
+export const DAY_SWITCH_DWELL_MS = 600;
 
 export function axisOf(date: Temporal.PlainDate, timeZoneId: string): Axis {
   return dayRange(date, timeZoneId);
@@ -123,4 +133,96 @@ export function describeBar(bar: ScheduleBar, timeZoneId: string): string {
   const end = bar.end.toZonedDateTimeISO(timeZoneId);
   const time = (value: Temporal.ZonedDateTime): string => value.toPlainTime().toString({ smallestUnit: 'minute' });
   return `${time(start)} - ${time(end)} (${start.offset})`;
+}
+
+/** The instant at a position of the axis in percent. It is the reverse of `percentOf`. */
+export function instantAt(percent: number, axis: Axis): Temporal.Instant {
+  return Temporal.Instant.fromEpochMilliseconds(
+    Math.round(axis.start.epochMilliseconds + (percent / PERCENT) * lengthMs(axis)),
+  );
+}
+
+/** Rounds an instant to the nearest grid step. The zone offsets are whole multiples of the step, so UTC and local agree. */
+export function snapToGrid(instant: Temporal.Instant): Temporal.Instant {
+  const step = SCHEDULE_GRID_MINUTES * MS_PER_MINUTE;
+  return Temporal.Instant.fromEpochMilliseconds(Math.round(instant.epochMilliseconds / step) * step);
+}
+
+/** The estimate of a bar of a width in percent of the axis: snapped to the grid and clamped to the allowed range. */
+export function minutesOfWidth(widthPercent: number, axis: Axis): number {
+  const minutes = (widthPercent / PERCENT) * (lengthMs(axis) / MS_PER_MINUTE);
+  const snapped = Math.round(minutes / SCHEDULE_GRID_MINUTES) * SCHEDULE_GRID_MINUTES;
+  return Math.min(RESIZE_MAX_MINUTES, Math.max(RESIZE_MIN_MINUTES, snapped));
+}
+
+/** The width of an estimate in percent of the axis. The staging area draws its bars with it. */
+export function widthPercentOf(estimateMinutes: number, axis: Axis): number {
+  return ((estimateMinutes * MS_PER_MINUTE) / lengthMs(axis)) * PERCENT;
+}
+
+/**
+ * Runs a callback once after a pointer rests on a day switch area. `enter` starts the wait, `leave` cancels it, and the
+ * wait starts again after each run while the pointer stays.
+ */
+export function createDwell(onElapsed: () => void, delayMs = DAY_SWITCH_DWELL_MS): { enter(): void; leave(): void } {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const leave = (): void => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  const enter = (): void => {
+    if (timer !== null) {
+      return;
+    }
+    timer = setTimeout(() => {
+      timer = null;
+      onElapsed();
+      enter();
+    }, delayMs);
+  };
+  return { enter, leave };
+}
+
+/** The data attribute values that mark a row of the board and the staging area for the drop lookup. */
+export const ROW_ATTRIBUTE = 'data-row-id';
+export const STAGING_ATTRIBUTE = 'data-staging';
+
+export type DropTarget = { readonly kind: 'row'; readonly rowId: string } | { readonly kind: 'staging' } | null;
+
+/** Finds what lies under the pointer: a row of the board, the staging area, or nothing. */
+export function dropTargetOf(elements: readonly Element[]): DropTarget {
+  for (const element of elements) {
+    const staging = element.closest(`[${STAGING_ATTRIBUTE}]`);
+    if (staging !== null) {
+      return { kind: 'staging' };
+    }
+    const row = element.closest(`[${ROW_ATTRIBUTE}]`);
+    const rowId = row?.getAttribute(ROW_ATTRIBUTE);
+    if (rowId !== null && rowId !== undefined) {
+      return { kind: 'row', rowId };
+    }
+  }
+  return null;
+}
+
+/** The layout of the board in rem. The templates bind them to CSS custom properties, so the CSS and the sums agree. */
+export const NAME_COLUMN_REM = 10;
+export const ROW_PADDING_REM = 0.9375;
+export const LANE_HEIGHT_REM = 1.5;
+export const LANE_GAP_REM = 0.25;
+
+/** The height of a row in rem for a number of lanes. The CSS of the board follows the same sum. */
+export function rowHeightRem(laneCount: number): number {
+  return 2 * ROW_PADDING_REM + laneCount * LANE_HEIGHT_REM + (laneCount - 1) * LANE_GAP_REM;
+}
+
+/** The top of a bar in the editable overlay: the rows above it, the row padding, and the lanes above it. */
+export function barTopCss(rowLaneCounts: readonly number[], rowIndex: number, lane: number): string {
+  const rem =
+    rowLaneCounts.slice(0, rowIndex).reduce((sum, count) => sum + rowHeightRem(count), 0) +
+    ROW_PADDING_REM +
+    lane * (LANE_HEIGHT_REM + LANE_GAP_REM);
+  return `calc(${rem}rem + ${rowIndex}px)`;
 }

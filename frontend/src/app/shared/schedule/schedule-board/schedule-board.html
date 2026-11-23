@@ -1,4 +1,10 @@
-<div class="hf-schedule-scroll min-h-0 flex-1 overflow-y-auto">
+<div
+  class="hf-schedule-scroll min-h-0 flex-1 overflow-y-auto"
+  [style.--hf-schedule-name-width.rem]="nameColumnRem"
+  [style.--hf-schedule-row-padding.rem]="rowPaddingRem"
+  [style.--hf-schedule-lane-height.rem]="laneHeightRem"
+  [style.--hf-schedule-lane-gap.rem]="laneGapRem"
+>
   <div
     class="hf-schedule-header"
     [style.--hf-schedule-hours]="hours().length"
@@ -60,6 +66,7 @@
       @for (layout of layouts(); track layout.row.id) {
         <div
           class="hf-schedule-row"
+          [attr.data-row-id]="layout.row.id"
           [style.--hf-schedule-hours]="hours().length"
         >
           <div class="hf-schedule-name">{{ layout.row.label }}</div>
@@ -79,21 +86,26 @@
             }
             <div class="hf-schedule-lanes">
               @for (lane of layout.lanes; track $index) {
-                <div class="relative h-6 flex-none">
-                  @for (item of lane; track item.bar.id) {
-                    <button
-                      type="button"
-                      class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
-                      [class]="item.bar.colorClass"
-                      [style.left.%]="item.left"
-                      [style.width.%]="item.width"
-                      [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
-                      [pTooltip]="tooltip(item.bar)"
-                      tooltipStyleClass="whitespace-pre-line"
-                      (click)="workOrderClick.emit(item.bar.id)"
-                    >
-                      {{ item.bar.title }}
-                    </button>
+                <div
+                  class="relative flex-none"
+                  [style.height.rem]="laneHeightRem"
+                >
+                  @if (!isEditable()) {
+                    @for (item of lane; track item.bar.id) {
+                      <button
+                        type="button"
+                        class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
+                        [class]="item.bar.colorClass"
+                        [style.left.%]="item.left"
+                        [style.width.%]="item.width"
+                        [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
+                        [pTooltip]="tooltip(item.bar)"
+                        tooltipStyleClass="whitespace-pre-line"
+                        (click)="workOrderClick.emit(item.bar.id)"
+                      >
+                        {{ item.bar.title }}
+                      </button>
+                    }
                   }
                 </div>
               }
@@ -108,5 +120,55 @@
         </div>
       }
     }
+    @if (isEditable()) {
+      <div
+        #overlay
+        class="hf-schedule-overlay"
+      >
+        @for (entry of flatBars(); track entry.item.bar.id) {
+          <div
+            cdkDrag
+            class="hf-schedule-bar absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6 text-white"
+            [class]="barClasses(entry.item.bar)"
+            [cdkDragDisabled]="entry.item.bar.isLocked === true"
+            [style.left.%]="entry.item.left"
+            [style.width.%]="entry.item.width"
+            [style.top]="entry.top"
+            [attr.aria-label]="entry.item.bar.title + ', ' + describe(entry.item.bar)"
+            [pTooltip]="tooltip(entry.item.bar)"
+            tooltipStyleClass="whitespace-pre-line"
+            (cdkDragStarted)="onDragStarted(entry, $event)"
+            (cdkDragMoved)="onDragMoved($event)"
+            (cdkDragEnded)="onDragEnded($event, entry.item.bar)"
+            role="button"
+            tabindex="0"
+            (click)="onBarClick(entry.item.bar.id)"
+            (keydown.enter)="onBarClick(entry.item.bar.id)"
+          >
+            {{ entry.item.bar.title }}
+            @if (entry.item.bar.isLocked !== true) {
+              <span
+                class="hf-resize-handle"
+                (pointerdown)="onResizeStart($event, entry.item)"
+              ></span>
+            }
+          </div>
+        }
+      </div>
+    }
   </div>
+  @if (isEditable() && isDragging()) {
+    <div
+      class="hf-day-area hf-day-area-previous"
+      data-day-area="previous"
+    >
+      <i class="pi pi-chevron-left"></i>
+    </div>
+    <div
+      class="hf-day-area hf-day-area-next"
+      data-day-area="next"
+    >
+      <i class="pi pi-chevron-right"></i>
+    </div>
+  }
 </div>

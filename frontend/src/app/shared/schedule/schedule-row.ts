@@ -16,6 +16,8 @@ export interface ScheduleBar {
   readonly statusKey: string;
   /** The CSS class that colors the bar (one preset color per status). */
   readonly colorClass: string;
+  /** A locked bar cannot be dragged or resized on an editable board. */
+  readonly isLocked?: boolean;
 }
 
 export interface ScheduleRow {

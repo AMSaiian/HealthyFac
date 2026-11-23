@@ -99,6 +99,11 @@ export const HealthyFacPreset = definePreset(Lara, {
       busy: 'light-dark({red.200}, {red.800})',
       dayOff: 'light-dark({surface.100}, {surface.800})',
     },
+    scheduleBar: {
+      pending: 'light-dark({sky.600}, {sky.400})',
+      conflict: 'light-dark({red.600}, {red.400})',
+      failed: 'light-dark({orange.600}, {orange.400})',
+    },
     workOrderPriority: {
       low: '{sky.500}',
       medium: '{amber.500}',

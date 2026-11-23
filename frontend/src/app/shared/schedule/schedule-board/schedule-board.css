@@ -1,4 +1,5 @@
 :host {
+  position: relative;
   display: flex;
   min-height: 0;
   flex-direction: column;
@@ -7,10 +8,14 @@
   border-radius: var(--p-content-border-radius);
 }
 
+.hf-schedule-body {
+  position: relative;
+}
+
 .hf-schedule-header,
 .hf-schedule-row {
   display: grid;
-  grid-template-columns: 10rem repeat(var(--hf-schedule-hours), minmax(0, 1fr));
+  grid-template-columns: var(--hf-schedule-name-width) repeat(var(--hf-schedule-hours), minmax(0, 1fr));
 }
 
 .hf-schedule-header {
@@ -94,6 +99,67 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.25rem;
-  padding-block: 0.9375rem;
+  gap: var(--hf-schedule-lane-gap);
+  padding-block: var(--hf-schedule-row-padding);
+}
+
+.hf-schedule-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--hf-schedule-name-width);
+  pointer-events: none;
+}
+
+.hf-schedule-bar {
+  height: var(--hf-schedule-lane-height);
+  pointer-events: auto;
+}
+
+.hf-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0.5rem;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.hf-bar-pending {
+  outline: 2px dashed var(--p-schedule-bar-pending);
+  outline-offset: 1px;
+}
+
+.hf-bar-conflict {
+  outline: 2px solid var(--p-schedule-bar-conflict);
+  outline-offset: 1px;
+}
+
+.hf-bar-failed {
+  outline: 2px solid var(--p-schedule-bar-failed);
+  outline-offset: 1px;
+}
+
+.hf-day-area {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  width: 3rem;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-highlight-background);
+  color: var(--p-text-color);
+  opacity: 0.85;
+}
+
+.hf-day-area-previous {
+  left: 0;
+}
+
+.hf-day-area-next {
+  right: 0;
 }

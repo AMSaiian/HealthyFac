@@ -117,13 +117,65 @@ public sealed class ScheduleChecks(
         }
     }
 
-    private async Task EnsureAssigneeAsync(Guid companyId, Guid assigneeId, CancellationToken cancellationToken)
-    {
-        var status = await _dbContext.Employees
+    /// <summary>
+    /// Reads the status of an employee of the company. Rule 1 and the apply use it.
+    /// </summary>
+    /// <param name="companyId">The company.</param>
+    /// <param name="assigneeId">The employee.</param>
+    /// <param name="cancellationToken">Cancels the query.</param>
+    /// <returns>The status, or <see langword="null"/> when the employee is not in the company.</returns>
+    public Task<EmployeeStatus?> FindAssigneeStatusAsync(
+        Guid companyId,
+        Guid assigneeId,
+        CancellationToken cancellationToken
+    ) =>
+        _dbContext.Employees
             .AsNoTracking()
             .Where(employee => employee.Id == assigneeId && employee.CompanyId == companyId)
-            .Select(employee => employee.Status)
+            .Select(employee => (EmployeeStatus?)employee.Status)
             .SingleOrDefaultAsync(cancellationToken);
+
+    /// <summary>
+    /// Converts a local planned start to a UTC instant after the grid check and the existence check of rule 2.
+    /// </summary>
+    /// <param name="plannedStartLocal">The planned start as a time in the company zone.</param>
+    /// <param name="zone">The zone of the company.</param>
+    /// <returns>The planned start as a UTC instant.</returns>
+    /// <exception cref="AppValidationException">The start is off the grid or does not exist in the zone.</exception>
+    public DateTime ToStartUtc(DateTime plannedStartLocal, TimeZoneInfo zone)
+    {
+        if (plannedStartLocal.TimeOfDay.Ticks % SlotRules.GridStep.Ticks != 0)
+        {
+            throw Invalid(WorkOrderErrors.Validation.StartOffGrid);
+        }
+
+        if (LocalTimes.IsSkipped(plannedStartLocal, zone))
+        {
+            throw Invalid(ShiftErrors.Validation.LocalTimeDoesNotExist);
+        }
+
+        return LocalTimes.ToUtc(plannedStartLocal, zone);
+    }
+
+    /// <summary>
+    /// Tells whether a planned start is now or later and at most 365 days ahead: the range check of rule 2.
+    /// </summary>
+    /// <param name="plannedStartLocal">The planned start as a time in the company zone.</param>
+    /// <param name="plannedStartUtc">The same start as a UTC instant.</param>
+    /// <param name="zone">The zone of the company.</param>
+    /// <returns><see langword="true"/> when the start is in the range.</returns>
+    public bool IsStartInRange(DateTime plannedStartLocal, DateTime plannedStartUtc, TimeZoneInfo zone)
+    {
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone));
+        var lastDate = today.AddDays(ShiftValidationConstants.MaxDaysAhead);
+
+        return plannedStartUtc >= nowUtc && DateOnly.FromDateTime(plannedStartLocal) <= lastDate;
+    }
+
+    private async Task EnsureAssigneeAsync(Guid companyId, Guid assigneeId, CancellationToken cancellationToken)
+    {
+        var status = await FindAssigneeStatusAsync(companyId, assigneeId, cancellationToken);
 
         if (status is null)
         {
@@ -138,21 +190,8 @@ public sealed class ScheduleChecks(
 
     private DateTime EnsureStart(DateTime plannedStartLocal, TimeZoneInfo zone)
     {
-        if (plannedStartLocal.TimeOfDay.Ticks % SlotRules.GridStep.Ticks != 0)
-        {
-            throw Invalid(WorkOrderErrors.Validation.StartOffGrid);
-        }
-
-        if (LocalTimes.IsSkipped(plannedStartLocal, zone))
-        {
-            throw Invalid(ShiftErrors.Validation.LocalTimeDoesNotExist);
-        }
-
-        var startUtc = LocalTimes.ToUtc(plannedStartLocal, zone);
-        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone));
-        var lastDate = today.AddDays(ShiftValidationConstants.MaxDaysAhead);
-        if (startUtc < nowUtc || DateOnly.FromDateTime(plannedStartLocal) > lastDate)
+        var startUtc = ToStartUtc(plannedStartLocal, zone);
+        if (!IsStartInRange(plannedStartLocal, startUtc, zone))
         {
             throw Invalid(WorkOrderErrors.Validation.StartOutOfRange);
         }

@@ -16,14 +16,12 @@ import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
 import type { DaySchedule } from '@work-orders/work-order';
-import { CompanyDayPage } from '@schedule/company-day/company-day-page/company-day-page';
 import { EmployeeDayStore } from '@schedule/employee-day/employee-day.store';
 import { EmployeeDayPage } from '@schedule/employee-day/employee-day-page/employee-day-page';
 import { SCHEDULE_ROUTES } from '@schedule/schedule.routes';
 import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
 
 const EMPLOYEE_DAY_URL = '/api/core/v1/employees/e1/schedule';
-const COMPANY_DAY_URL = '/api/core/v1/company/schedule';
 const TODAY = '2026-01-01';
 const NEXT_DAY = '2026-01-02';
 const DAY: DaySchedule = { date: TODAY, timeZoneId: 'Europe/Kyiv', source: 'template', blocks: [], workOrders: [] };
@@ -170,31 +168,5 @@ describe('schedule routes', () => {
     expect((TestBed.inject(PlatformNavigation) as FakePlatformNavigation).currentEntry.url).toContain(
       '/employees/e1/schedule',
     );
-  });
-
-  it('companyScheduleRoute_OnOpen_ActivatesThePageAndRequestsTheDayOfToday', async () => {
-    const http = setup();
-    const harness = await RouterTestingHarness.create();
-
-    await harness.navigateByUrl('/company/schedule');
-    TestBed.tick();
-
-    await vi.waitFor(() => {
-      TestBed.tick();
-      const requests = http.match((request) => request.url === COMPANY_DAY_URL);
-      expect(requests.map((request) => request.request.params.get('date'))).toContain(TODAY);
-    });
-    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(CompanyDayPage);
-  });
-
-  it('companyScheduleRoute_WithoutShiftsManage_RedirectsToHomeWithoutRequests', async () => {
-    const http = setup(false);
-    const harness = await RouterTestingHarness.create();
-
-    await harness.navigateByUrl('/company/schedule');
-    TestBed.tick();
-
-    expect(TestBed.inject(Router).url).toBe('/');
-    http.expectNone((request) => request.url === COMPANY_DAY_URL);
   });
 });

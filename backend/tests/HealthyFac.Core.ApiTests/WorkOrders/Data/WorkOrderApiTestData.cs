@@ -33,10 +33,39 @@ public static class WorkOrderApiTestData
         { "LimitMissing", string.Empty },
     };
 
+    public const string ApplyPath = BasePath + "/schedule/apply";
+    public const int OverApplyLimit = 101;
+    public const string PastStart = "2020-01-06T09:00:00";
+
+    private const string ApplyChangeStart = "{\"workOrderId\":\"{id}\",\"rowVersion\":1,";
+    private const string ApplyEstimate = "\"estimateMinutes\":60}";
+
+    public static TheoryData<string, string> InvalidApplyBodies => new()
+    {
+        { "NoChanges", "{\"changes\":[]}" },
+        {
+            "AssigneeWithoutStart",
+            "{\"changes\":[" + ApplyChangeStart + "\"assigneeId\":\"{id}\"," + ApplyEstimate + "]}"
+        },
+        {
+            "StartWithoutAssignee",
+            "{\"changes\":["
+            + ApplyChangeStart
+            + "\"plannedStartLocal\":\"2030-01-01T09:00:00\","
+            + ApplyEstimate
+            + "]}"
+        },
+        {
+            "RepeatedWorkOrder",
+            "{\"changes\":[" + ApplyChangeStart + ApplyEstimate + "," + ApplyChangeStart + ApplyEstimate + "]}"
+        },
+    };
+
     public static TheoryData<string, string, string> WorkerWriteRoutes => new()
     {
         { "Assign", "PUT", BasePath + "/{id}/assignee" },
         { "Move", "POST", BasePath + "/{id}/move" },
+        { "ApplySchedule", "POST", BasePath + "/schedule/apply" },
         { "Unassign", "DELETE", BasePath + "/{id}/assignee?rowVersion=1" },
         { "Delete", "DELETE", BasePath + "/{id}?rowVersion=1" },
     };

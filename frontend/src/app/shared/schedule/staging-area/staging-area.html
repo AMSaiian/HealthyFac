@@ -1,0 +1,38 @@
+<div class="flex min-h-0 flex-1 overflow-y-auto">
+  <div
+    class="text-muted-color flex-none px-3.5 text-sm"
+    [style.width.rem]="nameColumnRem"
+    [style.padding-block.rem]="rowPaddingRem"
+  >
+    {{ 'WORK_ORDERS.SCHEDULE_TAB.STAGING' | translate }}
+  </div>
+  <div
+    class="relative min-w-0 flex-1"
+    [style.padding-block.rem]="rowPaddingRem"
+  >
+    @for (entry of layout().packed; track entry.item.id) {
+      <div
+        cdkDrag
+        class="hf-status-backlog absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6"
+        [style.left.%]="entry.left"
+        [style.width.%]="entry.width"
+        [style.top.rem]="barTopRem(entry.lane)"
+        [style.height.rem]="laneHeightRem"
+        [pTooltip]="entry.item.title"
+        (cdkDragEnded)="onDragEnded($event, entry.item.id)"
+        role="button"
+        tabindex="0"
+        (click)="workOrderClick.emit(entry.item.id)"
+        (keydown.enter)="workOrderClick.emit(entry.item.id)"
+      >
+        {{ entry.item.title }}
+      </div>
+    }
+    <div [style.height.rem]="heightRem(layout().laneCount)"></div>
+  </div>
+</div>
+@if (isMoreAvailable()) {
+  <p class="text-muted-color flex-none px-3.5 pb-2 text-sm">
+    {{ 'WORK_ORDERS.SCHEDULE_TAB.MORE' | translate: { count: workOrders().length, total: totalCount() } }}
+  </p>
+}

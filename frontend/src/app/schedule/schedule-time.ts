@@ -6,7 +6,12 @@ import type { ScheduleBar, ScheduleBlock, ScheduleRow } from '@shared/schedule/s
 import type { Clock } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
-import type { DaySchedule, DayScheduleBlock, DayScheduleWorkOrder } from '@work-orders/work-order';
+import {
+  type DaySchedule,
+  type DayScheduleBlock,
+  type DayScheduleWorkOrder,
+  WorkOrderStatus,
+} from '@work-orders/work-order';
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 
 const MINUTE_MS = 60_000;
@@ -28,6 +33,7 @@ export function toBars(workOrders: readonly DayScheduleWorkOrder[]): ScheduleBar
     end: Temporal.Instant.from(workOrder.occupancyEndUtc),
     statusKey: STATUS_LABEL_KEYS[workOrder.status],
     colorClass: `${STATUS_CLASS_PREFIX}${workOrder.status}`,
+    isLocked: workOrder.status === WorkOrderStatus.Completed,
   }));
 }
 

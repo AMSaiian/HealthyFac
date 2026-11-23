@@ -1,0 +1,154 @@
+<hf-work-orders-view-header
+  activeView="schedule"
+  [canCreate]="grid.canWrite()"
+  [canOpenDrafts]="grid.canReadDrafts()"
+  (createRequested)="grid.requestCreate()"
+>
+  <div class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
+    <div class="flex flex-none flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button
+          pButton
+          [pTooltip]="'SCHEDULE.PREVIOUS_DAY' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'SCHEDULE.PREVIOUS_DAY' | translate"
+          (click)="store.previousDay()"
+        >
+          <i class="pi pi-chevron-left"></i>
+        </button>
+        <hf-plain-date-picker
+          [value]="store.date()"
+          (valueChange)="onDate($event)"
+        />
+        <button
+          pButton
+          [pTooltip]="'SCHEDULE.NEXT_DAY' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'SCHEDULE.NEXT_DAY' | translate"
+          (click)="store.nextDay()"
+        >
+          <i class="pi pi-chevron-right"></i>
+        </button>
+        <button
+          pButton
+          [pTooltip]="'SCHEDULE.TOOLTIPS.TODAY' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          severity="secondary"
+          (click)="store.goToToday()"
+        >
+          {{ 'SCHEDULE.TODAY' | translate }}
+        </button>
+      </div>
+      @if (store.canManage()) {
+        <div class="flex items-center gap-2">
+          <span class="text-muted-color text-sm">
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.PENDING' | translate: { count: store.pendingCount() } }}
+          </span>
+          <button
+            pButton
+            [pTooltip]="
+              (store.pendingCount() === 0
+                ? 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.DISCARD_DISABLED'
+                : 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.DISCARD'
+              ) | translate
+            "
+            tooltipPosition="bottom"
+            type="button"
+            severity="danger"
+            [outlined]="true"
+            [disabled]="store.pendingCount() === 0 || store.isApplying()"
+            (click)="store.discard()"
+          >
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.DISCARD' | translate }}
+          </button>
+          <button
+            pButton
+            [pTooltip]="
+              (store.canApply()
+                ? 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.APPLY'
+                : store.pendingCount() === 0
+                  ? 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.APPLY_NOTHING'
+                  : 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.APPLY_BLOCKED'
+              ) | translate
+            "
+            tooltipPosition="bottom"
+            type="button"
+            [disabled]="!store.canApply() || store.isApplying()"
+            (click)="store.apply()"
+          >
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.APPLY' | translate }}
+          </button>
+        </div>
+      }
+    </div>
+    @if (store.date(); as date) {
+      @if (store.canManage() && axis(); as axis) {
+        <p-splitter
+          class="min-h-0 flex-1"
+          layout="vertical"
+        >
+          <p-splitter-panel
+            class="flex min-h-0 flex-col"
+            [size]="stagingSize"
+            [minSize]="minSize"
+          >
+            <hf-staging-area
+              class="min-h-0 flex-1"
+              [workOrders]="store.stagingItems()"
+              [totalCount]="store.stagingTotal()"
+              [axis]="axis"
+              (barReleased)="onStagingRelease($event)"
+              (workOrderClick)="store.openWorkOrder($event)"
+            />
+          </p-splitter-panel>
+          <p-splitter-panel
+            class="flex min-h-0 flex-col"
+            [size]="boardSize"
+            [minSize]="minSize"
+          >
+            <hf-schedule-board
+              class="min-h-0 flex-1"
+              [rows]="store.displayRows()"
+              [isLoading]="store.day.isLoading()"
+              [hasLoaded]="store.day.hasValue()"
+              [hasFailed]="store.hasFailed()"
+              [date]="date"
+              [timeZoneId]="clock.timeZoneId()"
+              [now]="store.now()"
+              [isEditable]="true"
+              [pendingIds]="store.pendingIds()"
+              [conflictIds]="store.conflictIds()"
+              [failures]="failures()"
+              (workOrderClick)="store.openWorkOrder($event)"
+              (barDropped)="store.dropBar($event)"
+              (barResized)="store.resizeBar($event)"
+              (barUnassigned)="store.unassignBar($event)"
+              (daySwitchRequested)="onDaySwitch($event)"
+            />
+          </p-splitter-panel>
+        </p-splitter>
+      } @else {
+        <hf-schedule-board
+          class="min-h-0 flex-1"
+          [rows]="store.displayRows()"
+          [isLoading]="store.day.isLoading()"
+          [hasLoaded]="store.day.hasValue()"
+          [hasFailed]="store.hasFailed()"
+          [date]="date"
+          [timeZoneId]="clock.timeZoneId()"
+          [now]="store.now()"
+          (workOrderClick)="store.openWorkOrder($event)"
+        />
+      }
+    }
+  </div>
+</hf-work-orders-view-header>

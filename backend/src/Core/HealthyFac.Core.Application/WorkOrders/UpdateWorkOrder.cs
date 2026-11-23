@@ -196,7 +196,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         var assigneeUserId = assigneeId is { } assignee && estimate != oldEstimate
             ? await _dbContext.FindIdentityUserIdAsync(assignee, cancellationToken)
             : null;
-        var assignment = await BuildAssignmentChangeAsync(
+        var assignment = await _dbContext.BuildAssignmentChangeAsync(
             workOrder,
             scheduleChange,
             oldAssigneeId,
@@ -227,40 +227,6 @@ public sealed class UpdateWorkOrderRequestHandler(
         {
             throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged, exception);
         }
-    }
-
-    private async Task<WorkOrderAssignmentChange?> BuildAssignmentChangeAsync(
-        WorkOrder workOrder,
-        WorkOrderScheduleChange scheduleChange,
-        Guid? oldAssigneeId,
-        WorkOrderSlot? slot,
-        CancellationToken cancellationToken
-    )
-    {
-        if (scheduleChange is not (WorkOrderScheduleChange.Assign
-            or WorkOrderScheduleChange.Move
-            or WorkOrderScheduleChange.Unassign))
-        {
-            return null;
-        }
-
-        var oldAssigneeUserId = oldAssigneeId is { } oldId
-            ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
-            : null;
-        var newAssigneeUserId = slot is not null
-            ? await _dbContext.FindIdentityUserIdAsync(slot.AssigneeId, cancellationToken)
-            : null;
-
-        return new WorkOrderAssignmentChange
-        {
-            WorkOrderId = workOrder.Id,
-            Title = workOrder.Title,
-            OldAssigneeId = oldAssigneeId,
-            OldAssigneeUserId = oldAssigneeUserId,
-            NewAssigneeId = slot?.AssigneeId,
-            NewAssigneeUserId = newAssigneeUserId,
-            PlannedStartLocal = slot?.PlannedStartLocal,
-        };
     }
 
     private async Task<WorkOrderSlot?> EnsureScheduleAsync(

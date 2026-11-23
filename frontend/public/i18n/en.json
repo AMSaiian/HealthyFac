@@ -13,7 +13,6 @@
     "MACHINE_FILES": "Machine files",
     "WORK_ORDERS": "Work orders",
     "EMPLOYEE_SCHEDULE": "Schedule",
-    "COMPANY_SCHEDULE": "Company schedule",
     "SHIFTS": "Shifts",
     "EMPLOYEES": "Employees",
     "MY_SCHEDULE": "My schedule",
@@ -803,7 +802,8 @@
     "VIEW": {
       "LABEL": "View",
       "GRID": "Grid",
-      "BOARD": "Board"
+      "BOARD": "Board",
+      "SCHEDULE": "Schedule"
     },
     "TOOLTIPS": {
       "GRID_VIEW": "Show work orders as a list",
@@ -822,7 +822,8 @@
       "ATTACH_NEW": "Upload a new file and attach it",
       "ATTACH_EXISTING": "Attach a file that is stored already",
       "ADD_NEW": "Create a work order",
-      "DRAFTS": "Show the work order drafts of the maintenance cases"
+      "DRAFTS": "Show the work order drafts of the maintenance cases",
+      "SCHEDULE_VIEW": "Show the schedule of the day"
     },
     "COLUMNS": {
       "TITLE": "Title",
@@ -919,11 +920,41 @@
       "CHANGE_STATUS": "Change status",
       "EMPTY_COLUMN": "No work orders in this column"
     },
-    "DRAFTS": "Drafts"
+    "DRAFTS": "Drafts",
+    "SCHEDULE_TAB": {
+      "STAGING": "Backlog",
+      "MORE": "Showing {{count}} of {{total}} backlog work orders. Narrow the filters to see the rest",
+      "PENDING": "{{count}} pending changes",
+      "APPLY": "Apply",
+      "DISCARD": "Discard",
+      "APPLIED": "The schedule is updated",
+      "REJECTED": "Some changes break the rules. Nothing was changed",
+      "TOOLTIPS": {
+        "APPLY": "Save all pending changes",
+        "APPLY_NOTHING": "Move or resize a work order first",
+        "APPLY_BLOCKED": "Fix the marked conflicts first, or keep to 100 changes",
+        "DISCARD": "Drop all pending changes",
+        "DISCARD_DISABLED": "There are no pending changes"
+      },
+      "CONFIRM": {
+        "DISCARD_HEADER": "Discard changes",
+        "DISCARD_MESSAGE": "Drop all pending schedule changes?",
+        "DISCARD_ACCEPT": "Discard",
+        "LEAVE_HEADER": "Leave the schedule",
+        "LEAVE_MESSAGE": "The pending schedule changes are lost",
+        "LEAVE_ACCEPT": "Leave"
+      },
+      "REJECTIONS": {
+        "NOT_EDITABLE": "A completed work order cannot change",
+        "ASSIGNEE_NOT_ACTIVE": "The employee is not active",
+        "START_OUT_OF_RANGE": "The start is in the past or too far ahead",
+        "OUTSIDE_SHIFT": "The work order does not fit one work block",
+        "SLOT_TAKEN": "The slot overlaps another work order"
+      }
+    }
   },
   "SCHEDULE": {
     "EMPLOYEE_TITLE": "Schedule",
-    "COMPANY_TITLE": "Company schedule",
     "EMPLOYEE": "Employee",
     "PREVIOUS_DAY": "Previous day",
     "NEXT_DAY": "Next day",

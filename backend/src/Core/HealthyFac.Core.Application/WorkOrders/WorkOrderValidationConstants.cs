@@ -21,4 +21,7 @@ public static class WorkOrderValidationConstants
 
     /// <summary>The estimate is a multiple of this step, like the planned start.</summary>
     public const int EstimateStepMinutes = 5;
+
+    /// <summary>The most changes that one apply of the schedule board takes.</summary>
+    public const int ApplyMaxChanges = 100;
 }

@@ -3,6 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 
 import type {
+  ApplyScheduleBody,
+  ApplyScheduleResponse,
   AssignBody,
   ChangeStatusBody,
   CreateWorkOrderBody,
@@ -35,6 +37,7 @@ const STATUS_SEGMENT = 'status';
 const HISTORY_SEGMENT = 'history';
 const ASSIGNEE_SEGMENT = 'assignee';
 const MOVE_SEGMENT = 'move';
+const APPLY_SCHEDULE_URL = '/api/core/v1/work-orders/schedule/apply';
 const ROW_VERSION_PARAMETER = 'rowVersion';
 const LIMIT_PARAMETER = 'limit';
 const AFTER_PARAMETER = 'after';
@@ -101,6 +104,11 @@ export class WorkOrdersApi {
 
   move(id: string, body: MoveBody, options?: WriteOptions): Observable<void> {
     return this._http.post<void>(`${workOrderUrl(id)}/${MOVE_SEGMENT}`, body, options);
+  }
+
+  /** Applies the changes of the schedule tab in one request. All or none. */
+  applySchedule(body: ApplyScheduleBody, options?: WriteOptions): Observable<ApplyScheduleResponse> {
+    return this._http.post<ApplyScheduleResponse>(APPLY_SCHEDULE_URL, body, options);
   }
 
   unassign(id: string, rowVersion: number, options?: WriteOptions): Observable<void> {

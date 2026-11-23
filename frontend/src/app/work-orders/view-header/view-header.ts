@@ -5,10 +5,10 @@ import { ButtonDirective } from 'primeng/button';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tooltip } from 'primeng/tooltip';
 
-export type WorkOrdersView = 'grid' | 'board';
+export type WorkOrdersView = 'grid' | 'board' | 'schedule';
 
 /**
- * The header that the grid page and the board page share: the title and Add new, with the view tabs below. The page
+ * The header that the grid, board, and schedule pages share: the title and Add new, with the view tabs below. The page
  * content sits in the tab panel, so its gap to the tabs matches the employees page.
  */
 @Component({

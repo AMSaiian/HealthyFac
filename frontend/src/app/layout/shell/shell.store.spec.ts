@@ -92,7 +92,6 @@ describe('ShellStore', () => {
       '/work-orders',
       '/maintenance/cases',
       '/employees',
-      '/company/schedule',
       '/employees/e%201/schedule',
       FILES_PATH,
     ]);
@@ -164,19 +163,14 @@ describe('visibleNavItems', () => {
     expect(items.map((item) => item.path)).toEqual([HOME_PATH, '/work-orders', '/employees/e1/schedule']);
   });
 
-  it('visibleNavItems_SupervisorWithShiftsManage_ShowsCompanyScheduleAndEmployees', () => {
+  it('visibleNavItems_SupervisorWithShiftsManage_ShowsNoCompanyScheduleItem', () => {
     const items = visibleNavItems(
       SHELL_NAV_ITEMS,
       only(Permission.ShiftsRead, Permission.ShiftsManage, Permission.EmployeesRead),
       'e1',
     );
 
-    expect(items.map((item) => item.path)).toEqual([
-      HOME_PATH,
-      '/employees',
-      '/company/schedule',
-      '/employees/e1/schedule',
-    ]);
+    expect(items.map((item) => item.path)).toEqual([HOME_PATH, '/employees', '/employees/e1/schedule']);
   });
 });
 

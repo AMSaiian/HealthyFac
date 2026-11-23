@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HealthyFac.Core.Application.WorkOrders;
+using HealthyFac.Core.Application.WorkOrders.ApplySchedule;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Core.Web.Authorization;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -13,6 +14,8 @@ using ApplicationAssignWorkOrderRequest = HealthyFac.Core.Application.WorkOrders
 using ApplicationChangeWorkOrderStatusRequest = HealthyFac.Core.Application.WorkOrders.ChangeWorkOrderStatusRequest;
 using ApplicationCreateWorkOrderRequest = HealthyFac.Core.Application.WorkOrders.CreateWorkOrderRequest;
 using ApplicationDeleteWorkOrderRequest = HealthyFac.Core.Application.WorkOrders.DeleteWorkOrderRequest;
+using ApplicationApplyScheduleChangesRequest =
+    HealthyFac.Core.Application.WorkOrders.ApplySchedule.ApplyScheduleChangesRequest;
 using ApplicationGetWorkOrderHistoryRequest = HealthyFac.Core.Application.WorkOrders.GetWorkOrderHistoryRequest;
 using ApplicationGetWorkOrderRequest = HealthyFac.Core.Application.WorkOrders.GetWorkOrderRequest;
 using ApplicationMoveWorkOrderRequest = HealthyFac.Core.Application.WorkOrders.MoveWorkOrderRequest;
@@ -58,6 +61,8 @@ public static class WorkOrderEndpoints
             group.MapPut(WorkOrderRoutes.Assignee, AssignAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
             group.MapPost(WorkOrderRoutes.Move, MoveAsync)
+                .RequireAuthorization(CorePermissions.WorkOrders.Manage);
+            group.MapPost(WorkOrderRoutes.ApplySchedule, ApplyScheduleAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
             group.MapDelete(WorkOrderRoutes.Assignee, UnassignAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Manage);
@@ -254,6 +259,20 @@ public static class WorkOrderEndpoints
             cancellationToken);
 
         return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<ApplyScheduleChangesResponse>> ApplyScheduleAsync(
+        ApplyScheduleChangesRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationApplyScheduleChangesRequest, ApplyScheduleChangesResponse> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
     }
 
     private static async Task<NoContent> UnassignAsync(

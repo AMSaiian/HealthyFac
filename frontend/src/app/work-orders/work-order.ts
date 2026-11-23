@@ -245,3 +245,29 @@ export interface WorkOrderFilterBody {
 }
 
 export type SearchWorkOrdersBody = GridRequestBody<WorkOrderFilterBody, WorkOrderSortColumn>;
+
+/** One change of the schedule tab: the target state of a work order. */
+export interface ScheduleChangeBody {
+  readonly workOrderId: string;
+  readonly rowVersion: number;
+  readonly assigneeId: string | null;
+  readonly plannedStartLocal: string | null;
+  readonly estimateMinutes: number;
+}
+
+export interface ApplyScheduleBody {
+  readonly changes: readonly ScheduleChangeBody[];
+}
+
+export interface ApplyScheduleResponse {
+  readonly workOrders: readonly { readonly id: string; readonly rowVersion: number }[];
+}
+
+/** The reasons of a rejected change, as the `422` carries them in `changes[].reason`. */
+export enum ScheduleChangeRejection {
+  NotEditable = 'notEditable',
+  AssigneeNotActive = 'assigneeNotActive',
+  StartOutOfRange = 'startOutOfRange',
+  OutsideShift = 'outsideShift',
+  SlotTaken = 'slotTaken',
+}

@@ -10,3 +10,7 @@ export const ESTIMATE_SUFFIX = ' min';
 export const FILE_MAX_COUNT = 20;
 /** The rows of one page of the drawer history. */
 export const HISTORY_PAGE_SIZE = 10;
+/** The most changes that one apply of the schedule tab takes. The backend checks the same limit. */
+export const SCHEDULE_APPLY_MAX_CHANGES = 100;
+/** The backlog work orders that the staging area of the schedule tab loads. */
+export const STAGING_LIMIT = 100;
