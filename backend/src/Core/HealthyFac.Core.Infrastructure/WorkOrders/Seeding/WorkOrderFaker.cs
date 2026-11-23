@@ -1,4 +1,5 @@
 using Bogus;
+using Bogus.Extensions;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 
@@ -24,14 +25,11 @@ internal sealed class WorkOrderFaker : Faker<WorkOrder>
         UseSeed(seed);
         CustomInstantiator(faker => WorkOrder.Create(
             companyId,
-            Truncate(faker.Hacker.Phrase(), WorkOrderValidationConstants.TitleMaxLength),
+            faker.Hacker.Phrase().ClampLength(max: WorkOrderValidationConstants.TitleMaxLength),
             string.Format(DescriptionFormat, faker.Lorem.Sentence()),
             faker.PickRandom<WorkOrderPriority>(WorkOrderPriority.All),
             faker.PickRandom<WorkOrderCategory>(WorkOrderCategory.All),
             machineIds.Count == 0 ? null : faker.PickRandom<Guid>(machineIds),
             TimeSpan.FromMinutes(EstimateMinutes)));
     }
-
-    private static string Truncate(string text, int maxLength) =>
-        text.Length <= maxLength ? text : text[..maxLength];
 }

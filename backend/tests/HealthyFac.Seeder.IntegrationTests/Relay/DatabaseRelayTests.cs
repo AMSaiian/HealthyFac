@@ -101,6 +101,38 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
     }
 
     [Fact]
+    public async Task RunAsync_WithAMessageThatFailsItsValidator_StopsWithTheValidationErrorBeforeTheUseCaseRuns()
+    {
+        await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
+        var (companyId, machineId) = await _fixture.CreateMachineAsync();
+        await _fixture.Hosts.CreateRelay()
+            .RunAsync(eventItem: "machines.json#press-1", TestContext.Current.CancellationToken);
+        _fixture.EnterNextMoment(item: "empty-company");
+        await _fixture.AddToCoreOutboxAsync(
+            companyId,
+            [
+                new MachineStateChanged
+                {
+                    MachineId = machineId,
+                    CompanyId = Guid.Empty,
+                    State = MachineStateValue.Operational,
+                    StartedAt = new DateTime(
+                        year: 2027, month: 3, day: 24, hour: 8, minute: 0, second: 0, DateTimeKind.Utc),
+                },
+            ]);
+
+        var act = () => _fixture.Hosts.CreateRelay()
+            .RunAsync(eventItem: "machines.json#empty-company", TestContext.Current.CancellationToken);
+
+        var exception = await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage(
+                $"*{RelayTestData.TelemetryService}*{MachineStateChanged.MessageType}*machines.json#empty-company*"
+                + $"{MachineMessageErrors.Validation.CompanyIdRequired}*");
+        exception.Which.Message.Should().NotContain(MachineRegistrationErrors.RegistrationNotFound);
+    }
+
+    [Fact]
     public async Task TryAddAsync_WithAnIdThatTheInboxHolds_StoresNothing()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
