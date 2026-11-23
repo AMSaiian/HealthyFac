@@ -136,14 +136,26 @@ export function withLiveEnds(bars: readonly ScheduleBar[], now: Temporal.Instant
   return bars.map((bar) => (bar.isRunning === true ? { ...bar, end: later(bar.end, now) } : bar));
 }
 
-/** A cut bar and a completed bar cannot be resized (or dragged). */
-export function canResizeBar(item: PlacedBar): boolean {
-  return item.bar.isLocked !== true && !item.isCutStart && !item.isCutEnd;
+/** The planned end of a bar: the planned end of a running bar, else its end. */
+function plannedEndOf(bar: ScheduleBar): Temporal.Instant {
+  return bar.isRunning === true && bar.plannedEnd !== undefined ? bar.plannedEnd : bar.end;
 }
 
-/** A work order in progress keeps its start, so its bar cannot be dragged. It can still be resized. */
+/**
+ * A completed bar cannot be resized, and neither can a bar whose planned end lies off the shown axis. A bar cut at the
+ * start or at the end can still be resized when its planned end lies on the axis.
+ */
+export function canResizeBar(item: PlacedBar, axis: Axis): boolean {
+  if (item.bar.isLocked === true) {
+    return false;
+  }
+  const plannedPercent = percentOf(plannedEndOf(item.bar), axis);
+  return plannedPercent > 0 && plannedPercent <= PERCENT;
+}
+
+/** A cut bar, a completed bar, and a work order in progress (it keeps its start) cannot be dragged. */
 export function canDragBar(item: PlacedBar): boolean {
-  return canResizeBar(item) && item.bar.isRunning !== true;
+  return item.bar.isLocked !== true && !item.isCutStart && !item.isCutEnd && item.bar.isRunning !== true;
 }
 
 /**
@@ -230,16 +242,14 @@ export function snapToGrid(instant: Temporal.Instant): Temporal.Instant {
   return Temporal.Instant.fromEpochMilliseconds(Math.round(instant.epochMilliseconds / step) * step);
 }
 
-/** The estimate of a bar of a width in percent of the axis: snapped to the grid and clamped to the allowed range. */
-export function minutesOfWidth(widthPercent: number, axis: Axis): number {
-  const minutes = (widthPercent / PERCENT) * (lengthMs(axis) / MS_PER_MINUTE);
-  const snapped = Math.round(minutes / SCHEDULE_GRID_MINUTES) * SCHEDULE_GRID_MINUTES;
-  return Math.min(RESIZE_MAX_MINUTES, Math.max(RESIZE_MIN_MINUTES, snapped));
-}
-
 /** The width of an estimate in percent of the axis. The staging area draws its bars with it. */
 export function widthPercentOf(estimateMinutes: number, axis: Axis): number {
   return ((estimateMinutes * MS_PER_MINUTE) / lengthMs(axis)) * PERCENT;
+}
+
+/** The `right` offset of the resize handle in percent of the bar width: at the overrun start, else at the right edge. */
+function handleRightOf(overrunStartPercent: number | null): number {
+  return overrunStartPercent === null ? 0 : PERCENT - overrunStartPercent;
 }
 
 /**
@@ -247,27 +257,56 @@ export function widthPercentOf(estimateMinutes: number, axis: Axis): number {
  * its planned end has the handle at the end of the planned part, because the resize sets the planned end.
  */
 export function resizeHandleRightPercent(item: PlacedBar): number {
-  return item.overrunStartPercent === null ? 0 : PERCENT - item.overrunStartPercent;
+  return handleRightOf(item.overrunStartPercent);
 }
 
 /**
- * The bar while its handle is dragged to a width in percent of the axis, measured from the left edge of the bar. A bar
- * without overrun follows the pointer. An overdue bar keeps its live end while the planned end is before it, and only
- * the overrun start moves. Past the live end the bar ends at the planned end and has no overrun part.
+ * The estimate in minutes of a bar whose planned end is dragged to a pointer position in percent of the axis: the time
+ * from the planned start (which can lie before the axis start) to the pointer, snapped to the grid and clamped to the
+ * allowed range.
  */
-export function resizeShownOf(
-  item: PlacedBar,
-  widthPercent: number,
-  axis: Axis,
-): { widthPercent: number; overrunStartPercent: number | null } {
-  if (item.overrunStartPercent === null) {
-    return { widthPercent: Math.max(0, widthPercent), overrunStartPercent: null };
+export function resizeEstimateOf(plannedStart: Temporal.Instant, pointerPercent: number, axis: Axis): number {
+  const snapped = snapToGrid(instantAt(pointerPercent, axis));
+  const minutes = (snapped.epochMilliseconds - plannedStart.epochMilliseconds) / MS_PER_MINUTE;
+  const onGrid = Math.round(minutes / SCHEDULE_GRID_MINUTES) * SCHEDULE_GRID_MINUTES;
+  return Math.min(RESIZE_MAX_MINUTES, Math.max(RESIZE_MIN_MINUTES, onGrid));
+}
+
+/** What the resize handler writes while the handle is dragged. */
+export interface ResizeShown {
+  /** The drawn width of the bar in percent of the axis. */
+  readonly widthPercent: number;
+  /** Where the overrun part begins in percent of the bar width, or `null` when the bar has none. */
+  readonly overrunStartPercent: number | null;
+  /** The value of the overrun start property: the overrun start, or 100 (no overrun part) when there is none. */
+  readonly overrunCssPercent: number;
+  /** The `right` offset of the handle in percent of the bar width. */
+  readonly handleRightPercent: number;
+}
+
+/**
+ * The bar while its handle is dragged to a pointer position in percent of the axis. A bar without overrun ends at the
+ * planned end. An overdue bar keeps its drawn end while the planned end is before it, and only the overrun start
+ * moves. At or past the drawn end the bar ends at the planned end and has no overrun part.
+ */
+export function resizeShownOf(item: PlacedBar, pointerPercent: number, axis: Axis): ResizeShown {
+  const estimate = resizeEstimateOf(item.bar.start, pointerPercent, axis);
+  const plannedPercent = clamp(percentOf(item.bar.start.add({ minutes: estimate }), axis));
+  if (item.overrunStartPercent !== null && plannedPercent < item.left + item.width) {
+    const overrunStart = ((Math.max(plannedPercent, item.left) - item.left) / item.width) * PERCENT;
+    return {
+      widthPercent: item.width,
+      overrunStartPercent: overrunStart,
+      overrunCssPercent: overrunStart,
+      handleRightPercent: handleRightOf(overrunStart),
+    };
   }
-  const plannedPercent = widthPercentOf(minutesOfWidth(widthPercent, axis), axis);
-  if (plannedPercent >= item.width) {
-    return { widthPercent: plannedPercent, overrunStartPercent: null };
-  }
-  return { widthPercent: item.width, overrunStartPercent: (plannedPercent / item.width) * PERCENT };
+  return {
+    widthPercent: Math.max(0, plannedPercent - item.left),
+    overrunStartPercent: null,
+    overrunCssPercent: PERCENT,
+    handleRightPercent: 0,
+  };
 }
 
 /**

@@ -222,23 +222,27 @@ describe('bars across days', () => {
 
   describe('placeBars cut flags and locks', () => {
     it.each([
-      ['StartsBeforeTheDay', '2027-05-31T22:00', '2027-06-01T02:00', true, false, true],
-      ['EndsAfterTheDay', '2027-06-01T22:00', '2027-06-02T02:00', false, true, true],
-      ['InsideTheDay', '2027-06-01T09:00', '2027-06-01T10:00', false, false, false],
-    ])('placeBars_ForABar%s_SetsTheCutFlagsAndTheLock', (_name, start, end, isCutStart, isCutEnd, isLocked) => {
-      const { placed } = placeBars([bar('a', start, end)], NORMAL);
+      ['StartsBeforeTheDay', '2027-05-31T22:00', '2027-06-01T02:00', true, false, true, false],
+      ['EndsAfterTheDay', '2027-06-01T22:00', '2027-06-02T02:00', false, true, false, false],
+      ['InsideTheDay', '2027-06-01T09:00', '2027-06-01T10:00', false, false, true, true],
+    ])(
+      'placeBars_ForABar%s_SetsTheCutFlagsAndTheResizeAndDragRights',
+      (_name, start, end, isCutStart, isCutEnd, canResize, canDrag) => {
+        const { placed } = placeBars([bar('a', start, end)], NORMAL);
 
-      expect([placed[0].isCutStart, placed[0].isCutEnd, !canResizeBar(placed[0])]).toEqual([
-        isCutStart,
-        isCutEnd,
-        isLocked,
-      ]);
-    });
+        expect([
+          placed[0].isCutStart,
+          placed[0].isCutEnd,
+          canResizeBar(placed[0], NORMAL),
+          canDragBar(placed[0]),
+        ]).toEqual([isCutStart, isCutEnd, canResize, canDrag]);
+      },
+    );
 
     it('canResizeBar_ForACompletedBarInsideTheDay_IsFalse', () => {
       const { placed } = placeBars([{ ...bar('a', '2027-06-01T09:00', '2027-06-01T10:00'), isLocked: true }], NORMAL);
 
-      expect(canResizeBar(placed[0])).toBe(false);
+      expect(canResizeBar(placed[0], NORMAL)).toBe(false);
     });
 
     it.each([
@@ -248,16 +252,31 @@ describe('bars across days', () => {
     ])('canDragBar_ForA%sBar_GivesTheDragAndTheResizeRights', (_name, flags, canDrag, canResize) => {
       const { placed } = placeBars([{ ...bar('a', '2027-06-01T09:00', '2027-06-01T10:00'), ...flags }], NORMAL);
 
-      expect([canDragBar(placed[0]), canResizeBar(placed[0])]).toEqual([canDrag, canResize]);
+      expect([canDragBar(placed[0]), canResizeBar(placed[0], NORMAL)]).toEqual([canDrag, canResize]);
     });
 
-    it('canDragBar_ForACutRunningBar_IsFalseForBoth', () => {
-      const { placed } = placeBars(
-        [{ ...running('2027-05-31T22:00', '2027-06-01T01:00', '2027-06-01T02:00') }],
-        NORMAL,
-      );
+    it('canResizeBar_ForACutRunningBarWithItsPlannedEndOnTheDay_IsTrueAndItDoesNotDrag', () => {
+      const { placed } = placeBars([running('2027-05-31T22:00', '2027-06-01T01:00', '2027-06-01T02:00')], NORMAL);
 
-      expect([canDragBar(placed[0]), canResizeBar(placed[0])]).toEqual([false, false]);
+      expect([canDragBar(placed[0]), canResizeBar(placed[0], NORMAL)]).toEqual([false, true]);
+    });
+
+    it('canResizeBar_ForABarCutAtTheEndWithItsOverrunStartOnTheDay_IsTrueAndItDoesNotDrag', () => {
+      const { placed } = placeBars([running('2027-06-01T08:00', '2027-06-01T09:00', '2027-06-02T02:00')], NORMAL);
+
+      expect([placed[0].isCutEnd, canDragBar(placed[0]), canResizeBar(placed[0], NORMAL)]).toEqual([true, false, true]);
+    });
+
+    it('canResizeBar_ForARunningBarWithItsPlannedEndOffTheDay_IsFalse', () => {
+      const { placed } = placeBars([running('2027-05-31T08:00', '2027-05-31T09:00', '2027-06-01T02:00')], NORMAL);
+
+      expect(canResizeBar(placed[0], NORMAL)).toBe(false);
+    });
+
+    it('canResizeBar_ForABarCutAtTheEndWithItsEndOffTheDay_IsFalse', () => {
+      const { placed } = placeBars([bar('a', '2027-06-01T22:00', '2027-06-02T02:00')], NORMAL);
+
+      expect(canResizeBar(placed[0], NORMAL)).toBe(false);
     });
   });
 

@@ -16,7 +16,7 @@ import {
   dropTargetOf,
   instantAt,
   isSkeletonShown,
-  minutesOfWidth,
+  resizeEstimateOf,
   resizeHandleRightPercent,
   resizeShownOf,
   ROW_ATTRIBUTE,
@@ -56,39 +56,53 @@ describe('schedule board edit utils', () => {
     });
   });
 
-  describe('minutesOfWidth', () => {
-    const axis = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+  describe('resizeEstimateOf', () => {
+    const nextDay = axisOf(Temporal.PlainDate.from('2027-06-02'), ZONE);
+    const startOf = (local: string): Temporal.Instant =>
+      Temporal.PlainDateTime.from(local).toZonedDateTime(ZONE).toInstant();
 
-    it.each([
-      ['OneHour', widthPercentOf(60, axis), 60],
-      ['SnappedToTheGrid', widthPercentOf(62, axis), 60],
-      ['BelowTheMinimum', 0, 5],
-      ['AboveTheMaximum', 90, 720],
-    ])('minutesOfWidth_With%s_Is%s', (_name, width, expected) => {
-      expect(minutesOfWidth(width, axis)).toBe(expected);
+    it('resizeEstimateOf_ForAPlannedStartBeforeTheAxisStart_CountsFromThePlannedStart', () => {
+      expect(resizeEstimateOf(startOf('2027-06-01T22:00'), (1 / 24) * 100, nextDay)).toBe(180);
     });
 
-    it('minutesOfWidth_OnTheSpringForwardDay_UsesTheRealDayLength', () => {
+    it('resizeEstimateOf_ForAPointerFarFromTheStart_StopsAtTwelveHours', () => {
+      expect(resizeEstimateOf(startOf('2027-06-01T22:00'), 90, nextDay)).toBe(720);
+    });
+
+    it('resizeEstimateOf_ForAPointerBetweenGridSteps_SnapsToTheGrid', () => {
+      const day = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+
+      expect(resizeEstimateOf(startOf('2027-06-01T09:00'), widthPercentOf(9 * 60 + 62, day), day)).toBe(60);
+    });
+
+    it('resizeEstimateOf_OnTheSpringForwardDay_UsesTheRealDayLength', () => {
       const shortDay = axisOf(Temporal.PlainDate.from('2027-03-28'), ZONE);
 
-      expect(minutesOfWidth(widthPercentOf(60, shortDay), shortDay)).toBe(60);
+      expect(resizeEstimateOf(startOf('2027-03-28T00:00'), widthPercentOf(60, shortDay), shortDay)).toBe(60);
+    });
+
+    it('resizeEstimateOf_ForAPointerBeforeTheStart_StopsAtFiveMinutes', () => {
+      expect(
+        resizeEstimateOf(startOf('2027-06-01T22:00'), 0, axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE)),
+      ).toBe(5);
     });
   });
 
   describe('resize of an overdue running bar', () => {
     const axis = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+    const hourPercent = (hour: number): number => (hour / 24) * 100;
     const scheduleBar: ScheduleBar = {
       id: 'w',
       title: 'w',
-      start: Temporal.Instant.from('2027-06-01T06:00:00Z'),
-      end: Temporal.Instant.from('2027-06-01T10:00:00Z'),
+      start: Temporal.PlainDateTime.from('2027-06-01T09:00').toZonedDateTime(ZONE).toInstant(),
+      end: Temporal.PlainDateTime.from('2027-06-01T14:00').toZonedDateTime(ZONE).toInstant(),
       statusKey: 'S',
       colorClass: 'c',
     };
     const overdue = {
       bar: scheduleBar,
-      left: 25,
-      width: 20,
+      left: hourPercent(9),
+      width: hourPercent(5),
       lane: 0,
       isCutStart: false,
       isCutEnd: false,
@@ -104,30 +118,36 @@ describe('schedule board edit utils', () => {
       expect(resizeHandleRightPercent(onTime)).toBe(0);
     });
 
-    it('resizeShownOf_ForAPointerBeforeNow_KeepsTheLiveEndAndMovesTheOverrunStart', () => {
-      const shown = resizeShownOf(overdue, widthPercentOf(60, axis), axis);
+    it('resizeShownOf_ForAPointerBeforeNow_KeepsTheDrawnEndAndMovesTheOverrunStartAndTheHandle', () => {
+      const shown = resizeShownOf(overdue, hourPercent(11), axis);
+      const expectedOverrun = ((hourPercent(11) - hourPercent(9)) / hourPercent(5)) * 100;
 
-      expect(shown.widthPercent).toBe(20);
-      expect(shown.overrunStartPercent).toBeCloseTo((widthPercentOf(60, axis) / 20) * 100);
+      expect(shown.widthPercent).toBeCloseTo(hourPercent(5));
+      expect(shown.overrunStartPercent).toBeCloseTo(expectedOverrun);
+      expect(shown.overrunCssPercent).toBeCloseTo(expectedOverrun);
+      expect(shown.handleRightPercent).toBeCloseTo(100 - expectedOverrun);
     });
 
-    it('resizeShownOf_ForAPointerPastNow_EndsTheBarAtThePointerWithoutOverrun', () => {
-      const shown = resizeShownOf(overdue, widthPercentOf(300, axis), axis);
+    it('resizeShownOf_ForAPointerPastNow_EndsTheBarAtThePointerWithoutOverrunAndWithTheHandleAtTheEdge', () => {
+      const shown = resizeShownOf(overdue, hourPercent(20), axis);
 
-      expect(shown.widthPercent).toBeCloseTo(widthPercentOf(300, axis));
+      expect(shown.widthPercent).toBeCloseTo(hourPercent(11));
+      expect(shown.overrunStartPercent).toBeNull();
+      expect(shown.overrunCssPercent).toBe(100);
+      expect(shown.handleRightPercent).toBe(0);
+    });
+
+    it('resizeShownOf_ForABarWithoutOverrun_EndsAtThePointerOnTheGrid', () => {
+      const shown = resizeShownOf(onTime, hourPercent(10), axis);
+
+      expect(shown.widthPercent).toBeCloseTo(hourPercent(1));
       expect(shown.overrunStartPercent).toBeNull();
     });
 
-    it('resizeShownOf_ForABarWithoutOverrun_FollowsThePointer', () => {
-      const shown = resizeShownOf(onTime, 7, axis);
-
-      expect(shown).toEqual({ widthPercent: 7, overrunStartPercent: null });
-    });
-
     it('resizeShownOf_ForAnOverdueBarBelowTheMinimum_StopsAtFiveMinutes', () => {
-      const shown = resizeShownOf(overdue, -3, axis);
+      const shown = resizeShownOf(overdue, 0, axis);
 
-      expect(shown.overrunStartPercent).toBeCloseTo((widthPercentOf(5, axis) / 20) * 100);
+      expect(shown.overrunStartPercent).toBeCloseTo((widthPercentOf(5, axis) / hourPercent(5)) * 100);
     });
   });
 

@@ -59,7 +59,6 @@ import {
   leftPxOf,
   localRangeOf,
   minutesOfBar,
-  minutesOfWidth,
   NAME_COLUMN_REM,
   nowPercentOf,
   placeBars,
@@ -68,6 +67,7 @@ import {
   type PreviewDrag,
   previewPointOf,
   type PreviewSlot,
+  resizeEstimateOf,
   resizeHandleRightPercent,
   resizeShownOf,
   ROW_ATTRIBUTE,
@@ -290,7 +290,7 @@ export class ScheduleBoard {
   }
 
   protected canResize(item: PlacedBar): boolean {
-    return canResizeBar(item);
+    return canResizeBar(item, this.axis());
   }
 
   protected startDate(bar: ScheduleBar): string {
@@ -397,18 +397,16 @@ export class ScheduleBoard {
     event.preventDefault();
     event.stopPropagation();
     handle.setPointerCapture(event.pointerId);
-    const overlayWidth = overlay.getBoundingClientRect().width;
-    const startLeft = bar.getBoundingClientRect().left;
-    const widthPercent = (clientX: number): number => ((clientX - startLeft) / overlayWidth) * PERCENT;
+    const overlayRect = overlay.getBoundingClientRect();
+    const pointerPercent = (clientX: number): number => ((clientX - overlayRect.left) / overlayRect.width) * PERCENT;
     const initialOverrun = bar.style.getPropertyValue(OVERRUN_START_PROPERTY);
     const onMove = (move: PointerEvent): void => {
-      const shown = resizeShownOf(item, widthPercent(move.clientX), this.axis());
+      const shown = resizeShownOf(item, pointerPercent(move.clientX), this.axis());
       bar.style.width = `${shown.widthPercent}%`;
       if (item.overrunStartPercent !== null) {
-        const overrunPercent = shown.overrunStartPercent ?? PERCENT;
-        bar.style.setProperty(OVERRUN_START_PROPERTY, `${overrunPercent}%`);
-        handle.style.right = `${PERCENT - overrunPercent}%`;
+        bar.style.setProperty(OVERRUN_START_PROPERTY, `${shown.overrunCssPercent}%`);
       }
+      handle.style.right = `${shown.handleRightPercent}%`;
     };
     const onUp = (up: PointerEvent): void => {
       handle.removeEventListener('pointermove', onMove);
@@ -417,12 +415,12 @@ export class ScheduleBoard {
       bar.style.removeProperty('width');
       if (item.overrunStartPercent !== null) {
         bar.style.setProperty(OVERRUN_START_PROPERTY, initialOverrun);
-        handle.style.right = this.handleRight(item);
       }
+      handle.style.right = this.handleRight(item);
       this._clickGuard.markDragged();
       this.barResized.emit({
         workOrderId: item.bar.id,
-        estimateMinutes: minutesOfWidth(widthPercent(up.clientX), this.axis()),
+        estimateMinutes: resizeEstimateOf(item.bar.start, pointerPercent(up.clientX), this.axis()),
       });
     };
     handle.addEventListener('pointermove', onMove);
