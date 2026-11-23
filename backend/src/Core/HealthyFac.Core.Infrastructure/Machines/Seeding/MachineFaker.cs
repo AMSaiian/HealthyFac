@@ -14,6 +14,11 @@ internal sealed class MachineFaker : Faker<Machine>
     private const int MaxStartDaysBeforeNow = 365;
     private const double MinChangeShare = 0.1;
     private const double MaxChangeShare = 0.9;
+    private const string SerialNumberLetterPattern = "????";
+    private const string SerialNumberFormat = "SN-{0:0000}-{1}";
+
+    private static readonly IReadOnlyList<string> MachineTypes =
+        ["CNC lathe", "Milling machine", "Hydraulic press", "Laser cutter", "Injection molder", "Conveyor"];
 
     private static readonly IReadOnlyList<IReadOnlyList<MachineState>> ChangedStatesByCycleIndex =
     [
@@ -27,12 +32,8 @@ internal sealed class MachineFaker : Faker<Machine>
     /// </summary>
     /// <param name="companyId">The saved company that owns the machines.</param>
     /// <param name="timeZoneId">
-    /// The IANA time zone of the company. The expected go-live day is the day of <paramref name="now"/> in this zone,
-    /// which is the creation day of the seed. UTC applies when the company has none.
-    /// </param>
-    /// <param name="machineTypes">The machine types to pick from. The name appends a two-digit number.</param>
-    /// <param name="serialNumberPattern">
-    /// The Bogus replacement pattern of serial numbers: <c>#</c> becomes a digit and <c>?</c> becomes a letter.
+    /// The IANA time zone of the company. The expected go-live day is the day of the first state start in this
+    /// zone, so the state history never starts before it. UTC applies when the company has none.
     /// </param>
     /// <param name="now">
     /// The seed time. The first state starts 30 to 365 days before it, and every change starts before it.
@@ -41,8 +42,6 @@ internal sealed class MachineFaker : Faker<Machine>
     public MachineFaker(
         Guid companyId,
         string? timeZoneId,
-        IReadOnlyList<string> machineTypes,
-        string serialNumberPattern,
         DateTime now,
         int seed
     )
@@ -59,10 +58,13 @@ internal sealed class MachineFaker : Faker<Machine>
             var machine = new Machine(
                 companyId,
                 GatewayIds.Create(),
-                $"{faker.PickRandom<string>(machineTypes)} {faker.IndexFaker + 1:00}",
-                faker.Random.Replace(serialNumberPattern),
+                $"{faker.PickRandom<string>(MachineTypes)} {faker.IndexFaker + 1:00}",
+                string.Format(
+                    SerialNumberFormat,
+                    faker.IndexFaker + 1,
+                    faker.Random.Replace(SerialNumberLetterPattern).ToUpperInvariant()),
                 description: null,
-                DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now, zone)),
+                DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(firstStartedAt, zone)),
                 firstStartedAt);
 
             var changedStates =
