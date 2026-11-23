@@ -14,6 +14,7 @@ import {
   dropOutcomeOf,
   dropStartOf,
   dropTargetOf,
+  HOUR_LABEL_WIDTH_REM,
   instantAt,
   isSkeletonShown,
   resizeEstimateOf,
@@ -276,6 +277,17 @@ describe('schedule board edit utils', () => {
   describe('shownHourLabels', () => {
     it('shownHourLabels_ForColumnsAsWideAsTheLabel_ShowsEveryLabel', () => {
       expect(shownHourLabels(4, 40, 40)).toEqual([true, true, true, true]);
+    });
+
+    it('shownHourLabels_ForAColumnThatFitsTheTurnedLabel_ShowsEveryLabel', () => {
+      const rootFontPx = 16;
+
+      expect(shownHourLabels(4, 2.25 * rootFontPx, HOUR_LABEL_WIDTH_REM * rootFontPx)).toEqual([
+        true,
+        true,
+        true,
+        true,
+      ]);
     });
 
     it('shownHourLabels_ForNarrowColumns_ShowsOnlyTheEvenHours', () => {

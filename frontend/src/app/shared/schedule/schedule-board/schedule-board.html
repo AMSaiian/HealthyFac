@@ -12,11 +12,11 @@
   >
     <div class="hf-schedule-header-title">{{ 'SCHEDULE.EMPLOYEE' | translate }}</div>
     @for (hour of hours(); track $index) {
-      <div
-        class="flex h-8 items-center justify-center border-r border-(--p-schedule-board-border-color) last:border-r-0"
-      >
+      <div class="flex h-10 items-start border-r border-(--p-schedule-board-border-color) pt-1 pl-2 last:border-r-0">
         @if (shownLabels()[$index]) {
-          <span class="text-muted-color text-xs font-normal whitespace-nowrap">{{ hour }}</span>
+          <span class="text-muted-color origin-top-left rotate-45 text-xs font-normal whitespace-nowrap">{{
+            hour
+          }}</span>
         }
       </div>
     }

@@ -386,8 +386,11 @@ export const BAR_INSET_REM = 0.0625;
 /** The stacking order of the drag preview. It is above the PrimeNG overlays, such as the backlog drawer. */
 export const DRAG_PREVIEW_Z_INDEX = 10_000;
 
-/** The width of an hour label in rem: the text "00:00" in the small font with a little room. */
-export const HOUR_LABEL_WIDTH_REM = 2.5;
+/**
+ * The horizontal room of a turned hour label in rem: the left padding of its cell plus the text "00:00" in the small
+ * font, turned by 45 degrees around its top left corner. A label inside its own column is never cut at the board edge.
+ */
+export const HOUR_LABEL_WIDTH_REM = 2;
 
 /** The start under the left edge of a preview on the axis, snapped to the grid. It is `null` for an empty axis. */
 export function snappedStartOf(
