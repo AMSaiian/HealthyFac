@@ -1,3 +1,4 @@
+import type { ScheduleBar } from '@shared/schedule/schedule-row';
 import { Temporal } from '@shared/time/temporal';
 
 import {
@@ -16,6 +17,8 @@ import {
   instantAt,
   isSkeletonShown,
   minutesOfWidth,
+  resizeHandleRightPercent,
+  resizeShownOf,
   ROW_ATTRIBUTE,
   rowHeightRem,
   shownHourLabels,
@@ -69,6 +72,62 @@ describe('schedule board edit utils', () => {
       const shortDay = axisOf(Temporal.PlainDate.from('2027-03-28'), ZONE);
 
       expect(minutesOfWidth(widthPercentOf(60, shortDay), shortDay)).toBe(60);
+    });
+  });
+
+  describe('resize of an overdue running bar', () => {
+    const axis = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+    const scheduleBar: ScheduleBar = {
+      id: 'w',
+      title: 'w',
+      start: Temporal.Instant.from('2027-06-01T06:00:00Z'),
+      end: Temporal.Instant.from('2027-06-01T10:00:00Z'),
+      statusKey: 'S',
+      colorClass: 'c',
+    };
+    const overdue = {
+      bar: scheduleBar,
+      left: 25,
+      width: 20,
+      lane: 0,
+      isCutStart: false,
+      isCutEnd: false,
+      overrunStartPercent: 40,
+    };
+    const onTime = { ...overdue, overrunStartPercent: null };
+
+    it('resizeHandleRightPercent_ForAnOverdueBar_SitsAtTheOverrunStart', () => {
+      expect(resizeHandleRightPercent(overdue)).toBe(60);
+    });
+
+    it('resizeHandleRightPercent_ForABarWithoutOverrun_SitsAtTheRightEdge', () => {
+      expect(resizeHandleRightPercent(onTime)).toBe(0);
+    });
+
+    it('resizeShownOf_ForAPointerBeforeNow_KeepsTheLiveEndAndMovesTheOverrunStart', () => {
+      const shown = resizeShownOf(overdue, widthPercentOf(60, axis), axis);
+
+      expect(shown.widthPercent).toBe(20);
+      expect(shown.overrunStartPercent).toBeCloseTo((widthPercentOf(60, axis) / 20) * 100);
+    });
+
+    it('resizeShownOf_ForAPointerPastNow_EndsTheBarAtThePointerWithoutOverrun', () => {
+      const shown = resizeShownOf(overdue, widthPercentOf(300, axis), axis);
+
+      expect(shown.widthPercent).toBeCloseTo(widthPercentOf(300, axis));
+      expect(shown.overrunStartPercent).toBeNull();
+    });
+
+    it('resizeShownOf_ForABarWithoutOverrun_FollowsThePointer', () => {
+      const shown = resizeShownOf(onTime, 7, axis);
+
+      expect(shown).toEqual({ widthPercent: 7, overrunStartPercent: null });
+    });
+
+    it('resizeShownOf_ForAnOverdueBarBelowTheMinimum_StopsAtFiveMinutes', () => {
+      const shown = resizeShownOf(overdue, -3, axis);
+
+      expect(shown.overrunStartPercent).toBeCloseTo((widthPercentOf(5, axis) / 20) * 100);
     });
   });
 

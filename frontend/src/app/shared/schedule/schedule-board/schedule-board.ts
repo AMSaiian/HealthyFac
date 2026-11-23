@@ -68,6 +68,8 @@ import {
   type PreviewDrag,
   previewPointOf,
   type PreviewSlot,
+  resizeHandleRightPercent,
+  resizeShownOf,
   ROW_ATTRIBUTE,
   ROW_PADDING_REM,
   shownHourLabels,
@@ -99,6 +101,7 @@ const DAY_AREA_ATTRIBUTE = 'data-day-area';
 const PREVIOUS_AREA = 'previous';
 const NEXT_AREA = 'next';
 const PERCENT = 100;
+const OVERRUN_START_PROPERTY = '--hf-overrun-start';
 const DEFAULT_ROOT_FONT_PX = 16;
 
 /**
@@ -298,6 +301,10 @@ export class ScheduleBoard {
     return bar.end.toZonedDateTimeISO(this.timeZoneId()).toPlainDate().toString();
   }
 
+  protected handleRight(item: PlacedBar): string {
+    return `${resizeHandleRightPercent(item)}%`;
+  }
+
   protected overrunStart(item: PlacedBar): string | null {
     return item.overrunStartPercent === null ? null : `${item.overrunStartPercent}%`;
   }
@@ -393,14 +400,25 @@ export class ScheduleBoard {
     const overlayWidth = overlay.getBoundingClientRect().width;
     const startLeft = bar.getBoundingClientRect().left;
     const widthPercent = (clientX: number): number => ((clientX - startLeft) / overlayWidth) * PERCENT;
+    const initialOverrun = bar.style.getPropertyValue(OVERRUN_START_PROPERTY);
     const onMove = (move: PointerEvent): void => {
-      bar.style.width = `${Math.max(0, widthPercent(move.clientX))}%`;
+      const shown = resizeShownOf(item, widthPercent(move.clientX), this.axis());
+      bar.style.width = `${shown.widthPercent}%`;
+      if (item.overrunStartPercent !== null) {
+        const overrunPercent = shown.overrunStartPercent ?? PERCENT;
+        bar.style.setProperty(OVERRUN_START_PROPERTY, `${overrunPercent}%`);
+        handle.style.right = `${PERCENT - overrunPercent}%`;
+      }
     };
     const onUp = (up: PointerEvent): void => {
       handle.removeEventListener('pointermove', onMove);
       handle.removeEventListener('pointerup', onUp);
       handle.releasePointerCapture(up.pointerId);
       bar.style.removeProperty('width');
+      if (item.overrunStartPercent !== null) {
+        bar.style.setProperty(OVERRUN_START_PROPERTY, initialOverrun);
+        handle.style.right = this.handleRight(item);
+      }
       this._clickGuard.markDragged();
       this.barResized.emit({
         workOrderId: item.bar.id,

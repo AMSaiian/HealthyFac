@@ -243,6 +243,34 @@ export function widthPercentOf(estimateMinutes: number, axis: Axis): number {
 }
 
 /**
+ * Where the resize handle of a bar sits, in percent of the bar width counted from its right edge. A running bar past
+ * its planned end has the handle at the end of the planned part, because the resize sets the planned end.
+ */
+export function resizeHandleRightPercent(item: PlacedBar): number {
+  return item.overrunStartPercent === null ? 0 : PERCENT - item.overrunStartPercent;
+}
+
+/**
+ * The bar while its handle is dragged to a width in percent of the axis, measured from the left edge of the bar. A bar
+ * without overrun follows the pointer. An overdue bar keeps its live end while the planned end is before it, and only
+ * the overrun start moves. Past the live end the bar ends at the planned end and has no overrun part.
+ */
+export function resizeShownOf(
+  item: PlacedBar,
+  widthPercent: number,
+  axis: Axis,
+): { widthPercent: number; overrunStartPercent: number | null } {
+  if (item.overrunStartPercent === null) {
+    return { widthPercent: Math.max(0, widthPercent), overrunStartPercent: null };
+  }
+  const plannedPercent = widthPercentOf(minutesOfWidth(widthPercent, axis), axis);
+  if (plannedPercent >= item.width) {
+    return { widthPercent: plannedPercent, overrunStartPercent: null };
+  }
+  return { widthPercent: item.width, overrunStartPercent: (plannedPercent / item.width) * PERCENT };
+}
+
+/**
  * Runs a callback once after a pointer rests on a day switch area. `enter` starts the wait, `leave` cancels it, and the
  * wait starts again after each run while the pointer stays.
  */

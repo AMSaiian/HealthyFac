@@ -206,6 +206,7 @@
             @if (canResize(entry.item)) {
               <span
                 class="hf-resize-handle"
+                [style.right]="handleRight(entry.item)"
                 (pointerdown)="onResizeStart($event, entry.item)"
               ></span>
             }
