@@ -150,6 +150,7 @@
           <div
             cdkDrag
             cdkDragPreviewContainer="global"
+            [cdkDragConstrainPosition]="constrain"
             class="hf-schedule-bar absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6 text-white"
             [class]="barClasses(entry.item.bar)"
             [class.hf-bar-overrun]="entry.item.overrunStartPercent !== null"
@@ -161,7 +162,7 @@
             [attr.aria-label]="entry.item.bar.title + ', ' + describe(entry.item.bar)"
             [pTooltip]="tooltip(entry.item.bar)"
             tooltipStyleClass="whitespace-pre-line"
-            (pointerdown)="onBarPointerDown($event)"
+            (pointerdown)="onBarPointerDown($event, entry.item.bar)"
             (cdkDragStarted)="onDragStarted(entry)"
             (cdkDragMoved)="onDragMoved($event)"
             (cdkDragEnded)="onDragEnded($event, entry.item.bar)"
@@ -185,13 +186,20 @@
             }
             <ng-template cdkDragPreview>
               <div
-                class="rounded-border -mt-3 truncate px-2 text-xs leading-6 text-white shadow-lg"
+                class="rounded-border flex px-2 text-xs leading-6 text-white shadow-lg"
                 [class]="barClasses(entry.item.bar)"
+                [class.hf-preview-conflict]="previewSlot()?.isConflict"
                 [style.height.rem]="laneHeightRem"
                 [style.width.px]="previewWidthPx(entry.item)"
-                [style.margin-left.px]="-grabOffsetPx()"
               >
-                {{ entry.item.bar.title }}
+                @if (previewSlot(); as slot) {
+                  <span
+                    class="rounded-border bg-surface-900 dark:bg-surface-0 absolute bottom-full left-0 mb-1 px-2 text-xs leading-5 whitespace-nowrap text-white dark:text-surface-900 shadow-lg"
+                  >
+                    {{ slot.rangeText }}
+                  </span>
+                }
+                <span class="min-w-0 flex-1 truncate">{{ entry.item.bar.title }}</span>
               </div>
             </ng-template>
             @if (canResize(entry.item)) {

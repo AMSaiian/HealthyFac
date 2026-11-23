@@ -8,8 +8,22 @@
     [value]="model().date"
     [min]="minDate()"
     [disabled]="isEdit()"
+    [disabledDates]="disabledDates()"
+    [dateTemplate]="dayCell"
     (valueChange)="setDate($event)"
+    (monthChange)="monthChange.emit($event)"
   />
+  <ng-template
+    #dayCell
+    let-cell
+  >
+    <span
+      class="flex size-full items-center justify-center rounded-full"
+      [class.hf-day-busy]="isTaken(cell)"
+      [pTooltip]="isTaken(cell) ? ('SHIFTS.DIALOG.HAS_OVERRIDE' | translate) : ''"
+      >{{ cell.day }}</span
+    >
+  </ng-template>
 </div>
 <p-divider />
 @if (showSkeleton()) {

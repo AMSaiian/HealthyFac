@@ -12,6 +12,7 @@ import {
   localStartOf,
   type PendingChange,
   stagingOf,
+  stagingTotalOf,
   withTarget,
 } from './schedule.store.utils';
 
@@ -272,6 +273,38 @@ describe('schedule store utils', () => {
         ['w3', 60],
         ['w4', 30],
       ]);
+    });
+  });
+
+  describe('stagingTotalOf', () => {
+    const backlog = [{ id: 'w3', title: 'w3', priority: WorkOrderPriority.Low, estimateMinutes: 60 }];
+    const knownMap = new Map([['w1', known('w1', 'e1', '09:00:00')]]);
+    const assign: PendingChange = {
+      workOrderId: 'w3',
+      rowVersion: 3,
+      assigneeId: 'e1',
+      plannedStartLocal: '2027-06-01T09:00:00',
+      estimateMinutes: 60,
+    };
+    const unassign: PendingChange = {
+      workOrderId: 'w1',
+      rowVersion: 3,
+      assigneeId: null,
+      plannedStartLocal: null,
+      estimateMinutes: 45,
+    };
+
+    it.each([
+      ['NoPendingChange', [], 1],
+      ['APendingAssignOfTheOnlyBacklogItem', [assign], 0],
+      ['APendingUnassignOfAnotherWorkOrder', [unassign], 2],
+      ['AnAssignAndAnUnassign', [assign, unassign], 1],
+    ])('stagingTotalOf_With%s_CountsThePendingChanges', (_name, pending, total) => {
+      expect(stagingTotalOf(1, backlog, pending, knownMap)).toBe(total);
+    });
+
+    it('stagingTotalOf_ForAServerListCutAtTheLimit_KeepsTheServerTotalMinusTheAssigned', () => {
+      expect(stagingTotalOf(120, backlog, [assign], knownMap)).toBe(119);
     });
   });
 });

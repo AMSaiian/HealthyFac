@@ -147,3 +147,24 @@ export function summaryOf(blocks: readonly ShiftBlock[]): string {
 export function isOverrideDateTaken(isCreate: boolean, source: DayScheduleSource | null): boolean {
   return isCreate && source === DayScheduleSource.Override;
 }
+
+/** The first day of the month that the override calendar shows: the shown month, else the month of the form date. */
+export function shownOverrideMonthOf(
+  month: Temporal.PlainYearMonth | null,
+  formDate: Temporal.PlainDate,
+): Temporal.PlainDate {
+  return month === null ? formDate.with({ day: 1 }) : month.toPlainDate({ day: 1 });
+}
+
+/** The days that already have an override. The new override calendar disables them. */
+export function overrideDatesOf(overrides: readonly { readonly date: string }[]): Temporal.PlainDate[] {
+  return overrides.map((entry) => Temporal.PlainDate.from(entry.date));
+}
+
+/** The days that the calendar of an override disables: the taken days of a new override, none when editing. */
+export function disabledOverrideDatesOf(
+  isEdit: boolean,
+  taken: readonly Temporal.PlainDate[],
+): readonly Temporal.PlainDate[] {
+  return isEdit ? [] : taken;
+}

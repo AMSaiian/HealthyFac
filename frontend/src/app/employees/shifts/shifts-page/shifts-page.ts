@@ -6,6 +6,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
 import { CLOCK } from '@shared/time/clock';
+import type { ShownMonth } from '@shared/time/pickers/plain-date-picker/plain-date-picker';
 import { Temporal } from '@shared/time/temporal';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { HistoryStore } from '@shared/history/history.store';
@@ -99,6 +100,10 @@ export class ShiftsPage {
   protected onOverride(value: OverrideFormValue): void {
     this._override.set(value);
     this.store.setPrefillDate(value.date);
+  }
+
+  protected toYearMonth(month: ShownMonth): Temporal.PlainYearMonth {
+    return new Temporal.PlainYearMonth(month.year, month.month);
   }
 
   protected onValidity(isValid: boolean): void {

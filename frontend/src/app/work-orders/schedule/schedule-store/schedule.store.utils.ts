@@ -1,5 +1,6 @@
 import { type Axis, segmentOf } from '@shared/schedule/schedule-board/schedule-board.utils';
-import type { ScheduleBar, ScheduleBlock, ScheduleRow } from '@shared/schedule/schedule-row';
+import { isSlotBroken } from '@shared/schedule/schedule-conflicts';
+import type { ScheduleBar, ScheduleRow } from '@shared/schedule/schedule-row';
 import { Temporal } from '@shared/time/temporal';
 
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
@@ -127,17 +128,6 @@ export function applyPending(
   return stripped;
 }
 
-function isInsideOneBlock(bar: ScheduleBar, blocks: readonly ScheduleBlock[]): boolean {
-  return blocks.some(
-    (block) =>
-      Temporal.Instant.compare(block.start, bar.start) <= 0 && Temporal.Instant.compare(bar.end, block.end) <= 0,
-  );
-}
-
-function isOverlapping(first: ScheduleBar, second: ScheduleBar): boolean {
-  return Temporal.Instant.compare(first.start, second.end) < 0 && Temporal.Instant.compare(second.start, first.end) < 0;
-}
-
 /**
  * The pending bars of drawn rows that break a rule: a bar outside every work block of its row, or a bar that overlaps
  * another bar of the same row (half-open intervals).
@@ -146,10 +136,8 @@ export function conflictsOf(rows: readonly ScheduleRow[], pendingIds: ReadonlySe
   const conflicts = new Set<string>();
   for (const row of rows) {
     for (const bar of row.bars.filter((candidate) => pendingIds.has(candidate.id))) {
-      const isBroken =
-        !isInsideOneBlock(bar, row.blocks) ||
-        row.bars.some((other) => other.id !== bar.id && isOverlapping(bar, other));
-      if (isBroken) {
+      const others = row.bars.filter((other) => other.id !== bar.id);
+      if (isSlotBroken(bar, row.blocks, others)) {
         conflicts.add(bar.id);
       }
     }
@@ -184,4 +172,14 @@ export function stagingOf(
         : [{ id: base.id, title: base.title, priority: base.priority, estimateMinutes: entry.estimateMinutes }];
     });
   return [...returned, ...remaining];
+}
+
+/** The backlog count with the pending changes: the server total, minus the assigned items, plus the returned ones. */
+export function stagingTotalOf(
+  serverTotal: number,
+  backlog: readonly StagingWorkOrder[],
+  pending: readonly PendingChange[],
+  known: ReadonlyMap<string, KnownWorkOrder>,
+): number {
+  return serverTotal + stagingOf(backlog, pending, known).length - backlog.length;
 }

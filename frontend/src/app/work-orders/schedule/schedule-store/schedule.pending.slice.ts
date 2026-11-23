@@ -37,6 +37,7 @@ import {
   localStartOf,
   type PendingChange,
   stagingOf,
+  stagingTotalOf,
   targetOf,
   withTarget,
 } from './schedule.store.utils';
@@ -144,7 +145,17 @@ export function withSchedulePending() {
             : applyPending(store.rows(), store.pending(), knownMap(), axisOf(date, store._zone()), store._zone());
         }),
         stagingItems: computed(() => stagingOf(backlog(), store.pending(), knownMap())),
-        stagingTotal: computed(() => (store.staging.hasValue() ? store.staging.value().totalCount : 0)),
+        stagingTotal: computed(() =>
+          stagingTotalOf(
+            store.staging.hasValue() ? store.staging.value().totalCount : 0,
+            backlog(),
+            store.pending(),
+            knownMap(),
+          ),
+        ),
+        isStagingCut: computed(
+          () => store.staging.hasValue() && store.staging.value().items.length < store.staging.value().totalCount,
+        ),
         _knownMap: knownMap,
       };
     }),

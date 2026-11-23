@@ -34,20 +34,9 @@ export function backlogDrawerStateOf(
   return { isMounted: isOpen || isBacklogDragActive, isHidden: !isOpen && isBacklogDragActive };
 }
 
-export const BACKLOG_BUTTON_TEXT_KEY = 'WORK_ORDERS.SCHEDULE_TAB.BACKLOG_TOGGLE';
-export const BACKLOG_DROP_TEXT_KEY = 'WORK_ORDERS.SCHEDULE_TAB.DROP_TO_BACKLOG';
-
-/**
- * The backlog button of the toolbar. While a bar of the board drags, the button is the target that returns the work
- * order to the backlog: it shows the drop text and the highlight. Otherwise it shows the count and toggles the drawer.
- */
-export function backlogButtonOf(isBoardDragActive: boolean): {
-  readonly textKey: string;
-  readonly isHighlighted: boolean;
-} {
-  return isBoardDragActive
-    ? { textKey: BACKLOG_DROP_TEXT_KEY, isHighlighted: true }
-    : { textKey: BACKLOG_BUTTON_TEXT_KEY, isHighlighted: false };
+/** The band over the toolbar row that returns a work order to the backlog: shown while a bar of the board drags. */
+export function isReturnBandShown(isBoardDragActive: boolean, canManage: boolean): boolean {
+  return isBoardDragActive && canManage;
 }
 
 export type BacklogDragEvent = 'backlogDragStarted' | 'boardDragStarted' | 'boardDragEnded';

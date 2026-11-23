@@ -8,6 +8,9 @@ import {
   createClickGuard,
   DRAG_PREVIEW_Z_INDEX,
   LANE_HEIGHT_REM,
+  type Point,
+  type PreviewDrag,
+  type PreviewSlot,
 } from '@shared/schedule/schedule-board/schedule-board.utils';
 import {
   chipTooltipOf,
@@ -15,6 +18,14 @@ import {
   previewWidthOf,
   type StagingItem,
 } from '@shared/schedule/staging-area/staging-area.utils';
+
+/** Gives the slot that a preview takes under the pointer: the pointer, the grab offset, the estimate, and the bar to ignore. */
+export type PreviewAt = (
+  pointer: Point,
+  grabPx: number,
+  estimateMinutes: number,
+  excludedId: string | null,
+) => PreviewDrag;
 
 export interface StagingRelease {
   readonly workOrderId: string;
@@ -37,9 +48,13 @@ export interface StagingRelease {
 export class StagingArea {
   readonly workOrders = input.required<readonly StagingItem[]>();
   readonly totalCount = input(0);
+  /** Whether the server holds more backlog items than the list shows. */
+  readonly isCut = input(false);
   readonly axis = input.required<Axis>();
   /** The width of the board axis in pixels. It gives the width of a drag preview. */
   readonly axisWidthPx = input(0);
+  /** Snaps a preview to the board. The page gives the function of the board. */
+  readonly previewAt = input<PreviewAt>(() => ({ slot: null, point: { x: 0, y: 0 } }));
 
   readonly dragStarted = output<void>();
   readonly dragMoved = output<{ readonly x: number; readonly y: number }>();
@@ -47,7 +62,6 @@ export class StagingArea {
   readonly workOrderClick = output<string>();
 
   protected readonly laneHeightRem = LANE_HEIGHT_REM;
-  protected readonly isMoreAvailable = computed(() => this.totalCount() > this.workOrders().length);
   protected readonly cards = computed(() =>
     this.workOrders().map((item) => ({
       item,
@@ -58,8 +72,30 @@ export class StagingArea {
 
   private readonly _translate = inject(TranslateService);
   protected readonly isDragging = signal(false);
+  /** The snapped slot under the preview of the running drag, or `null` outside every row. */
+  protected readonly previewSlot = signal<PreviewSlot | null>(null);
+  protected readonly grabOffsetPx = signal(0);
+
+  /** The point that the CDK takes as the pointer of a chip: on the snapped slot while the pointer is over a row. */
+  protected readonly constrain = (point: Point): Point => {
+    const holding = this._holding;
+    return holding === null ? point : this.previewAt()(point, this.grabOffsetPx(), holding.estimateMinutes, null).point;
+  };
 
   private readonly _clickGuard = createClickGuard();
+  private _holding: { readonly estimateMinutes: number } | null = null;
+  protected onPointerDown(event: PointerEvent, item: StagingItem): void {
+    this._holding = { estimateMinutes: item.estimateMinutes };
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.grabOffsetPx.set(Math.min(rect.width, Math.max(0, event.clientX - rect.left)));
+  }
+
+  protected onDragMoved(pointer: Point): void {
+    this.previewSlot.set(
+      this.previewAt()(pointer, this.grabOffsetPx(), this._holding?.estimateMinutes ?? 0, null).slot,
+    );
+    this.dragMoved.emit(pointer);
+  }
 
   protected onDragStarted(): void {
     this.isDragging.set(true);
@@ -68,9 +104,9 @@ export class StagingArea {
 
   protected onDragEnded(event: CdkDragEnd, id: string): void {
     this.isDragging.set(false);
+    this.previewSlot.set(null);
     this._clickGuard.markDragged();
-    const card = this.cards().find((entry) => entry.item.id === id);
-    const previewLeftPx = event.dropPoint.x - (card?.previewWidthPx ?? 0) / 2;
+    const previewLeftPx = event.dropPoint.x - this.grabOffsetPx();
     this.barReleased.emit({ workOrderId: id, previewLeftPx, pointer: event.dropPoint });
   }
 

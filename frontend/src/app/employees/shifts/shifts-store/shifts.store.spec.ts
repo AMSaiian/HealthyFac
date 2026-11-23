@@ -20,10 +20,13 @@ import { EmployeesApi } from '@employees/employees-api';
 import { type ShiftOverride, type ShiftVersion, Weekday } from '@employees/shifts/shift';
 import {
   affectedOf,
+  disabledOverrideDatesOf,
   emptyDays,
   isOverrideDateTaken,
   monthRange,
   normalizeVersion,
+  overrideDatesOf,
+  shownOverrideMonthOf,
   toShiftDialog,
   toVersionFormValue,
 } from '@employees/shifts/shifts-store/shifts.store.utils';
@@ -424,6 +427,28 @@ describe('ShiftsStore', () => {
     expect(store.prefillBlocks()).toBeNull();
   });
 
+  it('setOverrideMonth_ForANewOverride_LoadsTheOverridesOfThatMonthAsTakenDates', async () => {
+    const store = await setup();
+    store.openOverrideDialog(null);
+    await vi.waitFor(() => expect(store.takenDates().map(String)).toEqual(['2027-06-10']));
+
+    shiftOverrides.mockReturnValue(of([{ ...OVERRIDE, date: '2027-07-04' }]));
+    store.setOverrideMonth(Temporal.PlainYearMonth.from('2027-07'));
+
+    await vi.waitFor(() => expect(store.takenDates().map(String)).toEqual(['2027-07-04']));
+    expect(shiftOverrides).toHaveBeenLastCalledWith('e1', '2027-07-01', '2027-07-31');
+  });
+
+  it('openOverrideDialog_ForAStoredOverride_HasNoTakenDates', async () => {
+    const store = await setup();
+
+    store.openOverrideDialog(OVERRIDE);
+    await vi.waitFor(() => expect(store.dialog()).not.toBeNull());
+    await settle();
+
+    expect(store.takenDates()).toEqual([]);
+  });
+
   it('isEditable_ForAVersionThatTookEffect_IsFalse', async () => {
     const store = await setup();
 
@@ -581,5 +606,28 @@ describe('isOverrideDateTaken', () => {
     ['CreateBeforeTheDayLoads', true, null, false],
   ])('isOverrideDateTaken_For%s_Decides', (_name, isCreate, source, expected) => {
     expect(isOverrideDateTaken(isCreate, source)).toBe(expected);
+  });
+});
+
+describe('override calendar', () => {
+  it.each([
+    ['TheShownMonth', Temporal.PlainYearMonth.from('2027-08'), '2027-08-01'],
+    ['TheMonthOfTheFormDate', null, '2027-06-01'],
+  ])('shownOverrideMonthOf_With%s_GivesItsFirstDay', (_name, month, expected) => {
+    expect(shownOverrideMonthOf(month, Temporal.PlainDate.from('2027-06-17')).toString()).toBe(expected);
+  });
+
+  it('overrideDatesOf_ForTheOverridesOfAMonth_GivesTheirDates', () => {
+    expect(overrideDatesOf([{ date: '2027-06-10' }, { date: '2027-06-12' }]).map(String)).toEqual([
+      '2027-06-10',
+      '2027-06-12',
+    ]);
+  });
+
+  it.each([
+    ['ANewOverride', false, 1],
+    ['AnEditedOverride', true, 0],
+  ])('disabledOverrideDatesOf_For%s_Decides', (_name, isEdit, count) => {
+    expect(disabledOverrideDatesOf(isEdit, [Temporal.PlainDate.from('2027-06-10')])).toHaveLength(count);
   });
 });

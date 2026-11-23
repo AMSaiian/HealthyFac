@@ -7,7 +7,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { ScheduleBoard } from '@shared/schedule/schedule-board/schedule-board';
 import { axisOf } from '@shared/schedule/schedule-board/schedule-board.utils';
-import { StagingArea, type StagingRelease } from '@shared/schedule/staging-area/staging-area';
+import { type PreviewAt, StagingArea, type StagingRelease } from '@shared/schedule/staging-area/staging-area';
 import { CLOCK } from '@shared/time/clock';
 import { PlainDatePicker } from '@shared/time/pickers/plain-date-picker/plain-date-picker';
 import type { Temporal } from '@shared/time/temporal';
@@ -17,9 +17,9 @@ import { ScheduleStore } from '@work-orders/schedule/schedule-store/schedule.sto
 import { ViewHeader } from '@work-orders/view-header/view-header';
 import {
   BACKLOG_DRAWER_REM,
-  backlogButtonOf,
   backlogDrawerStateOf,
   isBacklogOpenAfterDrag,
+  isReturnBandShown,
   stagingCardOf,
 } from './schedule-page.utils';
 
@@ -64,10 +64,14 @@ export class SchedulePage {
   protected readonly drawerState = computed(() =>
     backlogDrawerStateOf(this.store.isBacklogOpen(), this.isStagingDragActive()),
   );
-  protected readonly backlogButton = computed(() => backlogButtonOf(this.isBoardDragActive()));
+  protected readonly isReturnBandVisible = computed(() =>
+    isReturnBandShown(this.isBoardDragActive(), this.store.canManage()),
+  );
 
   private readonly _board = viewChild(ScheduleBoard);
   protected readonly axisWidthPx = computed(() => this._board()?.axisWidthPx() ?? 0);
+  protected readonly previewAt: PreviewAt = (pointer, grabPx, estimateMinutes, excludedId) =>
+    this._board()?.previewAt(pointer, grabPx, estimateMinutes, excludedId) ?? { slot: null, point: pointer };
 
   protected onDate(date: Temporal.PlainDate | null): void {
     if (date !== null) {

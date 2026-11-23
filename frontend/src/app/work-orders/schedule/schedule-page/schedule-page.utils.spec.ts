@@ -1,13 +1,6 @@
 import { WorkOrderPriority } from '@work-orders/work-order';
 
-import {
-  BACKLOG_BUTTON_TEXT_KEY,
-  BACKLOG_DROP_TEXT_KEY,
-  backlogButtonOf,
-  backlogDrawerStateOf,
-  isBacklogOpenAfterDrag,
-  stagingCardOf,
-} from './schedule-page.utils';
+import { backlogDrawerStateOf, isBacklogOpenAfterDrag, isReturnBandShown, stagingCardOf } from './schedule-page.utils';
 
 describe('stagingCardOf', () => {
   it('stagingCardOf_ForAHighPriorityWorkOrder_GivesTheLabelKeyAndTheColorClass', () => {
@@ -34,16 +27,6 @@ describe('backlogDrawerStateOf', () => {
   });
 });
 
-describe('backlogButtonOf', () => {
-  it('backlogButtonOf_DuringADragOfAnAssignedBar_ShowsTheDropTextAndTheHighlight', () => {
-    expect(backlogButtonOf(true)).toEqual({ textKey: BACKLOG_DROP_TEXT_KEY, isHighlighted: true });
-  });
-
-  it('backlogButtonOf_WithoutADrag_ShowsTheCountTextWithoutTheHighlight', () => {
-    expect(backlogButtonOf(false)).toEqual({ textKey: BACKLOG_BUTTON_TEXT_KEY, isHighlighted: false });
-  });
-});
-
 describe('isBacklogOpenAfterDrag', () => {
   it.each([
     ['BacklogDragStartedWhileOpen', true, 'backlogDragStarted', false],
@@ -53,5 +36,15 @@ describe('isBacklogOpenAfterDrag', () => {
     ['BoardDragEndedWhileClosed', false, 'boardDragEnded', false],
   ] as const)('isBacklogOpenAfterDrag_For%s_Decides', (_name, isOpen, event, expected) => {
     expect(isBacklogOpenAfterDrag(isOpen, event)).toBe(expected);
+  });
+});
+
+describe('isReturnBandShown', () => {
+  it.each([
+    ['ADragOfABoardBarByAManager', true, true, true],
+    ['NoDrag', false, true, false],
+    ['ADragWithoutManageRights', true, false, false],
+  ])('isReturnBandShown_For%s_Decides', (_name, isDragActive, canManage, isShown) => {
+    expect(isReturnBandShown(isDragActive, canManage)).toBe(isShown);
   });
 });

@@ -8,11 +8,18 @@ import {
   describeBar,
   gapsOf,
   hourLabelsOf,
+  isPreviewConflict,
+  laneUnderOf,
+  leftPxOf,
   lengthMs,
+  localRangeOf,
+  minutesOfBar,
   nowPercentOf,
   placeBars,
+  previewPointOf,
   segmentOf,
   skeletonRowCount,
+  snappedStartOf,
   tooltipOf,
   withLiveEnds,
 } from './schedule-board.utils';
@@ -38,7 +45,8 @@ function bar(id: string, start: string, end: string): ScheduleBar {
   return { id, title: id, start: at(start), end: at(end), statusKey: 'S', colorClass: 'c' };
 }
 
-const NORMAL = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
+const NORMAL_DATE = Temporal.PlainDate.from('2027-06-01');
+const NORMAL = axisOf(NORMAL_DATE, ZONE);
 
 describe('hourLabelsOf', () => {
   it('hourLabelsOf_OnANormalDay_Gives24HoursFrom0000To2300', () => {
@@ -291,5 +299,75 @@ describe('bars across days', () => {
 
       expect(text).toBe('09:00 - 10:00 (+03:00)');
     });
+  });
+});
+
+describe('preview snapping', () => {
+  const AREA = { left: 100, width: 2400 };
+  const ROOT_FONT_PX = 16;
+
+  it.each([
+    ['OnAGridStep', 100 + 9 * 100, '2027-06-01T09:00'],
+    ['BetweenGridSteps', 100 + 905, '2027-06-01T09:05'],
+    ['JustBeforeTheNextStep', 100 + 907, '2027-06-01T09:05'],
+    ['LeftOfTheAxis', 100 - 100, '2027-05-31T23:00'],
+  ])('snappedStartOf_ForAPreviewLeftEdge%s_SnapsToTheGrid', (_name, leftPx, local) => {
+    expect(snappedStartOf(leftPx, AREA, NORMAL)?.equals(at(local))).toBe(true);
+  });
+
+  it('snappedStartOf_ForAnEmptyAxis_IsNull', () => {
+    expect(snappedStartOf(10, { left: 0, width: 0 }, NORMAL)).toBeNull();
+  });
+
+  it('leftPxOf_ForTheSnappedStart_GivesTheEdgeOfThePreview', () => {
+    expect(leftPxOf(at('2027-06-01T09:05'), AREA, NORMAL)).toBeCloseTo(100 + ((9 * 60 + 5) / 60) * 100, 5);
+  });
+
+  it.each([
+    ['AbovePadding', 0, 0],
+    ['FirstLane', 15, 0],
+    ['SecondLane', 15 + 28, 1],
+    ['BelowTheLastLane', 500, 1],
+  ])('laneUnderOf_ForThePointer%s_GivesTheLane', (_name, offsetPx, lane) => {
+    expect(laneUnderOf(1000 + offsetPx, 1000, 2, ROOT_FONT_PX)).toBe(lane);
+  });
+
+  it.each([
+    ['OverARow', { leftPx: 1005, laneTopPx: 1015 }, { x: 1005, y: 1015 }],
+    ['OutsideEveryRow', null, { x: 970, y: 1000 - 12 }],
+  ])('previewPointOf_For%s_GivesTheTopLeftOfThePreview', (_name, slot, point) => {
+    expect(previewPointOf(slot, { x: 1000, y: 1000 }, 30, ROOT_FONT_PX)).toEqual(point);
+  });
+
+  describe('localRangeOf', () => {
+    it('localRangeOf_ForASlotOnTheShownDay_GivesTheTimesOnly', () => {
+      expect(localRangeOf(at('2027-06-01T09:05'), at('2027-06-01T10:35'), ZONE, NORMAL_DATE)).toBe('09:05 - 10:35');
+    });
+
+    it('localRangeOf_ForASlotThatEndsOnTheNextDay_GivesBothDates', () => {
+      expect(localRangeOf(at('2027-06-01T23:00'), at('2027-06-02T01:00'), ZONE, NORMAL_DATE)).toBe(
+        '2027-06-01 23:00 - 2027-06-02 01:00',
+      );
+    });
+  });
+
+  describe('isPreviewConflict', () => {
+    const blocks = [{ start: at('2027-06-01T08:00'), end: at('2027-06-01T17:00') }];
+    const others = [{ start: at('2027-06-01T10:00'), end: at('2027-06-01T11:00') }];
+    const now = at('2027-06-01T07:00');
+
+    it.each([
+      ['FitsInABlockWithoutOverlap', '2027-06-01T08:00', '2027-06-01T09:00', false],
+      ['TouchesAnotherBar', '2027-06-01T09:00', '2027-06-01T10:00', false],
+      ['OverlapsAnotherBar', '2027-06-01T09:30', '2027-06-01T10:30', true],
+      ['LeavesEveryBlock', '2027-06-01T16:30', '2027-06-01T17:30', true],
+      ['StartsBeforeNow', '2027-06-01T06:30', '2027-06-01T07:30', true],
+    ])('isPreviewConflict_ForASlotThat%s_Decides', (_name, start, end, isConflict) => {
+      expect(isPreviewConflict({ start: at(start), end: at(end) }, blocks, others, now)).toBe(isConflict);
+    });
+  });
+
+  it('minutesOfBar_ForABarOfOneAndAHalfHours_Gives90', () => {
+    expect(minutesOfBar(bar('a', '2027-06-01T09:00', '2027-06-01T10:30'))).toBe(90);
   });
 });

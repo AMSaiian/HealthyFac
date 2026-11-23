@@ -48,18 +48,30 @@ import {
   gapsOf,
   HOUR_LABEL_WIDTH_REM,
   hourLabelsOf,
+  isPreviewConflict,
   isSkeletonShown,
   LANE_GAP_REM,
   LANE_HEIGHT_REM,
+  laneTopPxOf,
+  laneUnderOf,
+  leftPxOf,
+  localRangeOf,
+  minutesOfBar,
   minutesOfWidth,
   NAME_COLUMN_REM,
   nowPercentOf,
   placeBars,
   type PlacedBar,
+  type Point,
+  type PreviewDrag,
+  previewPointOf,
+  type PreviewSlot,
+  ROW_ATTRIBUTE,
   ROW_PADDING_REM,
   shownHourLabels,
   shownWhileHolding,
   skeletonRowCount,
+  snappedStartOf,
   tooltipOf,
   withLiveEnds,
 } from '@shared/schedule/schedule-board/schedule-board.utils';
@@ -136,6 +148,14 @@ export class ScheduleBoard {
   protected readonly laneGapRem = LANE_GAP_REM;
   /** The distance in pixels from the left edge of the grabbed bar to the pointer. The preview keeps it. */
   protected readonly grabOffsetPx = signal(0);
+  /** The snapped slot under the preview of the running drag, or `null` outside every row. */
+  protected readonly previewSlot = signal<PreviewSlot | null>(null);
+
+  /** The point that the CDK takes as the pointer of a board bar: on the snapped slot while the pointer is over a row. */
+  protected readonly constrain = (point: Point): Point => {
+    const bar = this._holdingBar;
+    return bar === null ? point : this.previewAt(point, this.grabOffsetPx(), minutesOfBar(bar), bar.id).point;
+  };
 
   /**
    * The rows and the date that the board draws. A drag that runs while the next day loads keeps the previous ones, so
@@ -186,6 +206,7 @@ export class ScheduleBoard {
   private readonly _overlay = viewChild<ElementRef<HTMLElement>>('overlay');
   private readonly _header = viewChild<ElementRef<HTMLElement>>('header');
   private readonly _draggedBar = signal<FlatBar | null>(null);
+  private _holdingBar: ScheduleBar | null = null;
   private readonly _clickGuard = createClickGuard();
   private readonly _previousDwell = createDwell(() => this.daySwitchRequested.emit(-1));
   private readonly _nextDwell = createDwell(() => this.daySwitchRequested.emit(1));
@@ -293,9 +314,10 @@ export class ScheduleBoard {
     }
   }
 
-  protected onBarPointerDown(event: PointerEvent): void {
-    const bar = event.currentTarget as HTMLElement;
-    const rect = bar.getBoundingClientRect();
+  protected onBarPointerDown(event: PointerEvent, bar: ScheduleBar): void {
+    this._holdingBar = bar;
+    const element = event.currentTarget as HTMLElement;
+    const rect = element.getBoundingClientRect();
     this.grabOffsetPx.set(Math.min(rect.width, Math.max(0, event.clientX - rect.left)));
   }
 
@@ -307,9 +329,16 @@ export class ScheduleBoard {
 
   protected onDragMoved(event: CdkDragMove): void {
     this.trackExternalDrag(event.pointerPosition);
+    const bar = this._draggedBar()?.item.bar;
+    this.previewSlot.set(
+      bar === undefined
+        ? null
+        : this.previewAt(event.pointerPosition, this.grabOffsetPx(), minutesOfBar(bar), bar.id).slot,
+    );
   }
 
   protected onDragEnded(event: CdkDragEnd, bar: ScheduleBar): void {
+    this.previewSlot.set(null);
     this._updateDwell(null);
     this.isDragging.set(false);
     this.dragActiveChange.emit(false);
@@ -331,6 +360,16 @@ export class ScheduleBoard {
   placeExternal(workOrderId: string, previewLeftPx: number, pointer: { x: number; y: number }): void {
     this._updateDwell(null);
     this._dropAt(workOrderId, false, previewLeftPx, pointer);
+  }
+
+  /**
+   * The slot that a preview takes when the pointer is over a row: the start under its left edge snapped to the grid,
+   * the end after the estimate, and whether a drop there is refused. The bar of `excludedId` does not count as an
+   * obstacle. It is `null` outside every row. The backlog calls it through the page for its own previews.
+   */
+  previewAt(pointer: Point, grabPx: number, estimateMinutes: number, excludedId: string | null): PreviewDrag {
+    const slot = this._slotAt(pointer, grabPx, estimateMinutes, excludedId);
+    return { slot, point: previewPointOf(slot, pointer, grabPx, this._rootFontPx()) };
   }
 
   protected onResizeStart(event: PointerEvent, item: PlacedBar): void {
@@ -398,6 +437,41 @@ export class ScheduleBoard {
     } else if (outcome?.kind === 'place') {
       this.barDropped.emit({ workOrderId, assigneeId: outcome.rowId, startInstant: outcome.start });
     }
+  }
+
+  private _slotAt(
+    pointer: Point,
+    grabPx: number,
+    estimateMinutes: number,
+    excludedId: string | null,
+  ): PreviewSlot | null {
+    const overlay = this._overlay()?.nativeElement;
+    const rowElement = document
+      .elementsFromPoint(pointer.x, pointer.y)
+      .map((element) => element.closest(`[${ROW_ATTRIBUTE}]`))
+      .find((element) => element !== null && element !== undefined);
+    const layout = this.layouts().find((entry) => entry.row.id === rowElement?.getAttribute(ROW_ATTRIBUTE));
+    if (overlay === undefined || rowElement === null || rowElement === undefined || layout === undefined) {
+      return null;
+    }
+    const axisArea = overlay.getBoundingClientRect();
+    const start = snappedStartOf(pointer.x - grabPx, axisArea, this.axis());
+    if (start === null) {
+      return null;
+    }
+    const end = start.add({ minutes: estimateMinutes });
+    const others = withLiveEnds(layout.row.bars, this.now()).filter((bar) => bar.id !== excludedId);
+    const rowTopPx = rowElement.getBoundingClientRect().top;
+    const lane = laneUnderOf(pointer.y, rowTopPx, layout.lanes.length, this._rootFontPx());
+    return {
+      start,
+      end,
+      rowId: layout.row.id,
+      rangeText: localRangeOf(start, end, this.timeZoneId(), this._shownDate()),
+      isConflict: isPreviewConflict({ start, end }, layout.row.blocks, others, this.now()),
+      leftPx: leftPxOf(start, axisArea, this.axis()),
+      laneTopPx: laneTopPxOf(rowTopPx, lane, this._rootFontPx()),
+    };
   }
 
   private _updateDwell(area: string | null): void {

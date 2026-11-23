@@ -34,6 +34,8 @@ export class PlainDatePicker implements FormValueControl<Temporal.PlainDate | nu
   readonly appendTo = input<'body' | 'self'>('body');
   readonly min = input<Temporal.PlainDate | undefined>(undefined);
   readonly max = input<Temporal.PlainDate | undefined>(undefined);
+  /** Days that cannot be picked. */
+  readonly disabledDates = input<readonly Temporal.PlainDate[]>([]);
   /** A template for the day cells. It gets the cell as `$implicit`. */
   readonly dateTemplate = input<TemplateRef<{ $implicit: PickerCellContext }> | null>(null);
   readonly touch = output<void>();
@@ -43,6 +45,9 @@ export class PlainDatePicker implements FormValueControl<Temporal.PlainDate | nu
   protected readonly pickerValue = computed(() => plainDateToPickerDate(this.value()), { equal: isSameDate });
   protected readonly minDate = computed(() => plainDateToPickerDate(this.min() ?? null), { equal: isSameDate });
   protected readonly maxDate = computed(() => plainDateToPickerDate(this.max() ?? null), { equal: isSameDate });
+  protected readonly disabledPickerDates = computed(() =>
+    this.disabledDates().flatMap((date) => plainDateToPickerDate(date) ?? []),
+  );
 
   protected onViewChange(event: DatePickerMonthChangeEvent): void {
     if (event.year !== undefined && event.month !== undefined) {

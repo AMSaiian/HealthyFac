@@ -5,7 +5,7 @@
   (createRequested)="grid.requestCreate()"
 >
   <div class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
-    <div class="flex flex-none flex-wrap items-center justify-between gap-2">
+    <div class="relative flex flex-none flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <button
           pButton
@@ -55,14 +55,13 @@
           </span>
           <button
             pButton
-            data-staging
             [pTooltip]="'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.BACKLOG_TOGGLE' | translate"
             tooltipPosition="bottom"
             type="button"
-            [severity]="backlogButton().isHighlighted ? 'primary' : 'secondary'"
+            severity="secondary"
             (click)="store.toggleBacklog()"
           >
-            {{ backlogButton().textKey | translate: { count: store.stagingTotal() } }}
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.BACKLOG_TOGGLE' | translate: { count: store.stagingTotal() } }}
           </button>
           <button
             pButton
@@ -98,6 +97,14 @@
           >
             {{ 'WORK_ORDERS.SCHEDULE_TAB.APPLY' | translate }}
           </button>
+        </div>
+      }
+      @if (isReturnBandVisible()) {
+        <div
+          data-staging
+          class="rounded-border text-primary bg-primary/20 absolute inset-0 z-10 flex items-center justify-center font-medium"
+        >
+          {{ 'WORK_ORDERS.SCHEDULE_TAB.DROP_TO_BACKLOG' | translate }}
         </div>
       }
     </div>
@@ -152,8 +159,10 @@
             <hf-staging-area
               [workOrders]="stagingCards()"
               [totalCount]="store.stagingTotal()"
+              [isCut]="store.isStagingCut()"
               [axis]="axis"
               [axisWidthPx]="axisWidthPx()"
+              [previewAt]="previewAt"
               (dragStarted)="onStagingDragStarted()"
               (dragMoved)="onStagingMove($event)"
               (barReleased)="onStagingRelease($event)"

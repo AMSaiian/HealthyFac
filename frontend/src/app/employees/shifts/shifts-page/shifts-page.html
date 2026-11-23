@@ -214,6 +214,8 @@
         [loadedBlocks]="store.prefillBlocks()"
         [isLoading]="store.isPrefillLoading()"
         [isDateTaken]="store.isDateTaken()"
+        [takenDates]="store.takenDates()"
+        (monthChange)="store.setOverrideMonth(toYearMonth($event))"
         (valueChange)="onOverride($event)"
         (validityChange)="onValidity($event)"
       />

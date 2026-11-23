@@ -129,6 +129,10 @@
     background-color: var(--p-work-order-status-rejected);
   }
 
+  .hf-preview-conflict {
+    background-color: var(--p-schedule-bar-conflict);
+  }
+
   .hf-file-type-pdf {
     color: var(--p-surface-0);
     background-color: var(--p-file-type-pdf);

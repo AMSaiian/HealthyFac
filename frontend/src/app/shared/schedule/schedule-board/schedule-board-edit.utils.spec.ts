@@ -125,11 +125,11 @@ describe('schedule board edit utils', () => {
       });
     });
 
-    it('dropTargetOf_WithTheBacklogButtonUnderThePointer_GivesStaging', () => {
-      const button = document.createElement('button');
-      button.setAttribute(STAGING_ATTRIBUTE, '');
+    it('dropTargetOf_WithTheReturnBandUnderThePointer_GivesStaging', () => {
+      const band = document.createElement('div');
+      band.setAttribute(STAGING_ATTRIBUTE, '');
 
-      expect(dropTargetOf([button])).toEqual({ kind: 'staging' });
+      expect(dropTargetOf([band])).toEqual({ kind: 'staging' });
     });
 
     it('dropTargetOf_WithTheStagingAreaUnderThePointer_GivesStaging', () => {

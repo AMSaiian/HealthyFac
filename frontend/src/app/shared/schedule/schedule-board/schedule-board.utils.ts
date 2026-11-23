@@ -2,6 +2,7 @@ import { SCHEDULE_SKELETON_ROWS } from '@shared/loading/loading-constants';
 import { Temporal } from '@shared/time/temporal';
 import { dayRange } from '@shared/time/zoned-times';
 
+import { isSlotBroken, type Slot } from '@shared/schedule/schedule-conflicts';
 import type { ScheduleBar, ScheduleBlock } from '@shared/schedule/schedule-row';
 
 /** The axis of one day: from the start of the date to the start of the next date, with the real length. */
@@ -190,8 +191,22 @@ export function tooltipOf(
  * end lies on another date than `axisDate`, both times show their dates.
  */
 export function describeBar(bar: ScheduleBar, timeZoneId: string, axisDate?: Temporal.PlainDate): string {
-  const start = bar.start.toZonedDateTimeISO(timeZoneId);
-  const end = bar.end.toZonedDateTimeISO(timeZoneId);
+  const offset = bar.start.toZonedDateTimeISO(timeZoneId).offset;
+  return `${localRangeOf(bar.start, bar.end, timeZoneId, axisDate)} (${offset})`;
+}
+
+/**
+ * The local range of a slot, e.g. `09:00 - 10:00`. When the start or the end lies on another date than `axisDate`, both
+ * times show their dates.
+ */
+export function localRangeOf(
+  startInstant: Temporal.Instant,
+  endInstant: Temporal.Instant,
+  timeZoneId: string,
+  axisDate?: Temporal.PlainDate,
+): string {
+  const start = startInstant.toZonedDateTimeISO(timeZoneId);
+  const end = endInstant.toZonedDateTimeISO(timeZoneId);
   const isOtherDate = (value: Temporal.ZonedDateTime): boolean =>
     axisDate !== undefined && !value.toPlainDate().equals(axisDate);
   const hasDates = isOtherDate(start) || isOtherDate(end);
@@ -199,7 +214,7 @@ export function describeBar(bar: ScheduleBar, timeZoneId: string, axisDate?: Tem
     const text = value.toPlainTime().toString({ smallestUnit: 'minute' });
     return hasDates ? `${value.toPlainDate().toString()} ${text}` : text;
   };
-  return `${time(start)} - ${time(end)} (${start.offset})`;
+  return `${time(start)} - ${time(end)}`;
 }
 
 /** The instant at a position of the axis in percent. It is the reverse of `percentOf`. */
@@ -303,19 +318,27 @@ export const DRAG_PREVIEW_Z_INDEX = 10_000;
 /** The width of an hour label in rem: the text "00:00" in the small font with a little room. */
 export const HOUR_LABEL_WIDTH_REM = 2.5;
 
-/** The start of a bar that a drop gives: the left edge of the preview on the axis, snapped to the grid. */
+/** The start under the left edge of a preview on the axis, snapped to the grid. It is `null` for an empty axis. */
+export function snappedStartOf(
+  previewLeftPx: number,
+  axisArea: { readonly left: number; readonly width: number },
+  axis: Axis,
+): Temporal.Instant | null {
+  if (axisArea.width <= 0) {
+    return null;
+  }
+  return snapToGrid(instantAt(((previewLeftPx - axisArea.left) / axisArea.width) * PERCENT, axis));
+}
+
+/** The start of a bar that a drop gives: the snapped start under the preview, unless it is before now. */
 export function dropStartOf(
   previewLeftPx: number,
   axisArea: { readonly left: number; readonly width: number },
   axis: Axis,
   now: Temporal.Instant,
 ): Temporal.Instant | null {
-  if (axisArea.width <= 0) {
-    return null;
-  }
-  const percent = ((previewLeftPx - axisArea.left) / axisArea.width) * PERCENT;
-  const start = snapToGrid(instantAt(percent, axis));
-  return Temporal.Instant.compare(start, now) < 0 ? null : start;
+  const start = snappedStartOf(previewLeftPx, axisArea, axis);
+  return start === null || Temporal.Instant.compare(start, now) < 0 ? null : start;
 }
 
 /**
@@ -397,4 +420,78 @@ export function createClickGuard(): { markDragged(): void; isBlocked(): boolean 
     },
     isBlocked: () => isDragged,
   };
+}
+
+export interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
+/** The left edge in pixels of an instant on the axis. It is the reverse of `snappedStartOf`. */
+export function leftPxOf(
+  instant: Temporal.Instant,
+  axisArea: { readonly left: number; readonly width: number },
+  axis: Axis,
+): number {
+  return axisArea.left + (percentOf(instant, axis) / PERCENT) * axisArea.width;
+}
+
+/** The lane of a row under the pointer, from 0 to the last lane. */
+export function laneUnderOf(pointerY: number, rowTopPx: number, laneCount: number, rootFontPx: number): number {
+  const laneStepPx = (LANE_HEIGHT_REM + LANE_GAP_REM) * rootFontPx;
+  const lane = Math.floor((pointerY - rowTopPx - ROW_PADDING_REM * rootFontPx) / laneStepPx);
+  return Math.min(Math.max(laneCount - 1, 0), Math.max(0, lane));
+}
+
+/** The top in pixels of a lane of a row. */
+export function laneTopPxOf(rowTopPx: number, lane: number, rootFontPx: number): number {
+  return rowTopPx + (ROW_PADDING_REM + lane * (LANE_HEIGHT_REM + LANE_GAP_REM)) * rootFontPx;
+}
+
+/**
+ * The point that the drag gives to the CDK as the top left of the preview. Over a row it is the snapped slot. Elsewhere
+ * the preview keeps the grab point under the pointer and half a lane below its top.
+ */
+export function previewPointOf(
+  slot: { readonly leftPx: number; readonly laneTopPx: number } | null,
+  pointer: Point,
+  grabPx: number,
+  rootFontPx: number,
+): Point {
+  return slot === null
+    ? { x: pointer.x - grabPx, y: pointer.y - (LANE_HEIGHT_REM / 2) * rootFontPx }
+    : { x: slot.leftPx, y: slot.laneTopPx };
+}
+
+/** Whether a drop of a slot is refused: it starts before now, leaves every work block, or overlaps another bar. */
+export function isPreviewConflict(
+  slot: Slot,
+  blocks: readonly ScheduleBlock[],
+  others: readonly Slot[],
+  now: Temporal.Instant,
+): boolean {
+  return Temporal.Instant.compare(slot.start, now) < 0 || isSlotBroken(slot, blocks, others);
+}
+
+/** The estimate of a bar in whole minutes: the length of its slot. */
+export function minutesOfBar(bar: ScheduleBar): number {
+  return Math.round((bar.end.epochMilliseconds - bar.start.epochMilliseconds) / MS_PER_MINUTE);
+}
+
+/** What the preview of a drag shows over a row: the snapped slot, its place in pixels, and whether a drop is refused. */
+export interface PreviewSlot {
+  readonly start: Temporal.Instant;
+  readonly end: Temporal.Instant;
+  readonly rowId: string;
+  /** The local range of the slot for the preview text. */
+  readonly rangeText: string;
+  readonly isConflict: boolean;
+  readonly leftPx: number;
+  readonly laneTopPx: number;
+}
+
+/** The preview of a drag: its slot over a row, and the point for the CDK. */
+export interface PreviewDrag {
+  readonly slot: PreviewSlot | null;
+  readonly point: Point;
 }

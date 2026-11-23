@@ -3,7 +3,11 @@ import { form, validateStandardSchema } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { delayedLoading } from '@shared/loading/delayed-loading';
-import { PlainDatePicker } from '@shared/time/pickers/plain-date-picker/plain-date-picker';
+import {
+  type PickerCellContext,
+  PlainDatePicker,
+  type ShownMonth,
+} from '@shared/time/pickers/plain-date-picker/plain-date-picker';
 import type { Temporal } from '@shared/time/temporal';
 
 import { BlockListEditor } from '@employees/shifts/block-list-editor/block-list-editor';
@@ -12,12 +16,14 @@ import {
   type OverrideFormValue,
 } from '@employees/shifts/override-dialog/override-dialog-schema';
 import type { ShiftBlock } from '@employees/shifts/shift';
+import { disabledOverrideDatesOf } from '@employees/shifts/shifts-store/shifts.store.utils';
 import { Divider } from 'primeng/divider';
 import { Skeleton } from 'primeng/skeleton';
+import { Tooltip } from 'primeng/tooltip';
 
 /** The form of an override: one date and its blocks. No block means a day off. */
 @Component({
-  imports: [Divider, BlockListEditor, PlainDatePicker, Skeleton, TranslatePipe],
+  imports: [Divider, BlockListEditor, PlainDatePicker, Skeleton, Tooltip, TranslatePipe],
   host: { class: 'flex flex-col gap-4' },
   selector: 'hf-override-dialog',
   templateUrl: './override-dialog.html',
@@ -33,8 +39,11 @@ export class OverrideDialog {
   readonly isLoading = input(false);
   /** Whether the chosen date of a new override already has an override. */
   readonly isDateTaken = input(false);
+  /** The days of the shown month that already have an override. A new override cannot pick them. */
+  readonly takenDates = input<readonly Temporal.PlainDate[]>([]);
 
   readonly valueChange = output<OverrideFormValue>();
+  readonly monthChange = output<ShownMonth>();
   readonly validityChange = output<boolean>();
 
   protected readonly model = linkedSignal<OverrideFormValue>(() => ({
@@ -42,6 +51,7 @@ export class OverrideDialog {
     blocks: [...this.initialValue().blocks],
   }));
   protected readonly showSkeleton = delayedLoading(this.isLoading);
+  protected readonly disabledDates = computed(() => disabledOverrideDatesOf(this.isEdit(), this.takenDates()));
   protected readonly storedBlocks = computed((): readonly ShiftBlock[] =>
     this.isEdit() ? this.initialValue().blocks : (this.loadedBlocks() ?? []),
   );
@@ -78,6 +88,12 @@ export class OverrideDialog {
     effect(() => {
       this.validityChange.emit(this.overrideForm().valid());
     });
+  }
+
+  protected isTaken(cell: PickerCellContext): boolean {
+    return this.disabledDates().some(
+      (date) => date.year === cell.year && date.month === cell.month + 1 && date.day === cell.day,
+    );
   }
 
   protected setDate(date: Temporal.PlainDate | null): void {

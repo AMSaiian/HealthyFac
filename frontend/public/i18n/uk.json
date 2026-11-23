@@ -1003,6 +1003,7 @@
       "VERSION_CREATE_TITLE": "Новий тижневий шаблон",
       "VERSION_EDIT_TITLE": "Змінити тижневий шаблон",
       "OVERRIDE_TITLE": "Виняток на день",
+      "HAS_OVERRIDE": "Має виняток",
       "EFFECTIVE_FROM": "Перший день дії",
       "DATE": "Дата",
       "BLOCKS": "Блоки",
