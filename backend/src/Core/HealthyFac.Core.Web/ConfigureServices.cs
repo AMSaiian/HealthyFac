@@ -28,7 +28,6 @@ using HealthyFac.Shared.Web.Rpc;
 using HealthyFac.Shared.Web.Serialization;
 using HealthyFac.Shared.Web.Tracing;
 using HealthyFac.Shared.Web.Versioning;
-using Serilog;
 
 namespace HealthyFac.Core.Web;
 
@@ -131,7 +130,7 @@ public static class ConfigureServices
             app.UseSharedGrpcPort();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
-            app.UseSerilogRequestLogging();
+            app.UseSharedRequestLogging();
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();

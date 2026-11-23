@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Web.Observability;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using Serilog.AspNetCore;
 using Serilog.Sinks.OpenTelemetry;
 
 namespace HealthyFac.Shared.Web.Logging;
@@ -50,6 +52,29 @@ public static class LoggingExtensions
             });
 
             return services;
+        }
+    }
+
+    extension(WebApplication app)
+    {
+        /// <summary>
+        /// Writes one log line for each request through the Serilog logger of the host. Without
+        /// <see cref="RequestLoggingOptions.Logger"/>, the middleware falls back to the static
+        /// <see cref="Log.Logger"/>, and every host replaces that logger at startup, so a request line can miss the
+        /// host sinks.
+        /// </summary>
+        /// <param name="configure">Optional hook to change the request logging options.</param>
+        /// <returns>The same <see cref="WebApplication"/> instance for method chaining.</returns>
+        public WebApplication UseSharedRequestLogging(Action<RequestLoggingOptions>? configure = null)
+        {
+            var logger = app.Services.GetRequiredService<ILogger>();
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.Logger = logger;
+                configure?.Invoke(options);
+            });
+
+            return app;
         }
     }
 

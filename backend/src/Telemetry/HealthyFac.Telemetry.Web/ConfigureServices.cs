@@ -30,7 +30,6 @@ using HealthyFac.Telemetry.Web.StatusDefinitions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using Serilog;
 
 namespace HealthyFac.Telemetry.Web;
 
@@ -139,7 +138,7 @@ public static class ConfigureServices
             app.UseSharedGrpcPort();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
-            app.UseSerilogRequestLogging();
+            app.UseSharedRequestLogging();
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();

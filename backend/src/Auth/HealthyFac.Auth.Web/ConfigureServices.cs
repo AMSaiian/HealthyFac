@@ -15,7 +15,6 @@ using HealthyFac.Shared.Web.Serialization;
 using HealthyFac.Shared.Web.Tracing;
 using HealthyFac.Shared.Web.Versioning;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Serilog;
 using StackExchange.Redis;
 
 namespace HealthyFac.Auth.Web;
@@ -114,7 +113,7 @@ public static class ConfigureServices
             app.UseSharedHealthChecks();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
-            app.UseSerilogRequestLogging();
+            app.UseSharedRequestLogging();
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();

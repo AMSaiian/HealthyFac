@@ -27,7 +27,6 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
-using Serilog;
 
 namespace HealthyFac.Document.Web;
 
@@ -154,7 +153,7 @@ public static class ConfigureServices
             app.UseSharedGrpcPort();
             app.UseSharedForwardedHeaders();
             app.UseSharedHttps();
-            app.UseSerilogRequestLogging();
+            app.UseSharedRequestLogging();
 
             app.UseSharedCors();
             app.UseSharedExceptionHandling();
