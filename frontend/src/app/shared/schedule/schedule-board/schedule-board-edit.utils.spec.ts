@@ -125,6 +125,13 @@ describe('schedule board edit utils', () => {
       });
     });
 
+    it('dropTargetOf_WithTheBacklogButtonUnderThePointer_GivesStaging', () => {
+      const button = document.createElement('button');
+      button.setAttribute(STAGING_ATTRIBUTE, '');
+
+      expect(dropTargetOf([button])).toEqual({ kind: 'staging' });
+    });
+
     it('dropTargetOf_WithTheStagingAreaUnderThePointer_GivesStaging', () => {
       expect(dropTargetOf([tagged(STAGING_ATTRIBUTE, '')])).toEqual({ kind: 'staging' });
     });

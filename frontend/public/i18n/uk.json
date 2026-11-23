@@ -925,6 +925,7 @@
       "STAGING": "Беклог",
       "STAGING_EMPTY": "Немає нарядів у беклозі за цими фільтрами",
       "BACKLOG_TOGGLE": "Беклог ({{count}})",
+      "DROP_TO_BACKLOG": "Відпустіть, щоб повернути в беклог",
       "ESTIMATE_MINUTES": "{{minutes}} хв",
       "ESTIMATE_HOURS": "{{hours}} год",
       "ESTIMATE_HOURS_MINUTES": "{{hours}} год {{minutes}} хв",

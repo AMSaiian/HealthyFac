@@ -4,10 +4,7 @@
   [canOpenDrafts]="grid.canReadDrafts()"
   (createRequested)="grid.requestCreate()"
 >
-  <div
-    class="relative flex min-h-0 flex-1 flex-col gap-4 pb-4 pl-4"
-    [style.padding-right.rem]="contentPaddingRem()"
-  >
+  <div class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
     <div class="flex flex-none flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
         <button
@@ -58,13 +55,14 @@
           </span>
           <button
             pButton
+            data-staging
             [pTooltip]="'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.BACKLOG_TOGGLE' | translate"
             tooltipPosition="bottom"
             type="button"
-            severity="secondary"
+            [severity]="backlogButton().isHighlighted ? 'primary' : 'secondary'"
             (click)="store.toggleBacklog()"
           >
-            {{ 'WORK_ORDERS.SCHEDULE_TAB.BACKLOG_TOGGLE' | translate: { count: store.stagingTotal() } }}
+            {{ backlogButton().textKey | translate: { count: store.stagingTotal() } }}
           </button>
           <button
             pButton
@@ -112,54 +110,58 @@
         {{ 'WORK_ORDERS.SCHEDULE_TAB.CHANGED' | translate }}
       </p-message>
     }
-    @if (store.date(); as date) {
-      <hf-schedule-board
-        class="min-h-0 flex-1"
-        [rows]="store.displayRows()"
-        [isLoading]="store.day.isLoading()"
-        [hasLoaded]="store.day.hasValue()"
-        [hasFailed]="store.hasFailed()"
-        [date]="date"
-        [timeZoneId]="clock.timeZoneId()"
-        [now]="store.now()"
-        [isEditable]="store.canManage()"
-        [isExternalDragActive]="isStagingDragActive()"
-        [pendingIds]="store.pendingIds()"
-        [conflictIds]="store.conflictIds()"
-        [failures]="failures()"
-        (workOrderClick)="store.openWorkOrder($event)"
-        (barDropped)="store.dropBar($event)"
-        (barResized)="store.resizeBar($event)"
-        (barUnassigned)="store.unassignBar($event)"
-        (daySwitchRequested)="onDaySwitch($event)"
-      />
-    }
-    @if (store.canManage()) {
-      <p-drawer
-        position="right"
-        appendTo="self"
-        [visible]="store.isBacklogOpen()"
-        (visibleChange)="store.setBacklogOpen($event)"
-        [modal]="false"
-        [dismissible]="false"
-        [showCloseIcon]="false"
-        [blockScroll]="false"
-        [header]="'WORK_ORDERS.SCHEDULE_TAB.STAGING' | translate"
-        [style]="drawerStyle"
-      >
-        @if (axis(); as axis) {
-          <hf-staging-area
-            [workOrders]="stagingCards()"
-            [totalCount]="store.stagingTotal()"
-            [axis]="axis"
-            [axisWidthPx]="axisWidthPx()"
-            (dragStarted)="isStagingDragActive.set(true)"
-            (dragMoved)="onStagingMove($event)"
-            (barReleased)="onStagingRelease($event)"
-            (workOrderClick)="store.openWorkOrder($event)"
-          />
-        }
-      </p-drawer>
-    }
+    <div class="relative flex min-h-0 flex-1 flex-col">
+      @if (store.date(); as date) {
+        <hf-schedule-board
+          class="min-h-0 flex-1"
+          [rows]="store.displayRows()"
+          [isLoading]="store.day.isLoading()"
+          [hasLoaded]="store.day.hasValue()"
+          [hasFailed]="store.hasFailed()"
+          [date]="date"
+          [timeZoneId]="clock.timeZoneId()"
+          [now]="store.now()"
+          [isEditable]="store.canManage()"
+          [isExternalDragActive]="isStagingDragActive()"
+          [pendingIds]="store.pendingIds()"
+          [conflictIds]="store.conflictIds()"
+          [failures]="failures()"
+          (workOrderClick)="store.openWorkOrder($event)"
+          (barDropped)="store.dropBar($event)"
+          (barResized)="store.resizeBar($event)"
+          (barUnassigned)="store.unassignBar($event)"
+          (daySwitchRequested)="onDaySwitch($event)"
+          (dragActiveChange)="onBoardDragActive($event)"
+        />
+      }
+      @if (store.canManage()) {
+        <p-drawer
+          position="right"
+          appendTo="self"
+          [visible]="drawerState().isMounted"
+          (visibleChange)="store.setBacklogOpen($event)"
+          [modal]="false"
+          [dismissible]="false"
+          [showCloseIcon]="false"
+          [blockScroll]="false"
+          [header]="'WORK_ORDERS.SCHEDULE_TAB.STAGING' | translate"
+          [styleClass]="drawerState().isHidden ? 'hf-backlog-hidden' : ''"
+          [style]="drawerStyle"
+        >
+          @if (axis(); as axis) {
+            <hf-staging-area
+              [workOrders]="stagingCards()"
+              [totalCount]="store.stagingTotal()"
+              [axis]="axis"
+              [axisWidthPx]="axisWidthPx()"
+              (dragStarted)="onStagingDragStarted()"
+              (dragMoved)="onStagingMove($event)"
+              (barReleased)="onStagingRelease($event)"
+              (workOrderClick)="store.openWorkOrder($event)"
+            />
+          }
+        </p-drawer>
+      }
+    </div>
   </div>
 </hf-work-orders-view-header>

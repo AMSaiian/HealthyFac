@@ -371,17 +371,17 @@ describe('ScheduleStore', () => {
     expect(store.stagingItems()).toEqual([]);
   });
 
-  it('toggleBacklog_OnAFreshStore_StartsOpenAndClosesThenOpensAgain', async () => {
+  it('toggleBacklog_OnAFreshStore_StartsClosedAndOpensThenClosesAgain', async () => {
     const store = await setup();
     const initial = store.isBacklogOpen();
 
     store.toggleBacklog();
     const afterFirst = store.isBacklogOpen();
-    store.setBacklogOpen(true);
+    store.setBacklogOpen(false);
 
-    expect(initial).toBe(true);
-    expect(afterFirst).toBe(false);
-    expect(store.isBacklogOpen()).toBe(true);
+    expect(initial).toBe(false);
+    expect(afterFirst).toBe(true);
+    expect(store.isBacklogOpen()).toBe(false);
   });
 
   it('stagingItems_OfABacklogWorkOrder_CarriesItsPriority', async () => {

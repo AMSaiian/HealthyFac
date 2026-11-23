@@ -15,7 +15,13 @@ import type { Temporal } from '@shared/time/temporal';
 import { WorkOrdersGridStore } from '@work-orders/list/work-orders-grid.store';
 import { ScheduleStore } from '@work-orders/schedule/schedule-store/schedule.store';
 import { ViewHeader } from '@work-orders/view-header/view-header';
-import { BACKLOG_DRAWER_REM, contentPaddingRemOf, stagingCardOf } from './schedule-page.utils';
+import {
+  BACKLOG_DRAWER_REM,
+  backlogButtonOf,
+  backlogDrawerStateOf,
+  isBacklogOpenAfterDrag,
+  stagingCardOf,
+} from './schedule-page.utils';
 
 @Component({
   imports: [
@@ -47,6 +53,7 @@ export class SchedulePage {
     width: `${BACKLOG_DRAWER_REM}rem`,
   };
   protected readonly isStagingDragActive = signal(false);
+  protected readonly isBoardDragActive = signal(false);
 
   protected readonly axis = computed(() => {
     const date = this.store.date();
@@ -54,10 +61,10 @@ export class SchedulePage {
   });
   protected readonly failures = computed(() => new Map(Object.entries(this.store.failures())));
   protected readonly stagingCards = computed(() => this.store.stagingItems().map(stagingCardOf));
-  /** The page keeps the width of the open drawer free at its right, so the drawer covers no hour of the board. */
-  protected readonly contentPaddingRem = computed(() =>
-    contentPaddingRemOf(this.store.canManage(), this.store.isBacklogOpen()),
+  protected readonly drawerState = computed(() =>
+    backlogDrawerStateOf(this.store.isBacklogOpen(), this.isStagingDragActive()),
   );
+  protected readonly backlogButton = computed(() => backlogButtonOf(this.isBoardDragActive()));
 
   private readonly _board = viewChild(ScheduleBoard);
   protected readonly axisWidthPx = computed(() => this._board()?.axisWidthPx() ?? 0);
@@ -74,6 +81,18 @@ export class SchedulePage {
     } else {
       this.store.nextDay();
     }
+  }
+
+  protected onStagingDragStarted(): void {
+    this.isStagingDragActive.set(true);
+    this.store.setBacklogOpen(isBacklogOpenAfterDrag(this.store.isBacklogOpen(), 'backlogDragStarted'));
+  }
+
+  protected onBoardDragActive(isActive: boolean): void {
+    this.isBoardDragActive.set(isActive);
+    this.store.setBacklogOpen(
+      isBacklogOpenAfterDrag(this.store.isBacklogOpen(), isActive ? 'boardDragStarted' : 'boardDragEnded'),
+    );
   }
 
   protected onStagingMove(pointer: { readonly x: number; readonly y: number }): void {

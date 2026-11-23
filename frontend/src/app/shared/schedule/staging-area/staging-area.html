@@ -1,33 +1,32 @@
 <div
   cdkDropList
   cdkDropListSortingDisabled
-  class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-1"
+  class="flex flex-col items-start gap-2 p-1"
 >
   @for (card of cards(); track card.item.id) {
-    <article
+    <div
       cdkDrag
       cdkDragPreviewContainer="global"
-      class="hf-list-item bg-surface-0 dark:bg-surface-900 flex flex-none cursor-grab flex-col gap-1 shadow-sm"
+      class="hf-status-backlog rounded-border flex max-w-full min-w-min flex-none cursor-grab items-stretch overflow-hidden text-xs leading-6 text-white"
       role="button"
       tabindex="0"
-      [attr.aria-label]="card.item.title"
+      [style.width.px]="card.previewWidthPx"
+      [style.height.rem]="laneHeightRem"
+      [attr.aria-label]="card.tooltip"
+      [pTooltip]="card.tooltip"
+      tooltipStyleClass="whitespace-pre-line"
       (cdkDragStarted)="dragStarted.emit()"
       (cdkDragMoved)="dragMoved.emit($event.pointerPosition)"
       (cdkDragEnded)="onDragEnded($event, card.item.id)"
       (click)="onClick(card.item.id)"
       (keydown.enter)="onClick(card.item.id)"
     >
-      <div class="flex min-w-0 items-center gap-2">
-        <p-tag
-          class="flex-none"
-          [class]="card.item.priorityClass"
-          [value]="card.item.priorityKey | translate"
-        />
-        <span class="text-muted-color min-w-0 truncate text-xs">{{
-          card.estimate.key | translate: card.estimate.params
-        }}</span>
-      </div>
-      <span class="line-clamp-2 font-bold">{{ card.item.title }}</span>
+      <span
+        class="w-1.5 flex-none"
+        [class]="card.item.priorityClass"
+      ></span>
+      <span class="flex-none px-2 whitespace-nowrap">{{ card.estimate.key | translate: card.estimate.params }}</span>
+      <span class="w-0 min-w-0 flex-1 truncate pr-2">{{ card.item.title }}</span>
       <ng-template cdkDragPreview>
         <div
           class="hf-status-backlog rounded-border -mt-3 truncate px-2 text-xs leading-6 text-white shadow-lg"
@@ -38,7 +37,7 @@
           {{ card.item.title }}
         </div>
       </ng-template>
-    </article>
+    </div>
   } @empty {
     <p class="text-muted-color p-3 text-sm">{{ 'WORK_ORDERS.SCHEDULE_TAB.STAGING_EMPTY' | translate }}</p>
   }

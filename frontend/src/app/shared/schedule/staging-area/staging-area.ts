@@ -1,7 +1,7 @@
 import { CDK_DRAG_CONFIG, CdkDrag, type CdkDragEnd, CdkDragPreview, CdkDropList } from '@angular/cdk/drag-drop';
-import { Component, computed, input, output } from '@angular/core';
-import { TranslatePipe } from '@ngx-translate/core';
-import { Tag } from 'primeng/tag';
+import { Component, computed, inject, input, output } from '@angular/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
   type Axis,
@@ -9,7 +9,12 @@ import {
   DRAG_PREVIEW_Z_INDEX,
   LANE_HEIGHT_REM,
 } from '@shared/schedule/schedule-board/schedule-board.utils';
-import { estimateTextOf, previewWidthOf, type StagingItem } from '@shared/schedule/staging-area/staging-area.utils';
+import {
+  chipTooltipOf,
+  estimateTextOf,
+  previewWidthOf,
+  type StagingItem,
+} from '@shared/schedule/staging-area/staging-area.utils';
 
 export interface StagingRelease {
   readonly workOrderId: string;
@@ -23,8 +28,8 @@ export interface StagingRelease {
  * its estimate on the board axis. The board reports a row bar that lands here. The area only reports the drag.
  */
 @Component({
-  imports: [CdkDrag, CdkDragPreview, CdkDropList, Tag, TranslatePipe],
-  host: { class: 'flex min-h-0 min-w-0 flex-col', 'data-staging': '' },
+  imports: [CdkDrag, CdkDragPreview, CdkDropList, Tooltip, TranslatePipe],
+  host: { class: 'flex min-w-0 flex-col' },
   providers: [{ provide: CDK_DRAG_CONFIG, useValue: { zIndex: DRAG_PREVIEW_Z_INDEX } }],
   selector: 'hf-staging-area',
   templateUrl: './staging-area.html',
@@ -47,10 +52,12 @@ export class StagingArea {
     this.workOrders().map((item) => ({
       item,
       estimate: estimateTextOf(item.estimateMinutes),
+      tooltip: this._tooltipOf(item),
       previewWidthPx: previewWidthOf(item.estimateMinutes, this.axis(), this.axisWidthPx()),
     })),
   );
 
+  private readonly _translate = inject(TranslateService);
   private readonly _clickGuard = createClickGuard();
 
   protected onDragEnded(event: CdkDragEnd, id: string): void {
@@ -64,5 +71,10 @@ export class StagingArea {
     if (!this._clickGuard.isBlocked()) {
       this.workOrderClick.emit(id);
     }
+  }
+
+  private _tooltipOf(item: StagingItem): string {
+    const estimate = estimateTextOf(item.estimateMinutes);
+    return chipTooltipOf(item.title, this._translate.instant(estimate.key, estimate.params));
   }
 }

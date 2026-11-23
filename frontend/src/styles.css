@@ -53,6 +53,10 @@
     opacity: 0.35;
   }
 
+  .hf-backlog-hidden {
+    visibility: hidden;
+  }
+
   .hf-menu-danger .p-menu-item-link,
   .hf-menu-danger .p-menu-item-icon,
   .hf-menu-danger .p-menu-item-label,

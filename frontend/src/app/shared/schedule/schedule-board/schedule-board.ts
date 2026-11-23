@@ -121,6 +121,8 @@ export class ScheduleBoard {
   readonly barResized = output<BarResizeEvent>();
   readonly barUnassigned = output<string>();
   readonly daySwitchRequested = output<-1 | 1>();
+  /** Tells the page that a drag of a bar of the board starts (`true`) or ends (`false`). */
+  readonly dragActiveChange = output<boolean>();
 
   protected readonly isDragging = signal(false);
   protected readonly isDragActive = computed(() => this.isDragging() || this.isExternalDragActive());
@@ -295,6 +297,7 @@ export class ScheduleBoard {
   protected onDragStarted(entry: FlatBar): void {
     this._draggedBar.set(entry);
     this.isDragging.set(true);
+    this.dragActiveChange.emit(true);
   }
 
   protected onDragMoved(event: CdkDragMove): void {
@@ -304,6 +307,7 @@ export class ScheduleBoard {
   protected onDragEnded(event: CdkDragEnd, bar: ScheduleBar): void {
     this._updateDwell(null);
     this.isDragging.set(false);
+    this.dragActiveChange.emit(false);
     this._draggedBar.set(null);
     this._clickGuard.markDragged();
     this._dropAt(bar.id, true, event.dropPoint.x - this.grabOffsetPx(), event.dropPoint);

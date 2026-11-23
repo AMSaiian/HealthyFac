@@ -38,3 +38,8 @@ export function estimateTextOf(estimateMinutes: number): EstimateText {
 export function previewWidthOf(estimateMinutes: number, axis: Axis, axisWidthPx: number): number {
   return Math.max(MIN_PREVIEW_PX, (widthPercentOf(estimateMinutes, axis) / PERCENT) * axisWidthPx);
 }
+
+/** The tooltip of a chip: the full title on the first line, the estimate text on the second. */
+export function chipTooltipOf(title: string, estimateText: string): string {
+  return `${title}\n${estimateText}`;
+}

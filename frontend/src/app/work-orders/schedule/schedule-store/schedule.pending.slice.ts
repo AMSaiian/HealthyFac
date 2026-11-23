@@ -47,7 +47,7 @@ interface PendingState {
   visited: Readonly<Record<string, readonly ScheduleRow[]>>;
   /** Whether a hint came while changes were pending. The tab keeps the changes and tells the user. */
   isChangedRemotely: boolean;
-  /** Whether the backlog drawer is open. It opens with the page and keeps its state when changes are discarded. */
+  /** Whether the backlog drawer is open. It starts closed and keeps its state when changes are discarded. */
   isBacklogOpen: boolean;
 }
 
@@ -67,7 +67,7 @@ const EMPTY_PENDING: PendingState = {
   known: {},
   visited: {},
   isChangedRemotely: false,
-  isBacklogOpen: true,
+  isBacklogOpen: false,
 };
 
 function stagingBodyOf(filter: WorkOrderFilter): SearchWorkOrdersBody {

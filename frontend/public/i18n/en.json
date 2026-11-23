@@ -925,6 +925,7 @@
       "STAGING": "Backlog",
       "STAGING_EMPTY": "No backlog work orders for these filters",
       "BACKLOG_TOGGLE": "Backlog ({{count}})",
+      "DROP_TO_BACKLOG": "Drop to return to the backlog",
       "ESTIMATE_MINUTES": "{{minutes}} min",
       "ESTIMATE_HOURS": "{{hours}} h",
       "ESTIMATE_HOURS_MINUTES": "{{hours}} h {{minutes}} min",

@@ -1,7 +1,7 @@
 import { axisOf } from '@shared/schedule/schedule-board/schedule-board.utils';
 import { Temporal } from '@shared/time/temporal';
 
-import { estimateTextOf, previewWidthOf } from './staging-area.utils';
+import { chipTooltipOf, estimateTextOf, previewWidthOf } from './staging-area.utils';
 
 const AXIS = axisOf(Temporal.PlainDate.from('2027-06-01'), 'Europe/Kyiv');
 
@@ -22,5 +22,13 @@ describe('previewWidthOf', () => {
 
   it('previewWidthOf_ForAVeryShortEstimate_KeepsAMinimumWidth', () => {
     expect(previewWidthOf(5, AXIS, 100)).toBe(8);
+  });
+});
+
+describe('chipTooltipOf', () => {
+  it('chipTooltipOf_ForATitleAndAnEstimateText_GivesTheTitleThenTheEstimateOnTwoLines', () => {
+    const lines = chipTooltipOf('Replace filter', '1 h 30 min').split('\n');
+
+    expect(lines).toEqual(['Replace filter', '1 h 30 min']);
   });
 });
