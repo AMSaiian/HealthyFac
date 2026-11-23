@@ -276,6 +276,8 @@ export function resizeEstimateOf(plannedStart: Temporal.Instant, pointerPercent:
 export interface ResizeShown {
   /** The drawn width of the bar in percent of the axis. */
   readonly widthPercent: number;
+  /** The `width` style of the drawn bar: the same rule as the bound width, so the bar keeps its inset. */
+  readonly widthCss: string;
   /** Where the overrun part begins in percent of the bar width, or `null` when the bar has none. */
   readonly overrunStartPercent: number | null;
   /** The value of the overrun start property: the overrun start, or 100 (no overrun part) when there is none. */
@@ -296,6 +298,7 @@ export function resizeShownOf(item: PlacedBar, pointerPercent: number, axis: Axi
     const overrunStart = ((Math.max(plannedPercent, item.left) - item.left) / item.width) * PERCENT;
     return {
       widthPercent: item.width,
+      widthCss: barWidthCss(item.width),
       overrunStartPercent: overrunStart,
       overrunCssPercent: overrunStart,
       handleRightPercent: handleRightOf(overrunStart),
@@ -303,6 +306,7 @@ export function resizeShownOf(item: PlacedBar, pointerPercent: number, axis: Axi
   }
   return {
     widthPercent: Math.max(0, plannedPercent - item.left),
+    widthCss: barWidthCss(Math.max(0, plannedPercent - item.left)),
     overrunStartPercent: null,
     overrunCssPercent: PERCENT,
     handleRightPercent: 0,

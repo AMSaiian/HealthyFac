@@ -402,7 +402,7 @@ export class ScheduleBoard {
     const initialOverrun = bar.style.getPropertyValue(OVERRUN_START_PROPERTY);
     const onMove = (move: PointerEvent): void => {
       const shown = resizeShownOf(item, pointerPercent(move.clientX), this.axis());
-      bar.style.width = `${shown.widthPercent}%`;
+      bar.style.width = shown.widthCss;
       if (item.overrunStartPercent !== null) {
         bar.style.setProperty(OVERRUN_START_PROPERTY, `${shown.overrunCssPercent}%`);
       }
@@ -412,7 +412,7 @@ export class ScheduleBoard {
       handle.removeEventListener('pointermove', onMove);
       handle.removeEventListener('pointerup', onUp);
       handle.releasePointerCapture(up.pointerId);
-      bar.style.removeProperty('width');
+      bar.style.width = this.barWidth(item);
       if (item.overrunStartPercent !== null) {
         bar.style.setProperty(OVERRUN_START_PROPERTY, initialOverrun);
       }

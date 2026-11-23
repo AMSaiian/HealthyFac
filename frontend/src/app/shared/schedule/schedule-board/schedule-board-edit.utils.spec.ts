@@ -137,6 +137,13 @@ describe('schedule board edit utils', () => {
       expect(shown.handleRightPercent).toBe(0);
     });
 
+    it('resizeShownOf_ForABarCutAtTheEnd_KeepsTheInsetOfTheBoundWidth', () => {
+      const cutAtEnd = { ...overdue, width: 100 - hourPercent(9), isCutEnd: true };
+
+      expect(resizeShownOf(cutAtEnd, hourPercent(23), axis).widthCss).toBe(barWidthCss(cutAtEnd.width));
+      expect(resizeShownOf(cutAtEnd, hourPercent(30), axis).widthCss).toBe(barWidthCss(cutAtEnd.width));
+    });
+
     it('resizeShownOf_ForABarWithoutOverrun_EndsAtThePointerOnTheGrid', () => {
       const shown = resizeShownOf(onTime, hourPercent(10), axis);
 
