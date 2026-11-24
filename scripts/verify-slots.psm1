@@ -187,4 +187,21 @@ function Get-SeedSignIn {
   [pscustomobject]@{ SupervisorEmail = $supervisor.email; WorkerEmail = $worker.email; Password = $company.password }
 }
 
-Export-ModuleMember -Function Get-SeedSignIn, Get-VerifySlotLocks, Request-VerifySlotLock, Get-StaleVerifySlotLocks, Merge-VerifyOwners, Assert-VerifySlot, Get-VerifySlotNumbers, Get-VerifySlotValues, ConvertTo-VerifyProjects, Select-VerifySlot, Resolve-VerifyEnvFile
+# The Compose calls of `up`, in order. With -Telemetry the seeder runs first in mode 2 (`--telemetry`), so the
+# `up` that follows finds the complete seed and the seeder container ends without a change.
+function Get-VerifyUpComposeCalls {
+  param([switch]$Telemetry)
+  $calls = @()
+  if ($Telemetry) { $calls += , @('run', '--rm', '--build', 'seeder', '--telemetry') }
+  $calls += , @('up', '-d', '--build')
+  return $calls
+}
+
+# The usage message when -Telemetry goes with another command than `up`, else $null.
+function Get-VerifyTelemetryUsageError {
+  param([string]$Command, [bool]$IsTelemetry)
+  if ($IsTelemetry -and $Command -ne 'up') { return "-Telemetry is valid only with up. Use: pwsh scripts/verify-stack.ps1 up -Telemetry." }
+  return $null
+}
+
+Export-ModuleMember -Function Get-VerifyUpComposeCalls, Get-VerifyTelemetryUsageError, Get-SeedSignIn, Get-VerifySlotLocks, Request-VerifySlotLock, Get-StaleVerifySlotLocks, Merge-VerifyOwners, Assert-VerifySlot, Get-VerifySlotNumbers, Get-VerifySlotValues, ConvertTo-VerifyProjects, Select-VerifySlot, Resolve-VerifyEnvFile

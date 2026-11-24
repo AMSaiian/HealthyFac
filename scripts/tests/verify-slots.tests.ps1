@@ -280,6 +280,22 @@ finally {
   foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
 }
 
+Write-Host 'Telemetry switch'
+$withTelemetry = @(Get-VerifyUpComposeCalls -Telemetry)
+Assert-That ($withTelemetry.Count -eq 2) '-Telemetry gives 2 compose calls'
+Assert-That (($withTelemetry[0] -join ' ') -eq 'run --rm --build seeder --telemetry') '-Telemetry runs the seeder with --telemetry first'
+Assert-That (($withTelemetry[1] -join ' ') -eq 'up -d --build') '-Telemetry then starts the stack with up -d --build'
+$withoutTelemetry = @(Get-VerifyUpComposeCalls)
+Assert-That ($withoutTelemetry.Count -eq 1 -and ($withoutTelemetry[0] -join ' ') -eq 'up -d --build') 'without -Telemetry the only compose call is up -d --build'
+Assert-That (-not ($withoutTelemetry | Where-Object { $_ -contains 'seeder' })) 'without -Telemetry no seeder run'
+Assert-That ((Get-VerifyTelemetryUsageError -Command 'up' -IsTelemetry $true) -eq $null) '-Telemetry with up has no usage error'
+Assert-That ((Get-VerifyTelemetryUsageError -Command 'stop' -IsTelemetry $false) -eq $null) 'stop without -Telemetry has no usage error'
+foreach ($other in 'status', 'stop', 'reset', 'down') {
+  Assert-That ((Get-VerifyTelemetryUsageError -Command $other -IsTelemetry $true) -match 'only with up') "-Telemetry with $other gives the usage message"
+}
+$scriptOutput = & pwsh -NoProfile -File (Join-Path $repo 'scripts\verify-stack.ps1') stop -Telemetry 2>&1
+Assert-That ($LASTEXITCODE -ne 0 -and ($scriptOutput -join ' ') -match 'only with up') 'verify-stack.ps1 stop -Telemetry fails with the usage message'
+
 if ($failures.Count -gt 0) {
   Write-Host "$($failures.Count) check(s) failed." -ForegroundColor Red
   exit 1

@@ -15,9 +15,11 @@
 # The script acts on the checkout (the main one or a worktree) that holds this script file, not on the current
 # folder: run the copy of the worktree whose stack you want.
 # Usage:
-#   pwsh scripts/verify-stack.ps1 up [-Slot n] [-Simulator]   builds and starts the stack, waits until it is ready, prints the
-#                                                sign-in; -Simulator adds the machine simulator (profile simulator) on
-#                                                port 8200 + n and prints its control API page
+#   pwsh scripts/verify-stack.ps1 up [-Slot n] [-Simulator] [-Telemetry]   builds and starts the stack, waits until it is ready,
+#                                                prints the sign-in; -Simulator adds the machine simulator (profile simulator) on
+#                                                port 8200 + n and prints its control API page; -Telemetry first runs the seeder
+#                                                in mode 2 (`docker compose run --rm --build seeder --telemetry`), so the demo
+#                                                holds the telemetry history of the last 48 hours; a failed seeder run stops the script
 #   pwsh scripts/verify-stack.ps1 status         lists the containers of the stack
 #   pwsh scripts/verify-stack.ps1 stop [-Slot n] stops the containers and keeps them, the volumes, the images, and the
 #                                                slot; `up` starts them again with the data
@@ -44,12 +46,17 @@ param(
 
   [int]$Slot,
 
-  [switch]$Simulator
+  [switch]$Simulator,
+
+  [switch]$Telemetry
 )
 
 $ErrorActionPreference = 'Stop'
 
 Import-Module (Join-Path $PSScriptRoot 'verify-slots.psm1') -Force
+
+$telemetryUsageError = Get-VerifyTelemetryUsageError -Command $Command -IsTelemetry $Telemetry.IsPresent
+if ($telemetryUsageError) { Write-Error $telemetryUsageError }
 
 $DevProject = 'healthyfac'
 $ReadyTimeout = [TimeSpan]::FromMinutes(15)
@@ -303,7 +310,7 @@ switch ($Command) {
     Assert-PortFree $values.KeycloakPort 'the Keycloak admin port'
     if ($Simulator) { Assert-PortFree $values.SimulatorPort 'the simulator port' }
     Show-MemoryWarning
-    Invoke-Compose up -d --build
+    foreach ($call in Get-VerifyUpComposeCalls -Telemetry:$Telemetry) { Invoke-Compose @call }
     Wait-Ready
     Wait-AppAnswers $config.SpaUrl
     # The demo accounts are development-only accounts that the seed job creates; the agent needs them to sign in.
