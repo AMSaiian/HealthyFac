@@ -44,6 +44,9 @@ public sealed class DrainCurve
     /// <summary>The value without a drain.</summary>
     public double Reference => _points[0].Value;
 
+    /// <summary>The value at the end of the drain.</summary>
+    public double Trip => _points[^1].Value;
+
     /// <summary>
     /// Reads the value at a progress.
     /// </summary>

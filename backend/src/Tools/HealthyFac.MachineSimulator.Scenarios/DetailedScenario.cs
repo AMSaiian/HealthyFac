@@ -83,7 +83,10 @@ public sealed class DetailedScenario(ScenarioSpec spec) : IMachineScenario
             var items = group.ToList();
             values[group.Key] = items.Count == 1 && isMainPhase
                 ? items[index: 0].effect.Curve.ValueAt(items[index: 0].Progress)
-                : (double)values[group.Key] + items.Sum(item => item.effect.Curve.OffsetAt(item.Progress));
+                : ClampToCurve(
+                    (double)values[group.Key] + items.Sum(item => item.effect.Curve.OffsetAt(item.Progress)),
+                    items,
+                    isMainPhase);
         }
 
         foreach (var (module, progress) in active)
@@ -104,6 +107,34 @@ public sealed class DetailedScenario(ScenarioSpec spec) : IMachineScenario
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Keeps a drained value of a phase other than the main phase on the drain side of its curve: the phase value is
+    /// not the reference of the curve, so the sum could pass the trip value that the curve reaches at the same
+    /// progress. The effect with the largest offset gives the curve. The main phase keeps the sum of the offsets.
+    /// </summary>
+    /// <param name="value">The phase value plus the offsets of the effects.</param>
+    /// <param name="items">The effects of one key with the progress of their modules.</param>
+    /// <param name="isMainPhase">Whether the sample belongs to the main phase.</param>
+    /// <returns>The value, limited by the curve.</returns>
+    private static double ClampToCurve(
+        double value,
+        List<(AbsoluteEffect effect, double Progress)> items,
+        bool isMainPhase
+    )
+    {
+        if (isMainPhase)
+        {
+            return value;
+        }
+
+        var (effect, progress) = items.MaxBy(item => Math.Abs(item.effect.Curve.OffsetAt(item.Progress)));
+        var curveValue = effect.Curve.ValueAt(progress);
+
+        return effect.Curve.Trip >= effect.Curve.Reference
+            ? Math.Min(value, curveValue)
+            : Math.Max(value, curveValue);
     }
 
     private List<string> CollectCodes(ScenarioContext context, string? infoCode)

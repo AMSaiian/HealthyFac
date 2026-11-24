@@ -6,6 +6,7 @@ using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Machines.Data;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
+using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
 
 namespace HealthyFac.Seeder.IntegrationTests.FullSeed;
@@ -34,7 +35,9 @@ public sealed class FullSeedTests(SeederFixture fixture)
         var workOrderDraft = await _fixture.LoadWorkOrderDraftAsync();
         var workOrders = await _fixture.LoadWorkOrdersAsync();
         var company = await _fixture.LoadCompanyAsync();
+        var messageCounts = await _fixture.CountMessagesByMachineAsync();
         failures.Should().BeEmpty(name);
+        messageCounts.Should().BeEmpty();
         company.Id.Should().Be(PeopleTestData.CompanyId);
         employees.Should()
             .HaveCount(FullSeedTestData.EmployeeCount)

@@ -1,3 +1,5 @@
+using HealthyFac.MachineSimulator.Scenarios.Modules;
+
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
 
 public static class CncTurningCenterScenarioTestData
@@ -15,6 +17,18 @@ public static class CncTurningCenterScenarioTestData
             { "NormalLimit", 0.5, 60 },
             { "Alarm", 0.8, 65 },
             { "NearTrip", 0.999, 70 },
+        };
+
+    /// <summary>
+    /// The drain at progress 0.99: the module, the key, the seconds of the run, the curve value at the progress, and
+    /// whether the curve value is the upper bound (a rising curve) or the lower bound (a falling curve).
+    /// </summary>
+    public static TheoryData<string, ModuleName, string, int, double, bool> ClampedValues =>
+        new()
+        {
+            { "PartChangeSpindleTemperature", ModuleName.Spindle, "spindle.temperature", 45, 69.75, true },
+            { "CuttingSpindleTemperature", ModuleName.Spindle, "spindle.temperature", 10, 69.75, true },
+            { "PartChangeHydraulicPressure", ModuleName.Hydraulics, "hydraulic.pressure", 45, 25.15, false },
         };
 
     /// <summary>The drain progress, a code, and whether the spindle sends it.</summary>

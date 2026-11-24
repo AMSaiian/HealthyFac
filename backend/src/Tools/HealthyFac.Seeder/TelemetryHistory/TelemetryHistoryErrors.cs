@@ -45,6 +45,15 @@ public static class TelemetryHistoryErrors
     public static string StatusCodeUnknown(string item, string code, string machine) =>
         $"The item {item} names the status code {code}, which the draft of the machine {machine} does not have.";
 
+    public static string PayloadRejected(string gatewayId, DateTime sampledAt, string code) =>
+        $"The schema of the machine {gatewayId} rejects the history message of {sampledAt:O} with the error {code}.";
+
+    public static string ColumnTypeNotSupported(string typeName) =>
+        $"The bulk writer does not support the column value type {typeName}.";
+
+    public static string AnchorSampleMissing(string machine) =>
+        $"The machine {machine} has no sample at the anchor, so the marker message cannot be written.";
+
     public static string StepMetricNotNumeric(string item, string metric) =>
         $"The item {item} steps the metric {metric}, which is not numeric.";
 

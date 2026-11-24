@@ -18,14 +18,16 @@ namespace HealthyFac.Seeder.TelemetryHistory;
 /// Seeds the telemetry history of the 3 machines from <c>telemetry.json</c>: the history steps, the maintenance state
 /// changes of the drains, and the marker. The seed check reads the events like those of every other part.
 /// </summary>
-/// <remarks>
-/// The history steps and the marker do nothing in <see cref="RunAsync"/> yet.
-/// </remarks>
 public sealed class TelemetryHistoryPart : ISeedPart
 {
     private readonly ServiceHosts.ServiceHosts _hosts;
     private readonly Func<int> _readCatchUpBatchReadings;
     private readonly Dictionary<string, Func<SeedContext, CancellationToken, Task>> _actions = [];
+
+    private TelemetryFile _file = null!;
+    private MachinesFile _machinesFile = null!;
+    private IReadOnlyDictionary<string, HistoryMachine> _machines = null!;
+    private HistoryRun? _run;
 
     public TelemetryHistoryPart(ServiceHosts.ServiceHosts hosts)
         : this(hosts, () => hosts.Telemetry.GetService<IOptions<DetectionOptions>>().Value.CatchUpBatchReadings)
@@ -46,6 +48,10 @@ public sealed class TelemetryHistoryPart : ISeedPart
         var file = folder.Read<TelemetryFile>(TelemetryHistoryConstants.FileName);
         var machinesFile = folder.Read<MachinesFile>(MachinesConstants.FileName);
         var machines = ReadMachines(folder, machinesFile);
+        _file = file;
+        _machinesFile = machinesFile;
+        _machines = machines;
+        _run = null;
         TelemetryHistoryChecks.Run(
             file,
             machines,
@@ -60,10 +66,42 @@ public sealed class TelemetryHistoryPart : ISeedPart
         ];
     }
 
-    public Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken) =>
-        _actions.TryGetValue(SeedItem.KeyOf(seedEvent.Item), out var action)
-            ? action(context, cancellationToken)
-            : Task.CompletedTask;
+    /// <summary>
+    /// Runs one event. A history step writes the samples up to its moment and evaluates the machines. The marker
+    /// writes the anchor sample of the last machine with the ID of the marker, after the last evaluation. A state
+    /// change of a maintenance goes through the Core use case.
+    /// </summary>
+    /// <remarks>
+    /// The form <b>Resume</b> of the cancellation rule is not used: a cancelled run has no marker message, so the next
+    /// run reads a seed without the history, and the reset starts it again.
+    /// </remarks>
+    /// <param name="seedEvent">An event that <see cref="ReadEvents"/> listed.</param>
+    /// <param name="context">The keys and the actors of the job.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
+    /// requests.</param>
+    /// <returns>A task that completes when the event is stored.</returns>
+    public async Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken)
+    {
+        var key = SeedItem.KeyOf(seedEvent.Item);
+        if (_actions.TryGetValue(key, out var action))
+        {
+            await action(context, cancellationToken);
+
+            return;
+        }
+
+        _run ??= await HistoryRun.CreateAsync(
+            _hosts.Telemetry, _file, _machinesFile, _machines.Values.ToList(), context, cancellationToken);
+        if (key == TelemetryHistoryConstants.MarkerKey)
+        {
+            await _run.WriteMarkerAsync(_file.MarkerMessageId, cancellationToken);
+
+            return;
+        }
+
+        await _run.RunStepAsync(
+            SeedCalendar.ToUtc(seedEvent.At, context.Anchor, context.Zone).UtcDateTime, cancellationToken);
+    }
 
     /// <summary>
     /// Finds the largest step in minutes whose samples fit in one catch-up batch of the evaluator, at least 1 minute.
