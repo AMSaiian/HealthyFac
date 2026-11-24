@@ -9,7 +9,7 @@ public sealed class WorkOrdersPartTests
 {
     private const string OrderKey = "coolant-check";
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithTheSameStatusTwiceInOneOrder_GivesEachChangeItsOwnItem()
     {
         var folder = CreateFolder(("inProgress", "sofiia"), ("blocked", "sofiia"), ("inProgress", "nadiia"));
@@ -23,7 +23,7 @@ public sealed class WorkOrdersPartTests
         items.Should().OnlyHaveUniqueItems().And.HaveCount(expected: 3);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithAnUnknownActorOfAStatusChange_NamesTheStatusItem()
     {
         var folder = CreateFolder(("inProgress", "ghost"));

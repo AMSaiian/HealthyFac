@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Scenarios;
+namespace HealthyFac.MachineSimulator;
 
 /// <summary>
 /// Defines the error messages of the simulator.

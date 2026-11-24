@@ -1,4 +1,4 @@
-using HealthyFac.MachineSimulator.Machines;
+using HealthyFac.MachineSimulator.Scenarios.Machines;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 
 namespace HealthyFac.MachineSimulator.Scenarios;

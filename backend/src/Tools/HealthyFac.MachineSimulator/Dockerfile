@@ -25,6 +25,7 @@ COPY src/Shared/HealthyFac.Shared.Application/*.csproj     src/Shared/HealthyFac
 COPY src/Shared/HealthyFac.Shared.Infrastructure/*.csproj  src/Shared/HealthyFac.Shared.Infrastructure/
 COPY src/Shared/HealthyFac.Shared.Web/*.csproj             src/Shared/HealthyFac.Shared.Web/
 COPY src/Tools/HealthyFac.MachineSimulator/*.csproj        src/Tools/HealthyFac.MachineSimulator/
+COPY src/Tools/HealthyFac.MachineSimulator.Scenarios/*.csproj  src/Tools/HealthyFac.MachineSimulator.Scenarios/
 COPY src/Tools/HealthyFac.HealthProbe/*.csproj             src/Tools/HealthyFac.HealthProbe/
 
 RUN dotnet restore src/Tools/HealthyFac.MachineSimulator/HealthyFac.MachineSimulator.csproj

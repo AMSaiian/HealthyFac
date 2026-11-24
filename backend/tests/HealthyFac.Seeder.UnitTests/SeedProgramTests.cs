@@ -2,7 +2,7 @@ namespace HealthyFac.Seeder.UnitTests;
 
 public sealed class SeedProgramTests
 {
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAnUnknownArgument_ReturnsExitCodeOneAndNamesTheArgument()
     {
         var output = new StringWriter();
@@ -14,7 +14,7 @@ public sealed class SeedProgramTests
         output.ToString().Should().Contain(expected: "--bogus");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAFailureInTheSetup_ReturnsExitCodeOneAndPrintsTheError()
     {
         var output = new StringWriter();

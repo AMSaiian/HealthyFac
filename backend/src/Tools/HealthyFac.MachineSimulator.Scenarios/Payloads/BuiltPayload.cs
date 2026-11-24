@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Publishing;
+namespace HealthyFac.MachineSimulator.Scenarios.Payloads;
 
 /// <summary>
 /// The result of <see cref="MachinePayloadBuilder.Build"/>.

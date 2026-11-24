@@ -1,4 +1,4 @@
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Scenarios.Machines;
 
 /// <summary>
 /// The metric definitions and the status codes of one machine, as the last state poll read them.

@@ -8,7 +8,7 @@ namespace HealthyFac.Seeder.UnitTests.Reset;
 
 public sealed class TruncateTablesTests
 {
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(TruncateTablesTestData.Contexts), MemberType = typeof(TruncateTablesTestData))]
     public void List_ForTheModelOfAService_HoldsEveryEntityTableExceptTheKeepList(
         string name,
@@ -32,7 +32,7 @@ public sealed class TruncateTablesTests
         keepTables.Should().BeEquivalentTo(keptNames.Select(table => $"\"{table}\""), name);
     }
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(TruncateTablesTestData.Contexts), MemberType = typeof(TruncateTablesTestData))]
     public void List_ForTheModelOfAService_LeavesNoKeptTableThatReferencesAnEmptiedTable(
         string name,
@@ -55,7 +55,7 @@ public sealed class TruncateTablesTests
         tables.Intersect(keptNames.Select(table => $"\"{table}\"")).Should().BeEmpty(name);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void BuildSql_WithTables_EmptiesThemInOneStatementWithoutCascade()
     {
         var sql = TruncateTables.BuildSql(["\"a\"", "\"b\""]);

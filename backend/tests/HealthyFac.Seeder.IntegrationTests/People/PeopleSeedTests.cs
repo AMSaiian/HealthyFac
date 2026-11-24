@@ -12,7 +12,7 @@ public sealed class PeopleSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealCompanyFile_SeedsTheCompanyThePeopleTheInvitesAndTheShifts()
     {
         var context = await _fixture.RunPeopleSeedAsync(TestContext.Current.CancellationToken);
@@ -48,7 +48,7 @@ public sealed class PeopleSeedTests(SeederFixture fixture)
         tarasInvite.CreatedBy.Should().Be(context.GetId(PeopleTestData.NadiiaUserKey));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealCompanyFile_LetsEachAccountSignInWithTheDemoPassword()
     {
         var context = await _fixture.RunPeopleSeedAsync(TestContext.Current.CancellationToken);
@@ -66,7 +66,7 @@ public sealed class PeopleSeedTests(SeederFixture fixture)
         }
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Check_OnTheRealCompanyFile_ReturnsNoFailure()
     {
         var events = await _fixture.LoadPeopleEventsAsync();

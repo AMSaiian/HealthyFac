@@ -1,10 +1,9 @@
 using HealthyFac.Core.Domain.Machines;
-using HealthyFac.MachineSimulator.Machines.Snapshots;
-using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Scenarios.Curves;
+using HealthyFac.MachineSimulator.Scenarios.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Scenarios.Machines;
 
 /// <summary>
 /// One machine of the simulator: its scenario, its modules, its counters, and the gates that decide whether it
@@ -123,15 +122,16 @@ public sealed class SimulatedMachine
     /// </summary>
     /// <param name="name">The module name.</param>
     /// <param name="mode">The new mode.</param>
+    /// <param name="drainDuration">The drain time of this drain, or <see langword="null"/> for the default.</param>
     /// <returns><see langword="false"/> when the machine has no such module.</returns>
-    public bool TrySetMode(ModuleName name, ModuleMode mode)
+    public bool TrySetMode(ModuleName name, ModuleMode mode, TimeSpan? drainDuration = null)
     {
         if (!_modules.TryGetValue(name, out var module))
         {
             return false;
         }
 
-        module.SetMode(mode);
+        module.SetMode(mode, drainDuration);
 
         return true;
     }

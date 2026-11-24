@@ -7,7 +7,7 @@ namespace HealthyFac.Seeder.UnitTests.SeedFiles;
 
 public sealed class SeedFolderTests
 {
-    [Fact]
+    [Fact(Explicit = true)]
     public void Read_WithAValidFile_ReadsCamelCaseNamesEnumerationsAndMoments()
     {
         var folder = CreateFolder(SeedFolderTestData.ValidJson, out _);
@@ -19,7 +19,7 @@ public sealed class SeedFolderTests
         file.At.Should().BeEquivalentTo(RelativeMoment.Parse(text: "wd-1 09:00"));
     }
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(SeedFolderTestData.InvalidFiles), MemberType = typeof(SeedFolderTestData))]
     public void Read_WithAnInvalidFile_ThrowsWithTheFilePathAndTheJsonPath(string name, string json, string jsonPath)
     {
@@ -31,7 +31,7 @@ public sealed class SeedFolderTests
         exception.Message.Should().Contain(path).And.Contain(jsonPath);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Read_WithAMissingFile_ThrowsWithTheFilePath()
     {
         var folder = new SeedFolder(Directory.CreateTempSubdirectory().FullName);

@@ -1,5 +1,5 @@
-using HealthyFac.MachineSimulator.Machines;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Machines;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Publishing.Data;

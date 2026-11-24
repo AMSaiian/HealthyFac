@@ -1,11 +1,10 @@
 using System.Globalization;
 using System.Text.Json;
-using HealthyFac.MachineSimulator.Machines;
-using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Machines;
 using HealthyFac.Telemetry.Application.MetricSchemas;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 
-namespace HealthyFac.MachineSimulator.Publishing;
+namespace HealthyFac.MachineSimulator.Scenarios.Payloads;
 
 /// <summary>
 /// Writes the JSON payload of one machine message from a scenario sample. The payload keeps only the keys and the

@@ -1,6 +1,6 @@
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Scenarios.Machines;
 
 /// <summary>
 /// One metric definition of a machine, as the last state poll read it.

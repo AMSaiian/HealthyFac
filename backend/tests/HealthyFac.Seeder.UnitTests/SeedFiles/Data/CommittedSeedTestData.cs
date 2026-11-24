@@ -53,7 +53,9 @@ public static class CommittedSeedTestData
         throw new DirectoryNotFoundException(message: "The committed seed folder backend/seed/demo was not found.");
     }
 
-    public static SeedFolder CopyWith(string fileName, Action<JsonNode> change)
+    /// <summary>Copies the committed seed folder into a new temporary folder.</summary>
+    /// <returns>The path of the copy.</returns>
+    public static string CopyCommitted()
     {
         var source = FindCommittedPath();
         var target = Directory.CreateTempSubdirectory().FullName;
@@ -67,6 +69,12 @@ public static class CommittedSeedTestData
             File.Copy(file, file.Replace(source, target));
         }
 
+        return target;
+    }
+
+    public static SeedFolder CopyWith(string fileName, Action<JsonNode> change)
+    {
+        var target = CopyCommitted();
         var path = Path.Combine(target, fileName);
         var root = JsonNode.Parse(File.ReadAllText(path))!;
         change(root);

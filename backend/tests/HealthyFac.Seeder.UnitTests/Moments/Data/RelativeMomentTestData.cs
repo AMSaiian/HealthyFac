@@ -13,6 +13,12 @@ public static class RelativeMomentTestData
         string.Empty,
         "wd+1 9:00",
         "d+99999999999",
+        "h-1:60",
+        "h-1:5",
+        "h-1 :05",
+        "d-1:30",
+        "wd-1:30 10:00",
+        "h-1:30 10:00",
     };
 
     public static TheoryData<string> ValidTexts => new()
@@ -25,5 +31,7 @@ public static class RelativeMomentTestData
         "d+0",
         "h-3",
         "h+48",
+        "h-22:05",
+        "h+0:30",
     };
 }

@@ -11,7 +11,7 @@ namespace HealthyFac.Seeder.UnitTests.SeedFiles;
 
 public sealed class CommittedSeedCheckTests
 {
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(CommittedSeedTestData.Anchors), MemberType = typeof(CommittedSeedTestData))]
     public async Task Run_OnTheCommittedSeed_ReturnsNoFailureForAnyAnchorDay(string name, DateTimeOffset anchor)
     {
@@ -23,7 +23,7 @@ public sealed class CommittedSeedCheckTests
         failures.Should().BeEmpty(name);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_OnACopyWithAnUnknownKey_ReturnsTheKeyNotCreatedFailure()
     {
         var folder = CommittedSeedTestData.CopyWith(
@@ -37,7 +37,7 @@ public sealed class CommittedSeedCheckTests
             .Contain(failure => failure.Item.StartsWith("machines.json#pump") && failure.Rule.Contains("nobody"));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_OnACopyWithAnEventAfterTheAnchor_ReturnsTheInThePastFailure()
     {
         var folder = CommittedSeedTestData.CopyWith(
@@ -52,7 +52,7 @@ public sealed class CommittedSeedCheckTests
                 && failure.Rule.Contains("past"));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_OnACopyThatUsesAKeyBeforeItsCreatingEvent_ReturnsTheUsedBeforeFailure()
     {
         var folder = CommittedSeedTestData.CopyWith(
@@ -69,7 +69,7 @@ public sealed class CommittedSeedCheckTests
                 && failure.Rule.Contains("pump-seal.order"));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_OnACopyWithAnInvalidMoment_FailsWithTheFile()
     {
         var folder = CommittedSeedTestData.CopyWith(

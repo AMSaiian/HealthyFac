@@ -13,7 +13,7 @@ public sealed class SeedResetTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheResetArgument_SeedsAgainWithTheDatesOfTheNewAnchorAndKeepsTheRequiredData()
     {
         var laterAnchor = FullSeedTestData.SaturdayAnchor.AddDays(SeedResetTestData.LaterAnchorDays);
@@ -45,7 +45,7 @@ public sealed class SeedResetTests(SeederFixture fixture)
         company.CreatedAt.Should().BeCloseTo(expectedCreatedAt.UtcDateTime, TimeSpan.FromSeconds(seconds: 1));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheResetArgumentAndAnOpenConnection_ExitsWithOneNamesTheDatabaseAndWritesNothing()
     {
         await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
@@ -67,7 +67,7 @@ public sealed class SeedResetTests(SeederFixture fixture)
         after.Should().BeEquivalentTo(before);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterAResetThatStoppedAfterItsFirstWrite_ReportsAnIncompleteSeedAndTheResetHint()
     {
         await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);

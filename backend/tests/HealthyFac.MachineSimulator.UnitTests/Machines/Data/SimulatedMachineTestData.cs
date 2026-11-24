@@ -1,7 +1,7 @@
 using HealthyFac.Core.Domain.Machines;
-using HealthyFac.MachineSimulator.Machines;
-using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Machines;
+using HealthyFac.MachineSimulator.Scenarios.Machines.Snapshots;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Machines.Data;
@@ -13,6 +13,7 @@ public static class SimulatedMachineTestData
     public const string PumpSerialNumber = ScenarioBinding.PumpSerialNumber;
 
     public static readonly TimeSpan DrainDuration = TimeSpan.FromMinutes(minutes: 3);
+    public static readonly TimeSpan LongDrainDuration = TimeSpan.FromHours(hours: 8);
     public static readonly TimeSpan OneSecond = TimeSpan.FromSeconds(seconds: 1);
 
     /// <summary>23:30 UTC on 2026-03-10 is already 2026-03-11 in Kyiv.</summary>

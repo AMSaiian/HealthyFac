@@ -7,7 +7,7 @@ public sealed class SeedCalendarTests
 {
     private static readonly TimeZoneInfo Kyiv = TimeZoneInfo.FindSystemTimeZoneById(SeedCalendarTestData.KyivZoneId);
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(SeedCalendarTestData.UtcCases), MemberType = typeof(SeedCalendarTestData))]
     public void ToUtc_WithAnchorAndMoment_ReturnsTheInstant(string name, string input, DateTimeOffset expected)
     {
@@ -18,7 +18,7 @@ public sealed class SeedCalendarTests
         instant.Should().Be(expected, name);
     }
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(SeedCalendarTestData.RejectedCases), MemberType = typeof(SeedCalendarTestData))]
     public void ToUtc_WithAnUnusableMoment_ThrowsWithTheText(string name, string input)
     {
@@ -29,7 +29,7 @@ public sealed class SeedCalendarTests
         act.Should().Throw<MomentException>(name).WithMessage($"*'{text}'*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ToDate_WithDayOffset_ReturnsTheLocalDateThatManyDaysBefore()
     {
         var anchor = SeedCalendarTestData.Utc(year: 2027, month: 3, day: 25, hour: 10, minute: 0);

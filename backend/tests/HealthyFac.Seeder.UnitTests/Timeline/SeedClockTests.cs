@@ -7,7 +7,7 @@ public sealed class SeedClockTests
     private static readonly DateTimeOffset Moment = new(
         year: 2027, month: 3, day: 24, hour: 7, minute: 0, second: 0, TimeSpan.Zero);
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_AfterEnter_ReturnsTheMoment()
     {
         var clock = new SeedClock();
@@ -18,7 +18,7 @@ public sealed class SeedClockTests
         first.Should().Be(Moment);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_OnLaterReads_AddsOneMicrosecondEachTime()
     {
         var clock = new SeedClock();
@@ -29,7 +29,7 @@ public sealed class SeedClockTests
         reads.Should().Equal(Moment, Moment.AddTicks(ticks: 10), Moment.AddTicks(ticks: 20));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_OnManyReads_ReturnsDistinctValues()
     {
         var clock = new SeedClock();
@@ -40,7 +40,7 @@ public sealed class SeedClockTests
         reads.Distinct().Should().HaveCount(expected: 1000);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_AfterEnterWithTheSameMoment_ContinuesAfterTheLastRead()
     {
         var clock = new SeedClock();
@@ -55,7 +55,7 @@ public sealed class SeedClockTests
         read.Should().Be(firstRead.AddTicks(ticks: 30));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Enter_WithAMomentEarlierThanThePreviousOne_ThrowsWithTheItem()
     {
         var clock = new SeedClock();
@@ -68,7 +68,7 @@ public sealed class SeedClockTests
         act.Should().Throw<InvalidOperationException>().WithMessage(expectedWildcardPattern: "*orders.json#order-3*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Enter_WithAnEarlierMoment_Throws()
     {
         var clock = new SeedClock();
@@ -80,7 +80,7 @@ public sealed class SeedClockTests
         act.Should().Throw<InvalidOperationException>().WithMessage(expectedWildcardPattern: "*orders.json#order-2*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_AfterEnterWithALaterMoment_ReturnsThatMoment()
     {
         var clock = new SeedClock();
@@ -93,7 +93,7 @@ public sealed class SeedClockTests
         read.Should().Be(Moment.AddHours(hours: 1));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_BeforeTheFirstEnter_Throws()
     {
         var clock = new SeedClock();

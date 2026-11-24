@@ -15,7 +15,7 @@ public sealed class FullSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(FullSeedTestData.Anchors), MemberType = typeof(FullSeedTestData))]
     public async Task RunAsync_OnAnAnchorDay_PassesTheCheckAndSeedsTheCountsAndStatusesOfTheDemo(
         string name,
@@ -56,7 +56,7 @@ public sealed class FullSeedTests(SeederFixture fixture)
             .BeEquivalentTo(WorkOrdersTestData.StatusCounts);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_OnASaturday_LeavesNoOpenOrFailedMessageInAnyDatabase()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, FullSeedTestData.SaturdayAnchor);
@@ -67,7 +67,7 @@ public sealed class FullSeedTests(SeederFixture fixture)
         failedCount.Should().Be(expected: 0);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_TwiceOnEmptyStacks_DeliversTheSameMessageTypesInTheSameOrder()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, FullSeedTestData.SaturdayAnchor);

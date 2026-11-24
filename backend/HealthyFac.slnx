@@ -51,6 +51,7 @@
   <Folder Name="/src/Tools/">
     <Project Path="src/Tools/HealthyFac.HealthProbe/HealthyFac.HealthProbe.csproj" />
     <Project Path="src/Tools/HealthyFac.MachineSimulator/HealthyFac.MachineSimulator.csproj" />
+    <Project Path="src/Tools/HealthyFac.MachineSimulator.Scenarios/HealthyFac.MachineSimulator.Scenarios.csproj" />
     <Project Path="src/Tools/HealthyFac.Seeder/HealthyFac.Seeder.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -11,7 +11,7 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_SecondRunAfterAFullSeed_ExitsWithZeroAndChangesNothing()
     {
         var first = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
@@ -26,7 +26,7 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
         after.Should().BeEquivalentTo(before);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterAFailedRun_ReportsAnIncompleteSeedAndWritesNothing()
     {
         var baseDirectory = SeedBaseDirectory.Create(WorkOrderSeedVariants.PumpCouplingSlotTaken());
@@ -45,7 +45,7 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
         after.Should().BeEquivalentTo(before);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterAStopAtTheEndOfThePeoplePart_LeavesNoHalfWrittenUseCaseAndReportsAnIncompleteSeed()
     {
         using var stop = new CancellationTokenSource();

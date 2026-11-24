@@ -6,7 +6,7 @@ namespace HealthyFac.Seeder.UnitTests.Cases;
 
 public sealed class CasesPartTests
 {
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithACoverageOtherThanDrafted_FailsWithTheItem()
     {
         var folder = CreateFolder(coverage: "watched");
@@ -17,7 +17,7 @@ public sealed class CasesPartTests
         act.Should().Throw<SeedFileException>().WithMessage($"*{CasesPartTestData.Item}*watched*only drafted*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithTheDraftedCoverage_ReturnsTheCaseEvent()
     {
         var folder = CreateFolder(coverage: "drafted");

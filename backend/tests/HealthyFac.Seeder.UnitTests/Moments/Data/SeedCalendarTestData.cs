@@ -28,6 +28,10 @@ public static class SeedCalendarTestData
         },
         { "h-3", "2027-03-25T10:00:00Z|h-3", Utc(year: 2027, month: 3, day: 25, hour: 7, minute: 0) },
         {
+            "h-22:05", "2027-03-25T10:00:00Z|h-22:05", Utc(year: 2027, month: 3, day: 24, hour: 11, minute: 55)
+        },
+        { "h+0:30", "2027-03-25T10:00:00Z|h+0:30", Utc(year: 2027, month: 3, day: 25, hour: 10, minute: 30) },
+        {
             "wd+0 03:30 on a Friday before the clock change", "2027-03-26T10:00:00Z|wd+0 03:30",
             Utc(year: 2027, month: 3, day: 26, hour: 1, minute: 30)
         },

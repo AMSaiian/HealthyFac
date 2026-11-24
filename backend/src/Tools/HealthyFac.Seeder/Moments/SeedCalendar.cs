@@ -17,7 +17,7 @@ public static class SeedCalendar
     {
         if (moment.Form == MomentForm.Hour)
         {
-            return anchor.AddHours(moment.Offset).ToUniversalTime();
+            return anchor.AddMinutes(moment.TotalMinutes).ToUniversalTime();
         }
 
         if (moment.Time is not { } time)

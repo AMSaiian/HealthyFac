@@ -1,8 +1,7 @@
-using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Scenarios.Curves;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 
-namespace HealthyFac.MachineSimulator.Machines;
+namespace HealthyFac.MachineSimulator.Scenarios.Machines;
 
 /// <summary>
 /// The result of one tick of a publishing machine.

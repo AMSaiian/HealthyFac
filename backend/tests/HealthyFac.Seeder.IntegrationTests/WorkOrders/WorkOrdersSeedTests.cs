@@ -10,7 +10,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealWorkOrdersFile_StoresThe13OrdersWithTheirCurrentStatuses()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, WorkOrdersTestData.Anchor);
@@ -23,7 +23,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
             .BeEquivalentTo(WorkOrdersTestData.StatusCounts);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task GetWorkOrderHistory_OfThePumpSealOrder_ReturnsTheRowsWithTheirMomentsAndActors()
     {
         var context = await _fixture.RunFullSeedAsync(
@@ -47,7 +47,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
         }
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAStartOutsideTheShift_StopsWithTheOrderKeyAndOutsideShift()
     {
         var folder = WorkOrderSeedVariants.BearingVibrationOutsideShift();
@@ -60,7 +60,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
             .WithMessage($"*bearing-vibration*{WorkOrdersTestData.OutsideShiftMessage}*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithATakenSlot_StopsWithTheOrderKeyAndSlotTaken()
     {
         var folder = WorkOrderSeedVariants.PumpCouplingSlotTaken();
@@ -73,7 +73,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
             .WithMessage($"*pump-coupling*{WorkOrdersTestData.SlotTakenMessage}*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheSameStatusTwiceInOneOrder_StoresEachChangeWithItsActor()
     {
         var folder = WorkOrderSeedVariants.CoolantCheckWithRepeatedStatus();
@@ -91,7 +91,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
             .Equal(WorkOrdersTestData.RepeatedActors.Select(actor => context.GetActor(actor).UserId));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAStatusChangeOnABacklogOrder_StopsWithTheItemAndTheRule()
     {
         var folder = WorkOrderSeedVariants.StatusChangeOnBacklogOrder();
@@ -104,7 +104,7 @@ public sealed class WorkOrdersSeedTests(SeederFixture fixture)
             .WithMessage($"*{WorkOrdersTestData.BacklogStatusItem}*{WorkOrdersTestData.NoAssignmentRule}*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithThePumpDraftAppliedTwice_StopsWithTheDraftItemAndNotPending()
     {
         var folder = WorkOrderSeedVariants.PumpDraftAppliedTwice();

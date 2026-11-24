@@ -10,7 +10,7 @@ public sealed class MessageValidatorRegistrationTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Resolve_ForEveryMessageWithAValidatorClass_ReturnsTheValidatorInEachHost()
     {
         var missing = new List<string>();

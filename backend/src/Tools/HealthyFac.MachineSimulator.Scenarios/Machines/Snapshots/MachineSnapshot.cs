@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
 
-namespace HealthyFac.MachineSimulator.Machines.Snapshots;
+namespace HealthyFac.MachineSimulator.Scenarios.Machines.Snapshots;
 
 /// <summary>
 /// What a poll reads about one machine: the Core data, the registration in Telemetry, and the definitions.

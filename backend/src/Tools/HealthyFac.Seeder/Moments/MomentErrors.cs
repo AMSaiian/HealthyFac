@@ -6,7 +6,7 @@ namespace HealthyFac.Seeder.Moments;
 public static class MomentErrors
 {
     public static string InvalidForm(string text) =>
-        $"The moment '{text}' is not valid. Use 'wd±N HH:mm', 'd±N HH:mm', 'd±N', or 'h±N'.";
+        $"The moment '{text}' is not valid. Use 'wd±N HH:mm', 'd±N HH:mm', 'd±N', 'h±N', or 'h±N:MM'.";
 
     public static string TimeRequired(string text) => $"The moment '{text}' needs a time (HH:mm).";
 

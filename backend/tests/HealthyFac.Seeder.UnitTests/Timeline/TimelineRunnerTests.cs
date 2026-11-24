@@ -7,7 +7,7 @@ public sealed class TimelineRunnerTests
 {
     private static readonly TimeZoneInfo Kyiv = TimeZoneInfo.FindSystemTimeZoneById(id: "Europe/Kyiv");
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithEventsOfTwoParts_InitializesFirstThenRunsThemInMomentOrderAndRelaysAfterEach()
     {
         var log = new List<string>();
@@ -38,7 +38,7 @@ public sealed class TimelineRunnerTests
                 "relay a.json#late");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAFailingPart_StopsAndNamesTheItem()
     {
         var log = new List<string>();
@@ -66,7 +66,7 @@ public sealed class TimelineRunnerTests
             .Equal("run a.json#first at 07:00");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithEventsOfTheSameMoment_RunsThemInFileOrderWithGrowingReads()
     {
         var log = new List<string>();

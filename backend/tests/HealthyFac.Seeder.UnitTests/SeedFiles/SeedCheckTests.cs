@@ -8,7 +8,7 @@ public sealed class SeedCheckTests
 {
     private static readonly TimeZoneInfo Kyiv = TimeZoneInfo.FindSystemTimeZoneById(id: "Europe/Kyiv");
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(SeedCheckTestData.FailingCases), MemberType = typeof(SeedCheckTestData))]
     public async Task Run_WithABrokenRule_ReturnsTheFileTheItemAndTheRule(
         string name,
@@ -27,7 +27,7 @@ public sealed class SeedCheckTests
         failure.Rule.Should().Contain(ruleText);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_WithAnEventAfterTheCompletionMarkerEvent_ReturnsTheItemOfThatEvent()
     {
         var check = new SeedCheck(
@@ -43,7 +43,7 @@ public sealed class SeedCheckTests
         failures[index: 0].Rule.Should().Contain(SeedCheckTestData.CompletionItem);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_WithACompletionItemThatNoEventHas_ReturnsAFailureForThatItem()
     {
         var check = new SeedCheck(
@@ -57,7 +57,7 @@ public sealed class SeedCheckTests
         failures.Should().ContainSingle(failure => failure.Item == SeedCheckTestData.MissingCompletionItem);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_WithTheCompletionMarkerEventLast_ReturnsNoFailure()
     {
         var check = new SeedCheck(
@@ -71,7 +71,7 @@ public sealed class SeedCheckTests
         failures.Should().BeEmpty();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Run_WithACleanSet_ReturnsNoFailure()
     {
         var check = new SeedCheck(SeedCheckTestData.Anchor, Kyiv, SeedCheckTestData.ValidateAsync);

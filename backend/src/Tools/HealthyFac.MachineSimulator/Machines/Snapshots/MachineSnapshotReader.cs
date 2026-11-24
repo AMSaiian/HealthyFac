@@ -1,4 +1,6 @@
 using HealthyFac.Core.Application;
+using HealthyFac.MachineSimulator.Scenarios.Machines;
+using HealthyFac.MachineSimulator.Scenarios.Machines.Snapshots;
 using HealthyFac.Telemetry.Application;
 using Microsoft.EntityFrameworkCore;
 

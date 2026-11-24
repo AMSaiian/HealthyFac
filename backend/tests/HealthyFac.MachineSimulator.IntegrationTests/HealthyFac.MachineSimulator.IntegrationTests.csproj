@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tools\HealthyFac.MachineSimulator\HealthyFac.MachineSimulator.csproj" />
+    <ProjectReference Include="..\..\src\Tools\HealthyFac.MachineSimulator.Scenarios\HealthyFac.MachineSimulator.Scenarios.csproj" />
     <ProjectReference Include="..\HealthyFac.Testing\HealthyFac.Testing.csproj" />
   </ItemGroup>
 

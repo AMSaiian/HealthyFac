@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\HealthyFac.MachineSimulator.Scenarios\HealthyFac.MachineSimulator.Scenarios.csproj"/>
         <ProjectReference Include="..\..\Core\HealthyFac.Core.Infrastructure\HealthyFac.Core.Infrastructure.csproj"/>
         <ProjectReference Include="..\..\Telemetry\HealthyFac.Telemetry.Infrastructure\HealthyFac.Telemetry.Infrastructure.csproj"/>
         <ProjectReference Include="..\..\Document\HealthyFac.Document.Infrastructure\HealthyFac.Document.Infrastructure.csproj"/>

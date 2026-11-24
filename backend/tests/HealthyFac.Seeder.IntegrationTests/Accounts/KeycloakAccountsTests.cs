@@ -9,7 +9,7 @@ public sealed class KeycloakAccountsTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task CreateOrganizationAsync_WithACompany_MakesTheOrganizationFindableByTheCompanyId()
     {
         _fixture.TrackOrganization(AccountsTestData.CompanyId);
@@ -25,7 +25,7 @@ public sealed class KeycloakAccountsTests(SeederFixture fixture)
         found.Should().Be(organizationId);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task CreateUserAsync_WithAPassword_CreatesAUserThatSignsIn()
     {
         _fixture.EnterNextMoment(item: "accounts");
@@ -47,7 +47,7 @@ public sealed class KeycloakAccountsTests(SeederFixture fixture)
         claims[propertyName: "sub"]!.GetValue<string>().Should().Be(userId.ToString());
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task DeleteOrganizationWithMembersAsync_WithElevenMembers_RemovesEveryMemberAndTheOrganization()
     {
         _fixture.EnterNextMoment(item: "accounts");

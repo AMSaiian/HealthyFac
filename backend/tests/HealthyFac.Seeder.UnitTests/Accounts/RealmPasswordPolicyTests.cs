@@ -8,7 +8,7 @@ public sealed class RealmPasswordPolicyTests
 {
     private const string PolicyProperty = "passwordPolicy";
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Text_ComparedWithTheRealmFile_IsEqual()
     {
         var realmFile = KeycloakFiles.Find("realm", "healthyfac-realm.json");

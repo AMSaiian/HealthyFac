@@ -1,6 +1,6 @@
 using HealthyFac.Core.Domain.Machines;
-using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Scenarios;
+using HealthyFac.MachineSimulator.Scenarios.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.UnitTests.Machines.Data;
 
@@ -38,6 +38,21 @@ public sealed class SimulatedMachineTests
         var result = machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
 
         result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TrySetMode_DrainingWithOwnDuration_ProgressesByTheOwnDuration()
+    {
+        var machine = SimulatedMachineTestData.Create(
+            SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber));
+        machine.TrySetMode(ModuleName.Spindle, ModuleMode.Draining, SimulatedMachineTestData.LongDrainDuration);
+
+        for (var second = 0; second < 4 * 3600; second++)
+        {
+            machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
+        }
+
+        machine.Modules[ModuleName.Spindle].Progress.Should().BeApproximately(expectedValue: 0.5, precision: 1e-6);
     }
 
     [Fact]
