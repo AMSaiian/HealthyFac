@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Application.WorkOrders;
+using HealthyFac.Core.Application.WorkOrders.ApplySchedule;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
@@ -8,8 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 
-/// <summary>Arranges the data and returns the change under test, so a test records only that change.</summary>
-public delegate Task<Func<Task>> WorkOrderChangeAction(CoreDatabaseFixture fixture, ShiftTenant tenant);
+/// <summary>
+/// Arranges the data and returns the change under test, so a test records only that change. The change returns the
+/// ID of the work order that it changed.
+/// </summary>
+public delegate Task<Func<Task<Guid>>> WorkOrderChangeAction(CoreDatabaseFixture fixture, ShiftTenant tenant);
 
 public static class WorkOrderHintTestData
 {
@@ -18,7 +22,7 @@ public static class WorkOrderHintTestData
         {
             {
                 "Create",
-                (fixture, tenant) => Task.FromResult<Func<Task>>(() => CreateBacklogAsync(fixture, tenant))
+                (fixture, tenant) => Task.FromResult<Func<Task<Guid>>>(() => CreateBacklogAsync(fixture, tenant))
             },
             {
                 "Update",
@@ -27,10 +31,13 @@ public static class WorkOrderHintTestData
                     var id = await CreateBacklogAsync(fixture, tenant);
                     var rowVersion = await fixture.LoadWorkOrderRowVersionAsync(id);
 
-                    return () => fixture.UpdateWorkOrderAsync(
-                        tenant.CompanyId,
-                        Guid.CreateVersion7(),
-                        WorkOrderTestData.UpdateRequest(tenant.CompanyId, AccessScope.Company, id, rowVersion, []));
+                    return () => Returning(
+                        id,
+                        fixture.UpdateWorkOrderAsync(
+                            tenant.CompanyId,
+                            Guid.CreateVersion7(),
+                            WorkOrderTestData.UpdateRequest(
+                                tenant.CompanyId, AccessScope.Company, id, rowVersion, [])));
                 }
             },
             {
@@ -39,11 +46,13 @@ public static class WorkOrderHintTestData
                 {
                     var id = await CreateAssignedAsync(fixture, tenant, time: "10:00");
 
-                    return () => fixture.ChangeStatusAsync(
-                        tenant.CompanyId,
-                        Guid.CreateVersion7(),
+                    return () => Returning(
                         id,
-                        WorkOrderStatus.InProgress);
+                        fixture.ChangeStatusAsync(
+                            tenant.CompanyId,
+                            Guid.CreateVersion7(),
+                            id,
+                            WorkOrderStatus.InProgress));
                 }
             },
             {
@@ -53,17 +62,19 @@ public static class WorkOrderHintTestData
                     var id = await CreateBacklogAsync(fixture, tenant);
                     var rowVersion = await fixture.LoadWorkOrderRowVersionAsync(id);
 
-                    return () => RunAsync(
-                        fixture,
-                        tenant,
-                        new AssignWorkOrderRequest
-                        {
-                            CompanyId = tenant.CompanyId,
-                            Id = id,
-                            AssigneeId = tenant.EmployeeId,
-                            PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "09:00"),
-                            RowVersion = rowVersion,
-                        });
+                    return () => Returning(
+                        id,
+                        RunAsync(
+                            fixture,
+                            tenant,
+                            new AssignWorkOrderRequest
+                            {
+                                CompanyId = tenant.CompanyId,
+                                Id = id,
+                                AssigneeId = tenant.EmployeeId,
+                                PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "09:00"),
+                                RowVersion = rowVersion,
+                            }));
                 }
             },
             {
@@ -73,16 +84,18 @@ public static class WorkOrderHintTestData
                     var id = await CreateAssignedAsync(fixture, tenant, time: "09:00");
                     var rowVersion = await fixture.LoadWorkOrderRowVersionAsync(id);
 
-                    return () => RunAsync(
-                        fixture,
-                        tenant,
-                        new MoveWorkOrderRequest
-                        {
-                            CompanyId = tenant.CompanyId,
-                            Id = id,
-                            PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "10:00"),
-                            RowVersion = rowVersion,
-                        });
+                    return () => Returning(
+                        id,
+                        RunAsync(
+                            fixture,
+                            tenant,
+                            new MoveWorkOrderRequest
+                            {
+                                CompanyId = tenant.CompanyId,
+                                Id = id,
+                                PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "10:00"),
+                                RowVersion = rowVersion,
+                            }));
                 }
             },
             {
@@ -92,11 +105,13 @@ public static class WorkOrderHintTestData
                     var id = await CreateAssignedAsync(fixture, tenant, time: "09:00");
                     var rowVersion = await fixture.LoadWorkOrderRowVersionAsync(id);
 
-                    return () => RunAsync(
-                        fixture,
-                        tenant,
-                        new UnassignWorkOrderRequest
-                            { CompanyId = tenant.CompanyId, Id = id, RowVersion = rowVersion });
+                    return () => Returning(
+                        id,
+                        RunAsync(
+                            fixture,
+                            tenant,
+                            new UnassignWorkOrderRequest
+                                { CompanyId = tenant.CompanyId, Id = id, RowVersion = rowVersion }));
                 }
             },
             {
@@ -106,10 +121,13 @@ public static class WorkOrderHintTestData
                     var id = await CreateBacklogAsync(fixture, tenant);
                     var rowVersion = await fixture.LoadWorkOrderRowVersionAsync(id);
 
-                    return () => RunAsync(
-                        fixture,
-                        tenant,
-                        new DeleteWorkOrderRequest { CompanyId = tenant.CompanyId, Id = id, RowVersion = rowVersion });
+                    return () => Returning(
+                        id,
+                        RunAsync(
+                            fixture,
+                            tenant,
+                            new DeleteWorkOrderRequest
+                                { CompanyId = tenant.CompanyId, Id = id, RowVersion = rowVersion }));
                 }
             },
         };
@@ -127,7 +145,7 @@ public static class WorkOrderHintTestData
         return tenant;
     }
 
-    private static async Task<Guid> CreateBacklogAsync(CoreDatabaseFixture fixture, ShiftTenant tenant)
+    public static async Task<Guid> CreateBacklogAsync(CoreDatabaseFixture fixture, ShiftTenant tenant)
     {
         var created = await fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
@@ -137,7 +155,32 @@ public static class WorkOrderHintTestData
         return created.Id;
     }
 
-    private static async Task<Guid> CreateAssignedAsync(CoreDatabaseFixture fixture, ShiftTenant tenant, string time)
+    public static async Task<ScheduleChange> ApplyChangeAsync(
+        CoreDatabaseFixture fixture,
+        ShiftTenant tenant,
+        Guid id,
+        string time
+    ) =>
+        new()
+        {
+            WorkOrderId = id,
+            RowVersion = await fixture.LoadWorkOrderRowVersionAsync(id),
+            AssigneeId = tenant.EmployeeId,
+            PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time),
+            EstimateMinutes = WorkOrderTestData.OneHour,
+        };
+
+    public static Task<ApplyScheduleChangesResponse> ApplyAsync(
+        CoreDatabaseFixture fixture,
+        ShiftTenant tenant,
+        params ScheduleChange[] changes
+    ) =>
+        fixture.ReadAsAsync<ApplyScheduleChangesRequest, ApplyScheduleChangesResponse>(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            new ApplyScheduleChangesRequest { CompanyId = tenant.CompanyId, Changes = changes });
+
+    public static async Task<Guid> CreateAssignedAsync(CoreDatabaseFixture fixture, ShiftTenant tenant, string time)
     {
         var created = await fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
@@ -149,6 +192,13 @@ public static class WorkOrderHintTestData
                 plannedStartLocal: ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time)));
 
         return created.Id;
+    }
+
+    private static async Task<Guid> Returning(Guid id, Task change)
+    {
+        await change;
+
+        return id;
     }
 
     private static async Task RunAsync<TRequest>(CoreDatabaseFixture fixture, ShiftTenant tenant, TRequest request)

@@ -9,6 +9,12 @@ public record GetWorkOrderHistoryRequest
 {
     [FromRoute(Name = WorkOrderRoutes.IdParameter)]
     public required string Id { get; init; }
+
+    [FromQuery(Name = WorkOrderRoutes.LimitParameter)]
+    public required int Limit { get; init; }
+
+    [FromQuery(Name = WorkOrderRoutes.AfterParameter)]
+    public int? After { get; init; }
 }
 
 public static class GetWorkOrderHistoryRequestExtensions
@@ -25,6 +31,8 @@ public static class GetWorkOrderHistoryRequestExtensions
                 CompanyId = companyId,
                 Scope = scope,
                 Id = WorkOrderRouteIds.Decrypt(request.Id, idEncryptor),
+                Limit = request.Limit,
+                After = request.After,
             };
     }
 }

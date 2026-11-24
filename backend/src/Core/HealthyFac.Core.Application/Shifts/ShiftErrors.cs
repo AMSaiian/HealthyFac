@@ -28,9 +28,6 @@ public static class ShiftErrors
         public static readonly string RangeTooLong =
             $"The range has at most {ShiftValidationConstants.MaxOverrideRangeDays} days.";
 
-        public static readonly string TooManyBlocks =
-            $"A day has at most {ShiftValidationConstants.MaxBlocksPerDay} blocks.";
-
         public static readonly string BlockOffGrid =
             $"Block times must be a multiple of {SlotRules.GridStep.TotalMinutes} minutes.";
 
@@ -51,5 +48,6 @@ public static class ShiftErrors
         public const string EffectiveFromTaken = "The employee already has a version for this date.";
         public const string OverrideNotFound = "The employee has no override for this date.";
         public const string OverrideChanged = "The override changed at the same time. Reload it and try again.";
+        public const string OverrideExists = "This date already has an override. Edit it instead.";
     }
 }

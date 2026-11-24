@@ -21,12 +21,15 @@ export class PlainTimePicker implements FormValueControl<Temporal.PlainTime | nu
   readonly readonly = input(false);
   readonly invalid = input(false);
   readonly stepMinute = input(DEFAULT_STEP_MINUTE);
+  readonly min = input<Temporal.PlainTime | undefined>(undefined);
   readonly max = input<Temporal.PlainTime | undefined>(undefined);
   readonly appendTo = input<'body' | 'self'>('body');
   readonly touch = output<void>();
 
   protected readonly pickerValue = computed(() => plainTimeToPickerDate(this.value()), { equal: isSameDate });
-  protected readonly minDate = computed(() => undefined);
+  protected readonly minDate = computed(() => plainTimeToPickerDate(this.min() ?? null) ?? undefined, {
+    equal: isSameDate,
+  });
   protected readonly maxDate = computed(() => plainTimeToPickerDate(this.max() ?? null) ?? undefined, {
     equal: isSameDate,
   });

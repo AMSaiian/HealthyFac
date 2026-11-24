@@ -1,5 +1,6 @@
 import {
   array,
+  custom,
   extend,
   type infer as Infer,
   int,
@@ -18,6 +19,7 @@ import {
 } from 'zod/mini';
 
 import { richTextSchema } from '@shared/rich-text/rich-text-schema';
+import { Temporal } from '@shared/time/temporal';
 
 import { WorkOrderCategory, WorkOrderPriority } from '@work-orders/work-order';
 import {
@@ -34,13 +36,16 @@ export const TOO_LONG_ERROR_KEY = 'WORK_ORDERS.FORM.ERRORS.TOO_LONG';
 export const ESTIMATE_RANGE_ERROR_KEY = 'WORK_ORDERS.FORM.ERRORS.ESTIMATE_RANGE';
 export const ESTIMATE_STEP_ERROR_KEY = 'WORK_ORDERS.FORM.ERRORS.ESTIMATE_STEP';
 export const TOO_MANY_FILES_ERROR_KEY = 'WORK_ORDERS.FORM.ERRORS.TOO_MANY_FILES';
+export const START_INVALID_ERROR_KEY = 'WORK_ORDERS.SCHEDULE.ERRORS.START_REQUIRED';
 
 const requiredText = (limit: number): ZodMiniString =>
   string().check(trim(), minLength(1, REQUIRED_ERROR_KEY), maxLength(limit, TOO_LONG_ERROR_KEY));
 
 /**
  * The one schema of a work order. The drawer form validates with it, and the action dispatcher validates the payload
- * of an action with its partial form. The messages are translation keys. The limits mirror the backend.
+ * of an action with its partial form. The messages are translation keys. The limits mirror the backend. The assignee
+ * and the start go together: the assignment picker reports it (`validityChange`), because a schema with a rule
+ * cannot be extended into the payload schema.
  */
 export const workOrderFormSchema = object({
   title: requiredText(TITLE_MAX_LENGTH),
@@ -54,6 +59,11 @@ export const workOrderFormSchema = object({
     refine((minutes) => minutes % ESTIMATE_STEP_MINUTES === 0, ESTIMATE_STEP_ERROR_KEY),
   ),
   fileIds: array(string()).check(maxLength(FILE_MAX_COUNT, TOO_MANY_FILES_ERROR_KEY)),
+  assigneeId: nullable(string()),
+  start: custom<Temporal.PlainDateTime | null>(
+    (value) => value === null || value instanceof Temporal.PlainDateTime,
+    START_INVALID_ERROR_KEY,
+  ),
 });
 
 export type WorkOrderFormValue = Infer<typeof workOrderFormSchema>;

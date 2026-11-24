@@ -103,4 +103,5 @@ export interface RealtimeHint {
   caseId?: string;
   attemptId?: string;
   machineId?: string;
+  workOrderId?: string;
 }

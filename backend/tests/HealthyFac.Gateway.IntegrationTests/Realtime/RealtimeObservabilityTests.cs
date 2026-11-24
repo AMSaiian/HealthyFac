@@ -7,6 +7,8 @@ using HealthyFac.Shared.Web.Realtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Core;
 
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
@@ -54,6 +56,22 @@ public sealed class RealtimeObservabilityTests(GatewayEnvironment environment) :
 
         logs.Lines.Should().Contain(line => line.Contains("responded") && line.Contains(RealtimeConstants.HubPath));
         spans.TagValues.Should().Contain(tag => tag.Contains(RealtimeConstants.HubPath));
+    }
+
+    [Fact]
+    public async Task Connect_AfterTheStaticLoggerChanged_StillRecordsTheRequestLog()
+    {
+        var logs = new LogTextCapture();
+        await using var gateway = CreateGateway(new SpanTagCapture(), logs);
+        var token = gateway.Tokens.CreateToken(RealtimeTestData.Claims(Guid.NewGuid()));
+        _ = gateway.Services;
+        Log.Logger = Logger.None;
+
+        await using var client = await RealtimeTestClient.ConnectAsync(gateway, token);
+        await client.DisposeAsync();
+        await WaitForRequestLogAsync(logs);
+
+        logs.Lines.Should().Contain(line => IsHubRequestLog(line));
     }
 
     [Fact]

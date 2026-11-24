@@ -36,12 +36,6 @@ export const SHELL_NAV_ITEMS: readonly ShellNavItem[] = [
   },
   { labelKey: 'TITLES.EMPLOYEES', icon: 'pi pi-users', path: '/employees', permission: Permission.EmployeesRead },
   {
-    labelKey: 'TITLES.COMPANY_SCHEDULE',
-    icon: 'pi pi-calendar',
-    path: '/company/schedule',
-    permission: Permission.ShiftsManage,
-  },
-  {
     labelKey: 'TITLES.MY_SCHEDULE',
     icon: 'pi pi-calendar-clock',
     path: '',

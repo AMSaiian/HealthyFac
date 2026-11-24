@@ -11,7 +11,7 @@ import { APP_ROUTER_FEATURES } from '@app/app-router';
 import { EmployeeRole } from '@shared/employee/employee';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -45,7 +45,7 @@ function setup(hasPermission: boolean): HttpTestingController {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: () => hasPermission } },
+      provideFakeAuthStore({ hasPermission: () => hasPermission }),
       {
         provide: CLOCK,
         useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },

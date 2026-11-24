@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { EmployeeRole } from './employee';
 import { EmployeeStore } from './employee.store';
@@ -15,11 +15,7 @@ describe('EmployeeStore', () => {
 
   function createStore(): { store: InstanceType<typeof EmployeeStore>; http: HttpTestingController } {
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: AuthStore, useValue: { isAuthenticated } },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideFakeAuthStore({ isAuthenticated })],
     });
     return { store: TestBed.inject(EmployeeStore), http: TestBed.inject(HttpTestingController) };
   }

@@ -5,10 +5,13 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tooltip } from 'primeng/tooltip';
 
 import { ActionDialog } from '@shared/actions/action-dialog/action-dialog';
+import { CLOCK } from '@shared/time/clock';
+import type { ShownMonth } from '@shared/time/pickers/plain-date-picker/plain-date-picker';
 import { Temporal } from '@shared/time/temporal';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 import { HistoryStore } from '@shared/history/history.store';
 
+import { AffectedWorkOrders } from '@employees/shifts/affected-work-orders/affected-work-orders';
 import { OverrideDialog } from '@employees/shifts/override-dialog/override-dialog';
 import type { OverrideFormValue } from '@employees/shifts/override-dialog/override-dialog-schema';
 import { ShiftsStore } from '@employees/shifts/shifts-store/shifts.store';
@@ -19,7 +22,16 @@ import type { ShiftOverride, ShiftVersion, Weekday } from '@employees/shifts/shi
 import { EMPLOYEES_RETURN_TARGET } from '@employees/employees-return-target';
 
 @Component({
-  imports: [ActionDialog, ButtonDirective, OverrideDialog, Skeleton, Tooltip, TranslatePipe, VersionDialog],
+  imports: [
+    ActionDialog,
+    AffectedWorkOrders,
+    ButtonDirective,
+    OverrideDialog,
+    Skeleton,
+    Tooltip,
+    TranslatePipe,
+    VersionDialog,
+  ],
   host: { class: 'flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-4' },
   selector: 'hf-shifts-page',
   templateUrl: './shifts-page.html',
@@ -29,6 +41,7 @@ export class ShiftsPage {
 
   protected readonly store = inject(ShiftsStore);
   protected readonly history = inject(HistoryStore);
+  protected readonly clock = inject(CLOCK);
   protected readonly returnTarget = EMPLOYEES_RETURN_TARGET;
   protected readonly showVersionsSkeleton = delayedLoading(this.store.versions.isLoading);
   protected readonly showOverridesSkeleton = delayedLoading(this.store.overrides.isLoading);
@@ -36,6 +49,10 @@ export class ShiftsPage {
 
   protected readonly versions = computed(() => (this.store.versions.hasValue() ? this.store.versions.value() : []));
   protected readonly overrides = computed(() => (this.store.overrides.hasValue() ? this.store.overrides.value() : []));
+  protected readonly dialogNow = computed(() => {
+    this.store.dialog();
+    return this.clock.now();
+  });
   protected readonly tomorrow = computed(() => this.store.today().add({ days: 1 }));
 
   private readonly _version = signal<VersionFormValue | null>(null);
@@ -56,7 +73,15 @@ export class ShiftsPage {
           blocks: override.blocks.map((block) => ({ ...block })),
         };
   });
-  protected readonly saveReason = computed((): string | null => (this._isValid() ? null : 'SHIFTS.DIALOG.INVALID'));
+  protected readonly saveReason = computed((): string | null =>
+    this.store.isPrefillLoading()
+      ? 'SHIFTS.DIALOG.LOADING'
+      : this.store.isDateTaken()
+        ? 'SHIFTS.ERRORS.OVERRIDE_EXISTS'
+        : this._isValid()
+          ? null
+          : 'SHIFTS.DIALOG.INVALID',
+  );
 
   constructor() {
     effect(() => {
@@ -74,6 +99,11 @@ export class ShiftsPage {
 
   protected onOverride(value: OverrideFormValue): void {
     this._override.set(value);
+    this.store.setPrefillDate(value.date);
+  }
+
+  protected toYearMonth(month: ShownMonth): Temporal.PlainYearMonth {
+    return new Temporal.PlainYearMonth(month.year, month.month);
   }
 
   protected onValidity(isValid: boolean): void {

@@ -50,6 +50,11 @@ public static class WorkOrderErrors
         public static readonly string EstimateOffGrid =
             $"The estimate must be a multiple of {WorkOrderValidationConstants.EstimateStepMinutes} minutes.";
 
+        public static readonly string ApplyChangeCountInvalid =
+            $"An apply takes 1 to {WorkOrderValidationConstants.ApplyMaxChanges} changes.";
+
+        public const string ApplyWorkOrderRepeated = "A work order appears twice in the apply.";
+
         public static readonly string StartOffGrid =
             $"The planned start must be a multiple of {SlotRules.GridStep.TotalMinutes} minutes.";
 
@@ -71,6 +76,11 @@ public static class WorkOrderErrors
         public const string NotInBacklog = "Only a work order in the backlog can be assigned.";
         public const string NotScheduled = "A work order in the backlog has no assignee and no planned start.";
         public const string SameStatus = "The work order already has this status.";
+        public const string ScheduleChangesRejected = "The schedule changes break rules. Nothing was changed.";
+
+        public const string CompletedScheduleLocked =
+            "A completed work order keeps its estimate, assignee, and start.";
+
         public const string WorkOrderChanged = "The work order changed at the same time. Reload it and try again.";
     }
 }

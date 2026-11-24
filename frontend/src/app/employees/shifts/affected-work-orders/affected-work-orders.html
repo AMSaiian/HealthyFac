@@ -1,0 +1,13 @@
+@if (titleKey(); as title) {
+  <h3 class="font-bold">{{ title | translate }}</h3>
+}
+<small class="text-muted-color">{{ hintKey() | translate }}</small>
+@for (workOrder of workOrders(); track workOrder.id) {
+  <button
+    type="button"
+    class="text-primary cursor-pointer text-left hover:underline"
+    (click)="opened.emit(workOrder.id)"
+  >
+    {{ workOrder.title }} · {{ workOrder.plannedStartLocal.replace('T', ' ').slice(0, 16) }}
+  </button>
+}

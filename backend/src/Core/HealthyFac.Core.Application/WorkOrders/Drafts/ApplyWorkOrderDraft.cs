@@ -133,7 +133,7 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
                     IsolationLevel.Serializable,
                     cancellationToken)
                 : await ApplyAsync(request, cancellationToken);
-            _notifier.PushWorkOrdersHint(request.CompanyId);
+            _notifier.PushWorkOrdersHint(request.CompanyId, workOrderId);
 
             return new ApplyWorkOrderDraftResponse { WorkOrderId = workOrderId };
         }

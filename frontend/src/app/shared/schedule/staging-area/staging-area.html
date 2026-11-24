@@ -1,0 +1,59 @@
+<div
+  cdkDropList
+  cdkDropListSortingDisabled
+  class="flex flex-col items-start gap-2 p-1"
+>
+  @for (card of cards(); track card.item.id) {
+    <div
+      cdkDrag
+      cdkDragPreviewContainer="global"
+      class="hf-status-backlog rounded-border flex max-w-full min-w-12 flex-none cursor-grab items-stretch overflow-hidden text-xs leading-6 text-white"
+      role="button"
+      tabindex="0"
+      [style.width.px]="card.previewWidthPx"
+      [style.height.rem]="laneHeightRem"
+      [attr.aria-label]="card.tooltip"
+      [pTooltip]="card.tooltip"
+      tooltipPosition="left"
+      tooltipStyleClass="whitespace-pre-line"
+      [tooltipDisabled]="isDragging()"
+      (cdkDragStarted)="onDragStarted()"
+      (cdkDragMoved)="onDragMoved($event.pointerPosition)"
+      (pointerdown)="onPointerDown($event, card.item)"
+      [cdkDragConstrainPosition]="constrain"
+      (cdkDragEnded)="onDragEnded($event, card.item.id)"
+      (click)="onClick(card.item.id)"
+      (keydown.enter)="onClick(card.item.id)"
+    >
+      <span
+        class="w-1.5 flex-none"
+        [class]="card.item.priorityClass"
+      ></span>
+      <span class="w-0 min-w-0 flex-1 truncate px-2">{{ card.item.title }}</span>
+      <ng-template cdkDragPreview>
+        <div
+          class="hf-status-backlog rounded-border flex px-2 text-xs leading-6 text-white shadow-lg"
+          [class.hf-preview-conflict]="previewSlot()?.isConflict"
+          [style.height.rem]="laneHeightRem"
+          [style.width.px]="card.previewWidthPx"
+        >
+          @if (previewSlot(); as slot) {
+            <span
+              class="rounded-border bg-surface-900 dark:bg-surface-0 absolute bottom-full left-0 mb-1 px-2 text-xs leading-5 whitespace-nowrap text-white dark:text-surface-900 shadow-lg"
+            >
+              {{ slot.rangeText }}
+            </span>
+          }
+          <span class="min-w-0 flex-1 truncate">{{ card.item.title }}</span>
+        </div>
+      </ng-template>
+    </div>
+  } @empty {
+    <p class="text-muted-color p-3 text-sm">{{ 'WORK_ORDERS.SCHEDULE_TAB.STAGING_EMPTY' | translate }}</p>
+  }
+</div>
+@if (isCut()) {
+  <p class="text-muted-color flex-none px-3 py-2 text-sm">
+    {{ 'WORK_ORDERS.SCHEDULE_TAB.MORE' | translate: { count: workOrders().length, total: totalCount() } }}
+  </p>
+}

@@ -7,7 +7,7 @@ import { of, throwError } from 'rxjs';
 
 import { DetailsMode } from '@shared/forms/with-details-mode';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 import { type StatusDefinition, StatusSeverity } from '@machines/statuses/status-definition';
 import { StatusDefinitionsApi } from '@machines/statuses/status-definitions-api';
@@ -58,7 +58,7 @@ function setup(
       StatusDefinitionDrawerStore,
       { provide: StatusDefinitionsApi, useValue: api },
       { provide: MessageService, useValue: messages },
-      { provide: AuthStore, useValue: { hasPermission: (permission: Permission) => permissions.includes(permission) } },
+      provideFakeAuthStore({ permissions }),
       { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],

@@ -1,15 +1,14 @@
-import { type Signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map, timer } from 'rxjs';
-
 import type { ScheduleBar, ScheduleBlock, ScheduleRow } from '@shared/schedule/schedule-row';
-import type { Clock } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
-import type { DaySchedule, DayScheduleBlock, DayScheduleWorkOrder } from '@work-orders/work-order';
+import {
+  type DaySchedule,
+  type DayScheduleBlock,
+  type DayScheduleWorkOrder,
+  WorkOrderStatus,
+} from '@work-orders/work-order';
 import { STATUS_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 
-const MINUTE_MS = 60_000;
 const STATUS_CLASS_PREFIX = 'hf-status-';
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -28,6 +27,9 @@ export function toBars(workOrders: readonly DayScheduleWorkOrder[]): ScheduleBar
     end: Temporal.Instant.from(workOrder.occupancyEndUtc),
     statusKey: STATUS_LABEL_KEYS[workOrder.status],
     colorClass: `${STATUS_CLASS_PREFIX}${workOrder.status}`,
+    isLocked: workOrder.status === WorkOrderStatus.Completed,
+    isRunning: workOrder.status === WorkOrderStatus.InProgress,
+    plannedEnd: Temporal.Instant.from(workOrder.plannedStartUtc).add({ minutes: workOrder.estimateMinutes }),
   }));
 }
 
@@ -46,19 +48,6 @@ export function plainDateOrNull(value: string | undefined): Temporal.PlainDate |
   } catch {
     return null;
   }
-}
-
-export function todayOf(clock: Clock): Temporal.PlainDate {
-  return clock.now().toZonedDateTimeISO(clock.timeZoneId()).toPlainDate();
-}
-
-/**
- * A signal of the current instant that ticks on each full minute, so the "now" line moves on the minute. The first
- * tick comes after the rest of the current minute. Call it in an injection context.
- */
-export function minuteTicker(clock: Clock): Signal<Temporal.Instant> {
-  const restOfMinute = MINUTE_MS - (clock.now().epochMilliseconds % MINUTE_MS);
-  return toSignal(timer(restOfMinute, MINUTE_MS).pipe(map(() => clock.now())), { initialValue: clock.now() });
 }
 
 /** Moves a shown date that was today to the new today when the day changes. Any other shown date stays. */

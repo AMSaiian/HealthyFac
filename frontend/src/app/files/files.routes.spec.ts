@@ -11,7 +11,7 @@ import { APP_ROUTER_FEATURES } from '@app/app-router';
 import { provideActionHosts } from '@shared/actions/action-registry';
 import { ActionStore } from '@shared/actions/action.store';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -53,7 +53,7 @@ describe('files routes', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideTranslateService(),
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         {
           provide: CLOCK,
           useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },
@@ -93,7 +93,7 @@ describe('files routes', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideTranslateService(),
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         {
           provide: CLOCK,
           useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },

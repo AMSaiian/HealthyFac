@@ -13,7 +13,6 @@
     "MACHINE_FILES": "Machine files",
     "WORK_ORDERS": "Work orders",
     "EMPLOYEE_SCHEDULE": "Schedule",
-    "COMPANY_SCHEDULE": "Company schedule",
     "SHIFTS": "Shifts",
     "EMPLOYEES": "Employees",
     "MY_SCHEDULE": "My schedule",
@@ -803,7 +802,8 @@
     "VIEW": {
       "LABEL": "View",
       "GRID": "Grid",
-      "BOARD": "Board"
+      "BOARD": "Board",
+      "SCHEDULE": "Schedule"
     },
     "TOOLTIPS": {
       "GRID_VIEW": "Show work orders as a list",
@@ -821,9 +821,9 @@
       "TAB_HISTORY": "Show the changes of the work order",
       "ATTACH_NEW": "Upload a new file and attach it",
       "ATTACH_EXISTING": "Attach a file that is stored already",
-      "USE_SUGGESTION": "Fill the start with the suggested time",
       "ADD_NEW": "Create a work order",
-      "DRAFTS": "Show the work order drafts of the maintenance cases"
+      "DRAFTS": "Show the work order drafts of the maintenance cases",
+      "SCHEDULE_VIEW": "Show the schedule of the day"
     },
     "COLUMNS": {
       "TITLE": "Title",
@@ -867,12 +867,27 @@
       "COMPANY_FILES": "Company files",
       "MACHINE_FILES": "Machine files",
       "EMPTY": "No files to attach",
-      "ATTACH": "Attach"
+      "ATTACH": "Attach",
+      "DAY": "Day",
+      "SPANS": "Free spans",
+      "TIME": "Start time",
+      "SPAN_TOO_SHORT": "This span is shorter than the estimate",
+      "SPAN_CHOOSE": "Start at the beginning of this span",
+      "SELECT_ESTIMATE_FIRST": "Set the estimate and the assignee first",
+      "NO_SPANS": "No free span on this day",
+      "SPAN_LENGTH": "{{minutes}} min",
+      "LABELS": {
+        "FITS": "Fits the estimate",
+        "TOO_SHORT": "Free time is shorter than the estimate",
+        "BUSY": "Fully booked",
+        "DAY_OFF": "Day off"
+      }
     },
     "HISTORY": {
       "EMPTY": "No history yet",
       "ASSIGNEE": "Assignee",
-      "PLANNED_START": "Planned start"
+      "PLANNED_START": "Planned start",
+      "ESTIMATE_CHANGED": "Estimate: {{old}} -> {{new}}"
     },
     "TOASTS": {
       "CREATED": "The work order was created",
@@ -890,11 +905,7 @@
       "START": "Planned start",
       "STATUS": "New status",
       "PICK_STATUS": "Choose a status",
-      "SUGGESTED": "First free start",
-      "USE_SUGGESTION": "Use",
-      "NO_FREE_START": "No free start is left on this day",
       "ERRORS": {
-        "ASSIGNEE_REQUIRED": "Choose a person",
         "START_REQUIRED": "Choose a start"
       }
     },
@@ -909,15 +920,59 @@
       "CHANGE_STATUS": "Change status",
       "EMPTY_COLUMN": "No work orders in this column"
     },
-    "DRAFTS": "Drafts"
+    "DRAFTS": "Drafts",
+    "SCHEDULE_TAB": {
+      "STAGING": "Backlog",
+      "STAGING_EMPTY": "No backlog work orders for these filters",
+      "BACKLOG_TOGGLE": "Backlog ({{count}})",
+      "DROP_TO_BACKLOG": "Drop to return to the backlog",
+      "ESTIMATE_MINUTES": "{{minutes}} min",
+      "ESTIMATE_HOURS": "{{hours}} h",
+      "ESTIMATE_HOURS_MINUTES": "{{hours}} h {{minutes}} min",
+      "MORE": "Showing {{count}} of {{total}} backlog work orders. Narrow the filters to see the rest",
+      "PENDING": "{{count}} pending changes",
+      "APPLY": "Apply",
+      "DISCARD": "Discard",
+      "APPLIED": "The schedule is updated",
+      "REJECTED": "Some changes break the rules. Nothing was changed",
+      "TOOLTIPS": {
+        "APPLY": "Save all pending changes",
+        "APPLY_NOTHING": "Move or resize a work order first",
+        "APPLY_BLOCKED": "Fix the marked conflicts first, or keep to 100 changes",
+        "DISCARD": "Drop all pending changes",
+        "DISCARD_DISABLED": "There are no pending changes",
+        "BACKLOG_TOGGLE": "Show or hide the backlog"
+      },
+      "CONFIRM": {
+        "DISCARD_HEADER": "Discard changes",
+        "DISCARD_MESSAGE": "Drop all pending schedule changes?",
+        "DISCARD_ACCEPT": "Discard",
+        "LEAVE_HEADER": "Leave the schedule",
+        "LEAVE_MESSAGE": "The pending schedule changes are lost",
+        "LEAVE_ACCEPT": "Leave"
+      },
+      "REJECTIONS": {
+        "NOT_EDITABLE": "A completed work order cannot change",
+        "ASSIGNEE_NOT_ACTIVE": "The employee is not active",
+        "START_OUT_OF_RANGE": "The start is in the past or too far ahead",
+        "OUTSIDE_SHIFT": "The work order does not fit one work block",
+        "SLOT_TAKEN": "The slot overlaps another work order"
+      },
+      "CHANGED": "The schedule changed. Apply or discard to see it",
+      "CONFLICT": "Another user changed some of these work orders. Discard to load the new data, then plan again"
+    },
+    "DRAWER": {
+      "CHANGED": "This work order changed. Save to get a conflict, or cancel to see the new data"
+    }
   },
   "SCHEDULE": {
     "EMPLOYEE_TITLE": "Schedule",
-    "COMPANY_TITLE": "Company schedule",
     "EMPLOYEE": "Employee",
     "PREVIOUS_DAY": "Previous day",
     "NEXT_DAY": "Next day",
     "TODAY": "Today",
+    "CONTINUES_FROM": "Continues from {{date}}",
+    "CONTINUES_ON": "Continues on {{date}}",
     "EMPTY": "No employees to show",
     "LOAD_FAILED": "The schedule did not load",
     "TOOLTIPS": {
@@ -948,6 +1003,7 @@
       "VERSION_CREATE_TITLE": "New weekly template",
       "VERSION_EDIT_TITLE": "Edit weekly template",
       "OVERRIDE_TITLE": "Day override",
+      "HAS_OVERRIDE": "Has an override",
       "EFFECTIVE_FROM": "First day of effect",
       "DATE": "Date",
       "BLOCKS": "Blocks",
@@ -956,7 +1012,8 @@
       "START": "start",
       "END": "end",
       "DAY_OFF": "Day off",
-      "INVALID": "Fix the blocks and the date first"
+      "INVALID": "Fix the blocks and the date first",
+      "LOADING": "Loading the blocks of the day"
     },
     "ERRORS": {
       "TIME_FORMAT": "Use the format HH:mm",
@@ -965,9 +1022,10 @@
       "END_AFTER_START": "A block must end after it starts",
       "UNSORTED": "Sort the blocks by their start",
       "OVERLAP": "Blocks must not overlap",
-      "TOO_MANY": "A day has at most 6 blocks",
       "DAYS": "The template needs all 7 weekdays",
-      "DATE_REQUIRED": "Choose a date"
+      "DATE_REQUIRED": "Choose a date",
+      "START_BEFORE_NOW": "A block cannot start before now",
+      "OVERRIDE_EXISTS": "This date already has an override. Close this dialog and use Edit in the list"
     },
     "TOASTS": {
       "SAVED": "The shifts were saved",
@@ -979,11 +1037,14 @@
       "DELETE_VERSION_HEADER": "Delete weekly template",
       "DELETE_VERSION_MESSAGE": "Delete this weekly template? This cannot be undone",
       "DELETE_OVERRIDE_HEADER": "Delete override",
-      "DELETE_OVERRIDE_MESSAGE": "Delete this override? The weekly template applies again"
+      "DELETE_OVERRIDE_MESSAGE": "Delete this override? The weekly template applies again",
+      "DELETE_TODAY_MESSAGE": "The part of today that already passed stays. From now on, the day follows the template"
     },
     "AFFECTED": {
       "TITLE": "Work orders outside the new shifts",
-      "HINT": "Move or unassign these work orders first, then save again"
+      "HINT": "Move or unassign these work orders first, then save again",
+      "DELETE_TITLE": "The override cannot be deleted",
+      "DELETE_HINT": "Move, unassign, or complete these work orders first, then delete the override again"
     },
     "TOOLTIPS": {
       "ADD_BLOCK": "Add a work block to the day",

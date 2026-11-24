@@ -4,7 +4,6 @@ import {
   LATEST_END_ERROR_KEY,
   OVERLAP_ERROR_KEY,
   shiftBlockListSchema,
-  TOO_MANY_ERROR_KEY,
   UNSORTED_ERROR_KEY,
 } from './shift-blocks-schema';
 
@@ -68,11 +67,11 @@ describe('shiftBlockListSchema', () => {
     expect(messages).toContain(OVERLAP_ERROR_KEY);
   });
 
-  it('shiftBlockListSchema_WithSevenBlocks_RejectsWithTheLimitKey', () => {
+  it('shiftBlockListSchema_WithSevenBlocks_Accepts', () => {
     const blocks = Array.from({ length: 7 }, (_, index) => block(`0${index}:00`, `0${index}:30`));
 
     const messages = messagesOf(blocks);
 
-    expect(messages).toContain(TOO_MANY_ERROR_KEY);
+    expect(messages).toEqual([]);
   });
 });

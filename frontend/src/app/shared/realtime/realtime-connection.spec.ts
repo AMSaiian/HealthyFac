@@ -4,7 +4,7 @@ import { HttpTransportType, type HubConnection, HubConnectionBuilder } from '@mi
 import { HUB_CONNECTION_FACTORY, RealtimeConnection, START_TIMEOUT_MILLISECONDS } from './realtime-connection';
 import { type RealtimeHint, type RealtimeNotification, RealtimeNotificationKind, RealtimeTopic } from './realtime';
 import { APP_CONFIG, type AppConfig } from '@shared/config/app-config';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -92,23 +92,20 @@ describe('RealtimeConnection', () => {
             return hub as unknown as HubConnection;
           },
         },
-        {
-          provide: AuthStore,
-          useValue: {
-            isAuthenticated: () => isAuthenticated,
-            tokenExpiresAt: () => expiresAt,
-            forceRefresh: () => {
-              calls.push('refresh');
-              if (refreshError !== null) {
-                return Promise.reject(refreshError);
-              }
-              if (isRefreshExtending) {
-                expiresAt = expiresAt.add({ milliseconds: TOKEN_LIFETIME_MS });
-              }
-              return Promise.resolve();
-            },
+        provideFakeAuthStore({
+          isAuthenticated: () => isAuthenticated,
+          tokenExpiresAt: () => expiresAt,
+          forceRefresh: () => {
+            calls.push('refresh');
+            if (refreshError !== null) {
+              return Promise.reject(refreshError);
+            }
+            if (isRefreshExtending) {
+              expiresAt = expiresAt.add({ milliseconds: TOKEN_LIFETIME_MS });
+            }
+            return Promise.resolve();
           },
-        },
+        }),
         {
           provide: CLOCK,
           useValue: {
@@ -143,7 +140,7 @@ describe('RealtimeConnection', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: APP_CONFIG, useValue: { apiBaseUrl: 'https://api.example.test' } as AppConfig },
-        { provide: AuthStore, useValue: { accessToken } },
+        provideFakeAuthStore({ accessToken }),
       ],
     });
 

@@ -172,6 +172,30 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task Update_WithAnAssigneeWithoutAStart_Returns400()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(WorkOrderApiTestData.WorkerEmail);
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+        var order = await _fixture.ReadOrderAsync(claims, id);
+        var body = new JsonObject
+        {
+            [propertyName: "title"] = WorkOrderApiTestData.Title,
+            [propertyName: "priority"] = "low",
+            [propertyName: "category"] = "repair",
+            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            [propertyName: "fileIds"] = new JsonArray(),
+            [propertyName: "assigneeId"] = worker.EncryptedId,
+            [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+        }.ToJsonString();
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Put, $"{WorkOrderApiTestData.BasePath}/{id}", claims, body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task OverrideThatOrphansAWorkOrder_Returns422WithEncryptedWorkOrderIds()
     {
         var worker = await _fixture.ArrangeActiveEmployeeAsync(WorkOrderApiTestData.WorkerEmail);
@@ -195,6 +219,93 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
 
         listed.Should().ContainSingle();
         listed[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(id);
+    }
+
+    [Theory]
+    [MemberData(nameof(WorkOrderApiTestData.InvalidHistoryLimits), MemberType = typeof(WorkOrderApiTestData))]
+    public async Task History_WithoutAValidLimit_Returns400(string caseName, string query)
+    {
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get,
+            $"{WorkOrderApiTestData.BasePath}/{id}/history{query}",
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(WorkOrderApiTestData.InvalidApplyBodies), MemberType = typeof(WorkOrderApiTestData))]
+    public async Task ApplySchedule_WithAnInvalidBody_Returns400(string caseName, string bodyTemplate)
+    {
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.ApplyPath, claims, bodyTemplate.Replace(oldValue: "{id}", id));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
+    }
+
+    [Fact]
+    public async Task ApplySchedule_WithMoreThanTheLimit_Returns400()
+    {
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+        var changes = new JsonArray();
+        for (var index = 0; index < WorkOrderApiTestData.OverApplyLimit; index++)
+        {
+            changes.Add(
+                new JsonObject
+                {
+                    [propertyName: "workOrderId"] = id,
+                    [propertyName: "rowVersion"] = 1,
+                    [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+                });
+        }
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post,
+            WorkOrderApiTestData.ApplyPath,
+            claims,
+            new JsonObject { [propertyName: "changes"] = changes }.ToJsonString());
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task ApplySchedule_WithASlotInThePast_Returns422WithEncryptedFailureIds()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(WorkOrderApiTestData.WorkerEmail);
+        await _fixture.SeedWorkWeekAsync(worker.EmployeeId);
+        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
+        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
+        var order = await _fixture.ReadOrderAsync(claims, id);
+        var body = new JsonObject
+        {
+            [propertyName: "changes"] = new JsonArray(
+                new JsonObject
+                {
+                    [propertyName: "workOrderId"] = id,
+                    [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+                    [propertyName: "assigneeId"] = worker.EncryptedId,
+                    [propertyName: "plannedStartLocal"] = WorkOrderApiTestData.PastStart,
+                    [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+                }),
+        }.ToJsonString();
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.ApplyPath, claims, body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        var problem = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
+        var failures = problem![propertyName: "changes"]!.AsArray();
+
+        failures.Should().ContainSingle();
+        failures[index: 0]![propertyName: "workOrderId"]!.GetValue<string>().Should().Be(id);
+        failures[index: 0]![propertyName: "reason"]!.GetValue<string>().Should().Be(expected: "startOutOfRange");
     }
 
     private static string UpdateBody(uint rowVersion) =>

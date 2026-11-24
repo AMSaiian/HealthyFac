@@ -20,7 +20,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var workOrderId = await CreateAssignedAsync(tenant, time: "10:00");
         _fixture.RealtimeQueue.Clear();
 
-        await UpdateAsync(tenant, workOrderId, WorkOrderTestData.LongerEstimate);
+        await UpdateAsync(tenant, workOrderId, WorkOrderTestData.LongerEstimate, time: "10:00");
 
         var pushes = PushesOf();
         var estimate = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
@@ -44,7 +44,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var workOrderId = await CreateAssignedAsync(tenant, time: "10:00");
         _fixture.RealtimeQueue.Clear();
 
-        await UpdateAsync(tenant, workOrderId, WorkOrderTestData.OneHour);
+        await UpdateAsync(tenant, workOrderId, WorkOrderTestData.OneHour, time: "10:00");
 
         var push = PushesOf().Should().ContainSingle().Subject;
         push.Group.Should().Be(RealtimeGroups.ForTopic(tenant.CompanyId, RealtimeTopic.WorkOrders));
@@ -82,7 +82,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         var returned = pushes.Should().ContainSingle(push => push.UserId == tenant.IdentityUserId).Subject;
         returned.Notification!.Kind.Should().Be(RealtimeNotificationKind.WorkOrderReturnedToBacklog);
         returned.Notification.Data.Should().BeEquivalentTo(new WorkOrderTitleData { Title = WorkOrderTestData.Title });
-        pushes.Should().HaveCount(expected: 2);
+        pushes.Should().HaveCount(expected: 3);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         rescheduled.Select(push => ((WorkOrderRescheduledData)push.Notification!.Data).WorkOrderId)
             .Should()
             .BeEquivalentTo([next, afternoon]);
-        pushes.Should().HaveCount(expected: 3);
+        pushes.Should().HaveCount(expected: 5);
     }
 
     [Fact]
@@ -192,7 +192,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
         return created.Id;
     }
 
-    private async Task UpdateAsync(ShiftTenant tenant, Guid workOrderId, int estimateMinutes) =>
+    private async Task UpdateAsync(ShiftTenant tenant, Guid workOrderId, int estimateMinutes, string? time = null) =>
         await _fixture.UpdateWorkOrderAsync(
             tenant.CompanyId,
             RandomActor,
@@ -202,5 +202,7 @@ public sealed class WorkOrderStatusRealtimeTests(CoreDatabaseFixture fixture)
                 workOrderId,
                 await _fixture.LoadWorkOrderRowVersionAsync(workOrderId),
                 [],
-                estimateMinutes));
+                estimateMinutes,
+                assigneeId: time is null ? null : tenant.EmployeeId,
+                plannedStartLocal: time is null ? null : ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time)));
 }

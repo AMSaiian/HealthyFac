@@ -4,7 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { PrimeNG } from 'primeng/config';
 import { of, throwError } from 'rxjs';
 
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { BROWSER_STORAGE } from '@shared/storage/browser-storage';
 
 import { Language } from './i18n.constants';
@@ -21,7 +21,7 @@ describe('LanguageStore', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: BROWSER_STORAGE, useValue: null },
-        { provide: AuthStore, useValue: { isAuthenticated, signInLocale, setUiLocale } },
+        provideFakeAuthStore({ isAuthenticated, signInLocale, setUiLocale }),
         { provide: LocaleApi, useValue: { save } },
         { provide: TranslateService, useValue: { use: () => of({}), instant: () => ({}) } },
         { provide: PrimeNG, useValue: { setTranslation: vi.fn() } },

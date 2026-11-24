@@ -1,4 +1,4 @@
-@layer theme, base, primeng, components, utilities;
+@layer cdk-resets, theme, base, primeng, components, utilities;
 
 @import '@fontsource/oxygen/300.css';
 @import '@fontsource/oxygen/400.css';
@@ -49,6 +49,14 @@
     @apply rounded-border border border-surface p-3;
   }
 
+  .cdk-drag-placeholder {
+    opacity: 0.35;
+  }
+
+  .hf-backlog-hidden {
+    visibility: hidden;
+  }
+
   .hf-menu-danger .p-menu-item-link,
   .hf-menu-danger .p-menu-item-icon,
   .hf-menu-danger .p-menu-item-label,
@@ -72,6 +80,23 @@
     padding: 0.25rem 0.5rem;
     border: 1px dashed var(--p-content-border-color);
     color: var(--p-text-muted-color);
+  }
+
+  .hf-day-fits {
+    background-color: var(--p-schedule-day-fits);
+  }
+
+  .hf-day-tooShort {
+    background-color: var(--p-schedule-day-too-short);
+  }
+
+  .hf-day-busy {
+    background-color: var(--p-schedule-day-busy);
+  }
+
+  .hf-day-dayOff {
+    color: var(--p-text-muted-color);
+    background-color: var(--p-schedule-day-day-off);
   }
 
   .hf-status-backlog {
@@ -102,6 +127,19 @@
   .hf-status-rejected {
     color: var(--p-surface-0);
     background-color: var(--p-work-order-status-rejected);
+  }
+
+  .hf-preview-conflict {
+    background-color: var(--p-schedule-bar-conflict);
+  }
+
+  .hf-drop-area {
+    background-color: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--p-primary-color) 22%, var(--p-content-background)) 80%,
+      transparent
+    );
+    color: var(--p-text-color);
   }
 
   .hf-file-type-pdf {

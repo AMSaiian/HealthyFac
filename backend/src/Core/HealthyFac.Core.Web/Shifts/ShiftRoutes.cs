@@ -9,6 +9,9 @@ public static class ShiftRoutes
     public const string VersionIdParameter = "versionId";
     public const string DateParameter = "date";
     public const string RowVersionParameter = "rowVersion";
+    public const string FromParameter = "from";
+    public const string ToParameter = "to";
+    public const string ExcludeWorkOrderIdParameter = "excludeWorkOrderId";
 
     public const string EmployeeRoute = "/employees/{" + EmployeeIdParameter + "}";
     public const string Templates = "/shift-templates";
@@ -16,5 +19,7 @@ public static class ShiftRoutes
     public const string Overrides = "/shift-overrides";
     public const string OverrideByDate = Overrides + "/{" + DateParameter + "}";
     public const string Schedule = "/schedule";
+    public const string ScheduleDays = Schedule + "/days";
+    public const string FreeSpans = Schedule + "/free-spans";
     public const string ResourceLocationFormat = "{0}/{1}";
 }

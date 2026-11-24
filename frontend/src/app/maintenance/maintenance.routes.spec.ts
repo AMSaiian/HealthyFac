@@ -14,7 +14,7 @@ import { provideFakePlatformNavigation } from '@shared/history/fake-platform-nav
 import { HistoryStore } from '@shared/history/history.store';
 import { HOME_RETURN_TARGET } from '@shared/history/return-target';
 import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 
 import { CasesPage } from '@maintenance/list/cases-page/cases-page';
@@ -73,14 +73,9 @@ function setup(permissions: readonly string[]): {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      {
-        provide: AuthStore,
-        useValue: {
-          hasPermission: (permission: string) => permissions.includes(permission),
-          setUiLocale: vi.fn(),
-          signInLocale: () => null,
-        },
-      },
+      provideFakeAuthStore({
+        permissions,
+      }),
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: messages },
     ],

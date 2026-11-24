@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { computed, DestroyRef, effect, inject, type ResourceRef } from '@angular/core';
+import { computed, DestroyRef, effect, inject, type ResourceRef, type Signal } from '@angular/core';
 import {
   patchState,
   signalStoreFeature,
@@ -18,6 +18,7 @@ import type { ConfirmRequest } from '@shared/confirm/with-confirm';
 import { HistoryStore } from '@shared/history/history.store';
 import { formatCompose } from '@shared/history/history.store.utils';
 import { httpErrorKey } from '@shared/http/http-error-key';
+import type { Temporal } from '@shared/time/temporal';
 
 import { EmployeesApi } from '@employees/employees-api';
 import type { AffectedWorkOrder, ShiftOverride, ShiftVersion } from '@employees/shifts/shift';
@@ -52,6 +53,10 @@ const DELETE_CONFIRM_KEYS = {
     headerKey: 'SHIFTS.CONFIRM.DELETE_OVERRIDE_HEADER',
     messageKey: 'SHIFTS.CONFIRM.DELETE_OVERRIDE_MESSAGE',
   },
+  OVERRIDE_TODAY: {
+    headerKey: 'SHIFTS.CONFIRM.DELETE_OVERRIDE_HEADER',
+    messageKey: 'SHIFTS.CONFIRM.DELETE_TODAY_MESSAGE',
+  },
 } as const;
 
 /**
@@ -65,6 +70,7 @@ export function withShiftsDialog() {
       props: type<{
         versions: ResourceRef<readonly ShiftVersion[] | undefined>;
         overrides: ResourceRef<readonly ShiftOverride[] | undefined>;
+        today: Signal<Temporal.PlainDate>;
       }>(),
       methods: type<{
         _toastSuccess: (key: string) => void;
@@ -101,6 +107,9 @@ export function withShiftsDialog() {
       },
       openOverrideDialog(override: ShiftOverride | null): void {
         void store._history.openCompose(formatCompose(SHIFT_OVERRIDE_COMPOSE_NAME, override?.id ?? null));
+      },
+      clearAffected(): void {
+        patchState(store, { affectedWorkOrders: [] });
       },
       closeDialog(): void {
         patchState(store, { affectedWorkOrders: [] });
@@ -204,7 +213,7 @@ export function withShiftsDialog() {
         requestDeleteOverride(override: ShiftOverride): void {
           const employeeId = store.employeeId();
           if (employeeId !== null) {
-            confirmDelete('OVERRIDE', () =>
+            confirmDelete(override.date === store.today().toString() ? 'OVERRIDE_TODAY' : 'OVERRIDE', () =>
               write({
                 request$: api.deleteOverride(employeeId, override.date, override.rowVersion),
                 successKey: 'SHIFTS.TOASTS.DELETED',

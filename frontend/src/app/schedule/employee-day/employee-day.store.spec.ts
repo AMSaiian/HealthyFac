@@ -7,11 +7,11 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
-import { type DaySchedule, WorkOrderPriority, WorkOrderStatus } from '@work-orders/work-order';
+import { type DaySchedule, DayScheduleSource, WorkOrderPriority, WorkOrderStatus } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
 
@@ -25,7 +25,7 @@ import {
 const DAY: DaySchedule = {
   date: '2027-06-01',
   timeZoneId: 'Europe/Kyiv',
-  source: 'template',
+  source: DayScheduleSource.Template,
   blocks: [
     { startLocal: '08:00', endLocal: '12:00', startUtc: '2027-06-01T05:00:00Z', endUtc: '2027-06-01T09:00:00Z' },
   ],
@@ -64,7 +64,7 @@ describe('EmployeeDayStore', () => {
         EmployeeDayStore,
         { provide: ScheduleApi, useValue: { employeeDay } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
-        { provide: AuthStore, useValue: { hasPermission: (permission: string) => permissions.includes(permission) } },
+        provideFakeAuthStore({ permissions }),
         { provide: EmployeeStore, useValue: { id: () => 'e1', name: () => 'Ann Lee' } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         {
@@ -144,7 +144,7 @@ describe('EmployeeDayStore', () => {
         EmployeeDayStore,
         { provide: ScheduleApi, useValue: { employeeDay } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         { provide: EmployeeStore, useValue: { id: () => 'e1', name: () => 'Ann Lee' } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         { provide: CLOCK, useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' } },

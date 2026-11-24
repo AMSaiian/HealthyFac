@@ -3,8 +3,6 @@ import type { Routes } from '@angular/router';
 import { permissionGuard } from '@shared/security/permission.guard';
 import { Permission } from '@shared/security/permissions';
 
-import { CompanyDayStore } from '@schedule/company-day/company-day.store';
-import { CompanyDayPage } from '@schedule/company-day/company-day-page/company-day-page';
 import { employeeDayResolver } from '@schedule/employee-day/employee-day.resolver';
 import { EmployeeDayStore } from '@schedule/employee-day/employee-day.store';
 import { EmployeeDayPage } from '@schedule/employee-day/employee-day-page/employee-day-page';
@@ -19,11 +17,5 @@ export const SCHEDULE_ROUTES: Routes = [
     providers: [ScheduleApi, EmployeeDayStore],
     resolve: { day: employeeDayResolver },
   },
-  {
-    path: 'company/schedule',
-    title: 'TITLES.COMPANY_SCHEDULE',
-    component: CompanyDayPage,
-    canActivate: [permissionGuard(Permission.ShiftsManage)],
-    providers: [ScheduleApi, CompanyDayStore],
-  },
+  { path: 'company/schedule', redirectTo: '/work-orders/schedule' },
 ];

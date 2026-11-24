@@ -22,7 +22,6 @@ using HealthyFac.Shared.Web.Tracing;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
-using Serilog;
 using StackExchange.Redis;
 using Yarp.ReverseProxy.Transforms;
 using Yarp.ReverseProxy.Transforms.Builder;
@@ -111,7 +110,7 @@ public static class ConfigureServices
         {
             app.UseSharedHealthChecks();
             app.UseSharedForwardedHeaders();
-            app.UseSerilogRequestLogging();
+            app.UseSharedRequestLogging();
             app.UseExceptionHandler();
             app.UseSharedCors();
             app.UseWebSockets();

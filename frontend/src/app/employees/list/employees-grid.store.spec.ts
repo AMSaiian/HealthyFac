@@ -7,7 +7,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeRole } from '@shared/employee/employee';
 import { SortDirection } from '@shared/grid/requests/grid-request';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { EmployeeSortColumn, EmployeeStatus } from '@employees/employee';
 import { EmployeeActionType } from '@employees/employee-actions';
@@ -77,7 +77,7 @@ describe('EmployeesGridStore', () => {
         EmployeesGridStore,
         { provide: EmployeesApi, useValue: { searchEmployees } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         { provide: Router, useValue: { navigate } },
       ],
     });

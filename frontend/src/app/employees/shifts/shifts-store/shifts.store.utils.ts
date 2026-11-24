@@ -3,6 +3,8 @@ import { parseCompose } from '@shared/history/history.store.utils';
 
 import { Temporal } from '@shared/time/temporal';
 
+import { DayScheduleSource } from '@work-orders/work-order';
+
 import {
   type AffectedWorkOrder,
   type CreateVersionBody,
@@ -131,7 +133,38 @@ export function isEditableVersion(version: ShiftVersion, today: Temporal.PlainDa
   return version.effectiveFrom > today.toString();
 }
 
+/** An override may change on today and later dates. An override of a past date is history. */
+export function isEditableOverride(override: ShiftOverride, today: Temporal.PlainDate): boolean {
+  return override.date >= today.toString();
+}
+
 /** The blocks of a day as text, e.g. `08:00-12:00, 13:00-17:00`. */
 export function summaryOf(blocks: readonly ShiftBlock[]): string {
   return blocks.map((block) => `${block.start}-${block.end}`).join(', ');
+}
+
+/** A new override cannot take a date that has an override: the user edits that override. Edit mode is never blocked. */
+export function isOverrideDateTaken(isCreate: boolean, source: DayScheduleSource | null): boolean {
+  return isCreate && source === DayScheduleSource.Override;
+}
+
+/** The first day of the month that the override calendar shows: the shown month, else the month of the form date. */
+export function shownOverrideMonthOf(
+  month: Temporal.PlainYearMonth | null,
+  formDate: Temporal.PlainDate,
+): Temporal.PlainDate {
+  return month === null ? formDate.with({ day: 1 }) : month.toPlainDate({ day: 1 });
+}
+
+/** The days that already have an override. The new override calendar disables them. */
+export function overrideDatesOf(overrides: readonly { readonly date: string }[]): Temporal.PlainDate[] {
+  return overrides.map((entry) => Temporal.PlainDate.from(entry.date));
+}
+
+/** The days that the calendar of an override disables: the taken days of a new override, none when editing. */
+export function disabledOverrideDatesOf(
+  isEdit: boolean,
+  taken: readonly Temporal.PlainDate[],
+): readonly Temporal.PlainDate[] {
+  return isEdit ? [] : taken;
 }

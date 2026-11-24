@@ -13,6 +13,8 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
     private static readonly DateOnly SpringDstDate = new(year: 2027, month: 3, day: 28);
     private static readonly DateOnly AutumnDstDate = new(year: 2027, month: 10, day: 31);
 
+    private static readonly DateOnly Yesterday = ShiftTestData.Today.AddDays(value: -1);
+
     private readonly CoreDatabaseFixture _fixture = fixture;
 
     [Fact]
@@ -106,6 +108,55 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task GetEmployeeDaySchedule_WithAnInProgressWorkOrderFromYesterday_ListsItAndEndsItAtNow()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "14:00"));
+        var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "15:00", minutes: 120);
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "15:30"));
+        await _fixture.ChangeWorkOrderStatusAsync(workOrderId, WorkOrderStatus.InProgress);
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "10:00"));
+
+        var day = await ReadDayAsync(tenant, ShiftTestData.Today);
+
+        var workOrder = day.WorkOrders.Should().ContainSingle().Which;
+        workOrder.Status.Should().Be(WorkOrderStatus.InProgress);
+        workOrder.OccupancyEndUtc.Should().Be(ShiftTestData.NowAt(time: "10:00").UtcDateTime);
+    }
+
+    [Fact]
+    public async Task GetEmployeeDaySchedule_WithAWorkOrderCompletedLateAfterMidnight_ListsItUntilTheCompletion()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "20:00"));
+        var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "22:00", minutes: 30);
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "01:00"));
+        await _fixture.CompleteWorkOrderAsync(workOrderId);
+
+        var day = await ReadDayAsync(tenant, ShiftTestData.Today);
+
+        var workOrder = day.WorkOrders.Should().ContainSingle().Which;
+        workOrder.Status.Should().Be(WorkOrderStatus.Completed);
+        workOrder.OccupancyEndUtc.Should().Be(ShiftTestData.NowAt(time: "01:00").UtcDateTime);
+    }
+
+    [Fact]
+    public async Task GetEmployeeDaySchedule_WithWorkOrdersThatEndedBeforeTheDate_DoesNotListThem()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "08:00"));
+        var completedId = await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "09:00", minutes: 30);
+        await _fixture.ArrangeStagedWorkOrderAsync(tenant, Yesterday, time: "11:00", minutes: 30);
+        _fixture.Clock.Freeze(ShiftTestData.NowOn(Yesterday, time: "09:20"));
+        await _fixture.CompleteWorkOrderAsync(completedId);
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "10:00"));
+
+        var day = await ReadDayAsync(tenant, ShiftTestData.Today);
+
+        day.WorkOrders.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task GetCompanyDaySchedule_Always_ListsOnlyActiveEmployees()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
@@ -121,6 +172,30 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
         response.Employees.Should().HaveCount(expected: 2);
         response.Employees.Select(employee => employee.EmployeeId).Should().Contain(tenant.EmployeeId);
         response.TimeZoneId.Should().Be(ShiftTestData.ZoneId);
+    }
+
+    [Fact]
+    public async Task GetCompanyDaySchedule_WithSeveralVersionsPerEmployee_ResolvesTheVersionInForceOfEachEmployee()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        var other = await _fixture.ArrangeOtherEmployeeAsync(tenant.CompanyId, ShiftTestData.OtherEmail);
+        var date = new DateOnly(year: 2027, month: 4, day: 12);
+        await _fixture.SeedVersionAsync(tenant.EmployeeId, new DateOnly(year: 2027, month: 1, day: 1), "08:00-12:00");
+        await _fixture.SeedVersionAsync(tenant.EmployeeId, new DateOnly(year: 2027, month: 3, day: 1), "09:00-11:00");
+        await _fixture.SeedVersionAsync(tenant.EmployeeId, new DateOnly(year: 2027, month: 6, day: 1), "13:00-17:00");
+        await _fixture.SeedVersionAsync(other.EmployeeId, new DateOnly(year: 2027, month: 2, day: 1), "10:00-12:00");
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
+        var response = await _fixture.ReadAsAsync<GetCompanyDayScheduleRequest, CompanyDayScheduleResponse>(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            new GetCompanyDayScheduleRequest { CompanyId = tenant.CompanyId, Date = date });
+
+        var starts = response.Employees.ToDictionary(
+            employee => employee.EmployeeId,
+            employee => employee.Day.Blocks.Single().StartLocal);
+        starts[tenant.EmployeeId].Should().Be(new TimeOnly(hour: 9, minute: 0));
+        starts[other.EmployeeId].Should().Be(new TimeOnly(hour: 10, minute: 0));
     }
 
     private Task<DayScheduleResponse> ReadDayAsync(ShiftTenant tenant, DateOnly date) =>

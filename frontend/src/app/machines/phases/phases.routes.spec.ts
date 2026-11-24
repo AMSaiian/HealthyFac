@@ -13,7 +13,7 @@ import { CompanyStore } from '@shared/company/company.store';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { DetailsMode } from '@shared/forms/with-details-mode';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 
 import { MachineState } from '@machines/machine';
@@ -75,12 +75,9 @@ function setup(permissions: readonly Permission[] | null = null): HttpTestingCon
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      {
-        provide: AuthStore,
-        useValue: {
-          hasPermission: (permission: Permission) => permissions === null || permissions.includes(permission),
-        },
-      },
+      provideFakeAuthStore({
+        hasPermission: (permission: Permission) => permissions === null || permissions.includes(permission),
+      }),
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
       { provide: ConfirmationService, useValue: { confirm: vi.fn() } },

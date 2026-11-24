@@ -93,6 +93,22 @@ export const HealthyFacPreset = definePreset(Lara, {
       headerFontWeight: '700',
       borderColor: 'light-dark({content.border.color}, {surface.800})',
     },
+    scheduleDay: {
+      fits: 'light-dark({green.200}, {green.800})',
+      tooShort: 'light-dark({amber.200}, {amber.800})',
+      busy: 'light-dark({red.200}, {red.800})',
+      dayOff: 'light-dark({surface.100}, {surface.800})',
+    },
+    backlogDrawer: {
+      background: 'light-dark({surface.100}, {surface.800})',
+      shadow: 'light-dark(rgb(0 0 0 / 0.25), rgb(0 0 0 / 0.6))',
+    },
+    scheduleBar: {
+      pending: 'light-dark({sky.600}, {sky.400})',
+      conflict: 'light-dark({red.600}, {red.400})',
+      failed: 'light-dark({orange.600}, {orange.400})',
+      overrun: 'light-dark({amber.500}, {amber.400})',
+    },
     workOrderPriority: {
       low: '{sky.500}',
       medium: '{amber.500}',

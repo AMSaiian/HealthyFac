@@ -12,7 +12,6 @@ using HealthyFac.Spa.Web.RuntimeConfig;
 using HealthyFac.Spa.Web.StaticAssets;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Instrumentation.AspNetCore;
-using Serilog;
 using Serilog.Events;
 
 namespace HealthyFac.Spa.Web;
@@ -71,7 +70,7 @@ public static class ConfigureServices
 
             app.UseSharedHealthChecks();
             app.UseSharedForwardedHeaders();
-            app.UseSerilogRequestLogging(options => options.GetLevel = GetRequestLogLevel);
+            app.UseSharedRequestLogging(options => options.GetLevel = GetRequestLogLevel);
             app.UseExceptionHandler();
             app.UseSpaStaticFiles();
             app.UseRouting();

@@ -48,6 +48,14 @@
     >
       {{ 'WORK_ORDERS.VIEW.BOARD' | translate }}
     </p-tab>
+    <p-tab
+      value="schedule"
+      routerLink="/work-orders/schedule"
+      [pTooltip]="'WORK_ORDERS.TOOLTIPS.SCHEDULE_VIEW' | translate"
+      tooltipPosition="bottom"
+    >
+      {{ 'WORK_ORDERS.VIEW.SCHEDULE' | translate }}
+    </p-tab>
   </p-tablist>
   <p-tabpanels class="flex min-h-0 flex-1 flex-col">
     <p-tabpanel

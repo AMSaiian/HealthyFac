@@ -8,6 +8,8 @@ import { catchError } from 'rxjs/operators';
 
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';
 import { withGridState } from '@shared/grid/with-grid-state';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
@@ -167,6 +169,9 @@ export const WorkOrderDraftsGridStore = signalStore(
         });
       },
     };
+  }),
+  withRealtimeReload<{ drafts: { reload: () => boolean } }>([RealtimeTopic.WorkOrders], (store) => {
+    store.drafts.reload();
   }),
   withStoreDevtools('work-order-drafts-grid'),
 );

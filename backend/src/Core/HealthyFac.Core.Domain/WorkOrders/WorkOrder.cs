@@ -125,12 +125,67 @@ public class WorkOrder : IEntity, IAuditable, ISoftDeletable, IVersioned
     }
 
     /// <summary>
-    /// Changes the planned working time. It adds no history row. The caller checks that the slot still fits.
+    /// Changes the planned working time. A new value adds a row with the current status, assignee, and planned start
+    /// and the new estimate. The caller checks that the slot still fits.
     /// </summary>
     /// <param name="estimate">The new planned working time.</param>
     public void ChangeEstimate(TimeSpan estimate)
     {
+        if (estimate == Estimate)
+        {
+            return;
+        }
+
+        var current = Current;
         Estimate = estimate;
+        AddRow(current.Status, current.AssigneeId, current.PlannedStartLocal, current.PlannedStartUtc);
+    }
+
+    /// <summary>
+    /// Applies a new slot and a new estimate in one step, and adds at most one history row with all new values. A
+    /// backlog work order with a slot is assigned. A scheduled work order with another slot is moved, and one without
+    /// a slot goes back to the backlog. Without a slot change, a new estimate adds a row with the current status,
+    /// assignee, and start.
+    /// </summary>
+    /// <param name="slot">The assignee and the start after the change, or <see langword="null"/> for none.</param>
+    /// <param name="estimate">The planned working time after the change.</param>
+    /// <returns>The change that was made.</returns>
+    public WorkOrderScheduleChange Reschedule(WorkOrderSlot? slot, TimeSpan estimate)
+    {
+        var current = Current;
+        var isEstimateChanged = estimate != Estimate;
+        Estimate = estimate;
+
+        if (!current.Status.IsScheduled)
+        {
+            if (slot is not null)
+            {
+                Assign(slot.AssigneeId, slot.PlannedStartLocal, slot.PlannedStartUtc);
+
+                return WorkOrderScheduleChange.Assign;
+            }
+        }
+        else if (slot is null)
+        {
+            Unassign();
+
+            return WorkOrderScheduleChange.Unassign;
+        }
+        else if (slot.AssigneeId != current.AssigneeId || slot.PlannedStartUtc != current.PlannedStartUtc)
+        {
+            Move(slot.AssigneeId, slot.PlannedStartLocal, slot.PlannedStartUtc);
+
+            return WorkOrderScheduleChange.Move;
+        }
+
+        if (!isEstimateChanged)
+        {
+            return WorkOrderScheduleChange.None;
+        }
+
+        AddRow(current.Status, current.AssigneeId, current.PlannedStartLocal, current.PlannedStartUtc);
+
+        return WorkOrderScheduleChange.EstimateOnly;
     }
 
     /// <summary>
@@ -244,7 +299,8 @@ public class WorkOrder : IEntity, IAuditable, ISoftDeletable, IVersioned
     )
     {
         var revision = CurrentRevision + 1;
-        _history.Add(new WorkOrderHistory(Id, revision, status, assigneeId, plannedStartLocal, plannedStartUtc));
+        _history.Add(
+            new WorkOrderHistory(Id, revision, status, assigneeId, plannedStartLocal, plannedStartUtc, Estimate));
         CurrentRevision = revision;
     }
 }

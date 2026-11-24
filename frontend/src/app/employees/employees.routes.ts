@@ -11,6 +11,8 @@ import { EmployeesPage } from '@employees/list/employees-page/employees-page';
 import { ShiftsPage } from '@employees/shifts/shifts-page/shifts-page';
 import { ShiftsStore } from '@employees/shifts/shifts-store/shifts.store';
 
+import { WorkOrdersApi } from '@work-orders/work-orders-api';
+
 export const EMPLOYEES_ROUTES: Routes = [
   {
     path: '',
@@ -24,6 +26,6 @@ export const EMPLOYEES_ROUTES: Routes = [
     title: 'TITLES.SHIFTS',
     component: ShiftsPage,
     canActivate: [permissionGuard(Permission.ShiftsRead)],
-    providers: [EmployeesApi, ShiftsStore],
+    providers: [EmployeesApi, WorkOrdersApi, ShiftsStore],
   },
 ];

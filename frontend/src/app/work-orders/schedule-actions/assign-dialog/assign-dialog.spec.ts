@@ -1,51 +1,60 @@
-import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 
 import { Temporal } from '@shared/time/temporal';
 
-import { AssignDialog, type AssignSelection } from './assign-dialog';
+import type { DaysRequest } from '@work-orders/assignment-picker/assignment-picker';
+import type { AssignmentValue } from '@work-orders/assignment-picker/assignment-picker.utils';
+
+import { AssignDialog } from './assign-dialog';
+
+const TODAY = Temporal.PlainDate.from('2027-06-01');
+
+function setup(initial: AssignmentValue): {
+  fixture: ReturnType<typeof TestBed.createComponent<AssignDialog>>;
+  days: DaysRequest[];
+  validity: boolean[];
+} {
+  TestBed.configureTestingModule({ providers: [provideTranslateService()] });
+  const fixture = TestBed.createComponent(AssignDialog);
+  fixture.componentRef.setInput('initialValue', initial);
+  fixture.componentRef.setInput('estimateMinutes', 60);
+  fixture.componentRef.setInput('employees', []);
+  fixture.componentRef.setInput('today', TODAY);
+  const days: DaysRequest[] = [];
+  const validity: boolean[] = [];
+  fixture.componentInstance.daysRequested.subscribe((request) => days.push(request));
+  fixture.componentInstance.validityChange.subscribe((isValid) => validity.push(isValid));
+  fixture.detectChanges();
+  return { fixture, days, validity };
+}
 
 describe('AssignDialog', () => {
-  async function settle(): Promise<void> {
-    TestBed.tick();
-    await TestBed.inject(ApplicationRef).whenStable();
-  }
+  it('opening_WithAnAssignee_SendsOneDaysRequest', () => {
+    const { days } = setup({ assigneeId: 'e1', start: Temporal.PlainDateTime.from('2027-06-02T10:00') });
 
-  async function setup(): Promise<{
-    fixture: ReturnType<typeof TestBed.createComponent<AssignDialog>>;
-    selections: (AssignSelection | null)[];
-  }> {
-    TestBed.configureTestingModule({ providers: [provideTranslateService()] });
-    const fixture = TestBed.createComponent(AssignDialog);
-    fixture.componentRef.setInput('initialValue', {
-      assigneeId: 'e1',
-      start: Temporal.PlainDateTime.from('2027-06-02T10:00'),
-    });
-    fixture.componentRef.setInput('employees', []);
-    const selections: (AssignSelection | null)[] = [];
-    fixture.componentInstance.selectionChange.subscribe((value) => selections.push(value));
-    await settle();
-    return { fixture, selections };
-  }
-
-  it('suggestion_ForTheChosenDayAndAgainAsAnEqualInstance_EmitsTheSelectionOnce', async () => {
-    const { fixture, selections } = await setup();
-
-    fixture.componentRef.setInput('suggestion', Temporal.PlainDateTime.from('2027-06-02T13:00'));
-    await settle();
-    fixture.componentRef.setInput('suggestion', Temporal.PlainDateTime.from('2027-06-02T13:00'));
-    await settle();
-
-    expect(selections).toHaveLength(1);
+    expect(days).toHaveLength(1);
+    expect(days[0].assigneeId).toBe('e1');
   });
 
-  it('suggestion_ForAnotherDay_EmitsTheNewSelection', async () => {
-    const { fixture, selections } = await setup();
+  it('opening_WithoutAssignee_SendsNoDaysRequest', () => {
+    const { days } = setup({ assigneeId: null, start: null });
 
-    fixture.componentRef.setInput('suggestion', Temporal.PlainDateTime.from('2027-06-03T09:00'));
-    await settle();
+    expect(days).toHaveLength(0);
+  });
 
-    expect(selections.map((selection) => selection?.date.toString())).toEqual(['2027-06-02', '2027-06-03']);
+  it.each([
+    { name: 'NoAssigneeAndNoStart', assigneeId: null, start: null, expected: false },
+    { name: 'AssigneeWithoutStart', assigneeId: 'e1', start: null, expected: false },
+    {
+      name: 'AssigneeAndStart',
+      assigneeId: 'e1',
+      start: Temporal.PlainDateTime.from('2027-06-02T10:00'),
+      expected: true,
+    },
+  ])('validity_$name', ({ assigneeId, start, expected }) => {
+    const { validity } = setup({ assigneeId, start });
+
+    expect(validity.at(-1)).toBe(expected);
   });
 });

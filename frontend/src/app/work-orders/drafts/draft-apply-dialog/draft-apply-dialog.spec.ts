@@ -30,6 +30,8 @@ describe('draft apply dialog', () => {
       machineId: 'm1',
       estimateMinutes: 60,
       fileIds: [],
+      assigneeId: null,
+      start: null,
     });
   });
 

@@ -1,0 +1,179 @@
+<hf-work-orders-view-header
+  activeView="schedule"
+  [canCreate]="grid.canWrite()"
+  [canOpenDrafts]="grid.canReadDrafts()"
+  (createRequested)="grid.requestCreate()"
+>
+  <div class="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4">
+    <div class="relative flex flex-none flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button
+          pButton
+          [pTooltip]="'SCHEDULE.PREVIOUS_DAY' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'SCHEDULE.PREVIOUS_DAY' | translate"
+          (click)="store.previousDay()"
+        >
+          <i class="pi pi-chevron-left"></i>
+        </button>
+        <hf-plain-date-picker
+          [value]="store.date()"
+          (valueChange)="onDate($event)"
+        />
+        <button
+          pButton
+          [pTooltip]="'SCHEDULE.NEXT_DAY' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'SCHEDULE.NEXT_DAY' | translate"
+          (click)="store.nextDay()"
+        >
+          <i class="pi pi-chevron-right"></i>
+        </button>
+        <button
+          pButton
+          [pTooltip]="'SCHEDULE.TOOLTIPS.TODAY' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          severity="secondary"
+          (click)="store.goToToday()"
+        >
+          {{ 'SCHEDULE.TODAY' | translate }}
+        </button>
+      </div>
+      @if (store.canManage()) {
+        <div class="flex items-center gap-2">
+          <span class="text-muted-color text-sm">
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.PENDING' | translate: { count: store.pendingCount() } }}
+          </span>
+          <button
+            pButton
+            data-backlog-toggle
+            [pTooltip]="'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.BACKLOG_TOGGLE' | translate"
+            tooltipPosition="bottom"
+            type="button"
+            severity="secondary"
+            (click)="store.toggleBacklog()"
+          >
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.BACKLOG_TOGGLE' | translate: { count: store.stagingTotal() } }}
+          </button>
+          <button
+            pButton
+            [pTooltip]="
+              (store.pendingCount() === 0
+                ? 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.DISCARD_DISABLED'
+                : 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.DISCARD'
+              ) | translate
+            "
+            tooltipPosition="bottom"
+            type="button"
+            severity="danger"
+            [outlined]="true"
+            [disabled]="store.pendingCount() === 0 || store.isApplying()"
+            (click)="store.discard()"
+          >
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.DISCARD' | translate }}
+          </button>
+          <button
+            pButton
+            [pTooltip]="
+              (store.canApply()
+                ? 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.APPLY'
+                : store.pendingCount() === 0
+                  ? 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.APPLY_NOTHING'
+                  : 'WORK_ORDERS.SCHEDULE_TAB.TOOLTIPS.APPLY_BLOCKED'
+              ) | translate
+            "
+            tooltipPosition="bottom"
+            type="button"
+            [disabled]="!store.canApply() || store.isApplying()"
+            (click)="store.apply()"
+          >
+            {{ 'WORK_ORDERS.SCHEDULE_TAB.APPLY' | translate }}
+          </button>
+        </div>
+      }
+      @if (isReturnBandVisible()) {
+        <div
+          data-staging
+          class="hf-drop-area rounded-border text-primary absolute inset-0 z-10 flex items-center justify-center font-medium"
+        >
+          {{ 'WORK_ORDERS.SCHEDULE_TAB.DROP_TO_BACKLOG' | translate }}
+        </div>
+      }
+    </div>
+    @if (store.isChangedRemotely()) {
+      <p-message
+        class="flex-none"
+        severity="warn"
+        icon="pi pi-exclamation-triangle"
+      >
+        {{ 'WORK_ORDERS.SCHEDULE_TAB.CHANGED' | translate }}
+      </p-message>
+    }
+    <div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      @if (store.date(); as date) {
+        <hf-schedule-board
+          class="min-h-0 flex-1"
+          [rows]="store.displayRows()"
+          [isLoading]="store.day.isLoading()"
+          [hasLoaded]="store.day.hasValue()"
+          [hasFailed]="store.hasFailed()"
+          [date]="date"
+          [timeZoneId]="clock.timeZoneId()"
+          [now]="store.now()"
+          [isEditable]="store.canManage()"
+          [isExternalDragActive]="isStagingDragActive()"
+          [pendingIds]="store.pendingIds()"
+          [conflictIds]="store.conflictIds()"
+          [failures]="failures()"
+          (workOrderClick)="store.openWorkOrder($event)"
+          (barDropped)="store.dropBar($event)"
+          (barResized)="store.resizeBar($event)"
+          (barUnassigned)="store.unassignBar($event)"
+          (daySwitchRequested)="onDaySwitch($event)"
+          (dragActiveChange)="onBoardDragActive($event)"
+        />
+      }
+      @if (store.canManage()) {
+        <p-drawer
+          position="right"
+          appendTo="self"
+          [visible]="drawerState().isMounted"
+          (visibleChange)="store.setBacklogOpen($event)"
+          [modal]="false"
+          [dismissible]="false"
+          [showCloseIcon]="false"
+          [blockScroll]="false"
+          [dt]="drawerTokens"
+          [header]="'WORK_ORDERS.SCHEDULE_TAB.STAGING' | translate"
+          [styleClass]="drawerState().isHidden ? drawerClass + ' hf-backlog-hidden' : drawerClass"
+          (onShow)="onDrawerShown()"
+          [style]="drawerStyle"
+        >
+          @if (axis(); as axis) {
+            <hf-staging-area
+              [workOrders]="stagingCards()"
+              [totalCount]="store.stagingTotal()"
+              [isCut]="store.isStagingCut()"
+              [axis]="axis"
+              [axisWidthPx]="axisWidthPx()"
+              [previewAt]="previewAt"
+              (dragStarted)="onStagingDragStarted()"
+              (dragMoved)="onStagingMove($event)"
+              (barReleased)="onStagingRelease($event)"
+              (workOrderClick)="store.openWorkOrder($event)"
+            />
+          }
+        </p-drawer>
+      }
+    </div>
+  </div>
+</hf-work-orders-view-header>

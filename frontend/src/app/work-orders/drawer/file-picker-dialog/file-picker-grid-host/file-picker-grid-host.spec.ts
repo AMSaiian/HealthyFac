@@ -7,7 +7,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ActionStore } from '@shared/actions/action.store';
 import { FileDownloader } from '@shared/files/file-downloader';
 import { FilesLinksApi } from '@shared/files/files-links-api';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -20,7 +20,7 @@ describe('FilePickerGridHost', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: ActionStore, useValue: { dispatch: vi.fn(), lastResult: () => null } },
-        { provide: AuthStore, useValue: { hasPermission: () => false } },
+        provideFakeAuthStore({ hasPermission: () => false }),
         { provide: ConfirmationService, useValue: { confirm: vi.fn() } },
         { provide: MessageService, useValue: { add: vi.fn() } },
         { provide: FileDownloader, useValue: { start: vi.fn() } },

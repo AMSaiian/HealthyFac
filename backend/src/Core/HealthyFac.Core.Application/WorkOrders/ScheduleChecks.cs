@@ -2,7 +2,6 @@ using FluentValidation.Results;
 using HealthyFac.Core.Application.Shifts;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.Employees;
-using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Domain.Time;
@@ -16,14 +15,20 @@ namespace HealthyFac.Core.Application.WorkOrders;
 /// </summary>
 /// <param name="dbContext">Reads the employee and the other work orders.</param>
 /// <param name="reader">Loads the shifts of the assignee.</param>
+/// <param name="occupancyReader">Reads the occupancies of the other work orders of the assignee.</param>
 /// <param name="timeProvider">Provides the current time.</param>
-public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader reader, TimeProvider timeProvider)
+public sealed class ScheduleChecks(
+    ICoreDbContext dbContext,
+    DayScheduleReader reader,
+    EmployeeOccupancyReader occupancyReader,
+    TimeProvider timeProvider
+)
 {
     private const string PlannedStartKey = "plannedStart";
-    private const int OccupancyLookbackHours = 36;
 
     private readonly ICoreDbContext _dbContext = dbContext;
     private readonly DayScheduleReader _reader = reader;
+    private readonly EmployeeOccupancyReader _occupancyReader = occupancyReader;
     private readonly TimeProvider _timeProvider = timeProvider;
 
     /// <summary>
@@ -99,20 +104,78 @@ public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader r
             throw new UnprocessableException(WorkOrderErrors.Rejections.OutsideShift);
         }
 
-        var occupied = await ReadOccupanciesAsync(companyId, assigneeId, slot, cancellationToken);
+        var occupied = await _occupancyReader.ReadAsync(
+            companyId,
+            assigneeId,
+            slot.StartUtc,
+            slot.EndUtc,
+            excludeWorkOrderId: null,
+            cancellationToken);
         if (SlotRules.Overlaps(slot, occupied))
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.SlotTaken);
         }
     }
 
-    private async Task EnsureAssigneeAsync(Guid companyId, Guid assigneeId, CancellationToken cancellationToken)
-    {
-        var status = await _dbContext.Employees
+    /// <summary>
+    /// Reads the status of an employee of the company. Rule 1 and the apply use it.
+    /// </summary>
+    /// <param name="companyId">The company.</param>
+    /// <param name="assigneeId">The employee.</param>
+    /// <param name="cancellationToken">Cancels the query.</param>
+    /// <returns>The status, or <see langword="null"/> when the employee is not in the company.</returns>
+    public Task<EmployeeStatus?> FindAssigneeStatusAsync(
+        Guid companyId,
+        Guid assigneeId,
+        CancellationToken cancellationToken
+    ) =>
+        _dbContext.Employees
             .AsNoTracking()
             .Where(employee => employee.Id == assigneeId && employee.CompanyId == companyId)
-            .Select(employee => employee.Status)
+            .Select(employee => (EmployeeStatus?)employee.Status)
             .SingleOrDefaultAsync(cancellationToken);
+
+    /// <summary>
+    /// Converts a local planned start to a UTC instant after the grid check and the existence check of rule 2.
+    /// </summary>
+    /// <param name="plannedStartLocal">The planned start as a time in the company zone.</param>
+    /// <param name="zone">The zone of the company.</param>
+    /// <returns>The planned start as a UTC instant.</returns>
+    /// <exception cref="AppValidationException">The start is off the grid or does not exist in the zone.</exception>
+    public DateTime ToStartUtc(DateTime plannedStartLocal, TimeZoneInfo zone)
+    {
+        if (plannedStartLocal.TimeOfDay.Ticks % SlotRules.GridStep.Ticks != 0)
+        {
+            throw Invalid(WorkOrderErrors.Validation.StartOffGrid);
+        }
+
+        if (LocalTimes.IsSkipped(plannedStartLocal, zone))
+        {
+            throw Invalid(ShiftErrors.Validation.LocalTimeDoesNotExist);
+        }
+
+        return LocalTimes.ToUtc(plannedStartLocal, zone);
+    }
+
+    /// <summary>
+    /// Tells whether a planned start is now or later and at most 365 days ahead: the range check of rule 2.
+    /// </summary>
+    /// <param name="plannedStartLocal">The planned start as a time in the company zone.</param>
+    /// <param name="plannedStartUtc">The same start as a UTC instant.</param>
+    /// <param name="zone">The zone of the company.</param>
+    /// <returns><see langword="true"/> when the start is in the range.</returns>
+    public bool IsStartInRange(DateTime plannedStartLocal, DateTime plannedStartUtc, TimeZoneInfo zone)
+    {
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone));
+        var lastDate = today.AddDays(ShiftValidationConstants.MaxDaysAhead);
+
+        return plannedStartUtc >= nowUtc && DateOnly.FromDateTime(plannedStartLocal) <= lastDate;
+    }
+
+    private async Task EnsureAssigneeAsync(Guid companyId, Guid assigneeId, CancellationToken cancellationToken)
+    {
+        var status = await FindAssigneeStatusAsync(companyId, assigneeId, cancellationToken);
 
         if (status is null)
         {
@@ -127,21 +190,8 @@ public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader r
 
     private DateTime EnsureStart(DateTime plannedStartLocal, TimeZoneInfo zone)
     {
-        if (plannedStartLocal.TimeOfDay.Ticks % SlotRules.GridStep.Ticks != 0)
-        {
-            throw Invalid(WorkOrderErrors.Validation.StartOffGrid);
-        }
-
-        if (LocalTimes.IsSkipped(plannedStartLocal, zone))
-        {
-            throw Invalid(ShiftErrors.Validation.LocalTimeDoesNotExist);
-        }
-
-        var startUtc = LocalTimes.ToUtc(plannedStartLocal, zone);
-        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(nowUtc, zone));
-        var lastDate = today.AddDays(ShiftValidationConstants.MaxDaysAhead);
-        if (startUtc < nowUtc || DateOnly.FromDateTime(plannedStartLocal) > lastDate)
+        var startUtc = ToStartUtc(plannedStartLocal, zone);
+        if (!IsStartInRange(plannedStartLocal, startUtc, zone))
         {
             throw Invalid(WorkOrderErrors.Validation.StartOutOfRange);
         }
@@ -151,40 +201,4 @@ public sealed class ScheduleChecks(ICoreDbContext dbContext, DayScheduleReader r
 
     private static AppValidationException Invalid(string message) =>
         new([new ValidationFailure(PlannedStartKey, message)]);
-
-    private async Task<List<Occupancy>> ReadOccupanciesAsync(
-        Guid companyId,
-        Guid assigneeId,
-        Occupancy slot,
-        CancellationToken cancellationToken
-    )
-    {
-        var fromUtc = slot.StartUtc.AddHours(-OccupancyLookbackHours);
-
-        var rows = await (from row in _dbContext.WorkOrderHistories.AsNoTracking()
-                join workOrder in _dbContext.WorkOrders.AsNoTracking() on row.WorkOrderId equals workOrder.Id
-                where workOrder.CompanyId == companyId
-                    && row.Revision == workOrder.CurrentRevision
-                    && row.AssigneeId == assigneeId
-                    && row.Status != WorkOrderStatus.Backlog
-                    && row.PlannedStartUtc >= fromUtc
-                    && row.PlannedStartUtc < slot.EndUtc
-                select new
-                {
-                    workOrder.Id,
-                    workOrder.Estimate,
-                    row.Status,
-                    row.PlannedStartUtc,
-                    ChangedAt = row.CreatedAt,
-                })
-            .ToListAsync(cancellationToken);
-
-        return rows
-            .Select(row => Occupancy.Of(
-                row.Id,
-                row.PlannedStartUtc!.Value,
-                row.Estimate,
-                row.Status == WorkOrderStatus.Completed ? row.ChangedAt : null))
-            .ToList();
-    }
 }

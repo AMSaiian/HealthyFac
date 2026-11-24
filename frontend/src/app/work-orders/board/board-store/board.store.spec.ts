@@ -7,7 +7,7 @@ import { forkJoin, type Observable, of, Subject, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult, AppAction } from '@shared/actions/app-action';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -72,7 +72,7 @@ describe('BoardStore', () => {
         { provide: WorkOrdersGridStore, useValue: { filter, setFilter } },
         { provide: WorkOrdersApi, useValue: { searchBatch, changeStatus } },
         { provide: ActionStore, useValue: { dispatch, lastResult, active } },
-        { provide: AuthStore, useValue: { hasPermission: () => options.canManage ?? true } },
+        provideFakeAuthStore({ hasPermission: () => options.canManage ?? true }),
         { provide: MessageService, useValue: { add } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         {

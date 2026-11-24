@@ -21,18 +21,9 @@ public static class WorkOrderChangeNotifications
         /// <param name="change">The assignment before and after.</param>
         public void PushAssignmentChange(Guid companyId, WorkOrderAssignmentChange change)
         {
-            var isSameAssignee = change.OldAssigneeId is not null && change.OldAssigneeId == change.NewAssigneeId;
-            if (isSameAssignee)
-            {
-                notifier.AddRescheduled(change);
-            }
-            else
-            {
-                notifier.AddUnassigned(change);
-                notifier.AddAssigned(change);
-            }
+            notifier.AddAssignmentEvents(change);
 
-            notifier.PushWorkOrdersHint(companyId);
+            notifier.PushWorkOrdersHint(companyId, change.WorkOrderId);
         }
 
         /// <summary>
@@ -43,22 +34,50 @@ public static class WorkOrderChangeNotifications
         /// <param name="change">The estimate before and after.</param>
         public void PushEstimateChange(Guid companyId, WorkOrderEstimateChange change)
         {
-            if (change.AssigneeUserId is { } userId && change.OldEstimate != change.NewEstimate)
+            notifier.AddEstimateEvent(change);
+
+            notifier.PushWorkOrdersHint(companyId, change.WorkOrderId);
+        }
+
+        /// <summary>
+        /// Adds the events of a schedule change and of a new estimate, and one <c>workOrders</c> hint of the work
+        /// order, without pushing. A batch calls it for each work order, then pushes once.
+        /// </summary>
+        /// <param name="companyId">The company of the work order.</param>
+        /// <param name="assignment">The assignment before and after, or <see langword="null"/> for no move.</param>
+        /// <param name="estimate">The estimate before and after.</param>
+        public void AddScheduleChange(
+            Guid companyId,
+            WorkOrderAssignmentChange? assignment,
+            WorkOrderEstimateChange estimate
+        )
+        {
+            if (assignment is not null)
             {
-                notifier.AddToUser(
-                    userId,
-                    RealtimeNotificationKind.WorkOrderEstimateChanged,
-                    new WorkOrderEstimateChangedData
-                    {
-                        WorkOrderId = change.WorkOrderId,
-                        Title = change.Title,
-                        OldEstimate = change.OldEstimate,
-                        NewEstimate = change.NewEstimate,
-                    },
-                    isActorSkipped: true);
+                notifier.AddAssignmentEvents(assignment);
             }
 
-            notifier.PushWorkOrdersHint(companyId);
+            notifier.AddEstimateEvent(estimate);
+            notifier.AddHint(
+                companyId,
+                new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = estimate.WorkOrderId });
+        }
+
+        /// <summary>
+        /// Adds the events and one hint of a schedule change of one work order, then pushes. Call it after the save
+        /// returned.
+        /// </summary>
+        /// <param name="companyId">The company of the work order.</param>
+        /// <param name="assignment">The assignment before and after, or <see langword="null"/> for no move.</param>
+        /// <param name="estimate">The estimate before and after.</param>
+        public void PushScheduleChange(
+            Guid companyId,
+            WorkOrderAssignmentChange? assignment,
+            WorkOrderEstimateChange estimate
+        )
+        {
+            notifier.AddScheduleChange(companyId, assignment, estimate);
+            notifier.Push();
         }
 
         /// <summary>
@@ -85,17 +104,61 @@ public static class WorkOrderChangeNotifications
                 notifier.AddSlideMove(move);
             }
 
-            notifier.PushWorkOrdersHint(companyId);
+            notifier.AddHint(
+                companyId,
+                new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = change.WorkOrderId });
+            foreach (var movedId in change.SlideMoves.Select(move => move.WorkOrderId).Distinct())
+            {
+                notifier.AddHint(
+                    companyId,
+                    new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = movedId });
+            }
+
+            notifier.Push();
         }
 
         /// <summary>
-        /// Adds the <c>workOrders</c> hint and pushes. Call it after the save returned.
+        /// Adds the <c>workOrders</c> hint of one work order and pushes. Call it after the save returned.
         /// </summary>
         /// <param name="companyId">The company of the work order.</param>
-        public void PushWorkOrdersHint(Guid companyId)
+        /// <param name="workOrderId">The work order that changed.</param>
+        public void PushWorkOrdersHint(Guid companyId, Guid workOrderId)
         {
-            notifier.AddHint(companyId, new RealtimeHint { Topic = RealtimeTopic.WorkOrders });
+            notifier.AddHint(
+                companyId, new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = workOrderId });
             notifier.Push();
+        }
+
+        private void AddAssignmentEvents(WorkOrderAssignmentChange change)
+        {
+            var isSameAssignee = change.OldAssigneeId is not null && change.OldAssigneeId == change.NewAssigneeId;
+            if (isSameAssignee)
+            {
+                notifier.AddRescheduled(change);
+            }
+            else
+            {
+                notifier.AddUnassigned(change);
+                notifier.AddAssigned(change);
+            }
+        }
+
+        private void AddEstimateEvent(WorkOrderEstimateChange change)
+        {
+            if (change.AssigneeUserId is { } userId && change.OldEstimate != change.NewEstimate)
+            {
+                notifier.AddToUser(
+                    userId,
+                    RealtimeNotificationKind.WorkOrderEstimateChanged,
+                    new WorkOrderEstimateChangedData
+                    {
+                        WorkOrderId = change.WorkOrderId,
+                        Title = change.Title,
+                        OldEstimate = change.OldEstimate,
+                        NewEstimate = change.NewEstimate,
+                    },
+                    isActorSkipped: true);
+            }
         }
 
         private void AddRescheduled(WorkOrderAssignmentChange change)

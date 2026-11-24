@@ -56,10 +56,10 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
 
         var response = await _fixture.SendShiftRequestAsync(
             new HttpMethod(method),
-            pathTemplate.Replace("{id}", arranged.AssignedToWorkerId.ToString()),
+            pathTemplate.Replace(oldValue: "{id}", arranged.AssignedToWorkerId.ToString()),
             arranged.WorkerClaims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Fact]
@@ -74,6 +74,32 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
             _fixture.CreateOrderBody(
                 encryptedAssigneeId: arranged.WorkerEncryptedId,
                 plannedStartLocal: _fixture.FutureStart(StartTime)));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Update_WithWorkerTokenAndAnotherStart_Returns403()
+    {
+        var arranged = await ArrangeAsync();
+        var order = await _fixture.ReadOrderAsync(arranged.WorkerClaims, arranged.AssignedToWorkerId);
+        var body = new System.Text.Json.Nodes.JsonObject
+        {
+            [propertyName: "title"] = WorkOrderApiTestData.Title,
+            [propertyName: "priority"] = "low",
+            [propertyName: "category"] = "repair",
+            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            [propertyName: "fileIds"] = new System.Text.Json.Nodes.JsonArray(),
+            [propertyName: "assigneeId"] = arranged.WorkerEncryptedId,
+            [propertyName: "plannedStartLocal"] = _fixture.FutureStart(time: "10:00:00"),
+            [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+        }.ToJsonString();
+
+        var response = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Put,
+            $"{WorkOrderApiTestData.BasePath}/{arranged.AssignedToWorkerId}",
+            arranged.WorkerClaims,
+            body);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

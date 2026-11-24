@@ -1,5 +1,12 @@
-<div class="hf-schedule-scroll min-h-0 flex-1 overflow-y-auto">
+<div
+  class="hf-schedule-scroll min-h-0 flex-1 overflow-y-auto"
+  [style.--hf-schedule-name-width.rem]="nameColumnRem"
+  [style.--hf-schedule-row-padding.rem]="rowPaddingRem"
+  [style.--hf-schedule-lane-height.rem]="laneHeightRem"
+  [style.--hf-schedule-lane-gap.rem]="laneGapRem"
+>
   <div
+    #header
     class="hf-schedule-header"
     [style.--hf-schedule-hours]="hours().length"
   >
@@ -60,6 +67,7 @@
       @for (layout of layouts(); track layout.row.id) {
         <div
           class="hf-schedule-row"
+          [attr.data-row-id]="layout.row.id"
           [style.--hf-schedule-hours]="hours().length"
         >
           <div class="hf-schedule-name">{{ layout.row.label }}</div>
@@ -79,21 +87,42 @@
             }
             <div class="hf-schedule-lanes">
               @for (lane of layout.lanes; track $index) {
-                <div class="relative h-6 flex-none">
-                  @for (item of lane; track item.bar.id) {
-                    <button
-                      type="button"
-                      class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
-                      [class]="item.bar.colorClass"
-                      [style.left.%]="item.left"
-                      [style.width.%]="item.width"
-                      [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
-                      [pTooltip]="tooltip(item.bar)"
-                      tooltipStyleClass="whitespace-pre-line"
-                      (click)="workOrderClick.emit(item.bar.id)"
-                    >
-                      {{ item.bar.title }}
-                    </button>
+                <div
+                  class="relative flex-none"
+                  [style.height.rem]="laneHeightRem"
+                >
+                  @if (!isEditable()) {
+                    @for (item of lane; track item.bar.id) {
+                      <button
+                        type="button"
+                        class="absolute inset-y-0 min-w-1 cursor-pointer truncate rounded-border px-2 text-left text-xs leading-6 text-white"
+                        [class]="item.bar.colorClass"
+                        [class.hf-bar-overrun]="item.overrunStartPercent !== null"
+                        [style.--hf-overrun-start]="overrunStart(item)"
+                        [style.left]="barLeft(item)"
+                        [style.width]="barWidth(item)"
+                        [attr.aria-label]="item.bar.title + ', ' + describe(item.bar)"
+                        [pTooltip]="tooltip(item.bar)"
+                        tooltipStyleClass="whitespace-pre-line"
+                        (click)="workOrderClick.emit(item.bar.id)"
+                      >
+                        {{ item.bar.title }}
+                        @if (item.isCutStart) {
+                          <i
+                            class="pi pi-angle-double-left hf-cut-mark hf-cut-start"
+                            [pTooltip]="
+                              'SCHEDULE.CONTINUES_FROM' | translate: { date: startDate(item.bar) | plainDate }
+                            "
+                          ></i>
+                        }
+                        @if (item.isCutEnd) {
+                          <i
+                            class="pi pi-angle-double-right hf-cut-mark hf-cut-end"
+                            [pTooltip]="'SCHEDULE.CONTINUES_ON' | translate: { date: endDate(item.bar) | plainDate }"
+                          ></i>
+                        }
+                      </button>
+                    }
                   }
                 </div>
               }
@@ -108,5 +137,94 @@
         </div>
       }
     }
+    @if (isEditable()) {
+      <div
+        #overlay
+        cdkDropList
+        cdkDropListSortingDisabled
+        class="hf-schedule-overlay"
+        [class.hf-placeholder-hidden]="!isPlaceholderVisible()"
+      >
+        @for (entry of flatBars(); track entry.item.bar.id) {
+          <div
+            cdkDrag
+            cdkDragPreviewContainer="global"
+            [cdkDragConstrainPosition]="constrain"
+            class="hf-schedule-bar absolute min-w-1 cursor-grab truncate rounded-border px-2 text-xs leading-6 text-white"
+            [class]="barClasses(entry.item.bar)"
+            [class.hf-bar-overrun]="entry.item.overrunStartPercent !== null"
+            [style.--hf-overrun-start]="overrunStart(entry.item)"
+            [cdkDragDisabled]="!canDrag(entry.item)"
+            [style.--hf-bar-left]="barLeft(entry.item)"
+            [style.width]="barWidth(entry.item)"
+            [style.--hf-bar-top]="entry.top"
+            [attr.aria-label]="entry.item.bar.title + ', ' + describe(entry.item.bar)"
+            [pTooltip]="tooltip(entry.item.bar)"
+            tooltipStyleClass="whitespace-pre-line"
+            (pointerdown)="onBarPointerDown($event, entry.item.bar)"
+            (cdkDragStarted)="onDragStarted(entry)"
+            (cdkDragMoved)="onDragMoved($event)"
+            (cdkDragEnded)="onDragEnded($event, entry.item.bar)"
+            role="button"
+            tabindex="0"
+            (click)="onBarClick(entry.item.bar.id)"
+            (keydown.enter)="onBarClick(entry.item.bar.id)"
+          >
+            {{ entry.item.bar.title }}
+            @if (entry.item.isCutStart) {
+              <i
+                class="pi pi-angle-double-left hf-cut-mark hf-cut-start"
+                [pTooltip]="'SCHEDULE.CONTINUES_FROM' | translate: { date: startDate(entry.item.bar) | plainDate }"
+              ></i>
+            }
+            @if (entry.item.isCutEnd) {
+              <i
+                class="pi pi-angle-double-right hf-cut-mark hf-cut-end"
+                [pTooltip]="'SCHEDULE.CONTINUES_ON' | translate: { date: endDate(entry.item.bar) | plainDate }"
+              ></i>
+            }
+            <ng-template cdkDragPreview>
+              <div
+                class="rounded-border flex px-2 text-xs leading-6 text-white shadow-lg"
+                [class]="barClasses(entry.item.bar)"
+                [class.hf-preview-conflict]="previewSlot()?.isConflict"
+                [style.height.rem]="laneHeightRem"
+                [style.width.px]="previewWidthPx(entry.item)"
+              >
+                @if (previewSlot(); as slot) {
+                  <span
+                    class="rounded-border bg-surface-900 dark:bg-surface-0 absolute bottom-full left-0 mb-1 px-2 text-xs leading-5 whitespace-nowrap text-white dark:text-surface-900 shadow-lg"
+                  >
+                    {{ slot.rangeText }}
+                  </span>
+                }
+                <span class="min-w-0 flex-1 truncate">{{ entry.item.bar.title }}</span>
+              </div>
+            </ng-template>
+            @if (canResize(entry.item)) {
+              <span
+                class="hf-resize-handle"
+                [style.right]="handleRight(entry.item)"
+                (pointerdown)="onResizeStart($event, entry.item)"
+              ></span>
+            }
+          </div>
+        }
+      </div>
+    }
   </div>
+  @if (showDayAreas()) {
+    <div
+      class="hf-day-area hf-drop-area hf-day-area-previous"
+      data-day-area="previous"
+    >
+      <i class="pi pi-chevron-left"></i>
+    </div>
+    <div
+      class="hf-day-area hf-drop-area hf-day-area-next"
+      data-day-area="next"
+    >
+      <i class="pi pi-chevron-right"></i>
+    </div>
+  }
 </div>

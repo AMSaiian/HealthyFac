@@ -25,7 +25,6 @@ using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
-using Serilog;
 
 namespace HealthyFac.MachineSimulator;
 
@@ -149,7 +148,7 @@ public static class ConfigureServices
         public WebApplication UseSimulatorPipeline()
         {
             app.UseSharedHealthChecks();
-            app.UseSerilogRequestLogging();
+            app.UseSharedRequestLogging();
             app.UseSharedExceptionHandling();
 
             return app;

@@ -10,7 +10,14 @@ import { ActionStore } from '@shared/actions/action.store';
 import { DetailsMode } from '@shared/forms/with-details-mode';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
+import { RealtimeTopic } from '@shared/realtime/realtime';
+import {
+  createFakeRealtimeConnection,
+  provideFakeRealtimeConnection,
+} from '@shared/realtime/testing/fake-realtime-connection';
+import { CLOCK } from '@shared/time/clock';
+import { Temporal } from '@shared/time/temporal';
 import { Permission } from '@shared/security/permissions';
 
 import { FilesApi } from '@files/files-api';
@@ -26,7 +33,7 @@ import type { WorkOrderFormValue } from '@work-orders/work-order-schema';
 import { WorkOrdersApi } from '@work-orders/work-orders-api';
 
 import { WorkOrderDrawerStore } from './work-order-drawer.store';
-import { fileEntries, toUpdateBody } from './work-order-drawer.store.utils';
+import { fileEntries, toCreateBody, toUpdateBody } from './work-order-drawer.store.utils';
 
 const WORK_ORDER: WorkOrder = {
   id: 'wo-1',
@@ -57,6 +64,8 @@ const FORM_VALUE: WorkOrderFormValue = {
   machineId: null,
   estimateMinutes: 90,
   fileIds: ['f2', 'f3'],
+  assigneeId: 'e1',
+  start: Temporal.PlainDateTime.from('2027-03-28T09:00:00'),
 };
 
 function lookedUp(id: string): LookedUpFile {
@@ -75,6 +84,69 @@ describe('toUpdateBody', () => {
     const body = toUpdateBody(FORM_VALUE, WORK_ORDER, true);
 
     expect(body.estimateMinutes).toBe(90);
+  });
+});
+
+describe('toUpdateBody schedule', () => {
+  it.each([
+    { name: 'NoChange', value: FORM_VALUE, assigneeId: 'e1', plannedStartLocal: '2027-03-28T09:00:00' },
+    {
+      name: 'Move',
+      value: { ...FORM_VALUE, start: Temporal.PlainDateTime.from('2027-03-29T10:00:00') },
+      assigneeId: 'e1',
+      plannedStartLocal: '2027-03-29T10:00:00',
+    },
+    {
+      name: 'AnotherAssignee',
+      value: { ...FORM_VALUE, assigneeId: 'e2' },
+      assigneeId: 'e2',
+      plannedStartLocal: '2027-03-28T09:00:00',
+    },
+    {
+      name: 'Unassign',
+      value: { ...FORM_VALUE, assigneeId: null, start: null },
+      assigneeId: null,
+      plannedStartLocal: null,
+    },
+  ])('toUpdateBody_$name_SendsTheAssigneeAndTheStart', ({ value, assigneeId, plannedStartLocal }) => {
+    const body = toUpdateBody(value, WORK_ORDER, true);
+
+    expect(body.assigneeId).toBe(assigneeId);
+    expect(body.plannedStartLocal).toBe(plannedStartLocal);
+  });
+
+  it('toUpdateBody_OfAWorker_SendsTheCurrentSlotNotTheEditedOne', () => {
+    const edited = { ...FORM_VALUE, assigneeId: 'e2', start: Temporal.PlainDateTime.from('2027-04-01T10:00:00') };
+
+    const body = toUpdateBody(edited, WORK_ORDER, false);
+
+    expect(body.assigneeId).toBe('e1');
+    expect(body.plannedStartLocal).toBe('2027-03-28T09:00:00');
+  });
+
+  it('toUpdateBody_OfABacklogWorkOrderWithoutSlot_SendsBothNull', () => {
+    const backlog = { ...WORK_ORDER, assigneeId: null, plannedStartLocal: null };
+
+    const body = toUpdateBody({ ...FORM_VALUE, assigneeId: null, start: null }, backlog, true);
+
+    expect(body.assigneeId).toBeNull();
+    expect(body.plannedStartLocal).toBeNull();
+  });
+});
+
+describe('toCreateBody schedule', () => {
+  it('toCreateBody_WithAssigneeAndStart_SendsBoth', () => {
+    const body = toCreateBody(FORM_VALUE);
+
+    expect(body.assigneeId).toBe('e1');
+    expect(body.plannedStartLocal).toBe('2027-03-28T09:00:00');
+  });
+
+  it('toCreateBody_WithoutAssignee_SendsNeither', () => {
+    const body = toCreateBody({ ...FORM_VALUE, assigneeId: null, start: null });
+
+    expect(body).not.toHaveProperty('assigneeId');
+    expect(body).not.toHaveProperty('plannedStartLocal');
   });
 });
 
@@ -97,14 +169,17 @@ describe('WorkOrderDrawerStore', () => {
   const notify = vi.fn();
   const add = vi.fn();
   const dispatch = vi.fn();
+  let currentNow = Temporal.Instant.from('2027-06-01T04:00:00Z');
   const history = vi.fn();
   const cancelAction = vi.fn();
+  const realtime = createFakeRealtimeConnection();
 
   async function setup(
     options: { canManage?: boolean; canWrite?: boolean; employeeId?: string | null; isUpdate?: boolean } = {},
   ): Promise<InstanceType<typeof WorkOrderDrawerStore>> {
     TestBed.configureTestingModule({
       providers: [
+        provideFakeRealtimeConnection(realtime),
         WorkOrderDrawerStore,
         {
           provide: WorkOrdersApi,
@@ -117,19 +192,17 @@ describe('WorkOrderDrawerStore', () => {
           },
         },
         { provide: FilesApi, useValue: { search: () => of({ items: [], totalCount: 0 }), upload: vi.fn() } },
-        {
-          provide: AuthStore,
-          useValue: {
-            hasPermission: (permission: string) =>
-              permission === Permission.WorkOrdersWrite ? (options.canWrite ?? false) : (options.canManage ?? false),
-          },
-        },
+        provideFakeAuthStore({
+          hasPermission: (permission: string) =>
+            permission === Permission.WorkOrdersWrite ? (options.canWrite ?? false) : (options.canManage ?? false),
+        }),
         { provide: EmployeeStore, useValue: { id: () => options.employeeId ?? null } },
         { provide: LookupsApi, useValue: { machines: () => of([]) } },
         { provide: ActionStore, useValue: { complete, notify, cancel: cancelAction, dispatch } },
         { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
         { provide: MessageService, useValue: { add } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
+        { provide: CLOCK, useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' } },
       ],
     });
     const store = TestBed.inject(WorkOrderDrawerStore);
@@ -150,8 +223,25 @@ describe('WorkOrderDrawerStore', () => {
     notify.mockReset();
     dispatch.mockReset();
     cancelAction.mockReset();
-    history.mockReset().mockReturnValue(of([]));
+    history.mockReset().mockReturnValue(of({ items: [], totalCount: 0, nextAfter: null }));
     add.mockReset();
+    currentNow = Temporal.Instant.from('2027-06-01T04:00:00Z');
+  });
+
+  it('today_AfterMidnightInTheCompanyZone_MovesToTheNextDayWithinOneMinute', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval', 'clearInterval', 'clearTimeout'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    currentNow = Temporal.Instant.from('2027-06-01T20:59:30Z');
+    const store = await setup({ canManage: true });
+    const todayBefore = store.today().toString();
+
+    currentNow = Temporal.Instant.from('2027-06-01T21:00:00Z');
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(todayBefore).toBe('2027-06-01');
+    expect(store.today().toString()).toBe('2027-06-02');
   });
 
   it('start_WhenTheWorkOrderIsNotFound_ClosesTheDrawer', async () => {
@@ -255,10 +345,21 @@ describe('WorkOrderDrawerStore', () => {
   it('save_OnCreate_CallsCreateWithoutAssignee', async () => {
     const store = await setup({ isUpdate: false });
 
-    store.save(FORM_VALUE);
+    store.save({ ...FORM_VALUE, assigneeId: null, start: null });
 
     expect(create).toHaveBeenCalledTimes(1);
     expect(create.mock.calls[0][0]).not.toHaveProperty('assigneeId');
+  });
+
+  it('save_OnCreateWithAssigneeAndStart_CallsCreateWithBoth', async () => {
+    const store = await setup({ isUpdate: false });
+
+    store.save(FORM_VALUE);
+
+    expect(create.mock.calls[0][0]).toMatchObject({
+      assigneeId: 'e1',
+      plannedStartLocal: '2027-03-28T09:00:00',
+    });
   });
 
   it('save_OnCreate_CompletesWithTheBacklogStatusOfTheNewWorkOrder', async () => {
@@ -285,6 +386,52 @@ describe('WorkOrderDrawerStore', () => {
     expect(history).toHaveBeenCalledTimes(1);
   });
 
+  it('activateHistory_OnOpen_LoadsTheFirstPageWithTenRowsAndNoAfter', async () => {
+    const store = await setup({ canManage: true });
+
+    store.activateHistory();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(history).toHaveBeenCalledWith('wo-1', 10, undefined);
+  });
+
+  it('nextHistoryPage_ThenPrevious_SendsTheAfterOfThePageAndGoesBackWithoutAnotherQuery', async () => {
+    const store = await setup({ canManage: true });
+    store.activateHistory();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    store.nextHistoryPage(14);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    const pageIndexAfterNext = store.historyPageIndex();
+    store.previousHistoryPage();
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(history).toHaveBeenNthCalledWith(2, 'wo-1', 10, 14);
+    expect(pageIndexAfterNext).toBe(1);
+    expect(store.historyPageIndex()).toBe(0);
+    expect(history).toHaveBeenLastCalledWith('wo-1', 10, undefined);
+  });
+
+  it('save_OnAnEditFromTheSecondHistoryPage_ReloadsTheFirstPage', async () => {
+    const store = await setup({ canManage: true });
+    store.activateHistory();
+    store.nextHistoryPage(14);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    history.mockClear();
+
+    store.save(FORM_VALUE);
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(store.historyPageIndex()).toBe(0);
+    expect(history).toHaveBeenCalledWith('wo-1', 10, undefined);
+  });
+
   it.each(
     [
       { name: 'ForASupervisor', options: { canManage: true } },
@@ -294,6 +441,31 @@ describe('WorkOrderDrawerStore', () => {
     const store = await setup(options);
 
     expect(store.canChangeStatus()).toBe(true);
+  });
+
+  it('isScheduleReadOnly_ForASupervisorWithACompletedWorkOrder_IsTrueAndTheEstimateIsReadOnly', async () => {
+    get.mockReturnValue(of({ ...WORK_ORDER, status: WorkOrderStatus.Completed }));
+
+    const store = await setup({ canManage: true, canWrite: true });
+
+    expect(store.isScheduleLocked()).toBe(true);
+    expect(store.isScheduleReadOnly()).toBe(true);
+    expect(store.isEstimateReadOnly()).toBe(true);
+  });
+
+  it('isScheduleReadOnly_ForASupervisorWithAStagedWorkOrder_IsFalseAndTheEstimateIsEditable', async () => {
+    const store = await setup({ canManage: true, canWrite: true });
+
+    expect(store.isScheduleLocked()).toBe(false);
+    expect(store.isScheduleReadOnly()).toBe(false);
+    expect(store.isEstimateReadOnly()).toBe(false);
+  });
+
+  it('isScheduleReadOnly_ForAWorkerWithAStagedWorkOrder_IsTrue', async () => {
+    const store = await setup({ canWrite: true });
+
+    expect(store.isScheduleReadOnly()).toBe(true);
+    expect(store.isEstimateReadOnly()).toBe(true);
   });
 
   it('canChangeStatus_InEditMode_IsFalse', async () => {
@@ -379,5 +551,115 @@ describe('WorkOrderDrawerStore', () => {
 
     expect(store.mode()).toBe(DetailsMode.Edit);
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  describe('hints', () => {
+    async function settle(): Promise<void> {
+      TestBed.tick();
+      await TestBed.inject(ApplicationRef).whenStable();
+    }
+
+    async function hint(workOrderId: string | undefined): Promise<void> {
+      vi.useFakeTimers();
+      realtime.hints$.next({ topic: RealtimeTopic.WorkOrders, workOrderId });
+      await vi.advanceTimersByTimeAsync(1000);
+      vi.useRealTimers();
+      await settle();
+    }
+
+    afterEach(() => vi.useRealTimers());
+
+    it('hint_WithTheOpenWorkOrderInViewMode_ReloadsTheWorkOrder', async () => {
+      await setup({ canManage: true });
+      const before = get.mock.calls.length;
+
+      await hint('wo-1');
+
+      expect(get.mock.calls.length - before).toBe(1);
+    });
+
+    it('hint_WithAnotherWorkOrder_DoesNothing', async () => {
+      await setup({ canManage: true });
+      const before = get.mock.calls.length;
+
+      await hint('wo-2');
+
+      expect(get.mock.calls.length - before).toBe(0);
+    });
+
+    it('hint_InEditModeWithUnsavedEdits_KeepsTheFormAndShowsTheMessage', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      store.setHasUnsavedEdits(true);
+      const before = get.mock.calls.length;
+
+      await hint('wo-1');
+
+      expect(get.mock.calls.length - before).toBe(0);
+      expect(store.isChangedRemotely()).toBe(true);
+    });
+
+    it('hint_InEditModeWithoutEdits_ReloadsTheWorkOrder', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      const before = get.mock.calls.length;
+
+      await hint('wo-1');
+
+      expect(get.mock.calls.length - before).toBe(1);
+      expect(store.isChangedRemotely()).toBe(false);
+    });
+
+    it('save_With409AfterARemoteChange_ClearsTheMessage', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      store.setHasUnsavedEdits(true);
+      await hint('wo-1');
+      update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict })));
+
+      store.save(FORM_VALUE);
+      await settle();
+
+      expect(store.isChangedRemotely()).toBe(false);
+    });
+
+    it('cancelEdit_AfterARemoteChange_ClearsTheMessageAndReloads', async () => {
+      const store = await setup({ canWrite: true, canManage: true });
+      store.edit();
+      store.setHasUnsavedEdits(true);
+      await hint('wo-1');
+      const before = get.mock.calls.length;
+
+      store.cancelEdit();
+      await settle();
+
+      expect(store.isChangedRemotely()).toBe(false);
+      expect(get.mock.calls.length - before).toBe(1);
+    });
+
+    it('hint_WithTheHistoryOnTheSecondPage_LoadsTheFirstPageWithoutAfter', async () => {
+      const store = await setup({ canManage: true });
+      store.activateHistory();
+      store.nextHistoryPage(14);
+      await settle();
+      history.mockClear();
+
+      await hint('wo-1');
+
+      expect(store.historyPageIndex()).toBe(0);
+      expect(history).toHaveBeenCalledWith('wo-1', 10, undefined);
+    });
+
+    it('hint_WithAnotherWorkOrderOnTheSecondHistoryPage_LoadsNoHistory', async () => {
+      const store = await setup({ canManage: true });
+      store.activateHistory();
+      store.nextHistoryPage(14);
+      await settle();
+      history.mockClear();
+
+      await hint('wo-2');
+
+      expect(history).not.toHaveBeenCalled();
+    });
   });
 });

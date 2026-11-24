@@ -1,4 +1,5 @@
 import type { AppAction } from '@shared/actions/app-action';
+import { Temporal } from '@shared/time/temporal';
 
 import type { FilesScope } from '@files/file';
 import {
@@ -24,6 +25,8 @@ export const EMPTY_VALUE: WorkOrderFormValue = {
   machineId: null,
   estimateMinutes: DEFAULT_ESTIMATE_MINUTES,
   fileIds: [],
+  assigneeId: null,
+  start: null,
 };
 
 export interface FileEntry {
@@ -40,6 +43,8 @@ export function toFormValue(workOrder: WorkOrder): WorkOrderFormValue {
     machineId: workOrder.machineId,
     estimateMinutes: workOrder.estimateMinutes,
     fileIds: [...workOrder.fileIds],
+    assigneeId: workOrder.assigneeId,
+    start: workOrder.plannedStartLocal === null ? null : Temporal.PlainDateTime.from(workOrder.plannedStartLocal),
   };
 }
 
@@ -56,6 +61,8 @@ export function overlay(base: WorkOrderFormValue, payload: WorkOrderActionPayloa
     machineId: payload.machineId === undefined ? base.machineId : payload.machineId,
     estimateMinutes: payload.estimateMinutes ?? base.estimateMinutes,
     fileIds: payload.fileIds ?? base.fileIds,
+    assigneeId: payload.assigneeId === undefined ? base.assigneeId : payload.assigneeId,
+    start: payload.start === undefined ? base.start : payload.start,
   };
 }
 
@@ -68,22 +75,29 @@ export function toCreateBody(value: WorkOrderFormValue): CreateWorkOrderBody {
     machineId: value.machineId,
     estimateMinutes: value.estimateMinutes,
     fileIds: value.fileIds,
+    ...(value.assigneeId !== null && value.start !== null
+      ? { assigneeId: value.assigneeId, plannedStartLocal: value.start.toString() }
+      : {}),
   };
 }
 
 /**
- * Builds the update body. A user without `work-orders:manage` may not change the estimate (the backend answers `403`),
- * so the body then carries the stored estimate and never the edited one.
+ * Builds the update body. A user without `work-orders:manage` may not change the estimate or the slot (the backend
+ * answers `403`), so the body then carries the stored values and never the edited ones. The body always carries the
+ * assignee and the start: both `null` unassigns the work order.
  */
 export function toUpdateBody(
   value: WorkOrderFormValue,
-  workOrder: Pick<WorkOrder, 'estimateMinutes' | 'rowVersion'>,
+  workOrder: Pick<WorkOrder, 'estimateMinutes' | 'rowVersion' | 'assigneeId' | 'plannedStartLocal'>,
   canManage: boolean,
 ): UpdateWorkOrderBody {
+  const { assigneeId, plannedStartLocal, ...body } = toCreateBody(value);
   return {
-    ...toCreateBody(value),
+    ...body,
     estimateMinutes: canManage ? value.estimateMinutes : workOrder.estimateMinutes,
     rowVersion: workOrder.rowVersion,
+    assigneeId: canManage ? (assigneeId ?? null) : workOrder.assigneeId,
+    plannedStartLocal: canManage ? (plannedStartLocal ?? null) : workOrder.plannedStartLocal,
   };
 }
 

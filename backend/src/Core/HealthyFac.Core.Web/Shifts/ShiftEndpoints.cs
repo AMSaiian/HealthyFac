@@ -15,6 +15,10 @@ using ApplicationDeleteShiftTemplateVersionRequest =
     HealthyFac.Core.Application.Shifts.DeleteShiftTemplateVersionRequest;
 using ApplicationGetEmployeeDayScheduleRequest =
     HealthyFac.Core.Application.Shifts.DaySchedules.GetEmployeeDayScheduleRequest;
+using ApplicationGetEmployeeFreeSpansRequest =
+    HealthyFac.Core.Application.Shifts.DaySchedules.GetEmployeeFreeSpansRequest;
+using ApplicationGetEmployeeScheduleDaysRequest =
+    HealthyFac.Core.Application.Shifts.DaySchedules.GetEmployeeScheduleDaysRequest;
 using ApplicationListShiftOverridesRequest = HealthyFac.Core.Application.Shifts.ListShiftOverridesRequest;
 using ApplicationListShiftTemplateVersionsRequest =
     HealthyFac.Core.Application.Shifts.ListShiftTemplateVersionsRequest;
@@ -54,6 +58,10 @@ public static class ShiftEndpoints
             group.MapDelete(ShiftRoutes.OverrideByDate, DeleteOverrideAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Manage);
             group.MapGet(ShiftRoutes.Schedule, GetEmployeeDayAsync)
+                .RequireAuthorization(CorePermissions.Shifts.Read);
+            group.MapGet(ShiftRoutes.ScheduleDays, GetScheduleDaysAsync)
+                .RequireAuthorization(CorePermissions.Shifts.Read);
+            group.MapGet(ShiftRoutes.FreeSpans, GetFreeSpansAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
 
             return app;
@@ -192,6 +200,44 @@ public static class ShiftEndpoints
         ClaimsPrincipal user,
         ICurrentUserProvider currentUser,
         IRequestHandler<ApplicationGetEmployeeDayScheduleRequest, DayScheduleResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(
+                currentUser.GetCompanyId(),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<ScheduleDaysResponse>> GetScheduleDaysAsync(
+        [AsParameters] GetEmployeeScheduleDaysRequest request,
+        ClaimsPrincipal user,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetEmployeeScheduleDaysRequest, ScheduleDaysResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(
+                currentUser.GetCompanyId(),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<FreeSpansResponse>> GetFreeSpansAsync(
+        [AsParameters] GetEmployeeFreeSpansRequest request,
+        ClaimsPrincipal user,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationGetEmployeeFreeSpansRequest, FreeSpansResponse> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )

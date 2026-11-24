@@ -3,7 +3,9 @@ import { signalStore } from '@ngrx/signals';
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withToasts } from '@shared/toasts/with-toasts';
 
+import { withAssignmentLookups } from '@work-orders/assignment-picker/with-assignment-lookups';
 import { withScheduleActionsAction } from './schedule-actions.action.slice';
+import { withSchedulePickerValues } from './with-schedule-picker-values';
 
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 
@@ -16,5 +18,7 @@ export const ScheduleActionsStore = signalStore(
   withToasts(),
   withConfirm(),
   withScheduleActionsAction(),
+  withAssignmentLookups(),
+  withSchedulePickerValues(),
   withStoreDevtools('schedule-actions'),
 );

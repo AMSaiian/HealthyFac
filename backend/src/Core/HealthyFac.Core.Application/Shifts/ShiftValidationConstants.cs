@@ -5,8 +5,6 @@ namespace HealthyFac.Core.Application.Shifts;
 /// </summary>
 public static class ShiftValidationConstants
 {
-    public const int MaxBlocksPerDay = 6;
-
     /// <summary>How many days ahead a version or an override may start.</summary>
     public const int MaxDaysAhead = 365;
 

@@ -1,15 +1,16 @@
 namespace HealthyFac.Core.Domain.Shifts.DaySchedules;
 
 /// <summary>
-/// Protects the part of today that already happened: an ended block, and the start of a running block.
+/// Protects the part of today that already happened: the ended blocks, and the start of a running block.
 /// </summary>
 public static class PastBlocks
 {
     /// <summary>
-    /// Compares the blocks of today before and after a change. An ended block (<c>End &lt;= now</c>) must stay with the
-    /// same start and end. A running block (<c>Start &lt;= now &lt; End</c>) must stay with the same start and an end
-    /// that is not before now. Every other block of the new list must start at or after now. A block that ends exactly
-    /// at now counts as ended, and a block that starts exactly at now counts as running.
+    /// Compares the blocks of today before and after a change, after both lists join their touching blocks. A block of
+    /// the old list that starts at or before now needs a block of the new list with the same start and the same end
+    /// cut at now (<c>min(End, now)</c>): an ended block stays as it is, and a running block keeps its start and may
+    /// end at now or later. A block of the new list that starts before now needs such an old block. Every other new
+    /// block starts at or after now. So a block that ends exactly at now may grow when a new block touches it.
     /// </summary>
     /// <param name="before">The blocks of today before the change.</param>
     /// <param name="after">The blocks of today after the change.</param>
@@ -21,28 +22,25 @@ public static class PastBlocks
         DateTime nowUtc
     )
     {
-        var isPastKept = before.All(block => IsKept(block, after, nowUtc));
-        var isNewStartLate = after.All(block => block.StartUtc >= nowUtc || IsPastBlock(block, before, nowUtc));
+        var oldBlocks = JoinTouching(before);
+        var newBlocks = JoinTouching(after);
+        var isPastKept = oldBlocks.Where(block => block.Start <= nowUtc)
+            .All(block => HasPastTwin(block, newBlocks, nowUtc));
+        var isNewStartLate = newBlocks.Where(block => block.Start < nowUtc)
+            .All(block => HasPastTwin(block, oldBlocks, nowUtc));
 
         return isPastKept && isNewStartLate;
     }
 
-    private static bool IsKept(DayBlock block, IEnumerable<DayBlock> after, DateTime nowUtc)
-    {
-        if (block.EndUtc <= nowUtc)
-        {
-            return after.Any(next => next.StartUtc == block.StartUtc && next.EndUtc == block.EndUtc);
-        }
+    private static List<(DateTime Start, DateTime End)> JoinTouching(IEnumerable<DayBlock> blocks) =>
+        BlockJoin.JoinRanges(blocks.Select(block => (block.StartUtc, block.EndUtc)));
 
-        if (block.StartUtc <= nowUtc)
-        {
-            return after.Any(next => next.StartUtc == block.StartUtc && next.EndUtc >= nowUtc);
-        }
+    private static bool HasPastTwin(
+        (DateTime Start, DateTime End) block,
+        IEnumerable<(DateTime Start, DateTime End)> others,
+        DateTime nowUtc
+    ) =>
+        others.Any(other => other.Start == block.Start && Min(other.End, nowUtc) == Min(block.End, nowUtc));
 
-        return true;
-    }
-
-    private static bool IsPastBlock(DayBlock block, IEnumerable<DayBlock> before, DateTime nowUtc) =>
-        before.Any(previous => previous.StartUtc == block.StartUtc
-            && (previous.EndUtc <= nowUtc ? previous.EndUtc == block.EndUtc : nowUtc < previous.EndUtc));
+    private static DateTime Min(DateTime first, DateTime second) => first <= second ? first : second;
 }

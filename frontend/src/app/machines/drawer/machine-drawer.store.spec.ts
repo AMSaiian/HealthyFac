@@ -7,7 +7,7 @@ import { of, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { DetailsMode } from '@shared/forms/with-details-mode';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -103,7 +103,7 @@ function setup(
       { provide: MachinesApi, useValue: api },
       { provide: DraftsApi, useValue: draftsApi },
       { provide: MessageService, useValue: messages },
-      { provide: AuthStore, useValue: { hasPermission: (permission: Permission) => permissions.includes(permission) } },
+      provideFakeAuthStore({ permissions }),
       { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
       {
         provide: CLOCK,

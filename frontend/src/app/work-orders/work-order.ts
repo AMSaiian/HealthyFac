@@ -92,8 +92,16 @@ export interface WorkOrderHistoryRow {
   readonly assigneeName: string | null;
   readonly plannedStartLocal: string | null;
   readonly plannedStartUtc: string | null;
+  readonly estimateMinutes: number;
   readonly createdAt: string;
   readonly createdBy: string;
+}
+
+/** One page of the history, newest first. `nextAfter` is the revision to send for the next page, or `null`. */
+export interface WorkOrderHistoryPage {
+  readonly items: readonly WorkOrderHistoryRow[];
+  readonly totalCount: number;
+  readonly nextAfter: number | null;
 }
 
 /** The fields that the form edits. The file IDs are the encrypted IDs of the Document service. */
@@ -114,6 +122,8 @@ export interface CreateWorkOrderBody extends WorkOrderBody {
 
 export interface UpdateWorkOrderBody extends WorkOrderBody {
   readonly rowVersion: number;
+  readonly assigneeId: string | null;
+  readonly plannedStartLocal: string | null;
 }
 
 export interface CreateWorkOrderResponse {
@@ -158,6 +168,13 @@ export interface DayScheduleBlock {
   readonly endUtc: string;
 }
 
+/** The source of the blocks of a day: the weekly template, an override of the date, or no shift. */
+export enum DayScheduleSource {
+  Template = 'template',
+  Override = 'override',
+  None = 'none',
+}
+
 export interface DayScheduleWorkOrder {
   readonly id: string;
   readonly title: string;
@@ -171,11 +188,39 @@ export interface DayScheduleWorkOrder {
   readonly rowVersion: number;
 }
 
+/** One day of the day summary: whether the employee works, and the longest free span in minutes. */
+export interface ScheduleDay {
+  readonly date: string;
+  readonly hasBlocks: boolean;
+  readonly longestFreeMinutes: number;
+}
+
+/** The answer of `GET /employees/{id}/schedule/days`. */
+export interface ScheduleDays {
+  readonly timeZoneId: string;
+  readonly days: readonly ScheduleDay[];
+}
+
+/** One free span of a day, local and UTC. */
+export interface FreeSpan {
+  readonly startLocal: string;
+  readonly endLocal: string;
+  readonly startUtc: string;
+  readonly endUtc: string;
+}
+
+/** The answer of `GET /employees/{id}/schedule/free-spans`. */
+export interface FreeSpans {
+  readonly date: string;
+  readonly timeZoneId: string;
+  readonly spans: readonly FreeSpan[];
+}
+
 /** The day of one employee as `GET /employees/{id}/schedule` returns it. */
 export interface DaySchedule {
   readonly date: string;
   readonly timeZoneId: string;
-  readonly source: string;
+  readonly source: DayScheduleSource;
   readonly blocks: readonly DayScheduleBlock[];
   readonly workOrders: readonly DayScheduleWorkOrder[];
 }
@@ -207,3 +252,29 @@ export interface WorkOrderFilterBody {
 }
 
 export type SearchWorkOrdersBody = GridRequestBody<WorkOrderFilterBody, WorkOrderSortColumn>;
+
+/** One change of the schedule tab: the target state of a work order. */
+export interface ScheduleChangeBody {
+  readonly workOrderId: string;
+  readonly rowVersion: number;
+  readonly assigneeId: string | null;
+  readonly plannedStartLocal: string | null;
+  readonly estimateMinutes: number;
+}
+
+export interface ApplyScheduleBody {
+  readonly changes: readonly ScheduleChangeBody[];
+}
+
+export interface ApplyScheduleResponse {
+  readonly workOrders: readonly { readonly id: string; readonly rowVersion: number }[];
+}
+
+/** The reasons of a rejected change, as the `422` carries them in `changes[].reason`. */
+export enum ScheduleChangeRejection {
+  NotEditable = 'notEditable',
+  AssigneeNotActive = 'assigneeNotActive',
+  StartOutOfRange = 'startOutOfRange',
+  OutsideShift = 'outsideShift',
+  SlotTaken = 'slotTaken',
+}

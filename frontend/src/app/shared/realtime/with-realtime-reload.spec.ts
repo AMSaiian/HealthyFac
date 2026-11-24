@@ -103,6 +103,24 @@ describe('withRealtimeReload', () => {
     expect(reload).not.toHaveBeenCalled();
   });
 
+  it('hint_WithTheWorkOrderIdOfTheStore_Reloads', async () => {
+    createStore([RealtimeTopic.WorkOrders], true);
+
+    hints$.next({ topic: RealtimeTopic.WorkOrders, workOrderId: 'case-1' });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('hint_WithAnotherWorkOrderId_DoesNotReload', async () => {
+    createStore([RealtimeTopic.WorkOrders], true);
+
+    hints$.next({ topic: RealtimeTopic.WorkOrders, workOrderId: 'other' });
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(reload).not.toHaveBeenCalled();
+  });
+
   it('hint_WhenTheStoreShowsNoScope_DoesNotReload', async () => {
     const store = createStore([RealtimeTopic.Cases], true);
     store.setScope(null);

@@ -1,4 +1,5 @@
 <hf-action-dialog
+  [hasGrid]="true"
   [title]="title()"
   [isSaveDisabled]="saveDisabledReason() !== null"
   [saveDisabledReason]="saveDisabledReason()"
@@ -12,6 +13,15 @@
   (cancelled)="store.cancel()"
 >
   @if (store.prefilledValue(); as initial) {
+    @if (store.isChangedRemotely()) {
+      <p-message
+        class="mb-2"
+        severity="warn"
+        icon="pi pi-exclamation-triangle"
+      >
+        {{ 'WORK_ORDERS.DRAWER.CHANGED' | translate }}
+      </p-message>
+    }
     @if (store.isViewMode() && store.isUpdate() && store.workOrder.hasValue()) {
       <div class="mb-2 flex items-center justify-between gap-2">
         <p-tag
@@ -35,6 +45,8 @@
       </div>
     }
     <p-tabs
+      class="flex min-h-0 flex-1 flex-col"
+      styleClass="flex min-h-0 flex-1 flex-col"
       [lazy]="true"
       [(value)]="tab"
     >
@@ -54,8 +66,15 @@
           >
         </p-tablist>
       }
-      <p-tabpanels>
-        <p-tabpanel [value]="DETAILS_TAB">
+      <p-tabpanels
+        class="flex min-h-0 flex-1 flex-col"
+        styleClass="flex min-h-0 flex-1 flex-col"
+      >
+        <p-tabpanel
+          class="flex min-h-0 flex-1 flex-col overflow-y-auto"
+          styleClass="flex min-h-0 flex-1 flex-col overflow-y-auto"
+          [value]="DETAILS_TAB"
+        >
           <ng-template #content>
             @if (store.isViewMode()) {
               <hf-work-order-details
@@ -64,6 +83,7 @@
                 [fileEntries]="store.fileEntries()"
                 [isFilesLoading]="store.lookup.isLoading()"
                 [descriptionLinks]="store.descriptionLinks()"
+                [assigneeName]="store.workOrder.hasValue() ? store.workOrder.value().assigneeName : null"
               />
             } @else {
               <hf-work-order-form
@@ -72,22 +92,42 @@
                 [isMachinesLoading]="store.machineLookup.isLoading()"
                 [fileEntries]="store.fileEntries()"
                 [isFilesLoading]="store.lookup.isLoading()"
-                [isEstimateReadOnly]="isEstimateReadOnly()"
+                [isEstimateReadOnly]="store.isEstimateReadOnly()"
+                [isScheduleShown]="store.isScheduleShown()"
+                [isScheduleReadOnly]="store.isScheduleReadOnly()"
+                [employees]="store.assigneeOptions()"
+                [isEmployeesLoading]="store.assigneeLookup.isLoading()"
+                [days]="store.days()"
+                [isDaysLoading]="store.isDaysLoading()"
+                [spans]="store.spans()"
+                [isSpansLoading]="store.isSpansLoading()"
+                [today]="store.today()"
                 (valueChange)="onValueChange($event)"
                 (validityChange)="onValidityChange($event)"
                 (uploadChosen)="onUpload($event)"
                 (pickRequested)="store.openPicker()"
                 (machineLookupRequested)="store.machineLookup.request($event)"
+                (employeeLookupRequested)="store.assigneeLookup.request($event)"
+                (daysRequested)="store.loadDays($event)"
+                (spansRequested)="store.loadSpans($event)"
               />
             }
           </ng-template>
         </p-tabpanel>
         @if (store.isUpdate() && store.isViewMode()) {
-          <p-tabpanel [value]="HISTORY_TAB">
+          <p-tabpanel
+            class="flex min-h-0 flex-1 flex-col"
+            styleClass="flex min-h-0 flex-1 flex-col"
+            [value]="HISTORY_TAB"
+          >
             <ng-template #content>
               <hf-work-order-history
-                [rows]="history()"
+                [rows]="historyRows()"
+                [totalCount]="historyTotal()"
+                [pageIndex]="store.historyPageIndex()"
                 [isLoading]="store.history.isLoading()"
+                (nextRequested)="onNextHistoryPage()"
+                (previousRequested)="store.previousHistoryPage()"
               />
             </ng-template>
           </p-tabpanel>

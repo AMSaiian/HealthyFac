@@ -46,4 +46,12 @@ public static class SlotRules
 
         return new DateTime(ticks, DateTimeKind.Utc);
     }
+
+    /// <summary>
+    /// Rounds an instant down to the previous point of <see cref="GridStep"/>. An instant on the grid stays as it is.
+    /// </summary>
+    /// <param name="instantUtc">The instant to round.</param>
+    /// <returns>The rounded instant with <see cref="DateTimeKind.Utc"/>.</returns>
+    public static DateTime RoundDownToGrid(DateTime instantUtc) =>
+        new(instantUtc.Ticks - instantUtc.Ticks % GridStep.Ticks, DateTimeKind.Utc);
 }

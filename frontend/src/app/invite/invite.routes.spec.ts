@@ -8,7 +8,7 @@ import { MessageService } from 'primeng/api';
 
 import { APP_CONFIG } from '@shared/config/app-config';
 import { authInterceptor } from '@shared/security/auth.interceptor';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { SessionEndedError } from '@shared/security/session-errors';
 
 import { InvitePage } from '@invite/invite-page/invite-page';
@@ -38,7 +38,7 @@ describe('invite routes', () => {
             primeUiLicenseKey: 'k',
           },
         },
-        { provide: AuthStore, useValue: { login, isAuthenticated, accessToken, email: () => 'me@healthyfac.test' } },
+        provideFakeAuthStore({ login, isAuthenticated, accessToken, email: () => 'me@healthyfac.test' }),
         { provide: MessageService, useValue: { add: vi.fn() } },
       ],
     });

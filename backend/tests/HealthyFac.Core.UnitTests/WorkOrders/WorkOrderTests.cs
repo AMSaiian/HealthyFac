@@ -131,7 +131,7 @@ public sealed class WorkOrderTests
 
         var act = () => workOrder.ChangeStatus(status);
 
-        act.Should().Throw<InvalidOperationException>(because: caseName);
+        act.Should().Throw<InvalidOperationException>(caseName);
         AssertCurrentIsNewest(workOrder, expectedRevision: 2);
     }
 
@@ -173,11 +173,75 @@ public sealed class WorkOrderTests
         workOrder.Files.Should().Equal(linksBefore);
     }
 
+    [Fact]
+    public void Create_Always_StoresTheEstimateInTheFirstRow()
+    {
+        var workOrder = WorkOrderTestData.CreateBacklog();
+
+        AssertCurrentIsNewest(workOrder, expectedRevision: 1);
+        workOrder.Current.Estimate.Should().Be(TimeSpan.FromHours(value: 1));
+    }
+
+    [Fact]
+    public void ChangeEstimate_WithAnotherValue_AddsRowWithCurrentStatusAssigneeAndStart()
+    {
+        var workOrder = WorkOrderTestData.CreateInProgress();
+
+        workOrder.ChangeEstimate(TimeSpan.FromHours(value: 2));
+
+        AssertCurrentIsNewest(workOrder, expectedRevision: 4);
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.InProgress);
+        workOrder.Current.AssigneeId.Should().Be(WorkOrderTestData.AssigneeId);
+        workOrder.Current.PlannedStartUtc.Should().Be(WorkOrderTestData.StartUtc);
+        workOrder.Current.Estimate.Should().Be(TimeSpan.FromHours(value: 2));
+    }
+
+    [Fact]
+    public void ChangeEstimate_WithTheSameValue_AddsNoRow()
+    {
+        var workOrder = WorkOrderTestData.CreateStaged();
+
+        workOrder.ChangeEstimate(TimeSpan.FromHours(value: 1));
+
+        AssertCurrentIsNewest(workOrder, expectedRevision: 2);
+    }
+
+    [Theory]
+    [MemberData(nameof(WorkOrderTestData.RescheduleCases), MemberType = typeof(WorkOrderTestData))]
+    public void Reschedule_WithEachCase_AddsAtMostOneRowWithAllNewValues(
+        string caseName,
+        WorkOrder workOrder,
+        WorkOrderSlot? slot,
+        TimeSpan estimate,
+        WorkOrderScheduleChange expectedChange,
+        int expectedRevision
+    )
+    {
+        var change = workOrder.Reschedule(slot, estimate);
+
+        change.Should().Be(expectedChange, caseName);
+        AssertCurrentIsNewest(workOrder, expectedRevision);
+        workOrder.Current.Estimate.Should().Be(estimate, caseName);
+    }
+
+    [Fact]
+    public void Reschedule_WithNewStartAndNewEstimate_AddsOneRowWithBoth()
+    {
+        var workOrder = WorkOrderTestData.CreateStaged();
+
+        workOrder.Reschedule(WorkOrderTestData.LaterSlot, TimeSpan.FromHours(value: 3));
+
+        AssertCurrentIsNewest(workOrder, expectedRevision: 3);
+        workOrder.Current.PlannedStartUtc.Should().Be(WorkOrderTestData.LaterStartUtc);
+        workOrder.Current.Estimate.Should().Be(TimeSpan.FromHours(value: 3));
+    }
+
     private static void AssertCurrentIsNewest(WorkOrder workOrder, int expectedRevision)
     {
         workOrder.CurrentRevision.Should().Be(expectedRevision);
         workOrder.History.Max(row => row.Revision).Should().Be(expectedRevision);
         workOrder.History.Should().HaveCount(expectedRevision);
         workOrder.Current.Revision.Should().Be(expectedRevision);
+        workOrder.Current.Estimate.Should().Be(workOrder.Estimate);
     }
 }

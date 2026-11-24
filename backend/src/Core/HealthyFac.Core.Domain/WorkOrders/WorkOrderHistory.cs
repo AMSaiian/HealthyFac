@@ -3,7 +3,7 @@ using HealthyFac.Shared.Domain.Entities;
 namespace HealthyFac.Core.Domain.WorkOrders;
 
 /// <summary>
-/// Represents one state of a work order: its status, assignee, and planned start. The row with the revision
+/// Represents one state of a work order: its status, assignee, planned start, and estimate. The row with the revision
 /// <see cref="WorkOrder.CurrentRevision"/> is the current state. A row never changes after it is created. The row
 /// stores no zone: the local start is a time in the zone of the company.
 /// </summary>
@@ -20,13 +20,15 @@ public class WorkOrderHistory : IEntity, IAuditable, ISoftDeletable
     /// The planned start as a time in the company zone, or <see langword="null"/>.
     /// </param>
     /// <param name="plannedStartUtc">The same start as a UTC instant, or <see langword="null"/>.</param>
+    /// <param name="estimate">The planned working time of the work order from this row on.</param>
     internal WorkOrderHistory(
         Guid workOrderId,
         int revision,
         WorkOrderStatus status,
         Guid? assigneeId,
         DateTime? plannedStartLocal,
-        DateTime? plannedStartUtc
+        DateTime? plannedStartUtc,
+        TimeSpan estimate
     )
     {
         WorkOrderId = workOrderId;
@@ -35,6 +37,7 @@ public class WorkOrderHistory : IEntity, IAuditable, ISoftDeletable
         AssigneeId = assigneeId;
         PlannedStartLocal = plannedStartLocal;
         PlannedStartUtc = plannedStartUtc;
+        Estimate = estimate;
     }
 
     public Guid Id { get; private set; } = Guid.CreateVersion7();
@@ -54,6 +57,8 @@ public class WorkOrderHistory : IEntity, IAuditable, ISoftDeletable
         get;
         private set => field = value is null ? null : DateTime.SpecifyKind(value.Value, DateTimeKind.Utc);
     }
+
+    public TimeSpan Estimate { get; private set; }
 
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; private set; }

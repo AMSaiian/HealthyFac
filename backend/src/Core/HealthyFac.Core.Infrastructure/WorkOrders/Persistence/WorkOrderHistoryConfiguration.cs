@@ -16,6 +16,7 @@ public class WorkOrderHistoryConfiguration : IEntityTypeConfiguration<WorkOrderH
 {
     private const string LocalColumnType = "timestamp without time zone";
     private const string UtcColumnType = "timestamp with time zone";
+    private const string IntervalColumnType = "interval";
 
     public void Configure(EntityTypeBuilder<WorkOrderHistory> builder)
     {
@@ -31,6 +32,10 @@ public class WorkOrderHistoryConfiguration : IEntityTypeConfiguration<WorkOrderH
 
         builder.Property(row => row.PlannedStartUtc)
             .HasColumnType(UtcColumnType);
+
+        builder.Property(row => row.Estimate)
+            .HasColumnType(IntervalColumnType)
+            .IsRequired();
 
         builder.HasAlternateKey(row => new { row.WorkOrderId, row.Revision })
             .HasName(WorkOrderIndexNames.HistoryRevision);

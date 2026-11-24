@@ -6,7 +6,7 @@ import { MessageService } from 'primeng/api';
 import { of, Subject, throwError } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { type Machine, MachineState } from '@machines/machine';
 import { MachineActionType } from '@machines/machine-actions';
 import { MachinesApi } from '@machines/machines-api';
@@ -49,7 +49,7 @@ function setup(overrides: Partial<Setup['api']> = {}): Setup {
       MachineStateStore,
       { provide: MachinesApi, useValue: api },
       { provide: MessageService, useValue: messages },
-      { provide: AuthStore, useValue: { hasPermission: () => true } },
+      provideFakeAuthStore({ hasPermission: () => true }),
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });

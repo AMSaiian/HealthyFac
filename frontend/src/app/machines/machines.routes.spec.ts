@@ -20,7 +20,7 @@ import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { CompanyStore } from '@shared/company/company.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { MachineState } from '@machines/machine';
 import { MACHINES_ROUTES } from '@machines/machines.routes';
 import { MetricsPage } from '@machines/metrics/metrics-page/metrics-page';
@@ -102,7 +102,7 @@ function setup(isConfirmed: boolean): { http: HttpTestingController; confirm: Re
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: () => true } },
+      provideFakeAuthStore({ hasPermission: () => true }),
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
       { provide: ConfirmationService, useValue: { confirm } },

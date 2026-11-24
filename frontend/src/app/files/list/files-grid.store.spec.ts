@@ -9,7 +9,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { FileDownloader } from '@shared/files/file-downloader';
 import { LookupsApi } from '@shared/lookups/lookups-api';
 import { FilesLinksApi } from '@shared/files/files-links-api';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -101,10 +101,7 @@ describe('FilesGridStore', () => {
           },
         },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
-        {
-          provide: AuthStore,
-          useValue: { hasPermission: (permission: string) => (options.permissions ?? []).includes(permission) },
-        },
+        provideFakeAuthStore({ permissions: options.permissions ?? [] }),
         {
           provide: CLOCK,
           useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },

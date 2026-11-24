@@ -8,15 +8,40 @@
     [value]="model().date"
     [min]="minDate()"
     [disabled]="isEdit()"
+    [disabledDates]="disabledDates()"
+    [dateTemplate]="dayCell"
     (valueChange)="setDate($event)"
+    (monthChange)="monthChange.emit($event)"
   />
+  <ng-template
+    #dayCell
+    let-cell
+  >
+    <span
+      class="flex size-full items-center justify-center rounded-full"
+      [class.hf-day-busy]="isTaken(cell)"
+      [pTooltip]="isTaken(cell) ? ('SHIFTS.DIALOG.HAS_OVERRIDE' | translate) : ''"
+      >{{ cell.day }}</span
+    >
+  </ng-template>
 </div>
 <p-divider />
-<hf-block-list-editor
-  [label]="'SHIFTS.DIALOG.BLOCKS' | translate"
-  [blocks]="model().blocks"
-  (blocksChange)="setBlocks($event)"
-/>
+@if (showSkeleton()) {
+  <p-skeleton height="4rem" />
+} @else {
+  <hf-block-list-editor
+    [label]="'SHIFTS.DIALOG.BLOCKS' | translate"
+    [blocks]="model().blocks"
+    [storedBlocks]="storedBlocks()"
+    [date]="model().date"
+    [now]="now()"
+    [timeZoneId]="timeZoneId()"
+    (blocksChange)="setBlocks($event)"
+  />
+}
+@if (isDateTaken()) {
+  <small class="text-red-500">{{ 'SHIFTS.ERRORS.OVERRIDE_EXISTS' | translate }}</small>
+}
 @for (message of messages(); track message) {
   <small class="text-red-500">{{ message | translate }}</small>
 }

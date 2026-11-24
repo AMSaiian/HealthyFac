@@ -9,7 +9,7 @@ import { of } from 'rxjs';
 import { ActionStore } from '@shared/actions/action.store';
 import { DetailsMode } from '@shared/forms/with-details-mode';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 
 import type { FileGridItem } from '@files/file';
@@ -58,10 +58,7 @@ describe('FileEditStore', () => {
         provideHttpClientTesting(),
         { provide: ActionStore, useValue: actions },
         { provide: MessageService, useValue: messages },
-        {
-          provide: AuthStore,
-          useValue: { hasPermission: (permission: Permission) => permissions.includes(permission) },
-        },
+        provideFakeAuthStore({ permissions }),
         { provide: RichTextImageLinks, useValue: { resolve: () => of(new Map<string, string>()) } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],

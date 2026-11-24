@@ -14,6 +14,8 @@ export function toFormValue(draft: WorkOrderDraft): WorkOrderFormValue {
     machineId: draft.machineId,
     estimateMinutes: draft.estimateMinutes,
     fileIds: [],
+    assigneeId: null,
+    start: null,
   };
 }
 

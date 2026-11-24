@@ -18,16 +18,27 @@ public static class GatewayLoggerFactory
     /// <summary>
     /// Routes every log entry of the gateway host into <paramref name="logs"/> with the levels of the gateway
     /// configuration. <c>AddSerilog</c> gives each host category the static logger that exists when the category is
-    /// created, so the host factory is replaced and <see cref="Log.Logger"/> is set to the same logger.
+    /// created, so the host factory is replaced and <see cref="Log.Logger"/> is set to the same logger. The request
+    /// log middleware reads the Serilog logger of the host, so the same logger is also its registration.
     /// </summary>
-    public static void CaptureHostLogs(IServiceCollection services, LogTextCapture logs) =>
+    public static void CaptureHostLogs(IServiceCollection services, LogTextCapture logs)
+    {
+        Logger? logger = null;
+
+        Logger GetLogger(IServiceProvider provider)
+        {
+            return logger ??= Create(provider.GetRequiredService<IConfiguration>(), logs);
+        }
+
+        services.AddSingleton<Serilog.ILogger>(GetLogger);
         services.AddSingleton<ILoggerFactory>(provider =>
         {
-            var logger = Create(provider.GetRequiredService<IConfiguration>(), logs);
-            Log.Logger = logger;
+            var hostLogger = GetLogger(provider);
+            Log.Logger = hostLogger;
 
-            return new SerilogLoggerFactory(logger, dispose: true);
+            return new SerilogLoggerFactory(hostLogger, dispose: true);
         });
+    }
 
     /// <summary>
     /// Waits until a captured line matches <paramref name="isMatch"/> or the timeout ends. The request log line

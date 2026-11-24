@@ -1122,6 +1122,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
 
+                    b.Property<TimeSpan>("Estimate")
+                        .HasColumnType("interval")
+                        .HasColumnName("estimate");
+
                     b.Property<DateTime?>("PlannedStartLocal")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("planned_start_local");

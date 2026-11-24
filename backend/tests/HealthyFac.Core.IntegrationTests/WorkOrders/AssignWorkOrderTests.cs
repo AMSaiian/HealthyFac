@@ -1,5 +1,4 @@
 using HealthyFac.Core.Application.Authorization;
-using HealthyFac.Core.Application.Shifts;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
@@ -30,6 +29,39 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
         workOrder.CurrentRevision.Should().Be(expected: 2);
         workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
         workOrder.Current.AssigneeId.Should().Be(tenant.EmployeeId);
+    }
+
+    [Fact]
+    public async Task AssignWorkOrder_ToTheOnCallBlockOfToday_AddsStagedRow()
+    {
+        var tenant = await _fixture.ArrangeShiftTenantAsync();
+        _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "22:02"));
+        await _fixture.SetOverrideAsync(tenant, ShiftTestData.Today, ShiftTestData.Blocks("22:05-23:55"));
+        var created = await _fixture.CreateWorkOrderAsync(
+            tenant.CompanyId,
+            tenant.IdentityUserId,
+            WorkOrderTestData.NewRequest(tenant.CompanyId, AccessScope.Company, estimateMinutes: 30));
+
+        await AssignOnAsync(tenant, created.Id, ShiftTestData.Today, time: "22:05");
+
+        var workOrder = await _fixture.LoadWorkOrderAsync(created.Id);
+
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
+    }
+
+    [Fact]
+    public async Task AssignWorkOrder_AcrossTheJoinOfTwoTouchingBlocks_AddsStagedRow()
+    {
+        var tenant = await ArrangeTenantAsync();
+        await _fixture.SetOverrideAsync(
+            tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks("08:00-12:00", "12:00-13:00"));
+        var workOrderId = await CreateBacklogAsync(tenant);
+
+        await AssignAsync(tenant, workOrderId, time: "11:30");
+
+        var workOrder = await _fixture.LoadWorkOrderAsync(workOrderId);
+
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
     }
 
     [Fact]
@@ -91,7 +123,7 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
 
         var act = () => AssignOnAsync(tenant, workOrderId, ShiftTestData.Today.AddDays(dayOffset), time);
 
-        await act.Should().ThrowAsync<AppValidationException>(because: caseName);
+        await act.Should().ThrowAsync<AppValidationException>(caseName);
     }
 
     [Fact]
@@ -211,6 +243,66 @@ public sealed class AssignWorkOrderTests(CoreDatabaseFixture fixture)
             });
 
         await act.Should().ThrowAsync<ConflictException>();
+    }
+
+    [Fact]
+    public async Task UnassignWorkOrder_OfACompletedWorkOrder_Returns422AndKeepsTheStatusAndTheHistory()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var workOrderId = await CreateCompletedAsync(tenant);
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+        var rowsBefore = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        var act = () => RunAsync(
+            tenant,
+            new UnassignWorkOrderRequest { CompanyId = tenant.CompanyId, Id = workOrderId, RowVersion = rowVersion });
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        var workOrder = await _fixture.LoadWorkOrderAsync(workOrderId);
+        var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        workOrder.Current.Status.Should().Be(WorkOrderStatus.Completed);
+        rowsAfter.Should().Be(rowsBefore);
+    }
+
+    [Fact]
+    public async Task MoveWorkOrder_OfACompletedWorkOrder_Returns422AndKeepsTheHistory()
+    {
+        var tenant = await ArrangeTenantAsync();
+        var workOrderId = await CreateCompletedAsync(tenant);
+        var rowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+        var rowsBefore = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        var act = () => RunAsync(
+            tenant,
+            new MoveWorkOrderRequest
+            {
+                CompanyId = tenant.CompanyId,
+                Id = workOrderId,
+                PlannedStartLocal = ShiftTestData.LocalStart(ShiftTestData.InTwoDays, WorkOrderTestData.NextTime),
+                RowVersion = rowVersion,
+            });
+
+        await act.Should()
+            .ThrowAsync<UnprocessableException>()
+            .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+        var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
+
+        rowsAfter.Should().Be(rowsBefore);
+    }
+
+    private async Task<Guid> CreateCompletedAsync(ShiftTenant tenant)
+    {
+        var workOrderId = await CreateBacklogAsync(tenant);
+        await AssignAsync(tenant, workOrderId, WorkOrderTestData.ScheduledTime);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, workOrderId, WorkOrderStatus.InProgress);
+        await _fixture.ChangeStatusAsync(
+            tenant.CompanyId, tenant.IdentityUserId, workOrderId, WorkOrderStatus.Completed);
+
+        return workOrderId;
     }
 
     private async Task<ShiftTenant> ArrangeTenantAsync()

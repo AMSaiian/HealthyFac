@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Core.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20261119041335_Initial")]
+    [Migration("20261122183014_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1124,6 +1124,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("deleted_by");
+
+                    b.Property<TimeSpan>("Estimate")
+                        .HasColumnType("interval")
+                        .HasColumnName("estimate");
 
                     b.Property<DateTime?>("PlannedStartLocal")
                         .HasColumnType("timestamp without time zone")

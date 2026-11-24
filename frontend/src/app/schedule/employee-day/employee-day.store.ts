@@ -10,12 +10,13 @@ import { EmployeeStore } from '@shared/employee/employee.store';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
 import type { ScheduleRow } from '@shared/schedule/schedule-row';
 import { CLOCK } from '@shared/time/clock';
+import { minuteTicker, todayOf } from '@shared/time/clock-ticks';
 import type { Temporal } from '@shared/time/temporal';
 
 import type { DaySchedule } from '@work-orders/work-order';
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 import { ScheduleApi } from '@schedule/schedule-api';
-import { followToday, minuteTicker, plainDateOrNull, todayOf, toRow } from '@schedule/schedule-time';
+import { followToday, plainDateOrNull, toRow } from '@schedule/schedule-time';
 
 import { RealtimeTopic } from '@shared/realtime/realtime';
 import { withRealtimeReload } from '@shared/realtime/with-realtime-reload';

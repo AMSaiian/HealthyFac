@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal, viewChild } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
+import { Message } from 'primeng/message';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
@@ -30,6 +31,7 @@ const HISTORY_TAB = 'history';
     ButtonDirective,
     FilePickerDialog,
     LoadingSpinner,
+    Message,
     Tab,
     TabList,
     TabPanel,
@@ -84,12 +86,25 @@ export class WorkOrderDrawerHost {
     }
     return this.hasNoChanges() ? 'WORK_ORDERS.FORM.NO_CHANGES' : null;
   });
-  protected readonly isEstimateReadOnly = computed(() => this.store.isUpdate() && !this.store.canManage());
-  protected readonly history = computed(() => (this.store.history.hasValue() ? this.store.history.value() : []));
+  protected readonly history = computed(() => (this.store.history.hasValue() ? this.store.history.value() : null));
+  protected readonly historyRows = computed(() => this.history()?.items ?? []);
+  protected readonly historyTotal = computed(() => this.history()?.totalCount ?? 0);
+
+  protected onNextHistoryPage(): void {
+    const nextAfter = this.history()?.nextAfter ?? null;
+    if (nextAfter !== null) {
+      this.store.nextHistoryPage(nextAfter);
+    }
+  }
 
   constructor() {
     effect(() => {
       this.store.start(this.action());
+    });
+    effect(() => {
+      this.store.setHasUnsavedEdits(
+        this.store.isUpdate() && this.store.isEditMode() && this._current() !== null && !this.hasNoChanges(),
+      );
     });
     effect(() => {
       if (this.tab() === HISTORY_TAB) {

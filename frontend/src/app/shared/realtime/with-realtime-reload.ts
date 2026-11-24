@@ -10,13 +10,13 @@ import { RealtimeConnection } from '@shared/realtime/realtime-connection';
 export const REALTIME_RELOAD_DEBOUNCE_MILLISECONDS = 1000;
 
 function matchesScope(hint: RealtimeHint, scope: string | null): boolean {
-  return scope !== null && [hint.caseId, hint.attemptId, hint.machineId].includes(scope);
+  return scope !== null && [hint.caseId, hint.attemptId, hint.machineId, hint.workOrderId].includes(scope);
 }
 
 /**
  * Reloads a store when a hint of one of the topics arrives (once, 1 second after the last hint of a burst), and once
  * after each reconnect of the real-time connection, because the pages missed the hints of the gap. With `scopeId`, a
- * hint counts only when its `caseId`, `attemptId`, or `machineId` equals the scope that the store shows now. The
+ * hint counts only when its `caseId`, `attemptId`, `machineId`, or `workOrderId` equals the scope that the store shows now. The
  * subscription ends with the store. A hint never starts the refresh cooldown of the refresh button: `reload` is the
  * method that the button calls after its own checks, never `startRefreshCooldown`.
  *

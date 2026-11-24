@@ -1,3 +1,4 @@
+using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Shared.Application.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
@@ -48,5 +49,48 @@ public static class WorkOrderPersistence
         /// <param name="previousRevision">The revision before the change.</param>
         public void AddNewHistoryRows(WorkOrder workOrder, int previousRevision) =>
             dbContext.WorkOrderHistories.AddRange(workOrder.History.Where(row => row.Revision > previousRevision));
+
+        /// <summary>
+        /// Builds the notification data of a schedule change: the old and the new assignee with their identity users.
+        /// </summary>
+        /// <param name="workOrder">The changed work order.</param>
+        /// <param name="scheduleChange">The kind of change that <see cref="WorkOrder.Reschedule"/> returned.</param>
+        /// <param name="oldAssigneeId">The assignee before the change.</param>
+        /// <param name="slot">The new slot, or <see langword="null"/> for an unassign.</param>
+        /// <param name="cancellationToken">Cancels the queries.</param>
+        /// <returns>The data, or <see langword="null"/> when the change moved nothing.</returns>
+        public async Task<WorkOrderAssignmentChange?> BuildAssignmentChangeAsync(
+            WorkOrder workOrder,
+            WorkOrderScheduleChange scheduleChange,
+            Guid? oldAssigneeId,
+            WorkOrderSlot? slot,
+            CancellationToken cancellationToken
+        )
+        {
+            if (scheduleChange is not (WorkOrderScheduleChange.Assign
+                or WorkOrderScheduleChange.Move
+                or WorkOrderScheduleChange.Unassign))
+            {
+                return null;
+            }
+
+            var oldAssigneeUserId = oldAssigneeId is { } oldId
+                ? await dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
+                : null;
+            var newAssigneeUserId = slot is not null
+                ? await dbContext.FindIdentityUserIdAsync(slot.AssigneeId, cancellationToken)
+                : null;
+
+            return new WorkOrderAssignmentChange
+            {
+                WorkOrderId = workOrder.Id,
+                Title = workOrder.Title,
+                OldAssigneeId = oldAssigneeId,
+                OldAssigneeUserId = oldAssigneeUserId,
+                NewAssigneeId = slot?.AssigneeId,
+                NewAssigneeUserId = newAssigneeUserId,
+                PlannedStartLocal = slot?.PlannedStartLocal,
+            };
+        }
     }
 }

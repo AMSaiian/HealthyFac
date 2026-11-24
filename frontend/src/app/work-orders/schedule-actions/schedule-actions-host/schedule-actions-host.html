@@ -12,13 +12,18 @@
         <hf-assign-dialog
           [initialValue]="initial"
           [employees]="store.employeeOptions()"
-          [isEmployeesLoading]="store.employeeLookup.isLoading()"
-          [suggestion]="store.suggestion()"
-          [hasNoFreeStart]="store.hasNoFreeStart()"
+          [isEmployeesLoading]="store.assigneeLookup.isLoading()"
+          [estimateMinutes]="store.estimateMinutes()"
+          [days]="store.days()"
+          [isDaysLoading]="store.isDaysLoading()"
+          [spans]="store.spans()"
+          [isSpansLoading]="store.isSpansLoading()"
+          [today]="store.today()"
           (valueChange)="onValue($event)"
           (validityChange)="onValidity($event)"
-          (selectionChange)="onSelection($event)"
-          (employeeLookupRequested)="store.employeeLookup.request($event)"
+          (employeeLookupRequested)="store.assigneeLookup.request($event)"
+          (daysRequested)="store.loadDays($event)"
+          (spansRequested)="store.loadSpans($event)"
         />
       } @else {
         <div class="flex min-h-32">
