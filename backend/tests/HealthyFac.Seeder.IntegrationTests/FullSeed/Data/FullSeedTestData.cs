@@ -2,6 +2,7 @@ namespace HealthyFac.Seeder.IntegrationTests.FullSeed.Data;
 
 public static class FullSeedTestData
 {
+    public const int LaterAnchorDays = 7;
     public const int EmployeeCount = 7;
     public const int OpenInviteCount = 2;
     public const int TemplateCount = 7;

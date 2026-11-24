@@ -1,3 +1,4 @@
+using HealthyFac.MachineSimulator.Scenarios.Curves;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 
 namespace HealthyFac.MachineSimulator.UnitTests.Scenarios.Data;
@@ -20,15 +21,25 @@ public static class CncTurningCenterScenarioTestData
         };
 
     /// <summary>
-    /// The drain at progress 0.99: the module, the key, the seconds of the run, the curve value at the progress, and
-    /// whether the curve value is the upper bound (a rising curve) or the lower bound (a falling curve).
+    /// The drain at progress 0.99: the module, the key, the seconds of the run, and the lower and the upper bound of
+    /// the value. A rising curve has the curve value plus the noise share as the upper bound, a falling curve has the
+    /// curve value minus the noise share as the lower bound.
     /// </summary>
-    public static TheoryData<string, ModuleName, string, int, double, bool> ClampedValues =>
+    public static TheoryData<string, ModuleName, string, int, double, double> ClampedValues =>
         new()
         {
-            { "PartChangeSpindleTemperature", ModuleName.Spindle, "spindle.temperature", 45, 69.75, true },
-            { "CuttingSpindleTemperature", ModuleName.Spindle, "spindle.temperature", 10, 69.75, true },
-            { "PartChangeHydraulicPressure", ModuleName.Hydraulics, "hydraulic.pressure", 45, 25.15, false },
+            {
+                "PartChangeSpindleTemperature", ModuleName.Spindle, "spindle.temperature", 45,
+                double.NegativeInfinity, 69.75 * (1 + ValueNoise.MaxShare)
+            },
+            {
+                "CuttingSpindleTemperature", ModuleName.Spindle, "spindle.temperature", 10,
+                double.NegativeInfinity, 69.75 * (1 + ValueNoise.MaxShare)
+            },
+            {
+                "PartChangeHydraulicPressure", ModuleName.Hydraulics, "hydraulic.pressure", 45,
+                25.15 * (1 - ValueNoise.MaxShare), double.PositiveInfinity
+            },
         };
 
     /// <summary>The drain progress, a code, and whether the spindle sends it.</summary>

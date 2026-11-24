@@ -13,6 +13,9 @@ public static class TelemetryHistorySeedTestData
     public const string ResetTelemetryHint = "--reset --telemetry";
     public const string SpindleSpeed = "spindle.speed";
     public const string Drift = "drift";
+    public const string CompressorStepMetric = "element.outlet_temperature";
+    public const string DatabaseSizeSql = "SELECT pg_database_size(current_database())";
+    public const double BytesPerMegabyte = 1024 * 1024;
     public const string SilentMachine = "silentMachine";
     public const string UnknownMode = "unknownMode";
     public const string Alarm = "alarm";

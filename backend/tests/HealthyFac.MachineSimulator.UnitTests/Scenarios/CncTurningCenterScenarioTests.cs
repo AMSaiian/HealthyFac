@@ -128,8 +128,8 @@ public sealed class CncTurningCenterScenarioTests
         ModuleName module,
         string key,
         int runSeconds,
-        double curveValue,
-        bool isUpperBound
+        double lowerBound,
+        double upperBound
     )
     {
         var modules = ScenarioContextFactory.ModulesWith(_scenario, module, ModuleMode.Draining, progress: 0.99);
@@ -138,14 +138,6 @@ public sealed class CncTurningCenterScenarioTests
         var sample = _scenario.Sample(context);
 
         var value = (double)sample.Values[key];
-        var noise = curveValue * ValueNoise.MaxShare;
-        if (isUpperBound)
-        {
-            value.Should().BeLessThanOrEqualTo(curveValue + noise, caseName);
-        }
-        else
-        {
-            value.Should().BeGreaterThanOrEqualTo(curveValue - noise, caseName);
-        }
+        value.Should().BeInRange(lowerBound, upperBound, caseName);
     }
 }

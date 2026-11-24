@@ -75,6 +75,7 @@ public static class HistoryAssertions
         episodes.Should()
             .Contain(episode => episode.MachineId == compressor
                 && episode.Rule == TelemetryHistorySeedTestData.Drift
+                && episode.MetricKey == TelemetryHistorySeedTestData.CompressorStepMetric
                 && episode.OpenedAt > At(expectation.CompressorStepFrom)
                 && episode.OpenedAt < stepEnd
                 && episode.ResolvedAt > stepEnd

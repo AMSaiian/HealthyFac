@@ -45,7 +45,7 @@ An entry of an ingest set holds the file (`key`, `path`, `uploadedAt`, `uploaded
 *   The job checks every file and every request first. A failure names the file, the item, and the rule, and the job writes nothing.
 *   The last entry of `ingest/set-2.json` is the completion marker: its machine draft exists in Core only when the whole timeline ran. No event may come after it.
 *   A second run of the job on a complete seed prints "The demo seed is complete." and changes nothing. A seed that stopped halfway reads as incomplete: the job exits with code 1 and prints the reset command.
-*   `docker compose stop core telemetry document insights auth`, then `docker compose run --rm seeder --reset`, empties the seed data and seeds again with the dates of the new day. The reset deletes the marker draft first, then the Keycloak organization with its members, then every blob, then one `TRUNCATE` for each database. The roles of Core and the units of Telemetry stay.
+*   `docker compose stop core telemetry document insights auth`, then `docker compose run --rm seeder --reset`, empties the seed data and seeds again with the dates of the new day. The reset deletes the mode-2 marker message first, then the marker draft, then the Keycloak organization with its members, then every blob, then one `TRUNCATE` for each database. The roles of Core and the units of Telemetry stay.
 
 ## Telemetry Mode
 
@@ -62,9 +62,15 @@ The job has 2 modes. Mode 1 is the job without an argument: it seeds the data ab
 *   **Event kinds:** `drain` (a module drains to a failure from `from`), `step` (adds `offset` to one metric from `from` until `until`), `gap` (the machine sends no message), and `override` (replaces values and status codes).
 *   **Committed events:** 5 events, each with 1 resolved case: the drain of the lathe spindle with its maintenance, the drain of the pump bearings with its maintenance, a step of the compressor `element.outlet_temperature`, a gap of the pump, and an override of the lathe `spindle.mode` that makes an unknown mode. The open fake case of `cases.json` stays the only open case.
 *   **Marker:** the received message `markerMessageId` is the anchor sample of the last machine. It exists only when the whole history ran.
-*   **Run states:** a complete seed in the mode of the run prints "The demo seed is complete." and exits 0. Mode 1 also accepts a mode-2 seed. Mode 2 on a mode-1 seed, and any run on a stopped seed, exit 1 and print the reset command.
+*   **Run states:**
+    *   Empty data: each mode seeds and exits 0.
+    *   The mode-1 marker without the mode-2 marker (live messages do not count; also a mode-2 run that stopped inside the history): mode 1 prints "The demo seed is complete." and exits 0. Mode 2 prints that the seed has no complete telemetry history, names `docker compose run --rm seeder --reset --telemetry`, and exits 1.
+    *   Both markers: both modes print "The demo seed is complete." and exit 0.
+    *   A company without the mode-1 marker: both modes print that the seed is incomplete with the reset command of the mode and exit 1.
 *   **Measured:** the committed seed in mode 2 runs 3 min 52 s in the test, and the Telemetry database holds 1418 MB.
 *   **Live messages:** the simulator continues from the last seeded counters.
+*   **Short threshold episodes:** each drain crosses its warning limits slowly, so the threshold rule opens and resolves many short episodes near a limit (the lathe drain case holds about 94 signals, the pump drain case about 38). Live machines do the same, and the seed keeps it.
+*   **Triage runs:** the Insights worker ends the triage run of each resolved history case as `skipped` (reason `caseNotOpen`) with no model call.
 
 ## Explicit Seeder Tests
 

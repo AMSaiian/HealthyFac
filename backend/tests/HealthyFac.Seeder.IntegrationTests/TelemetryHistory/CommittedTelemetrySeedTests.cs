@@ -9,9 +9,6 @@ namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 [Collection(SeederCollection.Name)]
 public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
 {
-    private const string DatabaseSizeSql = "SELECT pg_database_size(current_database())";
-    private const double BytesPerMegabyte = 1024 * 1024;
-
     private readonly SeederFixture _fixture = fixture;
 
     [Fact(Explicit = true)]
@@ -31,12 +28,14 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
         var (cases, signals) = await _fixture.LoadCasesAsync();
         var hasMarker = await _fixture.HasReceivedMessageAsync(SeedCompletionTestData.MarkerMessageId);
         var size = await ReadDatabaseSizeAsync();
+        var step = await _fixture.ReadEvaluationStepAsync();
+
         TestContext.Current.SendDiagnosticMessage(
-            $"Measured: elapsed {stopwatch.Elapsed:g}, telemetry database {size / BytesPerMegabyte:F0} MB");
+            $"Measured: elapsed {stopwatch.Elapsed:g}, "
+            + $"telemetry database {size / TelemetryHistorySeedTestData.BytesPerMegabyte:F0} MB");
         job.ExitCode.Should().Be(expected: 0);
         hasMarker.Should().BeTrue();
         HistoryAssertions.AssertSamples(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, counts, range);
-        var step = await _fixture.ReadEvaluationStepAsync();
         HistoryAssertions.AssertEpisodes(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, episodes, step);
         HistoryAssertions.AssertCases(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, cases, signals);
     }
@@ -49,7 +48,7 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
         }.ConnectionString;
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
-        await using var command = new NpgsqlCommand(DatabaseSizeSql, connection);
+        await using var command = new NpgsqlCommand(TelemetryHistorySeedTestData.DatabaseSizeSql, connection);
 
         return (long)(await command.ExecuteScalarAsync())!;
     }
