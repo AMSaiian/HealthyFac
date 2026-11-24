@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Testing.Features;
@@ -63,6 +64,24 @@ public sealed class StoreProposedDefinitionDraftsTests(TelemetryDatabaseFixture 
         metrics.Should().HaveCount(expected: 1);
         statuses.Should().HaveCount(expected: 1);
         entries.Should().HaveCount(expected: 1);
+    }
+
+    [Fact]
+    public async Task Store_Twice_StoresOneProposalOfTheAttempt()
+    {
+        var message = ProposalBuilder.Message(DefinitionDraftTestData.CompanyId, ProposalBuilder.Machine());
+        await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+
+        var proposal = proposals.Should().ContainSingle().Subject;
+        proposal.Id.Should().Be(DefinitionDraftTestData.AttemptId);
+        proposal.Source.Should().Be(DraftSource.Ingest);
+        proposal.FileId.Should().Be(DefinitionDraftTestData.FileId);
+        metrics.Should().ContainSingle().Which.ProposalId.Should().Be(proposal.Id);
     }
 
     [Fact]

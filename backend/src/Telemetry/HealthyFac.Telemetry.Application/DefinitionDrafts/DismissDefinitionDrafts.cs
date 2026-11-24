@@ -101,21 +101,21 @@ public sealed class DismissDefinitionDraftsRequestHandler(ITelemetryDbContext db
         var metricDrafts = await _dbContext.MetricDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.AttemptId == request.AttemptId))
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId))
             .Where(OpenDefinitionDrafts.Predicate<MetricDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
         var statusDrafts = await _dbContext.StatusDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.AttemptId == request.AttemptId))
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId))
             .Where(OpenDefinitionDrafts.Predicate<StatusDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
         var phaseDrafts = await _dbContext.OperatingPhaseDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.AttemptId == request.AttemptId))
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId))
             .Where(OpenDefinitionDrafts.Predicate<OperatingPhaseDraft>())
             .ToListAsync(cancellationToken);
 

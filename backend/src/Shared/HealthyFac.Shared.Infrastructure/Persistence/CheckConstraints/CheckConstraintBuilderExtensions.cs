@@ -86,6 +86,20 @@ public static class CheckConstraintBuilderExtensions
         builder.AddCheck(property, CheckConstraintConstants.Names.NotEmpty, CheckConstraintSql.NotEmptyGuid);
 
     /// <summary>
+    /// Rejects <see cref="Guid.Empty"/> on a nullable column. A <see langword="null"/> value passes.
+    /// </summary>
+    /// <param name="builder">The entity builder to extend.</param>
+    /// <param name="property">The nullable GUID property to check.</param>
+    /// <typeparam name="TEntity">The entity type.</typeparam>
+    /// <returns>The <see cref="EntityTypeBuilder{TEntity}"/> instance for chained configuration.</returns>
+    public static EntityTypeBuilder<TEntity> HasNotEmptyGuidCheck<TEntity>(
+        this EntityTypeBuilder<TEntity> builder,
+        Expression<Func<TEntity, Guid?>> property
+    )
+        where TEntity : class =>
+        builder.AddCheck(property, CheckConstraintConstants.Names.NotEmpty, CheckConstraintSql.NotEmptyGuid);
+
+    /// <summary>
     /// Rejects any value that is not a declared member of the enumeration. Adding or renaming a member
     /// changes the constraint, so it needs a migration.
     /// </summary>

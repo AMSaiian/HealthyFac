@@ -15,6 +15,32 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 .Annotation("Npgsql:CollationDefinition:case_insensitive", "und-u-ks-level2,und-u-ks-level2,icu,False");
 
             migrationBuilder.CreateTable(
+                name: "draft_proposals",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: false),
+                    attempt_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    file_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    chat_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    chat_message_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_draft_proposals", x => x.id);
+                    table.CheckConstraint("ck_draft_proposal_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_draft_proposal_source_allowed", "\"source\" IN ('chat', 'ingest')");
+                    table.CheckConstraint("ck_draft_proposals_source_fields", "(source = 'ingest' AND attempt_id IS NOT NULL AND file_id IS NOT NULL AND chat_id IS NULL AND chat_message_id IS NULL) OR (source = 'chat' AND chat_id IS NOT NULL AND chat_message_id IS NOT NULL AND attempt_id IS NULL AND file_id IS NULL)");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "inbox_messages",
                 columns: table => new
                 {
@@ -62,98 +88,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     table.CheckConstraint("ck_machine_registration_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
                     table.CheckConstraint("ck_machine_registration_gateway_id_length", "char_length(\"gateway_id\") BETWEEN 16 AND 16");
                     table.CheckConstraint("ck_machine_registration_state_allowed", "\"state\" IN ('inMaintenance', 'operational', 'outOfService')");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "metric_definition_drafts",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    attempt_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    proposal_entry_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    target_machine_draft_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    state = table.Column<string>(type: "character varying(14)", maxLength: 14, nullable: false),
-                    source_location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true, collation: "case_insensitive"),
-                    key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
-                    description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
-                    value_kind = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: true, collation: "case_insensitive"),
-                    quantity_kind_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
-                    unit_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
-                    min = table.Column<double>(type: "double precision", nullable: true),
-                    max = table.Column<double>(type: "double precision", nullable: true),
-                    states = table.Column<string[]>(type: "text[]", nullable: true),
-                    warning_low = table.Column<double>(type: "double precision", nullable: true),
-                    warning_high = table.Column<double>(type: "double precision", nullable: true),
-                    alarm_low = table.Column<double>(type: "double precision", nullable: true),
-                    alarm_high = table.Column<double>(type: "double precision", nullable: true),
-                    behavior = table.Column<string>(type: "character varying(7)", maxLength: 7, nullable: true, collation: "case_insensitive"),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
-                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
-                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_metric_definition_drafts", x => x.id);
-                    table.CheckConstraint("ck_metric_definition_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
-                    table.CheckConstraint("ck_metric_definition_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
-                    table.CheckConstraint("ck_metric_definition_draft_key_length", "char_length(\"key\") BETWEEN 1 AND 100");
-                    table.CheckConstraint("ck_metric_definition_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
-                    table.CheckConstraint("ck_metric_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
-                    table.CheckConstraint("ck_metric_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
-                    table.CheckConstraint("ck_metric_definition_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
-                    table.CheckConstraint("ck_metric_definition_drafts_behavior_allowed", "\"behavior\" IN ('counter', 'level')");
-                    table.CheckConstraint("ck_metric_definition_drafts_min_below_max", "min IS NULL OR max IS NULL OR min < max");
-                    table.CheckConstraint("ck_metric_definition_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
-                    table.CheckConstraint("ck_metric_definition_drafts_value_kind_allowed", "\"value_kind\" IN ('boolean', 'numeric', 'stateSet')");
-                    table.CheckConstraint("ck_metric_definition_drafts_warning_high_not_above_alarm_high", "warning_high IS NULL OR alarm_high IS NULL OR warning_high <= alarm_high");
-                    table.CheckConstraint("ck_metric_definition_drafts_warning_low_not_below_alarm_low", "warning_low IS NULL OR alarm_low IS NULL OR warning_low >= alarm_low");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "operating_phase_drafts",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    attempt_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    proposal_entry_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    target_machine_draft_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    state = table.Column<string>(type: "character varying(14)", maxLength: 14, nullable: false),
-                    source_location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true, collation: "case_insensitive"),
-                    code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true, collation: "case_insensitive"),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
-                    description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
-                    priority = table.Column<int>(type: "integer", nullable: true),
-                    is_tracked = table.Column<bool>(type: "boolean", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
-                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
-                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_operating_phase_drafts", x => x.id);
-                    table.CheckConstraint("ck_operating_phase_draft_code_length", "char_length(\"code\") BETWEEN 1 AND 50");
-                    table.CheckConstraint("ck_operating_phase_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
-                    table.CheckConstraint("ck_operating_phase_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
-                    table.CheckConstraint("ck_operating_phase_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
-                    table.CheckConstraint("ck_operating_phase_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
-                    table.CheckConstraint("ck_operating_phase_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
-                    table.CheckConstraint("ck_operating_phase_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
-                    table.CheckConstraint("ck_operating_phase_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
                 });
 
             migrationBuilder.CreateTable(
@@ -219,15 +153,118 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "metric_definition_drafts",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_entry_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    target_machine_draft_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    state = table.Column<string>(type: "character varying(14)", maxLength: 14, nullable: false),
+                    source_location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true, collation: "case_insensitive"),
+                    key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
+                    description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
+                    value_kind = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: true, collation: "case_insensitive"),
+                    quantity_kind_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
+                    unit_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
+                    min = table.Column<double>(type: "double precision", nullable: true),
+                    max = table.Column<double>(type: "double precision", nullable: true),
+                    states = table.Column<string[]>(type: "text[]", nullable: true),
+                    warning_low = table.Column<double>(type: "double precision", nullable: true),
+                    warning_high = table.Column<double>(type: "double precision", nullable: true),
+                    alarm_low = table.Column<double>(type: "double precision", nullable: true),
+                    alarm_high = table.Column<double>(type: "double precision", nullable: true),
+                    behavior = table.Column<string>(type: "character varying(7)", maxLength: 7, nullable: true, collation: "case_insensitive"),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_metric_definition_drafts", x => x.id);
+                    table.CheckConstraint("ck_metric_definition_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_metric_definition_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
+                    table.CheckConstraint("ck_metric_definition_draft_key_length", "char_length(\"key\") BETWEEN 1 AND 100");
+                    table.CheckConstraint("ck_metric_definition_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
+                    table.CheckConstraint("ck_metric_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_metric_definition_draft_proposal_id_not_empty", "\"proposal_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_metric_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
+                    table.CheckConstraint("ck_metric_definition_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
+                    table.CheckConstraint("ck_metric_definition_drafts_behavior_allowed", "\"behavior\" IN ('counter', 'level')");
+                    table.CheckConstraint("ck_metric_definition_drafts_min_below_max", "min IS NULL OR max IS NULL OR min < max");
+                    table.CheckConstraint("ck_metric_definition_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
+                    table.CheckConstraint("ck_metric_definition_drafts_value_kind_allowed", "\"value_kind\" IN ('boolean', 'numeric', 'stateSet')");
+                    table.CheckConstraint("ck_metric_definition_drafts_warning_high_not_above_alarm_high", "warning_high IS NULL OR alarm_high IS NULL OR warning_high <= alarm_high");
+                    table.CheckConstraint("ck_metric_definition_drafts_warning_low_not_below_alarm_low", "warning_low IS NULL OR alarm_low IS NULL OR warning_low >= alarm_low");
+                    table.ForeignKey(
+                        name: "FK_metric_definition_drafts_draft_proposals_proposal_id",
+                        column: x => x.proposal_id,
+                        principalTable: "draft_proposals",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "operating_phase_drafts",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_entry_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    target_machine_draft_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    state = table.Column<string>(type: "character varying(14)", maxLength: 14, nullable: false),
+                    source_location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true, collation: "case_insensitive"),
+                    code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true, collation: "case_insensitive"),
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
+                    description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
+                    priority = table.Column<int>(type: "integer", nullable: true),
+                    is_tracked = table.Column<bool>(type: "boolean", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_operating_phase_drafts", x => x.id);
+                    table.CheckConstraint("ck_operating_phase_draft_code_length", "char_length(\"code\") BETWEEN 1 AND 50");
+                    table.CheckConstraint("ck_operating_phase_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_operating_phase_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
+                    table.CheckConstraint("ck_operating_phase_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
+                    table.CheckConstraint("ck_operating_phase_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_operating_phase_draft_proposal_id_not_empty", "\"proposal_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_operating_phase_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
+                    table.CheckConstraint("ck_operating_phase_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
+                    table.CheckConstraint("ck_operating_phase_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
+                    table.ForeignKey(
+                        name: "FK_operating_phase_drafts_draft_proposals_proposal_id",
+                        column: x => x.proposal_id,
+                        principalTable: "draft_proposals",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "status_definition_drafts",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     company_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    attempt_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    proposal_entry_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_entry_id = table.Column<Guid>(type: "uuid", nullable: true),
                     target_machine_draft_id = table.Column<Guid>(type: "uuid", nullable: true),
                     target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
                     state = table.Column<string>(type: "character varying(14)", maxLength: 14, nullable: false),
@@ -249,10 +286,17 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     table.CheckConstraint("ck_status_definition_draft_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
                     table.CheckConstraint("ck_status_definition_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
                     table.CheckConstraint("ck_status_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_status_definition_draft_proposal_id_not_empty", "\"proposal_id\" <> '00000000-0000-0000-0000-000000000000'");
                     table.CheckConstraint("ck_status_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
                     table.CheckConstraint("ck_status_definition_draft_state_allowed", "\"state\" IN ('applied', 'awaitingTarget', 'dismissed', 'pending')");
                     table.CheckConstraint("ck_status_definition_drafts_severity_allowed", "\"severity\" IN ('error', 'info', 'warning')");
                     table.CheckConstraint("ck_status_definition_drafts_target", "(state IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) <= 1) OR (state NOT IN ('awaitingTarget', 'dismissed') AND num_nonnulls(target_machine_id, target_machine_draft_id) = 1)");
+                    table.ForeignKey(
+                        name: "FK_status_definition_drafts_draft_proposals_proposal_id",
+                        column: x => x.proposal_id,
+                        principalTable: "draft_proposals",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -458,6 +502,30 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "measurement_units",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity_kind_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false, collation: "case_insensitive"),
+                    abbreviation = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, collation: "case_insensitive"),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_measurement_units", x => x.id);
+                    table.CheckConstraint("ck_measurement_unit_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
+                    table.CheckConstraint("ck_measurement_unit_quantity_kind_id_not_empty", "\"quantity_kind_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.ForeignKey(
+                        name: "FK_measurement_units_quantity_kinds_quantity_kind_id",
+                        column: x => x.quantity_kind_id,
+                        principalTable: "quantity_kinds",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "operating_phase_draft_conditions",
                 columns: table => new
                 {
@@ -519,30 +587,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         principalTable: "operating_phase_drafts",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "measurement_units",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    quantity_kind_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false, collation: "case_insensitive"),
-                    abbreviation = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, collation: "case_insensitive"),
-                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_measurement_units", x => x.id);
-                    table.CheckConstraint("ck_measurement_unit_name_not_blank", "\"name\" COLLATE \"default\" ~ '\\S'");
-                    table.CheckConstraint("ck_measurement_unit_quantity_kind_id_not_empty", "\"quantity_kind_id\" <> '00000000-0000-0000-0000-000000000000'");
-                    table.ForeignKey(
-                        name: "FK_measurement_units_quantity_kinds_quantity_kind_id",
-                        column: x => x.quantity_kind_id,
-                        principalTable: "quantity_kinds",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -800,6 +844,16 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_company_id_attempt_id",
+                table: "draft_proposals",
+                columns: new[] { "company_id", "attempt_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_company_id_chat_id",
+                table: "draft_proposals",
+                columns: new[] { "company_id", "chat_id" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_inbox_messages_next_attempt_on",
                 table: "inbox_messages",
                 column: "next_attempt_on",
@@ -824,9 +878,9 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 filter: "deleted_at IS NULL");
 
             migrationBuilder.CreateIndex(
-                name: "ix_metric_definition_drafts_company_id_attempt_id",
+                name: "ix_metric_definition_drafts_company_id_proposal_id",
                 table: "metric_definition_drafts",
-                columns: new[] { "company_id", "attempt_id" });
+                columns: new[] { "company_id", "proposal_id" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_metric_definition_drafts_company_id_target_machine_id_state",
@@ -838,6 +892,11 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 name: "ix_metric_definition_drafts_proposal_entry_id",
                 table: "metric_definition_drafts",
                 column: "proposal_entry_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_metric_definition_drafts_proposal_id",
+                table: "metric_definition_drafts",
+                column: "proposal_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_metric_definitions_machine_registration_id_key",
@@ -895,9 +954,9 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 column: "draft_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_operating_phase_drafts_company_id_attempt_id",
+                name: "ix_operating_phase_drafts_company_id_proposal_id",
                 table: "operating_phase_drafts",
-                columns: new[] { "company_id", "attempt_id" });
+                columns: new[] { "company_id", "proposal_id" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_operating_phase_drafts_company_id_target_machine_id_state",
@@ -909,6 +968,11 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 name: "ix_operating_phase_drafts_proposal_entry_id",
                 table: "operating_phase_drafts",
                 column: "proposal_entry_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_operating_phase_drafts_proposal_id",
+                table: "operating_phase_drafts",
+                column: "proposal_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_operating_phase_limits_metric_definition_id",
@@ -994,9 +1058,9 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 .Annotation("Npgsql:NullsDistinct", false);
 
             migrationBuilder.CreateIndex(
-                name: "ix_status_definition_drafts_company_id_attempt_id",
+                name: "ix_status_definition_drafts_company_id_proposal_id",
                 table: "status_definition_drafts",
-                columns: new[] { "company_id", "attempt_id" });
+                columns: new[] { "company_id", "proposal_id" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_status_definition_drafts_company_id_target_machine_id_state",
@@ -1008,6 +1072,11 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 name: "ix_status_definition_drafts_proposal_entry_id",
                 table: "status_definition_drafts",
                 column: "proposal_entry_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_status_definition_drafts_proposal_id",
+                table: "status_definition_drafts",
+                column: "proposal_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_status_definitions_machine_registration_id_code",
@@ -1088,6 +1157,9 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "status_definitions");
+
+            migrationBuilder.DropTable(
+                name: "draft_proposals");
 
             migrationBuilder.DropTable(
                 name: "measurement_units");

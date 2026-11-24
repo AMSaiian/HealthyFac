@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 
 namespace HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 
@@ -18,9 +19,9 @@ public class StatusDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
     public Guid Id { get; private set; }
     public uint RowVersion { get; private set; }
     public Guid CompanyId { get; private set; }
-    public Guid AttemptId { get; private set; }
-    public Guid FileId { get; private set; }
-    public Guid ProposalEntryId { get; private set; }
+    public Guid ProposalId { get; private set; }
+    public DraftProposal Proposal { get; private set; } = null!;
+    public Guid? ProposalEntryId { get; private set; }
     public Guid? TargetMachineDraftId { get; private set; }
     public Guid? TargetMachineId { get; private set; }
     public DefinitionDraftState State { get; private set; }
@@ -47,9 +48,8 @@ public class StatusDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
     /// </summary>
     /// <param name="id">The ID from the proposal message.</param>
     /// <param name="companyId">The company of the file.</param>
-    /// <param name="attemptId">The ingest attempt that proposed the draft.</param>
-    /// <param name="fileId">The file that the draft came from.</param>
-    /// <param name="proposalEntryId">The proposed machine that the draft belongs to.</param>
+    /// <param name="proposalId">The proposal that holds the origin of the draft.</param>
+    /// <param name="proposalEntryId">The proposed machine that the draft belongs to, or <see langword="null"/>.</param>
     /// <param name="tentativeMachineId">
     /// The machine that the proposal named, or <see langword="null"/>. The machine check can still reject it.
     /// </param>
@@ -58,9 +58,8 @@ public class StatusDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
     public static StatusDefinitionDraft Propose(
         Guid id,
         Guid companyId,
-        Guid attemptId,
-        Guid fileId,
-        Guid proposalEntryId,
+        Guid proposalId,
+        Guid? proposalEntryId,
         Guid? tentativeMachineId,
         StatusDraftValues values
     ) =>
@@ -68,8 +67,7 @@ public class StatusDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
         {
             Id = id,
             CompanyId = companyId,
-            AttemptId = attemptId,
-            FileId = fileId,
+            ProposalId = proposalId,
             ProposalEntryId = proposalEntryId,
             TargetMachineId = tentativeMachineId,
             SourceLocation = values.SourceLocation,

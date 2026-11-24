@@ -180,7 +180,6 @@ public static class DefinitionDraftTestData
             ProposalEntryTestData.DraftId,
             ProposalEntryTestData.CompanyId,
             ProposalEntryTestData.AttemptId,
-            ProposalEntryTestData.FileId,
             EntryId,
             tentativeMachineId,
             new MetricDraftValues { Key = "temperature" });
@@ -196,7 +195,6 @@ public static class DefinitionDraftTestData
             ProposalEntryTestData.DraftId,
             ProposalEntryTestData.CompanyId,
             ProposalEntryTestData.AttemptId,
-            ProposalEntryTestData.FileId,
             EntryId,
             tentativeMachineId,
             new StatusDraftValues { Code = "E1" });

@@ -10,6 +10,7 @@ using HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
@@ -26,14 +27,52 @@ public static class DefinitionDraftFixtureExtensions
 {
     extension(TelemetryDatabaseFixture fixture)
     {
+        public async Task<IReadOnlyList<DraftProposal>> LoadDraftProposalsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>()
+                .DraftProposals
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task SaveDraftProposalAsync(DraftProposal proposal)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
+            await dbContext.EnsureProposalAsync(proposal);
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task SetDraftProposalColumnAsync(Guid proposalId, string column, string sqlValue)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
+            await dbContext.Database.ExecuteSqlRawAsync(
+                string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    format: "UPDATE draft_proposals SET {0} = {1} WHERE id = {{0}}",
+                    column,
+                    sqlValue),
+                proposalId);
+        }
+
         public async Task<StoredDraftRows> StoreDraftRowsAsync(Guid? tentativeMachineId = null)
         {
             var entry = new ProposalEntry(Guid.CreateVersion7(), DefinitionDraftTestData.CompanyId);
-            var metric = DefinitionDraftTestData.CreateMetric(Guid.CreateVersion7(), entry.Id, tentativeMachineId);
-            var status = DefinitionDraftTestData.CreateStatus(Guid.CreateVersion7(), entry.Id, tentativeMachineId);
+            var proposal = DefinitionDraftTestData.CreateProposal();
+            var metric = DefinitionDraftTestData.CreateMetric(
+                Guid.CreateVersion7(), entry.Id, proposal.Id, tentativeMachineId);
+            var status = DefinitionDraftTestData.CreateStatus(
+                Guid.CreateVersion7(), entry.Id, proposal.Id, tentativeMachineId);
 
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+            await dbContext.EnsureProposalAsync(proposal);
             dbContext.ProposalEntries.Add(entry);
             dbContext.MetricDefinitionDrafts.Add(metric);
             dbContext.StatusDefinitionDrafts.Add(status);
@@ -262,6 +301,16 @@ public static class DefinitionDraftFixtureExtensions
                 .MetricDefinitionDrafts
                 .AsNoTracking()
                 .SingleAsync(draft => draft.Id == draftId);
+        }
+    }
+
+    public static async Task EnsureProposalAsync(this ITelemetryDbContext dbContext, DraftProposal proposal)
+    {
+        var isStored = await dbContext.DraftProposals.AnyAsync(candidate => candidate.Id == proposal.Id);
+
+        if (!isStored)
+        {
+            dbContext.DraftProposals.Add(proposal);
         }
     }
 }

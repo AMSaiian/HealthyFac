@@ -2,6 +2,7 @@ using HealthyFac.Shared.Application.Persistence;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.Evaluation.Phases;
@@ -47,6 +48,8 @@ public interface ITelemetryDbContext : ITransactionalDbContext
     DbSet<MetricSchemaRevision> MetricSchemaRevisions { get; }
 
     DbSet<ProposalEntry> ProposalEntries { get; }
+
+    DbSet<DraftProposal> DraftProposals { get; }
 
     DbSet<MetricDefinitionDraft> MetricDefinitionDrafts { get; }
 

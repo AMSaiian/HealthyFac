@@ -36,8 +36,13 @@ public class StatusDefinitionDraftConfiguration : IEntityTypeConfiguration<Statu
 
         builder.ConfigureVersioned();
 
-        builder.HasIndex(draft => new { draft.CompanyId, draft.AttemptId })
-            .HasDatabaseName(DefinitionDraftIndexNames.StatusAttempt);
+        builder.HasOne(draft => draft.Proposal)
+            .WithMany()
+            .HasForeignKey(draft => draft.ProposalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(draft => new { draft.CompanyId, draft.ProposalId })
+            .HasDatabaseName(DefinitionDraftIndexNames.StatusProposal);
 
         builder.HasIndex(draft => new { draft.CompanyId, draft.TargetMachineId, draft.State })
             .HasDatabaseName(DefinitionDraftIndexNames.StatusTarget)
@@ -51,6 +56,7 @@ public class StatusDefinitionDraftConfiguration : IEntityTypeConfiguration<Statu
             .HasLengthCheck(draft => draft.Code, minLength: 1, DraftMessageLimits.Status.CodeMaxLength)
             .HasLengthCheck(draft => draft.Description, minLength: 0, RichTextConstants.HtmlMaxLength)
             .HasNotEmptyGuidCheck(draft => draft.CompanyId)
+            .HasNotEmptyGuidCheck(draft => draft.ProposalId)
             .HasNotEmptyGuidCheck(draft => draft.ProposalEntryId);
 
         builder.ToTable(table =>

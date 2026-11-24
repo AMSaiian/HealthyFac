@@ -9,6 +9,7 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using HealthyFac.Telemetry.Domain.Evaluation;
 using HealthyFac.Telemetry.Domain.Evaluation.Phases;
@@ -55,6 +56,8 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
     public DbSet<StatusDefinition> StatusDefinitions => Set<StatusDefinition>();
 
     public DbSet<ProposalEntry> ProposalEntries => Set<ProposalEntry>();
+
+    public DbSet<DraftProposal> DraftProposals => Set<DraftProposal>();
 
     public DbSet<MetricDefinitionDraft> MetricDefinitionDrafts => Set<MetricDefinitionDraft>();
 
@@ -135,6 +138,7 @@ public class TelemetryDbContext(DbContextOptions<TelemetryDbContext> options)
         configurationBuilder.HaveEnumerationConversion<MetricValueKind>();
         configurationBuilder.HaveEnumerationConversion<DefinitionDraftState>();
         configurationBuilder.HaveEnumerationConversion<ProposalEntryState>();
+        configurationBuilder.HaveEnumerationConversion<DraftSource>();
         configurationBuilder.IgnoreAny<IntakeError>();
     }
 

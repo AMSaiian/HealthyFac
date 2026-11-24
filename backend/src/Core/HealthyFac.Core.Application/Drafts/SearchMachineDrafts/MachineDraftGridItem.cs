@@ -23,8 +23,7 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
 
     public required Guid FileId { get; init; }
 
-    /// <summary>One of <see cref="DraftSource"/>.</summary>
-    public required string Source { get; init; }
+    public required DraftSource Source { get; init; }
 
     public Guid? ChatId { get; init; }
 
@@ -85,7 +84,7 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
                 State = draft.State,
                 AttemptId = draft.Proposal.AttemptId!.Value,
                 FileId = draft.Proposal.FileId!.Value,
-                Source = draft.Proposal.Source.Value,
+                Source = draft.Proposal.Source,
                 ChatId = draft.Proposal.ChatId,
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = null,

@@ -10,7 +10,7 @@ public interface IDefinitionDraft : IEntity
 {
     Guid CompanyId { get; }
 
-    Guid ProposalEntryId { get; }
+    Guid? ProposalEntryId { get; }
 
     Guid? TargetMachineId { get; }
 

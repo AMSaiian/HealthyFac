@@ -50,8 +50,13 @@ public class OperatingPhaseDraftConfiguration : IEntityTypeConfiguration<Operati
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(draft => new { draft.CompanyId, draft.AttemptId })
-            .HasDatabaseName(DefinitionDraftIndexNames.PhaseAttempt);
+        builder.HasOne(draft => draft.Proposal)
+            .WithMany()
+            .HasForeignKey(draft => draft.ProposalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(draft => new { draft.CompanyId, draft.ProposalId })
+            .HasDatabaseName(DefinitionDraftIndexNames.PhaseProposal);
 
         builder.HasIndex(draft => new { draft.CompanyId, draft.TargetMachineId, draft.State })
             .HasDatabaseName(DefinitionDraftIndexNames.PhaseTarget)
@@ -66,6 +71,7 @@ public class OperatingPhaseDraftConfiguration : IEntityTypeConfiguration<Operati
             .HasLengthCheck(draft => draft.Name, minLength: 1, DraftMessageLimits.Phase.NameMaxLength)
             .HasLengthCheck(draft => draft.Description, minLength: 0, RichTextConstants.HtmlMaxLength)
             .HasNotEmptyGuidCheck(draft => draft.CompanyId)
+            .HasNotEmptyGuidCheck(draft => draft.ProposalId)
             .HasNotEmptyGuidCheck(draft => draft.ProposalEntryId);
 
         builder.ToTable(table =>

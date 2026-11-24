@@ -18,8 +18,7 @@ public record MachineDraftDetail
 
     public required Guid FileId { get; init; }
 
-    /// <summary>One of <see cref="DraftSource"/>.</summary>
-    public required string Source { get; init; }
+    public required DraftSource Source { get; init; }
 
     public Guid? ChatId { get; init; }
 
@@ -40,7 +39,7 @@ public record MachineDraftDetail
             IsCreate = draft.IsCreate,
             AttemptId = draft.Proposal.AttemptId!.Value,
             FileId = draft.Proposal.FileId!.Value,
-            Source = draft.Proposal.Source.Value,
+            Source = draft.Proposal.Source,
             ChatId = draft.Proposal.ChatId,
             Name = draft.Name,
             SerialNumber = draft.SerialNumber,

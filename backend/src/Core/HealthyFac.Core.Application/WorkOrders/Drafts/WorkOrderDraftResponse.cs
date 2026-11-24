@@ -24,8 +24,7 @@ public record WorkOrderDraftResponse
 
     public required Guid RunId { get; init; }
 
-    /// <summary>One of <see cref="DraftSource"/>.</summary>
-    public required string Source { get; init; }
+    public required DraftSource Source { get; init; }
 
     public Guid? ChatId { get; init; }
 
@@ -75,7 +74,7 @@ public record WorkOrderDraftResponse
                 .FirstOrDefault(),
             CaseId = draft.Proposal.CaseId!.Value,
             RunId = draft.Proposal.RunId!.Value,
-            Source = draft.Proposal.Source.Value,
+            Source = draft.Proposal.Source,
             ChatId = draft.Proposal.ChatId,
             Title = draft.Title,
             Description = draft.Description,

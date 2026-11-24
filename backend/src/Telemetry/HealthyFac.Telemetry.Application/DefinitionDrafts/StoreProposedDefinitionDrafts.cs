@@ -8,6 +8,7 @@ using HealthyFac.Telemetry.Application.DefinitionDrafts.Following;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
+using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,6 +52,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
     protected override async Task HandleInternalAsync(DraftsProposed request, CancellationToken cancellationToken)
     {
         var existingIds = await LoadExistingIdsAsync(request, cancellationToken);
+        await AddProposalAsync(request, cancellationToken);
 
         var proposals = new List<(ProposedMachine Proposed, ProposalEntry Entry)>();
 
@@ -74,7 +76,6 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     metric.DraftId,
                     request.CompanyId,
                     request.AttemptId,
-                    request.FileId,
                     entry.Id,
                     proposed.TargetMachineId,
                     ToValues(metric));
@@ -93,7 +94,6 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     status.DraftId,
                     request.CompanyId,
                     request.AttemptId,
-                    request.FileId,
                     entry.Id,
                     proposed.TargetMachineId,
                     ToValues(status));
@@ -112,7 +112,6 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                     phase.DraftId,
                     request.CompanyId,
                     request.AttemptId,
-                    request.FileId,
                     entry.Id,
                     proposed.TargetMachineId,
                     ToValues(phase),
@@ -129,6 +128,21 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task AddProposalAsync(DraftsProposed request, CancellationToken cancellationToken)
+    {
+        var isProposalStored = await _dbContext.DraftProposals
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .AnyAsync(proposal => proposal.Id == request.AttemptId, cancellationToken);
+
+        if (isProposalStored)
+        {
+            return;
+        }
+
+        _dbContext.DraftProposals.Add(
+            DraftProposal.ForIngest(request.AttemptId, request.CompanyId, request.FileId));
     }
 
     private async Task<HashSet<Guid>> LoadExistingIdsAsync(DraftsProposed request, CancellationToken cancellationToken)

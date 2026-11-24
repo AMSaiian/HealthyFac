@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(TelemetryDbContext))]
-    [Migration("20261118212342_Initial")]
+    [Migration("20261124222923_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -187,10 +187,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("alarm_low");
 
-                    b.Property<Guid>("AttemptId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("attempt_id");
-
                     b.Property<string>("Behavior")
                         .HasMaxLength(7)
                         .HasColumnType("character varying(7)")
@@ -222,10 +218,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
 
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("file_id");
-
                     b.Property<string>("Key")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -246,9 +238,13 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnName("name")
                         .UseCollation("case_insensitive");
 
-                    b.Property<Guid>("ProposalEntryId")
+                    b.Property<Guid?>("ProposalEntryId")
                         .HasColumnType("uuid")
                         .HasColumnName("proposal_entry_id");
+
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_id");
 
                     b.Property<string>("QuantityKindName")
                         .HasMaxLength(100)
@@ -319,8 +315,10 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.HasIndex("ProposalEntryId")
                         .HasDatabaseName("ix_metric_definition_drafts_proposal_entry_id");
 
-                    b.HasIndex("CompanyId", "AttemptId")
-                        .HasDatabaseName("ix_metric_definition_drafts_company_id_attempt_id");
+                    b.HasIndex("ProposalId");
+
+                    b.HasIndex("CompanyId", "ProposalId")
+                        .HasDatabaseName("ix_metric_definition_drafts_company_id_proposal_id");
 
                     b.HasIndex("CompanyId", "TargetMachineId", "State")
                         .HasDatabaseName("ix_metric_definition_drafts_company_id_target_machine_id_state")
@@ -337,6 +335,8 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_metric_definition_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
 
                             t.HasCheckConstraint("ck_metric_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_metric_definition_draft_proposal_id_not_empty", "\"proposal_id\" <> '00000000-0000-0000-0000-000000000000'");
 
                             t.HasCheckConstraint("ck_metric_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
 
@@ -361,10 +361,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<Guid>("AttemptId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("attempt_id");
 
                     b.Property<string>("Code")
                         .HasMaxLength(50)
@@ -397,10 +393,6 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
 
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("file_id");
-
                     b.Property<bool?>("IsTracked")
                         .HasColumnType("boolean")
                         .HasColumnName("is_tracked");
@@ -415,9 +407,13 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("priority");
 
-                    b.Property<Guid>("ProposalEntryId")
+                    b.Property<Guid?>("ProposalEntryId")
                         .HasColumnType("uuid")
                         .HasColumnName("proposal_entry_id");
+
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_id");
 
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
@@ -458,8 +454,10 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.HasIndex("ProposalEntryId")
                         .HasDatabaseName("ix_operating_phase_drafts_proposal_entry_id");
 
-                    b.HasIndex("CompanyId", "AttemptId")
-                        .HasDatabaseName("ix_operating_phase_drafts_company_id_attempt_id");
+                    b.HasIndex("ProposalId");
+
+                    b.HasIndex("CompanyId", "ProposalId")
+                        .HasDatabaseName("ix_operating_phase_drafts_company_id_proposal_id");
 
                     b.HasIndex("CompanyId", "TargetMachineId", "State")
                         .HasDatabaseName("ix_operating_phase_drafts_company_id_target_machine_id_state")
@@ -476,6 +474,8 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_operating_phase_draft_name_length", "char_length(\"name\") BETWEEN 1 AND 100");
 
                             t.HasCheckConstraint("ck_operating_phase_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_operating_phase_draft_proposal_id_not_empty", "\"proposal_id\" <> '00000000-0000-0000-0000-000000000000'");
 
                             t.HasCheckConstraint("ck_operating_phase_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
 
@@ -692,15 +692,85 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
-            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts.StatusDefinitionDraft", b =>
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals.DraftProposal", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid>("AttemptId")
+                    b.Property<Guid?>("AttemptId")
                         .HasColumnType("uuid")
                         .HasColumnName("attempt_id");
+
+                    b.Property<Guid?>("ChatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_id");
+
+                    b.Property<Guid?>("ChatMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)")
+                        .HasColumnName("source");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "AttemptId")
+                        .HasDatabaseName("ix_draft_proposals_company_id_attempt_id");
+
+                    b.HasIndex("CompanyId", "ChatId")
+                        .HasDatabaseName("ix_draft_proposals_company_id_chat_id");
+
+                    b.ToTable("draft_proposals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_draft_proposal_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_draft_proposal_source_allowed", "\"source\" IN ('chat', 'ingest')");
+
+                            t.HasCheckConstraint("ck_draft_proposals_source_fields", "(source = 'ingest' AND attempt_id IS NOT NULL AND file_id IS NOT NULL AND chat_id IS NULL AND chat_message_id IS NULL) OR (source = 'chat' AND chat_id IS NOT NULL AND chat_message_id IS NOT NULL AND attempt_id IS NULL AND file_id IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts.StatusDefinitionDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Code")
                         .HasMaxLength(50)
@@ -733,13 +803,13 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
 
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("file_id");
-
-                    b.Property<Guid>("ProposalEntryId")
+                    b.Property<Guid?>("ProposalEntryId")
                         .HasColumnType("uuid")
                         .HasColumnName("proposal_entry_id");
+
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_id");
 
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
@@ -786,8 +856,10 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.HasIndex("ProposalEntryId")
                         .HasDatabaseName("ix_status_definition_drafts_proposal_entry_id");
 
-                    b.HasIndex("CompanyId", "AttemptId")
-                        .HasDatabaseName("ix_status_definition_drafts_company_id_attempt_id");
+                    b.HasIndex("ProposalId");
+
+                    b.HasIndex("CompanyId", "ProposalId")
+                        .HasDatabaseName("ix_status_definition_drafts_company_id_proposal_id");
 
                     b.HasIndex("CompanyId", "TargetMachineId", "State")
                         .HasDatabaseName("ix_status_definition_drafts_company_id_target_machine_id_state")
@@ -802,6 +874,8 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_status_definition_draft_description_length", "char_length(\"description\") BETWEEN 0 AND 20000");
 
                             t.HasCheckConstraint("ck_status_definition_draft_proposal_entry_id_not_empty", "\"proposal_entry_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_status_definition_draft_proposal_id_not_empty", "\"proposal_id\" <> '00000000-0000-0000-0000-000000000000'");
 
                             t.HasCheckConstraint("ck_status_definition_draft_source_location_length", "char_length(\"source_location\") BETWEEN 0 AND 200");
 
@@ -1898,6 +1972,28 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts.MetricDefinitionDraft", b =>
+                {
+                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals.DraftProposal", "Proposal")
+                        .WithMany()
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Proposal");
+                });
+
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraft", b =>
+                {
+                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals.DraftProposal", "Proposal")
+                        .WithMany()
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Proposal");
+                });
+
             modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraftCondition", b =>
                 {
                     b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts.OperatingPhaseDraft", null)
@@ -1914,6 +2010,17 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasForeignKey("DraftId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts.StatusDefinitionDraft", b =>
+                {
+                    b.HasOne("HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals.DraftProposal", "Proposal")
+                        .WithMany()
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Proposal");
                 });
 
             modelBuilder.Entity("HealthyFac.Telemetry.Domain.Evaluation.MachineEvaluation", b =>

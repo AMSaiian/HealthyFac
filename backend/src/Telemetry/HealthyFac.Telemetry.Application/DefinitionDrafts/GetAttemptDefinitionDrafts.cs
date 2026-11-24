@@ -67,19 +67,22 @@ public sealed class GetAttemptDefinitionDraftsRequestHandler(ITelemetryDbContext
     {
         var metrics = await _dbContext.MetricDefinitionDrafts
             .AsNoTracking()
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
+            .Include(draft => draft.Proposal)
+            .Where(draft => draft.CompanyId == request.CompanyId && draft.Proposal.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
 
         var statuses = await _dbContext.StatusDefinitionDrafts
             .AsNoTracking()
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
+            .Include(draft => draft.Proposal)
+            .Where(draft => draft.CompanyId == request.CompanyId && draft.Proposal.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
 
         var phases = await _dbContext.OperatingPhaseDrafts
             .AsNoTracking()
             .Include(draft => draft.Conditions)
             .Include(draft => draft.Limits)
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
+            .Include(draft => draft.Proposal)
+            .Where(draft => draft.CompanyId == request.CompanyId && draft.Proposal.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
 
         return new AttemptDefinitionDraftsResponse
