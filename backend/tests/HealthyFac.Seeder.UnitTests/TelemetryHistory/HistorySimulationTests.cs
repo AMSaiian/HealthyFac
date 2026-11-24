@@ -127,7 +127,7 @@ public sealed class HistorySimulationTests
             HistorySimulationTestData.Events([HistorySimulationTestData.Drain(drainHours: 8)]),
             HistorySimulationTestData.TenSeconds);
 
-        simulation.Run(Start, Start + TimeSpan.FromMinutes(minutes: 384));
+        simulation.Run(Start, Start + TimeSpan.FromMinutes(minutes: 384) - HistorySimulationTestData.TenSeconds);
 
         simulation.Machine.Modules[ModuleName.Spindle]
             .Progress.Should()
@@ -161,7 +161,7 @@ public sealed class HistorySimulationTests
     }
 
     [Fact(Explicit = true)]
-    public void Run_WithAOneSecondIntervalOverTenMinutes_Gives600SamplesOnWholeSeconds()
+    public void Run_WithAOneSecondIntervalOverTenMinutes_Gives601SamplesOnWholeSecondsWithBothEndsIncluded()
     {
         var simulation = HistorySimulationTestData.Create(
             HistorySimulationTestData.NoEvents(), HistorySimulationTestData.OneSecond);
@@ -169,8 +169,31 @@ public sealed class HistorySimulationTests
         var samples = simulation.Run(Start, Start.AddMinutes(value: 10));
 
         samples.Should()
-            .HaveCount(expected: 600)
-            .And.OnlyContain(sample => (sample.SampledAt - Start).Ticks % TimeSpan.TicksPerSecond == 0)
-            .And.OnlyContain(sample => sample.SampledAt > Start);
+            .HaveCount(expected: 601)
+            .And.OnlyContain(sample => (sample.SampledAt - Start).Ticks % TimeSpan.TicksPerSecond == 0);
+        samples[index: 0].SampledAt.Should().Be(Start);
+        samples[^1].SampledAt.Should().Be(Start.AddMinutes(value: 10));
+    }
+
+    [Fact(Explicit = true)]
+    public void Run_InTwoCalls_GivesTheSamplesOfOneCallWithoutRepeatOrLoss()
+    {
+        var whole = HistorySimulationTestData.Create(
+            HistorySimulationTestData.NoEvents(), HistorySimulationTestData.TenSeconds);
+        var split = HistorySimulationTestData.Create(
+            HistorySimulationTestData.NoEvents(), HistorySimulationTestData.TenSeconds);
+        var middle = Start.AddMinutes(value: 7).AddSeconds(value: 10);
+
+        var wholeSamples = whole.Run(Start, Start.AddMinutes(value: 20));
+        var firstPart = split.Run(Start, middle);
+        var secondPart = split.Run(middle, Start.AddMinutes(value: 20));
+
+        var splitSamples = firstPart.Concat(secondPart).ToList();
+        splitSamples.Select(sample => sample.SampledAt)
+            .Should()
+            .Equal(wholeSamples.Select(sample => sample.SampledAt));
+        splitSamples.Zip(wholeSamples)
+            .Should()
+            .OnlyContain(pair => HistorySimulationTestData.AreEqual(pair.First.Sample, pair.Second.Sample));
     }
 }

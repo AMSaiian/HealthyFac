@@ -70,6 +70,15 @@ public sealed class MachinesPart : ISeedPart
     /// </summary>
     private static Guid CheckDefinitionId(string name) => new(MD5.HashData(Encoding.UTF8.GetBytes(name)));
 
+    /// <summary>Builds the item name of the state change of <c>machines.json</c>.</summary>
+    /// <param name="change">The state change.</param>
+    /// <returns>The item name.</returns>
+    internal static string StateItemOf(MachineStateSeed change) =>
+        SeedItem.Of(MachinesConstants.FileName, StateKeyOf(change));
+
+    private static string StateKeyOf(MachineStateSeed change) =>
+        $"{change.Machine}{MachinesConstants.StateSuffix}.{change.At}";
+
     private static string MachineKey(string key) => $"{key}{MachinesConstants.MachineSuffix}";
 
     private static string UserKey(string person) => $"{person}{PeopleConstants.UserSuffix}";
@@ -139,7 +148,7 @@ public sealed class MachinesPart : ISeedPart
 
     private SeedEvent StateEvent(MachineStateSeed change)
     {
-        var key = $"{change.Machine}{MachinesConstants.StateSuffix}.{change.At}";
+        var key = StateKeyOf(change);
         var item = SeedItem.Of(MachinesConstants.FileName, key);
         _actions[key] = (context, cancellationToken) => ChangeStateAsync(change, context, cancellationToken);
 

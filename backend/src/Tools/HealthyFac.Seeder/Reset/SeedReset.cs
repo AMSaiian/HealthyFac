@@ -18,16 +18,16 @@ namespace HealthyFac.Seeder.Reset;
 
 /// <summary>
 /// Clears everything that the seed created, so the job can seed again. The order: refuse when another process uses a
-/// database, delete the completion marker draft in Core, delete the Keycloak organization with every member, delete
-/// every blob of the Document container, and empty the tables of each database with one <c>TRUNCATE</c> in one
-/// transaction.
+/// database, delete the received message that marks the telemetry history, delete the completion marker draft in
+/// Core, delete the Keycloak organization with every member, delete every blob of the Document container, and empty
+/// the tables of each database with one <c>TRUNCATE</c> in one transaction.
 /// </summary>
 /// <remarks>
 /// The reset resumes after a stop: each step is safe to repeat (a missing organization, a missing blob, and an empty
 /// table are no errors), and a stop never leaves a half emptied database, because the truncate of one database is one
-/// transaction that the token rolls back. The marker draft goes first, so a reset that stops
-/// at any later step leaves a seed that reads as incomplete (<see cref="Timeline.SeedState.Incomplete"/>). The next
-/// normal start then stops with the reset hint, and the next run of the reset finishes the work.
+/// transaction that the token rolls back. The marker message goes first and the marker draft second, so a reset that
+/// stops at any later step leaves a seed that reads as incomplete (<see cref="Timeline.SeedState.Incomplete"/>). The
+/// next normal start then stops with the reset hint, and the next run of the reset finishes the work.
 /// </remarks>
 public sealed class SeedReset
 {
@@ -35,6 +35,7 @@ public sealed class SeedReset
     private readonly KeycloakAccounts _accounts;
     private readonly Guid _companyId;
     private readonly Guid _markerDraftId;
+    private readonly Guid _markerMessageId;
     private readonly TextWriter _output;
 
     public SeedReset(
@@ -42,6 +43,7 @@ public sealed class SeedReset
         KeycloakAccounts accounts,
         Guid companyId,
         Guid markerDraftId,
+        Guid markerMessageId,
         TextWriter output
     )
     {
@@ -49,8 +51,12 @@ public sealed class SeedReset
         _accounts = accounts;
         _companyId = companyId;
         _markerDraftId = markerDraftId;
+        _markerMessageId = markerMessageId;
         _output = output;
     }
+
+    /// <summary>Runs after the marker message is deleted. A test sets it to stop the reset at that point.</summary>
+    internal Func<Task>? AfterMarkerMessageDeleted { get; init; }
 
     /// <summary>Runs after the marker draft is deleted. A test sets it to stop the reset at that point.</summary>
     internal Func<Task>? AfterMarkerDeleted { get; init; }
@@ -71,6 +77,14 @@ public sealed class SeedReset
             return false;
         }
 
+        await DeleteMarkerMessageAsync(cancellationToken);
+        if (AfterMarkerMessageDeleted is not null)
+        {
+            await AfterMarkerMessageDeleted();
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         await DeleteMarkerDraftAsync(cancellationToken);
         if (AfterMarkerDeleted is not null)
         {
@@ -89,6 +103,16 @@ public sealed class SeedReset
         }
 
         return true;
+    }
+
+    private async Task DeleteMarkerMessageAsync(CancellationToken cancellationToken)
+    {
+        using var scope = _hosts.Telemetry.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Telemetry));
+        var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
+        await dbContext.ReceivedMessages
+            .Where(message => message.Id == _markerMessageId)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     private async Task DeleteMarkerDraftAsync(CancellationToken cancellationToken)

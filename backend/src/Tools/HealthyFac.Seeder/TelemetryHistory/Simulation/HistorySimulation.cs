@@ -6,7 +6,8 @@ namespace HealthyFac.Seeder.TelemetryHistory.Simulation;
 
 /// <summary>
 /// Simulates one machine of the seed from the window start on, in ticks of the sample interval, without a database.
-/// The ticks lie on whole multiples of the interval after the window start. The machine counts as discovered at the
+/// The ticks lie on the window start and on whole multiples of the interval after it. The first tick uses one
+/// interval as its elapsed time, like the first tick of the live engine. The machine counts as discovered at the
 /// window start.
 /// </summary>
 public sealed class HistorySimulation
@@ -16,11 +17,12 @@ public sealed class HistorySimulation
     private readonly IReadOnlyList<StateHistoryEntry> _stateChanges;
     private readonly HistoryEvents _events;
     private int _appliedChanges;
-    private DateTime _lastTick;
+    private readonly DateTime _windowStart;
+    private DateTime _nextTick;
 
     /// <summary>Creates the simulation.</summary>
     /// <param name="snapshot">The first snapshot of the machine, with the state rows before the window start.</param>
-    /// <param name="windowStart">The UTC start of the window. The first tick lies one interval later.</param>
+    /// <param name="windowStart">The UTC start of the window. The first tick lies on it.</param>
     /// <param name="interval">The time between two ticks.</param>
     /// <param name="random">The random source of the machine.</param>
     /// <param name="stateChanges">The state changes after the window start, ordered by time.</param>
@@ -38,15 +40,18 @@ public sealed class HistorySimulation
         _interval = interval;
         _stateChanges = stateChanges;
         _events = events;
-        _lastTick = windowStart;
+        _windowStart = windowStart;
+        _nextTick = windowStart;
         Machine = new SimulatedMachine(snapshot, windowStart, TelemetryHistoryConstants.DrainDuration, random);
     }
 
     public SimulatedMachine Machine { get; }
 
     /// <summary>
-    /// Ticks the machine up to a time and returns the samples after another time. A tick before
-    /// <paramref name="fromExclusive"/> still moves the machine, so the next call continues from the last tick.
+    /// Ticks the machine up to a time and returns the samples after another time. A tick at or before
+    /// <paramref name="fromExclusive"/> still moves the machine, so the next call continues from the last tick. The
+    /// sample of the window start always counts, so the first call of a run may pass the window start as
+    /// <paramref name="fromExclusive"/>.
     /// </summary>
     /// <param name="fromExclusive">The UTC time after which a sample counts.</param>
     /// <param name="toInclusive">The UTC time of the last tick.</param>
@@ -55,13 +60,14 @@ public sealed class HistorySimulation
     public IReadOnlyList<HistorySample> Run(DateTime fromExclusive, DateTime toInclusive)
     {
         var samples = new List<HistorySample>();
-        while (_lastTick + _interval <= toInclusive)
+        while (_nextTick <= toInclusive)
         {
-            _lastTick += _interval;
-            var sample = Advance(_lastTick);
-            if (sample is not null && _lastTick > fromExclusive)
+            var at = _nextTick;
+            _nextTick += _interval;
+            var sample = Advance(at);
+            if (sample is not null && (at > fromExclusive || at == _windowStart))
             {
-                samples.Add(new HistorySample { SampledAt = _lastTick, Sample = sample });
+                samples.Add(new HistorySample { SampledAt = at, Sample = sample });
             }
         }
 

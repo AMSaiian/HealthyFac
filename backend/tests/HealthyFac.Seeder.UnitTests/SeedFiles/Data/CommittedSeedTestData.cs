@@ -7,6 +7,7 @@ public static class CommittedSeedTestData
 {
     public const string WorkOrdersFile = "work-orders.json";
     public const string MachinesFile = "machines.json";
+    public const string TelemetryFile = "telemetry.json";
 
     public static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById(id: "Europe/Kyiv");
 

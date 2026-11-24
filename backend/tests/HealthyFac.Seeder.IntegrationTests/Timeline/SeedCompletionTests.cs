@@ -27,6 +27,59 @@ public sealed class SeedCompletionTests(SeederFixture fixture)
     }
 
     [Fact(Explicit = true)]
+    public async Task RunAsync_WithTelemetryOnAModeOneSeed_ReportsTheMissingHistoryAndWritesNothing()
+    {
+        await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        var before = await _fixture.TakeSnapshotAsync();
+
+        var next = await _fixture.RunJobAsync(
+            [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
+
+        var after = await _fixture.TakeSnapshotAsync();
+        next.ExitCode.Should().Be(expected: 1);
+        next.Output.Should()
+            .Contain(SeedCompletionTestData.NoCompleteHistoryText)
+            .And.Contain(SeedCompletionTestData.ResetTelemetryHint);
+        after.Should().BeEquivalentTo(before);
+    }
+
+    [Fact(Explicit = true)]
+    public async Task RunAsync_WithTheMarkerMessage_ReportsTheSeedCompleteInBothModes()
+    {
+        await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.MarkerMessageId);
+
+        var modeOne = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        var modeTwo = await _fixture.RunJobAsync(
+            [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
+
+        modeOne.ExitCode.Should().Be(expected: 0);
+        modeOne.Output.Should().Contain(SeedCompletionTestData.CompleteText);
+        modeTwo.ExitCode.Should().Be(expected: 0);
+        modeTwo.Output.Should().Contain(SeedCompletionTestData.CompleteText);
+    }
+
+    [Fact(Explicit = true)]
+    public async Task RunAsync_WithReceivedMessagesOfALiveMachine_KeepsTheModeOneSeedCompleteAndFlagsTheMissingHistory()
+    {
+        await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.OtherMessageId);
+        await _fixture.AddReceivedMessageAsync(Guid.CreateVersion7());
+        await _fixture.AddReceivedMessageAsync(Guid.CreateVersion7());
+
+        var modeOne = await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        var modeTwo = await _fixture.RunJobAsync(
+            [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
+
+        modeOne.ExitCode.Should().Be(expected: 0);
+        modeOne.Output.Should().Contain(SeedCompletionTestData.CompleteText);
+        modeTwo.ExitCode.Should().Be(expected: 1);
+        modeTwo.Output.Should()
+            .Contain(SeedCompletionTestData.NoCompleteHistoryText)
+            .And.Contain(SeedCompletionTestData.ResetTelemetryHint);
+    }
+
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterAFailedRun_ReportsAnIncompleteSeedAndWritesNothing()
     {
         var baseDirectory = SeedBaseDirectory.Create(WorkOrderSeedVariants.PumpCouplingSlotTaken());

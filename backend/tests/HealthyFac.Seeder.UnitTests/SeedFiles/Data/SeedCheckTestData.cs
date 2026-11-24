@@ -1,4 +1,6 @@
+using HealthyFac.Seeder.Machines;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.Timeline;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 
@@ -16,6 +18,50 @@ public static class SeedCheckTestData
     public const string CompletionItem = "ingest.json#last";
     public const string MissingCompletionItem = "ingest.json#absent";
     public const string LateItem = "orders.json#late";
+    public const string ScriptMarkerItem = "telemetry.json#marker";
+    public const string ScriptStepItem = "telemetry.json#step.h-5";
+    public const string ScriptLateStepItem = "telemetry.json#step.h-0";
+
+    public static readonly TelemetryScript EmptyScript = new()
+    {
+        Telemetry = new TelemetryFile
+        {
+            WindowHours = 48,
+            SampleIntervalSeconds = 1,
+            RandomSeed = 1,
+            MarkerMessageId = Guid.Parse(input: "019b4c00-0000-7000-8000-00000000c0bb"),
+            Drains = [],
+            Steps = [],
+            Gaps = [],
+            Overrides = [],
+        },
+        Machines = new MachinesFile { Machines = [], StateChanges = [] },
+    };
+
+    /// <summary>
+    /// The mode-1 marker, then the events of the telemetry script (a step and the marker of the history).
+    /// </summary>
+    public static IReadOnlyList<SeedEvent> ScriptEventsAfterTheMarker =>
+    [
+        Event(file: "people.json", key: "anna", at: "d-4 09:00"),
+        Event(file: "ingest.json", key: "last", at: "d-2 09:00"),
+        Event(file: "telemetry.json", key: "step.h-5", at: "h-5"),
+        Event(file: "telemetry.json", key: "marker", at: "h-0"),
+    ];
+
+    public static IReadOnlyList<SeedEvent> ScriptEventsWithAModeOneEventAfterTheMarker =>
+    [
+        .. ScriptEventsAfterTheMarker,
+        Event(file: "orders.json", key: "late", at: "d-1 09:00"),
+    ];
+
+    public static IReadOnlyList<SeedEvent> ScriptEventsWithAStepAfterTheScriptMarker =>
+    [
+        Event(file: "people.json", key: "anna", at: "d-4 09:00"),
+        Event(file: "ingest.json", key: "last", at: "d-2 09:00"),
+        Event(file: "telemetry.json", key: "marker", at: "h-1"),
+        Event(file: "telemetry.json", key: "step.h-0", at: "h-0"),
+    ];
 
     public static TheoryData<string, IReadOnlyList<SeedEvent>, string, string> FailingCases => new()
     {

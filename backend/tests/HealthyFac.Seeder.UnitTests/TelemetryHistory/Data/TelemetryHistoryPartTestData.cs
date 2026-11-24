@@ -135,6 +135,17 @@ public static class TelemetryHistoryPartTestData
                 "telemetry.json#compressor-override", "S0002"
             },
             {
+                "status code in another case",
+                root =>
+                {
+                    var overrideSeed = root[propertyName: "overrides"]![index: 0]!;
+                    overrideSeed[propertyName: "machine"] = "lathe";
+                    overrideSeed[propertyName: "values"] = new JsonObject();
+                    overrideSeed[propertyName: "codes"] = new JsonArray("a112");
+                },
+                "telemetry.json#compressor-override", "a112"
+            },
+            {
                 "key shared by 2 lists",
                 root =>
                 {

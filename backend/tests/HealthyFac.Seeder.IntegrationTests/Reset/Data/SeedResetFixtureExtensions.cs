@@ -31,9 +31,33 @@ public static class SeedResetFixtureExtensions
                 new KeycloakAccounts(fixture.Hosts.Auth),
                 SeedCompletionTestData.CompanyId,
                 SeedCompletion.FindLastDraftId(folder),
+                SeedCompletion.FindMarkerMessageId(folder),
                 TextWriter.Null)
             {
                 AfterMarkerDeleted = () =>
+                {
+                    stop.Cancel();
+
+                    return Task.CompletedTask;
+                },
+            };
+
+            await reset.RunAsync(stop.Token);
+        }
+
+        public async Task RunResetStoppedAfterTheMarkerMessageAsync(CancellationTokenSource stop)
+        {
+            var folder = new SeedFolder(Path.Combine(AppContext.BaseDirectory, SeedProgram.SeedFolderName));
+            fixture.EnterNextMoment(item: "reset");
+            var reset = new SeedReset(
+                fixture.Hosts,
+                new KeycloakAccounts(fixture.Hosts.Auth),
+                SeedCompletionTestData.CompanyId,
+                SeedCompletion.FindLastDraftId(folder),
+                SeedCompletion.FindMarkerMessageId(folder),
+                TextWriter.Null)
+            {
+                AfterMarkerMessageDeleted = () =>
                 {
                     stop.Cancel();
 

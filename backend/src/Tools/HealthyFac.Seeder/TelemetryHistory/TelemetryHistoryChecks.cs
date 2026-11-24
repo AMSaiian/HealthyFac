@@ -66,10 +66,12 @@ internal static class TelemetryHistoryChecks
     private static void CheckKeysAreUnique(TelemetryFile file)
     {
         var listsByKey = new Dictionary<string, string>();
-        var keys = file.Drains.Select(drain => (drain.Key, List: nameof(TelemetryFile.Drains)))
-            .Concat(file.Steps.Select(step => (step.Key, List: nameof(TelemetryFile.Steps))))
-            .Concat(file.Gaps.Select(gap => (gap.Key, List: nameof(TelemetryFile.Gaps))))
-            .Concat(file.Overrides.Select(overrideSeed => (overrideSeed.Key, List: nameof(TelemetryFile.Overrides))));
+        var keys = file.Drains.Select(drain => (drain.Key, List: TelemetryHistoryConstants.DrainsList))
+            .Concat(file.Steps.Select(step => (step.Key, List: TelemetryHistoryConstants.StepsList)))
+            .Concat(file.Gaps.Select(gap => (gap.Key, List: TelemetryHistoryConstants.GapsList)))
+            .Concat(
+                file.Overrides.Select(overrideSeed =>
+                    (overrideSeed.Key, List: TelemetryHistoryConstants.OverridesList)));
         foreach (var (key, list) in keys)
         {
             if (!listsByKey.TryAdd(key, list))
@@ -199,7 +201,7 @@ internal static class TelemetryHistoryChecks
     }
 
     private static bool HasStatusCode(HistoryMachine machine, string code) =>
-        machine.Draft.Statuses.Any(status => string.Equals(status.Code, code, StringComparison.OrdinalIgnoreCase));
+        machine.Draft.Statuses.Any(status => string.Equals(status.Code, code, StringComparison.Ordinal));
 
     private static bool IsFit(ProposedMetric metric, JsonElement value) =>
         metric.ValueKind == MetricValueKind.Numeric.Value

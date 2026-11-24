@@ -79,6 +79,16 @@ public sealed class TelemetryHistoryPart : ISeedPart
             * catchUpBatchReadings
             / (RelativeMoment.MinutesPerHour * definitionCount));
 
+    /// <summary>Builds the item name of a maintenance state change of a drain.</summary>
+    /// <param name="drain">The drain.</param>
+    /// <param name="state">The state that the change sets.</param>
+    /// <returns>The item name.</returns>
+    internal static string MaintenanceItemOf(DrainSeed drain, MachineState state) =>
+        SeedItem.Of(TelemetryHistoryConstants.FileName, MaintenanceKeyOf(drain, state));
+
+    private static string MaintenanceKeyOf(DrainSeed drain, MachineState state) =>
+        $"{drain.Key}{TelemetryHistoryConstants.MaintenanceSuffix}.{state.Value}";
+
     private static string MachineKey(string key) => $"{key}{MachinesConstants.MachineSuffix}";
 
     private static string UserKey(string person) => $"{person}{PeopleConstants.UserSuffix}";
@@ -196,7 +206,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
 
     private SeedEvent StateEvent(DrainSeed drain, MachineState state, RelativeMoment at)
     {
-        var key = $"{drain.Key}{TelemetryHistoryConstants.MaintenanceSuffix}.{state.Value}";
+        var key = MaintenanceKeyOf(drain, state);
         _actions[key] = (context, cancellationToken) => ChangeStateAsync(drain, state, context, cancellationToken);
 
         return new SeedEvent

@@ -21,6 +21,13 @@ public static class SeedFileErrors
         $"No event has the completion marker item {completionItem}. "
         + "The check cannot confirm that the marker event is last.";
 
+    public static string EventOverlapsMaintenance(string machine, string maintenanceItem) =>
+        $"The event overlaps a maintenance of the machine {machine} (the maintenance of {maintenanceItem}).";
+
+    public static string StateDoesNotAlternate(string machine, string state) =>
+        $"The machine {machine} is already in the state {state}: "
+        + "the state changes of one machine must alternate, starting from operational.";
+
     public static string RequestInvalid(string reason) => $"The request is not valid: {reason}";
 
     public static string FileInvalid(string path, string? jsonPath, string reason) =>

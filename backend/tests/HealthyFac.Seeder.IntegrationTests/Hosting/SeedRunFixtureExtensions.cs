@@ -65,7 +65,7 @@ public static class SeedRunFixtureExtensions
             string? seedFolder = null
         ) =>
             fixture.RunPartsAsync(
-                current => SeedParts.Create(current.Hosts, People(current)),
+                current => SeedParts.Create(current.Hosts, People(current), isTelemetry: false),
                 cancellationToken,
                 anchor,
                 seedFolder);

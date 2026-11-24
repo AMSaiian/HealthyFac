@@ -68,6 +68,23 @@ public sealed class SeedResetTests(SeederFixture fixture)
     }
 
     [Fact(Explicit = true)]
+    public async Task RunAsync_AfterAResetThatStoppedAfterTheMarkerMessage_ReportsTheMissingHistoryInModeTwo()
+    {
+        await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.MarkerMessageId);
+        await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.OtherMessageId);
+        using var stop = new CancellationTokenSource();
+        var act = () => _fixture.RunResetStoppedAfterTheMarkerMessageAsync(stop);
+        await act.Should().ThrowAsync<OperationCanceledException>();
+
+        var next = await _fixture.RunJobAsync(
+            [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
+
+        next.ExitCode.Should().Be(expected: 1);
+        next.Output.Should().Contain(SeedCompletionTestData.NoCompleteHistoryText);
+    }
+
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterAResetThatStoppedAfterItsFirstWrite_ReportsAnIncompleteSeedAndTheResetHint()
     {
         await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
