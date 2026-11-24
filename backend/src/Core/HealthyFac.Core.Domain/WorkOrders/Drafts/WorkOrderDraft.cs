@@ -1,12 +1,13 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Shared.Domain.Entities;
 
 namespace HealthyFac.Core.Domain.WorkOrders.Drafts;
 
 /// <summary>
-/// A work order that the planner agent of Insights proposed for a machine. A user applies it (a work order exists then)
-/// or dismisses it. The ID is the ID of the agent action, so the proposal message is safe to repeat. Only a
-/// <c>pending</c> draft changes.
+/// A work order that the planner agent of Insights proposed for a machine. The proposal holds the origin of the draft.
+/// A user applies it (a work order exists then) or dismisses it. The ID is the ID of the agent action, so the proposal
+/// message is safe to repeat. Only a <c>pending</c> draft changes.
 /// </summary>
 public class WorkOrderDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
 {
@@ -14,8 +15,7 @@ public class WorkOrderDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
         Guid id,
         Guid companyId,
         Guid machineId,
-        Guid caseId,
-        Guid runId,
+        Guid proposalId,
         string title,
         string? description,
         WorkOrderPriority priority,
@@ -26,8 +26,7 @@ public class WorkOrderDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
         Id = id;
         CompanyId = companyId;
         MachineId = machineId;
-        CaseId = caseId;
-        RunId = runId;
+        ProposalId = proposalId;
         Title = title;
         Description = description;
         Priority = priority;
@@ -44,10 +43,9 @@ public class WorkOrderDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
 
     public Guid MachineId { get; private set; }
 
-    /// <summary>The case of Insights that the draft belongs to.</summary>
-    public Guid CaseId { get; private set; }
+    public Guid ProposalId { get; private set; }
 
-    public Guid RunId { get; private set; }
+    public DraftProposal Proposal { get; private set; } = null!;
 
     public string Title { get; private set; }
 

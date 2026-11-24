@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 
 namespace HealthyFac.Core.Application.Drafts;
 
@@ -17,6 +18,11 @@ public record MachineDraftDetail
 
     public required Guid FileId { get; init; }
 
+    /// <summary>One of <see cref="DraftSource"/>.</summary>
+    public required string Source { get; init; }
+
+    public Guid? ChatId { get; init; }
+
     public string? Name { get; init; }
 
     public string? SerialNumber { get; init; }
@@ -32,8 +38,10 @@ public record MachineDraftDetail
             Id = draft.Id,
             State = draft.State.Value,
             IsCreate = draft.IsCreate,
-            AttemptId = draft.AttemptId,
-            FileId = draft.FileId,
+            AttemptId = draft.Proposal.AttemptId!.Value,
+            FileId = draft.Proposal.FileId!.Value,
+            Source = draft.Proposal.Source.Value,
+            ChatId = draft.Proposal.ChatId,
             Name = draft.Name,
             SerialNumber = draft.SerialNumber,
             Description = draft.Description,

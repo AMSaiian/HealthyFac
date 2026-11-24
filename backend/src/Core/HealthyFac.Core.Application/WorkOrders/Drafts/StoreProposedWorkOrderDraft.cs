@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.Realtime;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Insights.Messaging.WorkOrders;
@@ -8,6 +9,7 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
+using HealthyFac.Shared.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Core.Application.WorkOrders.Drafts;
@@ -66,12 +68,21 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
             return;
         }
 
+        var isProposalStored = await _dbContext.DraftProposals
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .AnyAsync(proposal => proposal.Id == request.RunId, cancellationToken);
+
+        if (!isProposalStored)
+        {
+            _dbContext.DraftProposals.Add(
+                DraftProposal.ForCase(request.RunId, request.CompanyId, request.CaseId));
+        }
+
         _dbContext.WorkOrderDrafts.Add(
             new WorkOrderDraft(
                 request.DraftId,
                 request.CompanyId,
                 request.MachineId,
-                request.CaseId,
                 request.RunId,
                 request.Title,
                 request.Description,

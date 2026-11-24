@@ -15,14 +15,19 @@ public static class WorkOrderDraftTestData
     public const int OffGridEstimate = 3;
     public const uint StaleRowVersion = uint.MaxValue;
 
-    public static WorkOrderDraftProposed Proposal(Guid companyId, Guid machineId, Guid draftId) =>
+    public static WorkOrderDraftProposed Proposal(
+        Guid companyId,
+        Guid machineId,
+        Guid draftId,
+        Guid? runId = null
+    ) =>
         new()
         {
             DraftId = draftId,
             CompanyId = companyId,
             MachineId = machineId,
             CaseId = Guid.CreateVersion7(),
-            RunId = Guid.CreateVersion7(),
+            RunId = runId ?? Guid.CreateVersion7(),
             Title = Title,
             Priority = ProposedPriority,
             Category = ProposedCategory,

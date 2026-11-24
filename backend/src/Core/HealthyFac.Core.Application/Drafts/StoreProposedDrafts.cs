@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -54,6 +55,7 @@ public sealed class StoreProposedDraftsRequestHandler(
 
         var existingIds = await LoadExistingIdsAsync(request, cancellationToken);
         var isRepeat = existingIds.Count > 0;
+        await AddProposalAsync(request, cancellationToken);
         var resolvedEntries = new List<ResolvedEntry>();
 
         foreach (var entry in request.Machines)
@@ -128,6 +130,21 @@ public sealed class StoreProposedDraftsRequestHandler(
         return foundCount == targetIds.Count;
     }
 
+    private async Task AddProposalAsync(DraftsProposed request, CancellationToken cancellationToken)
+    {
+        var isProposalStored = await _dbContext.DraftProposals
+            .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+            .AnyAsync(proposal => proposal.Id == request.AttemptId, cancellationToken);
+
+        if (isProposalStored)
+        {
+            return;
+        }
+
+        _dbContext.DraftProposals.Add(
+            DraftProposal.ForIngest(request.AttemptId, request.CompanyId, request.FileId, request.QueuedAt));
+    }
+
     private async Task<HashSet<Guid>> LoadExistingIdsAsync(DraftsProposed request, CancellationToken cancellationToken)
     {
         var machineDraftIds = request.Machines.Select(machine => machine.DraftId).ToList();
@@ -195,8 +212,6 @@ public sealed class StoreProposedDraftsRequestHandler(
                     entry.DraftId,
                     request.CompanyId,
                     request.AttemptId,
-                    request.FileId,
-                    request.QueuedAt,
                     target?.Id,
                     entry.Name,
                     proposedSerialNumber,

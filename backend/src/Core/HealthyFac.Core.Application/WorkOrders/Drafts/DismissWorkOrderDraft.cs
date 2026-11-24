@@ -66,9 +66,10 @@ public sealed class DismissWorkOrderDraftRequestHandler(
         CancellationToken cancellationToken
     )
     {
-        var draft = await _dbContext.WorkOrderDrafts.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-                cancellationToken)
+        var draft = await _dbContext.WorkOrderDrafts.Include(candidate => candidate.Proposal)
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
+                    cancellationToken)
             ?? throw new NotFoundException(WorkOrderDraftErrors.DraftNotFound);
 
         if (request.RowVersion is { } rowVersion)
@@ -87,7 +88,7 @@ public sealed class DismissWorkOrderDraftRequestHandler(
             new WorkOrderDraftDismissed
             {
                 DraftId = draft.Id,
-                CaseId = draft.CaseId,
+                CaseId = draft.Proposal.CaseId!.Value,
                 CompanyId = draft.CompanyId,
                 DismissedAt = _timeProvider.GetUtcNow().UtcDateTime,
             });

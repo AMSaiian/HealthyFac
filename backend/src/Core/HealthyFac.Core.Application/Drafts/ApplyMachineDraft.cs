@@ -106,9 +106,10 @@ public sealed class ApplyMachineDraftRequestHandler(
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var draft = await _dbContext.MachineDrafts.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-                cancellationToken)
+        var draft = await _dbContext.MachineDrafts.Include(candidate => candidate.Proposal)
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
+                    cancellationToken)
             ?? throw new NotFoundException(DraftErrors.DraftNotFound);
 
         if (draft.State != DraftState.Pending)
@@ -179,10 +180,10 @@ public sealed class ApplyMachineDraftRequestHandler(
             new MachineDraftApplied
             {
                 DraftId = draft.Id,
-                FileId = draft.FileId,
+                FileId = draft.Proposal.FileId!.Value,
                 MachineId = machine.Id,
                 CompanyId = machine.CompanyId,
-                QueuedAt = draft.QueuedAt,
+                QueuedAt = draft.Proposal.QueuedAt!.Value,
             });
 
         return machine.Id;

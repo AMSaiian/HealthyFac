@@ -47,6 +47,35 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "draft_proposals",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: false),
+                    attempt_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    file_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    queued_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    case_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    run_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    chat_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    chat_message_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_draft_proposals", x => x.id);
+                    table.CheckConstraint("ck_draft_proposal_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_draft_proposal_source_allowed", "\"source\" IN ('case', 'chat', 'ingest')");
+                    table.CheckConstraint("ck_draft_proposals_source_fields", "(source = 'ingest'\n    AND attempt_id IS NOT NULL AND file_id IS NOT NULL AND queued_at IS NOT NULL\n    AND case_id IS NULL AND run_id IS NULL AND chat_id IS NULL AND chat_message_id IS NULL)\nOR (source = 'case'\n    AND case_id IS NOT NULL AND run_id IS NOT NULL\n    AND attempt_id IS NULL AND file_id IS NULL AND queued_at IS NULL\n    AND chat_id IS NULL AND chat_message_id IS NULL)\nOR (source = 'chat'\n    AND chat_id IS NOT NULL AND chat_message_id IS NOT NULL\n    AND attempt_id IS NULL AND file_id IS NULL AND queued_at IS NULL\n    AND case_id IS NULL AND run_id IS NULL)");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "inbox_messages",
                 columns: table => new
                 {
@@ -240,9 +269,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     company_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    attempt_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    queued_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    proposal_id = table.Column<Guid>(type: "uuid", nullable: false),
                     target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
                     applied_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
                     state = table.Column<string>(type: "character varying(9)", maxLength: 9, nullable: false),
@@ -266,6 +293,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     table.CheckConstraint("ck_machine_draft_serial_number_length", "char_length(\"serial_number\") BETWEEN 1 AND 100");
                     table.CheckConstraint("ck_machine_draft_serial_number_not_blank", "\"serial_number\" COLLATE \"default\" ~ '\\S'");
                     table.CheckConstraint("ck_machine_draft_state_allowed", "\"state\" IN ('applied', 'dismissed', 'pending')");
+                    table.ForeignKey(
+                        name: "FK_machine_drafts_draft_proposals_proposal_id",
+                        column: x => x.proposal_id,
+                        principalTable: "draft_proposals",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_machine_drafts_machines_applied_machine_id",
                         column: x => x.applied_machine_id,
@@ -316,8 +349,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     company_id = table.Column<Guid>(type: "uuid", nullable: false),
                     machine_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    case_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    run_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    proposal_id = table.Column<Guid>(type: "uuid", nullable: false),
                     title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false, collation: "case_insensitive"),
                     description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
                     priority = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
@@ -343,6 +375,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     table.CheckConstraint("ck_work_order_draft_state_allowed", "\"state\" IN ('applied', 'dismissed', 'pending')");
                     table.CheckConstraint("ck_work_order_draft_title_length", "char_length(\"title\") BETWEEN 1 AND 200");
                     table.CheckConstraint("ck_work_order_draft_title_not_blank", "\"title\" COLLATE \"default\" ~ '\\S'");
+                    table.ForeignKey(
+                        name: "FK_work_order_drafts_draft_proposals_proposal_id",
+                        column: x => x.proposal_id,
+                        principalTable: "draft_proposals",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_work_order_drafts_machines_machine_id",
                         column: x => x.machine_id,
@@ -577,6 +615,16 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_company_id_attempt_id",
+                table: "draft_proposals",
+                columns: new[] { "company_id", "attempt_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_company_id_chat_id",
+                table: "draft_proposals",
+                columns: new[] { "company_id", "chat_id" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_employee_invites_company_id_email",
                 table: "employee_invites",
                 columns: new[] { "company_id", "email" },
@@ -624,9 +672,14 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                 column: "applied_machine_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_machine_drafts_company_id_attempt_id",
+                name: "ix_machine_drafts_company_id_proposal_id",
                 table: "machine_drafts",
-                columns: new[] { "company_id", "attempt_id" });
+                columns: new[] { "company_id", "proposal_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_machine_drafts_proposal_id",
+                table: "machine_drafts",
+                column: "proposal_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_machine_drafts_target_machine_id_state",
@@ -703,6 +756,11 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                 column: "machine_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_work_order_drafts_proposal_id",
+                table: "work_order_drafts",
+                column: "proposal_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_work_order_files_work_order_id_file_id",
                 table: "work_order_files",
                 columns: new[] { "work_order_id", "file_id" },
@@ -767,6 +825,9 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "shift_template_versions");
+
+            migrationBuilder.DropTable(
+                name: "draft_proposals");
 
             migrationBuilder.DropTable(
                 name: "work_orders");

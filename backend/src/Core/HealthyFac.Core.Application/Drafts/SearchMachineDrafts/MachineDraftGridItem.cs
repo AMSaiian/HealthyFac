@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.Domain.Entities;
@@ -21,6 +22,11 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
     public required Guid AttemptId { get; init; }
 
     public required Guid FileId { get; init; }
+
+    /// <summary>One of <see cref="DraftSource"/>.</summary>
+    public required string Source { get; init; }
+
+    public Guid? ChatId { get; init; }
 
     public required DateTime ProposedAt { get; init; }
 
@@ -71,14 +77,16 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
         return machineDrafts
             .Where(draft => draft.CompanyId == companyId
                 && (machineId == null || draft.TargetMachineId == machineId)
-                && (attemptId == null || draft.AttemptId == attemptId))
+                && (attemptId == null || draft.Proposal.AttemptId == attemptId))
             .Select(draft => new MachineDraftGridItem
             {
                 Id = draft.Id,
                 Kind = DraftKinds.Machine,
                 State = draft.State,
-                AttemptId = draft.AttemptId,
-                FileId = draft.FileId,
+                AttemptId = draft.Proposal.AttemptId!.Value,
+                FileId = draft.Proposal.FileId!.Value,
+                Source = draft.Proposal.Source.Value,
+                ChatId = draft.Proposal.ChatId,
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = null,
                 Label = draft.Name ?? draft.SerialNumber,

@@ -82,7 +82,8 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
     {
         var machineDrafts = await _dbContext.MachineDrafts
             .AsNoTracking()
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
+            .Include(draft => draft.Proposal)
+            .Where(draft => draft.CompanyId == request.CompanyId && draft.Proposal.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
 
         var machineIds = machineDrafts

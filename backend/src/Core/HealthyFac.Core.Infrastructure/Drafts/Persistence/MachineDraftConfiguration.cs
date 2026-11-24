@@ -43,8 +43,13 @@ public class MachineDraftConfiguration : IEntityTypeConfiguration<MachineDraft>
             .HasForeignKey(draft => draft.AppliedMachineId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(draft => new { draft.CompanyId, draft.AttemptId })
-            .HasDatabaseName(DraftIndexNames.MachineDraftAttempt);
+        builder.HasOne(draft => draft.Proposal)
+            .WithMany()
+            .HasForeignKey(draft => draft.ProposalId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(draft => new { draft.CompanyId, draft.ProposalId })
+            .HasDatabaseName(DraftIndexNames.MachineDraftProposal);
 
         builder.HasIndex(draft => new { draft.TargetMachineId, draft.State })
             .HasDatabaseName(DraftIndexNames.MachineDraftTarget)

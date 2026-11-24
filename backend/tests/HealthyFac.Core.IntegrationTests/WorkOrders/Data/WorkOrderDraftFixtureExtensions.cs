@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HealthyFac.Core.Application.WorkOrders.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Core.Infrastructure.Database;
@@ -27,13 +28,14 @@ public static class WorkOrderDraftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+            var proposal = DraftProposal.ForCase(Guid.CreateVersion7(), companyId, Guid.CreateVersion7());
+            dbContext.DraftProposals.Add(proposal);
 
             var draft = new WorkOrderDraft(
                 Guid.CreateVersion7(),
                 companyId,
                 machineId,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
+                proposal.Id,
                 WorkOrderDraftTestData.Title,
                 description: null,
                 WorkOrderPriority.High,

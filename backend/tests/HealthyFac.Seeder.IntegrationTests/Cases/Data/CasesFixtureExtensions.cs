@@ -36,6 +36,7 @@ public static class CasesFixtureExtensions
             return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .WorkOrderDrafts
                 .AsNoTracking()
+                .Include(draft => draft.Proposal)
                 .SingleAsync(draft => draft.Id == CasesTestData.DraftId);
         }
     }

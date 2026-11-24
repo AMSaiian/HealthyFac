@@ -1,5 +1,7 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
+using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Insights.Messaging.Drafts;
@@ -14,6 +16,40 @@ public static class DraftFixtureExtensions
 {
     extension(CoreDatabaseFixture fixture)
     {
+        public async Task<IReadOnlyList<DraftProposal>> LoadDraftProposalsAsync()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            return await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
+                .DraftProposals
+                .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task SaveDraftProposalAsync(DraftProposal proposal)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
+            dbContext.DraftProposals.Add(proposal);
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task SetDraftProposalColumnAsync(Guid proposalId, string column, string sqlValue)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
+
+            await dbContext.Database.ExecuteSqlRawAsync(
+                string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    format: "UPDATE draft_proposals SET {0} = {1} WHERE id = {{0}}",
+                    column,
+                    sqlValue),
+                proposalId);
+        }
+
         public async Task<Guid> ArrangeMachineAsync(Guid companyId)
             => await fixture.CreateMachineAsync(
                 companyId, DraftTestData.MachineName, Guid.NewGuid().ToString(format: "N"));
@@ -34,6 +70,7 @@ public static class DraftFixtureExtensions
                 .MachineDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
+                .Include(draft => draft.Proposal)
                 .ToListAsync();
         }
 
@@ -43,13 +80,12 @@ public static class DraftFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
+            await EnsureProposalAsync(dbContext, companyId, attempt);
             dbContext.MachineDrafts.Add(
                 new MachineDraft(
                     Guid.CreateVersion7(),
                     companyId,
                     attempt,
-                    DraftTestData.FileId,
-                    DraftTestData.QueuedAt,
                     machineId,
                     DraftTestData.MachineName,
                     serialNumber: null,
@@ -62,13 +98,11 @@ public static class DraftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-
+            await EnsureProposalAsync(dbContext, companyId, DraftTestData.AttemptId);
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 companyId,
                 DraftTestData.AttemptId,
-                DraftTestData.FileId,
-                DraftTestData.QueuedAt,
                 targetMachineId,
                 DraftTestData.MachineName,
                 serialNumber: null,
@@ -78,6 +112,17 @@ public static class DraftFixtureExtensions
             await dbContext.SaveChangesAsync();
 
             return draft.Id;
+        }
+    }
+
+    private static async Task EnsureProposalAsync(ICoreDbContext dbContext, Guid companyId, Guid attemptId)
+    {
+        var isStored = await dbContext.DraftProposals.AnyAsync(proposal => proposal.Id == attemptId);
+
+        if (!isStored)
+        {
+            dbContext.DraftProposals.Add(
+                DraftProposal.ForIngest(attemptId, companyId, DraftTestData.FileId, DraftTestData.QueuedAt));
         }
     }
 }

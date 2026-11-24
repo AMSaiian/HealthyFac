@@ -146,9 +146,10 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
 
     private async Task<Guid> ApplyAsync(ApplyWorkOrderDraftRequest request, CancellationToken cancellationToken)
     {
-        var draft = await _dbContext.WorkOrderDrafts.SingleOrDefaultAsync(
-                candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
-                cancellationToken)
+        var draft = await _dbContext.WorkOrderDrafts.Include(candidate => candidate.Proposal)
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
+                    cancellationToken)
             ?? throw new NotFoundException(WorkOrderDraftErrors.DraftNotFound);
 
         if (request.RowVersion is { } rowVersion)
@@ -186,7 +187,7 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
             {
                 DraftId = draft.Id,
                 WorkOrderId = workOrderId,
-                CaseId = draft.CaseId,
+                CaseId = draft.Proposal.CaseId!.Value,
                 CompanyId = draft.CompanyId,
                 AppliedAt = _timeProvider.GetUtcNow().UtcDateTime,
             });

@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
@@ -49,8 +50,8 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         machineDrafts.Should().ContainSingle().Which.TargetMachineId.Should().Be(machineId);
-        machineDrafts[0].Name.Should().Be(expected: "New name");
-        machineDrafts[0].QueuedAt.Should().Be(DraftTestData.QueuedAt);
+        machineDrafts[index: 0].Name.Should().Be(expected: "New name");
+        machineDrafts[index: 0].Proposal.QueuedAt.Should().Be(DraftTestData.QueuedAt);
     }
 
     [Fact]
@@ -154,6 +155,24 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
 
         machineDrafts.Should().ContainSingle();
         matches.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task StoreProposed_WithRepeatDelivery_StoresOneProposalOfTheAttempt()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var message = ProposalBuilder.Message(
+            tenant.CompanyId, isMachineFile: false, ProposalBuilder.Machine(name: "Pump"));
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+
+        var proposal = proposals.Should().ContainSingle().Subject;
+        proposal.Id.Should().Be(DraftTestData.AttemptId);
+        proposal.Source.Should().Be(DraftSource.Ingest);
+        proposal.FileId.Should().Be(DraftTestData.FileId);
     }
 
     [Fact]
@@ -269,8 +288,8 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         machineDrafts.Should()
-            .OnlyContain(draft => draft.AttemptId == DraftTestData.AttemptId
-                && draft.FileId == DraftTestData.FileId
+            .OnlyContain(draft => draft.Proposal.AttemptId == DraftTestData.AttemptId
+                && draft.Proposal.FileId == DraftTestData.FileId
                 && draft.State == DraftState.Pending);
     }
 

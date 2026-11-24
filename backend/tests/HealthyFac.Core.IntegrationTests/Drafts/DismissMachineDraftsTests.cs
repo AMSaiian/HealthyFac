@@ -70,7 +70,7 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         var pendingCompanies = machineDrafts.Where(draft => draft.State == DraftState.Pending)
-            .Select(draft => (draft.CompanyId, draft.AttemptId))
+            .Select(draft => (draft.CompanyId, draft.Proposal.AttemptId))
             .ToList();
 
         response.DismissedCount.Should().Be(expected: 1);

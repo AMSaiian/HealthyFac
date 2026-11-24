@@ -37,6 +37,28 @@ public sealed class WorkOrderDraftTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Propose_TwoDraftsOfTheSameRun_ShareOneCaseProposal()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var runId = Guid.CreateVersion7();
+        var first = WorkOrderDraftTestData.Proposal(tenant.CompanyId, machineId, Guid.CreateVersion7(), runId);
+        var second = WorkOrderDraftTestData.Proposal(tenant.CompanyId, machineId, Guid.CreateVersion7(), runId);
+
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, first);
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, second);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        var drafts = await _fixture.LoadWorkOrderDraftsAsync();
+
+        var proposal = proposals.Should().ContainSingle().Subject;
+        proposal.Id.Should().Be(runId);
+        proposal.RunId.Should().Be(runId);
+        proposal.CaseId.Should().Be(first.CaseId);
+        drafts.Should().HaveCount(expected: 2).And.OnlyContain(draft => draft.ProposalId == runId);
+    }
+
+    [Fact]
     public async Task Receive_TheProposalThroughTheInbox_StoresOnePendingDraftAndMarksTheRowProcessed()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();

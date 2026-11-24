@@ -89,10 +89,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("applied_machine_id");
 
-                    b.Property<Guid>("AttemptId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("attempt_id");
-
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
@@ -118,19 +114,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnName("description")
                         .UseCollation("case_insensitive");
 
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("file_id");
-
                     b.Property<string>("Name")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name")
                         .UseCollation("case_insensitive");
 
-                    b.Property<DateTime>("QueuedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("queued_at");
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_id");
 
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
@@ -166,8 +158,10 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.HasIndex("AppliedMachineId");
 
-                    b.HasIndex("CompanyId", "AttemptId")
-                        .HasDatabaseName("ix_machine_drafts_company_id_attempt_id");
+                    b.HasIndex("ProposalId");
+
+                    b.HasIndex("CompanyId", "ProposalId")
+                        .HasDatabaseName("ix_machine_drafts_company_id_proposal_id");
 
                     b.HasIndex("TargetMachineId", "State")
                         .HasDatabaseName("ix_machine_drafts_target_machine_id_state")
@@ -188,6 +182,92 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_machine_draft_serial_number_not_blank", "\"serial_number\" COLLATE \"default\" ~ '\\S'");
 
                             t.HasCheckConstraint("ck_machine_draft_state_allowed", "\"state\" IN ('applied', 'dismissed', 'pending')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Core.Domain.Drafts.Proposals.DraftProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("attempt_id");
+
+                    b.Property<Guid?>("CaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("case_id");
+
+                    b.Property<Guid?>("ChatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_id");
+
+                    b.Property<Guid?>("ChatMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<DateTime?>("QueuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("queued_at");
+
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)")
+                        .HasColumnName("source");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "AttemptId")
+                        .HasDatabaseName("ix_draft_proposals_company_id_attempt_id");
+
+                    b.HasIndex("CompanyId", "ChatId")
+                        .HasDatabaseName("ix_draft_proposals_company_id_chat_id");
+
+                    b.ToTable("draft_proposals", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_draft_proposal_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_draft_proposal_source_allowed", "\"source\" IN ('case', 'chat', 'ingest')");
+
+                            t.HasCheckConstraint("ck_draft_proposals_source_fields", "(source = 'ingest'\n    AND attempt_id IS NOT NULL AND file_id IS NOT NULL AND queued_at IS NOT NULL\n    AND case_id IS NULL AND run_id IS NULL AND chat_id IS NULL AND chat_message_id IS NULL)\nOR (source = 'case'\n    AND case_id IS NOT NULL AND run_id IS NOT NULL\n    AND attempt_id IS NULL AND file_id IS NULL AND queued_at IS NULL\n    AND chat_id IS NULL AND chat_message_id IS NULL)\nOR (source = 'chat'\n    AND chat_id IS NOT NULL AND chat_message_id IS NOT NULL\n    AND attempt_id IS NULL AND file_id IS NULL AND queued_at IS NULL\n    AND case_id IS NULL AND run_id IS NULL)");
                         });
                 });
 
@@ -833,10 +913,6 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("applied_work_order_id");
 
-                    b.Property<Guid>("CaseId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("case_id");
-
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -882,15 +958,15 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("priority");
 
+                    b.Property<Guid>("ProposalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposal_id");
+
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("run_id");
 
                     b.Property<string>("State")
                         .IsRequired()
@@ -916,6 +992,8 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MachineId");
+
+                    b.HasIndex("ProposalId");
 
                     b.HasIndex("CompanyId", "MachineId", "State")
                         .HasDatabaseName("ix_work_order_drafts_company_id_machine_id_state")
@@ -1327,10 +1405,18 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasForeignKey("AppliedMachineId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("HealthyFac.Core.Domain.Drafts.Proposals.DraftProposal", "Proposal")
+                        .WithMany()
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
                         .WithMany()
                         .HasForeignKey("TargetMachineId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Proposal");
                 });
 
             modelBuilder.Entity("HealthyFac.Core.Domain.Employees.Employee", b =>
@@ -1428,6 +1514,14 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasForeignKey("MachineId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("HealthyFac.Core.Domain.Drafts.Proposals.DraftProposal", "Proposal")
+                        .WithMany()
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Proposal");
                 });
 
             modelBuilder.Entity("HealthyFac.Core.Domain.WorkOrders.WorkOrder", b =>

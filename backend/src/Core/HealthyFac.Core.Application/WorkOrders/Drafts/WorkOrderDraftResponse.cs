@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Domain.Entities;
@@ -22,6 +23,11 @@ public record WorkOrderDraftResponse
     public required Guid CaseId { get; init; }
 
     public required Guid RunId { get; init; }
+
+    /// <summary>One of <see cref="DraftSource"/>.</summary>
+    public required string Source { get; init; }
+
+    public Guid? ChatId { get; init; }
 
     public required string Title { get; init; }
 
@@ -67,8 +73,10 @@ public record WorkOrderDraftResponse
                 .Where(machine => machine.Id == draft.MachineId)
                 .Select(machine => machine.Name)
                 .FirstOrDefault(),
-            CaseId = draft.CaseId,
-            RunId = draft.RunId,
+            CaseId = draft.Proposal.CaseId!.Value,
+            RunId = draft.Proposal.RunId!.Value,
+            Source = draft.Proposal.Source.Value,
+            ChatId = draft.Proposal.ChatId,
             Title = draft.Title,
             Description = draft.Description,
             Priority = draft.Priority,

@@ -4,6 +4,7 @@ using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.Application;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Infrastructure.HttpFailures;
@@ -26,13 +27,13 @@ public static class WorkOrderDraftApiFixtureExtensions
 
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
-
+            var proposal = DraftProposal.ForCase(Guid.CreateVersion7(), fixture.CompanyId, Guid.CreateVersion7());
+            dbContext.DraftProposals.Add(proposal);
             var draft = new WorkOrderDraft(
                 Guid.CreateVersion7(),
                 fixture.CompanyId,
                 machineId,
-                Guid.CreateVersion7(),
-                Guid.CreateVersion7(),
+                proposal.Id,
                 WorkOrderApiTestData.Title,
                 description: null,
                 WorkOrderPriority.High,

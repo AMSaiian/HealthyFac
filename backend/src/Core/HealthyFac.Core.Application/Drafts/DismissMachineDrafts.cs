@@ -110,7 +110,7 @@ public sealed class DismissMachineDraftsRequestHandler(ICoreDbContext dbContext,
         var machineDrafts = await _dbContext.MachineDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.AttemptId == request.AttemptId)
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId)
                 && draft.State == DraftState.Pending)
             .ToListAsync(cancellationToken);
 
