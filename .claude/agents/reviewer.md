@@ -98,8 +98,9 @@ Read a full file only for a reference that points outside these parts.
   <repo path> -Area <area>`. When the ID equals a `Full run <area>:` line of plan.md, the
   executor tested this code: do not run that area again, and run only the tests that you
   doubt. Otherwise run the full commands of that area (`CLAUDE.md`, **Build and Test**). Use
-  the shell only for: build, test, git diff/log, `pwsh scripts/verify-stack.ps1 up|reset|stop`,
-  `pwsh .claude/tree-id.ps1`, and `pwsh .claude/check-review-routing.ps1`.
+  the shell only for: build, test, git diff/log/show, `pwsh scripts/verify-stack.ps1 up|reset|stop`,
+  `pwsh scripts/agent-chrome.ps1 restore|status`, `pwsh .claude/tree-id.ps1`, and
+  `pwsh .claude/check-review-routing.ps1`.
 - Checkpoint review: on a `checkpoint <x>` message, review `git diff <base tree>
   <checkpoint tree>` for the design, the rules, and the plan. Run no tests. Add the
   findings to `## Open` with `Status: NEW (checkpoint <x>)`, all [CODE] or [SPEC]. Do not
@@ -114,7 +115,9 @@ Read a full file only for a reference that points outside these parts.
   one is a MAJOR [CODE] finding.
 - Browser scope (UI feature): never run every flow of the browser check list again. The
   executor ran the list, and you check its log. You run only the flows that the next two
-  bullets name, in Chrome (Claude in Chrome); do not trust the executor's log for them.
+  bullets name, in the agent Chrome; do not trust the executor's log for them. Follow
+  `.claude/browser-checks.md` (the agent Chrome, the sizes, the screenshots, the drags, the
+  retries).
 - For a UI feature in a later round of a cycle: run the flows of the open findings and a
   few edge flows of the views that the diff since `Reviewed tree:` touches, with their
   layout checks, on the slot (`up` starts a stopped slot with its data). The next bullet
@@ -126,23 +129,20 @@ Read a full file only for a reference that points outside these parts.
   app page, run `localStorage.clear(); sessionStorage.clear(); location.reload()` with the
   JavaScript tool: it clears only the app origin, and the sign-in session stays. Then run
   only: the flows with a `fail` line in the executor's log, the flows of the open findings
-  (checkpoint findings too), and a few edge flows outside the list (back navigation, an
-  undo, a double click, a long input). The browser writes only to the isolated stack;
+  (checkpoint findings too), each flow with a drag, the views of each step with a `Look:`
+  line, and a few edge flows outside the list (back navigation, an undo, a double click, a
+  long input). The browser writes only to the isolated stack;
   this does not break the "no repo changes" rule. When the round is done, run
   `pwsh scripts/verify-stack.ps1 stop`: it frees the memory and keeps the data. `up`
   starts it again for Artur's test and `/fix`. Give the app URL and that `up` command in
   the report.
-- Layout checks (UI feature): look at the views of each flow that you run in the browser in light mode
-  at 1280 x 600 and in dark mode at full HD (a flow that names other sizes gets those).
-  Save no screenshot files. Use the `zoom` action for a detail (a chip, a border, a
-  radius). Check each view:
-  - no clipped text, control, or tag;
-  - the same height for the controls of one row;
-  - the same corner radius for the same component;
-  - no horizontal scroll and no overflow at 1280 x 600;
-  - no overlay or tooltip clipped by its container;
-  - readable in both themes.
-  Each failure is a [CODE] finding with the flow, the size, and the theme.
+- Layout checks (UI feature): check each view of each flow that you run by **Looking** of
+  `.claude/browser-checks.md`. Each failure is a [CODE] finding with the flow, the size, and
+  the theme. A view that differs from its `Look:` reference is a [CODE] finding; a step
+  that changes a look without a `Look:` line, or with a look that Artur did not ask for,
+  is a [SPEC] finding.
+- A flow that you could not run as written after one retry (**Errors**) is no pass: name
+  it in the report with the error. Never write a pass from a script measurement alone.
 
 ## Web access
 Verify version-specific API usage, deprecations, and issues in any new dependency.

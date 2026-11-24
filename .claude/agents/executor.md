@@ -118,11 +118,13 @@ code without a test proving it is unneeded.
   what changed, why, and the files. Never also
   under the step. Never a `Red:` or `Proof:` line, and never a "Step N: done" log there:
   `check-handoff.ps1` fails on both.
-- Browser check: never skip or defer it. Before the handoff to the review:
-  1. Start the isolated stack with `pwsh scripts/verify-stack.ps1 up`. Never use the dev
-     stack, and never run `docker compose down -v` on it.
-  2. Run the flows of the browser check list in Chrome (Claude in Chrome), each in a new
-     tab, signed in with the account that `up` prints.
+- Browser check: never skip or defer it. Read `.claude/browser-checks.md` first: it holds
+  the agent Chrome, the sizes, the screenshots, the drags, the line form, and the retries.
+  Before the handoff to the review:
+  1. Start the isolated stack with `pwsh scripts/verify-stack.ps1 up` yourself. Never use
+     the dev stack, and never run `docker compose down -v` on it.
+  2. Run the flows of the browser check list in the agent Chrome, each in a new
+     tab, signed in with the account that `up` prints. Check the look of each view.
      - First handoff of a cycle: run every flow.
      - A later handoff of the same cycle (a fix after a review): run only the flows that
        your changes since the last flow lines touch, each flow with a `fail` line, and
@@ -130,16 +132,17 @@ code without a test proving it is unneeded.
        (`frontend/src/app/shared/`, `backend/src/Shared/`, a layout, a store feature), run
        every flow that uses it. When you cannot tell which flows a change touches, run
        every flow.
-  3. Under the step, write one line per flow that you ran: `pass` or `fail`, and what you
-     saw (the console errors, the toast text, the request URL when it matters). A later
-     handoff adds its lines with the round (`round <R>: pass ...`) and keeps the earlier
-     lines, so every flow of the list has a line.
+  3. Under the step, write one line per flow that you ran (**Flow Lines** of
+     `browser-checks.md`): what you saw (the console errors, the toast text, the request URL
+     when it matters) and `seen:`. A later handoff adds its lines with the round and keeps
+     the earlier lines, so every flow of the list has a line.
   4. A failed flow counts like a failing test: diagnose it with the console and the code,
      fix it within the plan, and run the flow again.
   5. Stop the stack with `pwsh scripts/verify-stack.ps1 stop`. It keeps the images, so the
      reviewer's `reset` and `up` rebuild only the changed images.
-  If the script is missing, or the stack or the browser does not work, mark the step
-  `[!] ... WAITING: <error>` (see below). Never tick it without the flow lines.
+  If the script is missing, or the stack or the browser does not work after one retry
+  (**Errors** of `browser-checks.md`), mark the step `[!] ... WAITING: <error>; retried:
+  <what>` (see below). Never tick it without the flow lines.
 
 ## When a step is blocked
 A step is blocked when:

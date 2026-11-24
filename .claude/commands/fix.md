@@ -64,6 +64,7 @@ Do not make a plan item: propose its step in the report. When I answer "inline a
   a changed seed does not apply to an existing database), or the slot started on an
   earlier day (the seeded work orders and invites are tied to the seed day). Tell me why.
 - The log holds the sign-in password. Never repeat it. Give me the log path.
+- When you check a fix in the browser yourself, follow `.claude/browser-checks.md`.
 
 ## Log
 - `plan.md`, `#### Deviations` of the open cycle, one entry per call: `*   Inline fix, cycle N (Artur, YYYY-MM-DD: "<my words>"): <each change with its
