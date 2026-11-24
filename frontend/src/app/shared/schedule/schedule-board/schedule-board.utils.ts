@@ -386,12 +386,6 @@ export const BAR_INSET_REM = 0.0625;
 /** The stacking order of the drag preview. It is above the PrimeNG overlays, such as the backlog drawer. */
 export const DRAG_PREVIEW_Z_INDEX = 10_000;
 
-/**
- * The horizontal room of a turned hour label in rem: the left padding of its cell plus the text "00:00" in the small
- * font, turned by 45 degrees around its top left corner. A label inside its own column is never cut at the board edge.
- */
-export const HOUR_LABEL_WIDTH_REM = 2;
-
 /** The start under the left edge of a preview on the axis, snapped to the grid. It is `null` for an empty axis. */
 export function snappedStartOf(
   previewLeftPx: number,
@@ -413,20 +407,6 @@ export function dropStartOf(
 ): Temporal.Instant | null {
   const start = snappedStartOf(previewLeftPx, axisArea, axis);
   return start === null || Temporal.Instant.compare(start, now) < 0 ? null : start;
-}
-
-/**
- * Tells for each hour label whether it shows. All labels show when a column is at least as wide as a label. A narrower
- * column shows only the labels of the even hours, so the labels do not touch.
- */
-export function shownHourLabels(hourCount: number, columnWidthPx: number, labelWidthPx: number): boolean[] {
-  const isEveryHour = columnWidthPx >= labelWidthPx;
-  return Array.from({ length: hourCount }, (_, index) => isEveryHour || index % 2 === 0);
-}
-
-/** The width of the hour columns in pixels, from the width of the board and the width of the name column. */
-export function columnWidthOf(boardWidthPx: number, nameColumnPx: number, hourCount: number): number {
-  return hourCount > 0 ? Math.max(0, boardWidthPx - nameColumnPx) / hourCount : 0;
 }
 
 /** The `left` of a bar inside its slot: the slot start in percent plus the inset. */

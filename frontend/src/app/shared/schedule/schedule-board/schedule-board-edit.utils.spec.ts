@@ -7,14 +7,12 @@ import {
   barLeftCss,
   barTopCss,
   barWidthCss,
-  columnWidthOf,
   createClickGuard,
   createDwell,
   DAY_SWITCH_DWELL_MS,
   dropOutcomeOf,
   dropStartOf,
   dropTargetOf,
-  HOUR_LABEL_WIDTH_REM,
   instantAt,
   isSkeletonShown,
   resizeEstimateOf,
@@ -22,7 +20,6 @@ import {
   resizeShownOf,
   ROW_ATTRIBUTE,
   rowHeightRem,
-  shownHourLabels,
   shownWhileHolding,
   snapToGrid,
   STAGING_ATTRIBUTE,
@@ -271,37 +268,6 @@ describe('schedule board edit utils', () => {
 
     it('dropStartOf_ForAnAxisWithNoWidth_GivesNothing', () => {
       expect(dropStartOf(100, { left: 100, width: 0 }, axis, now)).toBeNull();
-    });
-  });
-
-  describe('shownHourLabels', () => {
-    it('shownHourLabels_ForColumnsAsWideAsTheLabel_ShowsEveryLabel', () => {
-      expect(shownHourLabels(4, 40, 40)).toEqual([true, true, true, true]);
-    });
-
-    it('shownHourLabels_ForAColumnThatFitsTheTurnedLabel_ShowsEveryLabel', () => {
-      const rootFontPx = 16;
-
-      expect(shownHourLabels(4, 2.25 * rootFontPx, HOUR_LABEL_WIDTH_REM * rootFontPx)).toEqual([
-        true,
-        true,
-        true,
-        true,
-      ]);
-    });
-
-    it('shownHourLabels_ForNarrowColumns_ShowsOnlyTheEvenHours', () => {
-      expect(shownHourLabels(4, 39, 40)).toEqual([true, false, true, false]);
-    });
-  });
-
-  describe('columnWidthOf', () => {
-    it('columnWidthOf_ForABoardWithTheNameColumn_DividesTheRest', () => {
-      expect(columnWidthOf(1360, 160, 24)).toBe(50);
-    });
-
-    it('columnWidthOf_ForNoHours_IsZero', () => {
-      expect(columnWidthOf(1360, 160, 0)).toBe(0);
     });
   });
 

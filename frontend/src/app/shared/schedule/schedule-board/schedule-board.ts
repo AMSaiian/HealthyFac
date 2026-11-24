@@ -38,7 +38,6 @@ import {
   barWidthCss,
   canDragBar,
   canResizeBar,
-  columnWidthOf,
   createClickGuard,
   createDwell,
   describeBar,
@@ -47,7 +46,6 @@ import {
   dropTargetOf,
   gapsOf,
   grabOffsetOf,
-  HOUR_LABEL_WIDTH_REM,
   hourLabelsOf,
   isPlaceholderShown,
   isPreviewConflict,
@@ -72,7 +70,6 @@ import {
   resizeShownOf,
   ROW_ATTRIBUTE,
   ROW_PADDING_REM,
-  shownHourLabels,
   shownWhileHolding,
   skeletonRowCount,
   snappedStartOf,
@@ -191,13 +188,6 @@ export class ScheduleBoard {
   protected readonly showSkeleton = computed(() => isSkeletonShown(this._delayedLoading(), this.isDragActive()));
   protected readonly showEmpty = computed(() =>
     isEmptyResult({ rows: this._shownRows(), isLoading: this.isLoading(), hasLoaded: this.hasLoaded() }),
-  );
-  protected readonly shownLabels = computed(() =>
-    shownHourLabels(
-      this.hours().length,
-      columnWidthOf(this._axisWidth() + this._nameColumnPx(), this._nameColumnPx(), this.hours().length),
-      HOUR_LABEL_WIDTH_REM * this._rootFontPx(),
-    ),
   );
   /** The width of the time axis in pixels. The page gives it to the backlog for the width of a drag preview. */
   readonly axisWidthPx = this._axisWidth.asReadonly();
@@ -425,10 +415,6 @@ export class ScheduleBoard {
     };
     handle.addEventListener('pointermove', onMove);
     handle.addEventListener('pointerup', onUp);
-  }
-
-  private _nameColumnPx(): number {
-    return NAME_COLUMN_REM * this._rootFontPx();
   }
 
   private _measure(header: HTMLElement): void {
