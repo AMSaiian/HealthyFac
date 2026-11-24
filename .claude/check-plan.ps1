@@ -17,7 +17,11 @@
 # - an AC number with more than one "*   **AC<n>:**" line in spec.md (a number is never reused);
 # - the Commit lines of the cycle ("Commit <tooling|docs|code>: <subject>"): none, an unknown group, 2 lines for one
 #   group, a subject that is not "<feature|bug>(<category>): <message in lower case>", a tooling subject without the
-#   category setup, or a docs subject without the category docs.
+#   category setup, or a docs subject without the category docs;
+# - a step whose Files: line names a template or a style file (.html, .css, "template"), without a "Look:" line in its
+#   block (.claude/browser-checks.md, Looking);
+# - a "Browser check: none" line of the cycle that quotes the same reason ("...") as such a line of another cycle: a
+#   "no UI check" note holds for one cycle (.claude/commands/spec.md, plan.md).
 param(
   [Parameter(Mandatory = $true)][string]$Folder,
   [int]$Cycle = 0
@@ -81,6 +85,9 @@ $steps = @(Get-CycleSteps $section)
 $TestFilePattern = '(?i)(^|[/`\s])tests?/|\.spec\.ts\b|Tests?\.cs\b|\.tests\.ps1\b'
 $FullRunPattern = '(?i)\bfull(?:\W+\w+){0,2}\W+(?:runs?|suites?|areas?|commands)\b'
 $VerifyLinePattern = '^\s*(?:[*-]\s+)?\**Verify\**:'
+$LookFilePattern = '(?i)\.(html|css)\b|\btemplates?\b'
+$LookLinePattern = '^\s*(?:[*-]\s+)?\**Look\**:\s*\S'
+$NoBrowserCheckPattern = '(?i)\bBrowser check:\s*none\b'
 foreach ($step in $steps) {
   $text = $step.Lines -join "`n"
   $textWithoutCommand = $text -replace '(?i)\.claude/commands/spec\.md', ''
@@ -94,6 +101,27 @@ foreach ($step in $steps) {
   $verifyText = ($step.Lines | Where-Object { $_ -match $VerifyLinePattern }) -join "`n"
   if ($verifyText -match $FullRunPattern) {
     $problems.Add("Cycle ${Cycle}: Step $($step.Number) asks for a full run in its Verify line. Name test filters; the executor runs the full run once.")
+  }
+  if ($filesText -match $LookFilePattern -and -not ($step.Lines | Where-Object { $_ -match $LookLinePattern })) {
+    $problems.Add("Cycle ${Cycle}: Step $($step.Number) changes a template or a style file, but has no Look: line (as develop <file>, as <page>, or new, Artur: `"<words>`").")
+  }
+}
+
+$noCheckReasons = [Collections.Generic.List[object]]::new()
+$lineCycle = 0
+foreach ($line in $planLines) {
+  $heading = [regex]::Match($line, '^### Cycle (\d+)\s*$')
+  if ($heading.Success) { $lineCycle = [int]$heading.Groups[1].Value; continue }
+  if ($line -match '^#{1,3} ') { $lineCycle = 0; continue }
+  if ($lineCycle -eq 0 -or $line -notmatch $NoBrowserCheckPattern) { continue }
+  foreach ($quote in [regex]::Matches($line, '"([^"]{8,})"')) {
+    $noCheckReasons.Add([pscustomobject]@{ Cycle = $lineCycle; Reason = $quote.Groups[1].Value.Trim() })
+  }
+}
+foreach ($own in @($noCheckReasons | Where-Object Cycle -eq $Cycle | Sort-Object Reason -Unique)) {
+  $other = $noCheckReasons | Where-Object { $_.Cycle -ne $Cycle -and $_.Reason -eq $own.Reason } | Select-Object -First 1
+  if ($other) {
+    $problems.Add("Cycle ${Cycle}: 'Browser check: none' repeats the reason of cycle $($other.Cycle) (`"$($own.Reason)`"). A no-UI-check note holds for one cycle; ask Artur again.")
   }
 }
 

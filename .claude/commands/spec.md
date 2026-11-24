@@ -121,7 +121,17 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
 - If the feature changes the UI, the last step is a browser check list: one line per
   user-visible flow from the acceptance criteria, each with its expected result. Include
   the edge flows (an unknown ID, a conflict, a long input, a failure, the 1280 x 600
-  window, back navigation). Never plan a deferred or manual-only browser check.
+  window, back navigation, a drag and the view during it). Never plan a deferred or
+  manual-only browser check. `.claude/browser-checks.md` defines how the flows run.
+- Each step whose `Files:` line names a template or a style file has a `Look:` line, the
+  reference that the browser check compares with: `Look: as develop <file>` (a look that
+  stays or comes back), `Look: as <page>, <component>` (the same component on another
+  page), or `Look: new, Artur: "<my words>"`. Write my words of the look into the
+  expected result. A look change that I did not ask for is a question to me, never a step:
+  to restore a look, copy the markup of `develop`. `check-plan.ps1` checks the line.
+- A "no UI check" note of mine holds for the cycle in which I write it. Ask me again for
+  the next cycle. `check-plan.ps1` fails when two cycles quote the same reason in a
+  `Browser check: none` line.
 - Put `## Acceptance Criteria Map` and `## Review Focus` after the cycles.
 
 ## Plan Check
@@ -202,7 +212,7 @@ contact: they never message each other, and I talk only to you.
 | executor `READY FOR REVIEW` | Reviewer: `review cycle C` (the `Cycle:` line of plan.md). A second line with commits: tell me the SHAs. |
 | executor message `CHECKPOINT <x>: tree <t>, base <b>` | Reviewer: `checkpoint <x>: base tree <b>, checkpoint tree <t>`. |
 | reviewer `CHECKPOINT <x>` | [CODE] findings: executor `checkpoint findings - read review.md`. [SPEC] findings: **Revisions**. |
-| executor message `BLOCKED: Step <N>` or report `BLOCKED: steps` | **Revisions**. After my approval: executor `continue` (running) or `start a run` (done). |
+| executor message `BLOCKED: Step <N>` or report `BLOCKED: steps` | A transient error with `retried:` or a permission denial (**Errors** of `browser-checks.md`): try once yourself, then executor `continue` (running) or `start a run` (done); else tell me. Any other: **Revisions**, and after my approval the same task. |
 | reviewer `executor code-fixes` | Executor: `review cycle C, round R requests code fixes - start a run`. |
 | reviewer `executor approved` | Executor: `APPROVED in cycle C - commit the cycle`. |
 | reviewer `spec spec-findings` or `spec not-converging` | **Revisions**. |
@@ -248,6 +258,10 @@ converge: read review.md / plan.md and propose concrete changes to spec.md and p
   `ACCEPTED (Artur, <date>)` and update the summary table. It never routes again.
 
 ## Verify Slot
+- Before the first browser task of this session (a subagent task of a UI cycle, or your own
+  check), run `pwsh scripts/agent-chrome.ps1 status`, and `start` when it does not run.
+  Check with `list_connected_browsers` that the agent Chrome is the browser in use: the
+  subagents use it too. When you cannot tell, ask me to choose it with `/chrome`.
 - The reviewer stops the verify slot after each round (`stop` keeps its data); `up`
   starts it again for my test, and `/fix` starts it. After `FEATURE DONE`, or after a
   commit that I ask for, ask me: "Stop the verify slot? `stop` keeps its data; `down` removes it." On yes, run

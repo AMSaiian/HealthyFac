@@ -22,7 +22,7 @@ The repo has two test areas. A change in one area needs only the full commands o
     *   Without `--max-parallel-test-modules`, `dotnet test` runs `Environment.ProcessorCount` test projects at a time. The unit command uses that default.
     *   One project: `dotnet test --project <project> --filter <VSTest filter>`.
 *   **Frontend area** (`frontend/`, `keycloak-theme/`): `cd frontend && npm run lint && npx ng build && npx ng test --watch=false`. When `keycloak-theme/` changed, also `cd keycloak-theme && npm run lint && npm test`.
-*   **Script tests:** after a change under `.claude/` or `scripts/`, run the test script of the changed file: `pwsh .claude/tests/flow-scripts.tests.ps1`, `pwsh .claude/tests/rules.tests.ps1`, `pwsh .claude/hooks/tests/hook-scope.tests.ps1`, or `pwsh scripts/tests/verify-slots.tests.ps1`. `check-handoff.ps1` runs them for a feature.
+*   **Script tests:** after a change under `.claude/` or `scripts/`, run the test script of the changed file: `pwsh .claude/tests/flow-scripts.tests.ps1`, `pwsh .claude/tests/rules.tests.ps1`, `pwsh .claude/hooks/tests/hook-scope.tests.ps1`, `pwsh scripts/tests/verify-slots.tests.ps1`, or `pwsh scripts/tests/agent-chrome.tests.ps1`. `check-handoff.ps1` runs them for a feature.
 
 ## Rules
 `.claude/rules/` holds every rule, one file per rule, with its full text. That directory is the single source of truth.

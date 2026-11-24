@@ -11,13 +11,15 @@
 # - tree-id -Area: see the area cases of check-handoff (a backend-only change needs no frontend run); -Area with -Ref
 #   of the base works when the branch has a commit after the base.
 # - check-plan: a sample plan with cycles 1 and 2 passes; each problem (Spec line, section name, AC line, map row,
-#   spec reference, test step without a proof marker, no "#### Deviations", duplicate AC, a full run in a Verify line)
-#   fails alone with its line; a problem in cycle 1 does not fail a check of cycle 2.
+#   spec reference, test step without a proof marker, no "#### Deviations", duplicate AC, a full run in a Verify line,
+#   a template or style step without a Look: line, a "Browser check: none" reason quoted in two cycles) fails alone
+#   with its line; a problem in cycle 1 does not fail a check of cycle 2.
 # - check-handoff: a clean case passes; each problem fails alone with its line; each TDD step is checked on its own;
 #   the area full runs (backend only, stale, frontend missing, frontend of an earlier cycle); the cycle Deviations;
 #   a Proof: line or a "done" log in the Deviations; a long C# line (Migrations/ skipped); a formatter change;
 #   the default base (merge base with the main branch); a failing script test of a changed flow script; an old
-#   "Full run: tree" line and an old plan-wide "## Deviations" count for nothing.
+#   "Full run: tree" line and an old plan-wide "## Deviations" count for nothing; the browser flow lines (a pass line
+#   without seen:, a pass line with a caveat, a transient fail without retried: fail; a retry note and step prose pass).
 # - check-review-routing: the "## Open" layout routes, counts REOPENED only in ## Open, and fails on a wrong table, a
 #   wrong heading, APPROVE with an open MAJOR, or a review.md without "## Open".
 # - format-changed: a second call at the same tree formats nothing again; a new file at the same tree is formatted
@@ -164,12 +166,15 @@ function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
   $planLines = @($firstLine, '', '# Plan', '', '### Cycle 1', '')
   $planLines += $specLine1
   $planLines += $cycle1Commits
+  if ($change.Cycle1Lines) { $planLines += $change.Cycle1Lines }
   $planLines += '', '- [x] Step 1: Do the first thing.', '    *   Files: `src/a.cs`', '', '#### Deviations', ''
   $planLines += '### Cycle 2', ''
   if (-not $change.NoCycle2Spec) { $planLines += $specLine2 }
   $planLines += $cycle2Commits
+  if ($change.Cycle2Lines) { $planLines += $change.Cycle2Lines }
   $planLines += ''
   $planLines += "- [ ] $step2", "    *   Files: $step2Files"
+  if ($change.Step2Look) { $planLines += "    *   Look: $($change.Step2Look)" }
   if ($change.Step2Verify) { $planLines += "    *   Verify: $($change.Step2Verify)" }
   $planLines += ''
   if (-not $change.NoCycle2Deviations) { $planLines += '#### Deviations', '' }
@@ -274,6 +279,28 @@ $duplicateAc = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-dupac' @{ 
 Assert-That ($duplicateAc.Exit -eq 1 -and $duplicateAc.Output.Count -eq 1 -and $duplicateAc.Output[0] -match '2 lines for AC2') `
   'an AC number with two lines in spec.md fails with its line'
 
+foreach ($uiFiles in @('`frontend/src/app/b/b.html`', '`frontend/src/app/b/b.css`', '`frontend/src/app/b/` (template, utils)')) {
+  $noLook = Invoke-Script 'check-plan.ps1' @((New-PlanFolder "plan-nolook-$($uiFiles.Length)" @{ Step2Files = $uiFiles }))
+  Assert-That ($noLook.Exit -eq 1 -and $noLook.Output.Count -eq 1 -and $noLook.Output[0] -match 'Step 2 changes a template or a style file, but has no Look: line') `
+    "a step with $uiFiles in its Files: line and no Look: line fails with its line"
+}
+$withLook = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-look' @{
+      Step2Files = '`frontend/src/app/b/b.html`'; Step2Look = 'as develop `frontend/src/app/b/b.html`' }))
+Assert-That ($withLook.Exit -eq 0 -and $withLook.Output.Count -eq 0) 'a template step with a Look: line passes'
+
+$noCheck = 'Browser check: none (Artur, 2026-11-23: "you can perform no UI check, I will do just ask").'
+$repeatedNone = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-none-repeat' @{ Cycle1Lines = @($noCheck); Cycle2Lines = @($noCheck) }))
+Assert-That ($repeatedNone.Exit -eq 1 -and $repeatedNone.Output.Count -eq 1 -and
+  $repeatedNone.Output[0] -match "Cycle 2: 'Browser check: none' repeats the reason of cycle 1") `
+  'a Browser check: none line that quotes the reason of an earlier cycle fails with its line'
+$singleNone = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-none-single' @{ Cycle2Lines = @($noCheck) }))
+$otherNone = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-none-other' @{
+      Cycle1Lines = @($noCheck); Cycle2Lines = @('Browser check: none (Artur, 2026-11-24: "skip the browser for this lint cycle").') }))
+$unquotedNone = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-none-unquoted' @{
+      Cycle1Lines = @('Browser check: none (spec files and lint only).'); Cycle2Lines = @('Browser check: none (spec files and lint only).') }))
+Assert-That ($singleNone.Exit -eq 0 -and $otherNone.Exit -eq 0 -and $unquotedNone.Exit -eq 0) `
+  'one Browser check: none reason, another reason per cycle, and an unquoted reason pass'
+
 # --- plan-sections ---------------------------------------------------------------------------------------------
 Write-Host 'plan-sections'
 . (Join-Path $ScriptsDir 'plan-sections.ps1')
@@ -369,6 +396,7 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   $step2Text = if ($change.Step2Tdd) { 'Document it with a TDD red step.' } elseif ($change.Step2ProofRequired) { 'Test it. Proof required.' } else { 'Document it.' }
   $lines += "- [$step2Mark] Step 2: $step2Text", '    *   Files: `src/a.cs`'
   if ($change.Step2Red) { $lines += '    *   Red: the doc test fails first with `Expected 2, found 0`.' }
+  if ($change.Step2Lines) { $lines += $change.Step2Lines }
   $lines += ''
   if (-not $change.NoFullRun) { $lines += "*   Full run backend: tree $backendTree; dotnet test -> 12 passed, 0 failed" }
   $lines += '', '#### Deviations', ''
@@ -389,6 +417,29 @@ function Invoke-Handoff($case, [string[]] $extra = @(), [string[]] $base = @('-B
 
 $cleanCase = Invoke-Handoff (New-HandoffCase 'ho-clean')
 Assert-That ($cleanCase.Exit -eq 0 -and $cleanCase.Output.Count -eq 0) 'a clean case passes'
+
+$goodFlows = Invoke-Handoff (New-HandoffCase 'ho-flows-ok' @{ Step2Lines = @(
+      '    *   pass: the drawer opens over the board; seen: 1280 x 600 light, 1920 x 1080 dark',
+      '    *   round 2: pass: the chip follows the cursor; seen: 1280 x 600 light; retried: the screenshot timed out once',
+      '    *   Flow assign: pass; the toast shows; seen: 1920 x 1080 dark',
+      '    *   fail: the badge sits above the button',
+      '    *   Pass the token to the call.') })
+Assert-That ($goodFlows.Exit -eq 0 -and $goodFlows.Output.Count -eq 0) `
+  'pass lines with seen: (also after a retry), a fail line without a transient error, and step prose pass'
+$flowCases = @(
+  @('ho-flow-noseen', '    *   pass: the drawer opens over the board', "has no 'seen:"),
+  @('ho-flow-script', '    *   pass: drags were sent as mouse events from the page; seen: 1280 x 600 light', 'a pass line has a caveat'),
+  @('ho-flow-zoom', '    *   pass: full HD through a root zoom; seen: 1920 x 1080 dark', 'a pass line has a caveat'),
+  @('ho-flow-timeout', '    *   pass: labels inside the board, the screenshot timed out; seen: 1280 x 600 light', 'a pass line has a caveat'),
+  @('ho-flow-stub', '    *   pass: pointer events on the handle (pointer capture stubbed); seen: 1280 x 600 light', 'a pass line has a caveat'),
+  @('ho-flow-transient', '    *   fail: Chrome screenshots timed out', "a transient error without 'retried:'"))
+foreach ($case in $flowCases) {
+  $flowCase = Invoke-Handoff (New-HandoffCase $case[0] @{ Step2Lines = @($case[1]) })
+  Assert-That ($flowCase.Exit -eq 1 -and $flowCase.Output.Count -eq 1 -and $flowCase.Output[0] -like "Step 2: *$($case[2])*") `
+    "the flow line '$($case[1].Trim())' fails with its line"
+}
+$retriedFail = Invoke-Handoff (New-HandoffCase 'ho-flow-retried' @{ Step2Lines = @('    *   fail: the slot did not start; retried: up') })
+Assert-That ($retriedFail.Exit -eq 0 -and $retriedFail.Output.Count -eq 0) 'a fail line of a transient error with retried: passes'
 
 $openStep = Invoke-Handoff (New-HandoffCase 'ho-open' @{ Step2Open = $true })
 Assert-That ($openStep.Exit -eq 1 -and $openStep.Output.Count -eq 1 -and $openStep.Output[0] -match 'Step 2 is not done') `

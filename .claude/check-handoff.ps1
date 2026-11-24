@@ -19,7 +19,11 @@
 # - a line of a changed C# file (outside Migrations/) that is longer than max_line_length of .editorconfig;
 # - a failing script test, when the change touches the flow scripts, the rules, the hooks, or the verify stack;
 # - a test area (tree-id.ps1 -Area backend|frontend) that differs from the base and has no "Full run <area>: tree <id>"
-#   line with its current tree in plan.md.
+#   line with its current tree in plan.md;
+# - a browser flow line of a step (.claude/browser-checks.md, Flow Lines): a "pass" line without "seen:", or with a
+#   caveat (a timeout, "not checked", a minimized window, a faked size, a script drag, a stubbed function, a DOM-only
+#   measurement; the text of a "retried:" part does not count); a "fail" line or a WAITING step that names a transient
+#   error (a timeout, an unresponsive renderer, a slot that did not start, a flaky test) without "retried:".
 # The Deviations of the cycle are the bullets under "#### Deviations" in the cycle section.
 param(
   [Parameter(Mandatory = $true)][string]$Folder,
@@ -41,6 +45,7 @@ $ScriptTests = [ordered]@{
   '.claude/hooks/tests/hook-scope.tests.ps1' = '^\.claude/hooks/'
   '.claude/tests/flow-scripts.tests.ps1'  = '^\.claude/[^/]+\.ps1$|^\.claude/tests/flow-scripts'
   'scripts/tests/verify-slots.tests.ps1'  = '^scripts/(verify-|tests/verify-)'
+  'scripts/tests/agent-chrome.tests.ps1'  = '^scripts/(tests/)?agent-chrome'
 }
 
 $planPath = Join-Path $Folder 'plan.md'
@@ -71,6 +76,30 @@ foreach ($step in $steps) {
   $hasProofLine = $text -cmatch '(?m)\b(Red|Proof)(\s*\([^)]*\))?:'
   if (($text -cmatch '\b(TDD|Red)\b' -or $text -cmatch '\bProof required\b') -and -not $hasProofLine) {
     $problems.Add("Step $($step.Number) names TDD, Red, or Proof required, but its block has no Red: or Proof: line.")
+  }
+}
+
+$FlowLinePattern = '(?i)^\s*(?:[*-]\s+)?(?:Flow [^:]{1,60}:\s*)?(?:round\s+\d+:\s*)?(pass|fail)\s*[:;]'
+$CaveatPattern = '(?i)\btimed?[ -]?out\b|\bnot checked\b|minimi[sz]ed|\b(root|css)\s+zoom\b|\bzoom layout\b|style\.zoom|' +
+  '\bstubbed\b|dispatchEvent|\bsynthetic\b|\bscripted\b|sent as (mouse|pointer) events|measured in the DOM|\bDOM only\b|\bemulated\b'
+$TransientPattern = '(?i)\btimed?[ -]?out\b|\btimeout\b|unresponsive|not respond|did not start|unhealthy|\bflak'
+foreach ($step in $steps) {
+  foreach ($line in $step.Lines) {
+    $start = $line.Trim().Substring(0, [Math]::Min(70, $line.Trim().Length))
+    $flow = [regex]::Match($line, $FlowLinePattern)
+    $isWaiting = $line -match '^- \[!\].*\bWAITING:'
+    if (-not $flow.Success -and -not $isWaiting) { continue }
+    $hasRetry = $line -match '(?i)\bretried:'
+    if ($flow.Success -and $flow.Groups[1].Value -eq 'pass') {
+      $withoutRetry = $line -replace '(?i)\bretried:[^;]*', ''
+      if ($withoutRetry -match $CaveatPattern) {
+        $problems.Add("Step $($step.Number): a pass line has a caveat ('$start'). A flow that did not run as written is no pass (.claude/browser-checks.md, Flow Lines).")
+      } elseif ($line -notmatch '(?i)\bseen:') {
+        $problems.Add("Step $($step.Number): a pass line has no 'seen: <size> <theme>' ('$start').")
+      }
+    } elseif ($line -match $TransientPattern -and -not $hasRetry) {
+      $problems.Add("Step $($step.Number): a transient error without 'retried:' ('$start'). Fix it and run the same command once more (.claude/browser-checks.md, Errors).")
+    }
   }
 }
 
