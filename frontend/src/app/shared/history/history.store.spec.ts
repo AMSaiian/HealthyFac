@@ -8,7 +8,7 @@ import { provideFakePlatformNavigation } from './fake-platform-navigation';
 import { HistoryStore } from './history.store';
 import type { ReturnTarget } from './return-target';
 
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 
 @Component({ template: '', host: { class: 'contents' } })
@@ -43,7 +43,7 @@ describe('HistoryStore', () => {
           { path: 'not-found', component: Blank },
         ]),
         provideFakePlatformNavigation(),
-        { provide: AuthStore, useValue: { hasPermission: () => hasPermission } },
+        provideFakeAuthStore({ hasPermission: () => hasPermission }),
         ...(options.isNavigationMissing === true ? [{ provide: PlatformNavigation, useValue: undefined }] : []),
       ],
     });

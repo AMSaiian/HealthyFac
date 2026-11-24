@@ -7,7 +7,7 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -64,7 +64,7 @@ describe('EmployeeDayStore', () => {
         EmployeeDayStore,
         { provide: ScheduleApi, useValue: { employeeDay } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
-        { provide: AuthStore, useValue: { hasPermission: (permission: string) => permissions.includes(permission) } },
+        provideFakeAuthStore({ permissions }),
         { provide: EmployeeStore, useValue: { id: () => 'e1', name: () => 'Ann Lee' } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         {
@@ -144,7 +144,7 @@ describe('EmployeeDayStore', () => {
         EmployeeDayStore,
         { provide: ScheduleApi, useValue: { employeeDay } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         { provide: EmployeeStore, useValue: { id: () => 'e1', name: () => 'Ann Lee' } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         { provide: CLOCK, useValue: { now: () => currentNow, timeZoneId: () => 'Europe/Kyiv' } },

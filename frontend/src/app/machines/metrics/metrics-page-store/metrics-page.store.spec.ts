@@ -10,7 +10,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { HistoryStore } from '@shared/history/history.store';
 import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { MachineState } from '@machines/machine';
 import { DraftActionType } from '@machines/drafts/draft-actions';
 import { DraftsApi } from '@machines/drafts/drafts-api';
@@ -182,7 +182,7 @@ async function setup(
       { provide: RichTextImageLinks, useValue: { resolve: resolveLinks } },
       { provide: MessageService, useValue: messages },
       { provide: ConfirmationService, useValue: confirmation },
-      { provide: AuthStore, useValue: { hasPermission: () => true } },
+      provideFakeAuthStore({ hasPermission: () => true }),
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });

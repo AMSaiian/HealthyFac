@@ -8,7 +8,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 
 import { CompanyStore } from '@shared/company/company.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { MachineState } from '@machines/machine';
 import { MACHINES_ROUTES } from '@machines/machines.routes';
@@ -102,7 +102,7 @@ function setup(): HttpTestingController {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: () => true, setUiLocale: vi.fn(), signInLocale: () => null } },
+      provideFakeAuthStore({ hasPermission: () => true }),
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
     ],

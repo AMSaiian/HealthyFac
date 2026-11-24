@@ -8,7 +8,7 @@ import { Subject } from 'rxjs';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { Language } from '@shared/i18n/i18n.constants';
 import { RealtimeConnection } from '@shared/realtime/realtime-connection';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 
 import { languageMenuItems, SHELL_NAV_ITEMS, visibleNavItems } from './shell.store.utils';
@@ -41,14 +41,11 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean; empl
       ShellStore,
       { provide: Router, useValue: { events } },
       { provide: EmployeeStore, useValue: { id: signal(options.employeeId ?? null) } },
-      {
-        provide: AuthStore,
-        useValue: {
-          isAuthenticated: signal(options.isAuthenticated),
-          hasPermission: () => options.hasPermission,
-          logout,
-        },
-      },
+      provideFakeAuthStore({
+        isAuthenticated: signal(options.isAuthenticated),
+        hasPermission: () => options.hasPermission,
+        logout,
+      }),
       { provide: RealtimeConnection, useValue: { stop } },
       { provide: ConfirmationService, useValue: { confirm } },
       { provide: TranslateService, useValue: { instant: (key: string) => key } },

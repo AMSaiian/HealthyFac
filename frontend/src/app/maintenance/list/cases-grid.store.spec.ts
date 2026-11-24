@@ -9,7 +9,7 @@ import {
   createFakeRealtimeConnection,
   provideFakeRealtimeConnection,
 } from '@shared/realtime/testing/fake-realtime-connection';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { CasesApi } from '@maintenance/cases-api';
 
@@ -29,7 +29,7 @@ describe('CasesGridStore', () => {
         { provide: CasesApi, useValue: { search } },
         { provide: LookupsApi, useValue: { machines: () => of([]), machinesByIds: () => of([]) } },
         { provide: Router, useValue: { navigate: vi.fn() } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
       ],
     });
     const store = TestBed.inject(CasesGridStore);

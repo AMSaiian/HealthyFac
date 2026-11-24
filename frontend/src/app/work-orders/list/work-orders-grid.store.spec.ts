@@ -6,7 +6,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { LookupsApi } from '@shared/lookups/lookups-api';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -67,14 +67,11 @@ describe('WorkOrdersGridStore', () => {
         { provide: WorkOrdersApi, useValue: { search } },
         { provide: LookupsApi, useValue: { employees, machines } },
         { provide: ActionStore, useValue: { dispatch, lastResult } },
-        {
-          provide: AuthStore,
-          useValue: {
-            hasPermission: (permission: string) =>
-              (permission !== 'work-orders:manage' || options.canManage === true) &&
-              (permission !== 'drafts:read' || options.canReadDrafts === true),
-          },
-        },
+        provideFakeAuthStore({
+          hasPermission: (permission: string) =>
+            (permission !== 'work-orders:manage' || options.canManage === true) &&
+            (permission !== 'drafts:read' || options.canReadDrafts === true),
+        }),
         {
           provide: CLOCK,
           useValue: { now: () => Temporal.Instant.from('2027-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },

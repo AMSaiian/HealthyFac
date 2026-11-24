@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { PlatformNavigation } from '@angular/common';
-import { Component } from '@angular/core';
+import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
@@ -13,8 +13,10 @@ import { APP_ROUTER_FEATURES } from '@app/app-router';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { HistoryStore } from '@shared/history/history.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
+import { CLOCK } from '@shared/time/clock';
+import { Temporal } from '@shared/time/temporal';
 
 import { DraftState } from '@work-orders/drafts/work-order-draft';
 import { WorkOrderDraftsGridStore } from '@work-orders/drafts/work-order-drafts-grid.store';
@@ -76,7 +78,11 @@ function setup(permissions: readonly string[]): {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: (permission: string) => permissions.includes(permission) } },
+      provideFakeAuthStore({ permissions }),
+      {
+        provide: CLOCK,
+        useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },
+      },
       { provide: MessageService, useValue: messages },
       { provide: ConfirmationService, useValue: { confirm } },
     ],
@@ -119,6 +125,14 @@ describe('work order drafts route', () => {
     expect(router.url).toBe('/work-orders/drafts');
     expect(navigation.currentEntry.index).toBe(entryCount - 2);
     expect(navigation.entries().length).toBe(entryCount);
+  });
+
+  it('draftsRoute_AfterTheRender_RunsEveryRootEffectWithoutAnError', async () => {
+    const { http } = setup([Permission.DraftsRead]);
+    await openDrafts(http);
+
+    expect(() => TestBed.tick()).not.toThrow();
+    await TestBed.inject(ApplicationRef).whenStable();
   });
 
   it('draftsRoute_OnOpen_SearchesThePendingDraftsNewestFirst', async () => {

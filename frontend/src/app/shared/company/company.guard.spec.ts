@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { firstValueFrom, type Observable } from 'rxjs';
 
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { companyGuard } from './company.guard';
 
@@ -14,11 +14,7 @@ const SERVER_ERROR = { status: 500, statusText: 'Server Error' };
 
 function runGuard(): { result: Promise<boolean>; http: HttpTestingController } {
   TestBed.configureTestingModule({
-    providers: [
-      provideHttpClient(),
-      provideHttpClientTesting(),
-      { provide: AuthStore, useValue: { isAuthenticated: () => true } },
-    ],
+    providers: [provideHttpClient(), provideHttpClientTesting(), provideFakeAuthStore({ isAuthenticated: () => true })],
   });
   const result$ = TestBed.runInInjectionContext(() =>
     companyGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),

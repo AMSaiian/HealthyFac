@@ -10,7 +10,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { DetailsMode } from '@shared/forms/with-details-mode';
 import { RichTextImageLinks } from '@shared/rich-text/file-image/rich-text-image-links';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { RealtimeTopic } from '@shared/realtime/realtime';
 import {
   createFakeRealtimeConnection,
@@ -192,13 +192,10 @@ describe('WorkOrderDrawerStore', () => {
           },
         },
         { provide: FilesApi, useValue: { search: () => of({ items: [], totalCount: 0 }), upload: vi.fn() } },
-        {
-          provide: AuthStore,
-          useValue: {
-            hasPermission: (permission: string) =>
-              permission === Permission.WorkOrdersWrite ? (options.canWrite ?? false) : (options.canManage ?? false),
-          },
-        },
+        provideFakeAuthStore({
+          hasPermission: (permission: string) =>
+            permission === Permission.WorkOrdersWrite ? (options.canWrite ?? false) : (options.canManage ?? false),
+        }),
         { provide: EmployeeStore, useValue: { id: () => options.employeeId ?? null } },
         { provide: LookupsApi, useValue: { machines: () => of([]) } },
         { provide: ActionStore, useValue: { complete, notify, cancel: cancelAction, dispatch } },

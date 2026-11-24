@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { authGuard } from './auth.guard';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 const REQUESTED_URL = '/some/path?x=1';
 
@@ -12,7 +12,7 @@ describe('authGuard', () => {
   const login = vi.fn().mockResolvedValue(undefined);
 
   function run(): unknown {
-    TestBed.configureTestingModule({ providers: [{ provide: AuthStore, useValue: { isAuthenticated, login } }] });
+    TestBed.configureTestingModule({ providers: [provideFakeAuthStore({ isAuthenticated, login })] });
     return TestBed.runInInjectionContext(() =>
       authGuard({} as ActivatedRouteSnapshot, { url: REQUESTED_URL } as RouterStateSnapshot),
     );

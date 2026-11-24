@@ -7,7 +7,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { EmployeeStore } from '@shared/employee/employee.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import type { ActionResult } from '@shared/actions/app-action';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
@@ -96,7 +96,7 @@ describe('ScheduleStore', () => {
         { provide: ScheduleApi, useValue: { companyDay, employeeDay } },
         { provide: WorkOrdersApi, useValue: { search, applySchedule } },
         { provide: WorkOrdersGridStore, useValue: { filter: signal(EMPTY_FILTER) } },
-        { provide: AuthStore, useValue: { hasPermission: () => canManage() } },
+        provideFakeAuthStore({ hasPermission: () => canManage() }),
         { provide: EmployeeStore, useValue: { employee: employeeResource } },
         { provide: MessageService, useValue: { add } },
         { provide: ConfirmationService, useValue: { confirm } },

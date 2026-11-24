@@ -12,7 +12,7 @@ import { provideActionHosts } from '@shared/actions/action-registry';
 import { ActionStore } from '@shared/actions/action.store';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -102,7 +102,7 @@ describe('ShiftsStore', () => {
           },
         },
         { provide: WorkOrdersApi, useValue: { daySchedule } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         provideRouter([{ path: '**', component: Blank }]),
         provideFakePlatformNavigation(),
         ...(options.isActionStoreReal === true

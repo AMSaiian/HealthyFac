@@ -9,7 +9,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { SKIP_ERROR_TOAST } from '@shared/http/problem-details.interceptor';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import type { Machine } from '@machines/machine';
@@ -73,7 +73,7 @@ describe('StatusDefinitionsGridStore', () => {
         provideRouter([{ path: '**', component: Blank }]),
         provideFakePlatformNavigation(),
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
-        { provide: AuthStore, useValue: { hasPermission: () => options.hasPermission ?? true } },
+        provideFakeAuthStore({ hasPermission: () => options.hasPermission ?? true }),
         {
           provide: CLOCK,
           useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },

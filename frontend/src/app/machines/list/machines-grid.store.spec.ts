@@ -6,7 +6,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 import { type Machine, MachineState } from '@machines/machine';
@@ -65,7 +65,7 @@ describe('MachinesGridStore', () => {
           },
         },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
-        { provide: AuthStore, useValue: { hasPermission: () => options.hasPermission ?? true } },
+        provideFakeAuthStore({ hasPermission: () => options.hasPermission ?? true }),
         {
           provide: CLOCK,
           useValue: { now: () => Temporal.Instant.from('2026-01-01T00:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },

@@ -15,7 +15,7 @@ import { APP_CONFIG } from '@shared/config/app-config';
 import { ANONYMOUS_REQUEST } from '@shared/http/anonymous-request';
 
 import { authInterceptor } from './auth.interceptor';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { SessionEndedError } from './session-errors';
 
 const API = 'https://api.healthyfac.test';
@@ -57,7 +57,7 @@ describe('authInterceptor', () => {
             primeUiLicenseKey: 'k',
           },
         },
-        { provide: AuthStore, useValue: store },
+        provideFakeAuthStore(store),
       ],
     });
     http = TestBed.inject(HttpClient);

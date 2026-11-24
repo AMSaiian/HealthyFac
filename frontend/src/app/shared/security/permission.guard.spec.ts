@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { type ActivatedRouteSnapshot, Router, type RouterStateSnapshot } from '@angular/router';
 
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { permissionGuard } from './permission.guard';
 import { Permission } from './permissions';
 
@@ -9,12 +9,9 @@ describe('permissionGuard', () => {
   function run(hasPermission: boolean): unknown {
     TestBed.configureTestingModule({
       providers: [
-        {
-          provide: AuthStore,
-          useValue: {
-            hasPermission: (permission: Permission) => hasPermission && permission === Permission.EmployeesRead,
-          },
-        },
+        provideFakeAuthStore({
+          hasPermission: (permission: Permission) => hasPermission && permission === Permission.EmployeesRead,
+        }),
         { provide: Router, useValue: { parseUrl: (url: string) => ({ url }) } },
       ],
     });

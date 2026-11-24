@@ -4,7 +4,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { of } from 'rxjs';
 
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { RealtimeTopic } from '@shared/realtime/realtime';
 import {
   createFakeRealtimeConnection,
@@ -26,7 +26,7 @@ describe('WorkOrderDraftsGridStore', () => {
         provideTranslateService(),
         WorkOrderDraftsGridStore,
         { provide: WorkOrderDraftsApi, useValue: { search } },
-        { provide: AuthStore, useValue: { hasPermission: () => signal(true)() } },
+        provideFakeAuthStore({ hasPermission: () => signal(true)() }),
         { provide: MessageService, useValue: { add: vi.fn() } },
         { provide: ConfirmationService, useValue: { confirm: vi.fn() } },
       ],

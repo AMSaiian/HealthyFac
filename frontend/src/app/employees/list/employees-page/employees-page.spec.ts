@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import type { ActionResult } from '@shared/actions/app-action';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { InvitesGridStore } from '@employees/invites/invites-grid.store';
 import { EmployeesApi } from '@employees/employees-api';
@@ -39,7 +39,7 @@ describe('EmployeesPage', () => {
         InvitesGridStore,
         { provide: EmployeesApi, useValue: { searchEmployees, searchInvites } },
         { provide: ActionStore, useValue: { dispatch: vi.fn(), lastResult } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
         { provide: ConfirmationService, useValue: { confirm: vi.fn() } },

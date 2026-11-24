@@ -9,7 +9,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { CompanyStore } from '@shared/company/company.store';
 import { NETWORK_ERROR_PATH } from '@shared/http/fallback-urls';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { NetworkErrorPage } from '@fallback/network-error/network-error-page';
 import { CompanyFilesPage } from '@files/list/company-files-page/company-files-page';
@@ -36,7 +36,7 @@ function setup(): HttpTestingController {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { isAuthenticated: () => true, hasPermission: () => true } },
+      provideFakeAuthStore({ isAuthenticated: () => true, hasPermission: () => true }),
       { provide: MessageService, useValue: { add: vi.fn() } },
       { provide: ConfirmationService, useValue: { confirm: vi.fn() } },
     ],

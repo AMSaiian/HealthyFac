@@ -5,7 +5,7 @@ import { MessageService } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 
 import { EmployeeRole } from '@shared/employee/employee';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { InviteApi, type InviteDetails } from '@invite/invite-api';
 import { InviteLocation } from '@invite/invite-location';
@@ -36,7 +36,7 @@ describe('InviteStore', () => {
         InviteStore,
         { provide: InviteApi, useValue: { verify, accept } },
         { provide: InviteLocation, useValue: { readToken, clearFragment } },
-        { provide: AuthStore, useValue: { isAuthenticated, logout, email: () => 'me@healthyfac.test' } },
+        provideFakeAuthStore({ isAuthenticated, logout, email: () => 'me@healthyfac.test' }),
         { provide: MessageService, useValue: { add } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],

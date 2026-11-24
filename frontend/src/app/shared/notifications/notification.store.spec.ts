@@ -10,7 +10,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import { LanguageStore } from '@shared/i18n/language.store';
 import { type RealtimeNotification, RealtimeNotificationKind } from '@shared/realtime/realtime';
 import { RealtimeConnection } from '@shared/realtime/realtime-connection';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import { WorkOrderActionType } from '@work-orders/work-order-actions';
 
@@ -39,7 +39,7 @@ describe('NotificationStore', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: RealtimeConnection, useValue: { notifications$, sessionEnded$, stop } },
-        { provide: AuthStore, useValue: { subject: () => OWN_SUBJECT, logout } },
+        provideFakeAuthStore({ subject: () => OWN_SUBJECT, logout }),
         { provide: MessageService, useValue: { add: toast } },
         { provide: Router, useValue: { navigate } },
         { provide: ActionStore, useValue: { dispatch } },

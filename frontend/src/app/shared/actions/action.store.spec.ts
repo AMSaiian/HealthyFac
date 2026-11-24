@@ -11,7 +11,7 @@ import type { ActionHostRegistration, ComposeCodec } from './app-action';
 import { APP_ROUTER_FEATURES } from '@app/app-router';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 const CREATE_TYPE = 'things.create';
 const SAVED_TYPE = 'things.saved';
@@ -76,7 +76,7 @@ describe('ActionStore', () => {
           ...APP_ROUTER_FEATURES,
         ),
         provideFakePlatformNavigation(),
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
       ],
     });
     (TestBed.inject(PlatformNavigation) as FakePlatformNavigation).seedCurrentEntryState(startState);

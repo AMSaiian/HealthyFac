@@ -14,7 +14,7 @@ import { NETWORK_ERROR_PATH, NETWORK_ERROR_URL, NOT_FOUND_URL } from '@shared/ht
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakeRealtimeConnection } from '@shared/realtime/testing/fake-realtime-connection';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CompanyStore } from '@shared/company/company.store';
 
 import { NetworkErrorPage } from '@fallback/network-error/network-error-page';
@@ -49,7 +49,7 @@ function setup(addressBarPath = '/'): {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { hasPermission: () => true, setUiLocale: vi.fn(), signInLocale: () => null } },
+      provideFakeAuthStore({ hasPermission: () => true }),
       { provide: CompanyStore, useValue: { timeZoneId: () => 'Europe/Kyiv' } },
       { provide: MessageService, useValue: { add: vi.fn() } },
     ],

@@ -11,7 +11,7 @@ import { of } from 'rxjs';
 
 import { ActionStore } from '@shared/actions/action.store';
 import { toKeysetPosition } from '@shared/grid/requests/grid-request';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { Permission } from '@shared/security/permissions';
 
 import { DraftKind, DraftState, type MachineDraftGridItem } from '@machines/drafts/draft';
@@ -90,10 +90,7 @@ describe('MachineDraftsStore', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: ActionStore, useValue: actions },
-        {
-          provide: AuthStore,
-          useValue: { hasPermission: (permission: string) => permission === Permission.DraftsWrite },
-        },
+        provideFakeAuthStore({ hasPermission: (permission: string) => permission === Permission.DraftsWrite }),
         { provide: MessageService, useValue: { add: vi.fn() } },
         {
           provide: ConfirmationService,

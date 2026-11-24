@@ -10,7 +10,7 @@ import {
   createFakeRealtimeConnection,
   provideFakeRealtimeConnection,
 } from '@shared/realtime/testing/fake-realtime-connection';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 import type { CaseDetail } from '@maintenance/case';
 import { CasesApi } from '@maintenance/cases-api';
@@ -33,7 +33,7 @@ describe('CasePageStore', () => {
         CasePageStore,
         { provide: CasesApi, useValue: { get, searchSignals, searchRuns } },
         { provide: LookupsApi, useValue: { machinesByIds: () => of([]) } },
-        { provide: AuthStore, useValue: { hasPermission: () => true } },
+        provideFakeAuthStore({ hasPermission: () => true }),
         { provide: MessageService, useValue: { add: vi.fn() } },
         { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],

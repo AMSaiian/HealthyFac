@@ -11,7 +11,7 @@ import { FALLBACK_ROUTES } from '@fallback/fallback.routes';
 import { NotFoundPage } from '@fallback/not-found/not-found-page';
 import type { FakePlatformNavigation } from '@shared/history/fake-platform-navigation';
 import { provideFakePlatformNavigation } from '@shared/history/fake-platform-navigation';
-import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { CLOCK } from '@shared/time/clock';
 import { Temporal } from '@shared/time/temporal';
 
@@ -51,7 +51,7 @@ function setup(hasPermission = true): HttpTestingController {
       provideHttpClient(),
       provideHttpClientTesting(),
       provideTranslateService(),
-      { provide: AuthStore, useValue: { isAuthenticated: () => true, hasPermission: () => hasPermission } },
+      provideFakeAuthStore({ isAuthenticated: () => true, hasPermission: () => hasPermission }),
       {
         provide: CLOCK,
         useValue: { now: () => Temporal.Instant.from('2026-01-01T10:00:00Z'), timeZoneId: () => 'Europe/Kyiv' },
