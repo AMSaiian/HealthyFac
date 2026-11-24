@@ -12,12 +12,4 @@ public interface IInsightsDbInitializer
     /// requests.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task ApplyDatabaseStructureAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-    /// <summary>
-    /// Seeds the demo ingest snapshot (Development only).
-    /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
-    /// requests.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken));
 }

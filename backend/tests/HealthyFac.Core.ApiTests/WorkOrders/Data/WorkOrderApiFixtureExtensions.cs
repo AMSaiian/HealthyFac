@@ -7,6 +7,7 @@ using HealthyFac.Core.Domain.Shifts;
 using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Testing.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -108,7 +109,7 @@ public static class WorkOrderApiFixtureExtensions
                 WorkOrderApiTestData.BasePath,
                 claims,
                 body);
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
             var created = await response.Content.ReadFromJsonAsync<JsonObject>();
 
             return created![propertyName: "id"]!.GetValue<string>();
@@ -120,7 +121,7 @@ public static class WorkOrderApiFixtureExtensions
                 HttpMethod.Get,
                 $"{WorkOrderApiTestData.BasePath}/{encryptedId}",
                 claims);
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return (await response.Content.ReadFromJsonAsync<JsonObject>())!;
         }
@@ -132,7 +133,7 @@ public static class WorkOrderApiFixtureExtensions
                 WorkOrderApiTestData.SearchPath,
                 claims,
                 WorkOrderApiTestData.SearchBody);
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
             var page = await response.Content.ReadFromJsonAsync<JsonObject>();
 
             return page![propertyName: "items"]!.AsArray()

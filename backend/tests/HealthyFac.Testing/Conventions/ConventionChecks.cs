@@ -118,6 +118,24 @@ public static class ConventionChecks
             .ToList();
 
     /// <summary>
+    /// Finds the properties and fields that carry an attribute (e.g., <c>[JsonPropertyName]</c>, which a project
+    /// that uses the shared JSON options must not use).
+    /// </summary>
+    /// <param name="assembly">The assembly to inspect.</param>
+    /// <param name="attributeType">The attribute to look for.</param>
+    /// <returns>The names of the members that carry the attribute.</returns>
+    public static IReadOnlyList<string> FindMembersWithAttribute(Assembly assembly, Type attributeType) =>
+        assembly.GetSourceTypes()
+            .SelectMany(type => type.GetProperties(TypeInspection.DeclaredMembers)
+                .Where(property => property.IsDefined(attributeType, inherit: false))
+                .Select(property => $"{type.DisplayName}.{property.Name}")
+                .Concat(
+                    type.GetFields(TypeInspection.DeclaredMembers)
+                        .Where(field => field.IsDefined(attributeType, inherit: false))
+                        .Select(field => $"{type.DisplayName}.{field.Name}")))
+            .ToList();
+
+    /// <summary>
     /// Finds the protected abstract methods whose name does not end with <c>Internal</c> or <c>InternalAsync</c>.
     /// </summary>
     /// <param name="assembly">The assembly to inspect.</param>

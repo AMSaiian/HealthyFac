@@ -1,14 +1,14 @@
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Realtime;
-using HealthyFac.Core.IntegrationTests.Database;
 using HealthyFac.Core.IntegrationTests.Database.Data;
+using HealthyFac.Core.IntegrationTests.Employees;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Realtime.Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Realtime;
 
-[Collection(CoreSeedingCollection.Name)]
+[Collection(CoreEmployeesCollection.Name)]
 public sealed class EmployeeRecipientsTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

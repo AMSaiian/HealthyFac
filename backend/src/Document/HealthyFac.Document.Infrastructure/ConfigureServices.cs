@@ -6,20 +6,16 @@ using HealthyFac.Document.Application.Files.Inspection;
 using HealthyFac.Document.Application.Files.Links;
 using HealthyFac.Document.Infrastructure.Database;
 using HealthyFac.Document.Infrastructure.Database.Initialization;
-using HealthyFac.Document.Infrastructure.Database.Seeding;
-using HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 using HealthyFac.Document.Infrastructure.Files.Inspection;
 using HealthyFac.Document.Infrastructure.Files.Links;
 using HealthyFac.Document.Infrastructure.Files.Storage;
 using HealthyFac.Insights.Messaging.Ingest;
-using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.RichText;
-using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Shared.Infrastructure.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -95,16 +91,10 @@ public static class ConfigureServices
             services.AddIntegrationMessage<FileMachineMatched>();
             services.AddIntegrationMessage<IngestStateChanged>();
 
-            services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
-                SeedingOptions.SectionName, configuration);
-
             services.AddFileStorage(configuration);
             services.AddSingleton<IFileInspector, FileSignaturesFileInspector>();
             services.AddSingleton<IFileLinkIssuer, SasFileLinkIssuer>();
 
-            services.AddScoped<DocumentDevelopmentDataSeeder>();
-            services.AddSingleton(DemoIngestSeedLocation.FromApplicationBase());
-            services.AddSingleton<DemoFileSeeder>();
             services.AddScoped<IDocumentDbInitializer, DocumentDbInitializer>();
 
             return services;

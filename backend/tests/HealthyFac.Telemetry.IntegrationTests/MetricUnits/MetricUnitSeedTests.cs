@@ -1,10 +1,10 @@
-using HealthyFac.Telemetry.IntegrationTests.Database;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricUnits.Data;
+using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MetricUnits;
 
-[Collection(TelemetrySeedingCollection.Name)]
+[Collection(TelemetryDefinitionsCollection.Name)]
 public sealed class MetricUnitSeedTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;

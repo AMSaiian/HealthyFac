@@ -23,7 +23,6 @@ using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.Database.Initialization;
-using HealthyFac.Insights.Infrastructure.Database.Seeding;
 using HealthyFac.Insights.Infrastructure.Documents;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.Infrastructure.Files;
@@ -42,7 +41,6 @@ using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.Infrastructure.Realtime;
 using HealthyFac.Shared.Infrastructure.RichText;
-using HealthyFac.Shared.Infrastructure.Seeding;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.Infrastructure.Time;
 using HealthyFac.Telemetry.Messaging.MetricUnits;
@@ -118,10 +116,6 @@ public static class ConfigureServices
             services.AddMessageProcessors();
             services.AddRealtimeNotifier();
 
-            services.AddValidatedOptions<SeedingOptions, SeedingOptionsValidator>(
-                SeedingOptions.SectionName, configuration);
-            services.AddSingleton(DemoIngestSeedLocation.FromApplicationBase());
-            services.AddSingleton<DemoIngestSeeder>();
             services.AddScoped<IInsightsDbInitializer, InsightsDbInitializer>();
             services.AddScoped<IIngestAttemptLock, IngestAttemptLock>();
             services.AddScoped<IMachineSignalCatalog, TelemetryMachineSignalCatalog>();

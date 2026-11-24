@@ -134,10 +134,26 @@ Assert-That ((Resolve-VerifyEnvFile -WorktreeRoot $tree -MainRoot $main -Exists 
 $message = Get-Failure { Resolve-VerifyEnvFile -WorktreeRoot $tree -MainRoot $main -Exists $none }
 Assert-That ($message -match 'D:\\Tree\\\.env' -and $message -match 'D:\\Main\\\.env') 'no .env: the error names both paths'
 
+Write-Host 'Seed sign-in'
+$signInDir = Join-Path ([IO.Path]::GetTempPath()) ("verify-sign-in-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path $signInDir | Out-Null
+$signInFile = Join-Path $signInDir 'company.json'
+Set-Content -Path $signInFile -Value '{ "password": "Test-Password-1!", "people": [ { "key": "nadiia", "email": "sup@test.example", "role": "supervisor" }, { "key": "andrii", "email": "work@test.example", "role": "worker" } ] }'
+$signIn = Get-SeedSignIn -Path $signInFile
+Assert-That ($signIn.SupervisorEmail -eq 'sup@test.example') 'the sign-in reader returns the supervisor email (nadiia)'
+Assert-That ($signIn.WorkerEmail -eq 'work@test.example') 'the sign-in reader returns the worker email (andrii)'
+Assert-That ($signIn.Password -eq 'Test-Password-1!') 'the sign-in reader returns the password'
+$missing = Join-Path $signInDir 'missing.json'
+$message = Get-Failure { Get-SeedSignIn -Path $missing }
+Assert-That ($message -like "*$missing*") 'a missing company.json fails with its path'
+Remove-Item -Recurse -Force $signInDir
+$committed = Get-SeedSignIn -Path (Join-Path $repo 'backend\seed\demo\company.json')
+Assert-That ($committed.SupervisorEmail -and $committed.WorkerEmail -and $committed.Password) 'the sign-in reader reads the committed company.json'
+
 Write-Host 'Settings split'
 # The check reads the raw Compose file, because `docker compose config` replaces every variable, and a fixed value
 # then looks like a value from .env. A .NET service is a service whose Dockerfile is a HealthyFac.<Name>.Web one or
-# the one of the machine simulator.
+# the one of the machine simulator or the seed job.
 $composeLines = Get-Content (Join-Path $repo 'docker-compose.yml')
 $blocks = [ordered]@{}
 $service = $null
@@ -147,7 +163,7 @@ foreach ($line in $composeLines) {
   if ($line -match '^\S') { $service = $null }
   if ($service) { $blocks[$service].Add($line) }
 }
-$dotnetServices = @($blocks.Keys | Where-Object { $blocks[$_] -match 'dockerfile:\s*src/(\w+/HealthyFac\.\w+\.Web|Tools/HealthyFac\.MachineSimulator)/Dockerfile' })
+$dotnetServices = @($blocks.Keys | Where-Object { $blocks[$_] -match 'dockerfile:\s*src/(\w+/HealthyFac\.\w+\.Web|Tools/HealthyFac\.(MachineSimulator|Seeder))/Dockerfile' })
 Assert-That ($dotnetServices.Count -ge 8) "docker-compose.yml has the .NET services ($($dotnetServices -join ', '))"
 $SecretName = '(?i)(password|secret|apikey|^key)$'
 foreach ($name in $dotnetServices) {
@@ -164,6 +180,16 @@ foreach ($name in $dotnetServices) {
     if ($value -notmatch '\$\{') { $fixed.Add($entry.Groups[1].Value) }
   }
   Assert-That ($fixed.Count -eq 0) "$name has no fixed '__' entry in its environment ($($fixed -join ', '))"
+
+  if ($name -eq 'seeder') {
+    foreach ($hostName in 'core', 'telemetry', 'document', 'insights', 'auth') {
+      $hostMount = "./docker/config/$hostName.json:/app/services/$hostName/appsettings.Deployment.json:ro"
+      $hostFile = Join-Path $repo "docker\config\$hostName.json"
+      Assert-That ([bool]($block -match [regex]::Escape($hostMount)) -and (Test-Path $hostFile)) "seeder mounts docker/config/$hostName.json for the $hostName host"
+    }
+    Assert-That ([bool]($block -match [regex]::Escape('./backend/seed/demo:/app/seed/demo:ro'))) 'seeder mounts backend/seed/demo read-only'
+    continue
+  }
 
   $mount = "./docker/config/$name.json:/app/appsettings.Deployment.json:ro"
   $configPath = Join-Path $repo "docker\config\$name.json"
@@ -186,6 +212,16 @@ foreach ($name in $dotnetServices) {
   }
   Assert-That ($secrets.Count -eq 0) "docker/config/$name.json names no secret ($($secrets -join ', '))"
 }
+
+foreach ($name in $blocks.Keys) {
+  $old = @($blocks[$name] | Where-Object { $_ -match 'Seeding__|HEALTHYFAC_TEST_' })
+  Assert-That ($old.Count -eq 0) "$name has no Seeding__ or HEALTHYFAC_TEST_ entry"
+}
+foreach ($name in 'core', 'telemetry', 'document', 'insights', 'auth') {
+  $blockText = $blocks[$name] -join "`n"
+  Assert-That ($blockText -match '(?m)^      seeder:\s*\n        condition: service_completed_successfully') "$name waits for the seeder (service_completed_successfully)"
+}
+Assert-That ($dotnetServices -contains 'seeder') 'docker-compose.yml has the seeder service'
 
 Write-Host 'Compose'
 $composeArgs = @(

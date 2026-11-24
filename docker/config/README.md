@@ -2,6 +2,10 @@
 
 Each file `<service>.json` holds the fixed settings of one .NET service inside the Compose network. Compose mounts it read-only as `/app/appsettings.Deployment.json`. The service loads it through `AddDeploymentSettingsFile()` (`HealthyFac.Shared.Web`).
 
+## The Seed Job
+
+The `seeder` service (`backend/src/Tools/HealthyFac.Seeder`) builds the hosts of `core`, `telemetry`, `document`, `insights`, and `auth` in one process. It mounts the file of each host read-only at `/app/services/<service>/appsettings.Deployment.json`, so a host reads the same fixed values as its service. The `environment` of the seeder holds only secrets and machine values, as `Services__<Name>__<key>`. The folder `backend/seed/demo` is mounted read-only at `/app/seed/demo`.
+
 ## Where a Setting Belongs
 
 | Setting | Place |

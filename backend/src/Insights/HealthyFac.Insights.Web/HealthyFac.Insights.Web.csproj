@@ -12,13 +12,6 @@
         <PackageReference Include="Serilog.AspNetCore"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <Content Include="..\..\..\seed\seed.Development.json" Link="seed\seed.Development.json"
-                 CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
-        <Content Include="..\..\..\seed\demo-ingest\**" LinkBase="seed\demo-ingest"
-                 CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never"/>
-    </ItemGroup>
-
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>

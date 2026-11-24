@@ -173,4 +173,18 @@ function Resolve-VerifyEnvFile {
   throw "No .env found. Looked at $own and $fallback. Copy .env.example to one of them."
 }
 
-Export-ModuleMember -Function Get-VerifySlotLocks, Request-VerifySlotLock, Get-StaleVerifySlotLocks, Merge-VerifyOwners, Assert-VerifySlot, Get-VerifySlotNumbers, Get-VerifySlotValues, ConvertTo-VerifyProjects, Select-VerifySlot, Resolve-VerifyEnvFile
+# Reads the sign-in values of the demo seed from backend/seed/demo/company.json: the email of the supervisor nadiia,
+# the email of the worker andrii, and the shared password. The seed job creates these accounts in Keycloak.
+function Get-SeedSignIn {
+  param([Parameter(Mandatory)][string]$Path)
+  if (-not (Test-Path $Path)) { throw "The seed file $Path does not exist." }
+  $company = Get-Content $Path -Raw | ConvertFrom-Json
+  $supervisor = $company.people | Where-Object { $_.key -eq 'nadiia' } | Select-Object -First 1
+  $worker = $company.people | Where-Object { $_.key -eq 'andrii' } | Select-Object -First 1
+  if (-not $supervisor -or -not $worker -or -not $company.password) {
+    throw "The seed file $Path lacks the people nadiia and andrii or the password."
+  }
+  [pscustomobject]@{ SupervisorEmail = $supervisor.email; WorkerEmail = $worker.email; Password = $company.password }
+}
+
+Export-ModuleMember -Function Get-SeedSignIn, Get-VerifySlotLocks, Request-VerifySlotLock, Get-StaleVerifySlotLocks, Merge-VerifyOwners, Assert-VerifySlot, Get-VerifySlotNumbers, Get-VerifySlotValues, ConvertTo-VerifyProjects, Select-VerifySlot, Resolve-VerifyEnvFile

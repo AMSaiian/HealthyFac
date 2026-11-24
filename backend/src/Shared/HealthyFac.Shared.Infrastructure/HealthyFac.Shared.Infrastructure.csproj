@@ -29,6 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="HealthyFac.Seeder" />
+    <InternalsVisibleTo Include="HealthyFac.Seeder.IntegrationTests" />
+    <InternalsVisibleTo Include="HealthyFac.Seeder.UnitTests" />
     <InternalsVisibleTo Include="HealthyFac.Shared.IntegrationTests" />
     <InternalsVisibleTo Include="HealthyFac.Shared.UnitTests" />
     <InternalsVisibleTo Include="HealthyFac.Testing" />

@@ -25,6 +25,9 @@ public static class SimulatorTestData
     public static readonly DateTime GoLiveStart = new(
         year: 2026, month: 11, day: 30, hour: 22, minute: 0, second: 0, DateTimeKind.Utc);
 
+    private const string ProposeMetricTool = "propose_metric";
+    private const string ProposeStatusTool = "propose_status";
+    private const string ProposeMachineTool = "propose_machine";
     public const string GenericSerialNumber = "GEN-0001";
     public const string GenericMetricKey = "level";
     public const string TopicFilter = "healthyfac/gateways/+/messages";
@@ -47,11 +50,8 @@ public static class SimulatorTestData
 
     public static readonly TimeSpan ShortWait = TimeSpan.FromSeconds(seconds: 2);
 
-    private static readonly string DemoFile = Path.Combine(
-        AppContext.BaseDirectory, path2: "demo-ingest", path3: "core.json");
-
-    private static readonly string DemoTelemetryFile = Path.Combine(
-        AppContext.BaseDirectory, path2: "demo-ingest", path3: "telemetry.json");
+    private static readonly string DemoIngestFile = Path.Combine(
+        [AppContext.BaseDirectory, "seed", "demo", "ingest", "set-1.json"]);
 
     public static TheoryData<string, ScenarioKind> DemoMachines =>
         new()
@@ -89,32 +89,20 @@ public static class SimulatorTestData
                 []);
         }
 
-        using var document = JsonDocument.Parse(File.ReadAllText(DemoFile));
-        using var telemetryDocument = JsonDocument.Parse(File.ReadAllText(DemoTelemetryFile));
-        var root = document.RootElement;
-        var telemetryRoot = telemetryDocument.RootElement;
-        var machine = root.GetProperty(propertyName: "machineDrafts")
+        using var document = JsonDocument.Parse(File.ReadAllText(DemoIngestFile));
+        var calls = document.RootElement.GetProperty(propertyName: "entries")
             .EnumerateArray()
-            .Single(draft => draft.GetProperty(propertyName: "serial_number").GetString() == serialNumber);
-        var machineDraftId = machine.GetProperty(propertyName: "id").GetString();
-        var targetMachineId = machine.GetProperty(propertyName: "target_machine_id").GetString();
-
-        bool IsOfMachine(JsonElement draft)
-        {
-            return draft.GetProperty(propertyName: "target_machine_draft_id").GetString() == machineDraftId
-                || (targetMachineId is not null
-                    && draft.GetProperty(propertyName: "target_machine_id").GetString() == targetMachineId);
-        }
-
-        var metrics = telemetryRoot.GetProperty(propertyName: "metricDefinitionDrafts")
-            .EnumerateArray()
-            .Where(IsOfMachine)
+            .Select(CollectToolCalls)
+            .Single(entryCalls => entryCalls.Any(call => IsMachineOf(call, serialNumber)));
+        var metrics = calls
+            .Where(call => ToolNameOf(call) == ProposeMetricTool)
+            .Select(call => call.GetProperty(propertyName: "arguments"))
             .Where(IsAppliedWithoutReview)
             .Select(ToMetric)
             .ToList();
-        var statuses = telemetryRoot.GetProperty(propertyName: "statusDefinitionDrafts")
-            .EnumerateArray()
-            .Where(IsOfMachine)
+        var statuses = calls
+            .Where(call => ToolNameOf(call) == ProposeStatusTool)
+            .Select(call => call.GetProperty(propertyName: "arguments"))
             .Select(draft => (
                 Code: draft.GetProperty(propertyName: "code").GetString()!,
                 Severity: StatusSeverity.FromValue(draft.GetProperty(propertyName: "severity").GetString()!)))
@@ -123,33 +111,70 @@ public static class SimulatorTestData
         return new DemoDefinitions(metrics, statuses);
     }
 
+    private static string? ToolNameOf(JsonElement call) => call.GetProperty(propertyName: "toolName").GetString();
+
+    private static bool IsMachineOf(JsonElement call, string serialNumber) =>
+        ToolNameOf(call) == ProposeMachineTool
+        && call.GetProperty(propertyName: "arguments").GetProperty(propertyName: "serialNumber").GetString()
+        == serialNumber;
+
+    private static List<JsonElement> CollectToolCalls(JsonElement entry)
+    {
+        var calls = new List<JsonElement>();
+        var pending = new Stack<JsonElement>([entry]);
+        while (pending.Count > 0)
+        {
+            var node = pending.Pop();
+            if (node.ValueKind == JsonValueKind.Array)
+            {
+                node.EnumerateArray().ToList().ForEach(pending.Push);
+            }
+            else if (node.ValueKind == JsonValueKind.Object)
+            {
+                if (node.TryGetProperty(propertyName: "toolName", out _))
+                {
+                    calls.Add(node);
+                }
+
+                node.EnumerateObject().ToList().ForEach(property => pending.Push(property.Value));
+            }
+        }
+
+        return calls;
+    }
+
     private static bool IsAppliedWithoutReview(JsonElement draft) =>
-        draft.GetProperty(propertyName: "value_kind").GetString() is { } valueKind
+        draft.TryGetProperty(propertyName: "valueKind", out var valueKindElement)
+        && valueKindElement.GetString() is { } valueKind
         && (valueKind != MetricValueKind.Numeric.Value
-            || draft.GetProperty(propertyName: "quantity_kind_name").GetString() is not null);
+            || (draft.TryGetProperty(propertyName: "quantityKind", out var quantityKind)
+                && quantityKind.ValueKind == JsonValueKind.String));
 
     private static CreatedMetricDefinition ToMetric(JsonElement draft)
     {
-        var kind = MetricValueKind.FromValue(draft.GetProperty(propertyName: "value_kind").GetString()!);
-        var quantityKind = draft.GetProperty(propertyName: "quantity_kind_name").GetString();
+        var kind = MetricValueKind.FromValue(draft.GetProperty(propertyName: "valueKind").GetString()!);
+        var hasQuantityKind = draft.TryGetProperty(propertyName: "quantityKind", out var quantityKind);
 
         return new CreatedMetricDefinition
         {
             Key = draft.GetProperty(propertyName: "key").GetString()!,
             Name = draft.GetProperty(propertyName: "name").GetString()!,
             ValueKind = kind,
-            Unit = quantityKind is null
-                ? kind == MetricValueKind.Numeric ? throw MissingNumericUnit(draft) : null
-                : new MetricUnitReference
+            Unit = hasQuantityKind
+                ? new MetricUnitReference
                 {
-                    QuantityKind = quantityKind,
-                    Name = draft.GetProperty(propertyName: "unit_name").GetString()!,
-                },
+                    QuantityKind = quantityKind.GetString()!,
+                    Name = draft.GetProperty(propertyName: "unit").GetString()!,
+                }
+                : kind == MetricValueKind.Numeric
+                    ? throw MissingNumericUnit(draft)
+                    : null,
             Min = ReadNumber(draft, name: "min"),
             Max = ReadNumber(draft, name: "max"),
-            States = draft.GetProperty(propertyName: "states").ValueKind == JsonValueKind.Array
-                ? draft.GetProperty(propertyName: "states").EnumerateArray().Select(item => item.GetString()!).ToList()
-                : null,
+            States = draft.TryGetProperty(propertyName: "states", out var states)
+                && states.ValueKind == JsonValueKind.Array
+                    ? states.EnumerateArray().Select(item => item.GetString()!).ToList()
+                    : null,
         };
     }
 
@@ -157,7 +182,9 @@ public static class SimulatorTestData
         new($"The numeric demo draft {draft.GetProperty(propertyName: "key").GetString()} has no unit.");
 
     private static double? ReadNumber(JsonElement draft, string name) =>
-        draft.GetProperty(name).ValueKind == JsonValueKind.Number ? draft.GetProperty(name).GetDouble() : null;
+        draft.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
+            ? value.GetDouble()
+            : null;
 }
 
 public sealed record DemoDefinitions(

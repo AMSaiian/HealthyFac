@@ -1,11 +1,11 @@
 using HealthyFac.Shared.Application.Realtime;
-using HealthyFac.Telemetry.IntegrationTests.Database;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
+using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Realtime;
 
-[Collection(TelemetrySeedingCollection.Name)]
+[Collection(TelemetryDefinitionsCollection.Name)]
 public sealed class RealtimeRegistrationTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;

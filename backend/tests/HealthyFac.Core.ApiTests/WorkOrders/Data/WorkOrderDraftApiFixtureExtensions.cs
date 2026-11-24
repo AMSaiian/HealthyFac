@@ -6,6 +6,7 @@ using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.Application;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Testing.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -77,7 +78,7 @@ public static class WorkOrderDraftApiFixtureExtensions
                 HttpMethod.Get,
                 $"{WorkOrderDraftApiTestData.BasePath}/{encryptedId}",
                 claims);
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return (await response.Content.ReadFromJsonAsync<JsonObject>())!;
         }

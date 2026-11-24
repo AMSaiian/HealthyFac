@@ -1,5 +1,3 @@
-using HealthyFac.Document.Infrastructure.Database.Seeding;
-using HealthyFac.Document.Infrastructure.Database.Seeding.DemoFiles;
 using HealthyFac.Document.Infrastructure.Files.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -8,22 +6,18 @@ using Microsoft.Extensions.Logging;
 namespace HealthyFac.Document.Infrastructure.Database.Initialization;
 
 /// <summary>
-/// Initializes the document database and performs data seeding operations.
+/// Initializes the document database: the migrations and the required data.
 /// </summary>
 public class DocumentDbInitializer(
     ILogger<DocumentDbInitializer> logger,
     DocumentDbContext dbContext,
     IHostEnvironment environment,
-    DocumentDevelopmentDataSeeder developmentDataSeeder,
-    DemoFileSeeder demoFileSeeder,
     BlobFileStorage fileStorage
 ) : IDocumentDbInitializer
 {
     private readonly ILogger<DocumentDbInitializer> _logger = logger;
     private readonly DocumentDbContext _dbContext = dbContext;
     private readonly IHostEnvironment _environment = environment;
-    private readonly DocumentDevelopmentDataSeeder _developmentDataSeeder = developmentDataSeeder;
-    private readonly DemoFileSeeder _demoFileSeeder = demoFileSeeder;
     private readonly BlobFileStorage _fileStorage = fileStorage;
 
     /// <summary>
@@ -77,22 +71,6 @@ public class DocumentDbInitializer(
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             _logger.LogWarning(exception, DatabaseConstants.Messages.ContainerNotCreated);
-        }
-    }
-
-    /// <summary>
-    /// Seeds the registrations of the seed machines, then the demo files, only in the Development environment.
-    /// It adds nothing that exists, so a restart does not duplicate the data.
-    /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
-    /// requests.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
-    {
-        await _developmentDataSeeder.SeedAsync(cancellationToken);
-        if (_environment.IsDevelopment())
-        {
-            await _demoFileSeeder.SeedAsync(cancellationToken);
         }
     }
 }

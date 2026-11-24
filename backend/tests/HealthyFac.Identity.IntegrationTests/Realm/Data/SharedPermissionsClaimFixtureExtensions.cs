@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Shared.Web.Authentication;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm.Data;
@@ -122,7 +123,7 @@ public static class SharedPermissionsClaimFixtureExtensions
             };
 
             var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return response;
         }

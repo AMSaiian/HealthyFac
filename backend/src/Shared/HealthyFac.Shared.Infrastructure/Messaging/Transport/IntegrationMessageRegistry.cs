@@ -29,6 +29,9 @@ public sealed class IntegrationMessageRegistry
 
     public IReadOnlyCollection<string> MessageTypes => _registrations.Keys;
 
+    internal IReadOnlyCollection<Type> MessageClrTypes =>
+        _registrations.Values.Select(registration => registration.MessageClrType).ToList();
+
     /// <summary>
     /// Adds a message contract and its typed dispatch. A service has exactly one use case for each message type:
     /// when two steps must react to one message, one use case runs both, or it saves a new message through the

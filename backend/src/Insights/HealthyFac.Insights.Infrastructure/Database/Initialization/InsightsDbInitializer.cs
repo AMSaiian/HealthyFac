@@ -1,4 +1,3 @@
-using HealthyFac.Insights.Infrastructure.Database.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,14 +10,12 @@ namespace HealthyFac.Insights.Infrastructure.Database.Initialization;
 public class InsightsDbInitializer(
     ILogger<InsightsDbInitializer> logger,
     InsightsDbContext dbContext,
-    IHostEnvironment environment,
-    DemoIngestSeeder demoIngestSeeder
+    IHostEnvironment environment
 ) : IInsightsDbInitializer
 {
     private readonly ILogger<InsightsDbInitializer> _logger = logger;
     private readonly InsightsDbContext _dbContext = dbContext;
     private readonly IHostEnvironment _environment = environment;
-    private readonly DemoIngestSeeder _demoIngestSeeder = demoIngestSeeder;
 
     /// <summary>
     /// Applies database migrations to the insights database context, only in the Development environment. Other
@@ -49,21 +46,6 @@ public class InsightsDbInitializer(
         {
             _logger.LogError(ex, DatabaseConstants.Errors.Migration);
             throw;
-        }
-    }
-
-    /// <summary>
-    /// Seeds the demo ingest snapshot, only in the Development environment. It adds nothing that exists, so a
-    /// restart does not duplicate the data.
-    /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe for cancellation
-    /// requests.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task SeedOptionalDataAsync(CancellationToken cancellationToken = default(CancellationToken))
-    {
-        if (_environment.IsDevelopment())
-        {
-            await _demoIngestSeeder.SeedAsync(cancellationToken);
         }
     }
 }

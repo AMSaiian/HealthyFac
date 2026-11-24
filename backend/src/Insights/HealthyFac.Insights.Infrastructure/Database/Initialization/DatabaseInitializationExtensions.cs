@@ -1,4 +1,3 @@
-using HealthyFac.Insights.Infrastructure.Database.Seeding;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
@@ -33,14 +32,7 @@ public static class DatabaseInitializationExtensions
 
             var initializer = scope.ServiceProvider.GetRequiredService<IInsightsDbInitializer>();
 
-            var seedingOptions = scope.ServiceProvider.GetRequiredService<IOptions<SeedingOptions>>().Value;
-
             await initializer.ApplyDatabaseStructureAsync(cancellationToken);
-
-            if (seedingOptions.IsOptionalDataSeeded)
-            {
-                await initializer.SeedOptionalDataAsync(cancellationToken);
-            }
         }
     }
 }

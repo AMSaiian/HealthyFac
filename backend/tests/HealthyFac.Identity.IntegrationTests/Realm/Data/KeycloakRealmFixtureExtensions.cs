@@ -2,7 +2,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
+using HealthyFac.Shared.Infrastructure.HttpFailures;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Http;
 
 namespace HealthyFac.Identity.IntegrationTests.Realm.Data;
 
@@ -74,7 +76,7 @@ public static class KeycloakRealmFixtureExtensions
                         [key: "password"] = RealmTestData.SupervisorPassword,
                         [key: "scope"] = OpenIdScope,
                     }));
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
@@ -93,7 +95,7 @@ public static class KeycloakRealmFixtureExtensions
                         [key: "client_id"] = RealmTestData.AuthClientId,
                         [key: "client_secret"] = RealmTestData.AuthClientSecret,
                     }));
-            response.EnsureSuccessStatusCode();
+            await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 
@@ -106,7 +108,7 @@ public static class KeycloakRealmFixtureExtensions
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken);
 
-            var result = await client.GetFromJsonAsync<T>(path);
+            var result = await client.GetJsonAsync<T>(path, TestContext.Current.CancellationToken);
 
             return result!;
         }
@@ -126,7 +128,7 @@ public static class KeycloakRealmFixtureExtensions
                     [key: "username"] = RealmTestData.SupervisorEmail,
                     [key: "password"] = RealmTestData.SupervisorPassword,
                 }));
-        response.EnsureSuccessStatusCode();
+        await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
         var body = await response.Content.ReadFromJsonAsync<JsonObject>();
 

@@ -35,7 +35,6 @@ public static class CoreApiTestData
             [key: "Smtp:FromAddress"] = "no-reply@healthyfac.test",
             [key: "Smtp:FromName"] = "HealthyFac Tests",
             [key: "Redis:ConnectionString"] = RealtimeTestSettings.UnreachableRedis,
-            [key: "Seeding:IsOptionalDataSeeded"] = bool.FalseString,
             [$"{ServiceActorOptions.SectionName}:AllowedClients:0"] = TestServiceTokenClaims.DefaultClientId,
         };
 }

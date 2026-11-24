@@ -15,7 +15,7 @@ The session of a feature runs in its own worktree. Claude Code takes the Stop ho
 
 Only the main checkout runs `docker compose up` for the dev project `healthyfac`. A worktree never does, because the container names and the ports are fixed.
 
-The Core `Initial` migration holds the column `expected_go_live_on`. Recreate a development database after you pull it: set `HEALTHYFAC_SEED_RECREATE=true`, or remove the volume of the dev project only.
+The Core `Initial` migration holds the column `expected_go_live_on`. Recreate a development database after you pull it: stop the 5 services (`docker compose stop core telemetry document insights auth`) and run `docker compose run --rm seeder --reset`, or remove the volume of the dev project only. The reset seeds again with the dates of the new day.
 
 ## Verify Stacks
 
@@ -36,7 +36,7 @@ The machine simulator sends messages for the machines of the dev stack (`docs/ar
 
 *   Start it: `docker compose --profile simulator up -d simulator`. It waits for Postgres, Mosquitto, Core, and Telemetry. The verify stack starts it with `pwsh scripts/verify-stack.ps1 up -Simulator` (port `8200 + <slot>`).
 *   The control API and its page are at `http://127.0.0.1:8088/scalar` (`SIMULATOR_PORT`). The health endpoint is on `SIMULATOR_HEALTH_PORT` (8098).
-*   Demo flow: apply the 3 demo machine drafts and their metric and status drafts from `backend/seed/demo-ingest` in the Insights UI. Telemetry registers each machine and its definitions. The simulator finds the machines within 1 minute and sends messages from the next second.
+*   Demo flow: the seed job creates 3 live machines. It also stores 3 pending ingests: apply their machine drafts and their metric and status drafts in the Insights UI to get machines 4 to 6 (`backend/seed/demo/README.md`). Telemetry registers each machine and its definitions. The simulator finds the machines within 1 minute and sends messages from the next second.
 *   Stop a machine and start it again:
 
         curl -X PUT http://127.0.0.1:8088/machines/<machineId>/run -H "Content-Type: application/json" -d "{\"isRunning\": false}"

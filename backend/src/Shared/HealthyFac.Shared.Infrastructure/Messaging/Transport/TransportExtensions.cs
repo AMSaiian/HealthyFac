@@ -1,3 +1,4 @@
+using FluentValidation;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Configuration;
@@ -5,6 +6,7 @@ using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport.Broker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Rebus.Config;
 using Rebus.Retry.FailFast;
@@ -69,7 +71,9 @@ public static class TransportExtensions
         /// Adds the message type to the registry, so the transport subscribes to its topic and the inbox
         /// processor dispatches its rows to the use case of the type. The method registers no handler:
         /// <c>AddUseCases</c> already did. Call <c>AddUseCases</c> (the service <c>AddApplicationServices</c>)
-        /// before this method, because the method checks the registered use cases.
+        /// before this method, because the method checks the registered use cases. The method also registers the
+        /// validators of <typeparamref name="TMessage"/> from the assembly of the message (the messaging assembly,
+        /// which <c>AddUseCases</c> does not scan), once, so the validation decorator checks a received message.
         /// </summary>
         /// <typeparam name="TMessage">The message contract. It is also the request of its use case.</typeparam>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -88,6 +92,12 @@ public static class TransportExtensions
             }
 
             GetOrAddIntegrationMessageRegistry(services).Register<TMessage>();
+
+            foreach (var validator in AssemblyScanner.FindValidatorsInAssembly(typeof(TMessage).Assembly)
+                .Where(result => result.InterfaceType == typeof(IValidator<TMessage>)))
+            {
+                services.TryAddEnumerable(ServiceDescriptor.Scoped(validator.InterfaceType, validator.ValidatorType));
+            }
 
             return services;
         }
