@@ -13,7 +13,7 @@ using Pgvector;
 namespace HealthyFac.Insights.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(InsightsDbContext))]
-    [Migration("20261125181706_InitialCreate")]
+    [Migration("20261125212204_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -851,6 +851,8 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_chat_message_link_entity_id_not_empty", "\"entity_id\" <> '00000000-0000-0000-0000-000000000000'");
 
                             t.HasCheckConstraint("ck_chat_message_link_kind_allowed", "\"kind\" IN ('employee', 'file', 'machine', 'maintenanceCase', 'workOrder')");
+
+                            t.HasCheckConstraint("ck_chat_message_link_label_not_blank", "\"label\" COLLATE \"default\" ~ '\\S'");
 
                             t.HasCheckConstraint("ck_chat_message_link_position_range", "\"position\" BETWEEN 0 AND 2147483647");
                         });

@@ -263,6 +263,22 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
             },
             cancellationToken);
 
+    public Task<ChatEmployee?> FindEmployeeAsync(Guid employeeId, CancellationToken cancellationToken) =>
+        CallAsync<ChatEmployee?>(
+            async () =>
+            {
+                var reply = await Employees()
+                    .LookupEmployeesAsync(
+                        new LookupEmployeesRequest { EmployeeId = employeeId.ToString() },
+                        cancellationToken: cancellationToken);
+                var employee = reply.Employees.SingleOrDefault();
+
+                return employee is null
+                    ? null
+                    : new ChatEmployee { Id = Guid.Parse(employee.Id), DisplayName = employee.DisplayName };
+            },
+            cancellationToken);
+
     public Task<SearchEmployeesResponse> SearchEmployeesAsync(
         SearchEmployeesArguments arguments,
         CancellationToken cancellationToken

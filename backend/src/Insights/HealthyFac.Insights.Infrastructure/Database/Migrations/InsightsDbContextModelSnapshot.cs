@@ -849,6 +849,8 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
 
                             t.HasCheckConstraint("ck_chat_message_link_kind_allowed", "\"kind\" IN ('employee', 'file', 'machine', 'maintenanceCase', 'workOrder')");
 
+                            t.HasCheckConstraint("ck_chat_message_link_label_not_blank", "\"label\" COLLATE \"default\" ~ '\\S'");
+
                             t.HasCheckConstraint("ck_chat_message_link_position_range", "\"position\" BETWEEN 0 AND 2147483647");
                         });
                 });

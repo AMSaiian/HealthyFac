@@ -20,7 +20,9 @@ namespace HealthyFac.Insights.Application.Agents.Tools.Invocation;
 /// handler inside the advisor scope of the company, so validation, the pre-handler check, and the downstream scopes
 /// apply. A rejection goes back to the model as the result with the outcome <c>rejected</c>. Any other failure goes
 /// back as a fixed text with the outcome <c>failed</c>, and never carries the exception text. After a downstream outage
-/// the function loop ends at once, so the model gets no further turn. The application log
+/// of a tool of another role than <c>chat</c> the function loop ends at once, so the model gets no further turn. A
+/// <c>chat</c> tool returns <see cref="Chats.Tools.ChatToolErrors.ServiceUnavailable"/> and the loop goes on. The
+/// application log
 /// holds the exception at <c>Warning</c>, so a failure of a downstream service is visible. The log column holds
 /// JSON, so the log keeps the text of a rejection or a failure as a JSON string.
 /// </summary>

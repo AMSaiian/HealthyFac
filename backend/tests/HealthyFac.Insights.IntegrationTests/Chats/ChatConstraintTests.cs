@@ -1,13 +1,16 @@
 using HealthyFac.Insights.Application.Chats;
+using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.Infrastructure.Chats.Persistence;
 using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatConstraintTests(InsightsFixture fixture)
 {
     private const string CheckViolation = "violates check constraint";
@@ -43,9 +46,27 @@ public sealed class ChatConstraintTests(InsightsFixture fixture)
     public async Task Save_UserMessageTextAboveTheLimit_FailsOnTheCheckConstraint()
     {
         var chat = ChatConstraintTestData.CreateChat();
+
         chat.AddTurn(
             new string(c: 'a', ChatLimits.TextMaxLength + 1),
             [],
+            ChatConstraintTestData.Now);
+
+        var act = () => _fixture.SaveAsync(chat);
+
+        await act.Should()
+            .ThrowAsync<DbUpdateException>()
+            .Where(exception => exception.InnerException!.Message.Contains(CheckViolation));
+    }
+
+    [Fact]
+    public async Task Save_LinkWithABlankLabel_FailsOnTheCheckConstraint()
+    {
+        var chat = ChatConstraintTestData.CreateChat();
+
+        chat.AddTurn(
+            ChatConstraintTestData.Text,
+            [new ChatMessageLink(ChatLinkKind.Machine, Guid.CreateVersion7(), label: "   ", position: 0)],
             ChatConstraintTestData.Now);
 
         var act = () => _fixture.SaveAsync(chat);

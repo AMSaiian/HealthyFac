@@ -295,6 +295,31 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task LookupEmployees_WithAnEmployeeId_ReturnsOnlyThatEmployee()
+    {
+        var employee = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.OtherEmail);
+
+        var reply = await _host.Employees.LookupEmployeesAsync(
+            new LookupEmployeesRequest { EmployeeId = employee.EmployeeId.ToString() },
+            SupervisorHeaders(),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.Employees.Select(option => option.Id).Should().Equal(employee.EmployeeId.ToString());
+    }
+
+    [Fact]
+    public async Task LookupEmployees_WithAnEmployeeIdOfNoEmployee_ReturnsNoOption()
+    {
+        var reply = await _host.Employees.LookupEmployeesAsync(
+            new LookupEmployeesRequest { EmployeeId = Guid.CreateVersion7().ToString() },
+            SupervisorHeaders(),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.Employees.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task LookupEmployees_WithOuterSpacesInTheSearch_FindsTheEmployeeLikeOverHttp()
     {
         var employee = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);

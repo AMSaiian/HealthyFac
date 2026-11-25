@@ -71,6 +71,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
     /// so the later calls of the same batch got no result, and the provider rejects a result turn with fewer parts than
     /// its call turn.
     /// </summary>
+    /// <param name="messages">The messages of the final request. The method adds the missing results in place.</param>
     private static void CompleteToolResults(List<Microsoft.Extensions.AI.ChatMessage> messages)
     {
         var answered = messages.SelectMany(message => message.Contents)

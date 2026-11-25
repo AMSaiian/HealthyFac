@@ -171,6 +171,11 @@ public static class ConfigureServices
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),
                 provider.GetRequiredService<IAgentPrompts>(),
                 provider.GetRequiredService<IAgentProviderCalls>()));
+            services.AddSingleton<IChatSummaryModel>(provider => new GeminiChatSummaryModel(
+                provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
+                provider.GetRequiredService<IOptions<GeminiOptions>>(),
+                provider.GetRequiredService<IAgentPrompts>(),
+                provider.GetRequiredService<IAgentProviderCalls>()));
             services.AddSingleton<IAgentJson, AgentJson>();
             services.AddSingleton<IToolCallIds, FunctionToolCallIds>();
             services.AddSingleton<IPlannerModel, AgentPlannerModel>();

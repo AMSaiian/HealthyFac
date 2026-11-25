@@ -11,8 +11,6 @@ namespace HealthyFac.Insights.Infrastructure.Chats.Persistence;
 /// </summary>
 public class ChatMessageLinkConfiguration : IEntityTypeConfiguration<ChatMessageLink>
 {
-    private const int LabelMaxLength = 255;
-
     public void Configure(EntityTypeBuilder<ChatMessageLink> builder)
     {
         builder.ToTable(name: "chat_message_links");
@@ -22,9 +20,10 @@ public class ChatMessageLinkConfiguration : IEntityTypeConfiguration<ChatMessage
         builder.ConfigureSoftDeletable();
 
         builder.Property(link => link.Kind).IsRequired();
-        builder.Property(link => link.Label).HasMaxLength(LabelMaxLength).IsRequired();
+        builder.Property(link => link.Label).HasMaxLength(ChatMessageLink.LabelMaxLength).IsRequired();
 
         builder.HasEnumerationCheck(link => link.Kind)
+            .HasNotBlankCheck(link => link.Label)
             .HasNotEmptyGuidCheck(link => link.ChatMessageId)
             .HasNotEmptyGuidCheck(link => link.EntityId)
             .HasRangeCheck(link => link.Position, min: 0, int.MaxValue);

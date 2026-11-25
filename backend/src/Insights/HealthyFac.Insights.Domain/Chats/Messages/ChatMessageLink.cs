@@ -15,6 +15,9 @@ public class ChatMessageLink : IEntity, IAuditable, ISoftDeletable
     /// <param name="entityId">The ID of the linked entity.</param>
     /// <param name="label">The name of the entity for the text of the message.</param>
     /// <param name="position">The place of the link in the text of the message.</param>
+    /// <summary>The longest label that a link stores.</summary>
+    public const int LabelMaxLength = 255;
+
     public ChatMessageLink(ChatLinkKind kind, Guid entityId, string label, int position)
     {
         Kind = kind;

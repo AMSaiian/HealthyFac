@@ -1,6 +1,7 @@
 using HealthyFac.Insights.Application.Agents.Prompts;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Chats.Links;
 using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Runs;
@@ -36,6 +37,7 @@ namespace HealthyFac.Insights.Application.Chats.Turns;
 /// <param name="permissions">Reads the permissions of the token.</param>
 /// <param name="toolCallIds">Gives the call ID and ends the function loop.</param>
 /// <param name="state">Tells whether the model reported no answer.</param>
+/// <param name="historyBuilder">Builds the model input and compacts a long chat.</param>
 public sealed class ChatTurnRunner(
     IChatTriageModel triage,
     IChatModel model,
@@ -49,7 +51,8 @@ public sealed class ChatTurnRunner(
     ChatToolScopes toolScopes,
     IChatPermissions permissions,
     IToolCallIds toolCallIds,
-    ChatTurnState state
+    ChatTurnState state,
+    ChatHistoryBuilder historyBuilder
 )
 {
     private readonly IChatTriageModel _triage = triage;
@@ -65,6 +68,7 @@ public sealed class ChatTurnRunner(
     private readonly IChatPermissions _permissions = permissions;
     private readonly IToolCallIds _toolCallIds = toolCallIds;
     private readonly ChatTurnState _state = state;
+    private readonly ChatHistoryBuilder _historyBuilder = historyBuilder;
 
     /// <summary>
     /// Runs the turn of the chat. The chat and its messages are tracked by the database context, so the final save
@@ -73,11 +77,13 @@ public sealed class ChatTurnRunner(
     /// <param name="chat">The chat of the turn, with its messages.</param>
     /// <param name="userMessage">The new message of the user.</param>
     /// <param name="assistantMessage">The reply that streams.</param>
+    /// <param name="links">The links of the new message, resolved as the user.</param>
     /// <param name="cancellationToken">The token of the request. A cancel ends the turn <c>cancelled</c>.</param>
     public async Task RunAsync(
         Chat chat,
         ChatMessage userMessage,
         ChatMessage assistantMessage,
+        IReadOnlyList<ResolvedLink> links,
         CancellationToken cancellationToken
     )
     {
@@ -102,7 +108,8 @@ public sealed class ChatTurnRunner(
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, limitSource.Token);
 
         var ending = await ExecuteAsync(
-            chat, userMessage, assistantMessage, prompt, (run, buffer), throttle, counts, limitSource, linked.Token);
+            chat, userMessage, assistantMessage, links, prompt, (run, buffer), throttle, counts, limitSource,
+            linked.Token);
 
         throttle.Flush();
         Apply(ending, chat, assistantMessage, run, throttle.Text, counts);
@@ -119,6 +126,7 @@ public sealed class ChatTurnRunner(
         Chat chat,
         ChatMessage userMessage,
         ChatMessage assistantMessage,
+        IReadOnlyList<ResolvedLink> links,
         AgentPrompt prompt,
         (AgentRun Run, ChatToolCallBuffer Buffer) toolRun,
         ChatSnapshotThrottle throttle,
@@ -144,7 +152,8 @@ public sealed class ChatTurnRunner(
                 return TurnEnding.Blocked;
             }
 
-            var history = BuildHistory(chat, userMessage, assistantMessage);
+            var history = await _historyBuilder.BuildAsync(
+                chat, userMessage, assistantMessage, links, cancellationToken);
 
             var tools = BuildTools(chat, toolRun.Run, toolRun.Buffer, throttle);
             var isLengthLimited = false;
@@ -197,55 +206,6 @@ public sealed class ChatTurnRunner(
         var functions = _registry.For(AgentRole.Chat, context, _permissions.Read(), _toolScopes);
 
         return ChatTurnTools.Create(functions, _options.MaxToolCalls, _toolCallIds.EndLoop, throttle.SetActivity);
-    }
-
-    /// <summary>
-    /// Builds the history of the model call. A turn (a user message and the reply with the next sequence) enters it
-    /// only when its reply is <c>completed</c> with the kind <c>answer</c> or <c>unanswerable</c>: a refused, blocked,
-    /// failed, cancelled, or interrupted turn leaves both messages out. A deleted message is left out. The new user
-    /// message is always the last one.
-    /// </summary>
-    /// <param name="chat">The chat with its messages.</param>
-    /// <param name="userMessage">The new message of the user.</param>
-    /// <param name="assistantMessage">The reply of the current turn, which the history never holds.</param>
-    /// <returns>The messages of the history in order, ending with the new user message.</returns>
-    private static List<ChatPromptMessage> BuildHistory(
-        Chat chat,
-        ChatMessage userMessage,
-        ChatMessage assistantMessage
-    )
-    {
-        var live = chat.Messages
-            .Where(message => message.DeletedAt is null)
-            .OrderBy(message => message.Sequence)
-            .ToList();
-        var history = new List<ChatPromptMessage>();
-
-        var earlierUserMessages = live.Where(message =>
-            message.Role == ChatMessageRole.User && message.Id != userMessage.Id);
-
-        foreach (var user in earlierUserMessages)
-        {
-            var reply = live.SingleOrDefault(message => message.Sequence == user.Sequence + 1
-                && message.Id != assistantMessage.Id);
-            var isUsable = reply is not null
-                && reply.State == ChatMessageState.Completed
-                && (reply.Kind == ChatMessageKind.Answer || reply.Kind == ChatMessageKind.Unanswerable);
-            if (!isUsable)
-            {
-                continue;
-            }
-
-            history.Add(new ChatPromptMessage { Role = user.Role, Text = user.Text });
-            if (reply!.Text.Length > 0)
-            {
-                history.Add(new ChatPromptMessage { Role = reply.Role, Text = reply.Text });
-            }
-        }
-
-        history.Add(new ChatPromptMessage { Role = userMessage.Role, Text = userMessage.Text });
-
-        return history;
     }
 
     private void Apply(

@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Infrastructure.Agents.Prompts;
 
@@ -14,6 +16,14 @@ public sealed class ChatPromptTests
     public void ChatPrompt_HoldsTheHeadingOfEachGroundingSection(string heading)
     {
         _text.Split(separator: '\n').Should().Contain(heading);
+    }
+
+    [Fact]
+    public void ChatPrompt_NamesTheFixedTextOfAnUnavailableService()
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should().Contain(ChatToolErrors.ServiceUnavailable);
     }
 
     [Fact]

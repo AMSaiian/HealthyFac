@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.Application.Chats.Tools.Reads;
 
-/// <summary>The arguments that the model gives <c>get_metric_history</c>.</summary>
+/// <summary>The arguments that the model gives <c>get_machine_metric_history</c>.</summary>
 public sealed record GetMetricHistoryArguments
 {
     public required Guid MachineId { get; init; }

@@ -16,6 +16,9 @@ public record LookupEmployeesRequest : IRequest<LookupResponse>
 
     /// <summary>Part of the first or last name. Without it the lookup answers the first employees by name.</summary>
     public string? Search { get; init; }
+
+    /// <summary>Keeps only this employee. A caller that holds an ID checks the employee with it.</summary>
+    public Guid? EmployeeId { get; init; }
 }
 
 public sealed class LookupEmployeesRequestValidator : AbstractValidator<LookupEmployeesRequest>
@@ -65,6 +68,11 @@ public sealed class LookupEmployeesRequestHandler(ICoreDbContext dbContext)
         if (!string.IsNullOrEmpty(request.Search))
         {
             query = query.Where(employee => (employee.FirstName + " " + employee.LastName).Contains(request.Search));
+        }
+
+        if (request.EmployeeId is { } employeeId)
+        {
+            query = query.Where(employee => employee.Id == employeeId);
         }
 
         var items = await query

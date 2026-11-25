@@ -20,4 +20,10 @@ public interface IAgentPrompts
     /// </summary>
     /// <returns>The prompt with its version and hash.</returns>
     AgentPrompt ForChatTriage();
+
+    /// <summary>
+    /// Returns the prompt of the chat summary model, which is no agent role.
+    /// </summary>
+    /// <returns>The prompt with its version and hash.</returns>
+    AgentPrompt ForChatSummary();
 }

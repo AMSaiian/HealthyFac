@@ -149,10 +149,15 @@ public sealed class TurnRunnerFixture
             new ChatToolScopes(provider),
             new FixedChatPermissions(["employees:read"]),
             new FunctionToolCallIds(),
-            State);
+            State,
+            new ChatHistoryBuilder(SummaryModel, SummaryLogger));
     }
 
     public ChatTurnState State { get; }
+
+    public ScriptedChatSummaryModel SummaryModel { get; } = new();
+
+    public Microsoft.Extensions.Logging.Testing.FakeLogger<ChatHistoryBuilder> SummaryLogger { get; } = new();
 
     public Microsoft.Extensions.Logging.Testing.FakeLogger<ChatTurnRunner> Logger { get; } = new();
 
@@ -175,7 +180,7 @@ public sealed class TurnRunnerFixture
     public ChatTurnRunner Runner { get; }
 
     public Task RunAsync(CancellationToken cancellationToken) =>
-        Runner.RunAsync(Chat, User, Assistant, cancellationToken);
+        Runner.RunAsync(Chat, User, Assistant, [], cancellationToken);
 }
 
 public static class ChatTurnRunnerTestData
@@ -207,4 +212,30 @@ public sealed class FixedChatPermissions(IReadOnlyCollection<string> permissions
     private readonly IReadOnlyCollection<string> _permissions = permissions;
 
     public IReadOnlyCollection<string> Read() => _permissions;
+}
+
+public sealed class ScriptedChatSummaryModel : IChatSummaryModel
+{
+    public const string Summary = "The user asked about the spindle.";
+
+    public int CallCount { get; private set; }
+
+    public Exception? Failure { get; set; }
+
+    public string? PreviousSummary { get; private set; }
+
+    public IReadOnlyList<ChatPromptMessage> SentMessages { get; private set; } = [];
+
+    public Task<string> SummarizeAsync(
+        string? previousSummary,
+        IReadOnlyList<ChatPromptMessage> messages,
+        CancellationToken cancellationToken
+    )
+    {
+        CallCount++;
+        PreviousSummary = previousSummary;
+        SentMessages = messages;
+
+        return Failure is null ? Task.FromResult(Summary) : Task.FromException<string>(Failure);
+    }
 }

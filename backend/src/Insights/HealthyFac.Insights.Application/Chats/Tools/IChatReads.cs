@@ -59,6 +59,14 @@ public interface IChatReads
         CancellationToken cancellationToken
     );
 
+    /// <summary>
+    /// Reads one active employee of the company by ID.
+    /// </summary>
+    /// <param name="employeeId">The employee to read.</param>
+    /// <param name="cancellationToken">The token that cancels the call.</param>
+    /// <returns>The employee, or <see langword="null"/> when the company has no such active employee.</returns>
+    Task<ChatEmployee?> FindEmployeeAsync(Guid employeeId, CancellationToken cancellationToken);
+
     Task<SearchEmployeesResponse> SearchEmployeesAsync(
         SearchEmployeesArguments arguments,
         CancellationToken cancellationToken

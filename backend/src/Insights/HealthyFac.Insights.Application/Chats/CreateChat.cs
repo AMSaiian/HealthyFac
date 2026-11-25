@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Insights.Application.Chats.Links;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Domain.Chats.Messages;
@@ -42,36 +43,41 @@ public sealed class CreateChatPreHandlerCheck(ICurrentUserProvider currentUser) 
 /// <param name="currentUser">Provides the user of the actor.</param>
 /// <param name="timeProvider">Provides the time of the turn.</param>
 /// <param name="runner">Runs the turn.</param>
+/// <param name="linkResolver">Resolves the links as the user before anything is stored.</param>
 public sealed class CreateChatRequestHandler(
     IInsightsDbContext dbContext,
     ICurrentUserProvider currentUser,
     TimeProvider timeProvider,
-    ChatTurnRunner runner
+    ChatTurnRunner runner,
+    ChatLinkResolver linkResolver
 ) : IRequestHandler<CreateChatRequest, ChatTurnResponse>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
     private readonly ICurrentUserProvider _currentUser = currentUser;
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ChatTurnRunner _runner = runner;
+    private readonly ChatLinkResolver _linkResolver = linkResolver;
 
     public async Task<ChatTurnResponse> HandleAsync(
         CreateChatRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
+        var links = await _linkResolver.ResolveAsync(request.Links, cancellationToken);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var chat = new Chat(_currentUser.GetUserId(), request.CompanyId, now);
+
         var (user, assistant) = chat.AddTurn(
             request.Text,
             [
-                .. request.Links.Select(link => new ChatMessageLink(
-                    link.Kind, link.EntityId, string.Empty, link.Position)),
+                .. links.Select(link => new ChatMessageLink(link.Kind, link.EntityId, link.Label, link.Position)),
             ],
             now);
+
         _dbContext.Chats.Add(chat);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        await _runner.RunAsync(chat, user, assistant, cancellationToken);
+        await _runner.RunAsync(chat, user, assistant, links, cancellationToken);
 
         return chat.ToTurnResponse(user, assistant);
     }

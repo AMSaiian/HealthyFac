@@ -13,6 +13,9 @@ service CoreEmployees {
 message LookupEmployeesRequest {
   // Part of the first or last name. Without it the lookup answers the first employees by name.
   string search = 1;
+  // The ID of one employee as a plain GUID in text. Empty adds no condition. The answer holds the employee only when
+  // the employee is active and in the company of the actor.
+  string employee_id = 2;
 }
 
 message LookupEmployeesReply {

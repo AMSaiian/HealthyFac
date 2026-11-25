@@ -1,3 +1,4 @@
+using HealthyFac.Insights.Application.Chats.Tools.Reads;
 using HealthyFac.Insights.Domain.Chats.Messages;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats.Data;
@@ -12,6 +13,23 @@ public static class ChatTestData
     public static readonly Guid OtherUserId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f12");
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f13");
     public static readonly Guid OtherCompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f14");
+    public const string MachineName = "Lathe 7";
+
+    public static GetMachineResponse MachineAnswer() =>
+        new()
+        {
+            Machine = new ChatMachine
+            {
+                Id = MachineId,
+                Name = MachineName,
+                SerialNumber = "SN-7",
+                State = "operational",
+                ExpectedGoLiveOn = "2026-01-01",
+            },
+            Metrics = [],
+            Statuses = [],
+        };
+
     public static readonly Guid MachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f15");
     public static readonly Guid DraftId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f16");
 

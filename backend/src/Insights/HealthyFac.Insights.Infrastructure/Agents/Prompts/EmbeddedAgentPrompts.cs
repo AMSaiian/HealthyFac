@@ -20,6 +20,11 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     public const string ChatTriageResourceName =
         "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatTriageSystemPrompt.md";
 
+    public const string ChatSummaryVersion = "chat-summary-v1";
+
+    public const string ChatSummaryResourceName =
+        "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSummarySystemPrompt.md";
+
     public const string ChatVersion = "chat-v2";
     public const string ChatResourceName = "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSystemPrompt.md";
     public const string PlannerVersion = "planner-v4";
@@ -35,6 +40,7 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     private const string UnknownRoleMessage = "The role {0} has no prompt.";
 
     private readonly Lazy<AgentPrompt> _triage = new(() => Read(TriageVersion, TriageResourceName));
+    private readonly Lazy<AgentPrompt> _chatSummary = new(() => Read(ChatSummaryVersion, ChatSummaryResourceName));
     private readonly Lazy<AgentPrompt> _chat = new(() => Read(ChatVersion, ChatResourceName));
     private readonly Lazy<AgentPrompt> _chatTriage = new(() => Read(ChatTriageVersion, ChatTriageResourceName));
     private readonly Lazy<AgentPrompt> _planner = new(() => Read(PlannerVersion, PlannerResourceName));
@@ -63,6 +69,8 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     }
 
     public AgentPrompt ForChatTriage() => _chatTriage.Value;
+
+    public AgentPrompt ForChatSummary() => _chatSummary.Value;
 
     private static AgentPrompt Read(string version, string resourceName)
     {

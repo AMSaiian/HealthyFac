@@ -38,10 +38,12 @@ public sealed class CoreEmployeesService(
             {
                 CompanyId = _currentUser.GetCompanyId(),
                 Search = RpcInput.ReadText(request.Search),
+                EmployeeId = RpcInput.ParseOptionalId(request.EmployeeId),
             },
             context.CancellationToken);
 
         var reply = new LookupEmployeesReply();
+
         reply.Employees.AddRange(
             response.Items.Select(item => new EmployeeOption
                 { Id = item.Id.ToString(), DisplayName = item.DisplayName }));

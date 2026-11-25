@@ -1,5 +1,6 @@
 using EntityFramework.Exceptions.Common;
 using FluentValidation;
+using HealthyFac.Insights.Application.Chats.Links;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Domain.Chats.Messages;
@@ -55,12 +56,14 @@ public sealed class SendChatMessagePreHandlerCheck(ICurrentUserProvider currentU
 /// <param name="timeProvider">Provides the time of the turn.</param>
 /// <param name="options">Holds the turn limit.</param>
 /// <param name="runner">Runs the turn.</param>
+/// <param name="linkResolver">Resolves the links as the user before anything is stored.</param>
 public sealed class SendChatMessageRequestHandler(
     IInsightsDbContext dbContext,
     ICurrentUserProvider currentUser,
     TimeProvider timeProvider,
     IOptions<ChatTurnOptions> options,
-    ChatTurnRunner runner
+    ChatTurnRunner runner,
+    ChatLinkResolver linkResolver
 ) : IRequestHandler<SendChatMessageRequest, ChatTurnResponse>
 {
     private readonly IInsightsDbContext _dbContext = dbContext;
@@ -68,6 +71,7 @@ public sealed class SendChatMessageRequestHandler(
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ChatTurnOptions _options = options.Value;
     private readonly ChatTurnRunner _runner = runner;
+    private readonly ChatLinkResolver _linkResolver = linkResolver;
 
     public async Task<ChatTurnResponse> HandleAsync(
         SendChatMessageRequest request,
@@ -90,8 +94,10 @@ public sealed class SendChatMessageRequestHandler(
             throw new UnprocessableException(ChatErrors.ChatBlocked);
         }
 
+        var links = await _linkResolver.ResolveAsync(request.Links, cancellationToken);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var limit = TimeSpan.FromSeconds(_options.TurnLimitSeconds);
+
         foreach (var running in chat.Messages.Where(message => message.IsStreaming))
         {
             if (!running.IsDead(now, limit))
@@ -105,8 +111,7 @@ public sealed class SendChatMessageRequestHandler(
         var (user, assistant) = chat.AddTurn(
             request.Text,
             [
-                .. request.Links.Select(link => new ChatMessageLink(
-                    link.Kind, link.EntityId, string.Empty, link.Position)),
+                .. links.Select(link => new ChatMessageLink(link.Kind, link.EntityId, link.Label, link.Position)),
             ],
             now);
 
@@ -119,7 +124,7 @@ public sealed class SendChatMessageRequestHandler(
             throw new ConflictException(ChatErrors.TurnConflict, exception);
         }
 
-        await _runner.RunAsync(chat, user, assistant, cancellationToken);
+        await _runner.RunAsync(chat, user, assistant, links, cancellationToken);
 
         return chat.ToTurnResponse(user, assistant);
     }

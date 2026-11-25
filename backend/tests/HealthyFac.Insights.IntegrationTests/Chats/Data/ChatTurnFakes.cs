@@ -32,6 +32,7 @@ public sealed class ChatTurnFakes
         Triage.Choice = ChatTriageChoice.InScope;
         Model.Reset();
         Reads.Reset();
+        Reads.MachineAnswer = ChatTestData.MachineAnswer();
     }
 }
 

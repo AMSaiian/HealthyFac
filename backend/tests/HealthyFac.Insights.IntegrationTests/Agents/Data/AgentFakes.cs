@@ -160,6 +160,10 @@ public sealed class FakeChatReads : IChatReads
 
     public GetWorkOrderResponse? WorkOrderAnswer { get; set; }
 
+    public GetMachineResponse? MachineAnswer { get; set; }
+
+    public ChatEmployee? EmployeeAnswer { get; set; }
+
     public Exception? Failure { get; set; }
 
     public void Reset()
@@ -167,6 +171,8 @@ public sealed class FakeChatReads : IChatReads
         Calls.Clear();
         MachinesAnswer = null;
         WorkOrderAnswer = null;
+        MachineAnswer = null;
+        EmployeeAnswer = null;
         Failure = null;
     }
 
@@ -186,7 +192,18 @@ public sealed class FakeChatReads : IChatReads
         GetMachineArguments arguments,
         CancellationToken cancellationToken
     ) =>
-        Answer<GetMachineResponse>(arguments, answer: null);
+        Answer(arguments, MachineAnswer);
+
+    public Task<ChatEmployee?> FindEmployeeAsync(Guid employeeId, CancellationToken cancellationToken)
+    {
+        Calls.Add(employeeId);
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
+        return Task.FromResult(EmployeeAnswer);
+    }
 
     public Task<GetMachineStateTimesResponse> GetMachineStateTimesAsync(
         GetMachineStateTimesArguments arguments,
