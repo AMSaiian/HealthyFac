@@ -9,7 +9,10 @@
     "rule": "threshold",
     "severity": "warning",
     "state": "open",
-    "coverage": "drafted"
+    "coverage": "drafted",
+    "metricKey": "spindle.vibration",
+    "value": 4.8,
+    "limit": 4.5
   },
   "workOrderDraft": {
     "draftId": "0190f3a0-0000-7000-8000-000000000c21",

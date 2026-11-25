@@ -1,8 +1,11 @@
 import { Temporal } from '@shared/time/temporal';
 
+import { WORK_ORDER_DRAFTS_PATH, WORK_ORDERS_PATH } from '@work-orders/work-order-links';
+
 import { type CaseSignal, SignalCoverage, SignalRule, SignalSeverity, SignalState } from '@maintenance/case';
 import {
   chartQueryOf,
+  coverageLink,
   groupKeyOf,
   RESOLVED_BEFORE_REVIEW,
   signalComparison,
@@ -136,5 +139,37 @@ describe('case signals utils', () => {
     );
 
     expect('metricKey' in query).toBe(false);
+  });
+
+  it('coverageLink_OfADraftedSignalWithADraft_OpensTheDraftsPageOnThatDraft', () => {
+    const link = coverageLink(signal('a', SignalCoverage.Drafted, { workOrderDraftId: 'd1' }));
+
+    expect(link).toEqual({
+      path: WORK_ORDER_DRAFTS_PATH,
+      queryParams: { draftId: 'd1' },
+      tooltipKey: 'MAINTENANCE.OUTCOME.TOOLTIPS.OPEN_DRAFT',
+      icon: 'pi pi-file-edit',
+    });
+  });
+
+  it('coverageLink_OfALinkedSignalWithAWorkOrder_OpensTheWorkOrders', () => {
+    const link = coverageLink(signal('a', SignalCoverage.Linked, { workOrderId: 'w1' }));
+
+    expect(link).toEqual({
+      path: WORK_ORDERS_PATH,
+      queryParams: null,
+      tooltipKey: 'MAINTENANCE.OUTCOME.TOOLTIPS.OPEN_WORK_ORDER',
+      icon: 'pi pi-wrench',
+    });
+  });
+
+  it.each([
+    ['a new signal', signal('a', SignalCoverage.New)],
+    ['a watched signal', signal('a', SignalCoverage.Watched)],
+    ['a dismissed signal', signal('a', SignalCoverage.Dismissed)],
+    ['a drafted signal without a draft', signal('a', SignalCoverage.Drafted)],
+    ['a linked signal without a work order', signal('a', SignalCoverage.Linked)],
+  ])('coverageLink_Of%s_IsNull', (_name, item) => {
+    expect(coverageLink(item)).toBeNull();
   });
 });

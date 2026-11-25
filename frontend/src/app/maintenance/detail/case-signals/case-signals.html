@@ -57,19 +57,36 @@
         />
       </td>
       <td class="text-right">
-        <a
-          pButton
-          [pTooltip]="'MAINTENANCE.TOOLTIPS.SHOW_ON_CHART' | translate"
-          tooltipPosition="bottom"
-          severity="secondary"
-          iconOnly
-          [text]="true"
-          [attr.aria-label]="'MAINTENANCE.TOOLTIPS.SHOW_ON_CHART' | translate"
-          [routerLink]="['/machines', machineId(), 'signals']"
-          [queryParams]="chartQuery(signal)"
-        >
-          <i class="pi pi-chart-line"></i>
-        </a>
+        <div class="flex justify-end gap-1">
+          @if (coverageLink(signal); as link) {
+            <a
+              pButton
+              [pTooltip]="link.tooltipKey | translate"
+              tooltipPosition="bottom"
+              severity="secondary"
+              iconOnly
+              [text]="true"
+              [attr.aria-label]="link.tooltipKey | translate"
+              [routerLink]="link.path"
+              [queryParams]="link.queryParams"
+            >
+              <i [class]="link.icon"></i>
+            </a>
+          }
+          <a
+            pButton
+            [pTooltip]="'MAINTENANCE.TOOLTIPS.SHOW_ON_CHART' | translate"
+            tooltipPosition="bottom"
+            severity="secondary"
+            iconOnly
+            [text]="true"
+            [attr.aria-label]="'MAINTENANCE.TOOLTIPS.SHOW_ON_CHART' | translate"
+            [routerLink]="['/machines', machineId(), 'signals']"
+            [queryParams]="chartQuery(signal)"
+          >
+            <i class="pi pi-chart-line"></i>
+          </a>
+        </div>
       </td>
     </tr>
   </ng-template>

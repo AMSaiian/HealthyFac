@@ -2,6 +2,8 @@ using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Messaging.WorkOrders;
+using HealthyFac.Seeder.Ingest;
+using HealthyFac.Seeder.Machines;
 using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.People;
 using HealthyFac.Seeder.SeedFiles;
@@ -37,6 +39,8 @@ public sealed class CasesPart : ISeedPart
             throw new SeedFileException(CasesErrors.CoverageNotSupported(item, _file.Signal.Coverage.Value));
         }
 
+        CheckMetricKey(folder, item);
+
         return
         [
             new SeedEvent
@@ -70,6 +74,9 @@ public sealed class CasesPart : ISeedPart
                 Rule = _file.Signal.Rule,
                 Severity = _file.Signal.Severity,
                 State = _file.Signal.State,
+                MetricKey = _file.Signal.MetricKey,
+                Value = _file.Signal.Value,
+                Limit = _file.Signal.Limit,
                 OpenedAt = openedAt,
                 Sequence = CasesConstants.FirstSequence,
             });
@@ -93,5 +100,24 @@ public sealed class CasesPart : ISeedPart
                 });
         await dbContext.SaveChangesAsync(cancellationToken);
         context.SetId(CasesConstants.CaseKey, _file.Case.Id);
+    }
+
+    private void CheckMetricKey(SeedFolder folder, string item)
+    {
+        var machinesFile = folder.Read<MachinesFile>(MachinesConstants.FileName);
+        var machine = machinesFile.Machines.FirstOrDefault(candidate => candidate.Key == _file.Case.Machine);
+        if (machine is null)
+        {
+            return;
+        }
+
+        var draft = folder.Read<IngestSetFile>(MachinesConstants.SetFileName)
+            .Entries
+            .SelectMany(entry => entry.DraftsProposed.Machines)
+            .FirstOrDefault(candidate => candidate.DraftId == machine.DraftId);
+        if (draft is not null && draft.Metrics.All(metric => metric.Key != _file.Signal.MetricKey))
+        {
+            throw new SeedFileException(CasesErrors.MetricUnknown(item, _file.Signal.MetricKey, machine.Key));
+        }
     }
 }
