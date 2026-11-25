@@ -63,6 +63,7 @@ public sealed class TelemetryDefinitionsService(
         reply.Statuses.AddRange(
             statuses.Select(status => new RpcStatusDefinition
             {
+                Id = status.Id.ToString(),
                 Code = status.Code,
                 Severity = status.Severity.Value,
             }));

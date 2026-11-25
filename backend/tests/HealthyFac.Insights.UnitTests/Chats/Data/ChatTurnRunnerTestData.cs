@@ -1,4 +1,5 @@
 using HealthyFac.Insights.Application.Agents.Tools;
+using HealthyFac.Insights.Application.Chats.Drafts;
 using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
@@ -150,7 +151,8 @@ public sealed class TurnRunnerFixture
             new FixedChatPermissions(["employees:read"]),
             new FunctionToolCallIds(),
             State,
-            new ChatHistoryBuilder(SummaryModel, SummaryLogger));
+            new ChatHistoryBuilder(SummaryModel, SummaryLogger),
+            new ChatDraftCommit(new ChatDraftBuffer(), new RecordingOutbox()));
     }
 
     public ChatTurnState State { get; }
@@ -238,4 +240,13 @@ public sealed class ScriptedChatSummaryModel : IChatSummaryModel
 
         return Failure is null ? Task.FromResult(Summary) : Task.FromException<string>(Failure);
     }
+}
+
+public sealed class RecordingOutbox : HealthyFac.Shared.Application.Messaging.IOutbox
+{
+    public List<object> Messages { get; } = [];
+
+    public void Add<TMessage>(TMessage message)
+        where TMessage : HealthyFac.Shared.Application.Messaging.IIntegrationMessage =>
+        Messages.Add(message);
 }

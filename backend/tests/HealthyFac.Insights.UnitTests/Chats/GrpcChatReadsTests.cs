@@ -106,7 +106,10 @@ public sealed class GrpcChatReadsTests
             _ => new ListDefinitionsReply
             {
                 Metrics = { new MetricDefinition { Id = metricId.ToString(), Key = "temp", Min = -5 } },
-                Statuses = { new StatusDefinition { Code = "running", Severity = "info" } },
+                Statuses =
+                {
+                    new StatusDefinition { Id = Guid.CreateVersion7().ToString(), Code = "running", Severity = "info" },
+                },
             },
         };
 

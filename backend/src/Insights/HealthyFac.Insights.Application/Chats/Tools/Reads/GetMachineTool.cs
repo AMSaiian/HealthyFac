@@ -69,6 +69,8 @@ public sealed record ChatMetricDefinition
 
 public sealed record ChatStatusDefinition
 {
+    public required Guid Id { get; init; }
+
     public required string Code { get; init; }
 
     public required string Severity { get; init; }

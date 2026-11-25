@@ -36,4 +36,6 @@ message MetricDefinition {
 message StatusDefinition {
   string code = 1;
   string severity = 2;
+  // The ID of the definition as a plain GUID in text. A phase condition on an existing status needs it.
+  string id = 3;
 }

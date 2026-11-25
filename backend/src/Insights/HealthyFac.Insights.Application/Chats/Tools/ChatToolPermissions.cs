@@ -12,6 +12,7 @@ public static class ChatToolPermissions
         public const string WorkOrdersRead = "work-orders:read";
         public const string EmployeesRead = "employees:read";
         public const string ShiftsRead = "shifts:read";
+        public const string DraftsWrite = "drafts:write";
     }
 
     public static class Telemetry
@@ -19,6 +20,7 @@ public static class ChatToolPermissions
         public const string SignalsRead = "signals:read";
         public const string MetricDefinitionsRead = "metric-definitions:read";
         public const string StatusDefinitionsRead = "status-definitions:read";
+        public const string DefinitionDraftsWrite = "definition-drafts:write";
     }
 
     public static class Insights

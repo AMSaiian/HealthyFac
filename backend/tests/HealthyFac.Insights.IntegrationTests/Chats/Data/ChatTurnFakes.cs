@@ -3,6 +3,7 @@ using HealthyFac.Insights.Application;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
+using HealthyFac.Insights.Application.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,12 +20,16 @@ public sealed class ChatTurnFakes
 
     public FakeChatReads Reads { get; } = new();
 
+    public FakeChatPermissions Permissions { get; } = new();
+
     public void Register(IServiceCollection services)
     {
         services.AddSingleton<IChatTriageModel>(Triage);
         services.AddSingleton<IChatModel>(Model);
         services.AddSingleton<IChatReads>(Reads);
-        services.AddScoped<IChatPermissions>(_ => new AllChatPermissions());
+        services.AddSingleton(Permissions);
+        services.AddSingleton<IMetricUnitCatalog>(new FakeMetricUnitCatalog());
+        services.AddScoped<IChatPermissions>(provider => provider.GetRequiredService<FakeChatPermissions>());
     }
 
     public void Reset()
@@ -32,6 +37,7 @@ public sealed class ChatTurnFakes
         Triage.Choice = ChatTriageChoice.InScope;
         Model.Reset();
         Reads.Reset();
+        Permissions.Granted = null;
         Reads.MachineAnswer = ChatTestData.MachineAnswer();
     }
 }
@@ -77,9 +83,21 @@ public sealed class ScriptedChatModel : IChatModel
     /// <summary>The name of a tool that the model calls once before it answers. Null means no tool call.</summary>
     public string? ToolName { get; set; }
 
+    /// <summary>Tool calls that the model makes, in order, before it answers (name and arguments as JSON).</summary>
+    public List<(string Name, string ArgumentsJson)> ToolCalls { get; } = [];
+
+    /// <summary>An error that the model throws after its tool calls. Null means no error.</summary>
+    public Exception? FailureAfterTools { get; set; }
+
+    /// <summary>The history that the last stream received.</summary>
+    public IReadOnlyList<ChatPromptMessage> LastHistory { get; private set; } = [];
+
     public void Reset()
     {
         ToolName = null;
+        ToolCalls.Clear();
+        FailureAfterTools = null;
+        LastHistory = [];
         Answer = ChatTestData.Answer;
         ConcurrentStreamCount = 0;
         CallCount = 0;
@@ -95,6 +113,8 @@ public sealed class ScriptedChatModel : IChatModel
         CancellationToken cancellationToken
     )
     {
+        LastHistory = history;
+
         lock (_lock)
         {
             CallCount++;
@@ -114,17 +134,45 @@ public sealed class ScriptedChatModel : IChatModel
             await function.InvokeAsync(new Microsoft.Extensions.AI.AIFunctionArguments(), cancellationToken);
         }
 
+        foreach (var (name, argumentsJson) in ToolCalls)
+        {
+            var scripted = tools.Functions.Single(candidate => candidate.Name == name);
+            var arguments = new Microsoft.Extensions.AI.AIFunctionArguments(
+                System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(argumentsJson));
+
+            await scripted.InvokeAsync(arguments, cancellationToken);
+        }
+
+        if (FailureAfterTools is not null)
+        {
+            throw FailureAfterTools;
+        }
+
         yield return new ChatModelChunk { Text = Answer, InputTokens = 5, OutputTokens = 2 };
     }
 
     private static TaskCompletionSource NewSource() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 }
 
-/// <summary>Plays a token that holds the permission of every chat tool.</summary>
-public sealed class AllChatPermissions : IChatPermissions
+/// <summary>
+/// Plays the permissions of the token. Without a script the token holds the permission of every chat tool.
+/// </summary>
+public sealed class FakeChatPermissions : IChatPermissions
 {
+    /// <summary>The permissions of the token, or <see langword="null"/> for every permission of a chat tool.</summary>
+    public IReadOnlyCollection<string>? Granted { get; set; }
+
     public IReadOnlyCollection<string> Read() =>
-        ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance)
+        Granted
+        ?? ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance)
             .SelectMany(type => type.GetCustomAttribute<AgentToolAttribute>()!.Permissions)
             .ToHashSet();
+}
+
+/// <summary>Plays the unit catalog of Telemetry with one unit.</summary>
+public sealed class FakeMetricUnitCatalog : IMetricUnitCatalog
+{
+    public Task<IReadOnlyList<MetricUnit>> GetAllAsync(CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<MetricUnit>>(
+            [new MetricUnit { QuantityKind = "Temperature", Name = "Celsius", Abbreviation = "C" }]);
 }

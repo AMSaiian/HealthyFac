@@ -86,6 +86,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
         metric.Unit.Should().Be(TelemetryRpcTestData.MetricUnit);
         metric.Min.Should().Be(expected: -20);
         metric.Max.Should().Be(expected: 200);
+        Guid.Parse(status.Id).Should().NotBeEmpty();
         status.Code.Should().Be(TelemetryRpcTestData.StatusCode);
         status.Severity.Should().Be(TelemetryRpcTestData.StatusSeverity);
     }

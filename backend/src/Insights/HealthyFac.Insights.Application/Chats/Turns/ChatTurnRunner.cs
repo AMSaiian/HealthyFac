@@ -1,6 +1,7 @@
 using HealthyFac.Insights.Application.Agents.Prompts;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Chats.Drafts;
 using HealthyFac.Insights.Application.Chats.Links;
 using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
@@ -38,6 +39,7 @@ namespace HealthyFac.Insights.Application.Chats.Turns;
 /// <param name="toolCallIds">Gives the call ID and ends the function loop.</param>
 /// <param name="state">Tells whether the model reported no answer.</param>
 /// <param name="historyBuilder">Builds the model input and compacts a long chat.</param>
+/// <param name="draftCommit">Stores the draft rows and sends the proposals of a completed turn.</param>
 public sealed class ChatTurnRunner(
     IChatTriageModel triage,
     IChatModel model,
@@ -52,7 +54,8 @@ public sealed class ChatTurnRunner(
     IChatPermissions permissions,
     IToolCallIds toolCallIds,
     ChatTurnState state,
-    ChatHistoryBuilder historyBuilder
+    ChatHistoryBuilder historyBuilder,
+    ChatDraftCommit draftCommit
 )
 {
     private readonly IChatTriageModel _triage = triage;
@@ -69,6 +72,7 @@ public sealed class ChatTurnRunner(
     private readonly IToolCallIds _toolCallIds = toolCallIds;
     private readonly ChatTurnState _state = state;
     private readonly ChatHistoryBuilder _historyBuilder = historyBuilder;
+    private readonly ChatDraftCommit _draftCommit = draftCommit;
 
     /// <summary>
     /// Runs the turn of the chat. The chat and its messages are tracked by the database context, so the final save
@@ -113,6 +117,7 @@ public sealed class ChatTurnRunner(
 
         throttle.Flush();
         Apply(ending, chat, assistantMessage, run, throttle.Text, counts);
+        _draftCommit.Stage(chat, assistantMessage, ending == TurnEnding.Completed);
         await _saves.SaveAsync(run, buffer.Rows, CancellationToken.None);
 
         _notifier.AddChatTurnEnd(

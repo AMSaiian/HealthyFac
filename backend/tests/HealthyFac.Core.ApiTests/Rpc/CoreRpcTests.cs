@@ -311,6 +311,8 @@ public sealed class CoreRpcTests(CoreApiFixture fixture) : IAsyncLifetime
     [Fact]
     public async Task LookupEmployees_WithAnEmployeeIdOfNoEmployee_ReturnsNoOption()
     {
+        await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+
         var reply = await _host.Employees.LookupEmployeesAsync(
             new LookupEmployeesRequest { EmployeeId = Guid.CreateVersion7().ToString() },
             SupervisorHeaders(),

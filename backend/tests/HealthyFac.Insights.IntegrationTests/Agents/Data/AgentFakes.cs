@@ -162,6 +162,9 @@ public sealed class FakeChatReads : IChatReads
 
     public GetMachineResponse? MachineAnswer { get; set; }
 
+    /// <summary>When set, only the machine read throws it.</summary>
+    public Exception? MachineFailure { get; set; }
+
     public ChatEmployee? EmployeeAnswer { get; set; }
 
     public Exception? Failure { get; set; }
@@ -172,6 +175,7 @@ public sealed class FakeChatReads : IChatReads
         MachinesAnswer = null;
         WorkOrderAnswer = null;
         MachineAnswer = null;
+        MachineFailure = null;
         EmployeeAnswer = null;
         Failure = null;
     }
@@ -192,7 +196,9 @@ public sealed class FakeChatReads : IChatReads
         GetMachineArguments arguments,
         CancellationToken cancellationToken
     ) =>
-        Answer(arguments, MachineAnswer);
+        MachineFailure is null
+            ? Answer(arguments, MachineAnswer)
+            : Task.FromException<GetMachineResponse>(MachineFailure);
 
     public Task<ChatEmployee?> FindEmployeeAsync(Guid employeeId, CancellationToken cancellationToken)
     {

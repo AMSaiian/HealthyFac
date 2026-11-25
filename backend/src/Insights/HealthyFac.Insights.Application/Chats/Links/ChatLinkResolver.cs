@@ -24,12 +24,14 @@ namespace HealthyFac.Insights.Application.Chats.Links;
 /// <param name="cases">Reads a case with the company of the user.</param>
 /// <param name="currentUser">Provides the company of the user.</param>
 /// <param name="json">Writes the context of a link with encrypted IDs.</param>
+/// <param name="permissions">Reads the permissions of the token. A case link needs <c>cases:read</c>.</param>
 public sealed class ChatLinkResolver(
     IChatReads reads,
     IFileCatalog files,
     IRequestHandler<GetCaseRequest, CaseDetailResponse> cases,
     ICurrentUserProvider currentUser,
-    IAgentJson json
+    IAgentJson json,
+    IChatPermissions permissions
 )
 {
     private const string CaseLabelFormat = "Case of {0:yyyy-MM-dd HH:mm}";
@@ -40,6 +42,7 @@ public sealed class ChatLinkResolver(
     private readonly IRequestHandler<GetCaseRequest, CaseDetailResponse> _cases = cases;
     private readonly ICurrentUserProvider _currentUser = currentUser;
     private readonly IAgentJson _json = json;
+    private readonly IChatPermissions _permissions = permissions;
     private readonly SemaphoreSlim _caseGate = new(initialCount: 1);
 
     /// <summary>
@@ -64,12 +67,13 @@ public sealed class ChatLinkResolver(
             .Where(item => item.Link is null)
             .Select(item => new ValidationFailure($"links[{item.Index}]", ChatErrors.LinkNotReadable))
             .ToList();
+
         if (failures.Count > 0)
         {
             throw new AppValidationException(failures);
         }
 
-        return resolved.Select(link => link!).ToList();
+        return [.. resolved.Select(link => link!)];
     }
 
     private async Task<ResolvedLink?> ResolveOneAsync(ChatLinkInput link, CancellationToken cancellationToken)
@@ -77,6 +81,7 @@ public sealed class ChatLinkResolver(
         try
         {
             var (label, context) = await ReadAsync(link, cancellationToken);
+
             if (label is null)
             {
                 return null;
@@ -135,7 +140,9 @@ public sealed class ChatLinkResolver(
             return (file?.FileName, file is null ? null : ToFileContext(file));
         }
 
-        return await ReadCaseAsync(link.EntityId, cancellationToken);
+        var canReadCases = _permissions.Read().Contains(ChatToolPermissions.Insights.CasesRead);
+
+        return canReadCases ? await ReadCaseAsync(link.EntityId, cancellationToken) : (null, null);
     }
 
     private async Task<(string? Label, object? Context)> ReadCaseAsync(
@@ -144,6 +151,7 @@ public sealed class ChatLinkResolver(
     )
     {
         await _caseGate.WaitAsync(cancellationToken);
+
         try
         {
             var detail = await _cases.HandleAsync(

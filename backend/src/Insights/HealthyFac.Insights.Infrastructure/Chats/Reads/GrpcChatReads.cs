@@ -81,7 +81,12 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                     Machine = ToMachine(machine),
                     Metrics = definitions.Metrics.Select(ToMetric).ToList(),
                     Statuses = definitions.Statuses
-                        .Select(status => new ChatStatusDefinition { Code = status.Code, Severity = status.Severity })
+                        .Select(status => new ChatStatusDefinition
+                        {
+                            Id = Guid.Parse(status.Id),
+                            Code = status.Code,
+                            Severity = status.Severity,
+                        })
                         .ToList(),
                 };
             },
