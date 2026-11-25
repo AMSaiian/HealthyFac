@@ -409,7 +409,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
             ?? throw new SeedFileException(
                 TelemetryHistoryErrors.NoWorkBlock(
                     SeedItem.Of(TelemetryHistoryConstants.FileName, $"{order.Key}{WorkOrdersConstants.AssignedSuffix}"),
-                    order.Assignment!.Assignee)),
+                    order.Assignment.Assignee)),
             zone);
     }
 }

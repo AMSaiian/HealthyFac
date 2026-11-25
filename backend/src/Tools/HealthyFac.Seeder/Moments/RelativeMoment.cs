@@ -38,9 +38,12 @@ public sealed partial record RelativeMoment
     /// The signed minutes of the hour form from the anchor (<c>h-22:05</c> is -1325). It is 0 for every other form.
     /// </summary>
     public int TotalMinutes =>
-        Form != MomentForm.Hour
-            ? 0
-            : (Offset < 0 || IsBefore ? -1 : 1) * (Math.Abs(Offset) * MinutesPerHour + Minutes);
+        Form == MomentForm.Hour ? Sign * (Math.Abs(Offset) * MinutesPerHour + Minutes) : 0;
+
+    /// <summary>
+    /// -1 for a moment before the anchor, also when <see cref="Offset"/> is 0 (<c>h-0:30</c>); else 1.
+    /// </summary>
+    private int Sign => Offset < 0 || IsBefore ? -1 : 1;
 
     /// <summary>Makes the hour form of a signed number of minutes. Zero and a negative number read as before.</summary>
     /// <param name="totalMinutes">The signed minutes from the anchor.</param>

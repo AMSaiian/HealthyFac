@@ -216,9 +216,10 @@ internal static class TelemetryHistoryChecks
             }
         }
 
-        foreach (var code in overrideSeed.Codes.Where(code => !HasStatusCode(machine, code)))
+        var unknownCode = overrideSeed.Codes.FirstOrDefault(code => !HasStatusCode(machine, code));
+        if (unknownCode is not null)
         {
-            throw new SeedFileException(TelemetryHistoryErrors.StatusCodeUnknown(item, code, machine.Key));
+            throw new SeedFileException(TelemetryHistoryErrors.StatusCodeUnknown(item, unknownCode, machine.Key));
         }
 
         CheckSpan(file, item, overrideSeed.From, overrideSeed.Until);
