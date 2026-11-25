@@ -5,7 +5,6 @@ using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Infrastructure.Database;
-using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.Ingest;
 using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.People;
@@ -171,17 +170,7 @@ public sealed class IngestPart : ISeedPart
         }
 
         var outbox = scope.ServiceProvider.GetRequiredService<IOutbox>();
-
-        outbox.Add(
-            new DraftsProposed
-            {
-                AttemptId = attempt.Id,
-                FileId = fileId,
-                CompanyId = companyId,
-                IsMachineFile = entry.DraftsProposed.IsMachineFile,
-                QueuedAt = queuedAt,
-                Machines = entry.DraftsProposed.Machines,
-            });
+        outbox.Add(entry.DraftsProposed.ToMessage(attempt.Id, fileId, companyId, queuedAt));
 
         outbox.Add(
             new IngestStateChanged

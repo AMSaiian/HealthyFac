@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { DraftKind, DraftState, type MachineDraftGridItem } from '@machines/drafts/draft';
 
 import { toApplyList, withSelected } from './machine-drafts.store.utils';
@@ -7,8 +8,7 @@ function item(id: string, kind: DraftKind): MachineDraftGridItem {
     id,
     kind,
     state: DraftState.Pending,
-    attemptId: 'a1',
-    fileId: 'f1',
+    proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
     proposedAt: '2026-01-01T00:00:00Z',
     sourceLocation: null,
     label: id,
@@ -40,5 +40,13 @@ describe('toApplyList', { tags: ['Drafts'] }, () => {
 
     expect(list.map((ref) => ref.draftId)).toEqual(['md', 'm1', 's1']);
     expect(list[0].attemptId).toBe('a1');
+  });
+  it('toApplyList_WithADraftWithoutAnAttempt_LeavesItOut', () => {
+    const chat = {
+      ...item('c1', DraftKind.Metric),
+      proposal: { source: DraftSource.Chat, attemptId: null, chatId: 'c' },
+    };
+    const list = toApplyList([chat, item('m1', DraftKind.Metric)]);
+    expect(list.map((ref) => ref.draftId)).toEqual(['m1']);
   });
 });

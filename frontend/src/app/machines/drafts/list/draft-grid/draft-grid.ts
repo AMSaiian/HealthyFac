@@ -234,6 +234,7 @@ export class DraftGrid {
     this.menuItems.set(
       draftRowMenuItems({
         translate: (key) => this._translate.instant(key),
+        isFromAttempt: draft.proposal.attemptId !== null,
         isReviewDisabled: isReviewDisabledOf(draft),
         applyReasonKey: this.reasons()[draft.id],
         isAwaitingTarget: draft.state === DraftState.AwaitingTarget,

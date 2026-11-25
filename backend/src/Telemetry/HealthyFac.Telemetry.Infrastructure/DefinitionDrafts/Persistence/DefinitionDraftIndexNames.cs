@@ -7,6 +7,7 @@ public static class DefinitionDraftIndexNames
 {
     public const string ProposalAttempt = "ix_draft_proposals_company_id_attempt_id";
     public const string ProposalChat = "ix_draft_proposals_company_id_chat_id";
+    public const string ProposalChatMessage = "ix_draft_proposals_chat_message_id";
     public const string MetricProposal = "ix_metric_definition_drafts_company_id_proposal_id";
     public const string MetricTarget = "ix_metric_definition_drafts_company_id_target_machine_id_state";
     public const string MetricEntry = "ix_metric_definition_drafts_proposal_entry_id";

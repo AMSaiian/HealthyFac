@@ -14,7 +14,7 @@ public class WorkOrderDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
     public WorkOrderDraft(
         Guid id,
         Guid companyId,
-        Guid machineId,
+        Guid? machineId,
         Guid proposalId,
         string title,
         string? description,
@@ -41,7 +41,8 @@ public class WorkOrderDraft : IEntity, IAuditable, ISoftDeletable, IVersioned
 
     public Guid CompanyId { get; private set; }
 
-    public Guid MachineId { get; private set; }
+    /// <summary>The machine of the draft. A chat draft may have none.</summary>
+    public Guid? MachineId { get; private set; }
 
     public Guid ProposalId { get; private set; }
 

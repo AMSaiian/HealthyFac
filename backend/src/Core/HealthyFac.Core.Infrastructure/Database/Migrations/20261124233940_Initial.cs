@@ -348,7 +348,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     company_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    machine_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    machine_id = table.Column<Guid>(type: "uuid", nullable: true),
                     proposal_id = table.Column<Guid>(type: "uuid", nullable: false),
                     title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false, collation: "case_insensitive"),
                     description = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
@@ -615,14 +615,30 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_chat_message_id",
+                table: "draft_proposals",
+                column: "chat_message_id",
+                unique: true,
+                filter: "deleted_at IS NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_draft_proposals_company_id_attempt_id",
                 table: "draft_proposals",
-                columns: new[] { "company_id", "attempt_id" });
+                columns: new[] { "company_id", "attempt_id" },
+                unique: true,
+                filter: "deleted_at IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "ix_draft_proposals_company_id_chat_id",
                 table: "draft_proposals",
                 columns: new[] { "company_id", "chat_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_run_id",
+                table: "draft_proposals",
+                column: "run_id",
+                unique: true,
+                filter: "deleted_at IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_employee_invites_company_id_email",

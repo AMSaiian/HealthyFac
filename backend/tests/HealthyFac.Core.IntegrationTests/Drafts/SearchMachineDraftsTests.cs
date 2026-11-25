@@ -1,5 +1,6 @@
 using HealthyFac.Core.Application.Drafts.SearchMachineDrafts;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
@@ -43,6 +44,48 @@ public sealed class SearchMachineDraftsTests(CoreDatabaseFixture fixture)
 
         seenIds.Should().Equal(expectedOrder(stored), caseName);
         seenIds.Should().HaveCount(draftIds.Count);
+    }
+
+    [Fact]
+    public async Task Search_ForAnAttempt_ListsTheIngestDraftsAndNotTheChatDraftsOfTheCompany()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var ingestId = await _fixture.AddMachineDraftAsync(tenant.CompanyId);
+        await _fixture.AddChatMachineDraftAsync(tenant.CompanyId);
+
+        var seenIds = await _fixture.ReadAttemptDraftsAsync(tenant.CompanyId, DraftTestData.AttemptId);
+
+        seenIds.Should().Equal(ingestId);
+    }
+
+    [Fact]
+    public async Task Search_OfAMachine_ShowsTheProposalOfEachSourceWithItsOwnFieldsOnly()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        await _fixture.AddMachineDraftAsync(tenant.CompanyId, machineId);
+        await _fixture.AddChatMachineDraftAsync(tenant.CompanyId, machineId);
+
+        var items = await _fixture.ReadMachineDraftItemsAsync(tenant.CompanyId, machineId);
+
+        var ingest = items.Single(item => item.Proposal.Source == DraftSource.Ingest).Proposal;
+        var chat = items.Single(item => item.Proposal.Source == DraftSource.Chat).Proposal;
+        ingest.AttemptId.Should().Be(DraftTestData.AttemptId);
+        ingest.ChatId.Should().BeNull();
+        chat.ChatId.Should().Be(DraftTestData.ChatId);
+        chat.AttemptId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Get_OfAChatDraft_ShowsTheChatProposal()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var draftId = await _fixture.AddChatMachineDraftAsync(tenant.CompanyId);
+
+        var detail = await _fixture.ReadMachineDraftDetailAsync(tenant.CompanyId, draftId);
+
+        detail.Proposal.Source.Should().Be(DraftSource.Chat);
+        detail.Proposal.ChatId.Should().Be(DraftTestData.ChatId);
     }
 
     [Fact]

@@ -30,5 +30,7 @@ export function withSelected(
 export function toApplyList(items: readonly MachineDraftGridItem[]): DraftRef[] {
   return [...items]
     .sort((a, b) => APPLY_ORDER[a.kind] - APPLY_ORDER[b.kind])
-    .map((item) => ({ attemptId: item.attemptId, draftId: item.id }));
+    .flatMap((item) =>
+      item.proposal.attemptId === null ? [] : [{ attemptId: item.proposal.attemptId, draftId: item.id }],
+    );
 }

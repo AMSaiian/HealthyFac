@@ -12,6 +12,20 @@ public static class AutomaticTieFixtureExtensions
 {
     extension(DocumentDatabaseFixture fixture)
     {
+        public async Task DeliverDraftAppliedWithoutFileAsync(Guid companyId, Guid machineId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            await scope.ServiceProvider.GetRequiredService<IRequestHandler<MachineDraftApplied>>()
+                .HandleAsync(
+                    new MachineDraftApplied
+                    {
+                        DraftId = Guid.CreateVersion7(),
+                        MachineId = machineId,
+                        CompanyId = companyId,
+                    });
+        }
+
         public async Task DeliverAutomaticTieAsync(
             AutomaticTieSource source,
             Guid fileId,

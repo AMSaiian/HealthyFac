@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { ApplicationRef } from '@angular/core';
 import { HttpStatusCode, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -41,8 +42,7 @@ const ITEM: MachineDraftGridItem = {
   id: 'draft-1',
   kind: DraftKind.Metric,
   state: DraftState.Pending,
-  attemptId: 'a1',
-  fileId: 'f1',
+  proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
   proposedAt: '2026-03-01T08:00:00Z',
   sourceLocation: 'page 1',
   label: 'Pressure',
@@ -540,10 +540,22 @@ describe('MachineDraftsStore', { tags: ['Drafts'] }, () => {
 
     expect(actions.cancel).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith(['/machines', 'machine-1', 'metrics'], {
-      queryParams: { draftAttemptId: ITEM.attemptId },
+      queryParams: { draftAttemptId: ITEM.proposal.attemptId },
     });
   });
 
+  it('requestReview_ForADraftWithoutAnAttempt_OpensNothing', async () => {
+    const { store, http, actions } = setup();
+    await load(http, store);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    store.requestReview({
+      ...ITEM,
+      kind: DraftKind.Metric,
+      proposal: { source: DraftSource.Chat, attemptId: null, chatId: 'c1' },
+    });
+    expect(navigate).not.toHaveBeenCalled();
+    expect(actions.dispatchChild).not.toHaveBeenCalled();
+  });
   it('requestReview_ForMetricDraftOfAPendingCreateDraft_OpensNothing', async () => {
     const { store, http, actions } = setup();
     await load(http, store);

@@ -3,6 +3,7 @@ using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
+using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Core.Messaging.Machines;
 using HealthyFac.Testing.Features;
 
@@ -33,6 +34,47 @@ public sealed class ApplyMachineDraftGoLiveTests(CoreDatabaseFixture fixture)
         var message = messages.Single(candidate => candidate.MachineId == machine.Id);
         message.ExpectedGoLiveOn.Should().Be(MachineGoLiveTestData.TodayInCompanyZone);
         message.GoLiveStartsAt.Should().Be(MachineGoLiveTestData.TodayInCompanyZoneStartsAt);
+    }
+
+    [Fact]
+    public async Task ApplyMachineDraft_OfAChatDraft_SendsTheAppliedMessageWithoutAFile()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var draftId = await _fixture.AddChatMachineDraftAsync(tenant.CompanyId);
+
+        await _fixture.ApplyDraftAsync(
+            tenant.CompanyId,
+            draftId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber);
+
+        var machine = await _fixture.LoadSingleMachineAsync(tenant.CompanyId);
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineDraftApplied>();
+
+        var message = messages.Should().ContainSingle().Subject;
+        message.DraftId.Should().Be(draftId);
+        message.MachineId.Should().Be(machine.Id);
+        message.FileId.Should().BeNull();
+        message.QueuedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ApplyMachineDraft_OfAnIngestDraft_SendsTheAppliedMessageWithTheFileAndTheQueueTime()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var draftId = await _fixture.AddMachineDraftAsync(tenant.CompanyId);
+
+        await _fixture.ApplyDraftAsync(
+            tenant.CompanyId,
+            draftId,
+            MachineTestData.MachineName,
+            MachineTestData.SerialNumber);
+
+        var messages = await _fixture.ReadOutboxMessagesAsync<MachineDraftApplied>();
+
+        var message = messages.Should().ContainSingle().Subject;
+        message.FileId.Should().Be(DraftTestData.FileId);
+        message.QueuedAt.Should().Be(DraftTestData.QueuedAt);
     }
 
     [Fact]

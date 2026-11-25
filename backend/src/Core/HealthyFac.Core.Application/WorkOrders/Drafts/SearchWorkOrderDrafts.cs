@@ -36,7 +36,7 @@ public sealed record WorkOrderDraftGridFilter : IFilter<WorkOrderDraft>
 
     public Expression<Func<WorkOrderDraft, bool>>? ToPredicate() =>
         Predicates.From(States?.ToPredicate<WorkOrderDraft>(draft => draft.State))
-            .And(MachineIds?.ToPredicate<WorkOrderDraft>(draft => draft.MachineId));
+            .And(MachineIds?.ToPredicate<WorkOrderDraft>(draft => draft.MachineId!.Value));
 }
 
 public sealed class WorkOrderDraftGridFilterValidator : AbstractValidator<WorkOrderDraftGridFilter>

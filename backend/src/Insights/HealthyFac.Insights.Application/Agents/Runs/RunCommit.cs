@@ -249,6 +249,7 @@ public sealed class RunCommit(
             new WorkOrderDraftProposed
             {
                 DraftId = action.Id,
+                Source = WorkOrderProposalSource.Case,
                 CompanyId = maintenanceCase.CompanyId,
                 MachineId = maintenanceCase.MachineId,
                 CaseId = maintenanceCase.Id,

@@ -2,7 +2,6 @@ using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Domain.WorkOrders;
-using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.Seeder.Ingest;
 using HealthyFac.Seeder.Machines;
@@ -183,7 +182,10 @@ public sealed class TelemetryHistoryPart : ISeedPart
             .ToDictionary(machine => machine.Key);
     }
 
-    private static ProposedMachine FindDraft(IReadOnlyDictionary<Guid, ProposedMachine> drafts, MachineSeed machine) =>
+    private static IngestMachineSeed FindDraft(
+        IReadOnlyDictionary<Guid, IngestMachineSeed> drafts,
+        MachineSeed machine
+    ) =>
         drafts.TryGetValue(machine.DraftId, out var draft)
             ? draft
             : throw new SeedFileException(

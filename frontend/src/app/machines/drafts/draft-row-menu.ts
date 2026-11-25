@@ -16,6 +16,8 @@ export const DRAFT_MENU_KEYS = {
 export interface DraftRowMenuOptions {
   /** Translates a translation key. */
   readonly translate: (key: string) => string;
+  /** True for a draft that belongs to an ingest attempt. A draft of another source has only **Dismiss**. */
+  readonly isFromAttempt: boolean;
   /** True when a child draft waits for its create machine draft, so **Review** is off. */
   readonly isReviewDisabled: boolean;
   /** The translation key of the reason that **Apply** is off, or `null` when the draft applies as it is. */
@@ -38,7 +40,7 @@ export function draftRowMenuItems(options: DraftRowMenuOptions): MenuItem[] {
   rowMenu.activeRow = true;
   const labels = translatedLabels(options);
   const applyReason = options.isAwaitingTarget ? DRAFT_MENU_KEYS.awaitingTarget : (options.applyReasonKey ?? null);
-  return [
+  const items: MenuItem[] = [
     {
       ...rowMenu.menuItem(
         {
@@ -76,6 +78,7 @@ export function draftRowMenuItems(options: DraftRowMenuOptions): MenuItem[] {
       disabled: options.isBusy,
     },
   ];
+  return options.isFromAttempt ? items : items.slice(-1);
 }
 
 function translatedLabels(options: DraftRowMenuOptions): Record<string, string> {

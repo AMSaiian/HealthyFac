@@ -23,6 +23,7 @@ public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
 
         var message = new DraftsResolved
         {
+            Source = ResolutionSource.Ingest,
             AttemptId = DefinitionDraftTestData.AttemptId,
             CompanyId = DefinitionDraftTestData.CompanyId,
             Resolution = DraftResolution.Accepted,
@@ -75,10 +76,37 @@ public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
         _fixture.RealtimeQueue.Items.Should().BeEmpty();
     }
 
-    private async Task HandleAndPushAsync<TMessage>(TMessage message)
+    [Fact]
+    public async Task StoreProposed_WithADefinitionOnAMachine_RecordsTheHintWithTheAttemptAndTheMachine()
+    {
+        var machineId = await _fixture.RegisterTenantMachineAsync(DefinitionDraftTestData.CompanyId);
+        var message = ProposalBuilder.OnMachineMessage(DefinitionDraftTestData.CompanyId, machineId);
+        _fixture.RealtimeQueue.Clear();
+
+        await HandleAndPushAsync(message, DefinitionDraftTestData.CompanyId);
+
+        AssertOneHint(DefinitionDraftTestData.CompanyId, DefinitionDraftTestData.AttemptId, machineId);
+    }
+
+    [Fact]
+    public async Task StoreProposed_WithARepeat_RecordsNoSecondHint()
+    {
+        var machineId = await _fixture.RegisterTenantMachineAsync(DefinitionDraftTestData.CompanyId);
+        var message = ProposalBuilder.OnMachineMessage(DefinitionDraftTestData.CompanyId, machineId);
+        await HandleAndPushAsync(message, DefinitionDraftTestData.CompanyId);
+        _fixture.RealtimeQueue.Clear();
+
+        await HandleAndPushAsync(message, DefinitionDraftTestData.CompanyId);
+
+        _fixture.RealtimeQueue.Items.Should().BeEmpty();
+    }
+
+    private async Task HandleAndPushAsync<TMessage>(TMessage message, Guid? actorCompanyId = null)
         where TMessage : IRequest
     {
-        using var scope = _fixture.ScopeFactory.CreateScope();
+        using var scope = actorCompanyId is { } companyId
+            ? _fixture.CreateUserScope(companyId)
+            : _fixture.ScopeFactory.CreateScope();
 
         await scope.ServiceProvider.GetRequiredService<IRequestHandler<TMessage>>().HandleAsync(message);
         scope.ServiceProvider.GetRequiredService<IRealtimeNotifier>().Push();

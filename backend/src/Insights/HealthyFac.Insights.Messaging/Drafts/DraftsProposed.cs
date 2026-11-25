@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json.Serialization;
 using FluentValidation;
 using HealthyFac.Shared.Application.Messaging;
@@ -8,26 +9,40 @@ using HealthyFac.Shared.Application.UseCases;
 namespace HealthyFac.Insights.Messaging.Drafts;
 
 /// <summary>
-/// Tells Core and Telemetry which machines, metrics, and statuses the extraction of one file proposed. Core stores the
-/// machine drafts; Telemetry stores the metric and status drafts. A user reviews them. A machine with a
-/// <see cref="ProposedMachine.TargetMachineId"/> updates that machine. A machine without one proposes a new machine.
+/// Tells Core and Telemetry which machines, metrics, statuses, and phases a proposal holds. The source is the ingest of
+/// one file or a chat message. Core stores the machine drafts; Telemetry stores the metric, status, and phase drafts.
+/// A machine with a <see cref="ProposedMachine.TargetMachineId"/> updates that machine. A machine without one proposes
+/// a new machine. Each definition names its machine: an existing one (<c>MachineId</c>) or a new one of the same
+/// message (<c>MachineDraftId</c>).
 /// </summary>
 public sealed record DraftsProposed : IIntegrationMessage, IRequest
 {
     public static string MessageType => "insights.v1:DraftsProposed";
 
-    public required Guid AttemptId { get; init; }
-
-    public required Guid FileId { get; init; }
+    public required ProposalSource Source { get; init; }
 
     public required Guid CompanyId { get; init; }
 
-    public required bool IsMachineFile { get; init; }
+    public Guid? AttemptId { get; init; }
+
+    public Guid? FileId { get; init; }
+
+    public bool? IsMachineFile { get; init; }
 
     /// <summary>The time when the user queued the ingest. It orders the proposal against later tie changes.</summary>
-    public required DateTime QueuedAt { get; init; }
+    public DateTime? QueuedAt { get; init; }
 
-    public required IReadOnlyList<ProposedMachine> Machines { get; init; }
+    public Guid? ChatId { get; init; }
+
+    public Guid? ChatMessageId { get; init; }
+
+    public IReadOnlyList<ProposedMachine> Machines { get; init; } = [];
+
+    public IReadOnlyList<ProposedMetric> Metrics { get; init; } = [];
+
+    public IReadOnlyList<ProposedStatus> Statuses { get; init; } = [];
+
+    public IReadOnlyList<ProposedPhase> Phases { get; init; } = [];
 }
 
 public sealed record ProposedMachine
@@ -41,17 +56,17 @@ public sealed record ProposedMachine
     public string? SerialNumber { get; init; }
 
     public string? Description { get; init; }
-
-    public required IReadOnlyList<ProposedMetric> Metrics { get; init; }
-
-    public required IReadOnlyList<ProposedStatus> Statuses { get; init; }
-
-    public IReadOnlyList<ProposedPhase> Phases { get; init; } = [];
 }
 
 public sealed record ProposedMetric
 {
     public required Guid DraftId { get; init; }
+
+    /// <summary>The existing machine of the definition. Exactly one of this and <c>MachineDraftId</c>.</summary>
+    public Guid? MachineId { get; init; }
+
+    /// <summary>The create draft of the same message that the definition belongs to.</summary>
+    public Guid? MachineDraftId { get; init; }
 
     public string? SourceLocation { get; init; }
 
@@ -100,6 +115,12 @@ public sealed record ProposedMetric
 public sealed record ProposedPhase
 {
     public required Guid DraftId { get; init; }
+
+    /// <summary>The existing machine of the definition. Exactly one of this and <c>MachineDraftId</c>.</summary>
+    public Guid? MachineId { get; init; }
+
+    /// <summary>The create draft of the same message that the definition belongs to.</summary>
+    public Guid? MachineDraftId { get; init; }
 
     public string? SourceLocation { get; init; }
 
@@ -165,6 +186,12 @@ public sealed record ProposedStatus
 {
     public required Guid DraftId { get; init; }
 
+    /// <summary>The existing machine of the definition. Exactly one of this and <c>MachineDraftId</c>.</summary>
+    public Guid? MachineId { get; init; }
+
+    /// <summary>The create draft of the same message that the definition belongs to.</summary>
+    public Guid? MachineDraftId { get; init; }
+
     public string? SourceLocation { get; init; }
 
     public string? Code { get; init; }
@@ -179,22 +206,143 @@ public class DraftsProposedValidator : AbstractValidator<DraftsProposed>
 {
     public DraftsProposedValidator(IRichTextPolicy richTextPolicy)
     {
-        RuleFor(message => message.AttemptId).NotEmpty().WithMessage(DraftMessageErrors.Validation.IdRequired);
-        RuleFor(message => message.FileId).NotEmpty().WithMessage(DraftMessageErrors.Validation.IdRequired);
         RuleFor(message => message.CompanyId).NotEmpty().WithMessage(DraftMessageErrors.Validation.IdRequired);
-        RuleFor(message => message.QueuedAt).NotEmpty().WithMessage(DraftMessageErrors.Validation.QueuedAtRequired);
+        RuleFor(message => message.Source).NotNull().WithMessage(DraftMessageErrors.Validation.SourceRequired);
 
-        RuleFor(message => message.Machines)
-            .Must(machines => machines.Count is >= DraftMessageLimits.MinMachines and <= DraftMessageLimits.MaxMachines)
+        When(
+            message => message.Source == ProposalSource.Ingest,
+            () =>
+            {
+                RuleFor(message => message.AttemptId)
+                    .Must(IsSetId)
+                    .WithMessage(DraftMessageErrors.Validation.IdRequired);
+                RuleFor(message => message.FileId).Must(IsSetId).WithMessage(DraftMessageErrors.Validation.IdRequired);
+                RuleFor(message => message.IsMachineFile)
+                    .NotNull()
+                    .WithMessage(DraftMessageErrors.Validation.IsMachineFileRequired);
+                RuleFor(message => message.QueuedAt)
+                    .NotEmpty()
+                    .WithMessage(DraftMessageErrors.Validation.QueuedAtRequired);
+                RuleFor(message => message.ChatId)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+                RuleFor(message => message.ChatMessageId)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+            });
+
+        When(
+            message => message.Source == ProposalSource.Chat,
+            () =>
+            {
+                RuleFor(message => message.ChatId).Must(IsSetId).WithMessage(DraftMessageErrors.Validation.IdRequired);
+                RuleFor(message => message.ChatMessageId)
+                    .Must(IsSetId)
+                    .WithMessage(DraftMessageErrors.Validation.IdRequired);
+                RuleFor(message => message.AttemptId)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+                RuleFor(message => message.FileId)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+                RuleFor(message => message.IsMachineFile)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+                RuleFor(message => message.QueuedAt)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+            });
+
+        RuleFor(message => message.Machines.Count)
+            .LessThanOrEqualTo(DraftMessageLimits.MaxMachines)
             .WithMessage(DraftMessageErrors.Validation.MachinesCount);
+        RuleFor(message => message.Metrics)
+            .Must(metrics => metrics.GroupBy(metric => metric.MachineId ?? metric.MachineDraftId)
+                .All(group => group.Count() <= DraftMessageLimits.MaxMetrics))
+            .WithMessage(DraftMessageErrors.Validation.MetricsCount);
+
+        RuleFor(message => message.Statuses)
+            .Must(statuses => statuses.GroupBy(status => status.MachineId ?? status.MachineDraftId)
+                .All(group => group.Count() <= DraftMessageLimits.MaxStatuses))
+            .WithMessage(DraftMessageErrors.Validation.StatusesCount);
+
+        RuleFor(message => message)
+            .Must(message => message.Machines.Count
+                + message.Metrics.Count
+                + message.Statuses.Count
+                + message.Phases.Count
+                > 0)
+            .WithMessage(DraftMessageErrors.Validation.MessageWithoutContent);
 
         RuleFor(message => message.Machines)
-            .Must(machines => machines is [{ TargetMachineId: not null }])
-            .When(message => message.IsMachineFile)
+            .Must(machines => machines is [] or [{ TargetMachineId: not null }])
+            .When(message => message.IsMachineFile is true)
             .WithMessage(DraftMessageErrors.Validation.MachineFileNeedsOneTarget);
 
+        RuleFor(message => message)
+            .Must(HasOnlyCreateDraftsAsMachineDrafts)
+            .WithMessage(DraftMessageErrors.Validation.MachineDraftUnknown);
+
+        RuleFor(message => message)
+            .Must(HasContentForEveryCreateDraft)
+            .WithMessage(DraftMessageErrors.Validation.MachineWithoutContent);
+
+        RuleForMachineOf(message => message.Metrics, metric => metric.MachineId, metric => metric.MachineDraftId);
+        RuleForMachineOf(message => message.Statuses, status => status.MachineId, status => status.MachineDraftId);
+        RuleForMachineOf(message => message.Phases, phase => phase.MachineId, phase => phase.MachineDraftId);
+
         RuleForEach(message => message.Machines).SetValidator(new ProposedMachineValidator(richTextPolicy));
+        RuleForEach(message => message.Metrics).SetValidator(new ProposedMetricValidator(richTextPolicy));
+        RuleForEach(message => message.Statuses).SetValidator(new ProposedStatusValidator(richTextPolicy));
+        RuleForEach(message => message.Phases).SetValidator(new ProposedPhaseValidator(richTextPolicy));
     }
+
+    private static bool IsSetId(Guid? id) => id is { } value && value != Guid.Empty;
+
+    private void RuleForMachineOf<TDefinition>(
+        Expression<Func<DraftsProposed, IEnumerable<TDefinition>>> definitions,
+        Func<TDefinition, Guid?> machineId,
+        Func<TDefinition, Guid?> machineDraftId
+    )
+    {
+        RuleForEach(definitions)
+            .Must(definition => machineId(definition) is null != machineDraftId(definition) is null)
+            .WithMessage(DraftMessageErrors.Validation.DefinitionMachineInvalid);
+
+        RuleForEach(definitions)
+            .Must(definition => machineId(definition) != Guid.Empty && machineDraftId(definition) != Guid.Empty)
+            .WithMessage(DraftMessageErrors.Validation.IdRequired);
+    }
+
+    private static bool HasOnlyCreateDraftsAsMachineDrafts(DraftsProposed message)
+    {
+        var createDraftIds = message.Machines
+            .Where(machine => machine.TargetMachineId is null)
+            .Select(machine => machine.DraftId)
+            .ToHashSet();
+
+        return ReferencedMachineDraftIds(message)
+            .Where(machineDraftId => machineDraftId != Guid.Empty)
+            .All(createDraftIds.Contains);
+    }
+
+    private static bool HasContentForEveryCreateDraft(DraftsProposed message)
+    {
+        var referencedIds = ReferencedMachineDraftIds(message).ToHashSet();
+
+        return message.Machines
+            .Where(machine => machine.TargetMachineId is null)
+            .All(machine => machine.Name is not null
+                || machine.SerialNumber is not null
+                || machine.Description is not null
+                || referencedIds.Contains(machine.DraftId));
+    }
+
+    private static IEnumerable<Guid> ReferencedMachineDraftIds(DraftsProposed message) =>
+        message.Metrics.Select(metric => metric.MachineDraftId)
+            .Concat(message.Statuses.Select(status => status.MachineDraftId))
+            .Concat(message.Phases.Select(phase => phase.MachineDraftId))
+            .OfType<Guid>();
 }
 
 public class ProposedMachineValidator : AbstractValidator<ProposedMachine>
@@ -218,26 +366,12 @@ public class ProposedMachineValidator : AbstractValidator<ProposedMachine>
 
         RuleFor(machine => machine.Description).IsProposedDescription(richTextPolicy);
 
-        RuleFor(machine => machine.Metrics.Count)
-            .LessThanOrEqualTo(DraftMessageLimits.MaxMetrics)
-            .WithMessage(DraftMessageErrors.Validation.MetricsCount);
-
-        RuleFor(machine => machine.Statuses.Count)
-            .LessThanOrEqualTo(DraftMessageLimits.MaxStatuses)
-            .WithMessage(DraftMessageErrors.Validation.StatusesCount);
-
         RuleFor(machine => machine)
             .Must(machine => machine.Name is not null
                 || machine.SerialNumber is not null
-                || machine.Description is not null
-                || machine.Metrics.Count > 0
-                || machine.Statuses.Count > 0
-                || machine.Phases.Count > 0)
-            .WithMessage(DraftMessageErrors.Validation.MachineWithoutContent);
-
-        RuleForEach(machine => machine.Metrics).SetValidator(new ProposedMetricValidator(richTextPolicy));
-        RuleForEach(machine => machine.Statuses).SetValidator(new ProposedStatusValidator(richTextPolicy));
-        RuleForEach(machine => machine.Phases).SetValidator(new ProposedPhaseValidator(richTextPolicy));
+                || machine.Description is not null)
+            .When(machine => machine.TargetMachineId is not null)
+            .WithMessage(DraftMessageErrors.Validation.UpdateWithoutContent);
     }
 }
 

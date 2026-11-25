@@ -6,6 +6,7 @@ namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
 public static class DefinitionDraftErrors
 {
     public const string DraftNotFound = "The definition draft does not exist.";
+    public const string MachineNotRegistered = "The machine of the definition draft has no registration yet.";
     public const string DraftChanged = "The draft changed since you read it. Reload it and try again.";
     public const string CompanyIdRequired = "CompanyId is required.";
     public const string MachineIdRequired = "MachineId is required.";

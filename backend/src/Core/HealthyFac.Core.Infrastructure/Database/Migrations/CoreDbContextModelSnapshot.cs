@@ -255,8 +255,20 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ChatMessageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_draft_proposals_chat_message_id")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("RunId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_draft_proposals_run_id")
+                        .HasFilter("deleted_at IS NULL");
+
                     b.HasIndex("CompanyId", "AttemptId")
-                        .HasDatabaseName("ix_draft_proposals_company_id_attempt_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_draft_proposals_company_id_attempt_id")
+                        .HasFilter("deleted_at IS NULL");
 
                     b.HasIndex("CompanyId", "ChatId")
                         .HasDatabaseName("ix_draft_proposals_company_id_chat_id");
@@ -948,7 +960,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("estimate_minutes");
 
-                    b.Property<Guid>("MachineId")
+                    b.Property<Guid?>("MachineId")
                         .HasColumnType("uuid")
                         .HasColumnName("machine_id");
 
@@ -1512,8 +1524,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.HasOne("HealthyFac.Core.Domain.Machines.Machine", null)
                         .WithMany()
                         .HasForeignKey("MachineId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("HealthyFac.Core.Domain.Drafts.Proposals.DraftProposal", "Proposal")
                         .WithMany()

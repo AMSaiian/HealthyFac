@@ -1,7 +1,6 @@
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts;
@@ -17,9 +16,7 @@ public record MetricDraftDetail
 
     public required Guid? ProposalEntryId { get; init; }
 
-    public required DraftSource Source { get; init; }
-
-    public Guid? ChatId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public Guid? TargetMachineId { get; init; }
 
@@ -61,8 +58,12 @@ public record MetricDraftDetail
             Id = draft.Id,
             State = draft.State,
             ProposalEntryId = draft.ProposalEntryId,
-            Source = draft.Proposal.Source,
-            ChatId = draft.Proposal.ChatId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                ChatId = draft.Proposal.ChatId,
+            },
             TargetMachineId = draft.TargetMachineId,
             TargetMachineDraftId = draft.TargetMachineDraftId,
             SourceLocation = draft.SourceLocation,
@@ -94,9 +95,7 @@ public record StatusDraftDetail
 
     public required Guid? ProposalEntryId { get; init; }
 
-    public required DraftSource Source { get; init; }
-
-    public Guid? ChatId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public Guid? TargetMachineId { get; init; }
 
@@ -116,8 +115,12 @@ public record StatusDraftDetail
             Id = draft.Id,
             State = draft.State,
             ProposalEntryId = draft.ProposalEntryId,
-            Source = draft.Proposal.Source,
-            ChatId = draft.Proposal.ChatId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                ChatId = draft.Proposal.ChatId,
+            },
             TargetMachineId = draft.TargetMachineId,
             TargetMachineDraftId = draft.TargetMachineDraftId,
             SourceLocation = draft.SourceLocation,
@@ -139,9 +142,7 @@ public record PhaseDraftDetail
 
     public required Guid? ProposalEntryId { get; init; }
 
-    public required DraftSource Source { get; init; }
-
-    public Guid? ChatId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public Guid? TargetMachineId { get; init; }
 
@@ -169,8 +170,12 @@ public record PhaseDraftDetail
             Id = draft.Id,
             State = draft.State,
             ProposalEntryId = draft.ProposalEntryId,
-            Source = draft.Proposal.Source,
-            ChatId = draft.Proposal.ChatId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                ChatId = draft.Proposal.ChatId,
+            },
             TargetMachineId = draft.TargetMachineId,
             TargetMachineDraftId = draft.TargetMachineDraftId,
             SourceLocation = draft.SourceLocation,

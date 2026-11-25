@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Database.Data;
 
@@ -96,7 +97,7 @@ public sealed class TelemetryDatabaseFixture : IAsyncLifetime, IResetBeforeEachT
 
         var environment = new TestHostEnvironment();
         var services = new ServiceCollection();
-        services.AddLogging();
+        services.AddLogging(builder => builder.AddFakeLogging());
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddActorContext();
         services.AddApplicationServices();

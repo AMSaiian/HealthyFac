@@ -23,11 +23,27 @@ public static class WorkOrderDraftTestData
     ) =>
         new()
         {
+            Source = WorkOrderProposalSource.Case,
             DraftId = draftId,
             CompanyId = companyId,
             MachineId = machineId,
             CaseId = Guid.CreateVersion7(),
             RunId = runId ?? Guid.CreateVersion7(),
+            Title = Title,
+            Priority = ProposedPriority,
+            Category = ProposedCategory,
+            EstimateMinutes = ValidEstimate,
+        };
+
+    public static WorkOrderDraftProposed ChatProposal(Guid companyId, Guid? machineId, Guid draftId) =>
+        new()
+        {
+            Source = WorkOrderProposalSource.Chat,
+            DraftId = draftId,
+            CompanyId = companyId,
+            MachineId = machineId,
+            ChatId = Guid.CreateVersion7(),
+            ChatMessageId = Guid.CreateVersion7(),
             Title = Title,
             Priority = ProposedPriority,
             Category = ProposedCategory,

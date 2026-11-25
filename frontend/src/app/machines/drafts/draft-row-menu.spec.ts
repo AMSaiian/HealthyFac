@@ -5,6 +5,7 @@ const NEEDS_REVIEW_KEY = 'DRAFTS.REASONS.NEEDS_REVIEW';
 function options(overrides: Partial<DraftRowMenuOptions> = {}): DraftRowMenuOptions {
   return {
     translate: (key) => `t:${key}`,
+    isFromAttempt: true,
     isReviewDisabled: false,
     applyReasonKey: null,
     isAwaitingTarget: false,
@@ -52,6 +53,10 @@ describe('draftRowMenuItems', { tags: ['Drafts'] }, () => {
     expect(items[0].tooltip).toBe('t:DRAFTS.REVIEW_AFTER_MACHINE');
   });
 
+  it('draftRowMenuItems_ForADraftWithoutAnAttempt_OffersOnlyDismiss', () => {
+    const items = draftRowMenuItems(options({ isFromAttempt: false }));
+    expect(items.map((item) => item.label)).toEqual(['t:DRAFTS.DISMISS']);
+  });
   it('draftRowMenuItems_WhileAnApplyRuns_DisablesApplyAndDismiss', () => {
     const items = draftRowMenuItems(options({ isBusy: true }));
 

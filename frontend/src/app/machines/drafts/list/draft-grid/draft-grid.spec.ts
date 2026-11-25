@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { TestBed } from '@angular/core/testing';
 import { provideTranslateService } from '@ngx-translate/core';
 
@@ -13,8 +14,7 @@ const DRAFT: MachineDraftGridItem = {
   id: 'd1',
   kind: DraftKind.Metric,
   state: DraftState.Pending,
-  attemptId: 'a1',
-  fileId: 'f1',
+  proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
   proposedAt: '2026-03-01T08:00:00Z',
   sourceLocation: null,
   label: 'Spindle speed',

@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts.Proposals;
+using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,19 @@ public class DraftProposalConfiguration : IEntityTypeConfiguration<DraftProposal
             .IsRequired();
 
         builder.HasIndex(proposal => new { proposal.CompanyId, proposal.AttemptId })
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter)
             .HasDatabaseName(DraftIndexNames.ProposalAttempt);
+
+        builder.HasIndex(proposal => proposal.RunId)
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter)
+            .HasDatabaseName(DraftIndexNames.ProposalRun);
+
+        builder.HasIndex(proposal => proposal.ChatMessageId)
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter)
+            .HasDatabaseName(DraftIndexNames.ProposalChatMessage);
 
         builder.HasIndex(proposal => new { proposal.CompanyId, proposal.ChatId })
             .HasDatabaseName(DraftIndexNames.ProposalChat);

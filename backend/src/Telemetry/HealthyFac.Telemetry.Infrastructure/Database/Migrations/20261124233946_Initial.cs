@@ -844,9 +844,18 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_draft_proposals_chat_message_id",
+                table: "draft_proposals",
+                column: "chat_message_id",
+                unique: true,
+                filter: "deleted_at IS NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_draft_proposals_company_id_attempt_id",
                 table: "draft_proposals",
-                columns: new[] { "company_id", "attempt_id" });
+                columns: new[] { "company_id", "attempt_id" },
+                unique: true,
+                filter: "deleted_at IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "ix_draft_proposals_company_id_chat_id",

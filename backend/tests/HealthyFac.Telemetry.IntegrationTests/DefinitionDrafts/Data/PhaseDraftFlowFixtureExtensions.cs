@@ -65,7 +65,7 @@ public static class PhaseDraftFlowFixtureExtensions
         {
             var ids = FlowIds.Create() with { MachineId = machineId };
 
-            var machine = ProposalBuilder.Machine(machineId) with
+            var machine = ProposalBuilder.Machine() with
             {
                 DraftId = ids.EntryId,
                 Metrics = [new ProposedMetric { DraftId = ids.MetricId, Key = "motor.temperature" }],
@@ -79,6 +79,7 @@ public static class PhaseDraftFlowFixtureExtensions
             await fixture.ResolveDraftsAsync(
                 new DraftsResolved
                 {
+                    Source = ResolutionSource.Ingest,
                     AttemptId = DefinitionDraftTestData.AttemptId,
                     CompanyId = tenant.CompanyId,
                     Resolution = DraftResolution.Accepted,

@@ -1,5 +1,5 @@
+using HealthyFac.Core.Application.Drafts;
 using HealthyFac.Core.Domain.Drafts;
-using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Drafts;
 using HealthyFac.Shared.Domain.Entities;
@@ -14,19 +14,13 @@ public record WorkOrderDraftResponse
 {
     public required Guid Id { get; init; }
 
-    public required Guid MachineId { get; init; }
+    public Guid? MachineId { get; init; }
 
     public string? MachineName { get; init; }
 
     public required bool IsMachineDeleted { get; init; }
 
-    public required Guid CaseId { get; init; }
-
-    public required Guid RunId { get; init; }
-
-    public required DraftSource Source { get; init; }
-
-    public Guid? ChatId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public required string Title { get; init; }
 
@@ -72,10 +66,13 @@ public record WorkOrderDraftResponse
                 .Where(machine => machine.Id == draft.MachineId)
                 .Select(machine => machine.Name)
                 .FirstOrDefault(),
-            CaseId = draft.Proposal.CaseId!.Value,
-            RunId = draft.Proposal.RunId!.Value,
-            Source = draft.Proposal.Source,
-            ChatId = draft.Proposal.ChatId,
+            Proposal = new DraftProposalSummary
+            {
+                Source = draft.Proposal.Source,
+                AttemptId = draft.Proposal.AttemptId,
+                CaseId = draft.Proposal.CaseId,
+                ChatId = draft.Proposal.ChatId,
+            },
             Title = draft.Title,
             Description = draft.Description,
             Priority = draft.Priority,

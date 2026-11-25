@@ -12,7 +12,6 @@ namespace HealthyFac.Insights.Messaging.Drafts;
 /// </remarks>
 public static class DraftMessageLimits
 {
-    public const int MinMachines = 1;
     public const int MaxMachines = 20;
     public const int MaxMetrics = 100;
     public const int MaxStatuses = 100;

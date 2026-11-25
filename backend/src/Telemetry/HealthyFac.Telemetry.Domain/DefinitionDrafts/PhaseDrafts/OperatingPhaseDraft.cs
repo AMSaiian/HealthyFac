@@ -101,6 +101,33 @@ public class OperatingPhaseDraft : IDefinitionDraft, IAuditable, ISoftDeletable,
         return draft;
     }
 
+    /// <summary>
+    /// Creates a draft for a machine that exists. The draft has no proposal entry and waits for a user at once.
+    /// </summary>
+    /// <param name="id">The ID from the proposal message.</param>
+    /// <param name="companyId">The company of the proposal.</param>
+    /// <param name="proposalId">The proposal that holds the origin of the draft.</param>
+    /// <param name="machineId">The machine of the draft.</param>
+    /// <param name="values">The proposed values.</param>
+    /// <param name="conditions">The proposed conditions.</param>
+    /// <param name="limits">The proposed limit rows.</param>
+    /// <returns>The new draft in the state <c>pending</c>.</returns>
+    public static OperatingPhaseDraft ProposeOnMachine(
+        Guid id,
+        Guid companyId,
+        Guid proposalId,
+        Guid machineId,
+        PhaseDraftValues values,
+        IReadOnlyList<PhaseDraftConditionValues> conditions,
+        IReadOnlyList<PhaseDraftLimitValues> limits
+    )
+    {
+        var draft = Propose(id, companyId, proposalId, proposalEntryId: null, machineId, values, conditions, limits);
+        draft.State = DefinitionDraftState.Pending;
+
+        return draft;
+    }
+
     /// <inheritdoc/>
     public bool Follow(ProposalEntry entry, bool isTargetRegistrationDeleted)
     {

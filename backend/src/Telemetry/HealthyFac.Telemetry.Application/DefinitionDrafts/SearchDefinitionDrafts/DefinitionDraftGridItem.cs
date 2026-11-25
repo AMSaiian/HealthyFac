@@ -3,7 +3,6 @@ using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
-using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.StatusDrafts;
 
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
@@ -21,13 +20,7 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
 
     public required DefinitionDraftState State { get; init; }
 
-    public required Guid AttemptId { get; init; }
-
-    public required Guid FileId { get; init; }
-
-    public required DraftSource Source { get; init; }
-
-    public Guid? ChatId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public required DateTime ProposedAt { get; init; }
 
@@ -80,10 +73,12 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
                 Id = draft.Id,
                 Kind = DefinitionDraftKinds.Metric,
                 State = draft.State,
-                AttemptId = draft.Proposal.AttemptId!.Value,
-                Source = draft.Proposal.Source,
-                ChatId = draft.Proposal.ChatId,
-                FileId = draft.Proposal.FileId!.Value,
+                Proposal = new DraftProposalSummary
+                {
+                    Source = draft.Proposal.Source,
+                    AttemptId = draft.Proposal.AttemptId,
+                    ChatId = draft.Proposal.ChatId,
+                },
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = draft.SourceLocation,
                 Label = draft.Name ?? draft.Key,
@@ -101,10 +96,12 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
                 Id = draft.Id,
                 Kind = DefinitionDraftKinds.Status,
                 State = draft.State,
-                AttemptId = draft.Proposal.AttemptId!.Value,
-                Source = draft.Proposal.Source,
-                ChatId = draft.Proposal.ChatId,
-                FileId = draft.Proposal.FileId!.Value,
+                Proposal = new DraftProposalSummary
+                {
+                    Source = draft.Proposal.Source,
+                    AttemptId = draft.Proposal.AttemptId,
+                    ChatId = draft.Proposal.ChatId,
+                },
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = draft.SourceLocation,
                 Label = draft.Code,
@@ -122,10 +119,12 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
                 Id = draft.Id,
                 Kind = DefinitionDraftKinds.Phase,
                 State = draft.State,
-                AttemptId = draft.Proposal.AttemptId!.Value,
-                Source = draft.Proposal.Source,
-                ChatId = draft.Proposal.ChatId,
-                FileId = draft.Proposal.FileId!.Value,
+                Proposal = new DraftProposalSummary
+                {
+                    Source = draft.Proposal.Source,
+                    AttemptId = draft.Proposal.AttemptId,
+                    ChatId = draft.Proposal.ChatId,
+                },
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = draft.SourceLocation,
                 Label = draft.Name ?? draft.Code,

@@ -28,6 +28,18 @@ public static class DraftProposalConstraintTestData
             { "chat with a file", Chat, "file_id", AnyId },
         };
 
+    public static TheoryData<string, Func<DraftProposal>, string, string> DuplicateKeys =>
+        new()
+        {
+            { "attempt", Ingest, "attempt_id", DefinitionDraftIndexNames.ProposalAttempt },
+            { "chat message", Chat, "chat_message_id", DefinitionDraftIndexNames.ProposalChatMessage },
+        };
+
+    public static DraftProposal IngestProposal() => Ingest();
+
+    public static DraftProposal ChatOf(Guid chatId) =>
+        DraftProposal.ForChat(Guid.CreateVersion7(), DefinitionDraftTestData.CompanyId, chatId);
+
     private static DraftProposal Ingest() =>
         DraftProposal.ForIngest(
             Guid.CreateVersion7(),

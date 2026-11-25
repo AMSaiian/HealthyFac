@@ -1,3 +1,5 @@
+using HealthyFac.Core.Messaging.Drafts;
+using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.MetricDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.PhaseDrafts;
@@ -119,6 +121,40 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         after.Single().State.Should().Be(before.Single().State);
         after.Single().TargetMachineId.Should().Be(before.Single().TargetMachineId);
         entries.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Flow_WithAChatCreateDraftApplied_MovesTheWaitingDraftsToTheNewMachine()
+    {
+        var entry = ProposalBuilder.Machine();
+        var machineId = Guid.CreateVersion7();
+        var message = ProposalBuilder.Message(DefinitionDraftTestData.CompanyId, entry) with
+        {
+            Source = ProposalSource.Chat,
+            AttemptId = null,
+            FileId = null,
+            IsMachineFile = null,
+            QueuedAt = null,
+            ChatId = DefinitionDraftTestData.ChatId,
+            ChatMessageId = DefinitionDraftTestData.ChatMessageId,
+        };
+        await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        await _fixture.ApplyMachineDraftMessageAsync(
+            new MachineDraftApplied
+            {
+                DraftId = entry.DraftId,
+                MachineId = machineId,
+                CompanyId = DefinitionDraftTestData.CompanyId,
+            });
+
+        var metric = (await _fixture.LoadMetricDraftsAsync()).Single();
+        var status = (await _fixture.LoadStatusDraftsAsync()).Single();
+
+        metric.State.Should().Be(DefinitionDraftState.Pending);
+        metric.TargetMachineId.Should().Be(machineId);
+        status.State.Should().Be(DefinitionDraftState.Pending);
+        status.TargetMachineId.Should().Be(machineId);
     }
 
     [Fact]

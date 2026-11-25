@@ -5,7 +5,9 @@ public static class WorkOrderDraftMessageErrors
     public static class Validation
     {
         public const string IdRequired = "Every ID of the message is required.";
+        public const string SourceRequired = "The source is required.";
         public const string TitleRequired = "The title is required.";
+        public const string FieldsOfAnotherSource = "A field of the other source must be empty.";
         public const string PriorityInvalid = "The priority is not one of the allowed values.";
         public const string CategoryInvalid = "The category is not one of the allowed values.";
 

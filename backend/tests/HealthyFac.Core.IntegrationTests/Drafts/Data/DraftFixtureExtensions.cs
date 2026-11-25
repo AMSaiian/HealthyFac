@@ -94,6 +94,27 @@ public static class DraftFixtureExtensions
             await dbContext.SaveChangesAsync();
         }
 
+        public async Task<Guid> AddChatMachineDraftAsync(Guid companyId, Guid? targetMachineId = null)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+            var proposal = DraftProposal.ForChat(DraftTestData.ChatMessageId, companyId, DraftTestData.ChatId);
+            dbContext.DraftProposals.Add(proposal);
+            var draft = new MachineDraft(
+                Guid.CreateVersion7(),
+                companyId,
+                proposal.Id,
+                targetMachineId,
+                DraftTestData.MachineName,
+                serialNumber: null,
+                description: null);
+
+            dbContext.MachineDrafts.Add(draft);
+            await dbContext.SaveChangesAsync();
+
+            return draft.Id;
+        }
+
         public async Task<Guid> AddMachineDraftAsync(Guid companyId, Guid? targetMachineId = null)
         {
             using var scope = fixture.ScopeFactory.CreateScope();

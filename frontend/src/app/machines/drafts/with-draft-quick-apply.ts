@@ -650,7 +650,9 @@ export function withDraftQuickApply(): SignalStoreFeature<
         pendingPage$(machineId, null).pipe(
           expand((page) => (page.nextPosition === null ? EMPTY : pendingPage$(machineId, page.nextPosition))),
           toArray(),
-          map((pages) => [...new Set(pages.flatMap((page) => page.items.map((item) => item.attemptId)))]),
+          map((pages) => [
+            ...new Set(pages.flatMap((page) => page.items.flatMap((item) => item.proposal.attemptId ?? []))),
+          ]),
         );
 
       /** Applies the drafts of the machine in every attempt, one attempt after the other, oldest first. */

@@ -1,5 +1,4 @@
 using HealthyFac.Core.Domain.Drafts;
-using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.Domain.Entities;
@@ -19,13 +18,7 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
 
     public required DraftState State { get; init; }
 
-    public required Guid AttemptId { get; init; }
-
-    public required Guid FileId { get; init; }
-
-    public required DraftSource Source { get; init; }
-
-    public Guid? ChatId { get; init; }
+    public required DraftProposalSummary Proposal { get; init; }
 
     public required DateTime ProposedAt { get; init; }
 
@@ -82,10 +75,13 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
                 Id = draft.Id,
                 Kind = DraftKinds.Machine,
                 State = draft.State,
-                AttemptId = draft.Proposal.AttemptId!.Value,
-                FileId = draft.Proposal.FileId!.Value,
-                Source = draft.Proposal.Source,
-                ChatId = draft.Proposal.ChatId,
+                Proposal = new DraftProposalSummary
+                {
+                    Source = draft.Proposal.Source,
+                    AttemptId = draft.Proposal.AttemptId,
+                    CaseId = draft.Proposal.CaseId,
+                    ChatId = draft.Proposal.ChatId,
+                },
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = null,
                 Label = draft.Name ?? draft.SerialNumber,

@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { HttpErrorResponse, HttpHeaders, HttpStatusCode } from '@angular/common/http';
 
 import {
@@ -31,8 +32,7 @@ const MACHINE: MachineDraftDetail = {
   id: 'md',
   state: DraftState.Pending,
   isCreate: true,
-  attemptId: 'a1',
-  fileId: 'f1',
+  proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
   name: 'Lathe',
   serialNumber: 'S-1',
   description: null,

@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { ApplicationRef } from '@angular/core';
 import { HttpStatusCode, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -20,8 +21,7 @@ const RESPONSE = {
     id: 'draft-1',
     state: 'pending',
     isCreate: false,
-    attemptId: 'a1',
-    fileId: 'f1',
+    proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
     name: 'Pump X',
     serialNumber: null,
     description: null,

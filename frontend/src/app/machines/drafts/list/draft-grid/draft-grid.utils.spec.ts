@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { DraftKind, DraftState, type MachineDraftGridItem } from '@machines/drafts/draft';
 
 import { isReviewDisabledOf, machineTitleOf } from './draft-grid.utils';
@@ -6,8 +7,7 @@ const ROW: MachineDraftGridItem = {
   id: 'd1',
   kind: DraftKind.Metric,
   state: DraftState.Pending,
-  attemptId: 'a1',
-  fileId: 'f1',
+  proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
   proposedAt: '2026-01-01T00:00:00Z',
   sourceLocation: null,
   label: 'Pressure',

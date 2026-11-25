@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(TelemetryDbContext))]
-    [Migration("20261124222923_Initial")]
+    [Migration("20261124233946_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -750,8 +750,15 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ChatMessageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_draft_proposals_chat_message_id")
+                        .HasFilter("deleted_at IS NULL");
+
                     b.HasIndex("CompanyId", "AttemptId")
-                        .HasDatabaseName("ix_draft_proposals_company_id_attempt_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_draft_proposals_company_id_attempt_id")
+                        .HasFilter("deleted_at IS NULL");
 
                     b.HasIndex("CompanyId", "ChatId")
                         .HasDatabaseName("ix_draft_proposals_company_id_chat_id");

@@ -39,6 +39,20 @@ public sealed class WorkOrderDraftRealtimeTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Inbox_WithAChatProposal_RecordsNothing()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var message = WorkOrderDraftTestData.ChatProposal(tenant.CompanyId, machineId, Guid.CreateVersion7());
+        _fixture.RealtimeQueue.Clear();
+
+        var outcome = await _fixture.ReceiveWorkOrderDraftThroughInboxAsync(message);
+
+        outcome.IsProcessed.Should().BeTrue();
+        _fixture.RealtimeQueue.Items.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Inbox_WithAUserActor_RecordsDraftCreatedWithoutActorSubject()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();

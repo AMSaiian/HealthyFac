@@ -1,3 +1,4 @@
+using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
@@ -22,7 +23,14 @@ public class DraftProposalConfiguration : IEntityTypeConfiguration<DraftProposal
             .IsRequired();
 
         builder.HasIndex(proposal => new { proposal.CompanyId, proposal.AttemptId })
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter)
             .HasDatabaseName(DefinitionDraftIndexNames.ProposalAttempt);
+
+        builder.HasIndex(proposal => proposal.ChatMessageId)
+            .IsUnique()
+            .HasFilter(SoftDeleteConstants.NotDeletedFilter)
+            .HasDatabaseName(DefinitionDraftIndexNames.ProposalChatMessage);
 
         builder.HasIndex(proposal => new { proposal.CompanyId, proposal.ChatId })
             .HasDatabaseName(DefinitionDraftIndexNames.ProposalChat);

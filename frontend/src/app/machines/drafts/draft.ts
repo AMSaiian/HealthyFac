@@ -1,3 +1,4 @@
+import type { DraftProposalSummary } from '@shared/drafts/draft-proposal';
 import type { SetFilterBody } from '@shared/grid/requests/grid-filters';
 import type { GridQueryState, GridSort, KeysetGridRequestBody, KeysetPage } from '@shared/grid/requests/grid-request';
 
@@ -36,8 +37,7 @@ export interface MachineDraftDetail {
   readonly id: string;
   readonly state: DraftState;
   readonly isCreate: boolean;
-  readonly attemptId: string;
-  readonly fileId: string;
+  readonly proposal: DraftProposalSummary;
   readonly name: string | null;
   readonly serialNumber: string | null;
   readonly description: string | null;
@@ -163,8 +163,7 @@ export interface MachineDraftGridItem {
   readonly id: string;
   readonly kind: DraftKind;
   readonly state: DraftState;
-  readonly attemptId: string;
-  readonly fileId: string;
+  readonly proposal: DraftProposalSummary;
   readonly proposedAt: string;
   readonly sourceLocation: string | null;
   readonly label: string | null;

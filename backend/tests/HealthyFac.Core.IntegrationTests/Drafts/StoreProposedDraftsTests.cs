@@ -21,19 +21,24 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
     private readonly CoreDatabaseFixture _fixture = fixture;
 
     [Fact]
-    public async Task StoreProposed_ForMachineFileWithoutMachineFields_StoresNothing()
+    public async Task StoreProposed_ForMachineFileWithOnlyDefinitions_StoresNoMachineDraftAndSendsNoResolution()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
 
-        var message = ProposalBuilder.Message(
-            tenant.CompanyId, isMachineFile: true, ProposalBuilder.Machine(machineId));
+        var message = ProposalBuilder.Message(tenant.CompanyId, isMachineFile: true) with
+        {
+            Metrics = [ProposalBuilder.Metric(machineId)],
+        };
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
+        var resolutions = await _fixture.ReadOutboxMessagesAsync<DraftsResolved>();
+
         machineDrafts.Should().BeEmpty();
+        resolutions.Should().BeEmpty();
     }
 
     [Fact]
@@ -50,8 +55,8 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         machineDrafts.Should().ContainSingle().Which.TargetMachineId.Should().Be(machineId);
-        machineDrafts[index: 0].Name.Should().Be(expected: "New name");
-        machineDrafts[index: 0].Proposal.QueuedAt.Should().Be(DraftTestData.QueuedAt);
+        machineDrafts[0].Name.Should().Be(expected: "New name");
+        machineDrafts[0].Proposal.QueuedAt.Should().Be(DraftTestData.QueuedAt);
     }
 
     [Fact]
@@ -123,7 +128,12 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
     public async Task StoreProposed_ForEmptyMachineOnTheCreatePath_StoresCreateDraftWithoutValues()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
-        var message = ProposalBuilder.Message(tenant.CompanyId, isMachineFile: false, ProposalBuilder.Machine());
+        var entry = ProposalBuilder.Machine();
+
+        var message = ProposalBuilder.Message(tenant.CompanyId, isMachineFile: false, entry) with
+        {
+            Metrics = [ProposalBuilder.Metric(machineDraftId: entry.DraftId)],
+        };
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
 
@@ -161,8 +171,10 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
     public async Task StoreProposed_WithRepeatDelivery_StoresOneProposalOfTheAttempt()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var message = ProposalBuilder.Message(
             tenant.CompanyId, isMachineFile: false, ProposalBuilder.Machine(name: "Pump"));
+
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
@@ -180,7 +192,7 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
-        var withTarget = ProposalBuilder.Machine(machineId);
+        var withTarget = ProposalBuilder.Machine(machineId, name: "Pump");
         var withoutTarget = ProposalBuilder.Machine(name: "Lathe", serialNumber: "SN-NEW");
         var message = ProposalBuilder.Message(tenant.CompanyId, isMachineFile: false, withTarget, withoutTarget);
 
@@ -208,7 +220,7 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
         var message = ProposalBuilder.Message(
             tenant.CompanyId,
             isMachineFile: false,
-            ProposalBuilder.Machine(name: "Pump", metrics: 0, statuses: 0));
+            ProposalBuilder.Machine(name: "Pump"));
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
 
@@ -239,7 +251,7 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var otherTenant = await _fixture.ArrangeMachineTenantAsync();
-        var entry = ProposalBuilder.Machine();
+        var entry = ProposalBuilder.Machine(name: "Pump");
         var message = ProposalBuilder.Message(otherTenant.CompanyId, isMachineFile: false, entry);
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
@@ -253,7 +265,7 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var otherTenant = await _fixture.ArrangeMachineTenantAsync();
         var foreignMachineId = await _fixture.ArrangeMachineAsync(otherTenant.CompanyId);
-        var entry = ProposalBuilder.Machine(foreignMachineId);
+        var entry = ProposalBuilder.Machine(foreignMachineId, name: "Pump");
         var message = ProposalBuilder.Message(tenant.CompanyId, isMachineFile: true, entry);
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
@@ -267,7 +279,7 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
-        var entry = ProposalBuilder.Machine(machineId);
+        var entry = ProposalBuilder.Machine(machineId, name: "Pump");
         var message = ProposalBuilder.Message(tenant.CompanyId, isMachineFile: true, entry);
 
         await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
@@ -291,6 +303,127 @@ public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
             .OnlyContain(draft => draft.Proposal.AttemptId == DraftTestData.AttemptId
                 && draft.Proposal.FileId == DraftTestData.FileId
                 && draft.State == DraftState.Pending);
+    }
+
+    [Fact]
+    public async Task StoreProposed_ForAChatCreateDraft_StoresItWithTheChatProposalAndResolvesIt()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var entry = ProposalBuilder.Machine(name: "Lathe");
+        var message = ProposalBuilder.ChatMessage(tenant.CompanyId, entry);
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        var resolutions = await _fixture.ReadOutboxMessagesAsync<DraftsResolved>();
+
+        var proposal = proposals.Should().ContainSingle().Subject;
+        proposal.Source.Should().Be(DraftSource.Chat);
+        proposal.Id.Should().Be(DraftTestData.ChatMessageId);
+        proposal.ChatId.Should().Be(DraftTestData.ChatId);
+        machineDrafts.Should().ContainSingle().Which.ProposalId.Should().Be(proposal.Id);
+        var resolution = resolutions.Should().ContainSingle().Subject;
+        resolution.Source.Should().Be(ResolutionSource.Chat);
+        resolution.AttemptId.Should().BeNull();
+        resolution.Resolution.Should().Be(DraftResolution.Accepted);
+
+        resolution.Entries.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new ResolvedEntry { EntryId = entry.DraftId, IsOnMachineDraft = true });
+    }
+
+    [Fact]
+    public async Task StoreProposed_ForAChatUpdateDraftOfAnActiveMachine_AcceptsItOnThatMachine()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        var entry = ProposalBuilder.Machine(machineId, name: "New name");
+        var message = ProposalBuilder.ChatMessage(tenant.CompanyId, entry);
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        var resolutions = await _fixture.ReadOutboxMessagesAsync<DraftsResolved>();
+
+        machineDrafts.Should().ContainSingle().Which.TargetMachineId.Should().Be(machineId);
+        var resolution = resolutions.Should().ContainSingle().Subject;
+        resolution.Resolution.Should().Be(DraftResolution.Accepted);
+
+        resolution.Entries.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new ResolvedEntry { EntryId = entry.DraftId, MachineId = machineId });
+    }
+
+    [Fact]
+    public async Task StoreProposed_ForAChatUpdateDraftOfADeletedMachine_RejectsTheProposalAndStoresNothing()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
+        await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
+        var entry = ProposalBuilder.Machine(machineId, name: "New name");
+        var message = ProposalBuilder.ChatMessage(tenant.CompanyId, entry);
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        await AssertRejectedAsync(tenant.CompanyId, entry.DraftId);
+        proposals.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task StoreProposed_ForAChatDraftWithTheSerialNumberOfAMachine_StaysACreateDraftWithoutAMatch()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        await _fixture.CreateMachineAsync(tenant.CompanyId, DraftTestData.MachineName, SerialNumber);
+
+        var message = ProposalBuilder.ChatMessage(
+            tenant.CompanyId, ProposalBuilder.Machine(name: "Renamed", serialNumber: SerialNumber));
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+        var matches = await _fixture.ReadOutboxMessagesAsync<FileMachineMatched>();
+
+        machineDrafts.Should().ContainSingle().Which.IsCreate.Should().BeTrue();
+        matches.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task StoreProposed_ForAChatProposalWithoutMachines_StoresTheProposalAndSendsNoResolution()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+
+        var message = ProposalBuilder.ChatMessage(tenant.CompanyId) with
+        {
+            Metrics = [ProposalBuilder.Metric(Guid.CreateVersion7())],
+        };
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        var resolutions = await _fixture.ReadOutboxMessagesAsync<DraftsResolved>();
+
+        proposals.Should().ContainSingle().Which.Source.Should().Be(DraftSource.Chat);
+        resolutions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task StoreProposed_ForARepeatOfAChatProposal_SendsNoSecondResolution()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var message = ProposalBuilder.ChatMessage(tenant.CompanyId, ProposalBuilder.Machine(name: "Lathe"));
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        await _fixture.StoreProposedDraftsAsync(tenant.CompanyId, message);
+
+        var resolutions = await _fixture.ReadOutboxMessagesAsync<DraftsResolved>();
+        var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+
+        resolutions.Should().ContainSingle();
+        machineDrafts.Should().ContainSingle();
     }
 
     private async Task AssertRejectedAsync(Guid companyId, Guid entryId)

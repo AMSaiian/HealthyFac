@@ -16,6 +16,8 @@ using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 
@@ -97,6 +99,24 @@ public static class DefinitionDraftFixtureExtensions
             await handler.HandleAsync(message);
         }
 
+        public void ClearLogs()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+
+            scope.ServiceProvider.GetFakeLogCollector().Clear();
+        }
+
+        public IReadOnlyList<FakeLogRecord> ReadWarnings<THandler>()
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var category = typeof(THandler).FullName;
+
+            return scope.ServiceProvider.GetFakeLogCollector()
+                .GetSnapshot()
+                .Where(record => record.Level == LogLevel.Warning && record.Category == category)
+                .ToList();
+        }
+
         public async Task ResolveDraftsAsync(DraftsResolved message)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
@@ -139,6 +159,7 @@ public static class DefinitionDraftFixtureExtensions
                 .MetricDefinitionDrafts
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
+                .Include(draft => draft.Proposal)
                 .ToListAsync();
         }
 

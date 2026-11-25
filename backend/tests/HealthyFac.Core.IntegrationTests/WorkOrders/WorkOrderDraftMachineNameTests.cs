@@ -1,4 +1,5 @@
 using HealthyFac.Core.Application.WorkOrders.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
@@ -57,6 +58,47 @@ public sealed class WorkOrderDraftMachineNameTests(CoreDatabaseFixture fixture)
 
         response.MachineName.Should().Be(MachineTestData.MachineName);
         response.IsMachineDeleted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Get_ForACaseDraft_ShowsTheCaseProposal()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var machineId = await _fixture.CreateMachineAsync(
+            tenant.CompanyId, MachineTestData.MachineName, serialNumber: "DN-3");
+        var draftId = await _fixture.SaveWorkOrderDraftAsync(tenant.CompanyId, machineId);
+
+        var proposal = (await GetAsync(tenant.CompanyId, draftId)).Proposal;
+
+        proposal.Source.Should().Be(DraftSource.Case);
+        proposal.CaseId.Should().NotBeNull();
+        proposal.ChatId.Should().BeNull();
+        proposal.AttemptId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Get_ForAChatDraft_ShowsTheChatProposalWithoutACase()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var message = WorkOrderDraftTestData.ChatProposal(tenant.CompanyId, machineId: null, Guid.CreateVersion7());
+        await _fixture.ProposeWorkOrderDraftAsync(tenant.CompanyId, message);
+        var stored = await _fixture.LoadWorkOrderDraftsAsync();
+
+        var proposal = (await GetAsync(tenant.CompanyId, stored.Single().Id)).Proposal;
+
+        proposal.Source.Should().Be(DraftSource.Chat);
+        proposal.ChatId.Should().Be(message.ChatId);
+        proposal.CaseId.Should().BeNull();
+        proposal.AttemptId.Should().BeNull();
+    }
+
+    private async Task<WorkOrderDraftResponse> GetAsync(Guid companyId, Guid draftId)
+    {
+        using var scope = _fixture.CreateUserScope(companyId);
+
+        return await scope.ServiceProvider
+            .GetRequiredService<IRequestHandler<GetWorkOrderDraftRequest, WorkOrderDraftResponse>>()
+            .HandleAsync(new GetWorkOrderDraftRequest { CompanyId = companyId, Id = draftId });
     }
 
     private async Task<GridResponse<WorkOrderDraftResponse>> SearchAsync(Guid companyId)

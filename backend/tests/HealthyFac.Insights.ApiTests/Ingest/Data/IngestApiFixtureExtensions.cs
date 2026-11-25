@@ -6,6 +6,7 @@ using HealthyFac.Insights.Application.Files;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Shared.Application.Messaging;
+using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Testing.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -140,8 +141,8 @@ public static class IngestApiFixtureExtensions
 
             return
             [
-                .. payloads.Select(payload =>
-                    JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!),
+                .. payloads
+                    .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!),
             ];
         }
     }

@@ -104,6 +104,29 @@ public class MetricDefinitionDraft : IDefinitionDraft, IAuditable, ISoftDeletabl
             Behavior = values.Behavior,
         };
 
+    /// <summary>
+    /// Creates a draft for a machine that exists. The draft has no proposal entry and waits for a user at once.
+    /// </summary>
+    /// <param name="id">The ID from the proposal message.</param>
+    /// <param name="companyId">The company of the proposal.</param>
+    /// <param name="proposalId">The proposal that holds the origin of the draft.</param>
+    /// <param name="machineId">The machine of the draft.</param>
+    /// <param name="values">The proposed values.</param>
+    /// <returns>The new draft in the state <c>pending</c>.</returns>
+    public static MetricDefinitionDraft ProposeOnMachine(
+        Guid id,
+        Guid companyId,
+        Guid proposalId,
+        Guid machineId,
+        MetricDraftValues values
+    )
+    {
+        var draft = Propose(id, companyId, proposalId, proposalEntryId: null, machineId, values);
+        draft.State = DefinitionDraftState.Pending;
+
+        return draft;
+    }
+
     /// <inheritdoc/>
     public bool Follow(ProposalEntry entry, bool isTargetRegistrationDeleted)
     {

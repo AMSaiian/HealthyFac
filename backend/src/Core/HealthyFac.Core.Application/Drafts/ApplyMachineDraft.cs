@@ -180,10 +180,10 @@ public sealed class ApplyMachineDraftRequestHandler(
             new MachineDraftApplied
             {
                 DraftId = draft.Id,
-                FileId = draft.Proposal.FileId!.Value,
+                FileId = draft.Proposal.FileId,
                 MachineId = machine.Id,
                 CompanyId = machine.CompanyId,
-                QueuedAt = draft.Proposal.QueuedAt!.Value,
+                QueuedAt = draft.Proposal.QueuedAt,
             });
 
         return machine.Id;

@@ -33,6 +33,19 @@ public static class DraftProposalConstraintTestData
             { "chat with a run", Chat, "run_id", AnyId },
         };
 
+    public static TheoryData<string, Func<DraftProposal>, string, string> DuplicateKeys =>
+        new()
+        {
+            { "attempt", Ingest, "attempt_id", DraftIndexNames.ProposalAttempt },
+            { "planner run", Case, "run_id", DraftIndexNames.ProposalRun },
+            { "chat message", Chat, "chat_message_id", DraftIndexNames.ProposalChatMessage },
+        };
+
+    public static DraftProposal IngestProposal() => Ingest();
+
+    public static DraftProposal ChatOf(Guid chatId) =>
+        DraftProposal.ForChat(Guid.CreateVersion7(), CompanyId, chatId);
+
     private static DraftProposal Ingest() =>
         DraftProposal.ForIngest(
             Guid.CreateVersion7(),

@@ -31,8 +31,13 @@ public sealed class WorkOrderDraftProposedPreHandlerCheck(ICoreDbContext dbConte
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
 
+        if (request.MachineId is not { } machineId)
+        {
+            return;
+        }
+
         var isMachineOfCompany = await _dbContext.Machines.AnyAsync(
-            machine => machine.Id == request.MachineId && machine.CompanyId == request.CompanyId,
+            machine => machine.Id == machineId && machine.CompanyId == request.CompanyId,
             cancellationToken);
 
         if (!isMachineOfCompany)
@@ -68,14 +73,18 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
             return;
         }
 
+        var isCase = request.Source == WorkOrderProposalSource.Case;
+        var proposalId = (isCase ? request.RunId : request.ChatMessageId)!.Value;
         var isProposalStored = await _dbContext.DraftProposals
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
-            .AnyAsync(proposal => proposal.Id == request.RunId, cancellationToken);
+            .AnyAsync(proposal => proposal.Id == proposalId, cancellationToken);
 
         if (!isProposalStored)
         {
             _dbContext.DraftProposals.Add(
-                DraftProposal.ForCase(request.RunId, request.CompanyId, request.CaseId));
+                isCase
+                    ? DraftProposal.ForCase(proposalId, request.CompanyId, request.CaseId!.Value)
+                    : DraftProposal.ForChat(proposalId, request.CompanyId, request.ChatId!.Value));
         }
 
         _dbContext.WorkOrderDrafts.Add(
@@ -83,7 +92,7 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
                 request.DraftId,
                 request.CompanyId,
                 request.MachineId,
-                request.RunId,
+                proposalId,
                 request.Title,
                 request.Description,
                 WorkOrderPriority.FromValue(request.Priority),
@@ -91,6 +100,11 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
                 request.EstimateMinutes));
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (!isCase)
+        {
+            return;
+        }
 
         _notifier.AddToGroup(
             request.CompanyId,

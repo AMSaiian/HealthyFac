@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.Infrastructure.Database;
@@ -56,6 +57,16 @@ public static class IngestFixtureExtensions
             var vectors = lengths.Distinct().ToList();
 
             return new InsightsCounts(completedCount, documentCount, chunkCount, runCount, toolCallCount, vectors);
+        }
+
+        public async Task<IReadOnlyList<DraftProposal>> LoadCoreProposalsAsync()
+        {
+            using var scope = fixture.Hosts.Core.CreateScope(SeederTestData.InitializationActor);
+
+            return await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
+                .DraftProposals
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<int> CountPendingMachineDraftsAsync()

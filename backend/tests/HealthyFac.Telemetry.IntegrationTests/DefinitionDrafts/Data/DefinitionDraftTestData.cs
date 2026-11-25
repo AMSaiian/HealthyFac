@@ -30,6 +30,8 @@ public static class DefinitionDraftTestData
     public static readonly Guid CompanyId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000001");
     public static readonly Guid AttemptId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000002");
     public static readonly Guid FileId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000003");
+    public static readonly Guid ChatId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000006");
+    public static readonly Guid ChatMessageId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000007");
     public static readonly Guid MachineId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000004");
     public static readonly Guid MachineDraftId = Guid.Parse(input: "0f1a2b3c-1000-7000-8000-000000000005");
 

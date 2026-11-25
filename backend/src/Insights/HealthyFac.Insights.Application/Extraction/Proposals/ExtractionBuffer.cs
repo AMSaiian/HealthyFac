@@ -42,19 +42,34 @@ public sealed class ExtractionBuffer
         _signals = signals;
     }
 
-    /// <summary>The machines with everything that the tools proposed for them, in the order of the calls.</summary>
-    public IReadOnlyList<ProposedMachine> Machines =>
+    /// <summary>
+    /// The machine drafts in the order of the calls. A machine file sends its machine only when the model proposed a
+    /// machine value (an update draft). A company file sends every machine that has a value or a definition (a create
+    /// draft).
+    /// </summary>
+    public IReadOnlyList<ProposedMachine> Machines => DraftsProposedFlattening.Machines(Groups, _isMachineFile);
+
+    /// <summary>The metrics with the machine that each belongs to, in the order of the calls.</summary>
+    public IReadOnlyList<ProposedMetric> Metrics => DraftsProposedFlattening.Metrics(Groups, _isMachineFile);
+
+    /// <summary>The statuses with the machine that each belongs to, in the order of the calls.</summary>
+    public IReadOnlyList<ProposedStatus> Statuses => DraftsProposedFlattening.Statuses(Groups, _isMachineFile);
+
+    /// <summary>The phases with the machine that each belongs to, in the order of the calls.</summary>
+    public IReadOnlyList<ProposedPhase> Phases => DraftsProposedFlattening.Phases(Groups, _isMachineFile);
+
+    private IReadOnlyList<ProposedMachineGroup> Groups =>
     [
-        .. _machines.Select(machine => new ProposedMachine
+        .. _machines.Select(machine => new ProposedMachineGroup
         {
             DraftId = machine.DraftId,
-            TargetMachineId = _isMachineFile ? _fileMachineId : null,
+            TargetMachineId = _fileMachineId,
             Name = machine.Name,
             SerialNumber = machine.SerialNumber,
             Description = machine.Description,
-            Metrics = [.. machine.Metrics],
-            Statuses = [.. machine.Statuses],
-            Phases = [.. machine.Phases],
+            Metrics = machine.Metrics,
+            Statuses = machine.Statuses,
+            Phases = machine.Phases,
         }),
     ];
 

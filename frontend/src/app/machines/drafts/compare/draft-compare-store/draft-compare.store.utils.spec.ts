@@ -1,3 +1,4 @@
+import { DraftSource } from '@shared/drafts/draft-proposal';
 import { type CurrentMachineValues, DraftState, type MachineDraftDetail } from '@machines/drafts/draft';
 
 import { CompareField, mergeValues, NO_CHOICES, toCompareRows, toCurrentFormValue } from './draft-compare.store.utils';
@@ -14,8 +15,7 @@ const DRAFT: MachineDraftDetail = {
   id: 'd1',
   state: DraftState.Pending,
   isCreate: false,
-  attemptId: 'a1',
-  fileId: 'f1',
+  proposal: { source: DraftSource.Ingest, attemptId: 'a1', chatId: null },
   name: 'Pump X',
   serialNumber: null,
   description: '<p>new</p>',

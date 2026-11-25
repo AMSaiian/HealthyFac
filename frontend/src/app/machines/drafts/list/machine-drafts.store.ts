@@ -158,7 +158,9 @@ export const MachineDraftsStore = signalStore(
       /** The drafts of the attempts on the page, to tell which draft applies as it is. */
       attempts: rxResource({
         params: () => {
-          const ids = drafts.hasValue() ? [...new Set(drafts.value().items.map((item) => item.attemptId))] : [];
+          const ids = drafts.hasValue()
+            ? [...new Set(drafts.value().items.flatMap((item) => item.proposal.attemptId ?? []))]
+            : [];
           return ids.length === 0 ? undefined : ids.join(',');
         },
         stream: ({ params }) =>
@@ -352,19 +354,29 @@ export const MachineDraftsStore = signalStore(
       },
       /** Opens the review of a draft. A metric draft opens the metrics page with all pending metric drafts of the attempt. */
       requestReview(item: MachineDraftGridItem): void {
+        const attemptId = item.proposal.attemptId;
+        if (attemptId === null) {
+          return;
+        }
+
         if (item.kind === DraftKind.Machine) {
           reviewMachineDraft(actions, item.id, item.isCreate);
         } else if (item.kind === DraftKind.Status && item.machineId !== null) {
-          reviewStatusDraft(actions, { machineId: item.machineId, attemptId: item.attemptId, draftId: item.id });
+          reviewStatusDraft(actions, { machineId: item.machineId, attemptId, draftId: item.id });
         } else if (item.kind === DraftKind.Phase && item.machineId !== null) {
-          reviewPhaseDraft(actions, { machineId: item.machineId, attemptId: item.attemptId, draftId: item.id });
+          reviewPhaseDraft(actions, { machineId: item.machineId, attemptId, draftId: item.id });
         } else if (item.kind === DraftKind.Metric && item.machineId !== null) {
-          void reviewMetricDrafts(router, item.machineId, item.attemptId);
+          void reviewMetricDrafts(router, item.machineId, attemptId);
         }
       },
       /** Applies one draft without the review screen. */
       requestApply(item: MachineDraftGridItem): void {
-        store.applyDraft(item.attemptId, item.id);
+        const attemptId = item.proposal.attemptId;
+        if (attemptId === null) {
+          return;
+        }
+
+        store.applyDraft(attemptId, item.id);
       },
       /**
        * Applies the pending drafts in the scope: every group of the attempt, or the drafts of the machine in every

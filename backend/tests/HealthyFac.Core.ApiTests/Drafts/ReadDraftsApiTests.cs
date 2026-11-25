@@ -137,6 +137,27 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task SearchForAttempt_ReturnsTheOriginAsOneProposalObjectWithoutFlatFields()
+    {
+        var attemptId = Guid.CreateVersion7();
+        var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "ATTEMPT-3"));
+        await _fixture.ArrangeMachineDraftAsync(machineId, attemptId: attemptId);
+
+        var items = await SearchAttemptAsync(attemptId, SearchBody);
+
+        var item = items.Should().ContainSingle().Subject;
+        var proposal = item.GetProperty(propertyName: "proposal");
+        proposal.GetProperty(propertyName: "source").GetString().Should().Be(expected: "ingest");
+        proposal.GetProperty(propertyName: "attemptId")
+            .GetString()
+            .Should()
+            .Be(_fixture.IdEncryptor.Encrypt(attemptId));
+        proposal.GetProperty(propertyName: "chatId").ValueKind.Should().Be(JsonValueKind.Null);
+        item.TryGetProperty(propertyName: "attemptId", out _).Should().BeFalse();
+        item.TryGetProperty(propertyName: "fileId", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task SearchForAttempt_WithDraftsOfAnotherAttemptAndAnotherCompany_ListsOnlyTheAttemptOfTheCompany()
     {
         var attemptId = Guid.CreateVersion7();

@@ -125,6 +125,57 @@ public static class DraftActionFixtureExtensions
             return [.. page.Items.Select(item => item.Id)];
         }
 
+        public async Task<IReadOnlyList<MachineDraftGridItem>> ReadMachineDraftItemsAsync(
+            Guid companyId,
+            Guid machineId
+        )
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<
+                    IRequestHandler<SearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>>>();
+
+            var page = await handler.HandleAsync(
+                new SearchMachineDraftsRequest
+                {
+                    CompanyId = companyId,
+                    MachineId = machineId,
+                    Limit = DraftSearchTestData.NoFilterPageLimit,
+                });
+
+            return page.Items;
+        }
+
+        public async Task<MachineDraftDetail> ReadMachineDraftDetailAsync(Guid companyId, Guid draftId)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<IRequestHandler<GetMachineDraftRequest, MachineDraftResponse>>();
+
+            var response = await handler.HandleAsync(
+                new GetMachineDraftRequest { CompanyId = companyId, Id = draftId });
+
+            return response.Draft;
+        }
+
+        public async Task<IReadOnlyList<Guid>> ReadAttemptDraftsAsync(Guid companyId, Guid attemptId)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<
+                    IRequestHandler<SearchMachineDraftsRequest, KeysetGridResponse<MachineDraftGridItem>>>();
+
+            var page = await handler.HandleAsync(
+                new SearchMachineDraftsRequest
+                {
+                    CompanyId = companyId,
+                    AttemptId = attemptId,
+                    Limit = DraftSearchTestData.NoFilterPageLimit,
+                });
+
+            return page.Items.Select(item => item.Id).ToList();
+        }
+
         public async Task DismissDraftAsync(Guid companyId, Guid draftId)
         {
             using var scope = fixture.CreateUserScope(companyId);

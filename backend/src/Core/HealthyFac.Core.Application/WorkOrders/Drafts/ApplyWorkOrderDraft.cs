@@ -3,6 +3,7 @@ using FluentValidation;
 using HealthyFac.Core.Application.Authorization;
 using HealthyFac.Core.Application.Realtime;
 using HealthyFac.Core.Domain.Drafts;
+using HealthyFac.Core.Domain.Drafts.Proposals;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser;
@@ -182,15 +183,18 @@ public sealed class ApplyWorkOrderDraftRequestHandler(
 
         draft.MarkApplied(workOrderId);
 
-        _outbox.Add(
-            new WorkOrderDraftApplied
-            {
-                DraftId = draft.Id,
-                WorkOrderId = workOrderId,
-                CaseId = draft.Proposal.CaseId!.Value,
-                CompanyId = draft.CompanyId,
-                AppliedAt = _timeProvider.GetUtcNow().UtcDateTime,
-            });
+        if (draft.Proposal.Source == DraftSource.Case)
+        {
+            _outbox.Add(
+                new WorkOrderDraftApplied
+                {
+                    DraftId = draft.Id,
+                    WorkOrderId = workOrderId,
+                    CaseId = draft.Proposal.CaseId!.Value,
+                    CompanyId = draft.CompanyId,
+                    AppliedAt = _timeProvider.GetUtcNow().UtcDateTime,
+                });
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

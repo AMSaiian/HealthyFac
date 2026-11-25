@@ -102,7 +102,7 @@ public static class ProposalEntryFlowTestData
             { "third, second, first", [third, second, first] },
         };
 
-    private static ProposedMachine ProposedMachineOf(FlowIds ids) =>
+    private static ProposedEntry ProposedMachineOf(FlowIds ids) =>
         new()
         {
             DraftId = ids.EntryId,
@@ -119,6 +119,7 @@ public static class ProposalEntryFlowTestData
     ) =>
         new()
         {
+            Source = ResolutionSource.Ingest,
             AttemptId = DefinitionDraftTestData.AttemptId,
             CompanyId = DefinitionDraftTestData.CompanyId,
             Resolution = resolution,

@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.ProposalEntries;
 using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
+using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
@@ -17,12 +19,11 @@ public sealed class StoreProposedDefinitionDraftsTests(TelemetryDatabaseFixture 
     private readonly TelemetryDatabaseFixture _fixture = fixture;
 
     [Fact]
-    public async Task Store_WithTwoEntries_StoresEveryChildAwaitingItsTarget()
+    public async Task Store_WithTwoCreateDrafts_StoresEveryChildAwaitingItsEntry()
     {
-        var targetMachineId = Guid.CreateVersion7();
-        var withTarget = ProposalBuilder.Machine(targetMachineId);
-        var withoutTarget = ProposalBuilder.Machine();
-        var message = ProposalBuilder.Message(DefinitionDraftTestData.CompanyId, withTarget, withoutTarget);
+        var first = ProposalBuilder.Machine();
+        var second = ProposalBuilder.Machine();
+        var message = ProposalBuilder.Message(DefinitionDraftTestData.CompanyId, first, second);
 
         await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
 
@@ -37,16 +38,81 @@ public sealed class StoreProposedDefinitionDraftsTests(TelemetryDatabaseFixture 
             .Should()
             .OnlyContain(draft => draft.State == DefinitionDraftState.AwaitingTarget);
 
-        metrics.Single(draft => draft.ProposalEntryId == withTarget.DraftId)
-            .TargetMachineId.Should()
-            .Be(targetMachineId);
-
-        metrics.Single(draft => draft.ProposalEntryId == withoutTarget.DraftId)
-            .TargetMachineId.Should()
-            .BeNull();
-
-        entries.Select(entry => entry.Id).Should().BeEquivalentTo([withTarget.DraftId, withoutTarget.DraftId]);
+        metrics.Select(draft => draft.ProposalEntryId).Should().BeEquivalentTo([first.DraftId, second.DraftId]);
+        entries.Select(entry => entry.Id).Should().BeEquivalentTo([first.DraftId, second.DraftId]);
         entries.Should().OnlyContain(entry => entry.State == ProposalEntryState.Awaiting);
+    }
+
+    [Fact]
+    public async Task Store_ForAMachineOfTheCompany_StoresTheChildrenPendingOnItWithoutAnEntry()
+    {
+        var machineId = await _fixture.RegisterTenantMachineAsync(DefinitionDraftTestData.CompanyId);
+        var message = ProposalBuilder.OnMachineMessage(DefinitionDraftTestData.CompanyId, machineId);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+        var statuses = await _fixture.LoadStatusDraftsAsync();
+        var entries = await _fixture.LoadProposalEntriesAsync();
+
+        metrics.Concat<IDefinitionDraft>(statuses)
+            .Should()
+            .OnlyContain(draft => draft.State == DefinitionDraftState.Pending
+                && draft.TargetMachineId == machineId
+                && draft.ProposalEntryId == null);
+
+        metrics.Should().ContainSingle();
+        statuses.Should().ContainSingle();
+        entries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Store_ForAMachineWithADeletedRegistration_StoresNothingForIt()
+    {
+        var machineId = await _fixture.RegisterTenantMachineAsync(DefinitionDraftTestData.CompanyId);
+        await _fixture.DeleteMachineAsync(DefinitionDraftTestData.CompanyId, machineId);
+        _fixture.ClearLogs();
+        var message = ProposalBuilder.OnMachineMessage(DefinitionDraftTestData.CompanyId, machineId);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+        var statuses = await _fixture.LoadStatusDraftsAsync();
+        var warnings = _fixture.ReadWarnings<StoreProposedDefinitionDraftsRequestHandler>();
+
+        metrics.Should().BeEmpty();
+        statuses.Should().BeEmpty();
+        warnings.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Store_ForAnUnknownMachine_ThrowsNotFoundAndStoresNothing()
+    {
+        var message = ProposalBuilder.OnMachineMessage(DefinitionDraftTestData.CompanyId, Guid.CreateVersion7());
+
+        var act = () => _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+        metrics.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Store_ForAChatProposal_StoresTheChatProposalAndTheChildrenOnTheMachine()
+    {
+        var machineId = await _fixture.RegisterTenantMachineAsync(DefinitionDraftTestData.CompanyId);
+        var message = ProposalBuilder.ChatMessage(DefinitionDraftTestData.CompanyId, machineId);
+
+        await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
+
+        var proposals = await _fixture.LoadDraftProposalsAsync();
+        var metrics = await _fixture.LoadMetricDraftsAsync();
+
+        var proposal = proposals.Should().ContainSingle().Subject;
+        proposal.Source.Should().Be(DraftSource.Chat);
+        proposal.Id.Should().Be(DefinitionDraftTestData.ChatMessageId);
+        proposal.ChatId.Should().Be(DefinitionDraftTestData.ChatId);
+        metrics.Should().ContainSingle().Which.ProposalId.Should().Be(proposal.Id);
     }
 
     [Fact]

@@ -21,7 +21,10 @@ public sealed class MetricDraftLimitsTests(TelemetryDatabaseFixture fixture)
     {
         var message = ProposalBuilder.Message(
             DefinitionDraftTestData.CompanyId,
-            ProposalBuilder.Machine() with { Metrics = [MetricDraftLimitsTestData.ProposedMetricWithLimits()] });
+            ProposalBuilder.Machine(metrics: 0, statuses: 0) with
+            {
+                Metrics = [MetricDraftLimitsTestData.ProposedMetricWithLimits()],
+            });
 
         await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
 

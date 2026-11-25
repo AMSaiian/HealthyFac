@@ -12,7 +12,12 @@ public static class DraftMessageErrors
         public const string MachineIdRequired = "MachineId is required.";
         public const string CompanyIdRequired = "CompanyId is required.";
         public const string QueuedAtRequired = "QueuedAt is required.";
-        public const string AttemptIdRequired = "AttemptId is required.";
+        public const string FileAndQueuedAtTogether = "FileId and QueuedAt are set together or both missing.";
+        public const string FileIdEmpty = "FileId must not be empty when it is set.";
+        public const string QueuedAtEmpty = "QueuedAt must not be empty when it is set.";
+        public const string AttemptIdRequired = "AttemptId is required for an ingest proposal.";
+        public const string AttemptIdOnlyForIngest = "AttemptId is allowed only for an ingest proposal.";
+        public const string SourceRequired = "Source is required.";
         public const string ResolutionRequired = "Resolution is required.";
         public const string EntriesRequired = "At least 1 entry is required.";
         public const string EntryIdRequired = "EntryId is required.";

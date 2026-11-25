@@ -21,10 +21,34 @@ public sealed class DraftsResolvedValidatorTests
     {
         var message = new DraftsResolved
         {
+            Source = ResolutionSource.Ingest,
             AttemptId = Id,
             CompanyId = Id,
             Resolution = resolution,
             Entries = [entry],
+        };
+
+        var result = new DraftsResolvedValidator().Validate(message);
+
+        result.IsValid.Should().Be(isValid, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(DraftsResolvedTestData.Sources), MemberType = typeof(DraftsResolvedTestData))]
+    public void Validate_WithSourceAndAttempt_ChecksTheAttemptAgainstTheSource(
+        string caseName,
+        ResolutionSource source,
+        Guid? attemptId,
+        bool isValid
+    )
+    {
+        var message = new DraftsResolved
+        {
+            Source = source,
+            AttemptId = attemptId,
+            CompanyId = Id,
+            Resolution = DraftResolution.Rejected,
+            Entries = [new ResolvedEntry { EntryId = Id }],
         };
 
         var result = new DraftsResolvedValidator().Validate(message);

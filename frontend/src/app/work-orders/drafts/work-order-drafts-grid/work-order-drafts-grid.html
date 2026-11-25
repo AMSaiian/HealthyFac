@@ -99,7 +99,7 @@
               @case (WorkOrderDraftColumn.Case) {
                 <a
                   class="text-primary"
-                  [routerLink]="['/maintenance/cases', draft.caseId]"
+                  [routerLink]="['/maintenance/cases', draft.proposal.caseId]"
                 >
                   {{ 'WORK_ORDER_DRAFTS.OPEN_CASE' | translate }}
                 </a>
