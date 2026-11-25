@@ -3,6 +3,7 @@ using System.Text.Json;
 using HealthyFac.Core.ApiTests.Drafts.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
+using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Drafts;
@@ -148,10 +149,12 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         var item = items.Should().ContainSingle().Subject;
         var proposal = item.GetProperty(propertyName: "proposal");
         proposal.GetProperty(propertyName: "source").GetString().Should().Be(expected: "ingest");
+
         proposal.GetProperty(propertyName: "attemptId")
             .GetString()
             .Should()
             .Be(_fixture.IdEncryptor.Encrypt(attemptId));
+
         proposal.GetProperty(propertyName: "chatId").ValueKind.Should().Be(JsonValueKind.Null);
         item.TryGetProperty(propertyName: "attemptId", out _).Should().BeFalse();
         item.TryGetProperty(propertyName: "fileId", out _).Should().BeFalse();
@@ -169,6 +172,41 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         var items = await SearchAttemptAsync(attemptId, SearchBody);
 
         items.Select(item => item.GetProperty(propertyName: "id").GetString()).Should().Equal(inScope.EncryptedId);
+    }
+
+    [Fact]
+    public async Task SearchForChat_WithDraftsOfAnotherChatAndAnotherCompany_ListsOnlyTheChatOfTheCompany()
+    {
+        var chatId = Guid.CreateVersion7();
+        var inScope = await _fixture.ArrangeChatMachineDraftAsync(chatId);
+        await _fixture.ArrangeChatMachineDraftAsync(Guid.CreateVersion7());
+        await _fixture.ArrangeChatMachineDraftAsync(chatId, Guid.CreateVersion7());
+
+        var items = await SearchChatAsync(chatId, SearchBody);
+
+        items.Select(item => item.GetProperty(propertyName: "id").GetString()).Should().Equal(inScope.EncryptedId);
+
+        items.Single()
+            .GetProperty(propertyName: "proposal")
+            .GetProperty(propertyName: "chatId")
+            .GetString()
+            .Should()
+            .Be(_fixture.IdEncryptor.Encrypt(chatId));
+    }
+
+    [Fact]
+    public async Task DismissForChat_DismissesThePendingDraftsOfTheChat()
+    {
+        var chatId = Guid.CreateVersion7();
+        await _fixture.ArrangeChatMachineDraftAsync(chatId);
+        var other = await _fixture.ArrangeChatMachineDraftAsync(Guid.CreateVersion7());
+
+        var response = await SendWriteAsync($"v1/chats/{_fixture.IdEncryptor.Encrypt(chatId)}/drafts/dismiss");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var drafts = await _fixture.LoadMachineDraftsAsync();
+        drafts.Single(draft => draft.Id == other.Id).State.Should().Be(DraftState.Pending);
+        drafts.Count(draft => draft.State == DraftState.Dismissed).Should().Be(expected: 1);
     }
 
     [Fact]
@@ -274,6 +312,26 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
     }
 
     [Fact]
+    public async Task GetChatDrafts_ListsTheGroupsOfTheChatOnly()
+    {
+        var chatId = Guid.CreateVersion7();
+        await _fixture.ArrangeChatMachineDraftAsync(chatId);
+        await _fixture.ArrangeChatMachineDraftAsync(Guid.CreateVersion7());
+        await _fixture.ArrangeMachineDraftAsync();
+
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Get,
+            $"v1/chats/{_fixture.IdEncryptor.Encrypt(chatId)}/drafts",
+            _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission));
+
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        document.RootElement.GetProperty(propertyName: "groups").GetArrayLength().Should().Be(expected: 1);
+    }
+
+    [Fact]
     public async Task GetAttemptDrafts_ForUnknownAttempt_ReturnsAnEmptyList()
     {
         var response = await _fixture.SendMachineRequestAsync(
@@ -315,6 +373,24 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post,
             SearchPath(_fixture.IdEncryptor.Encrypt(machineId)),
+            _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
+            body);
+
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var document = JsonDocument.Parse(content);
+
+        return
+        [
+            .. document.RootElement.GetProperty(propertyName: "items").EnumerateArray().Select(item => item.Clone()),
+        ];
+    }
+
+    private async Task<List<JsonElement>> SearchChatAsync(Guid chatId, string body)
+    {
+        var response = await _fixture.SendMachineRequestAsync(
+            HttpMethod.Post,
+            $"v1/chats/{_fixture.IdEncryptor.Encrypt(chatId)}/drafts/search",
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
             body);
 

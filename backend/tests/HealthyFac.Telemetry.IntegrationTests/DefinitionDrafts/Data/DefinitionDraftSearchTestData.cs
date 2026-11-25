@@ -9,6 +9,7 @@ namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 public static class DefinitionDraftSearchTestData
 {
     public const int PageLimit = 2;
+    public const int ChatPageLimit = 50;
 
     /// <summary>Two pending metrics, a pending status, an awaiting status, and an applied metric.</summary>
     public const int DraftCount = 5;

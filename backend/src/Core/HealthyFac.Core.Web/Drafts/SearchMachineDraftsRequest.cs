@@ -28,6 +28,21 @@ public static class SearchMachineDraftsRequestExtensions
                 After = request.After,
             };
 
+        public ApplicationSearchMachineDraftsRequest ToApplicationChatRequest(
+            string encryptedChatId,
+            Guid companyId,
+            IIdEncryptor idEncryptor
+        ) =>
+            new()
+            {
+                CompanyId = companyId,
+                ChatId = DraftRouteIds.Decrypt(encryptedChatId, idEncryptor),
+                Limit = request.Limit,
+                Sort = request.Sort,
+                Filter = request.Filter,
+                After = request.After,
+            };
+
         public ApplicationSearchMachineDraftsRequest ToApplicationAttemptRequest(
             string encryptedAttemptId,
             Guid companyId,

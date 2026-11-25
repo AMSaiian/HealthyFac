@@ -59,6 +59,38 @@ public sealed class SearchMachineDraftsTests(CoreDatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Search_ForAChat_ListsTheDraftsOfEveryProposalOfThatChatOnly()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var otherChatId = Guid.CreateVersion7();
+        var firstId = await _fixture.AddChatMachineDraftAsync(tenant.CompanyId);
+        var secondId = await _fixture.AddChatMachineDraftAsync(
+            tenant.CompanyId,
+            chatMessageId: Guid.CreateVersion7());
+        await _fixture.AddChatMachineDraftAsync(
+            tenant.CompanyId,
+            chatId: otherChatId,
+            chatMessageId: Guid.CreateVersion7());
+        await _fixture.AddMachineDraftAsync(tenant.CompanyId);
+
+        var seenIds = await _fixture.ReadChatDraftsAsync(tenant.CompanyId, DraftTestData.ChatId);
+
+        seenIds.Should().BeEquivalentTo([firstId, secondId]);
+    }
+
+    [Fact]
+    public async Task Search_ForAChatOfAnotherCompany_ReturnsAnEmptyPage()
+    {
+        var tenant = await _fixture.ArrangeMachineTenantAsync();
+        var otherTenant = await _fixture.ArrangeMachineTenantAsync(companyName: "Other company");
+        await _fixture.AddChatMachineDraftAsync(tenant.CompanyId);
+
+        var seenIds = await _fixture.ReadChatDraftsAsync(otherTenant.CompanyId, DraftTestData.ChatId);
+
+        seenIds.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Search_OfAMachine_ShowsTheProposalOfEachSourceWithItsOwnFieldsOnly()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();

@@ -12,7 +12,9 @@ public record GetAttemptDraftsRequest : IRequest<AttemptDraftsResponse>
 {
     public required Guid CompanyId { get; init; }
 
-    public required Guid AttemptId { get; init; }
+    public Guid? AttemptId { get; init; }
+
+    public Guid? ChatId { get; init; }
 }
 
 public record AttemptDraftsResponse
@@ -42,7 +44,17 @@ public class GetAttemptDraftsRequestValidator : AbstractValidator<GetAttemptDraf
     public GetAttemptDraftsRequestValidator()
     {
         RuleFor(x => x.CompanyId).NotEmpty().WithMessage(DraftErrors.CompanyIdRequired);
-        RuleFor(x => x.AttemptId).NotEmpty().WithMessage(DraftErrors.AttemptIdRequired);
+        RuleFor(x => x.AttemptId)
+            .NotEmpty()
+            .WithMessage(DraftErrors.AttemptIdRequired)
+            .When(x => x.AttemptId is not null);
+        RuleFor(x => x.ChatId)
+            .NotEmpty()
+            .WithMessage(DraftErrors.ChatIdRequired)
+            .When(x => x.ChatId is not null);
+        RuleFor(x => x)
+            .Must(x => x.AttemptId is null != x.ChatId is null)
+            .WithMessage(DraftErrors.GetScopeRequired);
     }
 }
 
@@ -64,10 +76,12 @@ public sealed class GetAttemptDraftsPreHandlerCheck(ICurrentUserProvider current
 }
 
 /// <summary>
-/// Reads every machine draft of one ingest attempt (all states) and groups them by machine. The group key is the
+/// Reads every machine draft of one ingest attempt or one chat (all states). Set exactly one of the two IDs and groups
+/// them by machine. The group key is the
 /// machine (the target, or the machine that a create draft made) or, for a pending create draft, the draft itself.
-/// The metric and status drafts live in Telemetry. An attempt that Core does not know gives an empty list, because Core
-/// does not own attempts.
+/// The metric and status drafts live in Telemetry. An attempt or a chat that Core does not know gives an empty list,
+/// because Core
+/// owns neither.
 /// </summary>
 /// <param name="dbContext">Reads the drafts and the machine names.</param>
 public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
@@ -83,7 +97,9 @@ public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)
         var machineDrafts = await _dbContext.MachineDrafts
             .AsNoTracking()
             .Include(draft => draft.Proposal)
-            .Where(draft => draft.CompanyId == request.CompanyId && draft.Proposal.AttemptId == request.AttemptId)
+            .Where(draft => draft.CompanyId == request.CompanyId
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId)
+                && (request.ChatId == null || draft.Proposal.ChatId == request.ChatId))
             .ToListAsync(cancellationToken);
 
         var machineIds = machineDrafts

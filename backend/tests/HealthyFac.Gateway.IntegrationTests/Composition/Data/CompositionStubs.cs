@@ -10,6 +10,7 @@ public sealed class CompositionStubs : IAsyncDisposable
 {
     public const string AttemptId = "v1.attempt";
     public const string MachineId = "v1.machine";
+    public const string ChatId = "v1.chat";
     public const string PublicBase = "/api/core/v1";
     public const string OkJson = "{}";
 
@@ -18,6 +19,12 @@ public sealed class CompositionStubs : IAsyncDisposable
     public static string PublicAttemptDismiss => $"{PublicBase}/ingest-attempts/{AttemptId}/drafts/dismiss";
 
     public static string PublicAttemptDrafts => $"{PublicBase}/ingest-attempts/{AttemptId}/drafts";
+
+    public static string PublicChatDismiss => $"{PublicBase}/chats/{ChatId}/drafts/dismiss";
+
+    public static string PublicChatDrafts => $"{PublicBase}/chats/{ChatId}/drafts";
+
+    public static string PublicChatDraftSearch => $"{PublicBase}/chats/{ChatId}/drafts/search";
 
     public static string PublicMachineDraftSearch => $"{PublicBase}/machines/{MachineId}/drafts/search";
 
@@ -40,6 +47,18 @@ public sealed class CompositionStubs : IAsyncDisposable
     public static string CoreAttemptDismiss => $"/v1/ingest-attempts/{AttemptId}/drafts/dismiss";
 
     public static string TelemetryAttemptDismiss => $"/v1/ingest-attempts/{AttemptId}/definition-drafts/dismiss";
+
+    public static string CoreChatDrafts => $"/v1/chats/{ChatId}/drafts";
+
+    public static string TelemetryChatDrafts => $"/v1/chats/{ChatId}/definition-drafts";
+
+    public static string CoreChatDismiss => $"/v1/chats/{ChatId}/drafts/dismiss";
+
+    public static string TelemetryChatDismiss => $"/v1/chats/{ChatId}/definition-drafts/dismiss";
+
+    public static string CoreChatSearch => $"/v1/chats/{ChatId}/drafts/search";
+
+    public static string TelemetryChatSearch => $"/v1/chats/{ChatId}/definition-drafts/search";
 
     public const string CoreMachineSearch = "/v1/machines/search";
     public const string TelemetryPendingCounts = "/v1/definition-drafts/pending-counts";
@@ -85,6 +104,15 @@ public sealed class CompositionStubs : IAsyncDisposable
         Telemetry.Respond(
             HttpMethod.Get, TelemetryAttemptDrafts, status: 200, json: "{\"metrics\":[],\"statuses\":[]}");
 
+        Core.Respond(HttpMethod.Get, CoreChatDrafts, status: 200, json: "{\"groups\":[]}");
+
+        Telemetry.Respond(
+            HttpMethod.Get, TelemetryChatDrafts, status: 200, json: "{\"metrics\":[],\"statuses\":[]}");
+
+        Core.Respond(HttpMethod.Post, CoreChatDismiss, status: 200, json: "{\"dismissedCount\":0}");
+        Telemetry.Respond(HttpMethod.Post, TelemetryChatDismiss, status: 200, json: "{\"dismissedCount\":0}");
+        DraftSourceStub.Serve(Core, CoreChatSearch, []);
+        DraftSourceStub.Serve(Telemetry, TelemetryChatSearch, []);
         Core.Respond(HttpMethod.Post, CoreMachineDismiss, status: 200, json: "{\"dismissedCount\":0}");
         Telemetry.Respond(HttpMethod.Post, TelemetryMachineDismiss, status: 200, json: "{\"dismissedCount\":0}");
         Core.Respond(HttpMethod.Post, CoreAttemptDismiss, status: 200, json: "{\"dismissedCount\":0}");

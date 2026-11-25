@@ -37,6 +37,21 @@ public static class DraftCompositionEndpoints
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
                 .RequireRateLimiting(RateLimitPolicyNames.Default);
 
+            app.MapPost(DraftCompositionRoutes.ChatDraftSearch, SearchChatDraftsAsync)
+                .RequireCors(CorsConstants.PolicyName)
+                .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
+                .RequireRateLimiting(RateLimitPolicyNames.Default);
+
+            app.MapGet(DraftCompositionRoutes.ChatDrafts, GetChatDraftsAsync)
+                .RequireCors(CorsConstants.PolicyName)
+                .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
+                .RequireRateLimiting(RateLimitPolicyNames.Default);
+
+            app.MapPost(DraftCompositionRoutes.ChatDraftDismiss, DismissChatDraftsAsync)
+                .RequireCors(CorsConstants.PolicyName)
+                .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
+                .RequireRateLimiting(RateLimitPolicyNames.Default);
+
             app.MapPost(DraftCompositionRoutes.MachineDraftDismiss, DismissMachineDraftsAsync)
                 .RequireCors(CorsConstants.PolicyName)
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
@@ -59,7 +74,55 @@ public static class DraftCompositionEndpoints
         AttemptDraftsComposer composer,
         CancellationToken cancellationToken
     ) =>
-        await composer.GetAsync(version, attemptId, context, cancellationToken);
+        await composer.GetAsync(
+            version,
+            DraftCompositionRoutes.CoreAttemptDrafts(version, attemptId),
+            DraftCompositionRoutes.TelemetryAttemptDrafts(version, attemptId),
+            context,
+            cancellationToken);
+
+    private static async Task<IResult> GetChatDraftsAsync(
+        [FromRoute(Name = DraftCompositionRoutes.VersionParameter)] string version,
+        [FromRoute(Name = DraftCompositionRoutes.ChatIdParameter)]
+        string chatId,
+        HttpContext context,
+        AttemptDraftsComposer composer,
+        CancellationToken cancellationToken
+    ) =>
+        await composer.GetAsync(
+            version,
+            DraftCompositionRoutes.CoreChatDrafts(version, chatId),
+            DraftCompositionRoutes.TelemetryChatDrafts(version, chatId),
+            context,
+            cancellationToken);
+
+    private static async Task<IResult> DismissChatDraftsAsync(
+        [FromRoute(Name = DraftCompositionRoutes.VersionParameter)] string version,
+        [FromRoute(Name = DraftCompositionRoutes.ChatIdParameter)]
+        string chatId,
+        HttpContext context,
+        DraftDismissComposer composer,
+        CancellationToken cancellationToken
+    ) =>
+        await composer.DismissAsync(
+            DraftCompositionRoutes.CoreChatDismiss(version, chatId),
+            DraftCompositionRoutes.TelemetryChatDismiss(version, chatId),
+            context,
+            cancellationToken);
+
+    private static async Task<IResult> SearchChatDraftsAsync(
+        [FromRoute(Name = DraftCompositionRoutes.VersionParameter)] string version,
+        [FromRoute(Name = DraftCompositionRoutes.ChatIdParameter)]
+        string chatId,
+        HttpContext context,
+        DraftSearchComposer composer,
+        CancellationToken cancellationToken
+    ) =>
+        await composer.SearchAsync(
+            new DraftSearchScope { Version = version, ChatId = chatId },
+            await ReadBodyAsync(context, cancellationToken),
+            context,
+            cancellationToken);
 
     private static async Task<IResult> DismissMachineDraftsAsync(
         [FromRoute(Name = DraftCompositionRoutes.VersionParameter)] string version,

@@ -47,21 +47,24 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
     public MachineDraftGridItem WithPosition(KeysetPosition position) => this with { Position = position };
 
     /// <summary>
-    /// Builds the query of the machine drafts in one scope: the drafts that target one machine, or the drafts of one
-    /// ingest attempt. The query projects into the row type, so the database reads only these columns.
+    /// Builds the query of the machine drafts in one scope: the drafts that target one machine, the drafts of one
+    /// ingest attempt, or the drafts of one chat. The query projects into the row type, so the database reads only
+    /// these columns.
     /// </summary>
     /// <param name="machineDrafts">The machine drafts.</param>
     /// <param name="machines">The machines, to read the machine name.</param>
     /// <param name="companyId">The company of the actor.</param>
     /// <param name="machineId">The target machine, or <see langword="null"/> to scope by the attempt.</param>
     /// <param name="attemptId">The ingest attempt, or <see langword="null"/> to scope by the machine.</param>
+    /// <param name="chatId">The chat, or <see langword="null"/> to scope by the machine or the attempt.</param>
     /// <returns>The query over the machine drafts.</returns>
     public static IQueryable<MachineDraftGridItem> Query(
         IQueryable<MachineDraft> machineDrafts,
         IQueryable<Machine> machines,
         Guid companyId,
         Guid? machineId,
-        Guid? attemptId
+        Guid? attemptId,
+        Guid? chatId
     )
     {
         var companyMachines = machines.Where(machine => machine.CompanyId == companyId);
@@ -69,7 +72,8 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
         return machineDrafts
             .Where(draft => draft.CompanyId == companyId
                 && (machineId == null || draft.TargetMachineId == machineId)
-                && (attemptId == null || draft.Proposal.AttemptId == attemptId))
+                && (attemptId == null || draft.Proposal.AttemptId == attemptId)
+                && (chatId == null || draft.Proposal.ChatId == chatId))
             .Select(draft => new MachineDraftGridItem
             {
                 Id = draft.Id,

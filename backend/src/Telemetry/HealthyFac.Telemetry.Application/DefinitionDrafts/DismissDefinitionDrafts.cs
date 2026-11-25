@@ -19,6 +19,8 @@ public record DismissDefinitionDraftsRequest : IRequest<DismissDefinitionDraftsR
     public Guid? MachineId { get; init; }
 
     public Guid? AttemptId { get; init; }
+
+    public Guid? ChatId { get; init; }
 }
 
 public record DismissDefinitionDraftsResponse
@@ -41,9 +43,13 @@ public sealed class DismissDefinitionDraftsRequestValidator : AbstractValidator<
             .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
-
+        RuleFor(request => request.ChatId)
+            .NotEmpty()
+            .WithMessage(DefinitionDraftErrors.ChatIdRequired)
+            .When(request => request.ChatId is not null);
         RuleFor(request => request)
-            .Must(request => request.MachineId is null != request.AttemptId is null)
+            .Must(request => new[] { request.MachineId, request.AttemptId, request.ChatId }.Count(id => id is not null)
+                == 1)
             .WithMessage(DefinitionDraftErrors.SearchScopeRequired);
     }
 }
@@ -76,7 +82,8 @@ public sealed class DismissDefinitionDraftsPreHandlerCheck(
 /// <summary>
 /// Dismisses every <c>pending</c> and <c>awaitingTarget</c> metric, status, and phase draft in the scope. The machine
 /// scope
-/// holds the drafts that target the machine. The attempt scope holds every draft of the attempt. One save stores all
+/// holds the drafts that target the machine. The attempt scope holds every draft of the attempt. The chat scope holds
+/// every draft of the chat. One save stores all
 /// changes, so a draft that changed in parallel is a conflict and nothing is dismissed.
 /// </summary>
 /// <param name="dbContext">Loads the drafts and saves the change.</param>
@@ -101,21 +108,24 @@ public sealed class DismissDefinitionDraftsRequestHandler(ITelemetryDbContext db
         var metricDrafts = await _dbContext.MetricDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId))
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId)
+                && (request.ChatId == null || draft.Proposal.ChatId == request.ChatId))
             .Where(OpenDefinitionDrafts.Predicate<MetricDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
         var statusDrafts = await _dbContext.StatusDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId))
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId)
+                && (request.ChatId == null || draft.Proposal.ChatId == request.ChatId))
             .Where(OpenDefinitionDrafts.Predicate<StatusDefinitionDraft>())
             .ToListAsync(cancellationToken);
 
         var phaseDrafts = await _dbContext.OperatingPhaseDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)
-                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId))
+                && (request.AttemptId == null || draft.Proposal.AttemptId == request.AttemptId)
+                && (request.ChatId == null || draft.Proposal.ChatId == request.ChatId))
             .Where(OpenDefinitionDrafts.Predicate<OperatingPhaseDraft>())
             .ToListAsync(cancellationToken);
 

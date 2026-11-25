@@ -61,6 +61,30 @@ public sealed class DismissAllCompositionTests(GatewayEnvironment environment) :
     }
 
     [Fact]
+    public async Task DismissChatDrafts_WithBothServices_CallsTheChatPathsAndReturnsTheSumOfTheCounts()
+    {
+        _stubs.Core.Respond(HttpMethod.Post, CompositionStubs.CoreChatDismiss, status: 200, CountsCoreTwo);
+
+        _stubs.Telemetry.Respond(
+            HttpMethod.Post, CompositionStubs.TelemetryChatDismiss, status: 200, CountsTelemetryThree);
+
+        await using var gateway = _stubs.CreateGateway(_environment);
+        using var client = gateway.CreateAuthenticatedClient();
+
+        var response = await client.PostAsync(
+            CompositionStubs.PublicChatDismiss, content: null, TestContext.Current.CancellationToken);
+
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
+
+        body["dismissedCount"]!.GetValue<int>().Should().Be(expected: 5);
+        _stubs.Core.Requests.Select(request => request.Path).Should().Equal(CompositionStubs.CoreChatDismiss);
+
+        _stubs.Telemetry.Requests.Select(request => request.Path)
+            .Should()
+            .Equal(CompositionStubs.TelemetryChatDismiss);
+    }
+
+    [Fact]
     public async Task DismissMachineDrafts_WhenCoreAnswers404_Returns404()
     {
         _stubs.Core.Respond(

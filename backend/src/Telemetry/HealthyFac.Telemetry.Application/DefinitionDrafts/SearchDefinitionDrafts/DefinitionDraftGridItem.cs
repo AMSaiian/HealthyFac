@@ -45,7 +45,8 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
 
     /// <summary>
     /// Builds the union query of the definition drafts in one scope: the drafts that target one machine, or the
-    /// drafts of one ingest attempt. Each branch projects into the row type inside the query, so the database reads
+    /// drafts of one ingest attempt, or the drafts of one chat. Each branch projects into the row type inside the
+    /// query, so the database reads
     /// only these columns.
     /// </summary>
     /// <param name="metricDrafts">The metric drafts.</param>
@@ -54,6 +55,7 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
     /// <param name="companyId">The company of the actor.</param>
     /// <param name="machineId">The target machine, or <see langword="null"/> to scope by the attempt.</param>
     /// <param name="attemptId">The ingest attempt, or <see langword="null"/> to scope by the machine.</param>
+    /// <param name="chatId">The chat, or <see langword="null"/> to scope by the machine or the attempt.</param>
     /// <returns>The query over the three tables.</returns>
     public static IQueryable<DefinitionDraftGridItem> Union(
         IQueryable<MetricDefinitionDraft> metricDrafts,
@@ -61,13 +63,15 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
         IQueryable<OperatingPhaseDraft> phaseDrafts,
         Guid companyId,
         Guid? machineId,
-        Guid? attemptId
+        Guid? attemptId,
+        Guid? chatId
     )
     {
         var metricRows = metricDrafts
             .Where(draft => draft.CompanyId == companyId
                 && (machineId == null || draft.TargetMachineId == machineId)
-                && (attemptId == null || draft.Proposal.AttemptId == attemptId))
+                && (attemptId == null || draft.Proposal.AttemptId == attemptId)
+                && (chatId == null || draft.Proposal.ChatId == chatId))
             .Select(draft => new DefinitionDraftGridItem
             {
                 Id = draft.Id,
@@ -90,7 +94,8 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
         var statusRows = statusDrafts
             .Where(draft => draft.CompanyId == companyId
                 && (machineId == null || draft.TargetMachineId == machineId)
-                && (attemptId == null || draft.Proposal.AttemptId == attemptId))
+                && (attemptId == null || draft.Proposal.AttemptId == attemptId)
+                && (chatId == null || draft.Proposal.ChatId == chatId))
             .Select(draft => new DefinitionDraftGridItem
             {
                 Id = draft.Id,
@@ -113,7 +118,8 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
         var phaseRows = phaseDrafts
             .Where(draft => draft.CompanyId == companyId
                 && (machineId == null || draft.TargetMachineId == machineId)
-                && (attemptId == null || draft.Proposal.AttemptId == attemptId))
+                && (attemptId == null || draft.Proposal.AttemptId == attemptId)
+                && (chatId == null || draft.Proposal.ChatId == chatId))
             .Select(draft => new DefinitionDraftGridItem
             {
                 Id = draft.Id,

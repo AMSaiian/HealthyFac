@@ -274,6 +274,49 @@ public static class DefinitionDraftFixtureExtensions
                 new GetAttemptDefinitionDraftsRequest { CompanyId = companyId, AttemptId = attemptId });
         }
 
+        public async Task<ChatDefinitionDraftsResponse> GetChatDefinitionDraftsAsync(Guid companyId, Guid chatId)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<IRequestHandler<GetChatDefinitionDraftsRequest, ChatDefinitionDraftsResponse>>();
+
+            return await handler.HandleAsync(
+                new GetChatDefinitionDraftsRequest { CompanyId = companyId, ChatId = chatId });
+        }
+
+        public async Task<IReadOnlyList<Guid>> ReadChatDefinitionDraftsAsync(Guid companyId, Guid chatId)
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<
+                    IRequestHandler<SearchDefinitionDraftsRequest, KeysetGridResponse<DefinitionDraftGridItem>>>();
+
+            var page = await handler.HandleAsync(
+                new SearchDefinitionDraftsRequest
+                {
+                    CompanyId = companyId,
+                    ChatId = chatId,
+                    Limit = DefinitionDraftSearchTestData.ChatPageLimit,
+                    Filter = new DefinitionDraftGridFilter(),
+                });
+
+            return [.. page.Items.Select(item => item.Id)];
+        }
+
+        public async Task<DismissDefinitionDraftsResponse> DismissChatDefinitionDraftsAsync(
+            Guid companyId,
+            Guid chatId
+        )
+        {
+            using var scope = fixture.CreateUserScope(companyId);
+            var handler = scope.ServiceProvider
+                .GetRequiredService<
+                    IRequestHandler<DismissDefinitionDraftsRequest, DismissDefinitionDraftsResponse>>();
+
+            return await handler.HandleAsync(
+                new DismissDefinitionDraftsRequest { CompanyId = companyId, ChatId = chatId });
+        }
+
         public async Task<PendingDefinitionDraftCountsResponse> GetPendingDefinitionDraftCountsAsync(Guid companyId)
         {
             using var scope = fixture.CreateUserScope(companyId);

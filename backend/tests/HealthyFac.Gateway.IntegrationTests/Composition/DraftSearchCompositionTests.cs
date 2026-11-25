@@ -42,6 +42,51 @@ public sealed class DraftSearchCompositionTests(GatewayEnvironment environment) 
     }
 
     [Fact]
+    public async Task SearchChat_ReadingAllPages_MergesBothSourcesFromTheChatPaths()
+    {
+        const string coreChatPath = "/v1/chats/v1.chat/drafts/search";
+        const string telemetryChatPath = "/v1/chats/v1.chat/definition-drafts/search";
+        DraftSourceStub.Serve(_core, coreChatPath, CoreRows);
+        DraftSourceStub.Serve(_telemetry, telemetryChatPath, TelemetryRows);
+        await using var gateway = CreateGateway();
+        using var client = gateway.CreateAuthenticatedClient();
+        var ids = new List<string>();
+        JsonNode? after = null;
+
+        do
+        {
+            using var content = JsonContent.Create(
+                new JsonObject
+                {
+                    ["limit"] = PageLimit,
+                    ["after"] = after?.DeepClone(),
+                });
+
+            using var response = await client.PostAsync(
+                CompositionStubs.PublicChatDraftSearch, content, TestContext.Current.CancellationToken);
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var page = JsonNode.Parse(
+                await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
+
+            ids.AddRange(
+                page["items"]!.AsArray().Select(item => item!["id"]!.GetValue<string>()));
+
+            after = page["nextPosition"];
+        }
+        while (after is not null && ids.Count <= MergedIds.Length);
+
+        ids.Should().Equal(MergedIds);
+
+        _core.Requests.Select(request => request.Path)
+            .Should()
+            .OnlyContain(path => path == coreChatPath || path == NamesPath);
+
+        _telemetry.Requests.Select(request => request.Path).Should().OnlyContain(path => path == telemetryChatPath);
+    }
+
+    [Fact]
     public async Task Search_ReadingPageByPage_ReturnsEveryRowOnceAndCallsTheInternalPaths()
     {
         await using var gateway = CreateGateway();

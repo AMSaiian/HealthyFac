@@ -26,11 +26,35 @@ public static class DraftApiFixtureExtensions
             var owner = companyId ?? fixture.CompanyId;
             var attempt = attemptId ?? DraftApiTestData.AttemptId;
             await EnsureProposalAsync(dbContext, owner, attempt);
+
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 owner,
                 attempt,
                 targetMachineId,
+                DraftApiTestData.ProposedName,
+                DraftApiTestData.ProposedSerialNumber,
+                description: null);
+
+            dbContext.MachineDrafts.Add(draft);
+            await dbContext.SaveChangesAsync();
+
+            return new ArrangedDraft(draft.Id, fixture.IdEncryptor.Encrypt(draft.Id));
+        }
+
+        public async Task<ArrangedDraft> ArrangeChatMachineDraftAsync(Guid chatId, Guid? companyId = null)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+            var owner = companyId ?? fixture.CompanyId;
+            var proposal = DraftProposal.ForChat(Guid.CreateVersion7(), owner, chatId);
+            dbContext.DraftProposals.Add(proposal);
+
+            var draft = new MachineDraft(
+                Guid.CreateVersion7(),
+                owner,
+                proposal.Id,
+                targetMachineId: null,
                 DraftApiTestData.ProposedName,
                 DraftApiTestData.ProposedSerialNumber,
                 description: null);
