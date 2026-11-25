@@ -6,6 +6,12 @@
 #        [-FormatScript <path>]
 # Defaults: -Repo is the checkout that holds this script file; -Base is the merge base of HEAD and -MainBranch
 # (develop); -FormatScript is format-changed.ps1 next to this file.
+# Lock: one full run per area at a time. Before step 1 the script creates run-<area>.lock (an exclusive create, so 2
+# runs that start together cannot both pass) with its process ID in the claude-runs folder of the git state. The script
+# keeps the file open for the whole run (read share only, so no other process can delete or write it), and it closes
+# and deletes the file when the run ends (also after RUN FAILED and an exception). A lock file that no run holds open
+# is stale: the next run deletes it. When a run holds the file open, the next run prints "RUN FAILED <area>: another
+# run of <area> is active (pid <id>)", leaves the lock, and exits 1 at once.
 # Steps, in order; the first failure ends the run:
 # 1. The format script on the existing files of the area that changed since the base (tracked and untracked). Its notes
 #    are printed as "Formatter: <note>".
@@ -37,8 +43,61 @@ $UnitModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;ba
 $IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll'
 $IntegrationParallelModules = 4
 
+$script:OwnedLock = $null
+$script:LockStream = $null
+
+function Remove-RunLock {
+  if ($script:LockStream) {
+    $script:LockStream.Dispose()
+    $script:LockStream = $null
+  }
+  if ($script:OwnedLock) {
+    Remove-Item -LiteralPath $script:OwnedLock -Force -ErrorAction SilentlyContinue
+    $script:OwnedLock = $null
+  }
+}
+
 function Stop-Run([string] $reason) {
+  Remove-RunLock
   "RUN FAILED ${Area}: $reason"
+  exit 1
+}
+
+# Takes the lock of the area, or ends the run when another run holds it. The lock file is created with an exclusive
+# create and stays open (read share only) until the run ends, so a delete of it fails while its run lives. When the
+# create fails, the script tries to delete the file: a delete that fails means that a live run holds it, and a delete
+# that works removed a stale file, so the next create attempt decides between runs that start together.
+function Enter-RunLock {
+  $folder = Get-GitStatePath $Repo 'claude-runs'
+  New-Item -ItemType Directory -Force $folder | Out-Null
+  $path = Join-Path $folder "run-$Area.lock"
+  for ($attempt = 0; $attempt -lt 5; $attempt++) {
+    $stream = $null
+    try {
+      $stream = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+      $bytes = [Text.Encoding]::ASCII.GetBytes("$PID")
+      $stream.Write($bytes, 0, $bytes.Length)
+      $stream.Flush()
+      $script:LockStream = $stream
+      $script:OwnedLock = $path
+      return
+    } catch [IO.IOException] {
+      if ($stream) { $stream.Dispose() }
+      if (-not (Test-Path -LiteralPath $path)) { continue }
+      try {
+        Remove-Item -LiteralPath $path -Force -ErrorAction Stop
+      } catch {
+        $text = $null
+        try { $text = (Get-Content -LiteralPath $path -ErrorAction Stop | Select-Object -First 1) -as [string] } catch { $text = $null }
+        Stop-Lock $(if ([string]::IsNullOrWhiteSpace($text)) { 'unknown' } else { $text.Trim() })
+      }
+    }
+  }
+  Stop-Lock 'unknown'
+}
+
+function Stop-Lock([string] $holder) {
+  "RUN FAILED ${Area}: another run of $Area is active (pid $holder)"
   exit 1
 }
 
@@ -66,6 +125,7 @@ function Get-FailedTests([string[]] $lines) {
 # The steps of the header. Each failure prints its RUN FAILED line and exits; a throw (a tree ID, the format script,
 # a missing tool) reaches the catch below, so the last line is always a Full run or a RUN FAILED line.
 function Invoke-AreaRun {
+  Enter-RunLock
   if (-not $Base) {
     $Base = git -C $Repo merge-base HEAD $MainBranch 2>$null
     if ($LASTEXITCODE -ne 0 -or -not $Base) { Stop-Run "no merge base of HEAD and $MainBranch. Pass -Base <ref>." }
@@ -133,11 +193,13 @@ function Invoke-AreaRun {
   $treeAfter = Get-TreeId -Repo $Repo -Area $Area
   if ($treeAfter -ne $treeBefore) { Stop-Run 'the tree changed during the run' }
 
+  Remove-RunLock
   "Full run ${Area}: tree $treeBefore; $(@($commands | ForEach-Object { $_.Label }) -join ', ') -> $($passed -join ' and ') passed, 0 failed"
 }
 
 try { Invoke-AreaRun }
 catch {
+  Remove-RunLock
   "RUN FAILED ${Area}: $($_.Exception.Message)"
   exit 1
 }

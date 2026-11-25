@@ -18,7 +18,8 @@
 #   "Profile 2", with the Claude in Chrome extension) once into HEALTHYFAC_AGENT_CHROME_DIR under the same folder name,
 #   then starts the agent Chrome on it. Without the source setting it starts the profile "Default" of that folder:
 #   install the extension in it once.
-# - restore: shows each minimized window of the agent Chrome again, without the focus. Exit 1 when it does not run.
+# - restore: shows each minimized window of the agent Chrome again and brings each maximized window back to its
+#   normal size, without the focus (a maximized window ignores resize_window). Exit 1 when it does not run.
 # - status: exit 0 when the agent Chrome runs, else 1.
 # Settings: .env of the worktree, else of the main checkout (Resolve-VerifyEnvFile); -EnvFile overrides both.
 param(
@@ -81,23 +82,28 @@ public static class AgentChromeWindows {
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc proc, IntPtr parameter);
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr handle, out uint processId);
   [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr handle);
+  [DllImport("user32.dll")] public static extern bool IsZoomed(IntPtr handle);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr handle);
   [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr handle, int command);
 }
 '@
-  $restored = [Collections.Generic.List[IntPtr]]::new()
+  $minimized = 0
+  $maximized = 0
   [void][AgentChromeWindows]::EnumWindows({
       param($handle, $parameter)
       $processId = [uint32]0
       [void][AgentChromeWindows]::GetWindowThreadProcessId($handle, [ref]$processId)
-      if ($processId -eq $browserProcess.ProcessId -and [AgentChromeWindows]::IsWindowVisible($handle) -and
-        [AgentChromeWindows]::IsIconic($handle)) {
-        [void][AgentChromeWindows]::ShowWindowAsync($handle, $ShowNoActivate)
-        $restored.Add($handle)
+      if ($processId -eq $browserProcess.ProcessId -and [AgentChromeWindows]::IsWindowVisible($handle)) {
+        $isMinimized = [AgentChromeWindows]::IsIconic($handle)
+        $isMaximized = [AgentChromeWindows]::IsZoomed($handle)
+        if ($isMinimized -or $isMaximized) {
+          [void][AgentChromeWindows]::ShowWindowAsync($handle, $ShowNoActivate)
+          if ($isMinimized) { $script:minimized++ } else { $script:maximized++ }
+        }
       }
       $true
     }, [IntPtr]::Zero)
-  Write-Host "Restored $($restored.Count) minimized window(s) of the agent Chrome."
+  Write-Host "Restored $minimized minimized and $maximized maximized window(s) of the agent Chrome."
   exit 0
 }
 

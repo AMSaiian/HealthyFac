@@ -14,6 +14,9 @@ The executor, the reviewer, the spec writer, and `/fix` follow this file for eve
 - `1280 x 600` and `1920 x 1080` are window sizes (`resize_window`). A maximized window ignores a resize: the page
   size (`innerWidth`, `innerHeight`) must change with it.
 - A resize reaches only the active tab: take a screenshot of the tab first.
+- After `restore` and after each `resize_window`, open a new tab for the flow: a tab that was open before keeps its old
+  page size. Check that `innerWidth` and `innerHeight` follow the window size before the first screenshot. A page that
+  does not follow is no pass.
 - Never fake a size (a root `zoom`, a scaled frame, an emulated viewport).
 
 ## Looking
