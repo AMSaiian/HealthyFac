@@ -17,14 +17,15 @@ namespace HealthyFac.Seeder.TelemetryHistory;
 
 /// <summary>
 /// Seeds the result of the planner agent for a drain case without an AI call: 1 completed <c>planner</c> run with 1
-/// committed <c>linkWorkOrder</c> action. The signals of the case that are open get the coverage <c>linked</c>, as
-/// <c>RunCommit</c> does it.
+/// committed <c>linkWorkOrder</c> action and 1 succeeded <c>link_work_order</c> tool call. The signals of the case
+/// that are open get the coverage <c>linked</c>, as <c>RunCommit</c> does it.
 /// </summary>
 internal static class DrainCaseLink
 {
     /// <summary>Links the open signals of the open case of the machine to a work order, in one save.</summary>
     /// <remarks>
-    /// The save uses the token (no durable step before it), so a cancelled run stores no run and no action.
+    /// The save uses the token (no durable step before it), so a cancelled run stores no run, no action, and no
+    /// tool call.
     /// </remarks>
     /// <param name="insights">The Insights host.</param>
     /// <param name="item">The item of the link event, for the error.</param>

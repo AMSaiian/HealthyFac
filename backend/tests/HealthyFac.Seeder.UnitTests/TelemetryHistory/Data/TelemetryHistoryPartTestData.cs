@@ -21,11 +21,11 @@ public static class TelemetryHistoryPartTestData
     /// <summary>The moments of the work order events: create, assign, start, complete, link.</summary>
     public static readonly string[] WorkOrderMoments = ["h-1:50", "h-1:45", "h-1:05", "h-0:50", "h-1:06"];
 
-    public static void AddWorkOrder(JsonNode root, string createdAt = "h-1:50", string title = "Replace the bearings")
+    public static void AddWorkOrder(JsonNode root, string createdAt = "h-1:50")
     {
         root[propertyName: "drains"]![index: 0]![propertyName: "workOrder"] = new JsonObject
         {
-            [propertyName: "title"] = title,
+            [propertyName: "title"] = "Replace the bearings",
             [propertyName: "description"] = "<p>Replace the front bearings.</p>",
             [propertyName: "priority"] = "high",
             [propertyName: "category"] = "repair",

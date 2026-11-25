@@ -1,7 +1,9 @@
 <div class="flex items-baseline gap-1">
   <span
     #textElement
-    class="line-clamp-2 min-w-0 wrap-anywhere whitespace-normal"
+    class="line-clamp-2 min-w-0 whitespace-normal"
+    [class.wrap-anywhere]="!isWordKept()"
+    [class.wrap-break-word]="isWordKept()"
     [class.line-through]="isStruck()"
     [pTooltip]="text()"
     tooltipPosition="bottom"
