@@ -87,6 +87,8 @@ code without a test proving it is unneeded.
   - Start it with `run_in_background`. Wait with one Monitor call on its output file, until
     a line starts with `Full run` or `RUN FAILED`. Never run an own polling loop on the same
     output beside it.
+  - While `run-area.ps1` runs, never report: do the other open work of the run, then wait for
+    the Monitor event, which resumes the run. A report never says that a full run is still going.
   - `RUN FAILED`: fix the cause (the failing tests and the log paths are in its output), then
     run it again.
   - Success: copy its last line (`Full run <area>: tree <tree-id>; ...`) under the cycle with
@@ -181,6 +183,9 @@ The message `APPROVED in cycle C - commit the cycle` starts this section.
   SHAs>. Remaining MINOR findings: <count>.` and end your turn.
 
 ## Report
+Before the first line of any report, read the open cycle of plan.md again. Implement each
+unticked step that is not `[!]` or `[~]` (new steps can arrive during the run), and only then
+report.
 Your final message goes to the spec writer, and the spec writer routes by its first line.
 Keep it short: plan.md holds the record. The first line is exactly one of:
 - `READY FOR REVIEW: cycle C, browser <passed>/<total> flows` (or `browser: no UI`);

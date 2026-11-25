@@ -850,6 +850,46 @@ Assert-That ($themeRun.Exit -eq 0 -and $themeRun.Last -match
   ($themeCommands -join '|') -eq 'npm run lint @ frontend|npx ng build @ frontend|npx ng test --watch=false @ frontend|npm run lint @ keycloak-theme|npm test @ keycloak-theme') `
   'a frontend run with a keycloak-theme change also runs the 2 keycloak-theme commands'
 
+function Get-RunLockPath([string] $repoDir, [string] $area) {
+  [IO.Path]::GetFullPath((Join-Path (git -C $repoDir rev-parse --git-path claude-runs) "run-$area.lock"), $repoDir)
+}
+
+Assert-That (-not (Test-Path (Get-RunLockPath $areaRepo 'backend'))) 'the lock of a passed run is gone'
+$unitFailRepo = New-AreaRepo 'ra-lock-fail'
+$null = Invoke-Area $unitFailRepo 'backend' @{ FAKE_UNIT_FAIL = '1' }
+Assert-That (-not (Test-Path (Get-RunLockPath $unitFailRepo 'backend'))) 'the lock of a failed run is gone'
+
+$liveRepo = New-AreaRepo 'ra-lock-live'
+$holder = Start-Process pwsh -ArgumentList '-NoProfile', '-Command', 'Start-Sleep -Seconds 120' -PassThru
+$liveLock = Get-RunLockPath $liveRepo 'backend'
+New-Item -ItemType Directory -Force (Split-Path $liveLock) | Out-Null
+Set-Content $liveLock "$($holder.Id)"
+$liveRun = Invoke-Area $liveRepo 'backend'
+Stop-Process -Id $holder.Id -Force -ErrorAction SilentlyContinue
+Assert-That ($liveRun.Exit -eq 1 -and $liveRun.Last -eq "RUN FAILED backend: another run of backend is active (pid $($holder.Id))" -and
+  (Test-Path $liveLock) -and ($liveRun.Log -notcontains 'dotnet build')) `
+  'a run while a live process holds the lock fails at once and leaves the lock'
+
+$deadRepo = New-AreaRepo 'ra-lock-dead'
+$deadProcess = Start-Process pwsh -ArgumentList '-NoProfile', '-Command', 'exit 0' -PassThru
+$deadProcess.WaitForExit()
+$deadLock = Get-RunLockPath $deadRepo 'backend'
+New-Item -ItemType Directory -Force (Split-Path $deadLock) | Out-Null
+Set-Content $deadLock "$($deadProcess.Id)"
+$deadRun = Invoke-Area $deadRepo 'backend'
+Assert-That ($deadRun.Exit -eq 0 -and $deadRun.Last -like 'Full run backend:*' -and -not (Test-Path $deadLock)) `
+  'a lock of a process that no longer runs does not block and is gone after the run'
+
+$openRepo = New-AreaRepo 'ra-lock-open'
+$openLock = Get-RunLockPath $openRepo 'backend'
+New-Item -ItemType Directory -Force (Split-Path $openLock) | Out-Null
+$openStream = [IO.File]::Open($openLock, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+$openRun = Invoke-Area $openRepo 'backend'
+$openStream.Dispose()
+Assert-That ($openRun.Exit -eq 1 -and $openRun.Last -like 'RUN FAILED backend: another run of backend is active*' -and
+  (Test-Path $openLock) -and ($openRun.Log -notcontains 'dotnet build')) `
+  'a run while another run holds the lock file open with an exclusive create fails at once and leaves the lock'
+
 $env:PATH = $previousPath
 
 Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
