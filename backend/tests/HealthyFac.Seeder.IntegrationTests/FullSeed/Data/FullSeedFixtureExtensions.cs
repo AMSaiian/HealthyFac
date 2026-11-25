@@ -17,7 +17,7 @@ public static class FullSeedFixtureExtensions
         {
             var folder = new SeedFolder(Path.Combine(AppContext.BaseDirectory, PeopleTestData.SeedFolder));
             var events = SeedPlan.Load(
-                SeedParts.Create(fixture.Hosts, SeedRunFixtureExtensions.People(fixture)), folder);
+                SeedParts.Create(fixture.Hosts, SeedRunFixtureExtensions.People(fixture), isTelemetry: false), folder);
             var check = new SeedCheck(
                 anchor,
                 TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId),

@@ -2,6 +2,8 @@ import { Temporal } from '@shared/time/temporal';
 
 import { type CaseSignal, SignalCoverage, SignalState } from '@maintenance/case';
 
+import { DRAFT_ID_QUERY_PARAM, WORK_ORDER_DRAFTS_PATH, WORK_ORDERS_PATH } from '@work-orders/work-order-links';
+
 const MILLISECONDS_PER_SECOND = 1000;
 
 function epochMs(instant: string): number {
@@ -86,4 +88,38 @@ export function chartQueryOf(
     to: Temporal.Instant.fromEpochMilliseconds(Math.round(to)).toString(),
   };
   return signal.metricKey === null ? range : { ...range, metricKey: signal.metricKey };
+}
+
+/** The link of the coverage of a signal: to its work order draft or to the work orders. */
+export interface CoverageLink {
+  readonly path: string;
+  readonly queryParams: Readonly<Record<string, string>> | null;
+  readonly tooltipKey: string;
+  readonly icon: string;
+}
+
+/**
+ * The link of the work item that covers a signal: a drafted signal with a draft opens the drafts page on that draft,
+ * a linked signal with a work order opens the work orders. Every other signal has none.
+ */
+export function coverageLink(
+  signal: Pick<CaseSignal, 'coverage' | 'workOrderDraftId' | 'workOrderId'>,
+): CoverageLink | null {
+  if (signal.coverage === SignalCoverage.Drafted && signal.workOrderDraftId !== null) {
+    return {
+      path: WORK_ORDER_DRAFTS_PATH,
+      queryParams: { [DRAFT_ID_QUERY_PARAM]: signal.workOrderDraftId },
+      tooltipKey: 'MAINTENANCE.OUTCOME.TOOLTIPS.OPEN_DRAFT',
+      icon: 'pi pi-file-edit',
+    };
+  }
+  if (signal.coverage === SignalCoverage.Linked && signal.workOrderId !== null) {
+    return {
+      path: WORK_ORDERS_PATH,
+      queryParams: null,
+      tooltipKey: 'MAINTENANCE.OUTCOME.TOOLTIPS.OPEN_WORK_ORDER',
+      icon: 'pi pi-wrench',
+    };
+  }
+  return null;
 }

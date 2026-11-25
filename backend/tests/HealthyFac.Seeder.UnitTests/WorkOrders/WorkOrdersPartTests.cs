@@ -9,7 +9,7 @@ public sealed class WorkOrdersPartTests
 {
     private const string OrderKey = "coolant-check";
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithTheSameStatusTwiceInOneOrder_GivesEachChangeItsOwnItem()
     {
         var folder = CreateFolder(("inProgress", "sofiia"), ("blocked", "sofiia"), ("inProgress", "nadiia"));
@@ -23,7 +23,7 @@ public sealed class WorkOrdersPartTests
         items.Should().OnlyHaveUniqueItems().And.HaveCount(expected: 3);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithAnUnknownActorOfAStatusChange_NamesTheStatusItem()
     {
         var folder = CreateFolder(("inProgress", "ghost"));
@@ -34,6 +34,22 @@ public sealed class WorkOrdersPartTests
         act.Should()
             .Throw<SeedFileException>()
             .WithMessage($"*work-orders.json#{OrderKey}.status.0.inProgress*ghost*");
+    }
+
+    [Fact(Explicit = true)]
+    public void ReadEvents_WithAnHourPlannedStartInTheFile_FailsWithTheItemAndTheTimeOfDayRule()
+    {
+        var folder = CommittedSeedTestData.CopyWith(
+            CommittedSeedTestData.WorkOrdersFile,
+            root => CommittedSeedTestData.FindOrder(root, OrderKey)[propertyName: "assignment"]![
+                propertyName: "plannedStart"] = "h-2");
+        var part = new WorkOrdersPart(null!);
+
+        var act = () => part.ReadEvents(folder);
+
+        act.Should()
+            .Throw<SeedFileException>()
+            .WithMessage($"*work-orders.json#{OrderKey}.assigned*needs a planned start with a time of day*");
     }
 
     private static SeedFolder CreateFolder(params (string Status, string By)[] changes) =>

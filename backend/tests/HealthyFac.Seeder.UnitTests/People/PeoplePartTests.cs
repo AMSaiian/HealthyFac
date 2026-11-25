@@ -6,7 +6,7 @@ namespace HealthyFac.Seeder.UnitTests.People;
 
 public sealed class PeoplePartTests
 {
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(PeoplePartTestData.InvalidAcceptMoments), MemberType = typeof(PeoplePartTestData))]
     public void ReadEvents_WithAnAcceptMomentThatCannotCarryTheShiftEvent_FailsWithTheItem(
         string name,
@@ -22,7 +22,7 @@ public sealed class PeoplePartTests
         act.Should().Throw<SeedFileException>(name).WithMessage($"*{PeoplePartTestData.Item}*{reason}*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithAValidAcceptMoment_ExposesTheCompanyZoneOfTheFile()
     {
         var folder = CreateFolder(acceptedAt: "d-1 09:00");

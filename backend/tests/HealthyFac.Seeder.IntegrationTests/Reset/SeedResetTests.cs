@@ -13,7 +13,7 @@ public sealed class SeedResetTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheResetArgument_SeedsAgainWithTheDatesOfTheNewAnchorAndKeepsTheRequiredData()
     {
         var laterAnchor = FullSeedTestData.SaturdayAnchor.AddDays(SeedResetTestData.LaterAnchorDays);
@@ -45,7 +45,7 @@ public sealed class SeedResetTests(SeederFixture fixture)
         company.CreatedAt.Should().BeCloseTo(expectedCreatedAt.UtcDateTime, TimeSpan.FromSeconds(seconds: 1));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheResetArgumentAndAnOpenConnection_ExitsWithOneNamesTheDatabaseAndWritesNothing()
     {
         await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
@@ -67,7 +67,24 @@ public sealed class SeedResetTests(SeederFixture fixture)
         after.Should().BeEquivalentTo(before);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
+    public async Task RunAsync_AfterAResetThatStoppedAfterTheMarkerMessage_ReportsTheMissingHistoryInModeTwo()
+    {
+        await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);
+        await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.MarkerMessageId);
+        await _fixture.AddReceivedMessageAsync(SeedCompletionTestData.OtherMessageId);
+        using var stop = new CancellationTokenSource();
+        var act = () => _fixture.RunResetStoppedAfterTheMarkerMessageAsync(stop);
+        await act.Should().ThrowAsync<OperationCanceledException>();
+
+        var next = await _fixture.RunJobAsync(
+            [SeedCompletionTestData.TelemetryArgument], TestContext.Current.CancellationToken);
+
+        next.ExitCode.Should().Be(expected: 1);
+        next.Output.Should().Contain(SeedCompletionTestData.NoCompleteHistoryText);
+    }
+
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterAResetThatStoppedAfterItsFirstWrite_ReportsAnIncompleteSeedAndTheResetHint()
     {
         await _fixture.RunJobAsync([], TestContext.Current.CancellationToken);

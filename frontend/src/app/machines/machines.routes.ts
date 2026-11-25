@@ -1,5 +1,7 @@
 import type { Routes } from '@angular/router';
 
+import { isOtherParamChanged, tabMatcher } from '@shared/tabs/tab-route';
+
 import { FilesApi } from '@files/files-api';
 import { IngestApi } from '@files/ingest/ingest-api';
 import { FilesGridStore } from '@files/list/files-grid.store';
@@ -22,6 +24,7 @@ import { operatingPhasesResolver } from './phases/operating-phases.resolver';
 import { OperatingPhasesApi } from './phases/operating-phases-api';
 import { OperatingPhasesPageStore } from '@machines/phases/operating-phases-page-store/operating-phases-page.store';
 import { MetricChartPage } from './signals/metric-chart-page/metric-chart-page';
+import { CHART_TABS, SIGNALS_SEGMENT } from './signals/metric-chart-page/metric-chart-page.utils';
 import { metricChartResolver } from './signals/metric-chart.resolver';
 import { SignalsApi } from './signals/signals-api';
 import { MetricChartPageStore } from '@machines/signals/metric-chart-page-store/metric-chart-page.store';
@@ -52,7 +55,8 @@ export const MACHINES_ROUTES: Routes = [
     resolve: { machine: operatingPhasesResolver },
   },
   {
-    path: ':machineId/signals',
+    matcher: tabMatcher(`:machineId/${SIGNALS_SEGMENT}`, CHART_TABS),
+    runGuardsAndResolvers: isOtherParamChanged,
     title: 'TITLES.SIGNALS',
     component: MetricChartPage,
     providers: [MachinesApi, MetricDefinitionsApi, SignalsApi, MetricChartPageStore],

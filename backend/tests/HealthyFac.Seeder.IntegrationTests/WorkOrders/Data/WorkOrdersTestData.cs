@@ -6,6 +6,9 @@ public static class WorkOrdersTestData
 {
     public const int OrderCount = 13;
     public const string PumpSealTitle = "Replace the mechanical seal of the pump";
+    public const string PumpCouplingTitle = "Realign the coupling of the pump and the motor";
+    public const string PumpCouplingCompletedAt = "wd-1 16:45";
+    public static readonly TimeSpan MomentTolerance = TimeSpan.FromSeconds(seconds: 1);
     public const string PumpSealKey = "pump-seal";
     public const string CoolantCheckTitle = "Check the coolant concentration and top up";
     public const string BacklogStatusItem = "work-orders.json#wear-rings.status.0.inProgress";
@@ -40,9 +43,8 @@ public static class WorkOrdersTestData
     public static readonly IReadOnlyDictionary<WorkOrderStatus, int> StatusCounts =
         new Dictionary<WorkOrderStatus, int>
         {
-            [WorkOrderStatus.Completed] = 3,
+            [WorkOrderStatus.Completed] = 4,
             [WorkOrderStatus.Rejected] = 1,
-            [WorkOrderStatus.InProgress] = 1,
             [WorkOrderStatus.Blocked] = 1,
             [WorkOrderStatus.Staged] = 5,
             [WorkOrderStatus.Backlog] = 2,

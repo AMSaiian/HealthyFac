@@ -4,7 +4,6 @@ using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
-using HealthyFac.Telemetry.Application.MetricSchemas;
 using HealthyFac.Telemetry.Domain.Intake;
 using Microsoft.EntityFrameworkCore;
 
@@ -137,7 +136,7 @@ public sealed class ReceiveMachineMessageRequestHandler(
         new()
         {
             Result = result,
-            ErrorCode = result == ReceiveMachineMessageResult.Rejected ? message.Received.Errors[0].Code : null,
+            ErrorCode = result == ReceiveMachineMessageResult.Rejected ? message.Received.Errors[index: 0].Code : null,
             SampledAt = message.Received.SampledAt,
         };
 
@@ -216,9 +215,6 @@ public sealed class ReceiveMachineMessageRequestHandler(
         CancellationToken cancellationToken
     )
     {
-        var errors = parsed.Errors.ToList();
-        var sampledAt = parsed.SampledAt!.Value;
-
         var definitions = await _dbContext.MetricDefinitions
             .AsNoTracking()
             .Where(metric => metric.MachineRegistrationId == registrationId)
@@ -228,53 +224,18 @@ public sealed class ReceiveMachineMessageRequestHandler(
         var statusDefinitions = await _dbContext.StatusDefinitions
             .AsNoTracking()
             .Where(status => status.MachineRegistrationId == registrationId)
-            .Select(status => new { status.Id, status.Code })
+            .Select(status => new StatusDefinitionKey { Id = status.Id, Code = status.Code })
             .ToListAsync(cancellationToken);
 
-        var numeric = new List<NumericReading>();
-        var discrete = new List<DiscreteReading>();
-
-        foreach (var value in parsed.Metrics.Where(value => definitions.ContainsKey(value.Key)))
-        {
-            var metricId = definitions[value.Key];
-
-            if (value.Number is { } number)
-            {
-                numeric.Add(new NumericReading(metricId, sampledAt, number, value.IsOutOfRange));
-            }
-            else
-            {
-                discrete.Add(new DiscreteReading(metricId, sampledAt, value.Text!, value.IsOutOfRange));
-            }
-        }
-
-        var statuses = new List<StatusReading>();
-
-        foreach (var code in parsed.StatusCodes)
-        {
-            var definition = statusDefinitions.FirstOrDefault(candidate => string.Equals(
-                candidate.Code, code, StringComparison.OrdinalIgnoreCase));
-
-            if (definition is null)
-            {
-                errors.Add(
-                    new IntakeError
-                    {
-                        Path = $"{MetricSchemaConstants.Fields.Statuses}.{code}", Code = IntakeErrorCodes.UnknownStatus,
-                    });
-
-                continue;
-            }
-
-            statuses.Add(new StatusReading(definition.Id, sampledAt));
-        }
+        var readings = AcceptedMessageReadings.Build(parsed, definitions, statusDefinitions);
 
         return new BuiltMessage
         {
-            Received = NewReceived(request, registrationId, revision, sampledAt, payloadText, errors),
-            Numeric = numeric,
-            Discrete = discrete,
-            Statuses = statuses,
+            Received = NewReceived(
+                request, registrationId, revision, parsed.SampledAt, payloadText, readings.Errors),
+            Numeric = readings.Numeric,
+            Discrete = readings.Discrete,
+            Statuses = readings.Statuses,
         };
     }
 

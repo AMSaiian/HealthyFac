@@ -16,11 +16,12 @@
 <p-tabs
   class="flex min-h-0 flex-1 flex-col"
   [lazy]="true"
-  [(value)]="tab"
+  [value]="activeTab()"
   (valueChange)="onTabChange($event)"
 >
   <p-tablist>
     <p-tab
+      [routerLink]="tabLinks[EMPLOYEES_TAB]"
       [pTooltip]="'EMPLOYEES.TOOLTIPS.TAB_EMPLOYEES' | translate"
       tooltipPosition="bottom"
       [value]="EMPLOYEES_TAB"
@@ -28,6 +29,7 @@
     >
     @if (store.canInvite()) {
       <p-tab
+        [routerLink]="tabLinks[INVITES_TAB]"
         [pTooltip]="'EMPLOYEES.TOOLTIPS.TAB_INVITES' | translate"
         tooltipPosition="bottom"
         [value]="INVITES_TAB"

@@ -7,6 +7,8 @@ public static class ModuleStateTestData
 {
     public static readonly TimeSpan DrainDuration = TimeSpan.FromMinutes(minutes: 3);
 
+    public static readonly TimeSpan LongDrainDuration = TimeSpan.FromHours(hours: 8);
+
     /// <summary>A start mode, a change, the expected mode, and the expected progress.</summary>
     public static TheoryData<string, ModuleMode, ModuleMode, ModuleMode, double> ModeChanges =>
         new()

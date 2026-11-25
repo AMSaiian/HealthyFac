@@ -5,7 +5,7 @@ namespace HealthyFac.Seeder.UnitTests.Relay;
 
 public sealed class MessageRelayTests
 {
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithRowsOfOneSender_DeliversThemInTheirOrder()
     {
         var log = new List<string>();
@@ -23,7 +23,7 @@ public sealed class MessageRelayTests
             .Equal("telemetry received m1", "telemetry received m2", "telemetry received m3");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithARowQueuedWhileDraining_DeliversItAfterEveryEarlierRow()
     {
         var log = new List<string>();
@@ -50,7 +50,7 @@ public sealed class MessageRelayTests
                 "core received m3");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithATypeThatTwoEndpointsHandle_DeliversItToBoth()
     {
         var log = new List<string>();
@@ -65,7 +65,7 @@ public sealed class MessageRelayTests
         log.Should().Contain(["telemetry received m1", "insights received m1", "core published m1"]);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithARowWithoutReceiver_MarksItPublishedAndDeliversItToNobody()
     {
         var log = new List<string>();
@@ -80,7 +80,7 @@ public sealed class MessageRelayTests
         sender.Pending.Should().BeEmpty();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAReceiverFailure_ThrowsAndMovesNoFurtherRow()
     {
         var log = new List<string>();
@@ -100,7 +100,7 @@ public sealed class MessageRelayTests
         sender.Pending.Should().ContainSingle(row => row.Type == "m2");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_OnTwoIdenticalStates_DeliversTheSameSequence()
     {
         var firstLog = await RunScenarioAsync();

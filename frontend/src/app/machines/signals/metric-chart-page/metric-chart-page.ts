@@ -1,6 +1,7 @@
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Component, computed, inject, input, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonDirective } from 'primeng/button';
 import { Popover } from 'primeng/popover';
@@ -18,6 +19,7 @@ import type { PlainDateTimeRange } from '@shared/time/plain-date-time-range';
 
 import { ThemeStore } from '@shared/theme/theme.store';
 import { HistoryStore } from '@shared/history/history.store';
+import { tabLink } from '@shared/tabs/tab-route';
 
 import { MetricChart } from '@machines/signals/metric-chart/metric-chart';
 import { limitsOf } from '@machines/signals/metric-chart/metric-chart.utils';
@@ -36,9 +38,7 @@ import { STATE_LABEL_KEYS } from '@machines/list/machine-grid/machine-grid.utils
 import type { MachineState } from '@machines/machine';
 import { MACHINES_RETURN_TARGET } from '@machines/machines-return-target';
 
-const CHART_TAB = 'chart';
-const PHASES_TAB = 'phases';
-const STATES_TAB = 'states';
+import { CHART_TAB, CHART_TABS, PHASES_TAB, SIGNALS_SEGMENT, STATES_TAB } from './metric-chart-page.utils';
 
 @Component({
   imports: [
@@ -49,6 +49,7 @@ const STATES_TAB = 'states';
     MetricChart,
     PlainDateTimeRangePicker,
     Popover,
+    RouterLink,
     Select,
     Tab,
     TabList,
@@ -112,9 +113,15 @@ export class MetricChartPage {
   protected readonly pickedRange = linkedSignal<PlainDateTimeRange>(() =>
     toPlainRange(this.store.range(), this._clock.timeZoneId()),
   );
-  protected readonly tab = signal<string | number>(CHART_TAB);
+  /** The `tab` route param: the last route segment, which the first tab has not. */
+  readonly tab = input<string>();
+  protected readonly activeTab = computed(() => this.tab() ?? CHART_TAB);
+  protected readonly tabLinks = computed(() => {
+    const page = [MACHINES_RETURN_TARGET.url, this.store.machineId() ?? '', SIGNALS_SEGMENT];
+    return Object.fromEntries(CHART_TABS.map((tab) => [tab, tabLink(page, CHART_TABS, tab)]));
+  });
   /** The metric select, Reset zoom, and the reading help belong to the chart; the range and Reload serve all tabs. */
-  protected readonly isChartTab = computed(() => this.tab() === CHART_TAB);
+  protected readonly isChartTab = computed(() => this.activeTab() === CHART_TAB);
   protected readonly isZoomed = computed(() => this.store.zoomBase() !== null);
 
   /** The last finished reads: a new load keeps them on the page until its own answer arrives. */

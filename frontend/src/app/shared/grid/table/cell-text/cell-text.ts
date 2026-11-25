@@ -25,6 +25,8 @@ export class CellText {
   readonly text = input.required<string>();
   /** Strikes only the text, not the content that a caller projects after it. */
   readonly isStruck = input(false);
+  /** Keeps a word whole: the text breaks only between words, and only a word wider than the cell breaks inside. */
+  readonly isWordKept = input(false);
 
   private readonly _textElement = viewChild.required<ElementRef<HTMLElement>>('textElement');
   private readonly _isCut = signal(false);

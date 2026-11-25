@@ -87,4 +87,66 @@ public sealed class ModuleStateTests
         milestones.Should().BeEmpty();
         module.Progress.Should().Be(expected: 0);
     }
+
+    [Fact]
+    public void Advance_AfterDrainingWithOwnDuration_UsesTheOwnDuration()
+    {
+        var module = new ModuleState(ModuleKind.Trip);
+        module.SetMode(ModuleMode.Draining, ModuleStateTestData.LongDrainDuration);
+
+        module.Advance(TimeSpan.FromHours(hours: 4), ModuleStateTestData.DrainDuration);
+
+        module.Mode.Should().Be(ModuleMode.Draining);
+        module.Progress.Should().BeApproximately(expectedValue: 0.5, precision: 1e-9);
+    }
+
+    [Fact]
+    public void Advance_AfterDrainingWithOwnDuration_FailsAfterTheOwnDuration()
+    {
+        var module = new ModuleState(ModuleKind.Trip);
+        module.SetMode(ModuleMode.Draining, ModuleStateTestData.LongDrainDuration);
+        module.Advance(TimeSpan.FromMinutes(minutes: 479), ModuleStateTestData.DrainDuration);
+
+        var milestones = module.Advance(TimeSpan.FromMinutes(minutes: 1), ModuleStateTestData.DrainDuration);
+
+        milestones.Should().Equal(DrainMilestone.Trip);
+        module.Mode.Should().Be(ModuleMode.Failure);
+    }
+
+    [Fact]
+    public void Advance_AfterDrainingWithoutDuration_UsesTheDurationOfAdvance()
+    {
+        var module = new ModuleState(ModuleKind.Trip);
+        module.SetMode(ModuleMode.Draining);
+
+        module.Advance(TimeSpan.FromMinutes(minutes: 3), ModuleStateTestData.DrainDuration);
+
+        module.Mode.Should().Be(ModuleMode.Failure);
+    }
+
+    [Fact]
+    public void Advance_AfterExpectedThenDrainingWithoutDuration_UsesTheDurationOfAdvance()
+    {
+        var module = new ModuleState(ModuleKind.Trip);
+        module.SetMode(ModuleMode.Draining, ModuleStateTestData.LongDrainDuration);
+        module.SetMode(ModuleMode.Expected);
+        module.SetMode(ModuleMode.Draining);
+
+        module.Advance(TimeSpan.FromMinutes(minutes: 3), ModuleStateTestData.DrainDuration);
+
+        module.Mode.Should().Be(ModuleMode.Failure);
+    }
+
+    [Fact]
+    public void Advance_AfterFailureThenDrainingWithoutDuration_UsesTheDurationOfAdvance()
+    {
+        var module = new ModuleState(ModuleKind.Trip);
+        module.SetMode(ModuleMode.Draining, ModuleStateTestData.LongDrainDuration);
+        module.SetMode(ModuleMode.Failure);
+        module.SetMode(ModuleMode.Draining);
+
+        module.Advance(TimeSpan.FromMinutes(minutes: 3), ModuleStateTestData.DrainDuration);
+
+        module.Mode.Should().Be(ModuleMode.Failure);
+    }
 }

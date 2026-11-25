@@ -13,4 +13,10 @@ public sealed class SignalSeed
     public required SignalState State { get; init; }
 
     public required SignalCoverage Coverage { get; init; }
+
+    public required string MetricKey { get; init; }
+
+    public required double Value { get; init; }
+
+    public required double Limit { get; init; }
 }

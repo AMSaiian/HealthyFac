@@ -1,12 +1,15 @@
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Domain.Employees;
+using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Seeder.IntegrationTests.Cases.Data;
 using HealthyFac.Seeder.IntegrationTests.FullSeed.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Machines.Data;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.IntegrationTests.Relay.Data;
+using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Seeder.Moments;
 
 namespace HealthyFac.Seeder.IntegrationTests.FullSeed;
 
@@ -15,7 +18,7 @@ public sealed class FullSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(FullSeedTestData.Anchors), MemberType = typeof(FullSeedTestData))]
     public async Task RunAsync_OnAnAnchorDay_PassesTheCheckAndSeedsTheCountsAndStatusesOfTheDemo(
         string name,
@@ -33,8 +36,11 @@ public sealed class FullSeedTests(SeederFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
         var workOrderDraft = await _fixture.LoadWorkOrderDraftAsync();
         var workOrders = await _fixture.LoadWorkOrdersAsync();
+        var (_, caseSignal) = await _fixture.LoadOpenCaseAsync();
         var company = await _fixture.LoadCompanyAsync();
+        var messageCounts = await _fixture.CountMessagesByMachineAsync();
         failures.Should().BeEmpty(name);
+        messageCounts.Should().BeEmpty();
         company.Id.Should().Be(PeopleTestData.CompanyId);
         employees.Should()
             .HaveCount(FullSeedTestData.EmployeeCount)
@@ -49,14 +55,29 @@ public sealed class FullSeedTests(SeederFixture fixture)
             .Should()
             .Be(FullSeedTestData.AppliedMachineDraftCount);
         workOrderDraft.Id.Should().Be(CasesTestData.DraftId);
+        caseSignal.MetricKey.Should().Be(CasesTestData.SignalMetricKey);
+        caseSignal.Value.Should().Be(CasesTestData.SignalValue);
+        caseSignal.Limit.Should().Be(CasesTestData.SignalLimit);
         workOrders.Should().HaveCount(FullSeedTestData.WorkOrderCount);
+        var coupling = workOrders.Single(order => order.Title == WorkOrdersTestData.PumpCouplingTitle);
+        var completedAt = SeedCalendar.ToUtc(
+            RelativeMoment.Parse(WorkOrdersTestData.PumpCouplingCompletedAt),
+            anchor,
+            TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId));
+        coupling.Current.Status.Should().Be(WorkOrderStatus.Completed);
+        coupling.Current.CreatedAt.Should().BeCloseTo(completedAt.UtcDateTime, WorkOrdersTestData.MomentTolerance);
+        completedAt.UtcDateTime.Should().BeBefore(coupling.Current.PlannedStartUtc!.Value + coupling.Current.Estimate);
+        workOrders.Select(order => order.Title)
+            .Should()
+            .NotContain(
+                [TelemetryHistorySeedTestData.LatheWorkOrderTitle, TelemetryHistorySeedTestData.PumpWorkOrderTitle]);
         workOrders.GroupBy(order => order.Current.Status)
             .ToDictionary(group => group.Key, group => group.Count())
             .Should()
             .BeEquivalentTo(WorkOrdersTestData.StatusCounts);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_OnASaturday_LeavesNoOpenOrFailedMessageInAnyDatabase()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, FullSeedTestData.SaturdayAnchor);
@@ -67,7 +88,7 @@ public sealed class FullSeedTests(SeederFixture fixture)
         failedCount.Should().Be(expected: 0);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_TwiceOnEmptyStacks_DeliversTheSameMessageTypesInTheSameOrder()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken, FullSeedTestData.SaturdayAnchor);

@@ -289,8 +289,10 @@ services:
   # The seed job. It runs the use cases of the 5 services against their databases, creates the company organization and
   # the demo users in Keycloak, and exits. The 5 services start after it ends with exit code 0. A second start
   # prints "The demo seed is complete." and changes nothing. `docker compose run --rm seeder --reset` empties the
-  # seed data and seeds again (stop the 5 services first). The fixed values are the mounted files of docker/config; the
-  # keys below hold only secrets and machine values. The job reads them as Services__<Name>__*.
+  # seed data and seeds again (stop the 5 services first). `--telemetry` also seeds 48 hours of simulated telemetry:
+  # `docker compose run --rm seeder --telemetry` before `docker compose up`, or `--reset --telemetry`. The fixed
+  # values are the mounted files of docker/config; the keys below hold only secrets and machine values.
+  # The job reads them as Services__<Name>__*.
   seeder:
     container_name: healthyfac-seeder
     build:

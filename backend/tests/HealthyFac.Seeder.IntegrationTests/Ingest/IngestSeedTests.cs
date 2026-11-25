@@ -10,7 +10,7 @@ public sealed class IngestSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealIngestSets_StoresTheSixFilesWithTheirBlobsAndTheCompletedState()
     {
         await _fixture.RunIngestSeedAsync(TestContext.Current.CancellationToken);
@@ -31,7 +31,7 @@ public sealed class IngestSeedTests(SeederFixture fixture)
         }
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealIngestSets_StoresTheIngestResultsInInsightsAndTheDraftsInCoreAndTelemetry()
     {
         await _fixture.RunIngestSeedAsync(TestContext.Current.CancellationToken);

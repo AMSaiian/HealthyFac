@@ -17,6 +17,7 @@ import { type CaseSignal, SignalCoverage, SignalSeverity } from '@maintenance/ca
 import { labelOf, RULE_LABEL_KEYS } from '@maintenance/detail/ai-log-panel/ai-log-panel.utils';
 import {
   chartQueryOf,
+  coverageLink,
   signalComparison,
   signalDurationSeconds,
 } from '@maintenance/detail/case-signals/case-signals.utils';
@@ -61,6 +62,7 @@ export class CaseSignals {
   protected readonly pageSizes = [...PAGE_SIZES];
   protected readonly signalSubject = signalSubject;
   protected readonly signalComparison = signalComparison;
+  protected readonly coverageLink = coverageLink;
   protected readonly rows = computed(() => [...this.signals()]);
 
   private readonly _clock = inject(CLOCK);

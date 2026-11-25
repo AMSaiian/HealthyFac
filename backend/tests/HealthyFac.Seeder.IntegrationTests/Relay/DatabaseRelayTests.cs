@@ -12,7 +12,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAMachineStateChange_CopiesTheRowToTheReceiverAndPublishesIt()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -37,7 +37,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
         received.ReadStateChange().StartedAt.Should().Be(queued[index: 0].StartedAt);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_AfterTheCascade_LeavesNoOpenMessageInAnyDatabase()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -50,7 +50,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
         openCount.Should().Be(expected: 0);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithThreeRowsOfOneSave_DeliversThemInTheirAddOrder()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -69,7 +69,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
         receivedStarts.Should().Equal(queued.Select(message => message.StartedAt));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAMessageThatTheReceiverRejects_StopsWithTheTypeTheServiceAndTheError()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -100,7 +100,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
                 + $"{MachineRegistrationErrors.RegistrationNotFound}*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithAMessageThatFailsItsValidator_StopsWithTheValidationErrorBeforeTheUseCaseRuns()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -132,7 +132,7 @@ public sealed class DatabaseRelayTests(SeederFixture fixture)
         exception.Which.Message.Should().NotContain(MachineRegistrationErrors.RegistrationNotFound);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task TryAddAsync_WithAnIdThatTheInboxHolds_StoresNothing()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);

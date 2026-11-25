@@ -1,5 +1,6 @@
 using HealthyFac.Seeder.Accounts;
 using HealthyFac.Seeder.Moments;
+using HealthyFac.Seeder.TelemetryHistory;
 using HealthyFac.Seeder.Timeline;
 
 namespace HealthyFac.Seeder.SeedFiles;
@@ -14,6 +15,7 @@ public sealed class SeedCheck
     private readonly TimeZoneInfo _zone;
     private readonly Func<SeedRequest, CancellationToken, Task<IReadOnlyList<string>>> _validate;
     private readonly string? _completionItem;
+    private readonly TelemetryScript? _script;
 
     /// <summary>Creates a check.</summary>
     /// <param name="anchor">The start of the job.</param>
@@ -25,13 +27,20 @@ public sealed class SeedCheck
     /// The item of the event that the completion marker belongs to. No event may sort after it, because a run that
     /// stops after the marker would read as complete. <see langword="null"/> turns the rule off.
     /// </param>
+    /// <param name="script">
+    /// The telemetry script of mode 2, or <see langword="null"/> for mode 1. In mode 2 the events of
+    /// <c>telemetry.json</c> may follow the completion marker, the marker of the telemetry history must be the last
+    /// event, and the anchor rules of the script apply.
+    /// </param>
     public SeedCheck(
         DateTimeOffset anchor,
         TimeZoneInfo zone,
         Func<SeedRequest, CancellationToken, Task<IReadOnlyList<string>>> validate,
-        string? completionItem = null
+        string? completionItem = null,
+        TelemetryScript? script = null
     )
     {
+        _script = script;
         _anchor = anchor;
         _zone = zone;
         _validate = validate;
@@ -62,6 +71,7 @@ public sealed class SeedCheck
         var order = moments.OrderBy(entry => entry.At).Select(entry => entry.Event).ToList();
         CheckKeys(events, order, failures);
         CheckCompletionIsLast(order, failures);
+        CheckScript(order, failures);
         foreach (var seedEvent in events)
         {
             await CheckRequestsAsync(seedEvent, failures, cancellationToken);
@@ -146,8 +156,41 @@ public sealed class SeedCheck
 
         failures.AddRange(
             order.Skip(markerIndex + 1)
+                .Where(seedEvent => !IsOfTelemetryScript(seedEvent))
                 .Select(seedEvent => Failure(seedEvent, SeedFileErrors.EventAfterCompletion(_completionItem))));
     }
+
+    private void CheckScript(IReadOnlyList<SeedEvent> order, List<SeedCheckFailure> failures)
+    {
+        if (_script is null)
+        {
+            return;
+        }
+
+        var markerItem = SeedItem.Of(TelemetryHistoryConstants.FileName, TelemetryHistoryConstants.MarkerKey);
+        var markerIndex = order.ToList().FindIndex(seedEvent => seedEvent.Item == markerItem);
+        if (markerIndex < 0)
+        {
+            failures.Add(
+                new SeedCheckFailure
+                {
+                    File = SeedItem.FileOf(markerItem),
+                    Item = markerItem,
+                    Rule = SeedFileErrors.CompletionEventMissing(markerItem),
+                });
+        }
+        else
+        {
+            failures.AddRange(
+                order.Skip(markerIndex + 1)
+                    .Select(seedEvent => Failure(seedEvent, SeedFileErrors.EventAfterCompletion(markerItem))));
+        }
+
+        failures.AddRange(TelemetryScriptCheck.Run(_script, _anchor, _zone));
+    }
+
+    private bool IsOfTelemetryScript(SeedEvent seedEvent) =>
+        _script is not null && SeedItem.FileOf(seedEvent.Item) == TelemetryHistoryConstants.FileName;
 
     private async Task CheckRequestsAsync(
         SeedEvent seedEvent,

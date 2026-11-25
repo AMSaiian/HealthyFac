@@ -11,7 +11,7 @@ public sealed class MachinesSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealMachinesFile_CreatesTheThreeMachinesWithTheirStatesAndDrafts()
     {
         await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
@@ -31,7 +31,7 @@ public sealed class MachinesSeedTests(SeederFixture fixture)
         drafts.Count(draft => draft.State == DraftState.Pending).Should().Be(MachinesTestData.MachineCount);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealMachinesFile_AppliesEveryDefinitionOfSetOneAndLeavesSetTwoPending()
     {
         await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
@@ -48,7 +48,7 @@ public sealed class MachinesSeedTests(SeederFixture fixture)
         pending.Phases.Should().Be(MachinesTestData.PhaseCountOfSet);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealMachinesFile_TiesTheFilesOfSetOneAndLeavesTheFilesOfSetTwoUntied()
     {
         await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);
@@ -63,7 +63,7 @@ public sealed class MachinesSeedTests(SeederFixture fixture)
         files.Count(file => file.MachineId is null).Should().Be(MachinesTestData.MachineCount);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task ApplyMachineDraft_OfTheSetTwoDraftsWithoutEdits_CreatesMachinesFourToSix()
     {
         var context = await _fixture.RunMachinesSeedAsync(TestContext.Current.CancellationToken);

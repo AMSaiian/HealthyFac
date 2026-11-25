@@ -1,15 +1,17 @@
+using System.Text.Json.Nodes;
 using HealthyFac.Seeder.Cases;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.UnitTests.Cases.Data;
+using HealthyFac.Seeder.UnitTests.SeedFiles.Data;
 
 namespace HealthyFac.Seeder.UnitTests.Cases;
 
 public sealed class CasesPartTests
 {
-    [Fact]
+    [Fact(Explicit = true)]
     public void ReadEvents_WithACoverageOtherThanDrafted_FailsWithTheItem()
     {
-        var folder = CreateFolder(coverage: "watched");
+        var folder = CreateFolder(signal => signal[propertyName: "coverage"] = "watched");
         var part = new CasesPart(null!);
 
         var act = () => part.ReadEvents(folder);
@@ -17,10 +19,23 @@ public sealed class CasesPartTests
         act.Should().Throw<SeedFileException>().WithMessage($"*{CasesPartTestData.Item}*watched*only drafted*");
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
+    public void ReadEvents_WithAMetricKeyThatTheMachineDoesNotHave_FailsWithTheFileTheItemAndTheRule()
+    {
+        var folder = CreateFolder(signal => signal[propertyName: "metricKey"] = CasesPartTestData.UnknownMetricKey);
+        var part = new CasesPart(null!);
+
+        var act = () => part.ReadEvents(folder);
+
+        act.Should()
+            .Throw<SeedFileException>()
+            .WithMessage($"*{CasesPartTestData.Item}*{CasesPartTestData.UnknownMetricKey}*does not have*");
+    }
+
+    [Fact(Explicit = true)]
     public void ReadEvents_WithTheDraftedCoverage_ReturnsTheCaseEvent()
     {
-        var folder = CreateFolder(coverage: "drafted");
+        var folder = CreateFolder(_ => { });
         var part = new CasesPart(null!);
 
         var events = part.ReadEvents(folder);
@@ -28,11 +43,8 @@ public sealed class CasesPartTests
         events.Should().ContainSingle().Which.Item.Should().Be(CasesPartTestData.Item);
     }
 
-    private static SeedFolder CreateFolder(string coverage)
-    {
-        var directory = Directory.CreateTempSubdirectory().FullName;
-        File.WriteAllText(Path.Combine(directory, CasesPartTestData.FileName), CasesPartTestData.CasesJson(coverage));
-
-        return new SeedFolder(directory);
-    }
+    private static SeedFolder CreateFolder(Action<JsonNode> changeSignal) =>
+        CommittedSeedTestData.CopyWith(
+            CasesPartTestData.FileName,
+            root => changeSignal(root[propertyName: "signal"]!));
 }

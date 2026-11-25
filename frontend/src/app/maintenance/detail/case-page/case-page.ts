@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -9,6 +9,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { LocalDateTimePipe } from '@shared/time/local-date-time.pipe';
 import { HistoryStore } from '@shared/history/history.store';
+import { tabLink } from '@shared/tabs/tab-route';
 
 import { SignalSeverity } from '@maintenance/case';
 import { AiLogPanel } from '@maintenance/detail/ai-log-panel/ai-log-panel';
@@ -23,9 +24,7 @@ import {
 } from '@maintenance/list/cases-grid/cases-grid.utils';
 import { CASES_RETURN_TARGET } from '@maintenance/maintenance-return-target';
 
-const SUMMARY_TAB = 'summary';
-const SIGNALS_TAB = 'signals';
-const AI_LOG_TAB = 'aiLog';
+import { AI_LOG_TAB, CASE_TABS, SIGNALS_TAB, SUMMARY_TAB } from './case-page.utils';
 
 @Component({
   imports: [
@@ -57,7 +56,13 @@ export class CasePage {
   protected readonly SUMMARY_TAB = SUMMARY_TAB;
   protected readonly SIGNALS_TAB = SIGNALS_TAB;
   protected readonly AI_LOG_TAB = AI_LOG_TAB;
-  protected readonly tab = signal<string | number>(SUMMARY_TAB);
+  /** The `tab` route param: the last route segment, which the first tab has not. */
+  readonly tab = input<string>();
+  protected readonly activeTab = computed(() => this.tab() ?? SUMMARY_TAB);
+  protected readonly tabLinks = computed(() => {
+    const page = [CASES_RETURN_TARGET.url, this.store.caseId() ?? ''];
+    return Object.fromEntries(CASE_TABS.map((tab) => [tab, tabLink(page, CASE_TABS, tab)]));
+  });
 
   private readonly _translate = inject(TranslateService);
   private readonly _labels = toSignal(

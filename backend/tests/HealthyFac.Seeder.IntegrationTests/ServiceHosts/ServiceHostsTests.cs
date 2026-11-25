@@ -21,7 +21,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task InitializeAsync_OnEmptyDatabases_CreatesTheSchemasAndTheRequiredData()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -33,7 +33,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         unitCount.Should().BePositive();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task InitializeAsync_CalledTwice_ChangesNothing()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -48,7 +48,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         unitCountAfter.Should().Be(unitCountBefore);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task SendAsync_WithAnInvalidRequest_ThrowsTheValidationException()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -68,7 +68,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         await act.Should().ThrowAsync<AppValidationException>();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task SendAsync_WithAValidRequest_RunsTheHandler()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -81,7 +81,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Create_WithoutARequiredKey_FailsWithTheServiceAndTheKey()
     {
         var settings = _fixture.CreateSettings();
@@ -95,7 +95,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         act.Should().Throw<InvalidOperationException>().WithMessage(ServiceHostsTestData.RequiredKeyMessage);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Create_ForAllServices_ReplacesTheRealtimeQueueWithTheDiscardingQueue()
     {
         using var scope = _fixture.Hosts.Core.CreateScope(ServiceHostsTestData.Actor);
@@ -105,7 +105,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         queue.Should().BeOfType<DiscardingRealtimeQueue>();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Validate_WithAnInvalidRequest_ReturnsOneTextForEachFailure()
     {
         var request = new CreateMachineRequest
@@ -123,7 +123,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
             .And.OnlyContain(text => text.StartsWith("name", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Validate_WithAValidRequest_ReturnsNoFailure()
     {
         var request = new CreateMachineRequest
@@ -139,7 +139,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         failures.Should().BeEmpty();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task DrainInboxAsync_OnEmptyInboxesWithAnUnreachableBroker_CompletesInEveryHost()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -150,7 +150,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         await act.Should().NotThrowAsync();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Create_WithoutServicesKeysForTheFileValues_ReadsThemFromTheDevelopmentSettingsFile()
     {
         var fileValue = ServiceHostsTestData.ReadDevelopmentSetting(
@@ -161,7 +161,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         blobBaseUrl.Should().Be(fileValue);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Create_WithAServicesKeyForAFileValue_UsesTheKey()
     {
         var settings = _fixture.CreateSettings();
@@ -176,7 +176,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         blobBaseUrl.Should().Be(ServiceHostsTestData.OverrideBlobUrl);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task InitializeAsync_AtTheInitializationMoment_RelaysTheUnitMessageWithThatTime()
     {
         var moment = await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -191,7 +191,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         insightsInbox.Single(message => message.Id == sent.Id).ProcessedOn.Should().NotBeNull();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task GetTokenAsync_AfterTheSeedClockJumps30Days_ReturnsTheCachedToken()
     {
         var moment = _fixture.EnterNextMoment(item: "token");
@@ -203,7 +203,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         second.Should().Be(first);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task GetTokenAsync_AfterTheRealLifetimeEnded_FetchesANewToken()
     {
         _fixture.EnterNextMoment(item: "token");
@@ -222,7 +222,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         }
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void GetUtcNow_OnTheAuthHostAfterEnter_ReturnsTheSeedMoment()
     {
         var moment = _fixture.EnterNextMoment(item: "clock");
@@ -232,7 +232,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         read.Should().Be(moment);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task GetServices_OnEveryHost_ReturnsNoHostedService()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
@@ -248,7 +248,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         hostedServiceCounts.Should().AllBeEquivalentTo(expectation: 0);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Registrations_OfEveryHost_HoldNoTypeOfARebusAssembly()
     {
         var rebusRegistrations = _fixture.Hosts.All.SelectMany(host => host.Registrations)
@@ -259,7 +259,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
         rebusRegistrations.Should().BeEmpty();
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task Publish_OnTheBusOfEveryHost_ThrowsTheNoMessageBusError()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);

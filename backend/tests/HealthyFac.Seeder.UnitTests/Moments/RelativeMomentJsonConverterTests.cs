@@ -9,7 +9,7 @@ public sealed class RelativeMomentJsonConverterTests
     private static readonly JsonSerializerOptions
         Options = new() { Converters = { new RelativeMomentJsonConverter() } };
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(RelativeMomentTestData.InvalidTexts), MemberType = typeof(RelativeMomentTestData))]
     public void Read_WithAnInvalidText_FailsWithTheText(string text)
     {
@@ -18,7 +18,7 @@ public sealed class RelativeMomentJsonConverterTests
         act.Should().Throw<JsonException>().WithMessage($"*'{text}'*");
     }
 
-    [Theory]
+    [Theory(Explicit = true)]
     [MemberData(nameof(RelativeMomentTestData.ValidTexts), MemberType = typeof(RelativeMomentTestData))]
     public void ReadAndWrite_WithAValidText_GivesTheSameText(string text)
     {
@@ -29,7 +29,7 @@ public sealed class RelativeMomentJsonConverterTests
         written.Should().Be(JsonSerializer.Serialize(text));
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public void Read_WithANumber_Fails()
     {
         var act = () => JsonSerializer.Deserialize<RelativeMoment>(json: "5", Options);

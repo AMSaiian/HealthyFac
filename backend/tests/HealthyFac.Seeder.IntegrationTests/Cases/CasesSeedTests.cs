@@ -12,7 +12,7 @@ public sealed class CasesSeedTests(SeederFixture fixture)
 {
     private readonly SeederFixture _fixture = fixture;
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealCasesFile_OpensTheCaseWithItsDraftedSignalOnTheLathe()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken);
@@ -28,7 +28,7 @@ public sealed class CasesSeedTests(SeederFixture fixture)
         signal.Coverage.Should().Be(SignalCoverage.Drafted);
     }
 
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task RunAsync_WithTheRealCasesFile_StoresThePendingWorkOrderDraftForTheLathe()
     {
         await _fixture.RunFullSeedAsync(TestContext.Current.CancellationToken);

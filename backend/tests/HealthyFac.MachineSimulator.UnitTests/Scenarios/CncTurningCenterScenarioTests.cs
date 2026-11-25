@@ -118,4 +118,26 @@ public sealed class CncTurningCenterScenarioTests
             .Should()
             .BeApproximately(before - 0.5, (before - 0.5) * ValueNoise.MaxShare);
     }
+
+    [Theory]
+    [MemberData(
+        nameof(CncTurningCenterScenarioTestData.ClampedValues),
+        MemberType = typeof(CncTurningCenterScenarioTestData))]
+    public void Sample_WithADrainNearTheTrip_KeepsTheValueOnTheSideOfTheCurve(
+        string caseName,
+        ModuleName module,
+        string key,
+        int runSeconds,
+        double lowerBound,
+        double upperBound
+    )
+    {
+        var modules = ScenarioContextFactory.ModulesWith(_scenario, module, ModuleMode.Draining, progress: 0.99);
+        var context = ScenarioContextFactory.Create(_scenario, runSeconds, modules);
+
+        var sample = _scenario.Sample(context);
+
+        var value = (double)sample.Values[key];
+        value.Should().BeInRange(lowerBound, upperBound, caseName);
+    }
 }

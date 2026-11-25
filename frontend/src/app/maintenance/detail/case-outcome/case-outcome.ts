@@ -9,8 +9,7 @@ import type { CaseOutcome } from '@maintenance/case';
 import { FINAL_TEXT_CLASSES } from '@maintenance/detail/ai-log-panel/ai-log-panel.utils';
 import { OutcomeLink, outcomeView } from '@maintenance/detail/case-outcome/case-outcome.utils';
 
-const DRAFTS_PATH = '/work-orders/drafts';
-const WORK_ORDERS_PATH = '/work-orders';
+import { WORK_ORDER_DRAFTS_PATH, WORK_ORDERS_PATH } from '@work-orders/work-order-links';
 
 /** The result of a case in one sentence with its link, and the final text of the agent as "Why". It reads no store. */
 @Component({
@@ -27,7 +26,7 @@ export class CaseOutcomeCard {
 
   protected readonly finalTextClasses = FINAL_TEXT_CLASSES;
   protected readonly OutcomeLink = OutcomeLink;
-  protected readonly draftsPath = DRAFTS_PATH;
+  protected readonly draftsPath = WORK_ORDER_DRAFTS_PATH;
   protected readonly workOrdersPath = WORK_ORDERS_PATH;
   protected readonly view = computed(() => outcomeView(this.outcome(), this.canRunAgain()));
 }

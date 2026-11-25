@@ -1,0 +1,63 @@
+{
+  "windowHours": 48,
+  "sampleIntervalSeconds": 1,
+  "randomSeed": 20261124,
+  "markerMessageId": "01a20ec8-2b3f-7d0f-908e-f5568348dd43",
+  "drains": [
+    {
+      "key": "lathe-spindle",
+      "machine": "lathe",
+      "module": "spindle",
+      "from": "h-30",
+      "drainHours": 8,
+      "maintenance": { "by": "maksym", "from": "h-22:05", "until": "h-20" },
+      "workOrder": {
+        "title": "Replace the spindle bearings",
+        "description": "<p>The spindle bearing temperature and vibration rise toward the trip limits. Replace the front spindle bearings and check the preload.</p>",
+        "priority": "high",
+        "category": "repair",
+        "estimateMinutes": 120,
+        "createdAt": "h-23:30"
+      }
+    },
+    {
+      "key": "pump-bearings",
+      "machine": "pump",
+      "module": "bearings",
+      "from": "h-14",
+      "drainHours": 6,
+      "maintenance": { "by": "maksym", "from": "h-8:05", "until": "h-7" },
+      "workOrder": {
+        "title": "Replace the pump bearings",
+        "description": "<p>The bearing temperature and vibration of the pump rise toward the trip limits. Replace both bearings and check the shaft alignment.</p>",
+        "priority": "high",
+        "category": "repair",
+        "estimateMinutes": 60,
+        "createdAt": "h-9:05"
+      }
+    }
+  ],
+  "steps": [
+    {
+      "key": "compressor-element",
+      "machine": "compressor",
+      "metric": "element.outlet_temperature",
+      "offset": 12,
+      "from": "h-5",
+      "until": "h-4:40"
+    }
+  ],
+  "gaps": [
+    { "key": "pump-outage", "machine": "pump", "from": "h-36", "until": "h-35:50" }
+  ],
+  "overrides": [
+    {
+      "key": "lathe-setup",
+      "machine": "lathe",
+      "values": { "spindle.mode": "manual" },
+      "codes": [],
+      "from": "h-44",
+      "until": "h-43:45"
+    }
+  ]
+}

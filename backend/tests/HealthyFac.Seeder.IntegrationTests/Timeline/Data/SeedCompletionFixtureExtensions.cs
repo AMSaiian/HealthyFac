@@ -37,6 +37,19 @@ public static class SeedCompletionFixtureExtensions
             return new JobResult { ExitCode = exitCode, Output = log.ToString()! };
         }
 
+        public async Task AddReceivedMessageAsync(Guid id)
+        {
+            var connectionString = new NpgsqlConnectionStringBuilder(fixture.ConnectionStringOf(service: "telemetry"))
+            {
+                Pooling = false,
+            }.ConnectionString;
+            await using var connection = new NpgsqlConnection(connectionString);
+            await connection.OpenAsync();
+            await using var command = new NpgsqlCommand(SeedCompletionTestData.InsertReceivedMessageSql, connection);
+            command.Parameters.AddWithValue(parameterName: "id", id);
+            await command.ExecuteNonQueryAsync();
+        }
+
         public async Task<DataSnapshot> TakeSnapshotAsync()
         {
             var tables = new SortedDictionary<string, string>(StringComparer.Ordinal);

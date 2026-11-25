@@ -34,6 +34,7 @@ COPY src/Auth/HealthyFac.Auth.Infrastructure/*.csproj src/Auth/HealthyFac.Auth.I
 COPY src/Shared/HealthyFac.Shared.Domain/*.csproj src/Shared/HealthyFac.Shared.Domain/
 COPY src/Shared/HealthyFac.Shared.Application/*.csproj src/Shared/HealthyFac.Shared.Application/
 COPY src/Shared/HealthyFac.Shared.Infrastructure/*.csproj src/Shared/HealthyFac.Shared.Infrastructure/
+COPY src/Tools/HealthyFac.MachineSimulator.Scenarios/*.csproj src/Tools/HealthyFac.MachineSimulator.Scenarios/
 COPY src/Tools/HealthyFac.Seeder/*.csproj src/Tools/HealthyFac.Seeder/
 
 RUN dotnet restore src/Tools/HealthyFac.Seeder/HealthyFac.Seeder.csproj
