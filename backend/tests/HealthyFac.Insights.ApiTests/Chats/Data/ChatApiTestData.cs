@@ -16,9 +16,17 @@ public static class ChatApiTestData
     public static readonly DateTime Now = new(
         year: 2026, month: 11, day: 25, hour: 10, minute: 0, second: 0, DateTimeKind.Utc);
 
+    public static TheoryData<string, string> BadLinkIds => new()
+    {
+        { "Empty", string.Empty },
+        { "Malformed", MalformedId },
+    };
+
     public static string ByIdPath(string encryptedId) => $"{BasePath}/{encryptedId}";
 
     public static string MessagesPath(string encryptedId) => $"{BasePath}/{encryptedId}/messages?limit=10";
+
+    public static string MessagesBasePath(string encryptedId) => $"{BasePath}/{encryptedId}/messages";
 
     public static string MessageByIdPath(string encryptedChatId, string encryptedMessageId) =>
         $"{BasePath}/{encryptedChatId}/messages/{encryptedMessageId}";

@@ -9,6 +9,7 @@ using HealthyFac.Insights.Application.Agents.Runs;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
 using HealthyFac.Insights.Application.Agents.Triage;
+using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Documents;
 using HealthyFac.Insights.Application.Extraction;
 using HealthyFac.Insights.Application.Extraction.Signals;
@@ -20,6 +21,7 @@ using HealthyFac.Insights.Infrastructure.Agents.Prompts;
 using HealthyFac.Insights.Infrastructure.Agents.Runs;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.Infrastructure.Ai;
+using HealthyFac.Insights.Infrastructure.Chats.Models;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.Database.Initialization;
@@ -133,7 +135,8 @@ public static class ConfigureServices
 
             services.AddValidatedOptions<AgentOptions, AgentOptionsValidator>(
                 AgentOptions.SectionName, configuration);
-
+            services.AddValidatedOptions<ChatTurnOptions, ChatTurnOptionsValidator>(
+                ChatTurnOptions.SectionName, configuration);
             services.AddValidatedOptions<ScreeningOptions, ScreeningOptionsValidator>(
                 ScreeningOptions.SectionName, configuration);
 
@@ -157,6 +160,14 @@ public static class ConfigureServices
                 provider.GetRequiredService<IOptions<GeminiOptions>>()));
 
             services.AddScoped<IAgentRunner, TriageRunner>();
+            services.AddSingleton<IChatModel>(provider => new GeminiChatModel(
+                provider.GetRequiredService<IChatClient>(),
+                provider.GetRequiredService<IOptions<GeminiOptions>>()));
+            services.AddSingleton<IChatTriageModel>(provider => new GeminiChatTriageModel(
+                provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
+                provider.GetRequiredService<IOptions<GeminiOptions>>(),
+                provider.GetRequiredService<IAgentPrompts>(),
+                provider.GetRequiredService<IAgentProviderCalls>()));
             services.AddSingleton<IAgentJson, AgentJson>();
             services.AddSingleton<IToolCallIds, FunctionToolCallIds>();
             services.AddSingleton<IPlannerModel, AgentPlannerModel>();

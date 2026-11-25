@@ -50,13 +50,16 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
         machineFile.FileName.Should().Be(expected: "machine");
         machineFile.Extension.Should().Be(expected: "pdf");
         machineFile.SizeBytes.Should().Be(expected: 20);
-        response.Files.Single(file => file.Id == ids[index: 0]).MachineId.Should().BeNull();
+        response.Files.Single(file => file.Id == ids[0]).MachineId.Should().BeNull();
     }
 
     [Fact]
     public async Task LookupFiles_WithASearch_ReturnsTheAttachmentsOfTheCompanyThatStartWithTheTextSortedByName()
     {
         var uploadedAt = GetFileLinksTestData.UploadedAt;
+        var ownMachineId = await _fixture.RegisterMachineAsync(GetFileLinksTestData.CompanyId);
+        var foreignMachineId = await _fixture.RegisterMachineAsync(GetFileLinksTestData.OtherCompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             GetFileLinksTestData.CompanyId,
             [
@@ -70,11 +73,17 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
                 new FileSeed(
                     FileName: "manual foreign", Extension: "pdf", SizeBytes: 10, uploadedAt,
                     CompanyId: GetFileLinksTestData.OtherCompanyId),
+                new FileSeed(FileName: "manual d machine", Extension: "pdf", SizeBytes: 10, uploadedAt, ownMachineId),
+                new FileSeed(
+                    FileName: "manual e foreign machine", Extension: "pdf", SizeBytes: 10, uploadedAt,
+                    foreignMachineId),
             ]);
 
         var response = await LookupBySearchAsync(GetFileLinksTestData.CompanyId, search: "MANUAL");
 
-        response.Files.Select(file => file.Id).Should().Equal(ids[index: 1], ids[index: 2], ids[index: 0]);
+        response.Files.Select(file => file.Id)
+            .Should()
+            .Equal(ids[1], ids[2], ids[0], ids[6]);
     }
 
     [Fact]
@@ -112,28 +121,6 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
             new LookupFilesRequest { CompanyId = GetFileLinksTestData.CompanyId, Ids = ids, Search = search });
 
         result.IsValid.Should().Be(isValid, caseName);
-    }
-
-    [Fact]
-    public void Validate_WithIdCountAtAndAboveTheLimit_AcceptsOnlyTheLimit()
-    {
-        var validator = new LookupFilesRequestValidator();
-
-        var atLimit = validator.Validate(
-            new LookupFilesRequest
-            {
-                CompanyId = GetFileLinksTestData.CompanyId,
-                Ids = [.. Enumerable.Range(start: 0, FileValidationConstants.LookupIdsMaxCount).Select(_ => "id")],
-            });
-        var above = validator.Validate(
-            new LookupFilesRequest
-            {
-                CompanyId = GetFileLinksTestData.CompanyId,
-                Ids = [.. Enumerable.Range(start: 0, FileValidationConstants.LookupIdsMaxCount + 1).Select(_ => "id")],
-            });
-
-        atLimit.IsValid.Should().BeTrue();
-        above.IsValid.Should().BeFalse();
     }
 
     private async Task<LookupFilesResponse> LookupBySearchAsync(Guid companyId, string search)

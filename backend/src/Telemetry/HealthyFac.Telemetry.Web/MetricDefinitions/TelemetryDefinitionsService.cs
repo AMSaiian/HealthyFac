@@ -23,8 +23,8 @@ namespace HealthyFac.Telemetry.Web.MetricDefinitions;
 /// read, and a machine of another company is "not found".
 /// </summary>
 /// <remarks>
-/// The status definitions come from the first page of the status definition grid at its maximum limit, because a
-/// machine holds far fewer status definitions than one page.
+/// The status definitions come from the status definition grid, page by page at its maximum limit, until a page holds
+/// fewer items than the limit.
 /// </remarks>
 /// <param name="metricsHandler">Lists the active metric definitions.</param>
 /// <param name="statusesHandler">Searches the status definitions.</param>
@@ -56,26 +56,46 @@ public sealed class TelemetryDefinitionsService(
         var metrics = await _metricsHandler.HandleAsync(
             new ApplicationListMetricDefinitionsRequest { CompanyId = companyId, MachineId = machineId },
             context.CancellationToken);
-        var statuses = await _statusesHandler.HandleAsync(
-            new ApplicationSearchStatusDefinitionsRequest
-            {
-                CompanyId = companyId,
-                MachineId = machineId,
-                Offset = 0,
-                Limit = GridValidationConstants.MaxLimit,
-            },
-            context.CancellationToken);
+        var statuses = await ReadStatusesAsync(companyId, machineId, context.CancellationToken);
 
         var reply = new ListDefinitionsReply();
         reply.Metrics.AddRange(metrics.Definitions.Select(ToMetric));
         reply.Statuses.AddRange(
-            statuses.Items.Select(status => new RpcStatusDefinition
+            statuses.Select(status => new RpcStatusDefinition
             {
                 Code = status.Code,
                 Severity = status.Severity.Value,
             }));
 
         return reply;
+    }
+
+    private async Task<List<StatusDefinitionResponse>> ReadStatusesAsync(
+        Guid companyId,
+        Guid machineId,
+        CancellationToken cancellationToken
+    )
+    {
+        var statuses = new List<StatusDefinitionResponse>();
+
+        while (true)
+        {
+            var page = await _statusesHandler.HandleAsync(
+                new ApplicationSearchStatusDefinitionsRequest
+                {
+                    CompanyId = companyId,
+                    MachineId = machineId,
+                    Offset = statuses.Count,
+                    Limit = GridValidationConstants.MaxLimit,
+                },
+                cancellationToken);
+            statuses.AddRange(page.Items);
+
+            if (page.Items.Count < GridValidationConstants.MaxLimit)
+            {
+                return statuses;
+            }
+        }
     }
 
     private static RpcMetricDefinition ToMetric(MetricDefinitionResponse metric)

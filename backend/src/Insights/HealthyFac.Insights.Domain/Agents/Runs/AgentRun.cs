@@ -232,15 +232,19 @@ public class AgentRun : IEntity, IAuditable, IVersioned
     /// Ends a run whose lease expired: <c>running</c> to <c>interrupted</c>.
     /// </summary>
     /// <param name="now">The end time (UTC).</param>
+    /// <param name="inputTokens">The input tokens that the run used before it ended.</param>
+    /// <param name="outputTokens">The output tokens that the run used before it ended.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown by <see cref="AgentInvariantErrors"/> when the run is not running.
     /// </exception>
-    public void Interrupt(DateTime now)
+    public void Interrupt(DateTime now, int inputTokens = 0, int outputTokens = 0)
     {
         EnsureState(AgentRunState.Running);
         State = AgentRunState.Interrupted;
         FinishedAt = now;
         LeaseUntil = null;
+        InputTokens += inputTokens;
+        OutputTokens += outputTokens;
     }
 
     private void EnsureState(AgentRunState expected, [CallerMemberName] string action = "")

@@ -40,7 +40,8 @@ public sealed class DeleteChatPreHandlerCheck(ICurrentUserProvider currentUser)
 /// <summary>
 /// Deletes a chat of the actor. The soft delete interceptor turns the removal into an update and soft-deletes the
 /// messages, the links, and the draft links of the chat in the same save. A chat of another user and a deleted chat
-/// are "not found".
+/// are "not found". A save that races another save of the chat fails with a conflict
+/// (<see cref="ChatErrors.ChatDeleteChanged"/>).
 /// </summary>
 /// <param name="dbContext">Loads and removes the chat.</param>
 /// <param name="currentUser">Provides the user of the actor.</param>
@@ -63,6 +64,14 @@ public sealed class DeleteChatRequestHandler(IInsightsDbContext dbContext, ICurr
             ?? throw new NotFoundException(ChatErrors.ChatNotFound);
 
         _dbContext.Chats.Remove(chat);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConflictException(ChatErrors.ChatDeleteChanged, exception);
+        }
     }
 }

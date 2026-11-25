@@ -4,10 +4,12 @@ using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatDeleteTests(InsightsFixture fixture)
 {
     private const int RaceParticipantCount = 2;
@@ -43,6 +45,25 @@ public sealed class ChatDeleteTests(InsightsFixture fixture)
         var act = () => _fixture.DeleteChatUseCaseAsync(ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id);
 
         await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task DeleteChat_TwiceAtTheSameTime_ConflictsForTheSecond()
+    {
+        var chat = await _fixture.SaveChatAsync(ChatTestData.OwnerId, ChatTestData.CompanyId, turnCount: 1);
+        using var race = _fixture.SaveGate.StartRace(RaceParticipantCount);
+
+        var failures = await Task.WhenAll(
+            race.RunAsync(() => _fixture.DeleteChatUseCaseAsync(
+                ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id)),
+            race.RunAsync(() => _fixture.DeleteChatUseCaseAsync(
+                ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id)));
+
+        var stored = await _fixture.LoadChatAsync(chat.Id);
+        race.SaveCounts.Order().Should().Equal(1, 2);
+        failures.Count(failure => failure is null).Should().Be(expected: 1);
+        failures.Single(failure => failure is not null).Should().BeOfType<ConflictException>();
+        stored.DeletedAt.Should().NotBeNull();
     }
 
     [Fact]
@@ -97,6 +118,7 @@ public sealed class ChatDeleteTests(InsightsFixture fixture)
             ChatTestData.CompanyId,
             turnCount: 1,
             arrange: running => running.AddTurn(ChatTestData.Question, [], ChatTestData.Now));
+
         var runningQuestion = chat.Messages.Single(message => message.Sequence == 3);
 
         var act = () => _fixture.DeleteChatMessageUseCaseAsync(
@@ -115,14 +137,18 @@ public sealed class ChatDeleteTests(InsightsFixture fixture)
             ChatTestData.CompanyId,
             turnCount: 2,
             arrange: summarized => summarized.SetSummary(text: "The spindle runs hot.", throughSequence: 2));
+
         var covered = chat.Messages.Single(message => message.Sequence == 1);
         var outside = chat.Messages.Single(message => message.Sequence == 3);
 
         await _fixture.DeleteChatMessageUseCaseAsync(
             ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id, outside.Id);
+
         var afterOutside = await _fixture.LoadChatAsync(chat.Id);
+
         await _fixture.DeleteChatMessageUseCaseAsync(
             ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id, covered.Id);
+
         var afterCovered = await _fixture.LoadChatAsync(chat.Id);
 
         afterOutside.IsSummaryStale.Should().BeFalse();

@@ -40,23 +40,25 @@ public sealed class LookupFilesApiTests(DocumentApiFixture fixture)
     {
         var file = await _fixture.ArrangeFileAsync();
         var claims = _fixture.CreateClaims(ReadPermission);
-        var body = new JsonObject { [propertyName: "search"] = "MAN" }.ToJsonString();
+        var body = new JsonObject { ["search"] = "MAN" }.ToJsonString();
 
         var response = await _fixture.SendAsync(HttpMethod.Post, LookupPath, claims, body);
-        var parsed = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
+        var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var parsed = JsonNode.Parse(text)!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        parsed[propertyName: "files"]![index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+        parsed["files"]![0]!["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
     }
 
     [Fact]
     public async Task LookupFiles_WithIdsAndASearch_Returns400()
     {
         var claims = _fixture.CreateClaims(ReadPermission);
+
         var body = new JsonObject
         {
-            [propertyName: "ids"] = new JsonArray(),
-            [propertyName: "search"] = "man",
+            ["ids"] = new JsonArray(),
+            ["search"] = "man",
         }.ToJsonString();
 
         var response = await _fixture.SendAsync(HttpMethod.Post, LookupPath, claims, body);

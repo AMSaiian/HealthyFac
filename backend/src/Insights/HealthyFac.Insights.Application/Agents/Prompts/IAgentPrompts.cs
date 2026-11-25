@@ -14,4 +14,10 @@ public interface IAgentPrompts
     /// <returns>The prompt with its version and hash.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the role has no prompt.</exception>
     AgentPrompt For(AgentRole role);
+
+    /// <summary>
+    /// Returns the prompt of the chat triage model, which is no agent role.
+    /// </summary>
+    /// <returns>The prompt with its version and hash.</returns>
+    AgentPrompt ForChatTriage();
 }

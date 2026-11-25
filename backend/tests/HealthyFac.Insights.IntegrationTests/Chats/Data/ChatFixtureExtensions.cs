@@ -28,16 +28,20 @@ public static class ChatFixtureExtensions
             Guid companyId,
             int turnCount,
             string? title = null,
-            Action<Chat>? arrange = null
+            Action<Chat>? arrange = null,
+            DateTime? startedAt = null
         )
         {
-            var chat = new Chat(ownerId, companyId, ChatTestData.Now);
+            var start = startedAt ?? ChatTestData.Now;
+            var chat = new Chat(ownerId, companyId, start);
+
             for (var turn = 0; turn < turnCount; turn++)
             {
                 var (_, reply) = chat.AddTurn(
                     title ?? $"{ChatTestData.Question} {turn}",
                     turn == 0 ? ChatTestData.Links : [],
-                    ChatTestData.Now);
+                    start);
+
                 if (turn == 0)
                 {
                     reply.AddDraft(

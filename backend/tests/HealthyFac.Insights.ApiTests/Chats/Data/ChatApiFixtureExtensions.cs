@@ -3,6 +3,7 @@ using HealthyFac.Insights.Application;
 using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Testing.Authentication;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.ApiTests.Chats.Data;
@@ -36,6 +37,16 @@ public static class ChatApiFixtureExtensions
             await dbContext.SaveChangesAsync();
 
             return chat;
+        }
+
+        public async Task SoftDeleteChatAsync(Guid chatId)
+        {
+            using var scope = fixture.ScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
+            var chat = await dbContext.Chats.SingleAsync(candidate => candidate.Id == chatId);
+
+            dbContext.Chats.Remove(chat);
+            await dbContext.SaveChangesAsync();
         }
 
         public string Encrypt(Guid id) => fixture.IdEncryptor.Encrypt(id);

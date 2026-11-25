@@ -4,10 +4,12 @@ using HealthyFac.Insights.ApiTests.Cases.Data;
 using HealthyFac.Insights.ApiTests.Chats.Data;
 using HealthyFac.Insights.ApiTests.Hosting;
 using HealthyFac.Insights.Domain.Chats.Messages;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.ApiTests.Chats;
 
 [Collection(InsightsApiCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatApiTests(InsightsApiFixture fixture)
 {
     private readonly InsightsApiFixture _fixture = fixture;
@@ -30,8 +32,8 @@ public sealed class ChatApiTests(InsightsApiFixture fixture)
         var items = document.RootElement.GetProperty(propertyName: "items");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         items.GetArrayLength().Should().Be(expected: 1);
-        items[index: 0].GetProperty(propertyName: "id").GetString().Should().Be(_fixture.Encrypt(own.Id));
-        items[index: 0].GetProperty(propertyName: "title").GetString().Should().Be(ChatApiTestData.Question);
+        items[0].GetProperty(propertyName: "id").GetString().Should().Be(_fixture.Encrypt(own.Id));
+        items[0].GetProperty(propertyName: "title").GetString().Should().Be(ChatApiTestData.Question);
     }
 
     [Fact]
@@ -79,6 +81,7 @@ public sealed class ChatApiTests(InsightsApiFixture fixture)
         using var document = JsonDocument.Parse(content);
         var items = document.RootElement.GetProperty(propertyName: "items");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         items.EnumerateArray()
             .Select(item => item.GetProperty(propertyName: "role").GetString())
             .Should()
@@ -96,6 +99,7 @@ public sealed class ChatApiTests(InsightsApiFixture fixture)
     {
         var owner = Guid.CreateVersion7();
         var chat = await _fixture.ArrangeChatAsync(owner);
+
         var otherPermission = permission == ChatApiTestData.ReadPermission
             ? ChatApiTestData.WritePermission
             : ChatApiTestData.ReadPermission;
@@ -123,6 +127,26 @@ public sealed class ChatApiTests(InsightsApiFixture fixture)
             new HttpMethod(method),
             ResolvePath(pathTemplate, chat),
             _fixture.CreateChatClaims(Guid.CreateVersion7(), permission));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(ChatApiTestData.ChatEndpoints), MemberType = typeof(ChatApiTestData))]
+    public async Task ChatEndpoint_ForADeletedChat_Returns404(
+        string caseName,
+        string method,
+        string pathTemplate,
+        string permission
+    )
+    {
+        var owner = Guid.CreateVersion7();
+        var chat = await _fixture.ArrangeChatAsync(owner);
+        var path = ResolvePath(pathTemplate, chat);
+        await _fixture.SoftDeleteChatAsync(chat.Id);
+
+        var response = await _fixture.SendCaseRequestAsync(
+            new HttpMethod(method), path, _fixture.CreateChatClaims(owner, permission));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound, caseName);
     }
@@ -174,6 +198,7 @@ public sealed class ChatApiTests(InsightsApiFixture fixture)
             HttpMethod.Delete,
             ChatApiTestData.MessageByIdPath(_fixture.Encrypt(chat.Id), _fixture.Encrypt(reply.Id)),
             claims);
+
         var onQuestion = await _fixture.SendCaseRequestAsync(
             HttpMethod.Delete,
             ChatApiTestData.MessageByIdPath(_fixture.Encrypt(chat.Id), _fixture.Encrypt(question.Id)),

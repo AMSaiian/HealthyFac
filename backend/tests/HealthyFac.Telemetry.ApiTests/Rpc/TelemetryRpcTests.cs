@@ -89,6 +89,56 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
         status.Severity.Should().Be(TelemetryRpcTestData.StatusSeverity);
     }
 
+    [Fact]
+    public async Task ListDefinitions_WithMoreStatusesThanOnePage_ReturnsEveryStatus()
+    {
+        var arrangement = await _fixture.ArrangeSignalMachineAsync();
+        await _fixture.ArrangeStatusDefinitionsAsync(
+            arrangement.MachineId, TelemetryRpcTestData.MoreStatusesThanOnePage);
+
+        var reply = await _host.Definitions.ListDefinitionsAsync(
+            new ListDefinitionsRequest { MachineId = arrangement.MachineId.ToString() },
+            Headers([TelemetryRpcTestData.MetricDefinitionsRead, TelemetryRpcTestData.StatusDefinitionsRead]),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.Statuses.Should().HaveCount(TelemetryRpcTestData.MoreStatusesThanOnePage);
+    }
+
+    [Fact]
+    public async Task Rpc_WithAUserToken_ReadsThePhaseTimesAndTheDefinitions()
+    {
+        var arrangement = await _fixture.ArrangeSignalMachineAsync();
+        await _fixture.ArrangeStatusDefinitionAsync(arrangement.MachineId);
+        var headers = TelemetryGrpcHost.BearerHeaders(
+            _fixture.Tokens.CreateToken(
+                new TestTokenClaims
+                {
+                    Subject = Guid.CreateVersion7(),
+                    Organizations = [_fixture.CompanyId.ToString()],
+                    Permissions =
+                    [
+                        TelemetryRpcTestData.SignalsRead,
+                        TelemetryRpcTestData.MetricDefinitionsRead,
+                        TelemetryRpcTestData.StatusDefinitionsRead,
+                    ],
+                }));
+
+        var phases = await _host.Client.GetPhaseTimesAsync(
+            PhaseTimesRequest(arrangement.MachineId),
+            headers,
+            cancellationToken: TestContext.Current.CancellationToken);
+        var definitions = await _host.Definitions.ListDefinitionsAsync(
+            new ListDefinitionsRequest { MachineId = arrangement.MachineId.ToString() },
+            headers,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        (phases.Phases.Sum(phase => phase.Seconds) + phases.UnknownModeSeconds + phases.NoDataSeconds)
+            .Should()
+            .BeApproximately(TelemetryRpcTestData.RangeSeconds, precision: 1);
+        definitions.Metrics.Should().ContainSingle();
+        definitions.Statuses.Should().ContainSingle();
+    }
+
     [Theory]
     [MemberData(nameof(TelemetryRpcTestData.DefinitionPermissionGaps), MemberType = typeof(TelemetryRpcTestData))]
     public async Task ListDefinitions_WithOneReadPermissionMissing_ReturnsPermissionDenied(

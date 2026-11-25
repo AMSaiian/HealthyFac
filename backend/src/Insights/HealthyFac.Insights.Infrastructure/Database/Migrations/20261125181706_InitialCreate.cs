@@ -482,7 +482,6 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                     table.CheckConstraint("ck_chat_message_link_chat_message_id_not_empty", "\"chat_message_id\" <> '00000000-0000-0000-0000-000000000000'");
                     table.CheckConstraint("ck_chat_message_link_entity_id_not_empty", "\"entity_id\" <> '00000000-0000-0000-0000-000000000000'");
                     table.CheckConstraint("ck_chat_message_link_kind_allowed", "\"kind\" IN ('employee', 'file', 'machine', 'maintenanceCase', 'workOrder')");
-                    table.CheckConstraint("ck_chat_message_link_label_not_blank", "\"label\" COLLATE \"default\" ~ '\\S'");
                     table.CheckConstraint("ck_chat_message_link_position_range", "\"position\" BETWEEN 0 AND 2147483647");
                     table.ForeignKey(
                         name: "FK_chat_message_links_chat_messages_chat_message_id",

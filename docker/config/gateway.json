@@ -41,6 +41,14 @@
           }
         }
       },
+      "insights-chat": {
+        "Destinations": {
+          "main": {
+            "Address": "http://insights:8080/",
+            "Health": "http://insights:8090/"
+          }
+        }
+      },
       "insights": {
         "Destinations": {
           "main": {

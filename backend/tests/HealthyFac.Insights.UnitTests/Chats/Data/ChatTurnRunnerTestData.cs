@@ -1,0 +1,167 @@
+using HealthyFac.Insights.Application.Chats.Turns;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Chats;
+using HealthyFac.Insights.Infrastructure.Agents.Prompts;
+using HealthyFac.Insights.Infrastructure.Ai;
+using HealthyFac.Insights.Infrastructure.Chats.Models;
+using HealthyFac.Shared.Application.Realtime;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
+
+namespace HealthyFac.Insights.UnitTests.Chats.Data;
+
+public sealed class ScriptedChatTriageModel : IChatTriageModel
+{
+    public ChatTriageChoice Choice { get; set; } = ChatTriageChoice.InScope;
+
+    public Exception? Failure { get; set; }
+
+    public int CallCount { get; private set; }
+
+    public string ModelName => "triage-model";
+
+    public Task<ChatTriageAnswer> AskAsync(
+        string text,
+        IReadOnlyList<string> linkLabels,
+        CancellationToken cancellationToken
+    )
+    {
+        CallCount++;
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
+        return Task.FromResult(
+            new ChatTriageAnswer
+            {
+                Verdict = new ChatTriageVerdict { Verdict = Choice },
+                InputTokens = 3,
+                OutputTokens = 1,
+            });
+    }
+}
+
+public sealed class RecordingChatTurnSaves : IChatTurnSaves
+{
+    public int SaveCount { get; private set; }
+
+    public AgentRun? Run { get; private set; }
+
+    public bool? WasTokenCancelable { get; private set; }
+
+    public Task SaveAsync(AgentRun run, CancellationToken cancellationToken)
+    {
+        SaveCount++;
+        Run = run;
+        WasTokenCancelable = cancellationToken.CanBeCanceled;
+
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class RecordingRealtimeNotifier : IRealtimeNotifier
+{
+    public List<ChatTurnUpdate> Updates { get; } = [];
+
+    public List<ChatTurnEnd> Ends { get; } = [];
+
+    public int PushCount { get; private set; }
+
+    public void AddChatTurnUpdate(Guid userId, ChatTurnUpdate update) => Updates.Add(update);
+
+    public void AddChatTurnEnd(Guid userId, ChatTurnEnd end) => Ends.Add(end);
+
+    public void Push() => PushCount++;
+
+    public void AddToUser(Guid userId, RealtimeNotificationKind kind, object data, bool isActorSkipped) =>
+        throw new NotSupportedException();
+
+    public void AddToGroup(Guid companyId, RealtimeNotificationKind kind, object data, bool isActorSkipped) =>
+        throw new NotSupportedException();
+
+    public void AddHint(Guid companyId, RealtimeHint hint) => throw new NotSupportedException();
+
+    public void AddSessionEnd(Guid userId) => throw new NotSupportedException();
+
+    public void Clear()
+    {
+    }
+}
+
+public sealed class TurnRunnerFixture
+{
+    public TurnRunnerFixture(Action<Chat>? arrange = null)
+    {
+        Time = new FakeTimeProvider(ChatTestData.Now);
+        Client = new ScriptedChatClient();
+        Triage = new ScriptedChatTriageModel();
+        Saves = new RecordingChatTurnSaves();
+        Notifier = new RecordingRealtimeNotifier();
+        Chat = new Chat(ChatTestData.OwnerId, ChatTestData.CompanyId, ChatTestData.Now);
+        arrange?.Invoke(Chat);
+        var turn = Chat.AddTurn(ChatTestData.ShortText, ChatTestData.Links, ChatTestData.Now);
+        User = turn.User;
+        Assistant = turn.Assistant;
+        Runner = new ChatTurnRunner(
+            Triage,
+            new GeminiChatModel(
+                Client,
+                Options.Create(
+                    new GeminiOptions
+                    {
+                        ProjectId = "project",
+                        Location = "location",
+                        ChatModel = "chat-model",
+                        TriageModel = "triage-model",
+                    })),
+            new EmbeddedAgentPrompts(),
+            Saves,
+            Notifier,
+            Options.Create(new ChatTurnOptions()),
+            Time,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<ChatTurnRunner>.Instance);
+    }
+
+    public FakeTimeProvider Time { get; }
+
+    public ScriptedChatClient Client { get; }
+
+    public ScriptedChatTriageModel Triage { get; }
+
+    public RecordingChatTurnSaves Saves { get; }
+
+    public RecordingRealtimeNotifier Notifier { get; }
+
+    public Chat Chat { get; }
+
+    public HealthyFac.Insights.Domain.Chats.Messages.ChatMessage User { get; }
+
+    public HealthyFac.Insights.Domain.Chats.Messages.ChatMessage Assistant { get; }
+
+    public ChatTurnRunner Runner { get; }
+
+    public Task RunAsync(CancellationToken cancellationToken) =>
+        Runner.RunAsync(Chat, User, Assistant, cancellationToken);
+}
+
+public static class ChatTurnRunnerTestData
+{
+    public const string FirstPiece = "Check ";
+    public const string SecondPiece = "the filter.";
+    public const int OverLimitSeconds = 91;
+
+    public static ChatResponseUpdate Piece(string text) => new(ChatRole.Assistant, text);
+
+    public static ChatResponseUpdate Usage(int input, int output) =>
+        new()
+        {
+            Contents = [new UsageContent(new UsageDetails { InputTokenCount = input, OutputTokenCount = output })],
+        };
+
+    public static ChatResponseUpdate Length() => new() { FinishReason = ChatFinishReason.Length };
+
+    public static ProviderUnavailableException Unavailable() => new(message: "down", new InvalidOperationException());
+}

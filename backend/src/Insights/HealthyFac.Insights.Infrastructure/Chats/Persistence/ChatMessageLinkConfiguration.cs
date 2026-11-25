@@ -27,7 +27,6 @@ public class ChatMessageLinkConfiguration : IEntityTypeConfiguration<ChatMessage
         builder.HasEnumerationCheck(link => link.Kind)
             .HasNotEmptyGuidCheck(link => link.ChatMessageId)
             .HasNotEmptyGuidCheck(link => link.EntityId)
-            .HasNotBlankCheck(link => link.Label)
             .HasRangeCheck(link => link.Position, min: 0, int.MaxValue);
     }
 }

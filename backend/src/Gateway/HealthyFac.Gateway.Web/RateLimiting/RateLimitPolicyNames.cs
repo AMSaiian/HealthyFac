@@ -11,4 +11,5 @@ public static class RateLimitPolicyNames
     public const string Default = "default-limit";
     public const string BlobDownload = "blob-download";
     public const string StaticAssets = "static-assets";
+    public const string ChatSend = "chat-send";
 }

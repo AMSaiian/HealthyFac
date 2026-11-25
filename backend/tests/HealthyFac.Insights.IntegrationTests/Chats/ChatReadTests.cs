@@ -3,10 +3,12 @@ using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatReadTests(InsightsFixture fixture)
 {
     private readonly InsightsFixture _fixture = fixture;
@@ -30,21 +32,35 @@ public sealed class ChatReadTests(InsightsFixture fixture)
     }
 
     [Fact]
-    public async Task SearchChats_InPagesOfOne_ReturnsEachChatOnceWithTheLatestFirst()
+    public async Task SearchChats_InPagesOfOne_ReturnsEachChatOnceWithTheLatestActivityFirst()
     {
-        var first = await _fixture.SaveChatAsync(ChatTestData.OwnerId, ChatTestData.CompanyId, turnCount: 1);
-        var second = await _fixture.SaveChatAsync(ChatTestData.OwnerId, ChatTestData.CompanyId, turnCount: 1);
-        var third = await _fixture.SaveChatAsync(ChatTestData.OwnerId, ChatTestData.CompanyId, turnCount: 1);
+        var hour = TimeSpan.FromHours(hours: 1);
+
+        var first = await _fixture.SaveChatAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.CompanyId,
+            turnCount: 1,
+            arrange: chat => chat.AddTurn(ChatTestData.Question, [], ChatTestData.Now + 3 * hour),
+            startedAt: ChatTestData.Now);
+
+        var second = await _fixture.SaveChatAsync(
+            ChatTestData.OwnerId, ChatTestData.CompanyId, turnCount: 1, startedAt: ChatTestData.Now + hour);
+
+        var third = await _fixture.SaveChatAsync(
+            ChatTestData.OwnerId, ChatTestData.CompanyId, turnCount: 1, startedAt: ChatTestData.Now + 2 * hour);
 
         var pageOne = await _fixture.SearchChatsUseCaseAsync(ChatTestData.OwnerId, ChatTestData.CompanyId, limit: 1);
+
         var pageTwo = await _fixture.SearchChatsUseCaseAsync(
             ChatTestData.OwnerId, ChatTestData.CompanyId, limit: 1, pageOne.NextPosition);
+
         var pageThree = await _fixture.SearchChatsUseCaseAsync(
             ChatTestData.OwnerId, ChatTestData.CompanyId, limit: 1, pageTwo.NextPosition);
 
         new[] { pageOne, pageTwo, pageThree }.Select(page => page.Items.Single().Id)
             .Should()
-            .Equal(third.Id, second.Id, first.Id);
+            .Equal(first.Id, third.Id, second.Id);
+
         pageThree.NextPosition.Should().BeNull();
     }
 
@@ -88,6 +104,7 @@ public sealed class ChatReadTests(InsightsFixture fixture)
 
         var first = await _fixture.GetChatMessagesUseCaseAsync(
             ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id, ChatTestData.PageLimit);
+
         var second = await _fixture.GetChatMessagesUseCaseAsync(
             ChatTestData.OwnerId, ChatTestData.CompanyId, chat.Id, ChatTestData.PageLimit, first.NextBefore);
 

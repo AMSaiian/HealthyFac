@@ -13,6 +13,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Extraction\Prompts\ExtractionSystemPrompt.md" />
     <EmbeddedResource Include="Agents\Prompts\TriageSystemPrompt.md" />
+    <EmbeddedResource Include="Agents\Prompts\ChatSystemPrompt.md" />
+    <EmbeddedResource Include="Agents\Prompts\ChatTriageSystemPrompt.md" />
     <EmbeddedResource Include="Agents\Prompts\PlannerSystemPrompt.md" />
     <EmbeddedResource Include="Agents\Prompts\ScreenerSystemPrompt.md" />
   </ItemGroup>

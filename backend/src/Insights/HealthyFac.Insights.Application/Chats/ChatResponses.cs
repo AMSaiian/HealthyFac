@@ -26,6 +26,18 @@ public record ChatListItem : IEntity<Guid>, IKeysetGridItem<ChatListItem>
     public ChatListItem WithPosition(KeysetPosition position) => this with { Position = position };
 }
 
+/// <summary>
+/// The result of a send: the chat with its new state, the message of the user, and the final reply.
+/// </summary>
+public record ChatTurnResponse
+{
+    public required ChatResponse Chat { get; init; }
+
+    public required ChatMessageResponse User { get; init; }
+
+    public required ChatMessageResponse Assistant { get; init; }
+}
+
 public record ChatResponse
 {
     public required Guid Id { get; init; }

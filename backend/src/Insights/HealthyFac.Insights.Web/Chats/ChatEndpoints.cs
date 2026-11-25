@@ -6,14 +6,16 @@ using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using ApplicationCreateChatRequest = HealthyFac.Insights.Application.Chats.CreateChatRequest;
 using ApplicationGetChatMessagesRequest = HealthyFac.Insights.Application.Chats.GetChatMessagesRequest;
 using ApplicationSearchChatsRequest = HealthyFac.Insights.Application.Chats.SearchChatsRequest;
+using ApplicationSendChatMessageRequest = HealthyFac.Insights.Application.Chats.SendChatMessageRequest;
 
 namespace HealthyFac.Insights.Web.Chats;
 
 /// <summary>
-/// Configures endpoint routing for the chats of the user. Reading needs <c>chats:read</c>. Deleting a chat or a
-/// message needs <c>chats:write</c>. Every endpoint reaches only the chats of the user in the token.
+/// Configures endpoint routing for the chats of the user. Reading needs <c>chats:read</c>. Sending, creating, and
+/// deleting need <c>chats:write</c>. Every endpoint reaches only the chats of the user in the token.
 /// </summary>
 public static class ChatEndpoints
 {
@@ -29,7 +31,10 @@ public static class ChatEndpoints
             group.MapPost(ChatRoutes.Search, SearchAsync).RequireAuthorization(InsightsPermissions.Chats.Read);
             group.MapGet(ChatRoutes.ById, GetAsync).RequireAuthorization(InsightsPermissions.Chats.Read);
             group.MapGet(ChatRoutes.Messages, GetMessagesAsync).RequireAuthorization(InsightsPermissions.Chats.Read);
+            group.MapPost(ChatRoutes.Root, CreateAsync).RequireAuthorization(InsightsPermissions.Chats.Write);
+            group.MapPost(ChatRoutes.Messages, SendAsync).RequireAuthorization(InsightsPermissions.Chats.Write);
             group.MapDelete(ChatRoutes.ById, DeleteAsync).RequireAuthorization(InsightsPermissions.Chats.Write);
+
             group.MapDelete(ChatRoutes.MessageById, DeleteMessageAsync)
                 .RequireAuthorization(InsightsPermissions.Chats.Write);
 
@@ -80,6 +85,39 @@ public static class ChatEndpoints
     {
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Created<ChatTurnResponse>> CreateAsync(
+        CreateChatRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationCreateChatRequest, ChatTurnResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId()),
+            cancellationToken);
+
+        return TypedResults.Created(
+            $"{ChatRoutes.BaseRoute}/{idEncryptor.Encrypt(response.Chat.Id)}",
+            response);
+    }
+
+    private static async Task<Ok<ChatTurnResponse>> SendAsync(
+        [FromRoute(Name = ChatRoutes.ChatIdParameter)] string chatId,
+        SendChatMessageRequest request,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationSendChatMessageRequest, ChatTurnResponse> handler,
+        IIdEncryptor idEncryptor,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(currentUser.GetCompanyId(), ChatRouteIds.DecryptChat(chatId, idEncryptor)),
             cancellationToken);
 
         return TypedResults.Ok(response);

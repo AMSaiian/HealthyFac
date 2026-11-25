@@ -10,6 +10,7 @@ public static class ChatRoutes
     public const string MessageIdParameter = "messageId";
     public const string LimitParameter = "limit";
     public const string BeforeParameter = "before";
+    public const string Root = "/";
     public const string Search = "/search";
     public const string ById = "/{" + ChatIdParameter + "}";
     public const string Messages = ById + "/messages";
