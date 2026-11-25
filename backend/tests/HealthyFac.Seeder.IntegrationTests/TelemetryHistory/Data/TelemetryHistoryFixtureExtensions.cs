@@ -1,4 +1,6 @@
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Insights.Domain.Agents.Actions;
+using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Infrastructure.Database;
@@ -191,6 +193,16 @@ public static class TelemetryHistoryFixtureExtensions
                     ResolvedAt = episode.ResolvedAt,
                 })
                 .ToList();
+        }
+
+        public async Task<(List<AgentRun> Runs, List<AgentAction> Actions)> LoadAgentRunsAsync()
+        {
+            using var scope = fixture.Hosts.Insights.CreateScope(SeederTestData.InitializationActor);
+            var dbContext = scope.ServiceProvider.GetRequiredService<InsightsDbContext>();
+
+            return (
+                await dbContext.AgentRuns.AsNoTracking().ToListAsync(),
+                await dbContext.AgentActions.AsNoTracking().ToListAsync());
         }
 
         public async Task<(List<MaintenanceCase> Cases, List<MachineSignal> Signals)> LoadCasesAsync()

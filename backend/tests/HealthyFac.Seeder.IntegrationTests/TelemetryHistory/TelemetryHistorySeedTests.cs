@@ -1,3 +1,10 @@
+using HealthyFac.Insights.Application.Agents;
+using HealthyFac.Insights.Application.Agents.Tools.Writes;
+using HealthyFac.Insights.Application.Cases;
+using HealthyFac.Insights.Domain.Agents.Actions;
+using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Cases;
+using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Seeder.IntegrationTests.Cases.Data;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
 using HealthyFac.Seeder.IntegrationTests.Machines.Data;
@@ -5,6 +12,8 @@ using HealthyFac.Seeder.IntegrationTests.People.Data;
 using HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
 using HealthyFac.Seeder.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Seeder.SeedFiles;
+using HealthyFac.Seeder.TelemetryHistory;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory;
 
@@ -122,6 +131,113 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         hasMarker.Should().BeFalse();
     }
 
+    [Fact(Explicit = true)]
+    public async Task RunAsync_WithAWorkOrderOnADrain_StoresTheWorkOrderWithItsMomentsAndStatuses()
+    {
+        var job = await RunTelemetryJobAsync(TelemetryHistorySeedTestData.TestScriptWithWorkOrder);
+
+        var orders = await _fixture.LoadWorkOrdersAsync();
+        var employees = await _fixture.LoadEmployeesAsync();
+        var order = orders.Single(candidate => candidate.Title == TelemetryHistorySeedTestData.DrainWorkOrderTitle);
+        var history = order.History.OrderBy(row => row.Revision).ToList();
+        var assignee = employees.Single(employee => employee.Id == order.Current.AssigneeId);
+        job.ExitCode.Should().Be(expected: 0);
+        history.Select(row => row.Status).Should().Equal(WorkOrdersTestData.PumpSealStatuses);
+        history.Select(row => row.CreatedAt)
+            .Should()
+            .BeEquivalentTo(
+                TelemetryHistorySeedTestData.DrainWorkOrderMoments.Select(At),
+                options => options.WithStrictOrdering()
+                    .Using<DateTime>(context => context.Subject.Should()
+                        .BeCloseTo(context.Expectation, TelemetryHistorySeedTestData.StateTolerance))
+                    .WhenTypeIs<DateTime>());
+        assignee.Email.Should().StartWith(TelemetryHistorySeedTestData.MaintenanceActor);
+        order.Current.Estimate.Should().Be(TimeSpan.FromMinutes(minutes: 60));
+        order.Current.PlannedStartUtc.Should()
+            .BeOnOrAfter(At(TelemetryHistorySeedTestData.MaintenanceStartMoment))
+            .And.BeBefore(At(TelemetryHistorySeedTestData.MaintenanceStartMoment).AddDays(value: 1));
+    }
+
+    [Fact(Explicit = true)]
+    public async Task RunAsync_WithABusySlotOfTheAssignee_PlansTheDrainWorkOrderAfterIt()
+    {
+        var job = await _fixture.RunJobAsync(
+            [TelemetryHistorySeedTestData.TelemetryArgument],
+            TestContext.Current.CancellationToken,
+            TelemetryHistorySeedTestData.CreateBaseDirectory(
+                TelemetryHistorySeedTestData.TestScriptWithWorkOrder, TelemetryHistorySeedTestData.BusyWorkOrder),
+            anchor: TelemetryHistorySeedTestData.ThursdayAnchor);
+
+        var orders = await _fixture.LoadWorkOrdersAsync();
+        var busy = orders.Single(order => order.Title == TelemetryHistorySeedTestData.BusyWorkOrderTitle);
+        var drain = orders.Single(order => order.Title == TelemetryHistorySeedTestData.DrainWorkOrderTitle);
+        job.ExitCode.Should().Be(expected: 0);
+        drain.Current.PlannedStartUtc.Should().Be(busy.Current.PlannedStartUtc + busy.Current.Estimate);
+    }
+
+    [Fact(Explicit = true)]
+    public async Task RunAsync_WithAWorkOrderOnADrain_LinksTheSignalsThatWereOpenAtTheLinkMoment()
+    {
+        await RunTelemetryJobAsync(TelemetryHistorySeedTestData.TestScriptWithWorkOrder);
+
+        var machineIds = await _fixture.LoadMachineIdsByKeyAsync();
+        var (cases, signals) = await _fixture.LoadCasesAsync();
+        var (runs, actions) = await _fixture.LoadAgentRunsAsync();
+        var orders = await _fixture.LoadWorkOrdersAsync();
+        var order = orders.Single(candidate => candidate.Title == TelemetryHistorySeedTestData.DrainWorkOrderTitle);
+        var overrideEnd = At(TelemetryHistorySeedTestData.TestExpectation.LatheOverrideUntil);
+        var drainCase = cases.Single(candidate => candidate.MachineId == machineIds[TelemetryHistorySeedTestData.Lathe]
+            && candidate.State == CaseState.Resolved
+            && candidate.OpenedAt > overrideEnd);
+        var caseSignals = signals.Where(signal => signal.CaseId == drainCase.Id).ToList();
+        var link = At(TelemetryHistorySeedTestData.LinkMoment);
+        var openAtLink = caseSignals.Where(signal => signal.OpenedAt <= link
+                && (signal.ResolvedAt is null || signal.ResolvedAt > link))
+            .ToList();
+        var plannerRuns = runs.Where(run => run.CaseId == drainCase.Id && run.Role == AgentRole.Planner).ToList();
+        var linkActions = actions.Where(action => plannerRuns.Select(run => run.Id).Contains(action.RunId)).ToList();
+        var action = linkActions.Should().ContainSingle().Subject;
+        var payload = ActionBuffering.Deserialize<LinkWorkOrderPayload>(action);
+        openAtLink.Should().NotBeEmpty();
+        openAtLink.Should()
+            .OnlyContain(signal => signal.Coverage == SignalCoverage.Linked && signal.WorkOrderId == order.Id);
+        caseSignals.Except(openAtLink).Should().OnlyContain(signal => signal.Coverage != SignalCoverage.Linked);
+        plannerRuns.Should().ContainSingle().Which.State.Should().Be(AgentRunState.Completed);
+        action.Kind.Should().Be(AgentActionKind.LinkWorkOrder);
+        action.State.Should().Be(AgentActionState.Committed);
+        payload.WorkOrderId.Should().Be(order.Id);
+        payload.SignalIds.Should().BeEquivalentTo(openAtLink.Select(signal => signal.Id));
+        CaseOutcomes.Resolve(action, plannerRuns.Single(), isAiUnavailable: false, reason: null)
+            .Kind.Should()
+            .Be(CaseOutcomeKind.LinkedWorkOrder);
+    }
+
+    [Fact(Explicit = true)]
+    public async Task RunAsync_OnAMachineWithoutAnOpenCase_FailsTheLinkWithTheItemAndWritesNoRun()
+    {
+        await _fixture.RunFullSeedAsync(
+            TestContext.Current.CancellationToken, TelemetryHistorySeedTestData.ThursdayAnchor);
+        var machineIds = await _fixture.LoadMachineIdsByKeyAsync();
+        var orders = await _fixture.LoadWorkOrdersAsync();
+
+        var failure = await Record.ExceptionAsync(() => DrainCaseLink.RunAsync(
+            _fixture.Hosts.Insights,
+            TelemetryHistorySeedTestData.PumpLinkItem,
+            TelemetryHistorySeedTestData.PumpDrain,
+            PeopleTestData.CompanyId,
+            machineIds[TelemetryHistorySeedTestData.Pump],
+            orders[index: 0].Id,
+            TestContext.Current.CancellationToken));
+
+        var (runs, _) = await _fixture.LoadAgentRunsAsync();
+        failure.Should()
+            .BeOfType<SeedFileException>()
+            .Which.Message.Should()
+            .Contain(TelemetryHistorySeedTestData.PumpLinkItem)
+            .And.Contain(expected: "no open case");
+        runs.Should().NotContain(run => run.Role == AgentRole.Planner);
+    }
+
     private static bool HasState(IEnumerable<StateRow> rows, string state, DateTime at) =>
         rows.Any(row => row.State == state
             && (row.StartedAt - at).Duration() < TelemetryHistorySeedTestData.StateTolerance);
@@ -153,10 +269,10 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         };
     }
 
-    private async Task<JobResult> RunTelemetryJobAsync() =>
+    private async Task<JobResult> RunTelemetryJobAsync(string script = TelemetryHistorySeedTestData.TestScript) =>
         await _fixture.RunJobAsync(
             [TelemetryHistorySeedTestData.TelemetryArgument],
             TestContext.Current.CancellationToken,
-            TelemetryHistorySeedTestData.CreateBaseDirectory(TelemetryHistorySeedTestData.TestScript),
+            TelemetryHistorySeedTestData.CreateBaseDirectory(script),
             anchor: TelemetryHistorySeedTestData.ThursdayAnchor);
 }

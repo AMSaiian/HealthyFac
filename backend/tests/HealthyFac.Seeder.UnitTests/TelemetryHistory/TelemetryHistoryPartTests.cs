@@ -46,6 +46,26 @@ public sealed class TelemetryHistoryPartTests
     }
 
     [Fact(Explicit = true)]
+    public void ReadEvents_WithAWorkOrderOnADrain_ListsItsEventsAndTheLinkAtTheirMoments()
+    {
+        var folder = TelemetryHistoryPartTestData.Folder(root => TelemetryHistoryPartTestData.AddWorkOrder(root));
+
+        var events = CreatePart().ReadEvents(folder);
+
+        string[] items =
+        [
+            TelemetryHistoryPartTestData.WorkOrderCreateItem,
+            TelemetryHistoryPartTestData.WorkOrderAssignItem,
+            TelemetryHistoryPartTestData.WorkOrderStartItem,
+            TelemetryHistoryPartTestData.WorkOrderCompleteItem,
+            TelemetryHistoryPartTestData.LinkItem,
+        ];
+        items.Select(item => events.Single(seedEvent => seedEvent.Item == item).At.ToString())
+            .Should()
+            .Equal(TelemetryHistoryPartTestData.WorkOrderMoments);
+    }
+
+    [Fact(Explicit = true)]
     public void StepMinutes_With51DefinitionsAndTheDefaultBatch_Is3()
     {
         var minutes = TelemetryHistoryPart.StepMinutes(

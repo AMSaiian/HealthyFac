@@ -1,5 +1,7 @@
 using HealthyFac.Core.Application.Machines.States;
+using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.Seeder.Ingest;
@@ -8,8 +10,10 @@ using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.People;
 using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.Timeline;
+using HealthyFac.Seeder.WorkOrders;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Telemetry.Application.Evaluation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Seeder.TelemetryHistory;
@@ -22,10 +26,14 @@ public sealed class TelemetryHistoryPart : ISeedPart
 {
     private readonly ServiceHosts.ServiceHosts _hosts;
     private readonly Func<int> _readCatchUpBatchReadings;
+    private readonly WorkOrdersPart _workOrders;
+    private readonly HashSet<string> _workOrderKeys = [];
+    private readonly Dictionary<string, DrainSeed> _drainsByOrderKey = [];
     private readonly Dictionary<string, Func<SeedContext, CancellationToken, Task>> _actions = [];
 
     private TelemetryFile _file = null!;
     private MachinesFile _machinesFile = null!;
+    private IReadOnlyList<WorkOrderSeed> _fileOrders = [];
     private IReadOnlyDictionary<string, HistoryMachine> _machines = null!;
     private HistoryRun? _run;
 
@@ -41,6 +49,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
     {
         _hosts = hosts;
         _readCatchUpBatchReadings = readCatchUpBatchReadings;
+        _workOrders = new WorkOrdersPart(hosts, TelemetryHistoryConstants.FileName, ChoosePlannedStartAsync);
     }
 
     public IReadOnlyList<SeedEvent> ReadEvents(SeedFolder folder)
@@ -52,16 +61,16 @@ public sealed class TelemetryHistoryPart : ISeedPart
         _machinesFile = machinesFile;
         _machines = machines;
         _run = null;
-        TelemetryHistoryChecks.Run(
-            file,
-            machines,
-            folder.Read<CompanyFile>(PeopleConstants.FileName).People.Select(person => person.Key).ToHashSet());
+        var people = folder.Read<CompanyFile>(PeopleConstants.FileName).People;
+        _fileOrders = folder.Read<WorkOrdersFile>(WorkOrdersConstants.FileName).WorkOrders;
+        TelemetryHistoryChecks.Run(file, machines, people.Select(person => person.Key).ToHashSet());
         _actions.Clear();
 
         return
         [
             .. ReadHistorySteps(file, machinesFile, machines),
             .. file.Drains.SelectMany(MaintenanceEvents),
+            .. ReadWorkOrderEvents(file, people),
             MarkerEvent(machines),
         ];
     }
@@ -83,6 +92,13 @@ public sealed class TelemetryHistoryPart : ISeedPart
     public async Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken)
     {
         var key = SeedItem.KeyOf(seedEvent.Item);
+        if (_workOrderKeys.Contains(key))
+        {
+            await _workOrders.RunAsync(seedEvent, context, cancellationToken);
+
+            return;
+        }
+
         if (_actions.TryGetValue(key, out var action))
         {
             await action(context, cancellationToken);
@@ -233,8 +249,84 @@ public sealed class TelemetryHistoryPart : ISeedPart
         return events;
     }
 
+    private static string WorkOrderKeyOf(DrainSeed drain) =>
+        $"{drain.Key}{TelemetryHistoryConstants.WorkOrderSuffix}";
+
+    private static WorkOrderSeed WorkOrderOf(DrainSeed drain, DrainWorkOrderSeed workOrder) =>
+        new()
+        {
+            Key = WorkOrderKeyOf(drain),
+            Title = workOrder.Title,
+            Description = workOrder.Description,
+            Priority = workOrder.Priority,
+            Category = workOrder.Category,
+            Machine = drain.Machine,
+            EstimateMinutes = workOrder.EstimateMinutes,
+            CreatedAt = workOrder.CreatedAt,
+            CreatedBy = TelemetryHistoryConstants.WorkOrderCreator,
+            Assignment = new AssignmentSeed
+            {
+                At = RelativeMoment.FromTotalMinutes(
+                    workOrder.CreatedAt.TotalMinutes + TelemetryHistoryConstants.AssignDelayMinutes),
+                By = TelemetryHistoryConstants.WorkOrderCreator,
+                Assignee = drain.Maintenance.By,
+                PlannedStart = drain.Maintenance.From,
+            },
+            StatusChanges =
+            [
+                new StatusChangeSeed
+                {
+                    At = drain.Maintenance.From,
+                    By = drain.Maintenance.By,
+                    Status = WorkOrderStatus.InProgress,
+                },
+                new StatusChangeSeed
+                {
+                    At = drain.Maintenance.Until,
+                    By = drain.Maintenance.By,
+                    Status = WorkOrderStatus.Completed,
+                },
+            ],
+        };
+
     private static IEnumerable<RelativeMoment> MaintenanceMoments(DrainSeed drain) =>
         [drain.Maintenance.From, drain.Maintenance.Until];
+
+    private List<SeedEvent> ReadWorkOrderEvents(TelemetryFile file, IReadOnlyList<PersonSeed> people)
+    {
+        _workOrderKeys.Clear();
+        _drainsByOrderKey.Clear();
+        var drains = file.Drains.Where(drain => drain.WorkOrder is not null).ToList();
+        drains.ForEach(drain => _drainsByOrderKey[WorkOrderKeyOf(drain)] = drain);
+        var events = _workOrders
+            .ReadEventsOf(drains.Select(drain => WorkOrderOf(drain, drain.WorkOrder!)), people)
+            .ToList();
+        _workOrderKeys.UnionWith(events.Select(seedEvent => SeedItem.KeyOf(seedEvent.Item)));
+        events.AddRange(drains.Select(LinkEvent));
+
+        return events;
+    }
+
+    private SeedEvent LinkEvent(DrainSeed drain)
+    {
+        var key = $"{drain.Key}{TelemetryHistoryConstants.LinkSuffix}";
+        var item = SeedItem.Of(TelemetryHistoryConstants.FileName, key);
+        _actions[key] = (context, cancellationToken) => DrainCaseLink.RunAsync(
+            _hosts.Insights,
+            item,
+            drain,
+            context.GetId(PeopleConstants.CompanyKey),
+            context.GetId(MachineKey(drain.Machine)),
+            context.GetId($"{WorkOrderKeyOf(drain)}{WorkOrdersConstants.OrderSuffix}"),
+            cancellationToken);
+
+        return new SeedEvent
+        {
+            At = TelemetryHistoryChecks.LinkMoment(drain),
+            Item = item,
+            Uses = [MachineKey(drain.Machine), $"{WorkOrderKeyOf(drain)}{WorkOrdersConstants.OrderSuffix}"],
+        };
+    }
 
     private IEnumerable<SeedEvent> MaintenanceEvents(DrainSeed drain)
     {
@@ -273,5 +365,51 @@ public sealed class TelemetryHistoryPart : ISeedPart
                 State = state,
             },
             cancellationToken);
+    }
+
+    private async Task<DateTime> ChoosePlannedStartAsync(
+        WorkOrderSeed order,
+        Guid assigneeId,
+        SeedContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        var drain = _drainsByOrderKey[order.Key];
+        var companyId = context.GetId(PeopleConstants.CompanyKey);
+        using var scope = _hosts.Core.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core, companyId));
+        var reader = scope.ServiceProvider.GetRequiredService<DayScheduleReader>();
+        var zone = await reader.GetZoneAsync(companyId, cancellationToken);
+        var assignedAtUtc = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+        var firstDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(assignedAtUtc, zone));
+        var lastDate = firstDate.AddDays(TelemetryHistoryConstants.PlannedStartSearchDays);
+        var shifts = await reader.LoadAsync(
+            assigneeId, zone, firstDate, lastDate, isTracked: false, cancellationToken);
+        var blocks = shifts.Resolve(firstDate, lastDate)
+            .SelectMany(day => day.Blocks)
+            .OrderBy(block => block.StartUtc)
+            .ToList();
+        var stored = blocks.Count == 0
+            ? []
+            : await scope.ServiceProvider.GetRequiredService<EmployeeOccupancyReader>()
+                .ReadAsync(
+                    companyId, assigneeId, assignedAtUtc, blocks.Max(block => block.EndUtc), excludeWorkOrderId: null,
+                    cancellationToken);
+        var startUtc = DrainPlannedStart.Choose(
+            SeedCalendar.ToUtc(drain.Maintenance.From, context.Anchor, context.Zone).UtcDateTime,
+            TimeSpan.FromMinutes(order.EstimateMinutes),
+            assignedAtUtc,
+            blocks,
+            [
+                .. stored,
+                .. AssigneeBusySlots.FromFile(_fileOrders, order.Assignment!.Assignee, context.Anchor, context.Zone),
+            ]);
+
+        return TimeZoneInfo.ConvertTimeFromUtc(
+            startUtc
+            ?? throw new SeedFileException(
+                TelemetryHistoryErrors.NoWorkBlock(
+                    SeedItem.Of(TelemetryHistoryConstants.FileName, $"{order.Key}{WorkOrdersConstants.AssignedSuffix}"),
+                    order.Assignment!.Assignee)),
+            zone);
     }
 }

@@ -149,6 +149,7 @@ internal static class TelemetryHistoryChecks
 
         CheckMoment(file, item, drain.From);
         CheckSpan(file, item, drain.Maintenance.From, drain.Maintenance.Until);
+        CheckWorkOrder(file, drain);
         var drainMinutes = drain.DrainHours * RelativeMoment.MinutesPerHour;
         var sinceStart = drain.Maintenance.From.TotalMinutes - drain.From.TotalMinutes;
         if (sinceStart < drainMinutes * ModuleState.AlarmProgress || sinceStart >= drainMinutes)
@@ -156,6 +157,39 @@ internal static class TelemetryHistoryChecks
             throw new SeedFileException(TelemetryHistoryErrors.MaintenanceOutsideDrainRange(item));
         }
     }
+
+    private static void CheckWorkOrder(TelemetryFile file, DrainSeed drain)
+    {
+        if (drain.WorkOrder is not { } workOrder)
+        {
+            return;
+        }
+
+        var item = ItemOf($"{drain.Key}{TelemetryHistoryConstants.WorkOrderSuffix}");
+        CheckMoment(file, item, workOrder.CreatedAt);
+        if (string.IsNullOrWhiteSpace(workOrder.Title))
+        {
+            throw new SeedFileException(TelemetryHistoryErrors.WorkOrderTitleInvalid(item));
+        }
+
+        if (workOrder.EstimateMinutes <= 0)
+        {
+            throw new SeedFileException(TelemetryHistoryErrors.WorkOrderEstimateInvalid(item));
+        }
+
+        var assignedMinutes = workOrder.CreatedAt.TotalMinutes + TelemetryHistoryConstants.AssignDelayMinutes;
+        if (assignedMinutes >= LinkMoment(drain).TotalMinutes)
+        {
+            throw new SeedFileException(TelemetryHistoryErrors.WorkOrderNotBeforeLink(item));
+        }
+    }
+
+    /// <summary>Finds the moment of the link: 1 minute before the maintenance start.</summary>
+    /// <param name="drain">The drain.</param>
+    /// <returns>The moment in the hour form.</returns>
+    internal static RelativeMoment LinkMoment(DrainSeed drain) =>
+        RelativeMoment.FromTotalMinutes(
+            drain.Maintenance.From.TotalMinutes - TelemetryHistoryConstants.LinkLeadMinutes);
 
     private static void CheckStep(
         TelemetryFile file,

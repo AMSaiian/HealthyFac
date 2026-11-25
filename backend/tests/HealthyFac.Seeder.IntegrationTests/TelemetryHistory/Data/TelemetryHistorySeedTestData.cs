@@ -1,4 +1,7 @@
+using System.Text.Json.Nodes;
 using HealthyFac.Seeder.IntegrationTests.Timeline.Data;
+using HealthyFac.Seeder.Moments;
+using HealthyFac.Seeder.TelemetryHistory;
 
 namespace HealthyFac.Seeder.IntegrationTests.TelemetryHistory.Data;
 
@@ -118,12 +121,70 @@ public static class TelemetryHistorySeedTestData
                                      }
                                      """;
 
+    /// <summary>The test script with a work order on the lathe drain, created at h-7:25.</summary>
+    public static readonly string TestScriptWithWorkOrder = TestScript.Replace(
+        oldValue: "\"from\": \"h-7:02\", \"until\": \"h-6:50\" }",
+        "\"from\": \"h-7:02\", \"until\": \"h-6:50\" },\n"
+        + "\"workOrder\": { \"title\": \"Replace the bearings\", \"description\": \"<p>Replace them.</p>\", "
+        + "\"priority\": \"high\", \"category\": \"repair\", \"estimateMinutes\": 60, \"createdAt\": \"h-7:25\" }");
+
+    public static readonly DrainSeed PumpDrain = new()
+    {
+        Key = "pump-bearings",
+        Machine = Pump,
+        Module = "bearings",
+        From = RelativeMoment.Parse(text: "h-6:48"),
+        DrainHours = 0.5,
+        Maintenance = new MaintenanceSeed
+        {
+            By = MaintenanceActor,
+            From = RelativeMoment.Parse(text: "h-6:21"),
+            Until = RelativeMoment.Parse(text: "h-6:10"),
+        },
+    };
+
+    public const string LatheWorkOrderTitle = "Replace the spindle bearings";
+    public const string PumpWorkOrderTitle = "Replace the pump bearings";
+
+    /// <summary>A Wednesday 21:00 in Kyiv (UTC+3 in June): the pump slot meets a work order of maksym.</summary>
+    public static readonly DateTimeOffset WeekdayEveningAnchor = new(
+        year: 2027, month: 6, day: 2, hour: 18, minute: 0, second: 0, TimeSpan.Zero);
+
+    public const string WorkOrdersFile = "work-orders.json";
+    public const string BusyWorkOrderTitle = "Check the guard doors";
+
+    /// <summary>
+    /// A work order of the assignee, assigned after the drain orders, on the first work block of the anchor day.
+    /// </summary>
+    public const string BusyWorkOrder = """
+                                        {
+                                          "key": "guard-doors", "title": "Check the guard doors",
+                                          "description": "<p>Check them.</p>",
+                                          "priority": "low", "category": "inspection", "machine": "lathe",
+                                          "estimateMinutes": 60, "createdAt": "h-5:00", "createdBy": "nadiia",
+                                          "assignment": {
+                                            "at": "h-4:55", "by": "nadiia", "assignee": "maksym",
+                                            "plannedStart": "wd+0 08:00"
+                                          },
+                                          "statusChanges": []
+                                        }
+                                        """;
+
+    public const string MaintenanceActor = "maksym";
+    public const string PumpLinkItem = "telemetry.json#pump-bearings.link";
+    public const string DrainWorkOrderTitle = "Replace the bearings";
+    public const string LinkMoment = "h-7:03";
+    public const string MaintenanceStartMoment = "h-7:02";
+
+    /// <summary>The moments of the history rows of the drain work order: create, assign, start, complete.</summary>
+    public static readonly string[] DrainWorkOrderMoments = ["h-7:25", "h-7:20", "h-7:02", "h-6:50"];
+
     /// <summary>
     /// Copies the committed seed folder, replaces <c>telemetry.json</c>, and returns the base directory.
     /// </summary>
     /// <param name="script">The content of <c>telemetry.json</c>.</param>
     /// <returns>The path of the base directory with the <c>services</c> and <c>seed/demo</c> folders.</returns>
-    public static string CreateBaseDirectory(string script)
+    public static string CreateBaseDirectory(string script, string? extraWorkOrder = null)
     {
         var folder = Directory.CreateTempSubdirectory().FullName;
         var source = Path.Combine(AppContext.BaseDirectory, SeedProgram.SeedFolderName);
@@ -138,6 +199,13 @@ public static class TelemetryHistorySeedTestData
         }
 
         File.WriteAllText(Path.Combine(folder, TelemetryFile), script);
+        if (extraWorkOrder is not null)
+        {
+            var path = Path.Combine(folder, WorkOrdersFile);
+            var root = JsonNode.Parse(File.ReadAllText(path))!;
+            root[propertyName: "workOrders"]!.AsArray().Add(JsonNode.Parse(extraWorkOrder));
+            File.WriteAllText(path, root.ToJsonString());
+        }
 
         return SeedBaseDirectory.Create(folder);
     }

@@ -67,6 +67,10 @@ public sealed class FullSeedTests(SeederFixture fixture)
         coupling.Current.Status.Should().Be(WorkOrderStatus.Completed);
         coupling.Current.CreatedAt.Should().BeCloseTo(completedAt.UtcDateTime, WorkOrdersTestData.MomentTolerance);
         completedAt.UtcDateTime.Should().BeBefore(coupling.Current.PlannedStartUtc!.Value + coupling.Current.Estimate);
+        workOrders.Select(order => order.Title)
+            .Should()
+            .NotContain(
+                [TelemetryHistorySeedTestData.LatheWorkOrderTitle, TelemetryHistorySeedTestData.PumpWorkOrderTitle]);
         workOrders.GroupBy(order => order.Current.Status)
             .ToDictionary(group => group.Key, group => group.Count())
             .Should()

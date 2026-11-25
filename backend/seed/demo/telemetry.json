@@ -10,7 +10,15 @@
       "module": "spindle",
       "from": "h-30",
       "drainHours": 8,
-      "maintenance": { "by": "maksym", "from": "h-22:05", "until": "h-20" }
+      "maintenance": { "by": "maksym", "from": "h-22:05", "until": "h-20" },
+      "workOrder": {
+        "title": "Replace the spindle bearings",
+        "description": "<p>The spindle bearing temperature and vibration rise toward the trip limits. Replace the front spindle bearings and check the preload.</p>",
+        "priority": "high",
+        "category": "repair",
+        "estimateMinutes": 120,
+        "createdAt": "h-23:30"
+      }
     },
     {
       "key": "pump-bearings",
@@ -18,7 +26,15 @@
       "module": "bearings",
       "from": "h-14",
       "drainHours": 6,
-      "maintenance": { "by": "maksym", "from": "h-8:05", "until": "h-7" }
+      "maintenance": { "by": "maksym", "from": "h-8:05", "until": "h-7" },
+      "workOrder": {
+        "title": "Replace the pump bearings",
+        "description": "<p>The bearing temperature and vibration of the pump rise toward the trip limits. Replace both bearings and check the shaft alignment.</p>",
+        "priority": "high",
+        "category": "repair",
+        "estimateMinutes": 60,
+        "createdAt": "h-9:05"
+      }
     }
   ],
   "steps": [

@@ -1,3 +1,8 @@
+using HealthyFac.Core.Domain.WorkOrders;
+using HealthyFac.Insights.Application.Agents;
+using HealthyFac.Insights.Application.Agents.Tools.Writes;
+using HealthyFac.Insights.Domain.Agents.Actions;
+using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
@@ -130,6 +135,60 @@ public static class HistoryAssertions
                 .BeOnOrAfter(At($"h-{expectation.WindowHours}"))
                 .And.BeOnOrBefore(At(moment: "h-0"));
             maintenanceCase.ClosedAt.Should().BeOnOrAfter(lastResolved).And.BeOnOrBefore(lastResolved + RuleDelay);
+        }
+    }
+
+    /// <summary>
+    /// Checks the work order of each drain and its link: the work order is completed, the signals that were open 1
+    /// minute before the maintenance are linked to it, and the case has 1 completed planner run with 1 committed
+    /// link action. No other case has a planner run.
+    /// </summary>
+    /// <param name="expectation">The moments of the script.</param>
+    /// <param name="machineIds">The machine IDs by key.</param>
+    /// <param name="signals">The signals of every case.</param>
+    /// <param name="runs">Every agent run.</param>
+    /// <param name="actions">Every agent action.</param>
+    /// <param name="orders">Every work order, with its history.</param>
+    public static void AssertDrainWorkOrders(
+        HistoryExpectation expectation,
+        IReadOnlyDictionary<string, Guid> machineIds,
+        IReadOnlyList<MachineSignal> signals,
+        IReadOnlyList<AgentRun> runs,
+        IReadOnlyList<AgentAction> actions,
+        IReadOnlyList<WorkOrder> orders
+    )
+    {
+        (string Machine, string Maintenance, string Title)[] drains =
+        [
+            (TelemetryHistorySeedTestData.Lathe, expectation.LatheMaintenanceFrom,
+                TelemetryHistorySeedTestData.LatheWorkOrderTitle),
+            (TelemetryHistorySeedTestData.Pump, expectation.PumpMaintenanceFrom,
+                TelemetryHistorySeedTestData.PumpWorkOrderTitle),
+        ];
+        var plannerRuns = runs.Where(run => run.Role == AgentRole.Planner).ToList();
+        plannerRuns.Should().HaveCount(drains.Length);
+        foreach (var (machine, maintenance, title) in drains)
+        {
+            var link = At(maintenance).AddMinutes(value: -1);
+            var order = orders.Single(candidate => candidate.Title == title);
+            var openAtLink = signals.Where(signal => signal.MachineId == machineIds[machine]
+                    && signal.OpenedAt <= link
+                    && (signal.ResolvedAt is null || signal.ResolvedAt > link))
+                .ToList();
+            var caseId = openAtLink.Select(signal => signal.CaseId).Distinct().Should().ContainSingle().Subject;
+            var run = plannerRuns.Where(candidate => candidate.CaseId == caseId).Should().ContainSingle().Subject;
+            var action = actions.Where(candidate => candidate.RunId == run.Id).Should().ContainSingle().Subject;
+            var payload = ActionBuffering.Deserialize<LinkWorkOrderPayload>(action);
+
+            order.Current.Status.Should().Be(WorkOrderStatus.Completed, machine);
+            openAtLink.Should()
+                .OnlyContain(
+                    signal => signal.Coverage == SignalCoverage.Linked && signal.WorkOrderId == order.Id, machine);
+            run.State.Should().Be(AgentRunState.Completed, machine);
+            action.Kind.Should().Be(AgentActionKind.LinkWorkOrder, machine);
+            action.State.Should().Be(AgentActionState.Committed, machine);
+            payload.WorkOrderId.Should().Be(order.Id, machine);
+            payload.SignalIds.Should().BeEquivalentTo(openAtLink.Select(signal => signal.Id), machine);
         }
     }
 }

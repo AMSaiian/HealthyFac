@@ -22,22 +22,48 @@ namespace HealthyFac.Seeder.WorkOrders;
 public sealed class WorkOrdersPart : ISeedPart
 {
     private readonly ServiceHosts.ServiceHosts _hosts;
+    private readonly string _fileName;
+    private readonly PlannedStartChooser? _chooser;
     private readonly Dictionary<string, Func<SeedContext, CancellationToken, Task>> _actions = [];
 
     private IReadOnlyDictionary<string, RoleCode> _roles = null!;
 
     public WorkOrdersPart(ServiceHosts.ServiceHosts hosts)
+        : this(hosts, WorkOrdersConstants.FileName)
+    {
+    }
+
+    /// <summary>Creates a part whose events name another seed file, for the work orders of a script.</summary>
+    /// <param name="hosts">The service hosts that the use cases go through.</param>
+    /// <param name="fileName">The file that the item names of the events carry.</param>
+    /// <param name="chooser">
+    /// Chooses the planned start at run time, for the orders whose start depends on the shifts. <see langword="null"/>
+    /// takes the planned start of the assignment as it is.
+    /// </param>
+    internal WorkOrdersPart(ServiceHosts.ServiceHosts hosts, string fileName, PlannedStartChooser? chooser = null)
     {
         _hosts = hosts;
+        _fileName = fileName;
+        _chooser = chooser;
     }
 
     public IReadOnlyList<SeedEvent> ReadEvents(SeedFolder folder)
     {
         var file = folder.Read<WorkOrdersFile>(WorkOrdersConstants.FileName);
-        _roles = folder.Read<CompanyFile>(PeopleConstants.FileName).People.ToDictionary(p => p.Key, p => p.Role);
+
+        return ReadEventsOf(file.WorkOrders, folder.Read<CompanyFile>(PeopleConstants.FileName).People);
+    }
+
+    /// <summary>Lists the events of work orders, in the order of the orders.</summary>
+    /// <param name="orders">The work orders.</param>
+    /// <param name="people">The people of the company, for the scope of each actor.</param>
+    /// <returns>The events of the create, the assign, and the status changes of each order.</returns>
+    internal IReadOnlyList<SeedEvent> ReadEventsOf(IEnumerable<WorkOrderSeed> orders, IEnumerable<PersonSeed> people)
+    {
+        _roles = people.ToDictionary(p => p.Key, p => p.Role);
         _actions.Clear();
         var events = new List<SeedEvent>();
-        foreach (var order in file.WorkOrders)
+        foreach (var order in orders)
         {
             events.Add(CreateEvent(order));
             if (order.Assignment is { } assignment)
@@ -75,7 +101,7 @@ public sealed class WorkOrdersPart : ISeedPart
         {
             At = order.CreatedAt,
             Actor = order.CreatedBy,
-            Item = SeedItem.Of(WorkOrdersConstants.FileName, key),
+            Item = SeedItem.Of(_fileName, key),
             Creates = [OrderKey(order)],
             Uses = [PeopleConstants.CompanyKey, MachineKey(order), UserKey(order.CreatedBy)],
             Requests = [CoreRequest(CreateRequest(order, PeopleConstants.CheckId, PeopleConstants.CheckId))],
@@ -85,7 +111,7 @@ public sealed class WorkOrdersPart : ISeedPart
     private SeedEvent AssignEvent(WorkOrderSeed order, AssignmentSeed assignment)
     {
         var key = AssignedKey(order);
-        var item = SeedItem.Of(WorkOrdersConstants.FileName, key);
+        var item = SeedItem.Of(_fileName, key);
         _actions[key] = (context, cancellationToken) =>
             AssignAsync(order, assignment, item, context, cancellationToken);
 
@@ -114,7 +140,7 @@ public sealed class WorkOrdersPart : ISeedPart
     private SeedEvent StatusEvent(WorkOrderSeed order, StatusChangeSeed change, int index)
     {
         var key = $"{order.Key}{WorkOrdersConstants.StatusSuffix}{index}.{change.Status.Value}";
-        var item = SeedItem.Of(WorkOrdersConstants.FileName, key);
+        var item = SeedItem.Of(_fileName, key);
         if (order.Assignment is null)
         {
             throw new SeedFileException(WorkOrdersErrors.StatusNeedsAssignment(item));
@@ -148,7 +174,7 @@ public sealed class WorkOrdersPart : ISeedPart
             CompanyId = companyId,
             Scope = ScopeOf(
                 order.CreatedBy,
-                SeedItem.Of(WorkOrdersConstants.FileName, $"{order.Key}{WorkOrdersConstants.CreatedSuffix}")),
+                SeedItem.Of(_fileName, $"{order.Key}{WorkOrdersConstants.CreatedSuffix}")),
             Title = order.Title,
             Description = order.Description,
             Priority = order.Priority,
@@ -172,7 +198,7 @@ public sealed class WorkOrdersPart : ISeedPart
             CompanyId = companyId,
             Id = orderId,
             AssigneeId = assigneeId,
-            PlannedStartLocal = assignment.PlannedStart.Time is null
+            PlannedStartLocal = assignment.PlannedStart is { Time: null, Form: not MomentForm.Hour }
                 ? throw new SeedFileException(WorkOrdersErrors.PlannedStartNeedsTime(item))
                 : plannedStart,
             RowVersion = rowVersion,
@@ -212,8 +238,10 @@ public sealed class WorkOrdersPart : ISeedPart
     )
     {
         var orderId = context.GetId(OrderKey(order));
-        var plannedStart = SeedCalendar.ToDate(assignment.PlannedStart, context.Anchor, context.Zone)
-            .ToDateTime(assignment.PlannedStart.Time ?? default(TimeOnly), DateTimeKind.Unspecified);
+        var assigneeId = context.GetId(EmployeeKey(assignment.Assignee));
+        var plannedStart = _chooser is null
+            ? PlannedStartLocal(assignment.PlannedStart, context)
+            : await _chooser(order, assigneeId, context, cancellationToken);
         var rowVersion = await ReadRowVersionAsync(orderId, cancellationToken);
 
         await _hosts.Core.SendAsync(
@@ -223,7 +251,7 @@ public sealed class WorkOrdersPart : ISeedPart
                 item,
                 context.GetId(PeopleConstants.CompanyKey),
                 orderId,
-                context.GetId(EmployeeKey(assignment.Assignee)),
+                assigneeId,
                 plannedStart,
                 rowVersion),
             cancellationToken);
@@ -258,4 +286,10 @@ public sealed class WorkOrdersPart : ISeedPart
 
         return rowVersion ?? throw new InvalidOperationException(WorkOrdersErrors.OrderMissing(orderId));
     }
+
+    private static DateTime PlannedStartLocal(RelativeMoment moment, SeedContext context) =>
+        moment.Form == MomentForm.Hour
+            ? TimeZoneInfo.ConvertTime(SeedCalendar.ToUtc(moment, context.Anchor, context.Zone), context.Zone).DateTime
+            : SeedCalendar.ToDate(moment, context.Anchor, context.Zone)
+                .ToDateTime(moment.Time ?? default(TimeOnly), DateTimeKind.Unspecified);
 }

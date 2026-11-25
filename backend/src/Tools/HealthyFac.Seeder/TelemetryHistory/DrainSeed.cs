@@ -17,4 +17,7 @@ public sealed class DrainSeed
     public required double DrainHours { get; init; }
 
     public required MaintenanceSeed Maintenance { get; init; }
+
+    /// <summary>The work order that handles the drain. A drain without it has no work order and no link.</summary>
+    public DrainWorkOrderSeed? WorkOrder { get; init; }
 }
