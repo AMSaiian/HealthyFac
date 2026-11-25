@@ -37,6 +37,13 @@ public sealed class CoreApiFixture : IAsyncLifetime, IResetBeforeEachTest
 
     public HttpClient CreateClient() => _factory.CreateClient();
 
+    /// <summary>
+    /// Starts a second host on real Kestrel ports for the gRPC tests. It shares the containers of the fixture.
+    /// </summary>
+    /// <returns>The host. The caller disposes it.</returns>
+    public CoreGrpcHost CreateGrpcHost() =>
+        new(CoreApiTestData.CreateSettings(_database.ConnectionString, _broker.ConnectionString), Tokens);
+
     public async ValueTask InitializeAsync()
     {
         await Task.WhenAll(_database.StartAsync(), _broker.StartAsync());

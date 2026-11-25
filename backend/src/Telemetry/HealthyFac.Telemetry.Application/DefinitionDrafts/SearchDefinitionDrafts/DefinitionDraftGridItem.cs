@@ -44,10 +44,9 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
     public DefinitionDraftGridItem WithPosition(KeysetPosition position) => this with { Position = position };
 
     /// <summary>
-    /// Builds the union query of the definition drafts in one scope: the drafts that target one machine, or the
-    /// drafts of one ingest attempt, or the drafts of one chat. Each branch projects into the row type inside the
-    /// query, so the database reads
-    /// only these columns.
+    /// Builds the union query of the definition drafts in one scope: the drafts that target one machine, the drafts
+    /// of one ingest attempt, or the drafts of one chat. Each branch projects into the row type inside the query, so
+    /// the database reads only these columns.
     /// </summary>
     /// <param name="metricDrafts">The metric drafts.</param>
     /// <param name="statusDrafts">The status drafts.</param>

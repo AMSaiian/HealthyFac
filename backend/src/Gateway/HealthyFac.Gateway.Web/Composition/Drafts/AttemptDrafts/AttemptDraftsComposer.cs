@@ -4,9 +4,7 @@ namespace HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
 
 /// <summary>
 /// Composes the view of one ingest attempt or one chat: the machine drafts of Core and the metric, status, and phase
-/// drafts of
-/// Telemetry,
-/// in one group for each machine.
+/// drafts of Telemetry, in one group for each machine.
 /// </summary>
 /// <param name="downstreamClient">Calls Core and Telemetry.</param>
 /// <param name="machineNameFiller">Reads the names of the groups that Core did not build.</param>

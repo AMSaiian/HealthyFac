@@ -57,24 +57,26 @@ public static class CorePermissions
     {
         public const string Read = "work-orders:read";
         public const string Write = "work-orders:write";
-        public const string Manage = "work-orders:manage";
+        public const string ReadCompany = "work-orders:read-company";
+        public const string WriteCompany = "work-orders:write-company";
 
         /// <summary>
         /// Holds every permission of the work orders feature. <see cref="CorePermissions.All"/> spreads this set, so a
         /// permission that is missing here has no policy.
         /// </summary>
-        public static readonly FrozenSet<string> All = [Read, Write, Manage];
+        public static readonly FrozenSet<string> All = [Read, ReadCompany, Write, WriteCompany];
     }
 
     public static class Shifts
     {
         public const string Read = "shifts:read";
-        public const string Manage = "shifts:manage";
+        public const string ReadCompany = "shifts:read-company";
+        public const string WriteCompany = "shifts:write-company";
 
         /// <summary>
         /// Holds every permission of the shifts feature. <see cref="CorePermissions.All"/> spreads this set, so a
         /// permission that is missing here has no policy.
         /// </summary>
-        public static readonly FrozenSet<string> All = [Read, Manage];
+        public static readonly FrozenSet<string> All = [Read, ReadCompany, WriteCompany];
     }
 }

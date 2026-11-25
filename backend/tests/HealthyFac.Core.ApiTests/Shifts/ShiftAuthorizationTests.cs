@@ -61,12 +61,52 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
         var claims = _fixture.CreateShiftClaims(
             supervisor.IdentityUserId,
             ShiftApiTestData.ReadPermission,
-            ShiftApiTestData.ManagePermission);
+            ShiftApiTestData.ReadCompanyPermission);
 
         var schedule = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.SchedulePath(worker.EncryptedId), claims);
 
         schedule.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Reads_WithCompanyReadTokenWithoutManage_ReturnTheScheduleOfAnotherEmployee()
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+        var reader = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.OtherEmail);
+
+        var claims = _fixture.CreateShiftClaims(
+            reader.IdentityUserId,
+            ShiftApiTestData.ReadPermission,
+            ShiftApiTestData.ReadCompanyPermission);
+
+        var schedule = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Get, ShiftApiTestData.SchedulePath(worker.EncryptedId), claims);
+
+        schedule.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [MemberData(nameof(ShiftApiTestData.WorkerWriteRoutes), MemberType = typeof(ShiftApiTestData))]
+    public async Task Writes_WithCompanyReadTokenWithoutManage_Return403(
+        string caseName,
+        string method,
+        string pathTemplate
+    )
+    {
+        var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+
+        var claims = _fixture.CreateShiftClaims(
+            worker.IdentityUserId,
+            ShiftApiTestData.ReadPermission,
+            ShiftApiTestData.ReadCompanyPermission);
+
+        var response = await _fixture.SendShiftRequestAsync(
+            new HttpMethod(method),
+            pathTemplate.Replace(oldValue: "{employeeId}", worker.EncryptedId),
+            claims);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Theory]
@@ -85,13 +125,13 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
     }
 
     [Fact]
-    public async Task CompanySchedule_WithManageAndEmployeesReadPermissions_Returns200()
+    public async Task CompanySchedule_WithCompanyReadAndEmployeesReadPermissions_Returns200()
     {
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
 
         var claims = _fixture.CreateShiftClaims(
             supervisor.IdentityUserId,
-            ShiftApiTestData.ManagePermission,
+            ShiftApiTestData.ReadCompanyPermission,
             ShiftApiTestData.EmployeesReadPermission);
 
         var response = await _fixture.SendShiftRequestAsync(
@@ -104,7 +144,7 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
     public async Task CompanySchedule_WithoutEmployeesReadPermission_Returns403()
     {
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
-        var claims = _fixture.CreateShiftClaims(supervisor.IdentityUserId, ShiftApiTestData.ManagePermission);
+        var claims = _fixture.CreateShiftClaims(supervisor.IdentityUserId, ShiftApiTestData.ReadCompanyPermission);
 
         var response = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, $"{ShiftApiTestData.CompanySchedulePath}?date={ShiftApiTestData.Date}", claims);

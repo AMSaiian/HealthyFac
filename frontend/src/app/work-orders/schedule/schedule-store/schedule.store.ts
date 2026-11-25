@@ -17,8 +17,9 @@ import { withSchedulePending } from './schedule.pending.slice';
 const RELOAD_RESULT_TYPES: readonly string[] = [WorkOrderActionType.Saved, WorkOrderActionType.Conflict];
 
 /**
- * One day of the schedule tab. A supervisor (`work-orders:manage`) sees every active employee and edits the schedule
- * through pending changes; a worker sees the own day as one row. The route provides it, so it resets per visit.
+ * One day of the schedule tab. A token with `work-orders:read-company` sees every active employee, and
+ * `work-orders:write-company` enables the edits through pending changes; a worker sees the own day as one row. The
+ * route provides it, so it resets per visit.
  */
 export const ScheduleStore = signalStore(
   withToasts(),

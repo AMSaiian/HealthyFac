@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\HealthyFac.Core.Application\HealthyFac.Core.Application.csproj"/>
+        <ProjectReference Include="..\HealthyFac.Core.Contracts\HealthyFac.Core.Contracts.csproj"/>
         <ProjectReference Include="..\HealthyFac.Core.Infrastructure\HealthyFac.Core.Infrastructure.csproj"/>
         <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj"/>
     </ItemGroup>

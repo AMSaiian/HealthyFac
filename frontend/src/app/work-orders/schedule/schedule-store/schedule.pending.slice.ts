@@ -93,7 +93,7 @@ export function withSchedulePending() {
     {
       state: type<{ date: Temporal.PlainDate | null }>(),
       props: type<{
-        canManage: Signal<boolean>;
+        canReadCompany: Signal<boolean>;
         rows: Signal<readonly ScheduleRow[]>;
         day: ResourceRef<CompanyDaySchedule | undefined>;
       }>(),
@@ -105,7 +105,7 @@ export function withSchedulePending() {
       const clock = inject(CLOCK);
       return {
         staging: rxResource({
-          params: () => (store.canManage() ? grid.filter() : undefined),
+          params: () => (store.canReadCompany() ? grid.filter() : undefined),
           stream: ({ params }) => api.search(stagingBodyOf(params)),
         }),
         _zone: () => clock.timeZoneId(),

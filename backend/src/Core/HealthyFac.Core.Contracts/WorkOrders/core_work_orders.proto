@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package healthyfac.core.v1;
+
+option csharp_namespace = "HealthyFac.Core.Contracts.WorkOrders";
+
+// Serves the work orders to the services that read them (Insights). The caller sends plain GUIDs as text. The access
+// scope of the token applies: a token without `work-orders:read-company` reaches only the work orders of its employee.
+service CoreWorkOrders {
+  rpc SearchWorkOrders(SearchWorkOrdersRequest) returns (SearchWorkOrdersReply);
+  rpc GetWorkOrder(GetWorkOrderRequest) returns (WorkOrderReply);
+}
+
+message SearchWorkOrdersRequest {
+  // The statuses to keep, for example "inProgress". No value keeps every status.
+  repeated string statuses = 1;
+  // The assignee to keep, or empty for any assignee.
+  string assignee_id = 2;
+  // The machine to keep, or empty for any machine.
+  string machine_id = 3;
+  // The planned start range. A missing bound is open.
+  optional google.protobuf.Timestamp planned_from = 4;
+  optional google.protobuf.Timestamp planned_to = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+  // The sort column of the work order grid: title, priority, plannedStart, createdAt, or isDelayed. Empty keeps the
+  // order of the grid.
+  string sort_column = 8;
+  // The sort direction: asc or desc. It applies only with a sort column.
+  string sort_direction = 9;
+}
+
+message SearchWorkOrdersReply {
+  repeated WorkOrderRow work_orders = 1;
+  // The number of work orders that match the filter, before the page is cut.
+  int32 total_count = 2;
+}
+
+message WorkOrderRow {
+  string id = 1;
+  string title = 2;
+  string status = 3;
+  string priority = 4;
+  string category = 5;
+  optional string machine_id = 6;
+  optional string assignee_id = 7;
+  optional string assignee_name = 8;
+  optional google.protobuf.Timestamp planned_start = 9;
+  // The planned start plus the estimate. It is set only with a planned start.
+  optional google.protobuf.Timestamp planned_end = 10;
+  int32 estimate_minutes = 11;
+}
+
+message GetWorkOrderRequest {
+  string work_order_id = 1;
+  // The number of newest history rows to return.
+  int32 history_limit = 2;
+}
+
+message WorkOrderReply {
+  string id = 1;
+  string title = 2;
+  optional string description = 3;
+  string status = 4;
+  string priority = 5;
+  string category = 6;
+  optional string machine_id = 7;
+  optional string machine_name = 8;
+  optional string assignee_id = 9;
+  optional string assignee_name = 10;
+  optional google.protobuf.Timestamp planned_start = 11;
+  optional google.protobuf.Timestamp planned_end = 12;
+  int32 estimate_minutes = 13;
+  bool is_delayed = 14;
+  google.protobuf.Timestamp created_at = 15;
+  // The newest history rows, newest first.
+  repeated WorkOrderHistoryRow history = 16;
+}
+
+message WorkOrderHistoryRow {
+  int32 revision = 1;
+  string status = 2;
+  optional string assignee_id = 3;
+  optional string assignee_name = 4;
+  optional google.protobuf.Timestamp planned_start = 5;
+  int32 estimate_minutes = 6;
+  google.protobuf.Timestamp created_at = 7;
+}

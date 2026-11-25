@@ -57,7 +57,7 @@ public sealed class GetCompanyDaySchedulePreHandlerCheck(ICurrentUserProvider cu
 }
 
 /// <summary>
-/// Reads the day of every active employee of the company, ordered by name. The endpoint needs the manage permission,
+/// Reads the day of every active employee of the company, ordered by name. The endpoint needs `shifts:read-company`,
 /// so the use case has no scope.
 /// </summary>
 /// <param name="dbContext">Reads the active employees.</param>

@@ -230,7 +230,7 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
                 Set(key: "DocumentClient:GrpcAddress", SeederTestData.UnusedUrl);
                 Set(key: "TelemetryClient:BaseAddress", SeederTestData.UnusedUrl);
                 Set(key: "TelemetryClient:GrpcAddress", SeederTestData.UnusedUrl);
-                Set(key: "CoreClient:BaseAddress", SeederTestData.UnusedUrl);
+                Set(key: "CoreClient:GrpcAddress", SeederTestData.UnusedUrl);
                 Set(key: "Docling:BaseUrl", SeederTestData.UnusedUrl);
                 Set(key: "Docling:ApiKey", SeederTestData.UnusedSecret);
                 Set(key: "Gemini:ProjectId", value: "test-project");

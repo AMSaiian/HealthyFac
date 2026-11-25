@@ -11,7 +11,8 @@ public static class ShiftApiTestData
     public const string FirstName = "Wanda";
     public const string LastName = "Worker";
     public const string ReadPermission = "shifts:read";
-    public const string ManagePermission = "shifts:manage";
+    public const string ReadCompanyPermission = "shifts:read-company";
+    public const string ManagePermission = "shifts:write-company";
     public const string EmployeesReadPermission = "employees:read";
     public const string Date = "2027-04-12";
     public const string EarlierDate = "2027-04-11";

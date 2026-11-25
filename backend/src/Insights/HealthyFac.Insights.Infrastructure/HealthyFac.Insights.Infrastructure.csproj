@@ -4,6 +4,7 @@
     <ProjectReference Include="..\HealthyFac.Insights.Application\HealthyFac.Insights.Application.csproj" />
     <ProjectReference Include="..\HealthyFac.Insights.Domain\HealthyFac.Insights.Domain.csproj" />
     <ProjectReference Include="..\..\Shared\HealthyFac.Shared.Infrastructure\HealthyFac.Shared.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Core\HealthyFac.Core.Contracts\HealthyFac.Core.Contracts.csproj" />
     <ProjectReference Include="..\..\Document\HealthyFac.Document.Contracts\HealthyFac.Document.Contracts.csproj" />
     <ProjectReference Include="..\..\Telemetry\HealthyFac.Telemetry.Contracts\HealthyFac.Telemetry.Contracts.csproj" />
     <ProjectReference Include="..\..\Telemetry\HealthyFac.Telemetry.Messaging\HealthyFac.Telemetry.Messaging.csproj" />

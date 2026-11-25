@@ -59,8 +59,8 @@ export type DropDecision = 'none' | 'status' | 'assign' | 'unassign' | 'refused'
 
 /**
  * Decides what a drop of a card does. A drop inside one column does nothing. Between two scheduled columns it changes
- * the status. From the backlog only `staged` is allowed, through the assign dialog, and only with `work-orders:manage`;
- * to the backlog it unassigns, also only with `work-orders:manage`.
+ * the status. From the backlog only `staged` is allowed, through the assign dialog, and only with `work-orders:write-company`;
+ * to the backlog it unassigns, also only with `work-orders:write-company`.
  */
 export function dropDecision(source: WorkOrderStatus, target: WorkOrderStatus, canManage: boolean): DropDecision {
   if (source === target) {

@@ -7,16 +7,16 @@ public sealed class CoreClientOptions
 {
     public const string SectionName = "CoreClient";
 
-    /// <summary>The address of the HTTP port of Core.</summary>
-    public required string BaseAddress { get; init; }
+    /// <summary>The address of the gRPC port of Core.</summary>
+    public required string GrpcAddress { get; init; }
 }
 
 public sealed class CoreClientOptionsValidator : AbstractValidator<CoreClientOptions>
 {
     public CoreClientOptionsValidator()
     {
-        RuleFor(options => options.BaseAddress)
+        RuleFor(options => options.GrpcAddress)
             .MustBeAbsoluteHttpUri()
-            .WithMessage(CoreClientMessages.BaseAddressInvalid);
+            .WithMessage(CoreClientMessages.GrpcAddressInvalid);
     }
 }

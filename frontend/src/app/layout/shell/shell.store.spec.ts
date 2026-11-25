@@ -163,7 +163,7 @@ describe('visibleNavItems', { tags: ['Platform'] }, () => {
   it('visibleNavItems_SupervisorWithShiftsManage_ShowsNoCompanyScheduleItem', () => {
     const items = visibleNavItems(
       SHELL_NAV_ITEMS,
-      only(Permission.ShiftsRead, Permission.ShiftsManage, Permission.EmployeesRead),
+      only(Permission.ShiftsRead, Permission.ShiftsWriteCompany, Permission.EmployeesRead),
       'e1',
     );
 

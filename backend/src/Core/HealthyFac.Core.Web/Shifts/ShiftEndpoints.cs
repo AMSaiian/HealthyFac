@@ -37,7 +37,7 @@ public static class ShiftEndpoints
     {
         /// <summary>
         /// Maps all shift endpoints to the application route builder. A read needs <c>shifts:read</c> and answers by
-        /// the access scope of the token; a write needs <c>shifts:manage</c>.
+        /// the access scope of the token; a write needs <c>shifts:write-company</c>.
         /// </summary>
         /// <returns>The <see cref="IEndpointRouteBuilder"/> instance for chained configuration.</returns>
         public IEndpointRouteBuilder MapShiftEndpoints()
@@ -48,22 +48,22 @@ public static class ShiftEndpoints
                 .RequireAuthorization(CorePermissions.Shifts.Read);
 
             group.MapPost(ShiftRoutes.Templates, CreateTemplateAsync)
-                .RequireAuthorization(CorePermissions.Shifts.Manage);
+                .RequireAuthorization(CorePermissions.Shifts.WriteCompany);
 
             group.MapPut(ShiftRoutes.TemplateById, UpdateTemplateAsync)
-                .RequireAuthorization(CorePermissions.Shifts.Manage);
+                .RequireAuthorization(CorePermissions.Shifts.WriteCompany);
 
             group.MapDelete(ShiftRoutes.TemplateById, DeleteTemplateAsync)
-                .RequireAuthorization(CorePermissions.Shifts.Manage);
+                .RequireAuthorization(CorePermissions.Shifts.WriteCompany);
 
             group.MapGet(ShiftRoutes.Overrides, ListOverridesAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
 
             group.MapPut(ShiftRoutes.OverrideByDate, SetOverrideAsync)
-                .RequireAuthorization(CorePermissions.Shifts.Manage);
+                .RequireAuthorization(CorePermissions.Shifts.WriteCompany);
 
             group.MapDelete(ShiftRoutes.OverrideByDate, DeleteOverrideAsync)
-                .RequireAuthorization(CorePermissions.Shifts.Manage);
+                .RequireAuthorization(CorePermissions.Shifts.WriteCompany);
 
             group.MapGet(ShiftRoutes.Schedule, GetEmployeeDayAsync)
                 .RequireAuthorization(CorePermissions.Shifts.Read);
@@ -91,7 +91,7 @@ public static class ShiftEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.ReadCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -165,7 +165,7 @@ public static class ShiftEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.ReadCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -217,7 +217,7 @@ public static class ShiftEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.ReadCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -236,7 +236,7 @@ public static class ShiftEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.ReadCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -255,7 +255,7 @@ public static class ShiftEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.Shifts.Manage),
+                AccessScopes.Resolve(user, CorePermissions.Shifts.ReadCompany),
                 idEncryptor),
             cancellationToken);
 

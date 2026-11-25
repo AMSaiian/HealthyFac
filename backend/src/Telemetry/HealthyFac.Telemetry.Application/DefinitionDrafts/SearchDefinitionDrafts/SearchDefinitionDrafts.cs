@@ -11,9 +11,9 @@ using Microsoft.EntityFrameworkCore;
 namespace HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
 
 /// <summary>
-/// Searches the definition drafts in one scope: the drafts that target one machine, or the drafts of one ingest
-/// attempt, or the drafts of one chat. Set exactly one of <see cref="MachineId"/>, <see cref="AttemptId"/>, and <see
-/// cref="ChatId"/>.
+/// Searches the definition drafts in one scope: the drafts that target one machine, the drafts of one ingest attempt,
+/// or the drafts of one chat. Set exactly one of <see cref="MachineId"/>, <see cref="AttemptId"/>, and
+/// <see cref="ChatId"/>.
 /// </summary>
 public record SearchDefinitionDraftsRequest : KeysetGridRequest<DefinitionDraftGridFilter, DefinitionDraftSortColumn>,
     IRequest<KeysetGridResponse<DefinitionDraftGridItem>>
@@ -44,10 +44,12 @@ public sealed class SearchDefinitionDraftsRequestValidator
             .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request.ChatId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.ChatIdRequired)
             .When(request => request.ChatId is not null);
+
         RuleFor(request => request)
             .Must(request => new[] { request.MachineId, request.AttemptId, request.ChatId }.Count(id => id is not null)
                 == 1)

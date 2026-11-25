@@ -29,7 +29,9 @@ public static class WorkOrderApiFixtureExtensions
                 subject,
                 WorkOrderApiTestData.ReadPermission,
                 WorkOrderApiTestData.WritePermission,
+                WorkOrderApiTestData.ReadCompanyPermission,
                 WorkOrderApiTestData.ManagePermission,
+                WorkOrderApiTestData.ShiftsReadCompanyPermission,
                 WorkOrderApiTestData.ShiftsManagePermission);
 
         /// <summary>

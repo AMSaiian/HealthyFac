@@ -162,6 +162,17 @@ public static class ConfigureServices
             versionedGroup.MapShiftEndpoints();
             versionedGroup.MapWorkOrderEndpoints();
             versionedGroup.MapWorkOrderDraftEndpoints();
+            app.MapRpcServices();
+
+            return app;
+        }
+
+        private IEndpointRouteBuilder MapRpcServices()
+        {
+            app.MapGrpcService<CoreMachinesService>();
+            app.MapGrpcService<CoreWorkOrdersService>();
+            app.MapGrpcService<CoreEmployeesService>();
+            app.MapGrpcService<CoreSchedulesService>();
 
             return app;
         }

@@ -50,8 +50,7 @@ public sealed class GetChatDefinitionDraftsPreHandlerCheck(ICurrentUserProvider 
 }
 
 /// <summary>
-/// Reads every metric, status, and phase draft of one chat (all states) with all their values. The
-/// Gateway groups
+/// Reads every metric, status, and phase draft of one chat (all states) with all their values. The Gateway groups
 /// them by machine. A chat that Telemetry does not know gives empty lists, because Telemetry does not own chats.
 /// </summary>
 /// <param name="dbContext">Reads the drafts.</param>

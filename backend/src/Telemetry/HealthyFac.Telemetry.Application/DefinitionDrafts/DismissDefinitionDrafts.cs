@@ -43,10 +43,12 @@ public sealed class DismissDefinitionDraftsRequestValidator : AbstractValidator<
             .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request.ChatId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.ChatIdRequired)
             .When(request => request.ChatId is not null);
+
         RuleFor(request => request)
             .Must(request => new[] { request.MachineId, request.AttemptId, request.ChatId }.Count(id => id is not null)
                 == 1)
@@ -81,10 +83,9 @@ public sealed class DismissDefinitionDraftsPreHandlerCheck(
 
 /// <summary>
 /// Dismisses every <c>pending</c> and <c>awaitingTarget</c> metric, status, and phase draft in the scope. The machine
-/// scope
-/// holds the drafts that target the machine. The attempt scope holds every draft of the attempt. The chat scope holds
-/// every draft of the chat. One save stores all
-/// changes, so a draft that changed in parallel is a conflict and nothing is dismissed.
+/// scope holds the drafts that target the machine. The attempt scope holds every draft of the attempt. The chat scope
+/// holds every draft of the chat. One save stores all changes, so a draft that changed in parallel is a conflict and
+/// nothing is dismissed.
 /// </summary>
 /// <param name="dbContext">Loads the drafts and saves the change.</param>
 public sealed class DismissDefinitionDraftsRequestHandler(ITelemetryDbContext dbContext)

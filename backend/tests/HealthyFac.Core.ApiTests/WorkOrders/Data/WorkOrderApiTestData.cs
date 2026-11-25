@@ -9,8 +9,10 @@ public static class WorkOrderApiTestData
     public const string SearchPath = "v1/work-orders/search";
     public const string ReadPermission = "work-orders:read";
     public const string WritePermission = "work-orders:write";
-    public const string ManagePermission = "work-orders:manage";
-    public const string ShiftsManagePermission = "shifts:manage";
+    public const string ReadCompanyPermission = "work-orders:read-company";
+    public const string ManagePermission = "work-orders:write-company";
+    public const string ShiftsReadCompanyPermission = "shifts:read-company";
+    public const string ShiftsManagePermission = "shifts:write-company";
     public const string Title = "Replace the filter";
     public const string OtherEmail = "other.orders@healthyfac.test";
     public const string WorkerEmail = "worker.orders@healthyfac.test";

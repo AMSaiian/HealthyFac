@@ -892,9 +892,11 @@
               "drafts:write",
               "work-orders:read",
               "work-orders:write",
-              "work-orders:manage",
+              "work-orders:read-company",
+              "work-orders:write-company",
               "shifts:read",
-              "shifts:manage"
+              "shifts:read-company",
+              "shifts:write-company"
             ],
             "healthyfac-telemetry": [
               "operating-phases:read",
@@ -983,7 +985,8 @@
               "status-definitions:read"
             ],
             "healthyfac-core": [
-              "work-orders:read"
+              "work-orders:read",
+              "work-orders:read-company"
             ]
           }
         }
@@ -1025,23 +1028,31 @@
         },
         {
           "name": "work-orders:read",
-          "description": "View work orders; without work-orders:manage only the own ones"
+          "description": "View the own work orders"
+        },
+        {
+          "name": "work-orders:read-company",
+          "description": "View every work order of the company"
         },
         {
           "name": "work-orders:write",
           "description": "Create and change work orders and their status"
         },
         {
-          "name": "work-orders:manage",
-          "description": "Assign, move, unassign, and delete work orders; reach every work order of the company"
+          "name": "work-orders:write-company",
+          "description": "Create, change, assign, move, unassign, and delete every work order of the company"
         },
         {
           "name": "shifts:read",
-          "description": "View shift templates, overrides, and day schedules; without shifts:manage only the own ones"
+          "description": "View the own shift templates, overrides, and day schedules"
         },
         {
-          "name": "shifts:manage",
-          "description": "Change shift templates and overrides of every employee; view the company schedule"
+          "name": "shifts:read-company",
+          "description": "View the shifts and schedule of every employee and the company schedule"
+        },
+        {
+          "name": "shifts:write-company",
+          "description": "Change the shift templates and overrides of every employee"
         }
       ],
       "healthyfac-telemetry": [
@@ -1318,7 +1329,8 @@
       {
         "clientScope": "insights-work-orders",
         "roles": [
-          "work-orders:read"
+          "work-orders:read",
+          "work-orders:read-company"
         ]
       }
     ]

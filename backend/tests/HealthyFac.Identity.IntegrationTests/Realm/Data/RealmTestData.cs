@@ -28,6 +28,9 @@ public static class RealmTestData
     public const string TelemetryScopeName = "insights-telemetry";
     public const string SignalsReadPermission = "signals:read";
     public const string WorkOrdersReadPermission = "work-orders:read";
+    public const string WorkOrdersReadCompanyPermission = "work-orders:read-company";
+    public const string WorkOrdersWriteCompanyPermission = "work-orders:write-company";
+    public const string ShiftsWriteCompanyPermission = "shifts:write-company";
     public const string PermissionsClaim = KeycloakClaimTypes.Permissions;
     public const string SupervisorRoleName = "supervisor";
     public const string ClientIdClaim = "client_id";
@@ -91,9 +94,11 @@ public static class RealmTestData
         "drafts:write",
         "work-orders:read",
         "work-orders:write",
-        "work-orders:manage",
+        "work-orders:read-company",
+        "work-orders:write-company",
         "shifts:read",
-        "shifts:manage",
+        "shifts:read-company",
+        "shifts:write-company",
     ];
 
     public static IReadOnlyList<string> TelemetryPermissions { get; } =

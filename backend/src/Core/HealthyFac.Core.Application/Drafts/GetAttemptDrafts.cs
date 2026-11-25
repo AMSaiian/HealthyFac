@@ -49,7 +49,7 @@ public class GetAttemptDraftsRequestValidator : AbstractValidator<GetAttemptDraf
             .WithMessage(DraftErrors.AttemptIdRequired)
             .When(x => x.AttemptId is not null);
         RuleFor(x => x.ChatId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DraftErrors.ChatIdRequired)
             .When(x => x.ChatId is not null);
         RuleFor(x => x)
@@ -76,12 +76,10 @@ public sealed class GetAttemptDraftsPreHandlerCheck(ICurrentUserProvider current
 }
 
 /// <summary>
-/// Reads every machine draft of one ingest attempt or one chat (all states). Set exactly one of the two IDs and groups
-/// them by machine. The group key is the
-/// machine (the target, or the machine that a create draft made) or, for a pending create draft, the draft itself.
-/// The metric and status drafts live in Telemetry. An attempt or a chat that Core does not know gives an empty list,
-/// because Core
-/// owns neither.
+/// Reads every machine draft of one ingest attempt or one chat (all states) and groups them by machine. The request
+/// sets exactly one of the two IDs. The group key is the machine (the target, or the machine that a create draft made)
+/// or, for a pending create draft, the draft itself. The metric and status drafts live in Telemetry. An attempt or a
+/// chat that Core does not know gives an empty list, because Core owns neither.
 /// </summary>
 /// <param name="dbContext">Reads the drafts and the machine names.</param>
 public sealed class GetAttemptDraftsRequestHandler(ICoreDbContext dbContext)

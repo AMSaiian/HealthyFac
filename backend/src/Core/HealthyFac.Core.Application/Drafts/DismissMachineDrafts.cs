@@ -43,10 +43,12 @@ public class DismissMachineDraftsRequestValidator : AbstractValidator<DismissMac
             .NotEqual(Guid.Empty)
             .WithMessage(DraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request.ChatId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DraftErrors.ChatIdRequired)
             .When(request => request.ChatId is not null);
+
         RuleFor(request => request)
             .Must(request => new[] { request.MachineId, request.AttemptId, request.ChatId }.Count(id => id is not null)
                 == 1)
@@ -89,9 +91,9 @@ public sealed class DismissMachineDraftsPreHandlerCheck(ICoreDbContext dbContext
 /// <summary>
 /// Dismisses every pending machine draft in the scope (the metric and status drafts live in Telemetry). The machine
 /// scope holds the drafts that target the machine. The attempt scope holds every machine draft of the attempt. The chat
-/// scope holds every machine draft of the chat. One
-/// save stores all changes, so a draft that changed in parallel is a conflict and nothing is dismissed. Each create
-/// draft that it dismisses also queues <see cref="MachineDraftDismissed"/> in the same save.
+/// scope holds every machine draft of the chat. One save stores all changes, so a draft that changed in parallel is a
+/// conflict and nothing is dismissed. Each create draft that it dismisses also queues
+/// <see cref="MachineDraftDismissed"/> in the same save.
 /// </summary>
 /// <param name="dbContext">Loads the drafts and saves the change.</param>
 /// <param name="outbox">Stores the messages with the change.</param>

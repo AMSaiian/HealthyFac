@@ -97,7 +97,7 @@ public static class WorkOrderDraftEndpoints
             request.ToApplicationRequest(
                 id,
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.WriteCompany),
                 idEncryptor),
             cancellationToken);
 

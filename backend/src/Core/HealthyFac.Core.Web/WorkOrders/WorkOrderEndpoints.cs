@@ -31,7 +31,7 @@ namespace HealthyFac.Core.Web.WorkOrders;
 /// <summary>
 /// Configures endpoint routing for work orders. The scoped endpoints need <c>work-orders:read</c> or
 /// <c>work-orders:write</c> and answer by the access scope of the token. The schedule endpoints (assign, move,
-/// unassign, delete) need <c>work-orders:manage</c>.
+/// unassign, delete) need <c>work-orders:write-company</c>.
 /// </summary>
 public static class WorkOrderEndpoints
 {
@@ -67,40 +67,18 @@ public static class WorkOrderEndpoints
                 .RequireAuthorization(CorePermissions.WorkOrders.Read);
 
             group.MapPut(WorkOrderRoutes.Assignee, AssignAsync)
-                .RequireAuthorization(CorePermissions.WorkOrders.Manage);
-
+                .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
             group.MapPost(WorkOrderRoutes.Move, MoveAsync)
-                .RequireAuthorization(CorePermissions.WorkOrders.Manage);
-
+                .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
             group.MapPost(WorkOrderRoutes.ApplySchedule, ApplyScheduleAsync)
-                .RequireAuthorization(CorePermissions.WorkOrders.Manage);
-
+                .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
             group.MapDelete(WorkOrderRoutes.Assignee, UnassignAsync)
-                .RequireAuthorization(CorePermissions.WorkOrders.Manage);
-
+                .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
             group.MapDelete(WorkOrderRoutes.ById, DeleteAsync)
-                .RequireAuthorization(CorePermissions.WorkOrders.Manage);
-
-            app.MapGet(WorkOrderRoutes.OpenForMachine, ListOpenForMachineAsync)
-                .RequireAuthorization(CorePermissions.WorkOrders.Read);
+                .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
 
             return app;
         }
-    }
-
-    private static async Task<Ok<IReadOnlyList<OpenWorkOrderResponse>>> ListOpenForMachineAsync(
-        [AsParameters] ListOpenMachineWorkOrdersWebRequest request,
-        ICurrentUserProvider currentUser,
-        IRequestHandler<ListOpenMachineWorkOrdersRequest, IReadOnlyList<OpenWorkOrderResponse>> handler,
-        IIdEncryptor idEncryptor,
-        CancellationToken cancellationToken
-    )
-    {
-        var response = await handler.HandleAsync(
-            request.ToApplicationRequest(currentUser.GetCompanyId(), idEncryptor),
-            cancellationToken);
-
-        return TypedResults.Ok(response);
     }
 
     private static async Task<IResult> CreateAsync(
@@ -116,7 +94,7 @@ public static class WorkOrderEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage)),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.WriteCompany)),
             cancellationToken);
 
         var location = string.Format(
@@ -138,7 +116,7 @@ public static class WorkOrderEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage)),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.ReadCompany)),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -155,7 +133,7 @@ public static class WorkOrderEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage)),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.ReadCompany)),
             cancellationToken);
 
         return TypedResults.Ok(response);
@@ -173,7 +151,7 @@ public static class WorkOrderEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.ReadCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -194,7 +172,7 @@ public static class WorkOrderEndpoints
             request.ToApplicationRequest(
                 id,
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.WriteCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -215,7 +193,7 @@ public static class WorkOrderEndpoints
             request.ToApplicationRequest(
                 id,
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.WriteCompany),
                 idEncryptor),
             cancellationToken);
 
@@ -234,7 +212,7 @@ public static class WorkOrderEndpoints
         var response = await handler.HandleAsync(
             request.ToApplicationRequest(
                 currentUser.GetCompanyId(),
-                AccessScopes.Resolve(user, CorePermissions.WorkOrders.Manage),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.ReadCompany),
                 idEncryptor),
             cancellationToken);
 

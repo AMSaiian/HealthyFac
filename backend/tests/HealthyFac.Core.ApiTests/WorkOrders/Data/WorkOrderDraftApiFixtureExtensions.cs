@@ -29,6 +29,7 @@ public static class WorkOrderDraftApiFixtureExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var proposal = DraftProposal.ForCase(Guid.CreateVersion7(), fixture.CompanyId, Guid.CreateVersion7());
             dbContext.DraftProposals.Add(proposal);
+
             var draft = new WorkOrderDraft(
                 Guid.CreateVersion7(),
                 fixture.CompanyId,
@@ -46,7 +47,12 @@ public static class WorkOrderDraftApiFixtureExtensions
             return fixture.IdEncryptor.Encrypt(draft.Id);
         }
 
-        public string CreateApplyBody(int estimateMinutes = WorkOrderApiTestData.ValidEstimate, uint? rowVersion = null)
+        public string CreateApplyBody(
+            int estimateMinutes = WorkOrderApiTestData.ValidEstimate,
+            uint? rowVersion = null,
+            string? encryptedAssigneeId = null,
+            string? plannedStartLocal = null
+        )
         {
             var body = new JsonObject
             {
@@ -59,6 +65,16 @@ public static class WorkOrderDraftApiFixtureExtensions
             if (rowVersion is not null)
             {
                 body["rowVersion"] = rowVersion;
+            }
+
+            if (encryptedAssigneeId is not null)
+            {
+                body["assigneeId"] = encryptedAssigneeId;
+            }
+
+            if (plannedStartLocal is not null)
+            {
+                body["plannedStartLocal"] = plannedStartLocal;
             }
 
             return body.ToJsonString();

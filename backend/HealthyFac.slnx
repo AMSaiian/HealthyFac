@@ -8,6 +8,7 @@
   </Folder>
   <Folder Name="/src/Core/">
     <Project Path="src/Core/HealthyFac.Core.Application/HealthyFac.Core.Application.csproj" />
+    <Project Path="src/Core/HealthyFac.Core.Contracts/HealthyFac.Core.Contracts.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Domain/HealthyFac.Core.Domain.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Infrastructure/HealthyFac.Core.Infrastructure.csproj" />
     <Project Path="src/Core/HealthyFac.Core.Messaging/HealthyFac.Core.Messaging.csproj" />

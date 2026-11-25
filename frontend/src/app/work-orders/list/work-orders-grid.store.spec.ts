@@ -69,7 +69,7 @@ describe('WorkOrdersGridStore', { tags: ['WorkOrders'] }, () => {
         { provide: ActionStore, useValue: { dispatch, lastResult } },
         provideFakeAuthStore({
           hasPermission: (permission: string) =>
-            (permission !== 'work-orders:manage' || options.canManage === true) &&
+            (permission !== 'work-orders:write-company' || options.canManage === true) &&
             (permission !== 'drafts:read' || options.canReadDrafts === true),
         }),
         {
