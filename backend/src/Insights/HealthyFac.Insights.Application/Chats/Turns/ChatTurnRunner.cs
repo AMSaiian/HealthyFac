@@ -1,4 +1,7 @@
 using HealthyFac.Insights.Application.Agents.Prompts;
+using HealthyFac.Insights.Application.Agents.Tools;
+using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Chats;
@@ -28,6 +31,11 @@ namespace HealthyFac.Insights.Application.Chats.Turns;
 /// <param name="options">Holds the limits.</param>
 /// <param name="timeProvider">The clock of the limit and of the push interval.</param>
 /// <param name="logger">Logs an unexpected error of a turn once, without the text of the user.</param>
+/// <param name="registry">Builds the tools of the turn.</param>
+/// <param name="toolScopes">Runs each tool in the request scope of the user.</param>
+/// <param name="permissions">Reads the permissions of the token.</param>
+/// <param name="toolCallIds">Gives the call ID and ends the function loop.</param>
+/// <param name="state">Tells whether the model reported no answer.</param>
 public sealed class ChatTurnRunner(
     IChatTriageModel triage,
     IChatModel model,
@@ -36,7 +44,12 @@ public sealed class ChatTurnRunner(
     IRealtimeNotifier notifier,
     IOptions<ChatTurnOptions> options,
     TimeProvider timeProvider,
-    ILogger<ChatTurnRunner> logger
+    ILogger<ChatTurnRunner> logger,
+    ToolRegistry registry,
+    ChatToolScopes toolScopes,
+    IChatPermissions permissions,
+    IToolCallIds toolCallIds,
+    ChatTurnState state
 )
 {
     private readonly IChatTriageModel _triage = triage;
@@ -47,6 +60,11 @@ public sealed class ChatTurnRunner(
     private readonly ChatTurnOptions _options = options.Value;
     private readonly TimeProvider _timeProvider = timeProvider;
     private readonly ILogger<ChatTurnRunner> _logger = logger;
+    private readonly ToolRegistry _registry = registry;
+    private readonly ChatToolScopes _toolScopes = toolScopes;
+    private readonly IChatPermissions _permissions = permissions;
+    private readonly IToolCallIds _toolCallIds = toolCallIds;
+    private readonly ChatTurnState _state = state;
 
     /// <summary>
     /// Runs the turn of the chat. The chat and its messages are tracked by the database context, so the final save
@@ -78,16 +96,17 @@ public sealed class ChatTurnRunner(
             chat.Id,
             assistantMessage.Id);
         var counts = new TokenCounts();
+        var buffer = new ChatToolCallBuffer(run.Id);
 
         using var limitSource = new CancellationTokenSource(limit, _timeProvider);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, limitSource.Token);
 
         var ending = await ExecuteAsync(
-            chat, userMessage, assistantMessage, prompt, throttle, counts, limitSource, linked.Token);
+            chat, userMessage, assistantMessage, prompt, (run, buffer), throttle, counts, limitSource, linked.Token);
 
         throttle.Flush();
         Apply(ending, chat, assistantMessage, run, throttle.Text, counts);
-        await _saves.SaveAsync(run, CancellationToken.None);
+        await _saves.SaveAsync(run, buffer.Rows, CancellationToken.None);
 
         _notifier.AddChatTurnEnd(
             chat.OwnerUserId,
@@ -101,6 +120,7 @@ public sealed class ChatTurnRunner(
         ChatMessage userMessage,
         ChatMessage assistantMessage,
         AgentPrompt prompt,
+        (AgentRun Run, ChatToolCallBuffer Buffer) toolRun,
         ChatSnapshotThrottle throttle,
         TokenCounts counts,
         CancellationTokenSource limitSource,
@@ -126,8 +146,9 @@ public sealed class ChatTurnRunner(
 
             var history = BuildHistory(chat, userMessage, assistantMessage);
 
+            var tools = BuildTools(chat, toolRun.Run, toolRun.Buffer, throttle);
             var isLengthLimited = false;
-            await foreach (var chunk in _model.StreamAsync(prompt.Text, history, cancellationToken))
+            await foreach (var chunk in _model.StreamAsync(prompt.Text, history, tools, cancellationToken))
             {
                 counts.ModelInput = Math.Max(counts.ModelInput, chunk.InputTokens);
                 counts.ModelOutput = Math.Max(counts.ModelOutput, chunk.OutputTokens);
@@ -136,13 +157,18 @@ public sealed class ChatTurnRunner(
                 assistantMessage.Update(throttle.Text);
             }
 
+            if (_state.IsNoAnswerReported)
+            {
+                return TurnEnding.NoAnswer;
+            }
+
             return isLengthLimited ? TurnEnding.OutputLimit : TurnEnding.Completed;
         }
-        catch (OperationCanceledException) when (limitSource.IsCancellationRequested)
+        catch (Exception) when (limitSource.IsCancellationRequested)
         {
             return TurnEnding.TimeLimit;
         }
-        catch (OperationCanceledException)
+        catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
             return TurnEnding.Cancelled;
         }
@@ -158,12 +184,31 @@ public sealed class ChatTurnRunner(
         }
     }
 
+    private ChatTurnTools BuildTools(Chat chat, AgentRun run, ChatToolCallBuffer buffer, ChatSnapshotThrottle throttle)
+    {
+        var context = new ToolContext
+        {
+            CompanyId = chat.CompanyId,
+            RunId = run.Id,
+            Recorder = buffer.Recorder,
+            CurrentCallId = _toolCallIds.Current,
+            EndLoop = _toolCallIds.EndLoop,
+        };
+        var functions = _registry.For(AgentRole.Chat, context, _permissions.Read(), _toolScopes);
+
+        return ChatTurnTools.Create(functions, _options.MaxToolCalls, _toolCallIds.EndLoop, throttle.SetActivity);
+    }
+
     /// <summary>
     /// Builds the history of the model call. A turn (a user message and the reply with the next sequence) enters it
     /// only when its reply is <c>completed</c> with the kind <c>answer</c> or <c>unanswerable</c>: a refused, blocked,
     /// failed, cancelled, or interrupted turn leaves both messages out. A deleted message is left out. The new user
     /// message is always the last one.
     /// </summary>
+    /// <param name="chat">The chat with its messages.</param>
+    /// <param name="userMessage">The new message of the user.</param>
+    /// <param name="assistantMessage">The reply of the current turn, which the history never holds.</param>
+    /// <returns>The messages of the history in order, ending with the new user message.</returns>
     private static List<ChatPromptMessage> BuildHistory(
         Chat chat,
         ChatMessage userMessage,
@@ -220,6 +265,10 @@ public sealed class ChatTurnRunner(
                 assistantMessage.Complete(ChatMessageKind.Answer, text);
                 run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
                 break;
+            case TurnEnding.NoAnswer:
+                assistantMessage.Complete(ChatMessageKind.Unanswerable, string.Empty);
+                run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
+                break;
             case TurnEnding.Refusal:
                 assistantMessage.Complete(ChatMessageKind.Refusal, string.Empty);
                 run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
@@ -265,6 +314,7 @@ public sealed class ChatTurnRunner(
         Cancelled,
         TimeLimit,
         OutputLimit,
+        NoAnswer,
         ProviderUnavailable,
     }
 

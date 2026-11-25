@@ -1,3 +1,4 @@
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Web.Authorization;
@@ -45,6 +46,7 @@ public static class ConfigureServices
             services.AddApiSecurity(configuration);
 
             services.AddActorContextMiddleware();
+            services.AddScoped<IChatPermissions, HttpChatPermissions>();
             services.AddSharedExceptionHandling();
             services.AddSharedRealtime(configuration);
 

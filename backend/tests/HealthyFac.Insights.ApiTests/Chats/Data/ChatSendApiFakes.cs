@@ -1,3 +1,4 @@
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Application.Realtime;
@@ -65,6 +66,7 @@ public sealed class BlockingChatModel : IChatModel
     public async IAsyncEnumerable<ChatModelChunk> StreamAsync(
         string systemPrompt,
         IReadOnlyList<ChatPromptMessage> history,
+        ChatTurnTools tools,
         [System.Runtime.CompilerServices.EnumeratorCancellation]
         CancellationToken cancellationToken
     )

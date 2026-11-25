@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Chats.Messages;
@@ -28,6 +29,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
     public async IAsyncEnumerable<ChatModelChunk> StreamAsync(
         string systemPrompt,
         IReadOnlyList<ChatPromptMessage> history,
+        ChatTurnTools tools,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
@@ -36,18 +38,95 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
                 message.Role == ChatMessageRole.User ? ChatRole.User : ChatRole.Assistant,
                 message.Text))
             .ToList();
-        var chatOptions = new ChatOptions
+        var totals = new UsageTotals();
+        var tracked = new UsageTrackingChatClient(_chatClient, totals);
+        var invoking = new FunctionInvokingChatClient(tracked);
+        var updates = new List<ChatResponseUpdate>();
+
+        await foreach (var update in StreamUpdatesAsync(
+            invoking, messages, CreateOptions(systemPrompt, tools.Functions), cancellationToken))
+        {
+            updates.Add(update);
+
+            yield return ToChunk(update);
+        }
+
+        if (tools.IsLimitReached && !tools.IsNoAnswerReported)
+        {
+            messages.AddRange(updates.ToChatResponse().Messages);
+            CompleteToolResults(messages);
+
+            await foreach (var update in StreamUpdatesAsync(
+                tracked, messages, CreateOptions(systemPrompt, []), cancellationToken))
+            {
+                yield return ToChunk(update);
+            }
+        }
+
+        yield return new ChatModelChunk { InputTokens = (int)totals.Input, OutputTokens = (int)totals.Output };
+    }
+
+    /// <summary>
+    /// Gives each tool call that has no result the text of the call limit. The loop ends after the call at the limit,
+    /// so the later calls of the same batch got no result, and the provider rejects a result turn with fewer parts than
+    /// its call turn.
+    /// </summary>
+    private static void CompleteToolResults(List<Microsoft.Extensions.AI.ChatMessage> messages)
+    {
+        var answered = messages.SelectMany(message => message.Contents)
+            .OfType<FunctionResultContent>()
+            .Select(result => result.CallId)
+            .ToHashSet();
+
+        for (var index = 0; index < messages.Count; index++)
+        {
+            var missing = messages[index]
+                .Contents.OfType<FunctionCallContent>()
+                .Where(call => !answered.Contains(call.CallId))
+                .Select(call => new FunctionResultContent(call.CallId, ChatTurnTools.LimitReachedText))
+                .ToList();
+
+            if (missing.Count == 0)
+            {
+                continue;
+            }
+
+            var hasResultMessage = index + 1 < messages.Count && messages[index + 1].Role == ChatRole.Tool;
+            if (hasResultMessage)
+            {
+                foreach (var result in missing)
+                {
+                    messages[index + 1].Contents.Add(result);
+                }
+            }
+            else
+            {
+                messages.Insert(index + 1, new Microsoft.Extensions.AI.ChatMessage(ChatRole.Tool, [.. missing]));
+            }
+        }
+    }
+
+    private ChatOptions CreateOptions(string systemPrompt, IReadOnlyList<AIFunction> functions) =>
+        new()
         {
             Instructions = systemPrompt,
             MaxOutputTokens = _options.MaxOutputTokens,
+            Tools = functions.Count == 0 ? null : [.. functions],
         };
 
-        await using var enumerator = _chatClient.GetStreamingResponseAsync(messages, chatOptions, cancellationToken)
+    private static async IAsyncEnumerable<ChatResponseUpdate> StreamUpdatesAsync(
+        IChatClient client,
+        List<Microsoft.Extensions.AI.ChatMessage> messages,
+        ChatOptions chatOptions,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        await using var enumerator = client.GetStreamingResponseAsync(messages, chatOptions, cancellationToken)
             .GetAsyncEnumerator(cancellationToken);
 
         while (true)
         {
-            ChatModelChunk chunk;
+            ChatResponseUpdate update;
 
             try
             {
@@ -56,7 +135,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
                     yield break;
                 }
 
-                chunk = ToChunk(enumerator.Current);
+                update = enumerator.Current;
             }
             catch (Exception exception) when (
                 !cancellationToken.IsCancellationRequested
@@ -67,7 +146,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
                     exception);
             }
 
-            yield return chunk;
+            yield return update;
         }
     }
 

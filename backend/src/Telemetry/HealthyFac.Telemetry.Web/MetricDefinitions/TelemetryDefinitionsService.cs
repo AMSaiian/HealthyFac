@@ -102,6 +102,7 @@ public sealed class TelemetryDefinitionsService(
     {
         var message = new RpcMetricDefinition
         {
+            Id = metric.Id.ToString(),
             Key = metric.Key,
             Name = metric.Name,
             ValueKind = metric.ValueKind.Value,

@@ -1,5 +1,7 @@
 using HealthyFac.Insights.Application;
 using HealthyFac.Insights.Application.Agents.Runs;
+using HealthyFac.Insights.Application.Chats.Tools;
+using HealthyFac.Insights.Application.Chats.Tools.Reads;
 using HealthyFac.Insights.Application.Signals;
 using HealthyFac.Insights.Application.WorkOrders;
 using HealthyFac.Insights.Domain.Agents.Actions;
@@ -143,5 +145,113 @@ public sealed class FakeTelemetrySignals : ITelemetrySignals
         EpisodeCalls.Add((machineId, from, to));
 
         return Task.FromResult<IReadOnlyList<SignalEpisodeInfo>>([.. Episodes]);
+    }
+}
+
+/// <summary>
+/// Plays the reads of the chat tools. A test scripts the answer or the failure, and reads back the arguments that the
+/// tool passed. A read that no test scripts throws, so a test never reads data by accident.
+/// </summary>
+public sealed class FakeChatReads : IChatReads
+{
+    public List<object> Calls { get; } = [];
+
+    public SearchMachinesResponse? MachinesAnswer { get; set; }
+
+    public GetWorkOrderResponse? WorkOrderAnswer { get; set; }
+
+    public Exception? Failure { get; set; }
+
+    public void Reset()
+    {
+        Calls.Clear();
+        MachinesAnswer = null;
+        WorkOrderAnswer = null;
+        Failure = null;
+    }
+
+    public Task<SearchMachinesResponse> SearchMachinesAsync(
+        SearchMachinesArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer(arguments, MachinesAnswer);
+
+    public Task<GetWorkOrderResponse> GetWorkOrderAsync(
+        GetWorkOrderArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer(arguments, WorkOrderAnswer);
+
+    public Task<GetMachineResponse> GetMachineAsync(
+        GetMachineArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetMachineResponse>(arguments, answer: null);
+
+    public Task<GetMachineStateTimesResponse> GetMachineStateTimesAsync(
+        GetMachineStateTimesArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetMachineStateTimesResponse>(arguments, answer: null);
+
+    public Task<GetMetricHistoryResponse> GetMetricHistoryAsync(
+        GetMetricHistoryArguments arguments,
+        int bucketCount,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetMetricHistoryResponse>(arguments, answer: null);
+
+    public Task<GetSignalEpisodesResponse> GetSignalEpisodesAsync(
+        GetSignalEpisodesArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetSignalEpisodesResponse>(arguments, answer: null);
+
+    public Task<GetPhaseTimesResponse> GetPhaseTimesAsync(
+        GetPhaseTimesArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetPhaseTimesResponse>(arguments, answer: null);
+
+    public Task<SearchWorkOrdersResponse> SearchWorkOrdersAsync(
+        SearchWorkOrdersArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<SearchWorkOrdersResponse>(arguments, answer: null);
+
+    public Task<SearchEmployeesResponse> SearchEmployeesAsync(
+        SearchEmployeesArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<SearchEmployeesResponse>(arguments, answer: null);
+
+    public Task<GetScheduleResponse> GetScheduleAsync(
+        GetScheduleArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetScheduleResponse>(arguments, answer: null);
+
+    public Task<GetFreeSpansResponse> GetFreeSpansAsync(
+        GetFreeSpansArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<GetFreeSpansResponse>(arguments, answer: null);
+
+    public Task<SearchFilesResponse> SearchFilesAsync(
+        SearchFilesArguments arguments,
+        CancellationToken cancellationToken
+    ) =>
+        Answer<SearchFilesResponse>(arguments, answer: null);
+
+    private Task<TResponse> Answer<TResponse>(object arguments, TResponse? answer)
+        where TResponse : class
+    {
+        Calls.Add(arguments);
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
+        return Task.FromResult(answer ?? throw new InvalidOperationException(message: "The read is not scripted."));
     }
 }

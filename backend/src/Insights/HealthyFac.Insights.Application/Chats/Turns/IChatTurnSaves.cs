@@ -1,4 +1,5 @@
 using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 
 namespace HealthyFac.Insights.Application.Chats.Turns;
 
@@ -8,9 +9,10 @@ namespace HealthyFac.Insights.Application.Chats.Turns;
 public interface IChatTurnSaves
 {
     /// <summary>
-    /// Adds the run row and saves every tracked change.
+    /// Adds the run row and the tool call rows and saves every tracked change.
     /// </summary>
     /// <param name="run">The run of the turn.</param>
+    /// <param name="toolCalls">The tool calls of the run, in the order of the calls.</param>
     /// <param name="cancellationToken">The token of the save.</param>
-    Task SaveAsync(AgentRun run, CancellationToken cancellationToken);
+    Task SaveAsync(AgentRun run, IReadOnlyList<AgentToolCall> toolCalls, CancellationToken cancellationToken);
 }

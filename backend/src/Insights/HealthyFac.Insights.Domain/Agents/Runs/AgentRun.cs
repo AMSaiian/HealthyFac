@@ -229,7 +229,8 @@ public class AgentRun : IEntity, IAuditable, IVersioned
     }
 
     /// <summary>
-    /// Ends a run whose lease expired: <c>running</c> to <c>interrupted</c>.
+    /// Ends a run that no process works on any more: <c>running</c> to <c>interrupted</c>. The sweep calls it for an
+    /// expired lease, and the chat turn runner calls it for a cancelled chat turn.
     /// </summary>
     /// <param name="now">The end time (UTC).</param>
     /// <param name="inputTokens">The input tokens that the run used before it ended.</param>

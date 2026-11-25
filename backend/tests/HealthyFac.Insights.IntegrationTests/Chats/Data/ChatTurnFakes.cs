@@ -1,4 +1,9 @@
+using System.Reflection;
+using HealthyFac.Insights.Application;
+using HealthyFac.Insights.Application.Agents.Tools;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
+using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats.Data;
@@ -12,16 +17,21 @@ public sealed class ChatTurnFakes
 
     public ScriptedChatModel Model { get; } = new();
 
+    public FakeChatReads Reads { get; } = new();
+
     public void Register(IServiceCollection services)
     {
         services.AddSingleton<IChatTriageModel>(Triage);
         services.AddSingleton<IChatModel>(Model);
+        services.AddSingleton<IChatReads>(Reads);
+        services.AddScoped<IChatPermissions>(_ => new AllChatPermissions());
     }
 
     public void Reset()
     {
         Triage.Choice = ChatTriageChoice.InScope;
         Model.Reset();
+        Reads.Reset();
     }
 }
 
@@ -63,8 +73,12 @@ public sealed class ScriptedChatModel : IChatModel
 
     public int CallCount { get; private set; }
 
+    /// <summary>The name of a tool that the model calls once before it answers. Null means no tool call.</summary>
+    public string? ToolName { get; set; }
+
     public void Reset()
     {
+        ToolName = null;
         Answer = ChatTestData.Answer;
         ConcurrentStreamCount = 0;
         CallCount = 0;
@@ -75,6 +89,7 @@ public sealed class ScriptedChatModel : IChatModel
     public async IAsyncEnumerable<ChatModelChunk> StreamAsync(
         string systemPrompt,
         IReadOnlyList<ChatPromptMessage> history,
+        ChatTurnTools tools,
         [System.Runtime.CompilerServices.EnumeratorCancellation]
         CancellationToken cancellationToken
     )
@@ -91,8 +106,24 @@ public sealed class ScriptedChatModel : IChatModel
 
         await _allStarted.Task.WaitAsync(TimeSpan.FromSeconds(StartTimeoutSeconds), cancellationToken);
 
+        if (ToolName is not null)
+        {
+            var function = tools.Functions.Single(candidate => candidate.Name == ToolName);
+
+            await function.InvokeAsync(new Microsoft.Extensions.AI.AIFunctionArguments(), cancellationToken);
+        }
+
         yield return new ChatModelChunk { Text = Answer, InputTokens = 5, OutputTokens = 2 };
     }
 
     private static TaskCompletionSource NewSource() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+}
+
+/// <summary>Plays a token that holds the permission of every chat tool.</summary>
+public sealed class AllChatPermissions : IChatPermissions
+{
+    public IReadOnlyCollection<string> Read() =>
+        ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance)
+            .SelectMany(type => type.GetCustomAttribute<AgentToolAttribute>()!.Permissions)
+            .ToHashSet();
 }

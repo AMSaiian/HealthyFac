@@ -1,13 +1,17 @@
 using HealthyFac.Insights.Application.Chats;
+using HealthyFac.Insights.Application.Chats.Tools.Reads;
 using HealthyFac.Insights.Application.Chats.Turns;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats;
 
 [Collection(ChatTurnCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatSendTests(ChatTurnFixture fixture)
 {
     private const int RaceParticipantCount = 2;
@@ -18,7 +22,10 @@ public sealed class ChatSendTests(ChatTurnFixture fixture)
     public async Task Create_WithAnInScopeText_StoresTheChatAndReturnsTheCompletedReply()
     {
         var response = await _fixture.CreateAsync(
-            ChatTestData.OwnerId, ChatTestData.Question, [ChatSendTestData.Link(ChatTestData.MachineId)]);
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            [ChatSendTestData.Link(ChatTestData.MachineId)],
+            TestContext.Current.CancellationToken);
 
         var states = await _fixture.ListMessageStatesAsync(response.Chat.Id);
 
@@ -75,6 +82,7 @@ public sealed class ChatSendTests(ChatTurnFixture fixture)
             ChatTestData.CompanyId,
             turnCount: 1,
             arrange: running => running.AddTurn(ChatTestData.Question, [], _fixture.Time.GetUtcNow().UtcDateTime));
+
         _fixture.Time.Advance(TimeSpan.FromSeconds(seconds: 30));
 
         var act = () => _fixture.SendAsync(ChatTestData.OwnerId, chat.Id, ChatTestData.Question);
@@ -92,12 +100,14 @@ public sealed class ChatSendTests(ChatTurnFixture fixture)
             ChatTestData.CompanyId,
             turnCount: 1,
             arrange: running => running.AddTurn(ChatTestData.Question, [], _fixture.Time.GetUtcNow().UtcDateTime));
+
         _fixture.Time.Advance(TimeSpan.FromSeconds(seconds: 100));
 
         var response = await _fixture.SendAsync(ChatTestData.OwnerId, chat.Id, ChatTestData.Question);
 
         var states = await _fixture.ListMessageStatesAsync(chat.Id);
         response.Assistant.State.Should().Be(ChatMessageState.Completed);
+
         states.Select(state => state.State)
             .Should()
             .Equal(
@@ -132,12 +142,15 @@ public sealed class ChatSendTests(ChatTurnFixture fixture)
         _fixture.Fakes.Model.ConcurrentStreamCount = 2;
 
         var responses = await Task.WhenAll(
-            _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question),
-            _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question));
+            _fixture.CreateAsync(
+                ChatTestData.OwnerId, ChatTestData.Question, cancellationToken: TestContext.Current.CancellationToken),
+            _fixture.CreateAsync(
+                ChatTestData.OwnerId, ChatTestData.Question, cancellationToken: TestContext.Current.CancellationToken));
 
         responses.Select(response => response.Assistant.State)
             .Should()
             .OnlyContain(state => state == ChatMessageState.Completed);
+
         responses.Select(response => response.Chat.Id).Distinct().Should().HaveCount(expected: 2);
     }
 
@@ -146,9 +159,28 @@ public sealed class ChatSendTests(ChatTurnFixture fixture)
     {
         _fixture.Fakes.Triage.Choice = ChatTriageChoice.Malicious;
 
-        var response = await _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question);
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId, ChatTestData.Question, cancellationToken: TestContext.Current.CancellationToken);
 
         response.Chat.State.Should().Be(ChatState.Blocked);
         response.Assistant.Kind.Should().Be(ChatMessageKind.BlockedNotice);
+    }
+
+    [Fact]
+    public async Task Create_WhenTheModelCallsATool_StoresTheRunAndTheCallRowInTheFinalSave()
+    {
+        _fixture.Fakes.Model.ToolName = "search_machines";
+        _fixture.Fakes.Reads.MachinesAnswer = new SearchMachinesResponse { TotalCount = 0, Machines = [] };
+
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId, ChatTestData.Question, [], TestContext.Current.CancellationToken);
+
+        response.Assistant.State.Should().Be(ChatMessageState.Completed);
+        var calls = await _fixture.ReadAllToolCallsAsync();
+        var call = calls.Should().ContainSingle().Subject;
+        call.ToolName.Should().Be(expected: "search_machines");
+        call.Outcome.Should().Be(ToolCallOutcome.Succeeded);
+        var runCount = await _fixture.CountRunsAsync(call.RunId);
+        runCount.Should().Be(expected: 1);
     }
 }

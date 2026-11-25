@@ -843,6 +843,8 @@ services:
       ReverseProxy__Routes__core-invite-accept__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__telemetry__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__insights-chat-create__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
+      ReverseProxy__Routes__insights-chat-send__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__insights__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__document-blobs__Match__Hosts__0: api.${HEALTHYFAC_DOMAIN:-healthyfac.test}
       ReverseProxy__Routes__keycloak-token__Match__Hosts__0: auth.${HEALTHYFAC_DOMAIN:-healthyfac.test}

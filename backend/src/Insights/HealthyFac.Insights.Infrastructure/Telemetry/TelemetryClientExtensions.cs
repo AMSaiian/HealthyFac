@@ -3,6 +3,7 @@ using HealthyFac.Insights.Application.Signals;
 using HealthyFac.Shared.Infrastructure.Configuration;
 using HealthyFac.Shared.Infrastructure.Rpc;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
+using HealthyFac.Telemetry.Contracts.Definitions;
 using HealthyFac.Telemetry.Contracts.Signals;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,8 @@ public static class TelemetryClientExtensions
     {
         /// <summary>
         /// Registers the validated Telemetry client options, the named HTTP client, and the gRPC signals client with
-        /// retries, both with the service token and the actor headers, and the signal reader. The service must call
+        /// retries, both with the service token and the actor headers, the user clients of signals and definitions
+        /// with the exchanged token of the user and no actor headers, and the signal reader. The service must call
         /// <c>AddServiceTokens</c>, and the host must register the incoming token accessor.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
@@ -45,6 +47,20 @@ public static class TelemetryClientExtensions
                     options.ServiceConfig = GrpcClientConfigurations.CreateResilientServiceConfig())
                 .AddClientCredentialsToken()
                 .AddActorHeaders();
+
+            services.AddGrpcClient<TelemetrySignals.TelemetrySignalsClient>(
+                    TelemetryClientNames.User.Signals,
+                    ConfigureGrpcAddress)
+                .ConfigureChannel(options =>
+                    options.ServiceConfig = GrpcClientConfigurations.CreateResilientServiceConfig())
+                .AddUserDelegatedToken(TelemetryClientNames.UserToken.Audience, TelemetryClientNames.UserToken.Scope);
+
+            services.AddGrpcClient<TelemetryDefinitions.TelemetryDefinitionsClient>(
+                    TelemetryClientNames.User.Definitions,
+                    ConfigureGrpcAddress)
+                .ConfigureChannel(options =>
+                    options.ServiceConfig = GrpcClientConfigurations.CreateResilientServiceConfig())
+                .AddUserDelegatedToken(TelemetryClientNames.UserToken.Audience, TelemetryClientNames.UserToken.Scope);
 
             services.AddScoped<ITelemetrySignals, GrpcTelemetrySignals>();
 

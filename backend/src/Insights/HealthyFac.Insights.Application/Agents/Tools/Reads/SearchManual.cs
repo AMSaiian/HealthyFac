@@ -121,7 +121,14 @@ public sealed class SearchManualRequestHandler(
     )
     {
         var vectors = await _embedder.EmbedAsync([request.Query], cancellationToken);
-        var chunks = await FindChunksAsync(request, vectors[0], cancellationToken);
+
+        var chunks = await ManualChunkFinder.FindAsync(
+            _search,
+            request.CompanyId,
+            request.MachineId,
+            vectors[0],
+            _options.ManualSearchChunks,
+            cancellationToken);
 
         var lastSequence = await _dbContext.AgentToolCalls
             .Where(call => call.RunId == request.RunId)
@@ -150,30 +157,5 @@ public sealed class SearchManualRequestHandler(
         }
 
         return new SearchManualResponse { Passages = passages };
-    }
-
-    private async Task<IReadOnlyList<ManualChunk>> FindChunksAsync(
-        SearchManualRequest request,
-        float[] vector,
-        CancellationToken cancellationToken
-    )
-    {
-        var wanted = _options.ManualSearchChunks;
-        var asked = wanted;
-
-        while (true)
-        {
-            var found = await _search.SearchAsync(
-                request.CompanyId, request.MachineId, vector, asked, cancellationToken);
-
-            var kept = found.Where(chunk => !ManualChunkText.IsTitleOnly(chunk.Text)).Take(wanted).ToList();
-
-            if (kept.Count == wanted || found.Count < asked)
-            {
-                return kept;
-            }
-
-            asked += wanted;
-        }
     }
 }

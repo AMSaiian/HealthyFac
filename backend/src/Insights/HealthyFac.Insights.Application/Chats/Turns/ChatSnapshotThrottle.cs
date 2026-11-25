@@ -17,6 +17,9 @@ public sealed class ChatSnapshotThrottle
     private readonly Guid _chatId;
     private readonly Guid _messageId;
 
+    /// <summary>
+    /// Creates the throttle of one reply that streams.
+    /// </summary>
     /// <param name="notifier">Pushes the snapshot.</param>
     /// <param name="timeProvider">The clock of the interval.</param>
     /// <param name="interval">The shortest time between 2 pushes.</param>
@@ -43,6 +46,7 @@ public sealed class ChatSnapshotThrottle
     private long? _lastPushTimestamp;
     private int _sequence;
     private bool _isPending;
+    private string? _activity;
 
     /// <summary>The full text that the throttle collected.</summary>
     public string Text => _text.ToString();
@@ -59,11 +63,24 @@ public sealed class ChatSnapshotThrottle
         }
 
         _text.Append(piece);
+        _activity = null;
         _isPending = true;
+
         if (_lastPushTimestamp is null || _timeProvider.GetElapsedTime(_lastPushTimestamp.Value) >= _interval)
         {
             Push();
         }
+    }
+
+    /// <summary>
+    /// Sets the activity of the snapshots and pushes a snapshot at once. A tool call takes long, so the push is rare.
+    /// The next piece of text clears the activity.
+    /// </summary>
+    /// <param name="activity">The value text of the tool group.</param>
+    public void SetActivity(string activity)
+    {
+        _activity = activity;
+        Push();
     }
 
     /// <summary>
@@ -82,6 +99,7 @@ public sealed class ChatSnapshotThrottle
         _sequence++;
         _lastPushTimestamp = _timeProvider.GetTimestamp();
         _isPending = false;
+
         _notifier.AddChatTurnUpdate(
             _ownerUserId,
             new ChatTurnUpdate
@@ -90,7 +108,9 @@ public sealed class ChatSnapshotThrottle
                 MessageId = _messageId,
                 Sequence = _sequence,
                 Text = _text.ToString(),
+                Activity = _activity,
             });
+
         _notifier.Push();
     }
 }

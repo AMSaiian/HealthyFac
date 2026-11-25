@@ -9,6 +9,7 @@ using HealthyFac.Insights.Application.Agents.Runs;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
 using HealthyFac.Insights.Application.Agents.Triage;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Documents;
 using HealthyFac.Insights.Application.Extraction;
@@ -22,6 +23,7 @@ using HealthyFac.Insights.Infrastructure.Agents.Runs;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Chats.Models;
+using HealthyFac.Insights.Infrastructure.Chats.Reads;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.Insights.Infrastructure.Database.Initialization;
@@ -153,6 +155,7 @@ public static class ConfigureServices
             services.AddScoped<AgentRunClaims>();
             services.AddScoped<IAgentRunLease, AgentRunLease>();
             services.AddSingleton<IAdvisorScopes, AdvisorScopes>();
+            services.AddScoped<IChatReads, GrpcChatReads>();
             services.AddSingleton<IAgentPrompts, EmbeddedAgentPrompts>();
 
             services.AddSingleton<ITriageModel>(provider => new GeminiTriageModel(

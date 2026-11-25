@@ -10,6 +10,10 @@ public static class AgentMessages
 
     public const string ValueNotPositive = "Every Insights:Agent value must be above 0.";
     public const string RunIdRequired = "RunId is required.";
+
+    public const string ChatToolsNeedUserScopes =
+        "The chat tools need the scopes of the user and never the advisor scopes.";
+
     public const string RunHasNoMachine = "The run has no machine.";
     public const string RunHasNoCase = "The run has no case.";
     public const string CompanyIdRequired = "CompanyId is required.";

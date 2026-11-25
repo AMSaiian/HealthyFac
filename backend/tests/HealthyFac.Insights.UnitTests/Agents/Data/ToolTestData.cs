@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
@@ -21,14 +22,22 @@ public static class ToolTestData
     public const string RejectedToolName = "always_rejected";
     public const string FailedToolName = "always_failed";
     public const string EpisodeToolName = "echo_episode";
+    public const string ChatEmployeesToolName = "search_employees";
+    public const string ChatMachinesToolName = "search_machines";
+    public const string ChatNoAnswerToolName = "report_no_answer";
+    public const string OutageToolName = "screen_outage";
     public const string DownstreamFailureText = "The downstream service is unavailable.";
     public const string ForeignGuidText = "11111111-1111-1111-1111-111111111111";
 
     public static readonly Type[] ToolTypes =
     [
         typeof(EchoRequest), typeof(ExtractRequest), typeof(RejectedRequest), typeof(FailedRequest),
-        typeof(EpisodeRequest),
+        typeof(EpisodeRequest), typeof(ChatEmployeesRequest), typeof(ChatMachinesRequest),
+        typeof(ChatNoAnswerRequest), typeof(OutageRequest),
     ];
+
+    public static readonly string[] AllChatToolNames =
+        [ChatEmployeesToolName, ChatMachinesToolName, ChatNoAnswerToolName];
 }
 
 public sealed record EchoArguments(string Text);
@@ -137,6 +146,7 @@ public sealed class TestAdvisorScopes : IAdvisorScopes
         .AddSingleton<IRequestHandler<RejectedRequest, EchoResponse>, RejectedHandler>()
         .AddSingleton<IRequestHandler<FailedRequest, EchoResponse>, FailedHandler>()
         .AddSingleton<IRequestHandler<EpisodeRequest, EpisodeResponse>, EpisodeHandler>()
+        .AddSingleton<IRequestHandler<OutageRequest, EchoResponse>, OutageHandler>()
         .BuildServiceProvider();
 
     public Guid LastCompanyId { get; private set; }
@@ -147,4 +157,72 @@ public sealed class TestAdvisorScopes : IAdvisorScopes
 
         return _provider.CreateScope();
     }
+}
+
+public sealed class ChatEmployeesHandler : IRequestHandler<ChatEmployeesRequest, EchoResponse>
+{
+    public int Calls { get; private set; }
+
+    public Exception? Failure { get; init; }
+
+    public Task<EchoResponse> HandleAsync(
+        ChatEmployeesRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    )
+    {
+        Calls++;
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
+        return Task.FromResult(new EchoResponse(Guid.Empty, Guid.Empty, string.Empty));
+    }
+}
+
+[AgentTool(
+    role: "chat",
+    ToolTestData.ChatEmployeesToolName,
+    Permissions = ["employees:read"],
+    Activity = "people")]
+public sealed record ChatEmployeesRequest : IAgentToolRequest<ChatEmployeesRequest, EchoArguments, EchoResponse>
+{
+    public static ChatEmployeesRequest Create(EchoArguments arguments, ToolContext context) => new();
+}
+
+[AgentTool(
+    role: "chat",
+    ToolTestData.ChatMachinesToolName,
+    Permissions = ["machines:read", "metric-definitions:read"],
+    Activity = "machines")]
+public sealed record ChatMachinesRequest : IAgentToolRequest<ChatMachinesRequest, EchoArguments, EchoResponse>
+{
+    public static ChatMachinesRequest Create(EchoArguments arguments, ToolContext context) => new();
+}
+
+[AgentTool(role: "chat", ToolTestData.ChatNoAnswerToolName)]
+public sealed record ChatNoAnswerRequest : IAgentToolRequest<ChatNoAnswerRequest, EchoArguments, EchoResponse>
+{
+    public static ChatNoAnswerRequest Create(EchoArguments arguments, ToolContext context) => new();
+}
+
+public sealed class TestUserScopes : IToolScopes
+{
+    public IServiceScope Create(Guid companyId) => new ServiceCollection().BuildServiceProvider().CreateScope();
+}
+
+[AgentTool(role: "screener", ToolTestData.OutageToolName)]
+[LocalTool]
+public sealed record OutageRequest : IAgentToolRequest<OutageRequest, EchoArguments, EchoResponse>
+{
+    public static OutageRequest Create(EchoArguments arguments, ToolContext context) => new();
+}
+
+public sealed class OutageHandler : IRequestHandler<OutageRequest, EchoResponse>
+{
+    public Task<EchoResponse> HandleAsync(
+        OutageRequest request,
+        CancellationToken cancellationToken = default(CancellationToken)
+    ) =>
+        throw new ProviderUnavailableException(ToolTestData.DownstreamFailureText, new InvalidOperationException());
 }

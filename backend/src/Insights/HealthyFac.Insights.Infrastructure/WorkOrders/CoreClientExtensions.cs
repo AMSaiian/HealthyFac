@@ -1,4 +1,7 @@
 using Grpc.Net.ClientFactory;
+using HealthyFac.Core.Contracts.Employees;
+using HealthyFac.Core.Contracts.Machines;
+using HealthyFac.Core.Contracts.Schedules;
 using HealthyFac.Core.Contracts.WorkOrders;
 using HealthyFac.Insights.Application.WorkOrders;
 using HealthyFac.Shared.Infrastructure.Configuration;
@@ -19,8 +22,9 @@ public static class CoreClientExtensions
     {
         /// <summary>
         /// Registers the validated Core client options, the gRPC work order client with retries, the service token and
-        /// the actor headers, and the work order reader. The service must call <c>AddServiceTokens</c>, and the host
-        /// must register the incoming token accessor.
+        /// the actor headers, the user clients (machines, work orders, employees, and schedules, with the exchanged
+        /// token of the user and no actor headers), and the work order reader. The service must call
+        /// <c>AddServiceTokens</c>, and the host must register the incoming token accessor.
         /// </summary>
         /// <param name="configuration">The application <see cref="IConfiguration"/> instance.</param>
         /// <returns>The updated <see cref="IServiceCollection"/> instance for method chaining.</returns>
@@ -36,11 +40,23 @@ public static class CoreClientExtensions
                 .AddClientCredentialsToken()
                 .AddActorHeaders();
 
+            AddUserClient<CoreMachines.CoreMachinesClient>(services, CoreClientNames.User.Machines);
+            AddUserClient<CoreWorkOrders.CoreWorkOrdersClient>(services, CoreClientNames.User.WorkOrders);
+            AddUserClient<CoreEmployees.CoreEmployeesClient>(services, CoreClientNames.User.Employees);
+            AddUserClient<CoreSchedules.CoreSchedulesClient>(services, CoreClientNames.User.Schedules);
+
             services.AddScoped<IWorkOrderCatalog, CoreWorkOrderCatalog>();
 
             return services;
         }
     }
+
+    private static void AddUserClient<TClient>(IServiceCollection services, string name)
+        where TClient : class =>
+        services.AddGrpcClient<TClient>(name, ConfigureGrpcAddress)
+            .ConfigureChannel(options =>
+                options.ServiceConfig = GrpcClientConfigurations.CreateResilientServiceConfig())
+            .AddUserDelegatedToken(CoreClientNames.UserToken.Audience, CoreClientNames.UserToken.Scope);
 
     private static void ConfigureGrpcAddress(IServiceProvider provider, GrpcClientFactoryOptions options)
     {

@@ -1,12 +1,20 @@
+using HealthyFac.Insights.Application.Agents.Tools;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Infrastructure.Agents.Prompts;
+using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Chats.Models;
+using HealthyFac.Insights.UnitTests.Agents.Data;
+using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
@@ -52,10 +60,13 @@ public sealed class RecordingChatTurnSaves : IChatTurnSaves
 
     public bool? WasTokenCancelable { get; private set; }
 
-    public Task SaveAsync(AgentRun run, CancellationToken cancellationToken)
+    public IReadOnlyList<AgentToolCall> ToolCalls { get; private set; } = [];
+
+    public Task SaveAsync(AgentRun run, IReadOnlyList<AgentToolCall> toolCalls, CancellationToken cancellationToken)
     {
         SaveCount++;
         Run = run;
+        ToolCalls = toolCalls;
         WasTokenCancelable = cancellationToken.CanBeCanceled;
 
         return Task.CompletedTask;
@@ -93,8 +104,15 @@ public sealed class RecordingRealtimeNotifier : IRealtimeNotifier
 
 public sealed class TurnRunnerFixture
 {
-    public TurnRunnerFixture(Action<Chat>? arrange = null)
+    public TurnRunnerFixture(Action<Chat>? arrange = null, int maxToolCalls = 8, Exception? toolFailure = null)
     {
+        State = new ChatTurnState();
+        var provider = new ServiceCollection()
+            .AddSingleton<IRequestHandler<ChatEmployeesRequest, EchoResponse>>(
+                new ChatEmployeesHandler { Failure = toolFailure })
+            .AddSingleton<IRequestHandler<ReportNoAnswerToolRequest, ReportNoAnswerResponse>>(
+                new ReportNoAnswerToolRequestHandler(State))
+            .BuildServiceProvider();
         Time = new FakeTimeProvider(ChatTestData.Now);
         Client = new ScriptedChatClient();
         Triage = new ScriptedChatTriageModel();
@@ -120,10 +138,23 @@ public sealed class TurnRunnerFixture
             new EmbeddedAgentPrompts(),
             Saves,
             Notifier,
-            Options.Create(new ChatTurnOptions()),
+            Options.Create(new ChatTurnOptions { MaxToolCalls = maxToolCalls }),
             Time,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<ChatTurnRunner>.Instance);
+            Logger,
+            new ToolRegistry(
+                new TestAdvisorScopes(),
+                [typeof(ChatEmployeesRequest), typeof(ReportNoAnswerToolRequest)],
+                Logger,
+                new AgentJson(new PrefixIdEncryptor())),
+            new ChatToolScopes(provider),
+            new FixedChatPermissions(["employees:read"]),
+            new FunctionToolCallIds(),
+            State);
     }
+
+    public ChatTurnState State { get; }
+
+    public Microsoft.Extensions.Logging.Testing.FakeLogger<ChatTurnRunner> Logger { get; } = new();
 
     public FakeTimeProvider Time { get; }
 
@@ -155,6 +186,11 @@ public static class ChatTurnRunnerTestData
 
     public static ChatResponseUpdate Piece(string text) => new(ChatRole.Assistant, text);
 
+    public static ChatResponseUpdate ToolCall(string callId, string toolName = ToolTestData.ChatEmployeesToolName) =>
+        new(
+            ChatRole.Assistant,
+            [new FunctionCallContent(callId, toolName, new Dictionary<string, object?> { [key: "text"] = "x" })]);
+
     public static ChatResponseUpdate Usage(int input, int output) =>
         new()
         {
@@ -164,4 +200,11 @@ public static class ChatTurnRunnerTestData
     public static ChatResponseUpdate Length() => new() { FinishReason = ChatFinishReason.Length };
 
     public static ProviderUnavailableException Unavailable() => new(message: "down", new InvalidOperationException());
+}
+
+public sealed class FixedChatPermissions(IReadOnlyCollection<string> permissions) : IChatPermissions
+{
+    private readonly IReadOnlyCollection<string> _permissions = permissions;
+
+    public IReadOnlyCollection<string> Read() => _permissions;
 }

@@ -28,6 +28,8 @@ message MetricDefinition {
   optional double min = 5;
   optional double max = 6;
   repeated string states = 7;
+  // The ID of the definition as a plain GUID in text. The history read of a metric needs it.
+  string id = 8;
 }
 
 // The severity is one of "info", "warning", and "error".

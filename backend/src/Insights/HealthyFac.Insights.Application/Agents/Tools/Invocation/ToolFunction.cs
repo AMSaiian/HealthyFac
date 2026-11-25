@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
+using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
@@ -36,14 +38,14 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
 
     private readonly JsonSerializerOptions _json;
     private readonly AgentToolAttribute _tool;
-    private readonly IAdvisorScopes _scopes;
+    private readonly IToolScopes _scopes;
     private readonly ToolContext _context;
     private readonly ILogger _logger;
     private readonly JsonElement _schema;
 
     public ToolFunction(
         AgentToolAttribute tool,
-        IAdvisorScopes scopes,
+        IToolScopes scopes,
         ToolContext context,
         ILogger logger,
         IAgentJson json
@@ -54,7 +56,10 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         _scopes = scopes;
         _context = context;
         _logger = logger;
-
+        AdditionalProperties = new Dictionary<string, object?>
+        {
+            [AgentToolAttribute.ActivityProperty] = tool.Activity,
+        };
         _schema = AIJsonUtilities.CreateJsonSchema(
             typeof(TArguments),
             _tool.Description,
@@ -69,6 +74,8 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
     public override JsonElement JsonSchema => _schema;
 
     public override JsonSerializerOptions JsonSerializerOptions => _json;
+
+    public override IReadOnlyDictionary<string, object?> AdditionalProperties { get; }
 
     protected override async ValueTask<object?> InvokeCoreAsync(
         AIFunctionArguments arguments,
@@ -98,9 +105,17 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         catch (ProviderUnavailableException exception) when (!cancellationToken.IsCancellationRequested)
         {
             LogFailure(exception);
-            _context.ReadFailures.RecordOutage(exception);
-            outage = exception;
-            (outcome, result) = (ToolCallOutcome.Failed, FailedText);
+
+            if (_tool.Role == AgentRole.Chat.Value)
+            {
+                (outcome, result) = (ToolCallOutcome.Failed, ChatToolErrors.ServiceUnavailable);
+            }
+            else
+            {
+                _context.ReadFailures.RecordOutage(exception);
+                outage = exception;
+                (outcome, result) = (ToolCallOutcome.Failed, FailedText);
+            }
         }
         catch (Exception exception) when (exception is IRejection)
         {

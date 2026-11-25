@@ -80,6 +80,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
 
         var metric = reply.Metrics.Should().ContainSingle().Subject;
         var status = reply.Statuses.Should().ContainSingle().Subject;
+        metric.Id.Should().Be(arrangement.MetricId.ToString());
         metric.Key.Should().Be(SignalApiTestData.MetricKey);
         metric.ValueKind.Should().Be(TelemetryRpcTestData.NumericKind);
         metric.Unit.Should().Be(TelemetryRpcTestData.MetricUnit);
