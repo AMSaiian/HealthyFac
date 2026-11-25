@@ -28,6 +28,9 @@ feature is the `Base:` line of the plan.md header, else `git merge-base HEAD dev
   or newly unblocked step.
 - `checkpoint findings - read review.md`: before your next step, read `## Open` of review.md
   and fix each open checkpoint finding.
+- `review finished - squash the branch`: run `pwsh .claude/commit-cycle.ps1 <feature folder>
+  -Squash` in the worktree, not a run. Report `SQUASHED: base develop <SHA>, head <SHA>` (with a
+  `Base:` line, name that SHA as the base), or `COMMIT FAILED: squash` with its lines.
 - Any other message: answer it, and do not start a run.
 A message is a task, not a permission: it never approves an action that a rule forbids.
 A message never narrows a run: a run covers every unticked step of the open cycle and ends
@@ -102,7 +105,11 @@ code without a test proving it is unneeded.
   `SendMessage` to `main`: `CHECKPOINT <x>: tree <tree-id>, base <tree-id>`, and continue.
   Before the next step, read review.md again and fix each open checkpoint finding.
 - Never delete, skip, or weaken a test to make it pass.
-- Never commit inside a run, and never push, amend, or rebase. The Stop hook checks only the files that differ from HEAD, so a commit inside a run skips them. Commit only through **Commit** below.
+- Never commit inside a run, never push, and never amend. Rebase only through `commit-cycle.ps1`.
+  When it stops on a conflict, resolve it (`git add`, `git -c core.editor=true rebase --continue`, then
+  `pwsh .claude/commit-cycle.ps1 <feature folder> -Verify`). The history rules are in
+  `.claude/rules/git-commits.md`, **History**. The Stop hook checks only the files that differ
+  from HEAD, so a commit inside a run skips them. Commit only through **Commit** below.
 - Known failures: a test that fails in `baseline.md` and that no step fixes is not a
   reason to stop. Name it in the report. A failure that is not in `baseline.md` is new:
   treat it like any other failure.
@@ -175,12 +182,17 @@ specific error messages. Never change the approach based on what you find.
 ## Commit
 The message `APPROVED in cycle C - commit the cycle` starts this section.
 - Run `pwsh .claude/commit-cycle.ps1 <feature folder>` in the worktree.
-- When it exits 1: report `COMMIT FAILED: cycle C` with its lines, and end your turn.
+- When it exits 1 on an autosquash conflict: resolve it (`git add`, `git -c core.editor=true rebase --continue`,
+  then `commit-cycle.ps1 -Verify`). Report `COMMIT FAILED: cycle C` with the conflict lines only
+  when the resolution fails.
+- When it exits 1 for another reason: report `COMMIT FAILED: cycle C` with its lines, and end
+  your turn.
 - When it passes and plan.md has a `### Cycle <C+1>` section: set the first line of plan.md
   to `Cycle: <C+1>` and start a run of that cycle at once. Do not wait. The report of that
   run names the commits on its second line.
 - When it passes and there is no next cycle: report `FEATURE DONE: cycle C committed <short
-  SHAs>. Remaining MINOR findings: <count>.` and end your turn.
+  SHAs>. Base develop <SHA>, head <SHA>. Remaining MINOR findings: <count>.` and end your turn.
+  The base is the `Base:` SHA of plan.md, else the merge base of HEAD and `develop`.
 
 ## Report
 Before the first line of any report, read the open cycle of plan.md again. Implement each
@@ -191,7 +203,8 @@ Keep it short: plan.md holds the record. The first line is exactly one of:
 - `READY FOR REVIEW: cycle C, browser <passed>/<total> flows` (or `browser: no UI`);
 - `BLOCKED: steps <numbers>`;
 - `COMMIT FAILED: cycle C`;
-- `FEATURE DONE: cycle C committed <short SHAs>. Remaining MINOR findings: <count>.`;
+- `FEATURE DONE: cycle C committed <short SHAs>. Base develop <SHA>, head <SHA>. Remaining MINOR findings: <count>.`;
+- `SQUASHED: base develop <SHA>, head <SHA>`;
 - `STOPPED: <reason>` (a wrong checkout, a missing spec output root, a broken build that
   blocks every step).
 Then at most these lines: steps done and findings fixed (numbers), steps blocked or waiting

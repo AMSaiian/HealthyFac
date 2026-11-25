@@ -29,7 +29,11 @@
 #   and without a keycloak-theme change.
 # - commit-cycle: an approved cycle is committed as one commit for each group (tooling, docs, code) with the subject
 #   only, nothing is pushed, a rerun makes no commit; each refusal (no APPROVE, another cycle, a changed tree, a changed
-#   file without a Commit line, a Commit line without a changed file, a bad subject) changes nothing.
+#   file without a Commit line, a Commit line without a changed file, a bad subject) changes nothing; a Fixup entry is
+#   committed with --fixup and folded by the autosquash (same tree, no fixup! commit); a fixup at or below the reviewed
+#   SHA stays; a Fixup subject with 0 or 2 matches, a conflict, -Verify, a changed tree, and -Squash.
+# - plan-sections and check-plan: the Fixup lines, the inline fix entries, the reviewed mark, and each Fixup problem.
+# - check-review-routing: a Scope: branch review routes branch approved and branch findings.
 # Red: run it with -ScriptsDir <folder of empty stubs> to see each case fail first.
 # Run:  pwsh .claude/tests/flow-scripts.tests.ps1 [-ScriptsDir <folder>]
 # It exits 1 when a check fails.
@@ -163,7 +167,9 @@ function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
   $cycle1Commits = if ($null -ne $change.Cycle1Commits) { $change.Cycle1Commits } else { @('Commit code: feature(sample): added a') }
   $cycle2Commits = if ($null -ne $change.Cycle2Commits) { $change.Cycle2Commits } else { @('Commit code: feature(sample): added b') }
   $firstLine = if ($change.FirstLine) { $change.FirstLine } else { 'Cycle: 2' }
-  $planLines = @($firstLine, '', '# Plan', '', '### Cycle 1', '')
+  $planLines = @($firstLine)
+  if ($change.HeaderLines) { $planLines += $change.HeaderLines }
+  $planLines += '', '# Plan', '', '### Cycle 1', ''
   $planLines += $specLine1
   $planLines += $cycle1Commits
   if ($change.Cycle1Lines) { $planLines += $change.Cycle1Lines }
@@ -173,11 +179,16 @@ function New-PlanFolder([string] $name, [hashtable] $change = @{}) {
   $planLines += $cycle2Commits
   if ($change.Cycle2Lines) { $planLines += $change.Cycle2Lines }
   $planLines += ''
-  $planLines += "- [ ] $step2", "    *   Files: $step2Files"
+  $step2Mark = if ($change.Step2Mark) { $change.Step2Mark } else { ' ' }
+  $planLines += "- [$step2Mark] $step2", "    *   Files: $step2Files"
+  if ($change.Step2Fixup) { $planLines += "    *   Fixup: $($change.Step2Fixup)" }
   if ($change.Step2Look) { $planLines += "    *   Look: $($change.Step2Look)" }
   if ($change.Step2Verify) { $planLines += "    *   Verify: $($change.Step2Verify)" }
+  if ($change.Step3Files) { $planLines += '', '- [ ] Step 3: Do the third thing.', "    *   Files: $($change.Step3Files)" }
+  if ($change.Step3Fixup) { $planLines += "    *   Fixup: $($change.Step3Fixup)" }
   $planLines += ''
   if (-not $change.NoCycle2Deviations) { $planLines += '#### Deviations', '' }
+  if ($change.DeviationLines) { $planLines += $change.DeviationLines }
   $planLines += '## Acceptance Criteria Map', '', '| AC | Steps |', '| --- | --- |', '| AC1, AC2 | 1 |'
   if (-not $change.DropAc3Row) { $planLines += '| AC3 | 2 |' }
   Set-Content (Join-Path $folder 'spec.md') $specLines
@@ -301,6 +312,103 @@ $unquotedNone = Invoke-Script 'check-plan.ps1' @((New-PlanFolder 'plan-none-unqu
 Assert-That ($singleNone.Exit -eq 0 -and $otherNone.Exit -eq 0 -and $unquotedNone.Exit -eq 0) `
   'one Browser check: none reason, another reason per cycle, and an unquoted reason pass'
 
+function New-FixupRepo([string] $name) {
+  $dir = New-Repo $name
+  Set-Content (Join-Path $dir 'a.txt') 'a'
+  Save-Commit $dir 'base'
+  git -C $dir branch develop
+  git -C $dir checkout -q -b feature
+  Add-Content (Join-Path $dir 'a.txt') 'b'
+  Save-Commit $dir 'feature(sample): added a'
+  return $dir
+}
+
+function Invoke-PlanInRepo([string] $name, [hashtable] $change, [string] $repo) {
+  return Invoke-Script 'check-plan.ps1' @((New-PlanFolder $name $change), '-Repo', $repo)
+}
+
+$fixupRepo = New-FixupRepo 'fixup-repo'
+$fixupOk = Invoke-PlanInRepo 'plan-fixup-ok' @{ Step2Fixup = 'feature(sample): added a' } $fixupRepo
+Assert-That ($fixupOk.Exit -eq 0 -and $fixupOk.Output.Count -eq 0) 'a Fixup step whose subject matches one commit passes'
+
+$fixupNone = Invoke-PlanInRepo 'plan-fixup-none' @{ Step2Fixup = 'feature(sample): added z' } $fixupRepo
+Assert-That ($fixupNone.Exit -eq 1 -and $fixupNone.Output.Count -eq 1 -and
+  $fixupNone.Output[0] -like "Cycle 2: Step 2: the Fixup subject 'feature(sample): added z' matches no commit of *..HEAD.") `
+  'a Fixup subject that matches no commit fails with its line'
+
+$fixupTwice = New-FixupRepo 'fixup-repo-twice'
+Add-Content (Join-Path $fixupTwice 'a.txt') 'c'
+Save-Commit $fixupTwice 'feature(sample): added a'
+$fixupMany = Invoke-PlanInRepo 'plan-fixup-many' @{ Step2Fixup = 'feature(sample): added a' } $fixupTwice
+Assert-That ($fixupMany.Exit -eq 1 -and $fixupMany.Output.Count -eq 1 -and
+  $fixupMany.Output[0] -like "Cycle 2: Step 2: the Fixup subject 'feature(sample): added a' matches 2 commits of *..HEAD.") `
+  'a Fixup subject that matches 2 commits fails with its line'
+
+$fixupShared = Invoke-PlanInRepo 'plan-fixup-shared' @{
+  Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Step3Files = '`src/b.cs`' } $fixupRepo
+Assert-That ($fixupShared.Exit -eq 1 -and $fixupShared.Output.Count -eq 1 -and
+  $fixupShared.Output[0] -eq 'Cycle 2: Step 2: src/b.cs is in a Fixup step and in Step 3 without Fixup.') `
+  'a path in a Fixup step and in a step without Fixup fails with its line'
+
+$fixupOtherFile = Invoke-PlanInRepo 'plan-fixup-other' @{
+  Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Step3Files = '`src/c.cs`' } $fixupRepo
+Assert-That ($fixupOtherFile.Exit -eq 0 -and $fixupOtherFile.Output.Count -eq 0) 'a Fixup step and a plain step with different files pass'
+
+$headSha = git -C $fixupRepo rev-parse HEAD
+$markOk = Invoke-PlanInRepo 'plan-mark-ok' @{ HeaderLines = @("Reviewed by Artur: $headSha") } $fixupRepo
+Assert-That ($markOk.Exit -eq 0 -and $markOk.Output.Count -eq 0) 'a Reviewed by Artur SHA that is an ancestor of HEAD passes'
+$otherSha = '0123456789012345678901234567890123456789'
+$markBad = Invoke-PlanInRepo 'plan-mark-bad' @{ HeaderLines = @("Reviewed by Artur: $otherSha") } $fixupRepo
+Assert-That ($markBad.Exit -eq 1 -and $markBad.Output.Count -eq 1 -and
+  $markBad.Output[0] -eq "plan.md: the Reviewed by Artur SHA $otherSha is no ancestor of HEAD.") `
+  'a Reviewed by Artur SHA that is no ancestor of HEAD fails with its line'
+
+# A cancelled Fixup step is no fixup entry (Step 68).
+$cancelledPlan = Invoke-PlanInRepo 'plan-fixup-cancelled' @{
+  Step2Mark = '~'; Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Step3Files = '`src/b.cs`' } $fixupRepo
+Assert-That ($cancelledPlan.Exit -eq 0 -and $cancelledPlan.Output.Count -eq 0) `
+  'a cancelled Fixup step and a plain replacing step with the same file report no shared path'
+
+# A cycle of only fixup steps needs no Commit line. Step 62.
+$fixupOnly = Invoke-PlanInRepo 'plan-fixup-only' @{ Step2Fixup = 'feature(sample): added a'; Cycle2Commits = @() } $fixupRepo
+Assert-That ($fixupOnly.Exit -eq 0 -and $fixupOnly.Output.Count -eq 0) 'a cycle of only Fixup steps without a Commit line passes'
+$fixupAndPlain = Invoke-PlanInRepo 'plan-fixup-plain-nocommit' @{
+  Step2Fixup = 'feature(sample): added a'; Step3Files = '`src/c.cs`'; Cycle2Commits = @() } $fixupRepo
+Assert-That ($fixupAndPlain.Exit -eq 1 -and $fixupAndPlain.Output.Count -eq 1 -and $fixupAndPlain.Output[0] -eq 'Cycle 2: no Commit line.') `
+  'a cycle with a Fixup step and a plain step without a Commit line fails'
+$fixupBadCommit = Invoke-PlanInRepo 'plan-fixup-bad-commit' @{
+  Step2Fixup = 'feature(sample): added a'; Cycle2Commits = @('Commit code: Feature(sample): Bad') } $fixupRepo
+Assert-That ($fixupBadCommit.Exit -eq 1 -and $fixupBadCommit.Output.Count -eq 1 -and $fixupBadCommit.Output[0] -like "*is not '<feature|bug>*") `
+  'a fixup-only cycle with a bad Commit line still reports the Commit line problem'
+
+# A path claimed by two fixup entries. Step 64.
+$fixupTwoSubjects = New-FixupRepo 'fixup-repo-two-subjects'
+Add-Content (Join-Path $fixupTwoSubjects 'a.txt') 'z'
+Save-Commit $fixupTwoSubjects 'feature(sample): added z'
+$twoEntries = Invoke-PlanInRepo 'plan-fixup-two-entries' @{
+  Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Step3Files = '`src/b.cs`'
+  Step3Fixup = 'feature(sample): added z'; Cycle2Commits = @() } $fixupTwoSubjects
+Assert-That ($twoEntries.Exit -eq 1 -and $twoEntries.Output.Count -eq 1 -and
+  $twoEntries.Output[0] -eq "Cycle 2: src/b.cs is in the Fixup entries of 'feature(sample): added a' and 'feature(sample): added z'.") `
+  'a path in two Fixup steps with different subjects fails with its line'
+$sameEntries = Invoke-PlanInRepo 'plan-fixup-same-entries' @{
+  Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Step3Files = '`src/b.cs`'
+  Step3Fixup = 'feature(sample): added a'; Cycle2Commits = @() } $fixupTwoSubjects
+Assert-That ($sameEntries.Exit -eq 0 -and $sameEntries.Output.Count -eq 0) 'two Fixup steps with the same subject and the same path pass'
+$inlineVsPlain = Invoke-PlanInRepo 'plan-inline-plain' @{
+  Step3Files = '`src/c.cs`'
+  DeviationLines = @('*   Inline fix 1: changed c. Fixup: feature(sample): added a; files: `src/c.cs`') } $fixupTwoSubjects
+Assert-That ($inlineVsPlain.Exit -eq 1 -and $inlineVsPlain.Output.Count -eq 1 -and
+  $inlineVsPlain.Output[0] -eq 'Cycle 2: src/c.cs is in an inline fix with Fixup and in Step 3 without Fixup.') `
+  'a path in an inline fix with Fixup and in a plain step fails with its line'
+$inlineVsStep = Invoke-PlanInRepo 'plan-inline-step' @{
+  Step2Fixup = 'feature(sample): added a'; Step2Files = '`src/b.cs`'; Cycle2Commits = @()
+  DeviationLines = @('*   Inline fix 1: changed b. Fixup: feature(sample): added z; files: `src/b.cs`') } $fixupTwoSubjects
+Assert-That ($inlineVsStep.Exit -eq 1 -and $inlineVsStep.Output.Count -eq 1 -and
+  $inlineVsStep.Output[0] -eq "Cycle 2: src/b.cs is in the Fixup entries of 'feature(sample): added a' and 'feature(sample): added z'.") `
+  'a path in a Fixup step and in an inline fix with another subject fails with its line'
+
+
 # --- plan-sections ---------------------------------------------------------------------------------------------
 Write-Host 'plan-sections'
 . (Join-Path $ScriptsDir 'plan-sections.ps1')
@@ -337,6 +445,33 @@ foreach ($case in @(
   $problems = @(Get-CommitProblems $case[1])
   Assert-That ($problems.Count -eq 1 -and $problems[0] -like "*$($case[2])*") "Get-CommitProblems reports $($case[0])"
 }
+
+$fixupSteps = @(
+  [pscustomobject]@{ Number = '3'; Mark = ' '; Lines = @('- [ ] Step 3: Fix a.', '    *   Files: `a/b.cs`, `a/c.cs` (new).',
+      '    *   Fixup: feature(setup): added a') },
+  [pscustomobject]@{ Number = '4'; Mark = ' '; Lines = @('- [ ] Step 4: Plain.', '    *   Files: `d.cs`.') })
+$fixups = @(Get-StepFixups $fixupSteps)
+Assert-That ($fixups.Count -eq 1 -and $fixups[0].Step -eq '3' -and $fixups[0].Subject -eq 'feature(setup): added a' -and
+  @($fixups[0].Files).Count -eq 2 -and $fixups[0].Files[0] -eq 'a/b.cs' -and $fixups[0].Files[1] -eq 'a/c.cs') `
+  'Get-StepFixups returns the step, subject, and both files of a Fixup step and none for a plain step'
+$inlineFixups = @(Get-InlineFixups @('*   Inline fix 1: changed x. Fixup: feature(setup): added a; files: `a/b.cs`, `c.cs`',
+    '*   Inline fix 2: changed y.', 'other line'))
+Assert-That ($inlineFixups.Count -eq 1 -and $inlineFixups[0].Subject -eq 'feature(setup): added a' -and
+  @($inlineFixups[0].Files).Count -eq 2 -and $inlineFixups[0].Files[1] -eq 'c.cs') `
+  'Get-InlineFixups returns the subject and files of an inline fix entry with Fixup:'
+$wrappedFixups = @(Get-InlineFixups @('*   Inline fix 1: changed x and y in a long entry that wraps', '    over the second line. Fixup: feature(setup): added a;',
+    '    files: `a/b.cs`, `c.cs`', '*   Inline fix 2: changed z. Fixup: feature(setup): added b; files: `d.cs`', 'continuation of fix 2 only'))
+Assert-That ($wrappedFixups.Count -eq 2 -and $wrappedFixups[0].Subject -eq 'feature(setup): added a' -and
+  @($wrappedFixups[0].Files).Count -eq 2 -and $wrappedFixups[0].Files[1] -eq 'c.cs' -and
+  $wrappedFixups[1].Subject -eq 'feature(setup): added b' -and @($wrappedFixups[1].Files).Count -eq 1) `
+  'Get-InlineFixups joins the continuation lines of an entry, and a continuation never joins the next entry'
+$cancelledSteps = @([pscustomobject]@{ Number = '3'; Mark = '~'; Lines = @('- [~] Step 3: Cancelled.', '    *   Files: `a.cs`',
+      '    *   Fixup: feature(setup): added a') })
+Assert-That (@(Get-StepFixups $cancelledSteps).Count -eq 0) 'Get-StepFixups skips a cancelled step'
+$markSha = 'a' * 40
+Assert-That ((Get-ReviewedMark @('Cycle: 1', "Reviewed by Artur: $markSha")) -eq $markSha) 'Get-ReviewedMark reads the SHA from the header'
+Assert-That ($null -eq (Get-ReviewedMark (@('Cycle: 1') + (1..25 | ForEach-Object { '' }) + @("Reviewed by Artur: $markSha")))) `
+  'Get-ReviewedMark ignores a mark below line 20'
 
 # --- check-handoff ---------------------------------------------------------------------------------------------
 Write-Host 'check-handoff'
@@ -559,7 +694,7 @@ Set-Content $oldReview @(
   'Cycle: 1', 'Round: 1', '', '# Review', '', '## Open Findings', '',
   '| Severity | [CODE] | [SPEC] |', '|---|---|---|', '| BLOCKER | 0 | 0 |', '| MAJOR | 1 | 0 |', '| MINOR | 0 | 0 |', '',
   'Verdict: CHANGES_REQUESTED')
-$oldLayout = Invoke-Script 'check-review-routing.ps1' @($oldReview)
+$oldLayout = Invoke-Script 'check-review-routing.ps1' @($oldReview, '-Scope', 'cycle')
 Assert-That ($oldLayout.Exit -eq 1 -and ($oldLayout.Output -join ' ') -match 'review.md has no "## Open" section') `
   'a review.md without "## Open" fails with its line'
 
@@ -570,8 +705,10 @@ function New-OpenReviewFile([string] $name, [hashtable] $change = @{}) {
   $status = if ($change.OpenReopened) { '*   Status: REOPENED (2)' } else { '*   Status: NEW' }
   $majorCode = if ($change.WrongTable) { 2 } elseif ($change.NoOpen) { 0 } else { 1 }
   $verdict = if ($change.Approve) { 'APPROVE' } else { 'CHANGES_REQUESTED' }
+  $scopeLine = if ($change.Branch) { 'Scope: branch' } else { '' }
+  $lateScope = if ($change.ScopeLate) { @('Scope: branch', '') } else { @() }
   $lines = @(
-    'Cycle: 1', 'Round: 2', 'Reviewed tree: 0123456789abcdef0123456789abcdef01234567', '', '# Review', '',
+    'Cycle: 1', 'Round: 2', 'Reviewed tree: 0123456789abcdef0123456789abcdef01234567', $scopeLine, '# Review', '') + $lateScope + @(
     '## Open', '') + $(if ($change.NoOpen) { @() } else { @($heading, $status, '*   Where: `src/a.cs:10`', '') }) + @(
     '## Closed', '', '*   F2 MINOR [SPEC] An old spec gap: REOPENED (2), then ACCEPTED (Artur, 2026-11-13).', '',
     '## Rounds', '', '*   Cycle 1, round 1: tree 0123456789abcdef0123456789abcdef01234567.', '',
@@ -581,29 +718,57 @@ function New-OpenReviewFile([string] $name, [hashtable] $change = @{}) {
   return $path
 }
 
-$openClean = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open'))
+$openClean = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open'), '-Scope', 'cycle')
 Assert-That ($openClean.Exit -eq 0 -and ($openClean.Output -join '') -match '^executor code-fixes') `
   'an open [CODE] finding routes to the executor; a REOPENED (2) in ## Closed does not count'
 
-$openReopened = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-reopened' @{ OpenReopened = $true }))
+$openReopened = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-reopened' @{ OpenReopened = $true }), '-Scope', 'cycle')
 Assert-That ($openReopened.Exit -eq 0 -and ($openReopened.Output -join '') -match '^spec not-converging') `
   'a REOPENED (2) in ## Open routes to the spec session'
 
-$wrongTable = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-table' @{ WrongTable = $true }))
+$wrongTable = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-table' @{ WrongTable = $true }), '-Scope', 'cycle')
 Assert-That ($wrongTable.Exit -eq 1 -and ($wrongTable.Output -join ' ') -match 'summary row MAJOR') `
   'a summary table that differs from ## Open fails'
 
-$badHeading = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-heading' @{ BadHeading = $true }))
+$badHeading = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-heading' @{ BadHeading = $true }), '-Scope', 'cycle')
 Assert-That ($badHeading.Exit -eq 1 -and ($badHeading.Output -join ' ') -match 'is not .### F<n>') `
   'a finding heading in another format fails'
 
-$badApprove = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-approve' @{ Approve = $true }))
+$badApprove = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-approve' @{ Approve = $true }), '-Scope', 'cycle')
 Assert-That ($badApprove.Exit -eq 1 -and ($badApprove.Output -join ' ') -match 'APPROVE with 1 open') `
   'APPROVE with an open MAJOR finding fails'
 
-$approved = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-routes-approve' @{ Approve = $true; NoOpen = $true }))
+$approved = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-open-routes-approve' @{ Approve = $true; NoOpen = $true }), '-Scope', 'cycle')
 Assert-That ($approved.Exit -eq 0 -and ($approved.Output -join '') -match '^executor approved \(cycle 1, round 2\)') `
   'an APPROVE routes to the executor'
+
+$branchApproved = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-branch-approve' @{ Approve = $true; NoOpen = $true; Branch = $true }), '-Scope', 'branch')
+Assert-That ($branchApproved.Exit -eq 0 -and ($branchApproved.Output -join '') -eq 'branch approved (cycle 1)') `
+  'a Scope: branch review with APPROVE routes branch approved'
+
+$branchFindings = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-branch-findings' @{ Branch = $true }), '-Scope', 'branch')
+Assert-That ($branchFindings.Exit -eq 0 -and ($branchFindings.Output -join '') -eq 'branch findings (cycle 1)') `
+  'a Scope: branch review with CHANGES_REQUESTED routes branch findings'
+
+$scopeLate = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-scope-late' @{ ScopeLate = $true }), '-Scope', 'cycle')
+Assert-That ($scopeLate.Exit -eq 1 -and ($scopeLate.Output -join ' ') -like "*line 4 does not match the scope cycle: write or remove 'Scope: branch'.*") `
+  '-Scope cycle with a Scope: branch line below line 4 fails'
+
+$cycleLeftover = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-cycle-leftover' @{ Branch = $true }), '-Scope', 'cycle')
+Assert-That ($cycleLeftover.Exit -eq 1 -and ($cycleLeftover.Output -join ' ') -like "*line 4 does not match the scope cycle: write or remove 'Scope: branch'.*") `
+  '-Scope cycle with a leftover Scope: branch line fails'
+
+$branchMissing = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-branch-missing'), '-Scope', 'branch')
+Assert-That ($branchMissing.Exit -eq 1 -and ($branchMissing.Output -join ' ') -like "*line 4 does not match the scope branch: write or remove 'Scope: branch'.*") `
+  '-Scope branch without the Scope: branch line fails'
+
+$branchLate = Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-branch-late' @{ ScopeLate = $true }), '-Scope', 'branch')
+Assert-That ($branchLate.Exit -eq 1 -and ($branchLate.Output -join ' ') -like "*line 4 does not match the scope branch*") `
+  '-Scope branch with the line below line 4 fails'
+
+$branchBadApprove =Invoke-Script 'check-review-routing.ps1' @((New-OpenReviewFile 'review-branch-bad-approve' @{ Approve = $true; Branch = $true }), '-Scope', 'branch')
+Assert-That ($branchBadApprove.Exit -eq 1 -and ($branchBadApprove.Output -join ' ') -match 'APPROVE with 1 open') `
+  'a Scope: branch review with APPROVE and an open MAJOR still fails'
 
 # --- commit-cycle ----------------------------------------------------------------------------------------------
 Write-Host 'commit-cycle'
@@ -704,6 +869,216 @@ foreach ($case in @(
     (git -C $failCase.Repo rev-parse HEAD) -eq $headBefore -and ((git -C $failCase.Repo status --porcelain) -join '|') -eq $statusBefore) `
     "commit-cycle refuses with its reason and changes nothing: $($case[2])"
 }
+
+# Fixups: a repo with the base on main, develop at the base, and 2 feature commits ("added a" creates src/a.cs, "added b"
+# edits its line two). The work tree then edits src/a.cs (the fixup entry) and adds src/c.cs (the code group).
+function New-FixupCase([string] $name, [hashtable] $change = @{}) {
+  $repoDir = New-Repo "$name-repo"
+  New-Item -ItemType Directory -Force (Join-Path $repoDir 'src') | Out-Null
+  Set-Content (Join-Path $repoDir 'base.txt') 'base'
+  Save-Commit $repoDir 'base'
+  git -C $repoDir branch develop
+  $base = git -C $repoDir rev-parse HEAD
+  Set-Content (Join-Path $repoDir 'src/a.cs') @('one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight')
+  Save-Commit $repoDir 'feature(sample): added a'
+  Set-Content (Join-Path $repoDir 'src/a.cs') @('one', 'TWO', 'three', 'four', 'five', 'six', 'seven', 'eight')
+  Save-Commit $repoDir 'feature(sample): added b'
+  $reviewed = git -C $repoDir rev-parse HEAD
+  $fixedLines = if ($change.Conflict) { @('one', 'deux', 'three', 'four', 'five', 'six', 'seven', 'eight') } else {
+    @('one', 'TWO', 'three', 'four', 'five', 'six', 'seven', 'EIGHT') }
+  Set-Content (Join-Path $repoDir 'src/a.cs') $fixedLines
+  if (-not $change.FixupOnly) { Set-Content (Join-Path $repoDir 'src/c.cs') 'class C {}' }
+  if ($change.TwoSteps) { Set-Content (Join-Path $repoDir 'src/e.cs') 'class E {}' }
+
+  $folder = Join-Path $work "$name-folder"
+  New-Item -ItemType Directory -Force $folder | Out-Null
+  $subject = if ($change.Subject) { $change.Subject } else { 'feature(sample): added a' }
+  $header = @('Cycle: 1')
+  if ($change.Reviewed) { $header += "Reviewed by Artur: $reviewed" }
+  if ($change.StaleMark) { $header += 'Reviewed by Artur: 0123456789012345678901234567890123456789' }
+  $commitLines = if ($change.NoCommitLine) { @() } else { @('Commit code: feature(sample): added c') }
+  $plainFiles = if ($change.CancelledFixup) { '`src/a.cs`, `src/c.cs`' } else { '`src/c.cs`' }
+  $plainStep = if ($change.FixupOnly) { @() } else { @('- [x] Step 2: Add c.', "    *   Files: $plainFiles", '') }
+  $step1Mark = if ($change.CancelledFixup) { '~' } else { 'x' }
+  $step3Subject = if ($change.Step3Subject) { $change.Step3Subject } else { $subject }
+  $step3Files = if ($change.Step3Files) { $change.Step3Files } else { '`src/e.cs`' }
+  $step3 = if ($change.TwoSteps) { @('- [x] Step 3: Fix a again.', "    *   Files: $step3Files", "    *   Fixup: $step3Subject", '') } else { @() }
+  $deviationLines = if ($change.DeviationLines) { $change.DeviationLines } else { @() }
+  Set-Content (Join-Path $folder 'plan.md') ($header + @('', '# Plan', '', '### Cycle 1', '', 'Spec: **Feature A**, AC1.') +
+    $commitLines + @('', "- [$step1Mark] Step 1: Fix a.", '    *   Files: `src/a.cs`', "    *   Fixup: $subject", '') + $plainStep + $step3 +
+    @('#### Deviations', '') + $deviationLines)
+  Set-Content (Join-Path $folder 'review.md') @('Cycle: 1', 'Round: 1', "Reviewed tree: $(Get-TreeId $repoDir)", '',
+    '## Open', '', '## Closed', '', '## Summary', '', '| Severity | [CODE] | [SPEC] |', '|---|---|---|',
+    '| BLOCKER | 0 | 0 |', '| MAJOR | 0 | 0 |', '| MINOR | 0 | 0 |', '', 'Verdict: APPROVE')
+  return @{ Folder = $folder; Repo = $repoDir; Base = $base; Reviewed = $reviewed }
+}
+
+function Get-LogSubjects($case) { return @(git -C $case.Repo log --format=%s "$($case.Base)..HEAD") }
+
+$foldCase = New-FixupCase 'cc-fold'
+$workTree = (git -C $foldCase.Repo show 'HEAD:src/a.cs') -join '|'
+$treeBefore = Get-TreeId $foldCase.Repo
+$folded = Invoke-Commit $foldCase
+$foldSubjects = Get-LogSubjects $foldCase
+Assert-That ($folded.Exit -eq 0 -and $foldSubjects.Count -eq 3 -and $foldSubjects[0] -eq 'feature(sample): added c' -and
+  $foldSubjects[1] -eq 'feature(sample): added b' -and $foldSubjects[2] -eq 'feature(sample): added a' -and
+  -not ($foldSubjects -match '^fixup!')) 'a fixup commit folds into its target: 3 commits, no fixup! commit'
+Assert-That ((Get-TreeId $foldCase.Repo) -eq $treeBefore -and (git -C $foldCase.Repo status --porcelain).Count -eq 0 -and
+  (git -C $foldCase.Repo show 'HEAD:src/a.cs') -join '|' -eq 'one|TWO|three|four|five|six|seven|EIGHT') 'the tree stays the same after the autosquash'
+
+$reviewedCase = New-FixupCase 'cc-reviewed' @{ Reviewed = $true }
+$kept = Invoke-Commit $reviewedCase
+$keptSubjects = Get-LogSubjects $reviewedCase
+Assert-That ($kept.Exit -eq 0 -and $keptSubjects.Count -eq 4 -and $keptSubjects[1] -eq 'fixup! feature(sample): added a') `
+  'a fixup whose target is at or below the reviewed SHA stays a separate commit'
+
+$fixupMissing = New-FixupCase 'cc-fixup-missing' @{ Subject = 'feature(sample): added z' }
+$missingHead = git -C $fixupMissing.Repo rev-parse HEAD
+$missing = Invoke-Commit $fixupMissing
+Assert-That ($missing.Exit -eq 1 -and ($missing.Output -join ' ') -like "*the Fixup subject 'feature(sample): added z' matches no commit*" -and
+  (git -C $fixupMissing.Repo rev-parse HEAD) -eq $missingHead) 'a Fixup subject with no matching commit makes no commit'
+
+$fixupTwo = New-FixupCase 'cc-fixup-two'
+git -C $fixupTwo.Repo commit -q --allow-empty -m 'feature(sample): added a'
+$twoHead = git -C $fixupTwo.Repo rev-parse HEAD
+$two = Invoke-Commit $fixupTwo
+Assert-That ($two.Exit -eq 1 -and ($two.Output -join ' ') -like "*matches 2 commits of*" -and
+  (git -C $fixupTwo.Repo rev-parse HEAD) -eq $twoHead) 'a Fixup subject with 2 matching commits makes no commit'
+
+$conflictCase = New-FixupCase 'cc-conflict' @{ Conflict = $true }
+$conflictTree = Get-TreeId $conflictCase.Repo
+$conflicted = Invoke-Commit $conflictCase
+$gitDir = (git -C $conflictCase.Repo rev-parse --absolute-git-dir)
+Assert-That ($conflicted.Exit -eq 1 -and ($conflicted.Output -contains 'autosquash conflict: src/a.cs') -and
+  ($conflicted.Output -join ' ') -like '*resolve, git add, git -c core.editor=true rebase --continue, then run commit-cycle.ps1 -Verify*' -and
+  (Test-Path (Join-Path $gitDir 'rebase-merge'))) 'an autosquash conflict names the file and leaves the rebase in progress'
+
+$env:GIT_EDITOR = 'true'
+for ($round = 0; $round -lt 5 -and (Test-Path (Join-Path $gitDir 'rebase-merge')); $round++) {
+  Set-Content (Join-Path $conflictCase.Repo 'src/a.cs') @('one', 'deux', 'three', 'four', 'five', 'six', 'seven', 'eight')
+  git -C $conflictCase.Repo add -A
+  git -C $conflictCase.Repo rebase --continue 2>&1 | Out-Null
+}
+Remove-Item Env:GIT_EDITOR
+$verified = Invoke-Script 'commit-cycle.ps1' @($conflictCase.Folder, '-Repo', $conflictCase.Repo, '-Verify')
+Assert-That ($verified.Exit -eq 0 -and (Get-TreeId $conflictCase.Repo) -eq $conflictTree) '-Verify passes after a manual rebase --continue'
+
+$treeChanged = New-FixupCase 'cc-tree'
+[void](Invoke-Commit $treeChanged)
+Add-Content (Join-Path $treeChanged.Repo 'src/a.cs') '// edited after the autosquash'
+Save-Commit $treeChanged.Repo 'feature(sample): edited a'
+$changedVerify = Invoke-Script 'commit-cycle.ps1' @($treeChanged.Folder, '-Repo', $treeChanged.Repo, '-Verify')
+Assert-That ($changedVerify.Exit -eq 1 -and ($changedVerify.Output -join ' ') -like '*the HEAD tree changed in the autosquash.*') `
+  '-Verify fails when the HEAD tree differs from the stored tree'
+
+$squashCase = New-FixupCase 'cc-squash' @{ Reviewed = $true }
+[void](Invoke-Commit $squashCase)
+$squashed = Invoke-Script 'commit-cycle.ps1' @($squashCase.Folder, '-Repo', $squashCase.Repo, '-Squash')
+$squashSubjects = Get-LogSubjects $squashCase
+Assert-That ($squashed.Exit -eq 0 -and $squashSubjects.Count -eq 3 -and -not ($squashSubjects -match '^fixup!') -and
+  (git -C $squashCase.Repo show 'HEAD:src/a.cs') -join '|' -eq 'one|TWO|three|four|five|six|seven|EIGHT') `
+  '-Squash folds a fixup below the reviewed SHA and keeps the tree'
+
+$twoStepsCase = New-FixupCase 'cc-two-steps' @{ TwoSteps = $true }
+$twoSteps = Invoke-Commit $twoStepsCase
+$twoStepsSubjects = Get-LogSubjects $twoStepsCase
+Assert-That ($twoSteps.Exit -eq 0 -and $twoStepsSubjects.Count -eq 3 -and (git -C $twoStepsCase.Repo status --porcelain).Count -eq 0 -and
+  (git -C $twoStepsCase.Repo show 'HEAD:src/a.cs') -join '|' -eq 'one|TWO|three|four|five|six|seven|EIGHT' -and
+  (git -C $twoStepsCase.Repo show 'HEAD:src/e.cs') -eq 'class E {}') `
+  'two Fixup steps with the same subject and different files each get a fixup commit, and the checkout is clean'
+
+Assert-That ($folded.Output.Count -eq 1 -and $folded.Output[0] -eq "$(git -C $foldCase.Repo rev-parse --short HEAD) feature(sample): added c") `
+  'the printed commit lines hold the SHAs of the history after the autosquash'
+
+$noTreeCase = New-FixupCase 'cc-no-tree'
+$noTree = Invoke-Script 'commit-cycle.ps1' @($noTreeCase.Folder, '-Repo', $noTreeCase.Repo, '-Verify')
+Assert-That ($noTree.Exit -eq 1 -and ($noTree.Output -join ' ') -like '*no stored autosquash tree.*') '-Verify without a stored tree reports it'
+
+$dirtySquash = Invoke-Script 'commit-cycle.ps1' @($noTreeCase.Folder, '-Repo', $noTreeCase.Repo, '-Squash')
+Assert-That ($dirtySquash.Exit -eq 1 -and ($dirtySquash.Output -join ' ') -like '*the checkout is not clean.*') '-Squash on a dirty checkout stops'
+
+$strandedCase = New-FixupCase 'cc-stranded'
+$targetSha = git -C $strandedCase.Repo log --format=%H --grep 'added a' -1
+git -C $strandedCase.Repo add -A
+git -C $strandedCase.Repo commit -q --fixup=$targetSha
+$strandedGitDir = git -C $strandedCase.Repo rev-parse --absolute-git-dir
+[IO.File]::WriteAllText((Join-Path $strandedGitDir 'claude-autosquash-tree.txt'),
+  "$(git -C $strandedCase.Repo rev-parse 'HEAD^{tree}')`n$($strandedCase.Base)`n")
+$stranded = Invoke-Script 'commit-cycle.ps1' @($strandedCase.Folder, '-Repo', $strandedCase.Repo, '-Verify')
+Assert-That ($stranded.Exit -eq 1 -and ($stranded.Output -join ' ') -like '*a fixup! commit stays above *: * fixup! feature(sample): added a*') `
+  '-Verify fails when a fixup! commit with its target above the squash base stays'
+
+# A cancelled Fixup step is no fixup entry (Step 68).
+$cancelledCase = New-FixupCase 'cc-cancelled' @{ CancelledFixup = $true }
+$cancelled = Invoke-Commit $cancelledCase
+$cancelledSubjects = Get-LogSubjects $cancelledCase
+$cancelledFiles = @(git -C $cancelledCase.Repo show --name-only --format= HEAD) -join ' '
+Assert-That ($cancelled.Exit -eq 0 -and $cancelledSubjects.Count -eq 3 -and $cancelledSubjects[0] -eq 'feature(sample): added c' -and
+  $cancelledFiles -eq 'src/a.cs src/c.cs') 'a cancelled Fixup step and a plain step with the same file: the file goes in the group commit'
+
+# A squash base that is no ancestor of HEAD (Step 66).
+$staleCase = New-FixupCase 'cc-stale-mark' @{ StaleMark = $true }
+$staleHead = git -C $staleCase.Repo rev-parse HEAD
+$stale = Invoke-Commit $staleCase
+Assert-That ($stale.Exit -eq 1 -and ($stale.Output -contains 'the squash base 0123456 is no ancestor of HEAD.') -and
+  (git -C $staleCase.Repo rev-parse HEAD) -eq $staleHead) 'a Reviewed by Artur SHA that is no ancestor of HEAD makes no commit'
+$stalePlan = Join-Path $staleCase.Folder 'plan.md'
+Set-Content $stalePlan (Get-Content $stalePlan | Where-Object { $_ -notmatch '^Reviewed by Artur:' })
+$afterRemoval = Invoke-Commit $staleCase
+Assert-That ($afterRemoval.Exit -eq 0 -and (Get-LogSubjects $staleCase).Count -eq 3) 'after the mark line is removed, the same plan commits'
+
+$staleVerifyCase = New-FixupCase 'cc-stale-verify'
+$staleVerifyGitDir = git -C $staleVerifyCase.Repo rev-parse --absolute-git-dir
+[IO.File]::WriteAllText((Join-Path $staleVerifyGitDir 'claude-autosquash-tree.txt'),
+  "$(git -C $staleVerifyCase.Repo rev-parse 'HEAD^{tree}')`n0123456789012345678901234567890123456789`n")
+$staleVerify = Invoke-Script 'commit-cycle.ps1' @($staleVerifyCase.Folder, '-Repo', $staleVerifyCase.Repo, '-Verify')
+Assert-That ($staleVerify.Exit -eq 1 -and ($staleVerify.Output -contains 'the squash base 0123456 is no ancestor of HEAD.')) `
+  '-Verify fails when the stored squash base is no ancestor of HEAD'
+
+# A cycle of only fixups needs no Commit line (Step 62).
+$fixupOnlyCase = New-FixupCase 'cc-fixup-only' @{ FixupOnly = $true; NoCommitLine = $true }
+$fixupOnlyRun = Invoke-Commit $fixupOnlyCase
+$fixupOnlySubjects = Get-LogSubjects $fixupOnlyCase
+Assert-That ($fixupOnlyRun.Exit -eq 0 -and $fixupOnlySubjects.Count -eq 2 -and -not ($fixupOnlySubjects -match '^fixup!') -and
+  (git -C $fixupOnlyCase.Repo status --porcelain).Count -eq 0 -and
+  (git -C $fixupOnlyCase.Repo show 'HEAD:src/a.cs') -join '|' -eq 'one|TWO|three|four|five|six|seven|EIGHT') `
+  'a fixup-only cycle without a Commit line makes only the fixup commit and folds it'
+
+$noCommitLineCase = New-FixupCase 'cc-no-commit-line' @{ NoCommitLine = $true }
+$noCommitHead = git -C $noCommitLineCase.Repo rev-parse HEAD
+$noCommitLine = Invoke-Commit $noCommitLineCase
+Assert-That ($noCommitLine.Exit -eq 1 -and ($noCommitLine.Output -join ' ') -like '*src/c.cs needs a Commit code line.*' -and
+  (git -C $noCommitLineCase.Repo rev-parse HEAD) -eq $noCommitHead) `
+  'a cycle with a fixup step and a plain step without a Commit line makes no commit'
+
+# A path claimed by two fixup entries (Step 64).
+$twoSubjectsCase = New-FixupCase 'cc-two-subjects' @{ TwoSteps = $true; Step3Subject = 'feature(sample): added b'; Step3Files = '`src/a.cs`' }
+$twoSubjectsHead = git -C $twoSubjectsCase.Repo rev-parse HEAD
+$twoSubjects = Invoke-Commit $twoSubjectsCase
+Assert-That ($twoSubjects.Exit -eq 1 -and
+  ($twoSubjects.Output -contains "Cycle 1: src/a.cs is in the Fixup entries of 'feature(sample): added a' and 'feature(sample): added b'.") -and
+  (git -C $twoSubjectsCase.Repo rev-parse HEAD) -eq $twoSubjectsHead) `
+  'a path in two fixup entries with different subjects makes no commit'
+
+$sameSubjectCase = New-FixupCase 'cc-same-subject' @{ TwoSteps = $true; Step3Files = '`src/a.cs`' }
+$sameSubject = Invoke-Commit $sameSubjectCase
+Assert-That ($sameSubject.Exit -eq 0) 'two fixup entries with the same subject and the same path pass'
+
+$inlinePlainCase = New-FixupCase 'cc-inline-plain' @{
+  DeviationLines = @('*   Inline fix 1: changed c. Fixup: feature(sample): added a; files: `src/c.cs`') }
+$inlinePlainHead = git -C $inlinePlainCase.Repo rev-parse HEAD
+$inlinePlain = Invoke-Commit $inlinePlainCase
+Assert-That ($inlinePlain.Exit -eq 1 -and
+  ($inlinePlain.Output -contains 'Cycle 1: src/c.cs is in an inline fix with Fixup and in Step 2 without Fixup.') -and
+  (git -C $inlinePlainCase.Repo rev-parse HEAD) -eq $inlinePlainHead) `
+  'a path in an inline fix with Fixup and in a plain step makes no commit'
+
+$inlineStepCase = New-FixupCase 'cc-inline-step' @{
+  DeviationLines = @('*   Inline fix 1: changed a. Fixup: feature(sample): added b; files: `src/a.cs`') }
+$inlineStep = Invoke-Commit $inlineStepCase
+Assert-That ($inlineStep.Exit -eq 1 -and
+  ($inlineStep.Output -contains "Cycle 1: src/a.cs is in the Fixup entries of 'feature(sample): added a' and 'feature(sample): added b'.")) `
+  'a path in a fixup step and in an inline fix with another subject makes no commit'
 
 # --- fake tools for format-changed and run-area ------------------------------------------------------------------
 # Each fake logs "<tool> <arguments> @ <folder name>" to FAKE_LOG. The fake npx prettier appends "// PRETTIER" to each

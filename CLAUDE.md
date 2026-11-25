@@ -11,7 +11,7 @@ HealthyFac is built using a strict layered Clean Architecture: Domain, Applicati
 *   `docs/` — architecture and design documents.
 *   `frontend/` — Angular 22 app (PrimeNG, Tailwind, ngx-translate, SignalStore).
 *   `.claude/` — rules, commands, agents, hooks, and the flow scripts. `scripts/` — the verify stack.
-*   Feature flow: `/spec <feature>` (`.claude/commands/spec.md`) is the only session of a feature. It runs the executor and the reviewer subagents (`.claude/agents/`) and routes their handoffs; `/fix` stays in that session.
+*   Feature flow: `/spec <feature>` (`.claude/commands/spec.md`) is the only session of a feature. It runs the executor and the reviewer subagents (`.claude/agents/`) and routes their handoffs; `/fix` stays in that session. Commits, fixups, and the autosquash follow `.claude/rules/git-commits.md`, **History**.
 
 ## Build and Test
 The repo has two test areas. A change in one area needs only the full commands of that area.

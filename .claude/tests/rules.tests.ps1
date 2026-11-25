@@ -62,6 +62,18 @@ foreach ($name in $rules.Keys | Where-Object { $rows.ContainsKey($_) } | Sort-Ob
   Assert-That ((@($rules[$name]) -join '|') -eq (@($rows[$name]) -join '|')) "$name`: the table row equals the paths of the file"
 }
 
+foreach ($path in @('.claude/agents/executor.md', '.claude/agents/reviewer.md', '.claude/commands/spec.md',
+    '.claude/commands/fix.md', 'CLAUDE.md')) {
+  $text = Get-Content -Raw -LiteralPath (Join-Path $Repo $path)
+  Assert-That ($text -match 'git-commits\.md') "$path names git-commits.md"
+}
+$commitAfterStep = @(Get-ChildItem -LiteralPath (Join-Path $Repo '.claude') -Recurse -File -Include '*.md', '*.ps1' |
+    Where-Object { $_.Name -ne 'git-commits.md' -and $_.Name -ne 'rules.tests.ps1' } |
+    Select-String -Pattern 'commit after each step' -SimpleMatch)
+Assert-That ($commitAfterStep.Count -eq 0) 'no file under .claude/ except git-commits.md holds the text "commit after each step"'
+$historyRule = Get-Content -Raw -LiteralPath (Join-Path $Repo '.claude/rules/git-commits.md')
+Assert-That ($historyRule -match [regex]::Escape('**History:**')) 'git-commits.md holds **History:**'
+
 if ($failures.Count -gt 0) {
   Write-Host "`n$($failures.Count) check(s) failed." -ForegroundColor Red
   exit 1

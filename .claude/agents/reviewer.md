@@ -30,6 +30,11 @@ the feature worktree (the branch `feature/<feature>`).
 The spec writer sends only these forms:
 - `review cycle C`: one round (**Rounds**, **Check**).
 - `checkpoint <x>: base tree <a>, checkpoint tree <b>`: a checkpoint review (**Check**).
+- `review branch`: one review of `git diff <base>...HEAD` and `git log --oneline <base>..HEAD`
+  (**Branch Review**). The base is the `Base:` SHA of plan.md, else `git merge-base HEAD develop`.
+  Write `Scope: branch` as line 4 of review.md. Keep `Cycle:` and `Round:` as for a round.
+  Only this task writes that line. A round, a checkpoint, and an inline fix review remove the
+  line first.
 - `relay from Artur: "<words>". Inline fix files: <files>`: review only those files and
   their `Inline fix` Deviations entry, in the open round.
 - `question from Artur: "<words>"`: answer it. A request to reconsider a finding is a
@@ -144,6 +149,18 @@ Read a full file only for a reference that points outside these parts.
 - A flow that you could not run as written after one retry (**Errors**) is no pass: name
   it in the report with the error. Never write a pass from a script measurement alone.
 
+## Branch Review
+The task `review branch` checks the whole branch after the last cycle. Check these points
+over all cycles:
+- One term and one definition per concept: no duplicate helper, constant, or type.
+- No code that a later cycle made dead or contradicted, and no leftover of a cancelled step.
+- The same pattern for the same problem across pages and services.
+- Consistency with the existing patterns of `develop` that the branch touches.
+- Each commit is one complete change, and no `fixup!` commit stays above the squash base
+  (`.claude/rules/git-commits.md`, **History**).
+Each branch finding has a bullet `Commit: <subject>` with the subject of the commit that
+introduced the code, so the fix can be a `Fixup:` step.
+
 ## Web access
 Verify version-specific API usage, deprecations, and issues in any new dependency.
 Cite the source URL for any finding based on external docs. Prefer official docs.
@@ -185,9 +202,11 @@ finding or a check that passed. Layout:
 
 ## Report
 Your final message goes to the spec writer, and the spec writer routes by its first line.
-- A round: run `pwsh .claude/check-review-routing.ps1 <review.md path>` and fix review.md
+- A round: run `pwsh .claude/check-review-routing.ps1 <review.md path> -Scope cycle` and fix review.md
   until it passes. The first line of the report is its output line, exactly (e.g.
   `executor code-fixes (cycle 1, round 2)`).
+- A branch review: run the routing script with `-Scope branch`. The first line is its output line,
+  `branch approved (cycle C)` or `branch findings (cycle C)`.
 - A checkpoint review: the first line is `CHECKPOINT <x>: <n> [CODE], <m> [SPEC] findings`.
 - An inline fix review: run the routing script as for a round.
 - A question: the first line is `ANSWER`.

@@ -1,6 +1,9 @@
 # check-review-routing.ps1 - prints the one allowed handoff target for a review.md, so the
 # reviewer routes by a fixed rule (.claude/agents/reviewer.md, Report).
-# Usage: pwsh .claude/check-review-routing.ps1 <path to review.md>
+# Usage: pwsh .claude/check-review-routing.ps1 <path to review.md> -Scope <cycle|branch>
+# -Scope branch (the task "review branch"): line 4 of review.md must be "Scope: branch". -Scope cycle (every other task):
+# no line of review.md may be "Scope: branch". A mismatch exits 1 with "review.md line 4 does not match the scope <scope>:
+# write or remove 'Scope: branch'."
 # Output: one line "<target> <reason>", where target is "spec" or "executor". An APPROVE goes to the executor
 # ("executor approved (...)"): it commits the cycle (.claude/commit-cycle.ps1).
 # Exit code 1 when review.md lacks the Cycle line, the Round line, the verdict, the "## Open" section, or the summary
@@ -8,8 +11,14 @@
 # - a "### " heading in "## Open" does not have the form "### F<n> <BLOCKER|MAJOR|MINOR> [<CODE|SPEC>] <title>";
 # - the summary table differs from the count of the open findings by severity and target;
 # - APPROVE has an open BLOCKER or MAJOR.
+# With -Scope branch (the file must hold the line "Scope: branch" at line 4, the review of the whole branch), the
+# script routes "branch approved (cycle C)" for APPROVE and "branch findings (cycle C)" for CHANGES_REQUESTED. With
+# -Scope cycle, that line fails the check. Every check above still applies.
 # REOPENED counts only inside "## Open", so a closed or accepted finding never routes.
-param([Parameter(Mandatory = $true)][string]$ReviewPath)
+param(
+  [Parameter(Mandatory = $true)][string]$ReviewPath,
+  [Parameter(Mandatory = $true)][ValidateSet('cycle', 'branch')][string]$Scope
+)
 
 $NotConvergingRound = 4
 $ReopenLimit = 2
@@ -17,6 +26,13 @@ $Severities = @('BLOCKER', 'MAJOR', 'MINOR')
 
 if (-not (Test-Path $ReviewPath)) { Write-Error "No file: $ReviewPath"; exit 1 }
 $text = Get-Content -Raw -Path $ReviewPath
+
+$hasBranchLine = [regex]::IsMatch($text, '(?m)^Scope:\s*branch\s*$')
+$isLineFourBranch = @($text -split '\r?\n')[3] -match '^Scope:\s*branch\s*$'
+if (($Scope -eq 'branch' -and -not $isLineFourBranch) -or ($Scope -eq 'cycle' -and $hasBranchLine)) {
+  Write-Error "review.md line 4 does not match the scope ${Scope}: write or remove 'Scope: branch'."
+  exit 1
+}
 
 $cycle = [regex]::Match($text, '(?m)^Cycle:\s*(\d+)\s*$')
 $round = [regex]::Match($text, '(?m)^Round:\s*(\d+)\s*$')
@@ -68,10 +84,13 @@ $reopenCounts = [regex]::Matches($openText, 'REOPENED\s*\((\d+)\)') | ForEach-Ob
 $maxReopened = ($reopenCounts | Measure-Object -Maximum).Maximum
 if ($null -eq $maxReopened) { $maxReopened = 0 }
 
+$isBranchReview = $Scope -eq 'branch'
 $r = [int]$round.Groups[1].Value
 $c = [int]$cycle.Groups[1].Value
 
-if ($verdict.Groups[1].Value -eq 'APPROVE') {
+if ($isBranchReview) {
+  if ($verdict.Groups[1].Value -eq 'APPROVE') { "branch approved (cycle $c)" } else { "branch findings (cycle $c)" }
+} elseif ($verdict.Groups[1].Value -eq 'APPROVE') {
   "executor approved (cycle $c, round $r)"
 } elseif ($maxReopened -ge $ReopenLimit -or $r -ge $NotConvergingRound) {
   "spec not-converging (cycle $c, round $r, max REOPENED $maxReopened)"

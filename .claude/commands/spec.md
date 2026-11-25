@@ -73,6 +73,10 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
 - When the branch starts on a commit that `develop` does not hold (an unmerged feature),
   write `Base: <SHA of that commit>` in the header (the first 20 lines). Otherwise the
   base takes in the files of that feature. After a rebase, change or remove the line.
+- A step that corrects code of an earlier commit of the branch gets a line
+  `Fixup: <subject of that commit>` (`git-commits.md`, **History**). Its files are in no other
+  step of the cycle without `Fixup:`. `check-plan.ps1` checks the line. A cycle of only fixup
+  steps has no Commit line.
 - Split the feature into functional cycles. Each cycle is one review and one commit group.
   Plan every cycle before the handoff when you can; my approval of plan.md covers every
   planned cycle. The `Cycle:` line names the open cycle; the scripts read it.
@@ -193,8 +197,8 @@ contact: they never message each other, and I talk only to you.
   path>, worktree <worktree path>:`, then exactly one task:
   - Executor: `start a run` · `review cycle C, round R requests code fixes - start a run` ·
     `APPROVED in cycle C - commit the cycle` · `continue` · `checkpoint findings - read
-    review.md`.
-  - Reviewer: `review cycle C` · `checkpoint <x>: base tree <a>, checkpoint tree <b>` ·
+    review.md` · `review finished - squash the branch`.
+  - Reviewer: `review cycle C` · `review branch` · `checkpoint <x>: base tree <a>, checkpoint tree <b>` ·
     `relay from Artur: "<my words>". Inline fix files: <files>` · `question from Artur:
     "<my words>"`.
   - Never add scope to an executor task (a step range, "before Step N", "only"). New work
@@ -218,7 +222,11 @@ contact: they never message each other, and I talk only to you.
 | reviewer `spec spec-findings` or `spec not-converging` | **Revisions**. |
 | reviewer `ANSWER` | Give me the answer. |
 | executor `COMMIT FAILED` | Give me its lines and your proposal. |
-| executor `FEATURE DONE` | Tell me and summarize: what was built (from plan.md and review.md), deviations, remaining concerns, the commits. |
+| executor `FEATURE DONE`, plan.md header has no `Reviewed by Artur:` line | Reviewer: `review branch` (also after a cycle of `Fixup:` steps from branch findings). |
+| executor `FEATURE DONE`, plan.md header has `Reviewed by Artur:` | Tell me the base branch, the base SHA, and the head SHA. I review my comment fixes myself. |
+| reviewer `branch findings` | **Revisions**: a new cycle of `Fixup:` steps, each naming the `Commit:` subject of its finding. |
+| reviewer `branch approved` | Tell me `FEATURE DONE` with the base branch, the base SHA, and the head SHA, and summarize: what was built (from plan.md and review.md), deviations, remaining concerns, the commits. |
+| executor `SQUASHED:` | Tell me the base and the head. |
 | `STOPPED` or any other first line | Give me the report and your proposal. Start nothing. |
 
 - After plan.md approval: executor `start a run`.
@@ -256,6 +264,14 @@ converge: read review.md / plan.md and propose concrete changes to spec.md and p
   summary table, then send the executor `start a run` (`continue` while it runs).
 - When I decide to keep the code of a finding, move it to `## Closed` as
   `ACCEPTED (Artur, <date>)` and update the summary table. It never routes again.
+
+## Artur's Review
+When I name the SHA that I reviewed, write `Reviewed by Artur: <SHA>` into the plan.md header
+with the Edit tool. History up to that SHA is never rewritten (`git-commits.md`, **History**).
+- My comments become a new cycle of `Fixup:` steps, one step per comment or group.
+- When I say "review finished", send the executor `review finished - squash the branch`.
+  After the executor reports `SQUASHED:`, remove the `Reviewed by Artur:` line with the Edit
+  tool, and add `Review finished: <date>` in its place.
 
 ## Verify Slot
 - Before the first browser task of this session (a subagent task of a UI cycle, or your own
