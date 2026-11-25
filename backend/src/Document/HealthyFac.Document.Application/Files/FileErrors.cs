@@ -29,6 +29,8 @@ public static class FileErrors
 
     public const string LinkAudienceInvalid = "The link audience is not valid.";
 
+    public const string LookupIdsOrSearchRequired = "The lookup needs the file IDs or a search text, and not both.";
+
     public static readonly string LookupIdsTooMany =
         $"The request must hold at most {FileValidationConstants.LookupIdsMaxCount} file IDs.";
 

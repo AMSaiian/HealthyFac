@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using HealthyFac.Core.Application.Lookups;
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Application.WorkOrders.ApplySchedule;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
@@ -18,6 +19,7 @@ using ApplicationApplyScheduleChangesRequest =
     HealthyFac.Core.Application.WorkOrders.ApplySchedule.ApplyScheduleChangesRequest;
 using ApplicationGetWorkOrderHistoryRequest = HealthyFac.Core.Application.WorkOrders.GetWorkOrderHistoryRequest;
 using ApplicationGetWorkOrderRequest = HealthyFac.Core.Application.WorkOrders.GetWorkOrderRequest;
+using ApplicationLookupWorkOrdersRequest = HealthyFac.Core.Application.WorkOrders.LookupWorkOrdersRequest;
 using ApplicationMoveWorkOrderRequest = HealthyFac.Core.Application.WorkOrders.MoveWorkOrderRequest;
 using ApplicationSearchWorkOrderBatchRequest =
     HealthyFac.Core.Application.WorkOrders.SearchWorkOrders.SearchWorkOrderBatchRequest;
@@ -60,6 +62,9 @@ public static class WorkOrderEndpoints
             group.MapPut(WorkOrderRoutes.ById, UpdateAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Write);
 
+            group.MapPost(WorkOrderRoutes.Lookup, LookupAsync)
+                .RequireAuthorization(CorePermissions.WorkOrders.Read);
+
             group.MapPost(WorkOrderRoutes.Status, ChangeStatusAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.Write);
 
@@ -68,12 +73,16 @@ public static class WorkOrderEndpoints
 
             group.MapPut(WorkOrderRoutes.Assignee, AssignAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
+
             group.MapPost(WorkOrderRoutes.Move, MoveAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
+
             group.MapPost(WorkOrderRoutes.ApplySchedule, ApplyScheduleAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
+
             group.MapDelete(WorkOrderRoutes.Assignee, UnassignAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
+
             group.MapDelete(WorkOrderRoutes.ById, DeleteAsync)
                 .RequireAuthorization(CorePermissions.WorkOrders.WriteCompany);
 
@@ -110,6 +119,23 @@ public static class WorkOrderEndpoints
         ClaimsPrincipal user,
         ICurrentUserProvider currentUser,
         IRequestHandler<ApplicationSearchWorkOrdersRequest, GridResponse<WorkOrderRowResponse>> handler,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await handler.HandleAsync(
+            request.ToApplicationRequest(
+                currentUser.GetCompanyId(),
+                AccessScopes.Resolve(user, CorePermissions.WorkOrders.ReadCompany)),
+            cancellationToken);
+
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<LookupResponse>> LookupAsync(
+        LookupWorkOrdersRequest request,
+        ClaimsPrincipal user,
+        ICurrentUserProvider currentUser,
+        IRequestHandler<ApplicationLookupWorkOrdersRequest, LookupResponse> handler,
         CancellationToken cancellationToken
     )
     {

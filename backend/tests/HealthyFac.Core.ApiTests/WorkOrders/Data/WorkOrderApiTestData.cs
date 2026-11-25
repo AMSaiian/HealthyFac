@@ -7,6 +7,7 @@ public static class WorkOrderApiTestData
     public const string BasePath = "v1/work-orders";
     public const string SearchBatchPath = BasePath + "/search/batch";
     public const string SearchPath = "v1/work-orders/search";
+    public const string LookupPath = BasePath + "/lookup";
     public const string ReadPermission = "work-orders:read";
     public const string WritePermission = "work-orders:write";
     public const string ReadCompanyPermission = "work-orders:read-company";

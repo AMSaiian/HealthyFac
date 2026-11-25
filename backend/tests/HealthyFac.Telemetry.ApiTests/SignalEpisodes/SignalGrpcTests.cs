@@ -98,6 +98,22 @@ public sealed class SignalGrpcTests(TelemetryApiFixture fixture) : IAsyncLifetim
         exception.Which.StatusCode.Should().Be(StatusCode.InvalidArgument);
     }
 
+    [Fact]
+    public async Task GetMetricHistory_WithoutFrom_ReturnsInvalidArgument()
+    {
+        var arrangement = await _fixture.ArrangeSignalMachineAsync();
+        var request = HistoryRequest(arrangement, SignalApiTestData.BucketCount);
+        request.From = null;
+
+        var act = async () => await _host.Client.GetMetricHistoryAsync(
+            request,
+            ServiceHeaders(SignalApiTestData.ReadPermission),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var exception = await act.Should().ThrowAsync<RpcException>();
+        exception.Which.StatusCode.Should().Be(StatusCode.InvalidArgument);
+    }
+
     private Metadata ServiceHeaders(string permission, Guid? companyId = null)
     {
         var token = _fixture.Tokens.CreateServiceToken(

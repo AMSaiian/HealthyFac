@@ -19,6 +19,7 @@ public static class TestFeatures
     public const string Intake = "Intake";
     public const string Evaluation = "Evaluation";
     public const string Cases = "Cases";
+    public const string Chat = "Chat";
     public const string Realtime = "Realtime";
     public const string Gateway = "Gateway";
     public const string Messaging = "Messaging";

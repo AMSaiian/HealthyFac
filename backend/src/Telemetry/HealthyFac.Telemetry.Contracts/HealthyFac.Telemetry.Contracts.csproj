@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <Protobuf Include="Signals/telemetry_signals.proto" GrpcServices="Both" />
+        <Protobuf Include="Definitions/telemetry_definitions.proto" GrpcServices="Both" />
     </ItemGroup>
 
     <PropertyGroup>

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
@@ -32,6 +33,31 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
                 arranged.AssignedToOtherId,
                 arranged.SupervisorBacklogId,
                 arranged.WorkerBacklogId);
+    }
+
+    [Fact]
+    public async Task Lookup_WithWorkerAndCompanyReadTokens_ReturnsOwnRowsAndEveryRow()
+    {
+        var arranged = await ArrangeAsync();
+        var readerClaims = arranged.WorkerClaims with
+        {
+            Permissions = [WorkOrderApiTestData.ReadPermission, WorkOrderApiTestData.ReadCompanyPermission],
+        };
+        const string body = """{"search":"replace"}""";
+
+        var worker = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.LookupPath, arranged.WorkerClaims, body);
+        var reader = await _fixture.SendShiftRequestAsync(
+            HttpMethod.Post, WorkOrderApiTestData.LookupPath, readerClaims, body);
+
+        var workerCount = JsonNode.Parse(await worker.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!
+            [propertyName: "items"]!.AsArray()
+            .Count;
+        var readerCount = JsonNode.Parse(await reader.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!
+            [propertyName: "items"]!.AsArray()
+            .Count;
+        workerCount.Should().Be(expected: 2);
+        readerCount.Should().Be(expected: 4);
     }
 
     [Fact]
@@ -122,7 +148,7 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
             ],
         };
         var order = await _fixture.ReadOrderAsync(arranged.SupervisorClaims, arranged.AssignedToOtherId);
-        var body = new System.Text.Json.Nodes.JsonObject
+        var body = new JsonObject
         {
             [propertyName: "status"] = "rejected",
             [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
@@ -150,13 +176,13 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
             ],
         };
         var order = await _fixture.ReadOrderAsync(arranged.SupervisorClaims, arranged.SupervisorBacklogId);
-        var body = new System.Text.Json.Nodes.JsonObject
+        var body = new JsonObject
         {
             [propertyName: "title"] = WorkOrderApiTestData.Title,
             [propertyName: "priority"] = "low",
             [propertyName: "category"] = "repair",
             [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-            [propertyName: "fileIds"] = new System.Text.Json.Nodes.JsonArray(),
+            [propertyName: "fileIds"] = new JsonArray(),
             [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
         }.ToJsonString();
         var path = $"{WorkOrderApiTestData.BasePath}/{arranged.SupervisorBacklogId}";
@@ -246,17 +272,16 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
     {
         var arranged = await ArrangeAsync();
         var order = await _fixture.ReadOrderAsync(arranged.WorkerClaims, arranged.AssignedToWorkerId);
-
-        var body = new System.Text.Json.Nodes.JsonObject
+        var body = new JsonObject
         {
-            ["title"] = WorkOrderApiTestData.Title,
-            ["priority"] = "low",
-            ["category"] = "repair",
-            ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-            ["fileIds"] = new System.Text.Json.Nodes.JsonArray(),
-            ["assigneeId"] = arranged.WorkerEncryptedId,
-            ["plannedStartLocal"] = _fixture.FutureStart(time: "10:00:00"),
-            ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
+            [propertyName: "title"] = WorkOrderApiTestData.Title,
+            [propertyName: "priority"] = "low",
+            [propertyName: "category"] = "repair",
+            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            [propertyName: "fileIds"] = new JsonArray(),
+            [propertyName: "assigneeId"] = arranged.WorkerEncryptedId,
+            [propertyName: "plannedStartLocal"] = _fixture.FutureStart(time: "10:00:00"),
+            [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
         }.ToJsonString();
 
         var response = await _fixture.SendShiftRequestAsync(

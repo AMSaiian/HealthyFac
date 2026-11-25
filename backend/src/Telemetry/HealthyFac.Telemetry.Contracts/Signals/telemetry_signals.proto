@@ -11,6 +11,7 @@ option csharp_namespace = "HealthyFac.Telemetry.Contracts.Signals";
 service TelemetrySignals {
   rpc GetMetricHistory(GetMetricHistoryRequest) returns (MetricHistoryReply);
   rpc GetSignalEpisodes(GetSignalEpisodesRequest) returns (SignalEpisodesReply);
+  rpc GetPhaseTimes(GetPhaseTimesRequest) returns (PhaseTimesReply);
 }
 
 message GetMetricHistoryRequest {
@@ -25,6 +26,29 @@ message GetSignalEpisodesRequest {
   string machine_id = 1;
   google.protobuf.Timestamp from = 2;
   google.protobuf.Timestamp to = 3;
+}
+
+message GetPhaseTimesRequest {
+  string machine_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+}
+
+// The time of a machine in each phase over a range, in seconds. The phase seconds, the unknown mode seconds, and the
+// no-data seconds add up to the length of the range.
+message PhaseTimesReply {
+  repeated PhaseTime phases = 1;
+  double unknown_mode_seconds = 2;
+  double no_data_seconds = 3;
+}
+
+message PhaseTime {
+  string phase_id = 1;
+  string code = 2;
+  string name = 3;
+  bool is_tracked = 4;
+  bool is_deleted = 5;
+  double seconds = 6;
 }
 
 message MetricHistoryReply {
