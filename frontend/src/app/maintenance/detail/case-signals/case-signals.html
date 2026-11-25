@@ -32,7 +32,7 @@
         />
       </td>
       <td><hf-cell-text [text]="ruleLabel(signal.rule)" /></td>
-      <td class="font-mono"><hf-cell-text [text]="signalSubject(signal)" /></td>
+      <td class="font-mono whitespace-nowrap">{{ signalSubject(signal) }}</td>
       <td>
         @if (signal.value !== null) {
           {{ signal.value | number: '1.0-2' }}

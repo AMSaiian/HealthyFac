@@ -1,12 +1,22 @@
+using System.Text.Json;
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Insights.Application.Agents.Tools.Invocation;
+using HealthyFac.Insights.Application.Agents.Tools.Writes;
+using HealthyFac.Insights.Application.Cases;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Infrastructure.Database;
 using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.Seeder.IntegrationTests.Hosting;
+using HealthyFac.Seeder.IntegrationTests.People.Data;
+using HealthyFac.Seeder.Machines;
+using HealthyFac.Seeder.SeedFiles;
 using HealthyFac.Seeder.TelemetryHistory;
+using HealthyFac.Seeder.Timeline;
+using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -193,6 +203,67 @@ public static class TelemetryHistoryFixtureExtensions
                     ResolvedAt = episode.ResolvedAt,
                 })
                 .ToList();
+        }
+
+        public async Task<IReadOnlyList<SeedCheckFailure>> CheckTelemetrySeedAsync(
+            string baseDirectory,
+            DateTimeOffset anchor,
+            CancellationToken cancellationToken
+        )
+        {
+            var folder = new SeedFolder(Path.Combine(baseDirectory, PeopleTestData.SeedFolder));
+            var events = SeedPlan.Load(
+                SeedParts.Create(fixture.Hosts, SeedRunFixtureExtensions.People(fixture), isTelemetry: true), folder);
+            var check = new SeedCheck(
+                anchor,
+                TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId),
+                (request, token) => fixture.Hosts.All.Single(host => host.Name == request.Service)
+                    .ValidateAsync(request.Request, token),
+                SeedCompletion.FindMarkerItem(folder),
+                new TelemetryScript
+                {
+                    Telemetry = folder.Read<TelemetryFile>(TelemetryHistoryConstants.FileName),
+                    Machines = folder.Read<MachinesFile>(MachinesConstants.FileName),
+                });
+
+            return await check.RunAsync(events.Select(planned => planned.Event).ToList(), cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<CaseToolCallResponse>> LoadToolCallsAsync(
+            Guid caseId,
+            Guid runId,
+            CancellationToken cancellationToken
+        )
+        {
+            var response = await fixture.Hosts.Insights.SendAsync<GetRunToolCallsRequest, CaseToolCallsResponse>(
+                ServiceActor.DatabaseInitialization.For(ServiceName.Insights, PeopleTestData.CompanyId),
+                new GetRunToolCallsRequest { CompanyId = PeopleTestData.CompanyId, CaseId = caseId, RunId = runId },
+                cancellationToken);
+
+            return response.ToolCalls;
+        }
+
+        public LinkWorkOrderArguments DecodeLinkArguments(string arguments) =>
+            JsonSerializer.Deserialize<LinkWorkOrderArguments>(
+                arguments, fixture.Hosts.Insights.GetService<IAgentJson>().Tools)!;
+
+        public async Task<CaseOutcomeResponse> LoadCaseOutcomeAsync(Guid caseId, CancellationToken cancellationToken)
+        {
+            var detail = await fixture.Hosts.Insights.SendAsync<GetCaseRequest, CaseDetailResponse>(
+                ServiceActor.DatabaseInitialization.For(ServiceName.Insights, PeopleTestData.CompanyId),
+                new GetCaseRequest { CompanyId = PeopleTestData.CompanyId, Id = caseId },
+                cancellationToken);
+
+            return detail.Outcome;
+        }
+
+        public async Task<List<AgentToolCall>> LoadAllToolCallsAsync()
+        {
+            using var scope = fixture.Hosts.Insights.CreateScope(SeederTestData.InitializationActor);
+
+            return await scope.ServiceProvider.GetRequiredService<InsightsDbContext>()
+                .AgentToolCalls.AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<(List<AgentRun> Runs, List<AgentAction> Actions)> LoadAgentRunsAsync()

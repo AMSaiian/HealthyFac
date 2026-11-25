@@ -63,6 +63,13 @@ internal static class TelemetryHistoryChecks
         }
     }
 
+    /// <summary>Finds the moment of the link: 1 minute before the maintenance start.</summary>
+    /// <param name="drain">The drain.</param>
+    /// <returns>The moment in the hour form.</returns>
+    internal static RelativeMoment LinkMoment(DrainSeed drain) =>
+        RelativeMoment.FromTotalMinutes(
+            drain.Maintenance.From.TotalMinutes - TelemetryHistoryConstants.LinkLeadMinutes);
+
     private static void CheckKeysAreUnique(TelemetryFile file)
     {
         var listsByKey = new Dictionary<string, string>();
@@ -167,29 +174,12 @@ internal static class TelemetryHistoryChecks
 
         var item = ItemOf($"{drain.Key}{TelemetryHistoryConstants.WorkOrderSuffix}");
         CheckMoment(file, item, workOrder.CreatedAt);
-        if (string.IsNullOrWhiteSpace(workOrder.Title))
-        {
-            throw new SeedFileException(TelemetryHistoryErrors.WorkOrderTitleInvalid(item));
-        }
-
-        if (workOrder.EstimateMinutes <= 0)
-        {
-            throw new SeedFileException(TelemetryHistoryErrors.WorkOrderEstimateInvalid(item));
-        }
-
         var assignedMinutes = workOrder.CreatedAt.TotalMinutes + TelemetryHistoryConstants.AssignDelayMinutes;
         if (assignedMinutes >= LinkMoment(drain).TotalMinutes)
         {
             throw new SeedFileException(TelemetryHistoryErrors.WorkOrderNotBeforeLink(item));
         }
     }
-
-    /// <summary>Finds the moment of the link: 1 minute before the maintenance start.</summary>
-    /// <param name="drain">The drain.</param>
-    /// <returns>The moment in the hour form.</returns>
-    internal static RelativeMoment LinkMoment(DrainSeed drain) =>
-        RelativeMoment.FromTotalMinutes(
-            drain.Maintenance.From.TotalMinutes - TelemetryHistoryConstants.LinkLeadMinutes);
 
     private static void CheckStep(
         TelemetryFile file,

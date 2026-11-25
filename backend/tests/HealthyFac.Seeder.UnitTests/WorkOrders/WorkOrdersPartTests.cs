@@ -36,6 +36,22 @@ public sealed class WorkOrdersPartTests
             .WithMessage($"*work-orders.json#{OrderKey}.status.0.inProgress*ghost*");
     }
 
+    [Fact(Explicit = true)]
+    public void ReadEvents_WithAnHourPlannedStartInTheFile_FailsWithTheItemAndTheTimeOfDayRule()
+    {
+        var folder = CommittedSeedTestData.CopyWith(
+            CommittedSeedTestData.WorkOrdersFile,
+            root => CommittedSeedTestData.FindOrder(root, OrderKey)[propertyName: "assignment"]![
+                propertyName: "plannedStart"] = "h-2");
+        var part = new WorkOrdersPart(null!);
+
+        var act = () => part.ReadEvents(folder);
+
+        act.Should()
+            .Throw<SeedFileException>()
+            .WithMessage($"*work-orders.json#{OrderKey}.assigned*needs a planned start with a time of day*");
+    }
+
     private static SeedFolder CreateFolder(params (string Status, string By)[] changes) =>
         CommittedSeedTestData.CopyWith(
             CommittedSeedTestData.WorkOrdersFile,

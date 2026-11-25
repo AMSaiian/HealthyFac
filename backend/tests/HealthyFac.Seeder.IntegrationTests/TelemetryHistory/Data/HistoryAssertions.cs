@@ -3,6 +3,7 @@ using HealthyFac.Insights.Application.Agents;
 using HealthyFac.Insights.Application.Agents.Tools.Writes;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Seeder.IntegrationTests.People.Data;
@@ -155,7 +156,8 @@ public static class HistoryAssertions
         IReadOnlyList<MachineSignal> signals,
         IReadOnlyList<AgentRun> runs,
         IReadOnlyList<AgentAction> actions,
-        IReadOnlyList<WorkOrder> orders
+        IReadOnlyList<WorkOrder> orders,
+        IReadOnlyList<AgentToolCall> toolCalls
     )
     {
         (string Machine, string Maintenance, string Title)[] drains =
@@ -185,6 +187,13 @@ public static class HistoryAssertions
                 .OnlyContain(
                     signal => signal.Coverage == SignalCoverage.Linked && signal.WorkOrderId == order.Id, machine);
             run.State.Should().Be(AgentRunState.Completed, machine);
+            toolCalls.Where(call => call.RunId == run.Id)
+                .Should()
+                .ContainSingle(
+                    call => call.ToolName == LinkWorkOrderToolRequest.ToolName
+                        && call.Outcome == ToolCallOutcome.Succeeded
+                        && call.Sequence == 1
+                        && call.CallId == action.CallId, machine);
             action.Kind.Should().Be(AgentActionKind.LinkWorkOrder, machine);
             action.State.Should().Be(AgentActionState.Committed, machine);
             payload.WorkOrderId.Should().Be(order.Id, machine);

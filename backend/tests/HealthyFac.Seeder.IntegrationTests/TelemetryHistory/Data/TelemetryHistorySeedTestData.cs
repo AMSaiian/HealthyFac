@@ -150,6 +150,10 @@ public static class TelemetryHistorySeedTestData
     public static readonly DateTimeOffset WeekdayEveningAnchor = new(
         year: 2027, month: 6, day: 2, hour: 18, minute: 0, second: 0, TimeSpan.Zero);
 
+    public static readonly string TestScriptWithEmptyTitle = TestScriptWithWorkOrder.Replace(
+        oldValue: "\"title\": \"Replace the bearings\"", newValue: "\"title\": \"\"");
+
+    public const string CreateWorkOrderItem = "telemetry.json#lathe-spindle-work-order.created";
     public const string WorkOrdersFile = "work-orders.json";
     public const string BusyWorkOrderTitle = "Check the guard doors";
 
@@ -169,6 +173,12 @@ public static class TelemetryHistorySeedTestData
                                           "statusChanges": []
                                         }
                                         """;
+
+    public const string WorkOrderCreator = "nadiia";
+
+    /// <summary>The first work block of the assignee after the maintenance start: 08:00 in Kyiv (UTC+3).</summary>
+    public static readonly DateTime DrainPlannedStartUtc = new(
+        year: 2027, month: 6, day: 3, hour: 5, minute: 0, second: 0, DateTimeKind.Utc);
 
     public const string MaintenanceActor = "maksym";
     public const string PumpLinkItem = "telemetry.json#pump-bearings.link";

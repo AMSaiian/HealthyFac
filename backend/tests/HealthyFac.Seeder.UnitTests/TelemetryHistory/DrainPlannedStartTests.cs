@@ -61,13 +61,13 @@ public sealed class DrainPlannedStartTests
     public void Choose_WithABlockThatBeginsBeforeTheAssignment_SkipsIt()
     {
         var start = DrainPlannedStart.Choose(
-            DrainPlannedStartTestData.At(day: 2, hour: 12, minute: 30),
+            DrainPlannedStartTestData.At(day: 2, hour: 2, minute: 0),
             DrainPlannedStartTestData.Estimate,
             DrainPlannedStartTestData.At(day: 2, hour: 9, minute: 0),
             DrainPlannedStartTestData.Blocks,
             []);
 
-        start.Should().Be(DrainPlannedStartTestData.At(day: 2, hour: 13, minute: 0));
+        start.Should().Be(DrainPlannedStartTestData.At(day: 2, hour: 9, minute: 0));
     }
 
     [Fact(Explicit = true)]

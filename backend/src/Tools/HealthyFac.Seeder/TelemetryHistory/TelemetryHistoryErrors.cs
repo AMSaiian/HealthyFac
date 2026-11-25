@@ -60,10 +60,6 @@ public static class TelemetryHistoryErrors
     public static string OverrideValueInvalid(string item, string metric, string kind) =>
         $"The item {item} gives the metric {metric} a value that does not fit its value kind {kind}.";
 
-    public static string WorkOrderTitleInvalid(string item) => $"The item {item} needs a title.";
-
-    public static string WorkOrderEstimateInvalid(string item) => $"The item {item} needs an estimate above 0.";
-
     public static string WorkOrderNotBeforeLink(string item) =>
         $"The item {item} must be assigned before the link moment, which lies "
         + $"{TelemetryHistoryConstants.LinkLeadMinutes} minute before the maintenance. "

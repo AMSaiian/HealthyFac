@@ -3,6 +3,7 @@ using HealthyFac.Insights.Application.Agents.Tools.Writes;
 using HealthyFac.Insights.Application.Cases;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Seeder.IntegrationTests.Cases.Data;
@@ -141,6 +142,8 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         var order = orders.Single(candidate => candidate.Title == TelemetryHistorySeedTestData.DrainWorkOrderTitle);
         var history = order.History.OrderBy(row => row.Revision).ToList();
         var assignee = employees.Single(employee => employee.Id == order.Current.AssigneeId);
+        var supervisor = employees.Single(employee =>
+            employee.Email.StartsWith(TelemetryHistorySeedTestData.WorkOrderCreator));
         job.ExitCode.Should().Be(expected: 0);
         history.Select(row => row.Status).Should().Equal(WorkOrdersTestData.PumpSealStatuses);
         history.Select(row => row.CreatedAt)
@@ -153,9 +156,26 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
                     .WhenTypeIs<DateTime>());
         assignee.Email.Should().StartWith(TelemetryHistorySeedTestData.MaintenanceActor);
         order.Current.Estimate.Should().Be(TimeSpan.FromMinutes(minutes: 60));
-        order.Current.PlannedStartUtc.Should()
-            .BeOnOrAfter(At(TelemetryHistorySeedTestData.MaintenanceStartMoment))
-            .And.BeBefore(At(TelemetryHistorySeedTestData.MaintenanceStartMoment).AddDays(value: 1));
+        order.Current.PlannedStartUtc.Should().Be(TelemetryHistorySeedTestData.DrainPlannedStartUtc);
+        history.Take(count: 2)
+            .Select(row => row.CreatedBy)
+            .Should()
+            .OnlyContain(userId => userId == supervisor.IdentityUserId);
+        order.CreatedBy.Should().Be(supervisor.IdentityUserId!.Value);
+    }
+
+    [Fact(Explicit = true)]
+    public async Task Run_WithAnEmptyTitleOnADrainWorkOrder_FailsWithTheCreateItemAndTheCoreRule()
+    {
+        var baseDirectory = TelemetryHistorySeedTestData.CreateBaseDirectory(
+            TelemetryHistorySeedTestData.TestScriptWithEmptyTitle);
+
+        var failures = await _fixture.CheckTelemetrySeedAsync(
+            baseDirectory, TelemetryHistorySeedTestData.ThursdayAnchor, TestContext.Current.CancellationToken);
+
+        failures.Should()
+            .ContainSingle(failure => failure.Item == TelemetryHistorySeedTestData.CreateWorkOrderItem
+                && failure.Rule.Contains("title"));
     }
 
     [Fact(Explicit = true)]
@@ -198,6 +218,9 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         var linkActions = actions.Where(action => plannerRuns.Select(run => run.Id).Contains(action.RunId)).ToList();
         var action = linkActions.Should().ContainSingle().Subject;
         var payload = ActionBuffering.Deserialize<LinkWorkOrderPayload>(action);
+        var outcome = await _fixture.LoadCaseOutcomeAsync(drainCase.Id, TestContext.Current.CancellationToken);
+        var toolCalls = await _fixture.LoadToolCallsAsync(
+            drainCase.Id, plannerRuns.Single().Id, TestContext.Current.CancellationToken);
         openAtLink.Should().NotBeEmpty();
         openAtLink.Should()
             .OnlyContain(signal => signal.Coverage == SignalCoverage.Linked && signal.WorkOrderId == order.Id);
@@ -207,9 +230,15 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         action.State.Should().Be(AgentActionState.Committed);
         payload.WorkOrderId.Should().Be(order.Id);
         payload.SignalIds.Should().BeEquivalentTo(openAtLink.Select(signal => signal.Id));
-        CaseOutcomes.Resolve(action, plannerRuns.Single(), isAiUnavailable: false, reason: null)
-            .Kind.Should()
-            .Be(CaseOutcomeKind.LinkedWorkOrder);
+        var toolCall = toolCalls.Should().ContainSingle().Subject;
+        var arguments = _fixture.DecodeLinkArguments(toolCall.Arguments);
+        toolCall.Sequence.Should().Be(expected: 1);
+        toolCall.ToolName.Should().Be(LinkWorkOrderToolRequest.ToolName);
+        toolCall.Outcome.Should().Be(ToolCallOutcome.Succeeded);
+        arguments.WorkOrderId.Should().Be(order.Id);
+        arguments.EpisodeIds.Should().BeEquivalentTo(openAtLink.Select(signal => signal.Id));
+        outcome.Kind.Should().Be(CaseOutcomeKind.LinkedWorkOrder);
+        outcome.WorkOrderId.Should().Be(order.Id);
     }
 
     [Fact(Explicit = true)]

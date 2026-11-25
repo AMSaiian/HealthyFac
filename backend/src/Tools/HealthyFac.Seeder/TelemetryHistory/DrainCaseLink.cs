@@ -1,7 +1,10 @@
+using System.Text.Json;
 using HealthyFac.Insights.Application.Agents;
+using HealthyFac.Insights.Application.Agents.Tools.Invocation;
 using HealthyFac.Insights.Application.Agents.Tools.Writes;
 using HealthyFac.Insights.Domain.Agents.Actions;
 using HealthyFac.Insights.Domain.Agents.Runs;
+using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.Infrastructure.Database;
@@ -69,9 +72,29 @@ internal static class DrainCaseLink
                 new LinkWorkOrderPayload
                     { SignalIds = signals.Select(signal => signal.Id).ToList(), WorkOrderId = workOrderId }));
         action.Commit();
+        var toolJson = scope.ServiceProvider.GetRequiredService<IAgentJson>().Tools;
+        var toolCall = new AgentToolCall(
+            run.Id,
+            sequence: 1,
+            action.CallId,
+            LinkWorkOrderToolRequest.ToolName,
+            JsonSerializer.Serialize(
+                new LinkWorkOrderArguments
+                    { WorkOrderId = workOrderId, EpisodeIds = signals.Select(signal => signal.Id).ToList() },
+                toolJson),
+            ToolCallOutcome.Succeeded,
+            JsonSerializer.Serialize(
+                new LinkWorkOrderToolResponse
+                {
+                    ActionId = action.Id,
+                    Status = ProposeWorkOrderToolRequestHandler.BufferedStatus,
+                },
+                toolJson),
+            durationMilliseconds: 0);
         signals.ForEach(signal => signal.MarkLinked(workOrderId));
         dbContext.AgentRuns.Add(run);
         dbContext.AgentActions.Add(action);
+        dbContext.AgentToolCalls.Add(toolCall);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

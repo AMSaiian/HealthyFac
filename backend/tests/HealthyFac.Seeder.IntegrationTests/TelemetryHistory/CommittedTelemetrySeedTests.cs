@@ -33,6 +33,7 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
         var step = await _fixture.ReadEvaluationStepAsync();
         var (runs, actions) = await _fixture.LoadAgentRunsAsync();
         var orders = await _fixture.LoadWorkOrdersAsync();
+        var toolCalls = await _fixture.LoadAllToolCallsAsync();
 
         TestContext.Current.SendDiagnosticMessage(
             $"Measured: elapsed {stopwatch.Elapsed:g}, "
@@ -43,7 +44,7 @@ public sealed class CommittedTelemetrySeedTests(SeederFixture fixture)
         HistoryAssertions.AssertEpisodes(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, episodes, step);
         HistoryAssertions.AssertCases(TelemetryHistorySeedTestData.CommittedExpectation, machineIds, cases, signals);
         HistoryAssertions.AssertDrainWorkOrders(
-            TelemetryHistorySeedTestData.CommittedExpectation, machineIds, signals, runs, actions, orders);
+            TelemetryHistorySeedTestData.CommittedExpectation, machineIds, signals, runs, actions, orders, toolCalls);
     }
 
     [Fact(Explicit = true)]

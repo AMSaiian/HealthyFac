@@ -181,11 +181,6 @@ public static class TelemetryHistoryPartTestData
                 "telemetry.json#lathe-spindle-work-order", "before the link"
             },
             {
-                "work order with an empty title",
-                root => AddWorkOrder(root, title: " "),
-                "telemetry.json#lathe-spindle-work-order", "title"
-            },
-            {
                 "work order without a maintenance",
                 root =>
                 {

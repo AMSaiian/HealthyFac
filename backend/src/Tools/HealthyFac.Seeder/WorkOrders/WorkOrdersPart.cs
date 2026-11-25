@@ -54,6 +54,9 @@ public sealed class WorkOrdersPart : ISeedPart
         return ReadEventsOf(file.WorkOrders, folder.Read<CompanyFile>(PeopleConstants.FileName).People);
     }
 
+    public Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken) =>
+        _actions[SeedItem.KeyOf(seedEvent.Item)](context, cancellationToken);
+
     /// <summary>Lists the events of work orders, in the order of the orders.</summary>
     /// <param name="orders">The work orders.</param>
     /// <param name="people">The people of the company, for the scope of each actor.</param>
@@ -76,9 +79,6 @@ public sealed class WorkOrdersPart : ISeedPart
 
         return events;
     }
-
-    public Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken) =>
-        _actions[SeedItem.KeyOf(seedEvent.Item)](context, cancellationToken);
 
     private static string OrderKey(WorkOrderSeed order) => $"{order.Key}{WorkOrdersConstants.OrderSuffix}";
 
@@ -184,7 +184,7 @@ public sealed class WorkOrdersPart : ISeedPart
             FileIds = [],
         };
 
-    private static AssignWorkOrderRequest AssignRequest(
+    private AssignWorkOrderRequest AssignRequest(
         AssignmentSeed assignment,
         string item,
         Guid companyId,
@@ -198,9 +198,10 @@ public sealed class WorkOrdersPart : ISeedPart
             CompanyId = companyId,
             Id = orderId,
             AssigneeId = assigneeId,
-            PlannedStartLocal = assignment.PlannedStart is { Time: null, Form: not MomentForm.Hour }
-                ? throw new SeedFileException(WorkOrdersErrors.PlannedStartNeedsTime(item))
-                : plannedStart,
+            PlannedStartLocal = assignment.PlannedStart.Time is null
+                && (_chooser is null || assignment.PlannedStart.Form != MomentForm.Hour)
+                    ? throw new SeedFileException(WorkOrdersErrors.PlannedStartNeedsTime(item))
+                    : plannedStart,
             RowVersion = rowVersion,
         };
 
@@ -240,7 +241,8 @@ public sealed class WorkOrdersPart : ISeedPart
         var orderId = context.GetId(OrderKey(order));
         var assigneeId = context.GetId(EmployeeKey(assignment.Assignee));
         var plannedStart = _chooser is null
-            ? PlannedStartLocal(assignment.PlannedStart, context)
+            ? SeedCalendar.ToDate(assignment.PlannedStart, context.Anchor, context.Zone)
+                .ToDateTime(assignment.PlannedStart.Time ?? default(TimeOnly), DateTimeKind.Unspecified)
             : await _chooser(order, assigneeId, context, cancellationToken);
         var rowVersion = await ReadRowVersionAsync(orderId, cancellationToken);
 
@@ -286,10 +288,4 @@ public sealed class WorkOrdersPart : ISeedPart
 
         return rowVersion ?? throw new InvalidOperationException(WorkOrdersErrors.OrderMissing(orderId));
     }
-
-    private static DateTime PlannedStartLocal(RelativeMoment moment, SeedContext context) =>
-        moment.Form == MomentForm.Hour
-            ? TimeZoneInfo.ConvertTime(SeedCalendar.ToUtc(moment, context.Anchor, context.Zone), context.Zone).DateTime
-            : SeedCalendar.ToDate(moment, context.Anchor, context.Zone)
-                .ToDateTime(moment.Time ?? default(TimeOnly), DateTimeKind.Unspecified);
 }
