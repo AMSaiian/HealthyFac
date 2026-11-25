@@ -22,7 +22,6 @@ using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 using HealthyFac.Telemetry.Web.Authorization;
 using HealthyFac.Telemetry.Web.DefinitionDrafts;
 using HealthyFac.Telemetry.Web.MetricDefinitions;
-using HealthyFac.Telemetry.Web.MetricDefinitions.Rpc;
 using HealthyFac.Telemetry.Web.MetricUnits;
 using HealthyFac.Telemetry.Web.OperatingPhases;
 using HealthyFac.Telemetry.Web.SignalEpisodes;

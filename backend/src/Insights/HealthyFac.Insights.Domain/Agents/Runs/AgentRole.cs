@@ -11,6 +11,7 @@ public sealed class AgentRole : Enumeration<AgentRole>
     public static readonly AgentRole Planner = new(value: "planner");
     public static readonly AgentRole Extractor = new(value: "extractor");
     public static readonly AgentRole Screener = new(value: "screener");
+    public static readonly AgentRole Chat = new(value: "chat");
 
     private AgentRole(string value)
         : base(value)

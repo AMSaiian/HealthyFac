@@ -44,6 +44,32 @@ public sealed class TokenExchangeTests(KeycloakRealmCollectionFixture fixture)
             .BeEquivalentTo(RealmTestData.CorePermissions);
     }
 
+    [Theory]
+    [MemberData(nameof(TokenExchangeTestData.ChatExchanges), MemberType = typeof(TokenExchangeTestData))]
+    public async Task Exchange_AsInsightsForAChatTurn_ReturnsTokenWithTheWorkerPermissions(
+        string audience,
+        string scope,
+        IReadOnlyList<string> expectedPermissions
+    )
+    {
+        var subjectToken = await _fixture.Realm.GetWorkerAccessTokenAsync();
+
+        var response = await _fixture.ExchangeAsInsightsAsync(subjectToken, audience, scope);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var claims = response.AccessTokenClaims();
+        claims.Audiences().Should().Equal(audience);
+
+        claims[TokenExchangeTestData.SubjectClaim]!.GetValue<string>()
+            .Should()
+            .Be(RealmTestData.WorkerIdentityId.ToString());
+
+        claims[RealmTestData.PermissionsClaim]!.AsArray()
+            .Select(value => value!.GetValue<string>())
+            .Should()
+            .BeEquivalentTo(expectedPermissions);
+    }
+
     [Fact]
     public async Task Exchange_ThroughInternalAddress_HasPublicIssuer()
     {

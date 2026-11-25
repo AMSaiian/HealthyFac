@@ -39,6 +39,7 @@ public static class RealmTestData
     public const string AdminRole = "admin";
     public const string IdListClaimSuffix = "_ids";
     public const string WorkerRoleName = "worker";
+    public const string WorkerEmail = "worker@healthyfac.local";
 
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");
     public static readonly Guid SupervisorIdentityId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000002");
@@ -130,6 +131,24 @@ public static class RealmTestData
         "ingest:write",
         "cases:read",
         "cases:write",
+        "chats:read",
+        "chats:write",
+    ];
+
+    /// <summary>The read permissions of the worker that the chat tools use at Core.</summary>
+    public static IReadOnlyList<string> WorkerChatCorePermissions { get; } =
+    [
+        "machines:read",
+        "work-orders:read",
+        "shifts:read",
+    ];
+
+    /// <summary>The read permissions of the worker that the chat tools use at Telemetry.</summary>
+    public static IReadOnlyList<string> WorkerChatTelemetryPermissions { get; } =
+    [
+        "signals:read",
+        "metric-definitions:read",
+        "status-definitions:read",
     ];
 
     /// <summary>The permissions of a token that the web app gets: the permissions of every API.</summary>

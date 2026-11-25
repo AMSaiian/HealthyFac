@@ -15,7 +15,7 @@ using ApplicationSearchStatusDefinitionsRequest =
 using RpcMetricDefinition = HealthyFac.Telemetry.Contracts.Definitions.MetricDefinition;
 using RpcStatusDefinition = HealthyFac.Telemetry.Contracts.Definitions.StatusDefinition;
 
-namespace HealthyFac.Telemetry.Web.MetricDefinitions.Rpc;
+namespace HealthyFac.Telemetry.Web.MetricDefinitions;
 
 /// <summary>
 /// Serves the active metric definitions and the status definitions of a machine to the services that read them

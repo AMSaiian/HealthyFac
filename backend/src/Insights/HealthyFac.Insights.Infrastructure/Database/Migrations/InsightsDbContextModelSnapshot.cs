@@ -216,13 +216,13 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         {
                             t.HasCheckConstraint("ck_agent_run_attempt_number_range", "\"attempt_number\" BETWEEN 0 AND 2147483647");
 
-                            t.HasCheckConstraint("ck_agent_run_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'providerUnavailable', 'unexpectedError')");
+                            t.HasCheckConstraint("ck_agent_run_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'outputLimit', 'providerUnavailable', 'timeLimit', 'unexpectedError')");
 
                             t.HasCheckConstraint("ck_agent_run_input_tokens_range", "\"input_tokens\" BETWEEN 0 AND 2147483647");
 
                             t.HasCheckConstraint("ck_agent_run_output_tokens_range", "\"output_tokens\" BETWEEN 0 AND 2147483647");
 
-                            t.HasCheckConstraint("ck_agent_run_role_allowed", "\"role\" IN ('extractor', 'planner', 'screener', 'triage')");
+                            t.HasCheckConstraint("ck_agent_run_role_allowed", "\"role\" IN ('chat', 'extractor', 'planner', 'screener', 'triage')");
 
                             t.HasCheckConstraint("ck_agent_run_skip_reason_allowed", "\"skip_reason\" IN ('caseNotOpen', 'nothingToReview')");
 
@@ -505,6 +505,353 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                             t.HasCheckConstraint("ck_machine_signal_severity_allowed", "\"severity\" IN ('alarm', 'warning')");
 
                             t.HasCheckConstraint("ck_machine_signal_state_allowed", "\"state\" IN ('open', 'resolved')");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Chat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<bool>("IsSummaryStale")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_summary_stale");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_activity_at");
+
+                    b.Property<int>("NextSequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("next_sequence");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<uint>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("state");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text")
+                        .HasColumnName("summary")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<int?>("SummaryThroughSequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("summary_through_sequence");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("title")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "CompanyId", "LastActivityAt")
+                        .HasDatabaseName("ix_chats_owner_user_id_company_id_last_activity_at");
+
+                    b.ToTable("chats", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chat_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_next_sequence_range", "\"next_sequence\" BETWEEN 1 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_chat_owner_user_id_not_empty", "\"owner_user_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_state_allowed", "\"state\" IN ('blocked', 'open')");
+
+                            t.HasCheckConstraint("ck_chat_title_length", "char_length(\"title\") BETWEEN 0 AND 80");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AgentRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("agent_run_id");
+
+                    b.Property<Guid>("ChatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(19)
+                        .HasColumnType("character varying(19)")
+                        .HasColumnName("error_code");
+
+                    b.Property<string>("Kind")
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)")
+                        .HasColumnName("role");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("state");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("text")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentRunId")
+                        .HasDatabaseName("ix_chat_messages_agent_run_id");
+
+                    b.HasIndex("ChatId", "Sequence")
+                        .IsUnique()
+                        .HasDatabaseName("ux_chat_messages_chat_id_sequence")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("chat_messages", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chat_message_chat_id_not_empty", "\"chat_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_message_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'outputLimit', 'providerUnavailable', 'timeLimit', 'unexpectedError')");
+
+                            t.HasCheckConstraint("ck_chat_message_kind_allowed", "\"kind\" IN ('answer', 'blockedNotice', 'refusal', 'unanswerable')");
+
+                            t.HasCheckConstraint("ck_chat_message_role_allowed", "\"role\" IN ('assistant', 'user')");
+
+                            t.HasCheckConstraint("ck_chat_message_sequence_range", "\"sequence\" BETWEEN 1 AND 2147483647");
+
+                            t.HasCheckConstraint("ck_chat_message_state_allowed", "\"state\" IN ('cancelled', 'completed', 'failed', 'interrupted', 'streaming')");
+
+                            t.HasCheckConstraint("ck_chat_message_text_user_text_length", "role <> 'user' OR (char_length(text) BETWEEN 1 AND 2000)");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessageDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChatMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("draft_id");
+
+                    b.Property<bool>("IsCommitted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_committed");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid?>("TargetMachineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_machine_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("title")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatMessageId");
+
+                    b.ToTable("chat_message_drafts", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chat_message_draft_chat_message_id_not_empty", "\"chat_message_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_message_draft_draft_id_not_empty", "\"draft_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_message_draft_kind_allowed", "\"kind\" IN ('machine', 'metric', 'operatingPhase', 'status', 'workOrder')");
+
+                            t.HasCheckConstraint("ck_chat_message_draft_title_not_blank", "\"title\" COLLATE \"default\" ~ '\\S'");
+                        });
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessageLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChatMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("label")
+                        .UseCollation("case_insensitive");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatMessageId");
+
+                    b.ToTable("chat_message_links", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_chat_message_link_chat_message_id_not_empty", "\"chat_message_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_message_link_entity_id_not_empty", "\"entity_id\" <> '00000000-0000-0000-0000-000000000000'");
+
+                            t.HasCheckConstraint("ck_chat_message_link_kind_allowed", "\"kind\" IN ('employee', 'file', 'machine', 'maintenanceCase', 'workOrder')");
+
+                            t.HasCheckConstraint("ck_chat_message_link_label_not_blank", "\"label\" COLLATE \"default\" ~ '\\S'");
+
+                            t.HasCheckConstraint("ck_chat_message_link_position_range", "\"position\" BETWEEN 0 AND 2147483647");
                         });
                 });
 
@@ -971,6 +1318,38 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessage", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Agents.Runs.AgentRun", null)
+                        .WithMany()
+                        .HasForeignKey("AgentRunId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HealthyFac.Insights.Domain.Chats.Chat", null)
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessageDraft", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Chats.Messages.ChatMessage", null)
+                        .WithMany("Drafts")
+                        .HasForeignKey("ChatMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessageLink", b =>
+                {
+                    b.HasOne("HealthyFac.Insights.Domain.Chats.Messages.ChatMessage", null)
+                        .WithMany("Links")
+                        .HasForeignKey("ChatMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HealthyFac.Insights.Domain.Documents.DocumentChunk", b =>
                 {
                     b.HasOne("HealthyFac.Insights.Domain.Documents.IngestedDocument", null)
@@ -992,6 +1371,18 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
             modelBuilder.Entity("HealthyFac.Insights.Domain.Cases.MaintenanceCase", b =>
                 {
                     b.Navigation("Signals");
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Chat", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("HealthyFac.Insights.Domain.Chats.Messages.ChatMessage", b =>
+                {
+                    b.Navigation("Drafts");
+
+                    b.Navigation("Links");
                 });
 
             modelBuilder.Entity("HealthyFac.Insights.Domain.Documents.IngestedDocument", b =>

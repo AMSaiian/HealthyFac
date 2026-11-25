@@ -17,6 +17,38 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                 .Annotation("Npgsql:PostgresExtension:vector", ",,");
 
             migrationBuilder.CreateTable(
+                name: "chats",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    owner_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    company_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    title = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false, collation: "case_insensitive"),
+                    state = table.Column<string>(type: "character varying(7)", maxLength: 7, nullable: false),
+                    summary = table.Column<string>(type: "text", nullable: true, collation: "case_insensitive"),
+                    summary_through_sequence = table.Column<int>(type: "integer", nullable: true),
+                    is_summary_stale = table.Column<bool>(type: "boolean", nullable: false),
+                    last_activity_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    next_sequence = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chats", x => x.id);
+                    table.CheckConstraint("ck_chat_company_id_not_empty", "\"company_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_next_sequence_range", "\"next_sequence\" BETWEEN 1 AND 2147483647");
+                    table.CheckConstraint("ck_chat_owner_user_id_not_empty", "\"owner_user_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_state_allowed", "\"state\" IN ('blocked', 'open')");
+                    table.CheckConstraint("ck_chat_title_length", "char_length(\"title\") BETWEEN 0 AND 80");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "inbox_messages",
                 columns: table => new
                 {
@@ -202,10 +234,10 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                 {
                     table.PrimaryKey("PK_agent_runs", x => x.id);
                     table.CheckConstraint("ck_agent_run_attempt_number_range", "\"attempt_number\" BETWEEN 0 AND 2147483647");
-                    table.CheckConstraint("ck_agent_run_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'providerUnavailable', 'unexpectedError')");
+                    table.CheckConstraint("ck_agent_run_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'outputLimit', 'providerUnavailable', 'timeLimit', 'unexpectedError')");
                     table.CheckConstraint("ck_agent_run_input_tokens_range", "\"input_tokens\" BETWEEN 0 AND 2147483647");
                     table.CheckConstraint("ck_agent_run_output_tokens_range", "\"output_tokens\" BETWEEN 0 AND 2147483647");
-                    table.CheckConstraint("ck_agent_run_role_allowed", "\"role\" IN ('extractor', 'planner', 'screener', 'triage')");
+                    table.CheckConstraint("ck_agent_run_role_allowed", "\"role\" IN ('chat', 'extractor', 'planner', 'screener', 'triage')");
                     table.CheckConstraint("ck_agent_run_skip_reason_allowed", "\"skip_reason\" IN ('caseNotOpen', 'nothingToReview')");
                     table.CheckConstraint("ck_agent_run_state_allowed", "\"state\" IN ('completed', 'failed', 'interrupted', 'queued', 'running', 'skipped')");
                     table.CheckConstraint("ck_agent_run_verdict_allowed", "\"verdict\" IN ('dismiss', 'escalate', 'safe', 'unsafe', 'watch')");
@@ -349,6 +381,117 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "chat_messages",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    chat_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sequence = table.Column<int>(type: "integer", nullable: false),
+                    role = table.Column<string>(type: "character varying(9)", maxLength: 9, nullable: false),
+                    kind = table.Column<string>(type: "character varying(13)", maxLength: 13, nullable: true),
+                    state = table.Column<string>(type: "character varying(11)", maxLength: 11, nullable: false),
+                    text = table.Column<string>(type: "text", nullable: false, collation: "case_insensitive"),
+                    agent_run_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    error_code = table.Column<string>(type: "character varying(19)", maxLength: 19, nullable: true),
+                    started_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_messages", x => x.id);
+                    table.CheckConstraint("ck_chat_message_chat_id_not_empty", "\"chat_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_message_error_code_allowed", "\"error_code\" IN ('caseChanged', 'noDecision', 'outputLimit', 'providerUnavailable', 'timeLimit', 'unexpectedError')");
+                    table.CheckConstraint("ck_chat_message_kind_allowed", "\"kind\" IN ('answer', 'blockedNotice', 'refusal', 'unanswerable')");
+                    table.CheckConstraint("ck_chat_message_role_allowed", "\"role\" IN ('assistant', 'user')");
+                    table.CheckConstraint("ck_chat_message_sequence_range", "\"sequence\" BETWEEN 1 AND 2147483647");
+                    table.CheckConstraint("ck_chat_message_state_allowed", "\"state\" IN ('cancelled', 'completed', 'failed', 'interrupted', 'streaming')");
+                    table.CheckConstraint("ck_chat_message_text_user_text_length", "role <> 'user' OR (char_length(text) BETWEEN 1 AND 2000)");
+                    table.ForeignKey(
+                        name: "FK_chat_messages_agent_runs_agent_run_id",
+                        column: x => x.agent_run_id,
+                        principalTable: "agent_runs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_chat_messages_chats_chat_id",
+                        column: x => x.chat_id,
+                        principalTable: "chats",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "chat_message_drafts",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    chat_message_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    kind = table.Column<string>(type: "character varying(14)", maxLength: 14, nullable: false),
+                    draft_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false, collation: "case_insensitive"),
+                    target_machine_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    is_committed = table.Column<bool>(type: "boolean", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_message_drafts", x => x.id);
+                    table.CheckConstraint("ck_chat_message_draft_chat_message_id_not_empty", "\"chat_message_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_message_draft_draft_id_not_empty", "\"draft_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_message_draft_kind_allowed", "\"kind\" IN ('machine', 'metric', 'operatingPhase', 'status', 'workOrder')");
+                    table.CheckConstraint("ck_chat_message_draft_title_not_blank", "\"title\" COLLATE \"default\" ~ '\\S'");
+                    table.ForeignKey(
+                        name: "FK_chat_message_drafts_chat_messages_chat_message_id",
+                        column: x => x.chat_message_id,
+                        principalTable: "chat_messages",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "chat_message_links",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    chat_message_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    kind = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: false),
+                    entity_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    label = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false, collation: "case_insensitive"),
+                    position = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_by = table.Column<Guid>(type: "uuid", nullable: false),
+                    updated_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    deleted_by = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_message_links", x => x.id);
+                    table.CheckConstraint("ck_chat_message_link_chat_message_id_not_empty", "\"chat_message_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_message_link_entity_id_not_empty", "\"entity_id\" <> '00000000-0000-0000-0000-000000000000'");
+                    table.CheckConstraint("ck_chat_message_link_kind_allowed", "\"kind\" IN ('employee', 'file', 'machine', 'maintenanceCase', 'workOrder')");
+                    table.CheckConstraint("ck_chat_message_link_label_not_blank", "\"label\" COLLATE \"default\" ~ '\\S'");
+                    table.CheckConstraint("ck_chat_message_link_position_range", "\"position\" BETWEEN 0 AND 2147483647");
+                    table.ForeignKey(
+                        name: "FK_chat_message_links_chat_messages_chat_message_id",
+                        column: x => x.chat_message_id,
+                        principalTable: "chat_messages",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "ux_agent_actions_run_id_call_id",
                 table: "agent_actions",
@@ -375,6 +518,33 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                 table: "agent_tool_calls",
                 columns: new[] { "run_id", "sequence" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_chat_message_drafts_chat_message_id",
+                table: "chat_message_drafts",
+                column: "chat_message_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_chat_message_links_chat_message_id",
+                table: "chat_message_links",
+                column: "chat_message_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_chat_messages_agent_run_id",
+                table: "chat_messages",
+                column: "agent_run_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ux_chat_messages_chat_id_sequence",
+                table: "chat_messages",
+                columns: new[] { "chat_id", "sequence" },
+                unique: true,
+                filter: "deleted_at IS NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_chats_owner_user_id_company_id_last_activity_at",
+                table: "chats",
+                columns: new[] { "owner_user_id", "company_id", "last_activity_at" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_document_chunks_embedding_hnsw",
@@ -460,6 +630,12 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                 name: "agent_tool_calls");
 
             migrationBuilder.DropTable(
+                name: "chat_message_drafts");
+
+            migrationBuilder.DropTable(
+                name: "chat_message_links");
+
+            migrationBuilder.DropTable(
                 name: "document_chunks");
 
             migrationBuilder.DropTable(
@@ -472,16 +648,22 @@ namespace HealthyFac.Insights.Infrastructure.Database.Migrations
                 name: "outbox_messages");
 
             migrationBuilder.DropTable(
-                name: "agent_runs");
+                name: "chat_messages");
 
             migrationBuilder.DropTable(
                 name: "ingested_documents");
 
             migrationBuilder.DropTable(
-                name: "maintenance_cases");
+                name: "agent_runs");
+
+            migrationBuilder.DropTable(
+                name: "chats");
 
             migrationBuilder.DropTable(
                 name: "ingest_attempts");
+
+            migrationBuilder.DropTable(
+                name: "maintenance_cases");
         }
     }
 }

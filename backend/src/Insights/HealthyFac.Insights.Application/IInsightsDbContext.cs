@@ -3,6 +3,8 @@ using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
+using HealthyFac.Insights.Domain.Chats;
+using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Application.Persistence;
@@ -27,6 +29,10 @@ public interface IInsightsDbContext : ITransactionalDbContext
     DbSet<MaintenanceCase> MaintenanceCases { get; }
 
     DbSet<MachineSignal> MachineSignals { get; }
+
+    DbSet<Chat> Chats { get; }
+
+    DbSet<ChatMessage> ChatMessages { get; }
 
     DbSet<AgentRun> AgentRuns { get; }
 

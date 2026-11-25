@@ -45,7 +45,12 @@ public static class TokenRequestExtensions
             return new TokenResponse { StatusCode = response.StatusCode, Body = body! };
         }
 
-        public async Task<string> GetSupervisorAccessTokenAsync()
+        public Task<string> GetSupervisorAccessTokenAsync() =>
+            fixture.GetUserAccessTokenAsync(RealmTestData.SupervisorEmail);
+
+        public Task<string> GetWorkerAccessTokenAsync() => fixture.GetUserAccessTokenAsync(RealmTestData.WorkerEmail);
+
+        private async Task<string> GetUserAccessTokenAsync(string username)
         {
             var clientId = await fixture.Server.CreatePasswordGrantClientAsync();
 
@@ -55,7 +60,7 @@ public static class TokenRequestExtensions
                     ["grant_type"] = "password",
                     ["client_id"] = clientId,
                     ["client_secret"] = KeycloakTestServer.PasswordGrantClientSecret,
-                    ["username"] = RealmTestData.SupervisorEmail,
+                    ["username"] = username,
                     ["password"] = RealmTestData.SupervisorPassword,
                 });
 

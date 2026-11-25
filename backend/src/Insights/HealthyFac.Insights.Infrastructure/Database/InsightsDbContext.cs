@@ -5,6 +5,8 @@ using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
+using HealthyFac.Insights.Domain.Chats;
+using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Shared.Infrastructure.Messaging;
@@ -34,6 +36,10 @@ public class InsightsDbContext(DbContextOptions<InsightsDbContext> options)
     public DbSet<MaintenanceCase> MaintenanceCases => Set<MaintenanceCase>();
 
     public DbSet<MachineSignal> MachineSignals => Set<MachineSignal>();
+
+    public DbSet<Chat> Chats => Set<Chat>();
+
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     public DbSet<AgentRun> AgentRuns => Set<AgentRun>();
 
@@ -106,6 +112,12 @@ public class InsightsDbContext(DbContextOptions<InsightsDbContext> options)
         configurationBuilder.HaveEnumerationConversion<AgentActionKind>();
         configurationBuilder.HaveEnumerationConversion<AgentActionState>();
         configurationBuilder.HaveEnumerationConversion<AgentActionFollowUp>();
+        configurationBuilder.HaveEnumerationConversion<ChatState>();
+        configurationBuilder.HaveEnumerationConversion<ChatMessageRole>();
+        configurationBuilder.HaveEnumerationConversion<ChatMessageKind>();
+        configurationBuilder.HaveEnumerationConversion<ChatMessageState>();
+        configurationBuilder.HaveEnumerationConversion<ChatLinkKind>();
+        configurationBuilder.HaveEnumerationConversion<ChatDraftKind>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
