@@ -7,9 +7,11 @@
 # Defaults: -Repo is the checkout that holds this script file; -Base is the merge base of HEAD and -MainBranch
 # (develop); -FormatScript is format-changed.ps1 next to this file.
 # Lock: one full run per area at a time. Before step 1 the script creates run-<area>.lock (an exclusive create, so 2
-# runs that start together cannot both pass) with its process ID in the claude-runs folder of the git state, and it deletes the file when the run ends (also after RUN FAILED and an
-# exception). When the lock file exists and its process still runs, the script prints "RUN FAILED <area>: another run of
-# <area> is active (pid <id>)", leaves the lock, and exits 1 at once. A lock of a process that no longer runs is replaced.
+# runs that start together cannot both pass) with its process ID in the claude-runs folder of the git state. The script
+# keeps the file open for the whole run (read share only, so no other process can delete or write it), and it closes
+# and deletes the file when the run ends (also after RUN FAILED and an exception). A lock file that no run holds open
+# is stale: the next run deletes it. When a run holds the file open, the next run prints "RUN FAILED <area>: another
+# run of <area> is active (pid <id>)", leaves the lock, and exits 1 at once.
 # Steps, in order; the first failure ends the run:
 # 1. The format script on the existing files of the area that changed since the base (tracked and untracked). Its notes
 #    are printed as "Formatter: <note>".
@@ -42,8 +44,13 @@ $IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.Integrati
 $IntegrationParallelModules = 4
 
 $script:OwnedLock = $null
+$script:LockStream = $null
 
 function Remove-RunLock {
+  if ($script:LockStream) {
+    $script:LockStream.Dispose()
+    $script:LockStream = $null
+  }
   if ($script:OwnedLock) {
     Remove-Item -LiteralPath $script:OwnedLock -Force -ErrorAction SilentlyContinue
     $script:OwnedLock = $null
@@ -56,9 +63,10 @@ function Stop-Run([string] $reason) {
   exit 1
 }
 
-# Takes the lock of the area, or ends the run when a live process holds it. The lock file is created with an
-# exclusive create, so 2 runs that start together cannot both own it. A lock file that a run holds open, or that
-# is still empty, counts as live. A stale lock (a process that no longer runs) is deleted and created again.
+# Takes the lock of the area, or ends the run when another run holds it. The lock file is created with an exclusive
+# create and stays open (read share only) until the run ends, so a delete of it fails while its run lives. When the
+# create fails, the script tries to delete the file: a delete that fails means that a live run holds it, and a delete
+# that works removed a stale file, so the next create attempt decides between runs that start together.
 function Enter-RunLock {
   $folder = Get-GitStatePath $Repo 'claude-runs'
   New-Item -ItemType Directory -Force $folder | Out-Null
@@ -69,24 +77,20 @@ function Enter-RunLock {
       $stream = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
       $bytes = [Text.Encoding]::ASCII.GetBytes("$PID")
       $stream.Write($bytes, 0, $bytes.Length)
-      $stream.Dispose()
-      $stream = $null
+      $stream.Flush()
+      $script:LockStream = $stream
       $script:OwnedLock = $path
       return
     } catch [IO.IOException] {
       if ($stream) { $stream.Dispose() }
       if (-not (Test-Path -LiteralPath $path)) { continue }
-      $text = $null
-      try { $text = (Get-Content -LiteralPath $path -ErrorAction Stop | Select-Object -First 1) -as [string] } catch { $text = $null }
-      $holder = 0
-      $isNumber = [int]::TryParse($text, [ref]$holder)
-      if (-not $isNumber) {
-        $isFresh = ((Get-Date) - (Get-Item -LiteralPath $path -ErrorAction SilentlyContinue).LastWriteTime).TotalSeconds -lt 10
-        if ($isFresh -or $null -eq $text) { Stop-Lock 'unknown' }
-      } elseif ($holder -gt 0 -and $holder -ne $PID -and (Get-Process -Id $holder -ErrorAction SilentlyContinue)) {
-        Stop-Lock "$holder"
+      try {
+        Remove-Item -LiteralPath $path -Force -ErrorAction Stop
+      } catch {
+        $text = $null
+        try { $text = (Get-Content -LiteralPath $path -ErrorAction Stop | Select-Object -First 1) -as [string] } catch { $text = $null }
+        Stop-Lock $(if ([string]::IsNullOrWhiteSpace($text)) { 'unknown' } else { $text.Trim() })
       }
-      Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
     }
   }
   Stop-Lock 'unknown'

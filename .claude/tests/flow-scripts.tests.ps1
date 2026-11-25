@@ -727,6 +727,7 @@ Set-Content (Join-Path $fakeBin 'fake-dotnet.ps1') @(
   '$kind = if ($args[0] -eq ''build'') { ''build'' } elseif ($line -match ''UnitTests'') { ''unit'' } else { ''integration'' }',
   'if ($env:FAKE_LOG) { Add-Content $env:FAKE_LOG "dotnet $kind" }',
   'if ($kind -eq ''unit'' -and $env:FAKE_UNIT_FAIL) { ''failed SampleTests.Unit_Fails (1ms)'', ''  total: 5'', ''  failed: 1'', ''  succeeded: 4''; exit 2 }',
+  'if ($kind -eq ''build'' -and $env:FAKE_PROBE_LOCK) { try { Remove-Item -LiteralPath $env:FAKE_PROBE_LOCK -Force -ErrorAction Stop; Add-Content $env:FAKE_LOG ''lock delete worked'' } catch { Add-Content $env:FAKE_LOG ''lock delete blocked'' } }',
   'if ($kind -eq ''unit'') { ''  total: 5'', ''  failed: 0'', ''  succeeded: 5'' }',
   'if ($kind -eq ''integration'') { if ($env:FAKE_TOUCH) { Add-Content $env:FAKE_TOUCH ''// touched during the run'' }; ''  total: 7'', ''  failed: 0'', ''  succeeded: 7'' }',
   'exit 0')
@@ -863,12 +864,16 @@ $liveRepo = New-AreaRepo 'ra-lock-live'
 $holder = Start-Process pwsh -ArgumentList '-NoProfile', '-Command', 'Start-Sleep -Seconds 120' -PassThru
 $liveLock = Get-RunLockPath $liveRepo 'backend'
 New-Item -ItemType Directory -Force (Split-Path $liveLock) | Out-Null
-Set-Content $liveLock "$($holder.Id)"
+$liveStream = [IO.File]::Open($liveLock, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+$liveBytes = [Text.Encoding]::ASCII.GetBytes("$($holder.Id)")
+$liveStream.Write($liveBytes, 0, $liveBytes.Length)
+$liveStream.Flush()
 $liveRun = Invoke-Area $liveRepo 'backend'
+$liveStream.Dispose()
 Stop-Process -Id $holder.Id -Force -ErrorAction SilentlyContinue
 Assert-That ($liveRun.Exit -eq 1 -and $liveRun.Last -eq "RUN FAILED backend: another run of backend is active (pid $($holder.Id))" -and
   (Test-Path $liveLock) -and ($liveRun.Log -notcontains 'dotnet build')) `
-  'a run while a live process holds the lock fails at once and leaves the lock'
+  'a run while another run holds the lock file open fails at once, names the holder, and leaves the lock'
 
 $deadRepo = New-AreaRepo 'ra-lock-dead'
 $deadProcess = Start-Process pwsh -ArgumentList '-NoProfile', '-Command', 'exit 0' -PassThru
@@ -878,7 +883,33 @@ New-Item -ItemType Directory -Force (Split-Path $deadLock) | Out-Null
 Set-Content $deadLock "$($deadProcess.Id)"
 $deadRun = Invoke-Area $deadRepo 'backend'
 Assert-That ($deadRun.Exit -eq 0 -and $deadRun.Last -like 'Full run backend:*' -and -not (Test-Path $deadLock)) `
-  'a lock of a process that no longer runs does not block and is gone after the run'
+  'a lock file that no run holds open is stale: it does not block and is gone after the run'
+
+$probeRepo = New-AreaRepo 'ra-lock-probe'
+$probeRun = Invoke-Area $probeRepo 'backend' @{ FAKE_PROBE_LOCK = (Get-RunLockPath $probeRepo 'backend') }
+Assert-That ($probeRun.Exit -eq 0 -and $probeRun.Log -contains 'lock delete blocked' -and $probeRun.Log -notcontains 'lock delete worked') `
+  'a run holds its lock file open, so no other process can delete it while the run lives'
+
+$emptyRepo = New-AreaRepo 'ra-lock-empty'
+$emptyLock = Get-RunLockPath $emptyRepo 'backend'
+New-Item -ItemType Directory -Force (Split-Path $emptyLock) | Out-Null
+Set-Content $emptyLock ''
+$emptyRun = Invoke-Area $emptyRepo 'backend'
+Assert-That ($emptyRun.Exit -eq 0 -and $emptyRun.Last -like 'Full run backend:*' -and -not (Test-Path $emptyLock)) `
+  'an empty lock file that no run holds open does not block'
+
+$staleOpenRepo = New-AreaRepo 'ra-lock-stale-open'
+$staleOpenLock = Get-RunLockPath $staleOpenRepo 'backend'
+New-Item -ItemType Directory -Force (Split-Path $staleOpenLock) | Out-Null
+$staleOpenStream = [IO.File]::Open($staleOpenLock, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::Read)
+$staleOpenBytes = [Text.Encoding]::ASCII.GetBytes("$($deadProcess.Id)")
+$staleOpenStream.Write($staleOpenBytes, 0, $staleOpenBytes.Length)
+$staleOpenStream.Flush()
+$staleOpenRun = Invoke-Area $staleOpenRepo 'backend'
+$staleOpenStream.Dispose()
+Assert-That ($staleOpenRun.Exit -eq 1 -and $staleOpenRun.Last -like 'RUN FAILED backend: another run of backend is active*' -and
+  (Test-Path $staleOpenLock) -and ($staleOpenRun.Log -notcontains 'dotnet build')) `
+  'a lock with the ID of a dead process that another run holds open is left alone and the run fails'
 
 $openRepo = New-AreaRepo 'ra-lock-open'
 $openLock = Get-RunLockPath $openRepo 'backend'
