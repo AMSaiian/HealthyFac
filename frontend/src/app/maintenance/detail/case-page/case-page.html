@@ -109,22 +109,25 @@
   <p-tabs
     class="flex min-h-0 flex-1 flex-col"
     [lazy]="true"
-    [(value)]="tab"
+    [value]="activeTab()"
   >
     <p-tablist>
       <p-tab
+        [routerLink]="tabLinks()[SUMMARY_TAB]"
         [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_SUMMARY' | translate"
         tooltipPosition="bottom"
         [value]="SUMMARY_TAB"
         >{{ 'MAINTENANCE.SUMMARY_TITLE' | translate }}</p-tab
       >
       <p-tab
+        [routerLink]="tabLinks()[SIGNALS_TAB]"
         [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_SIGNALS' | translate"
         tooltipPosition="bottom"
         [value]="SIGNALS_TAB"
         >{{ 'MAINTENANCE.SIGNALS_TITLE' | translate }} ({{ detail.signalCount }})</p-tab
       >
       <p-tab
+        [routerLink]="tabLinks()[AI_LOG_TAB]"
         [pTooltip]="'MAINTENANCE.TOOLTIPS.TAB_AI_LOG' | translate"
         tooltipPosition="bottom"
         [value]="AI_LOG_TAB"
