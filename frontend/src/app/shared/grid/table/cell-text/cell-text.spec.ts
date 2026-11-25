@@ -20,13 +20,9 @@ class FakeResizeObserver {
   }
 }
 
-function setup(
-  scrollHeight: number,
-  isWordKept = false,
-): {
+function setup(scrollHeight: number): {
   tooltip: Tooltip;
   component: CellText;
-  textElement: HTMLElement;
   resizeTo: (height: number) => void;
   detect: () => void;
 } {
@@ -38,12 +34,10 @@ function setup(
   TestBed.configureTestingModule({});
   const fixture = TestBed.createComponent(CellText);
   fixture.componentRef.setInput('text', TEXT);
-  fixture.componentRef.setInput('isWordKept', isWordKept);
   fixture.detectChanges();
   return {
     tooltip: fixture.debugElement.query(By.directive(Tooltip)).injector.get(Tooltip),
     component: fixture.componentInstance,
-    textElement: fixture.nativeElement.querySelector('span') as HTMLElement,
     resizeTo: (height) => {
       currentScrollHeight = height;
       observerCallbacks.forEach((callback) => callback());
@@ -89,19 +83,5 @@ describe('CellText', () => {
     const { tooltip } = setup(THREE_LINES_HEIGHT);
 
     expect(tooltip.content()).toBe(TEXT);
-  });
-
-  it('isWordKept_ByDefault_BreaksAnywhereInTheText', () => {
-    const { textElement } = setup(TWO_LINES_HEIGHT);
-
-    expect(textElement.classList.contains('wrap-anywhere')).toBe(true);
-    expect(textElement.classList.contains('wrap-break-word')).toBe(false);
-  });
-
-  it('isWordKept_WhenSet_BreaksOnlyBetweenWords', () => {
-    const { textElement } = setup(TWO_LINES_HEIGHT, true);
-
-    expect(textElement.classList.contains('wrap-break-word')).toBe(true);
-    expect(textElement.classList.contains('wrap-anywhere')).toBe(false);
   });
 });
