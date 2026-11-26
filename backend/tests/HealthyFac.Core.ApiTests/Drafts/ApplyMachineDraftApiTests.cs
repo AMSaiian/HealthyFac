@@ -21,6 +21,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
     public async Task Apply_CreateDraft_CreatesTheMachineAndQueuesTheMessages()
     {
         var draft = await _fixture.ArrangeMachineDraftAsync();
+
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
 
@@ -37,12 +38,12 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Applied);
-        machineDrafts[index: 0].AppliedMachineId.Should().Be(machineId);
+        machineDrafts[0].AppliedMachineId.Should().Be(machineId);
         created.Should().ContainSingle().Which.Name.Should().Be(DraftApiTestData.ProposedName);
         applied.Should().ContainSingle();
-        applied[index: 0].FileId.Should().Be(DraftApiTestData.FileId);
-        applied[index: 0].MachineId.Should().Be(machineId);
-        applied[index: 0].QueuedAt.Should().Be(DraftApiTestData.QueuedAt);
+        applied[0].FileId.Should().Be(DraftApiTestData.FileId);
+        applied[0].MachineId.Should().Be(machineId);
+        applied[0].QueuedAt.Should().Be(DraftApiTestData.QueuedAt);
     }
 
     [Fact]
@@ -51,6 +52,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
         var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "UPDATE-SERIAL"));
         var draft = await _fixture.ArrangeMachineDraftAsync(machineId);
         var rowVersion = await _fixture.LoadMachineRowVersionAsync(machineId);
+
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
 
@@ -60,14 +62,14 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
             claims,
             DraftApiTestData.ApplyBody(UpdatedName, serialNumber: "UPDATE-SERIAL", rowVersion));
 
-        var values = await _fixture.LoadMachineValuesAsync(machineId);
+        var (name, serialNumber) = await _fixture.LoadMachineValuesAsync(machineId);
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
         var renamed = await _fixture.ReadOutboxMessagesAsync<MachineRenamed>();
         var applied = await _fixture.ReadOutboxMessagesAsync<MachineDraftApplied>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        values.Name.Should().Be(UpdatedName);
-        values.SerialNumber.Should().Be(expected: "UPDATE-SERIAL");
+        name.Should().Be(UpdatedName);
+        serialNumber.Should().Be(expected: "UPDATE-SERIAL");
         machineDrafts.Should().ContainSingle().Which.State.Should().Be(DraftState.Applied);
         renamed.Should().ContainSingle().Which.Name.Should().Be(UpdatedName);
         applied.Should().BeEmpty();
@@ -79,9 +81,12 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
         var machineId = _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "STALE-SERIAL"));
         var draft = await _fixture.ArrangeMachineDraftAsync(machineId);
         var rowVersion = await _fixture.LoadMachineRowVersionAsync(machineId);
+
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
+
         var machinePath = $"{MachineApiTestData.MachinesPath}/{_fixture.IdEncryptor.Encrypt(machineId)}";
+
         await _fixture.SendMachineRequestAsync(
             HttpMethod.Put,
             machinePath,
@@ -93,6 +98,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
             DraftApiTestData.ApplyPath(draft.EncryptedId),
             claims,
             DraftApiTestData.ApplyBody(UpdatedName, serialNumber: "STALE-SERIAL", rowVersion));
+
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -104,6 +110,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
     {
         await _fixture.ArrangeMachineAsync(TakenSerialNumber);
         var draft = await _fixture.ArrangeMachineDraftAsync();
+
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
 
@@ -120,14 +127,18 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
     public async Task Apply_Twice_Returns422ForTheSecondCall()
     {
         var draft = await _fixture.ArrangeMachineDraftAsync();
+
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
+
         var body = DraftApiTestData.ApplyBody(DraftApiTestData.ProposedName, DraftApiTestData.ProposedSerialNumber);
+
         await _fixture.SendMachineRequestAsync(
             HttpMethod.Post, DraftApiTestData.ApplyPath(draft.EncryptedId), claims, body);
 
         var response = await _fixture.SendMachineRequestAsync(
             HttpMethod.Post, DraftApiTestData.ApplyPath(draft.EncryptedId), claims, body);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -138,6 +149,7 @@ public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
     public async Task Apply_DraftOfAnotherCompany_Returns404()
     {
         var draft = await _fixture.ArrangeMachineDraftAsync(companyId: Guid.CreateVersion7());
+
         var claims = _fixture.CreateMachineClaims(
             DraftApiTestData.DraftWritePermission, DraftApiTestData.MachineWritePermission);
 

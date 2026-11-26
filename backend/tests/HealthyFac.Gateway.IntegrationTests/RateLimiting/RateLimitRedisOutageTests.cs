@@ -43,10 +43,12 @@ public sealed class RateLimitRedisOutageTests : IAsyncLifetime
         using var client = gateway.CreateAuthenticatedClient();
 
         var statusCodes = new List<HttpStatusCode>();
+
         for (var attempt = 0; attempt < RateLimitTestData.DefaultRequestsDuringOutage; attempt++)
         {
             using var response = await client.GetAsync(
                 RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 

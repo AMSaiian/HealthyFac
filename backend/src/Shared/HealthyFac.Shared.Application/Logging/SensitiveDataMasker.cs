@@ -20,6 +20,7 @@ public static class SensitiveDataMasker
         }
 
         var text = value as string ?? value.ToString();
+
         if (string.IsNullOrEmpty(text))
         {
             return text;
@@ -36,6 +37,7 @@ public static class SensitiveDataMasker
         }
 
         var requiredLength = Math.Max(val1: 0, attribute.ShowFirst) + Math.Max(val1: 0, attribute.ShowLast);
+
         if (text.Length <= requiredLength)
         {
             if (attribute.IsLengthPreserved)

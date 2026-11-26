@@ -62,8 +62,8 @@ public sealed class MachineNameFiller(DownstreamClient downstreamClient)
 
         var body = new JsonObject
         {
-            [MachineIdsProperty] = new JsonArray([.. machineIds.Select(id => JsonValue.Create(id)!)]),
-            [MachineDraftIdsProperty] = new JsonArray([.. draftIds.Select(id => JsonValue.Create(id)!)]),
+            [MachineIdsProperty] = new JsonArray([.. machineIds.Select(id => JsonValue.Create(id))]),
+            [MachineDraftIdsProperty] = new JsonArray([.. draftIds.Select(id => JsonValue.Create(id))]),
         };
 
         var result = await _downstreamClient.SendAsync(
@@ -109,11 +109,13 @@ public sealed class MachineNameFiller(DownstreamClient downstreamClient)
     )
     {
         var telemetryRows = rows.Where(row => ReadText(row, KindProperty) != DraftNames.Kinds.Machine).ToList();
+
         var machineIds = telemetryRows
             .Select(row => ReadText(row, MachineIdProperty))
             .OfType<string>()
             .Distinct()
             .ToList();
+
         var draftIds = telemetryRows
             .Select(row => ReadText(row, TargetMachineDraftIdProperty))
             .OfType<string>()

@@ -17,8 +17,10 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
 
         var templates = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.TemplatesPath(worker.EncryptedId), claims);
+
         var overrides = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.OverridesPath(worker.EncryptedId), claims);
+
         var schedule = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.SchedulePath(worker.EncryptedId), claims);
 
@@ -36,8 +38,10 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
 
         var templates = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.TemplatesPath(other.EncryptedId), claims);
+
         var overrides = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.OverridesPath(other.EncryptedId), claims);
+
         var schedule = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.SchedulePath(other.EncryptedId), claims);
 
@@ -51,6 +55,7 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
     {
         var worker = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.OtherEmail);
+
         var claims = _fixture.CreateShiftClaims(
             supervisor.IdentityUserId,
             ShiftApiTestData.ReadPermission,
@@ -81,6 +86,7 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
     public async Task CompanySchedule_WithManageAndEmployeesReadPermissions_Returns200()
     {
         var supervisor = await _fixture.ArrangeActiveEmployeeAsync(ShiftApiTestData.WorkerEmail);
+
         var claims = _fixture.CreateShiftClaims(
             supervisor.IdentityUserId,
             ShiftApiTestData.ManagePermission,
@@ -140,6 +146,7 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
             HttpMethod.Get,
             ShiftApiTestData.ScheduleDaysPath(worker.EncryptedId, ShiftApiTestData.Date, ShiftApiTestData.Date),
             claims);
+
         var spans = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.FreeSpansPath(worker.EncryptedId, ShiftApiTestData.Date), claims);
 
@@ -158,6 +165,7 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
             HttpMethod.Get,
             ShiftApiTestData.ScheduleDaysPath(other.EncryptedId, ShiftApiTestData.Date, ShiftApiTestData.Date),
             claims);
+
         var spans = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get, ShiftApiTestData.FreeSpansPath(other.EncryptedId, ShiftApiTestData.Date), claims);
 
@@ -173,6 +181,7 @@ public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
         var days = await client.GetAsync(
             ShiftApiTestData.ScheduleDaysPath(employeeId: "any", ShiftApiTestData.Date, ShiftApiTestData.Date),
             TestContext.Current.CancellationToken);
+
         var spans = await client.GetAsync(
             ShiftApiTestData.FreeSpansPath(employeeId: "any", ShiftApiTestData.Date),
             TestContext.Current.CancellationToken);

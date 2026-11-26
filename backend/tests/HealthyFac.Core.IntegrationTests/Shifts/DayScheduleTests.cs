@@ -22,10 +22,12 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.WorkWeek(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         await _fixture.SetOverrideAsync(
             tenant, ShiftTestData.InTwoDays, ShiftTestData.Blocks(ShiftTestData.ShortMorning));
 
@@ -47,10 +49,12 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowOn(SpringDstDate.AddDays(value: -8), time: "09:30"));
+
         await _fixture.SetOverrideAsync(
             tenant,
             SpringDstDate,
             ShiftTestData.Blocks(ShiftTestData.NightBlock, ShiftTestData.Morning));
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(AutumnDstDate.AddDays(value: -8), time: "09:30"));
         await _fixture.SetOverrideAsync(tenant, AutumnDstDate, ShiftTestData.Blocks(ShiftTestData.NightBlock));
 
@@ -60,12 +64,15 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
         spring.Blocks.Select(block => block.EndUtc - block.StartUtc)
             .Should()
             .Equal(TimeSpan.FromHours(value: 2), TimeSpan.FromHours(value: 4));
-        spring.Blocks[index: 1]
+
+        spring.Blocks[1]
             .StartUtc.Should()
             .Be(new DateTime(year: 2027, month: 3, day: 28, hour: 5, minute: 0, second: 0, DateTimeKind.Utc));
+
         autumn.Blocks.Single()
             .EndUtc.Should()
             .Be(new DateTime(year: 2027, month: 10, day: 31, hour: 3, minute: 0, second: 0, DateTimeKind.Utc));
+
         (autumn.Blocks.Single().EndUtc - autumn.Blocks.Single().StartUtc).Should().Be(TimeSpan.FromHours(value: 4));
     }
 
@@ -75,11 +82,13 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         await _fixture.SetOverrideAsync(tenant, ShiftTestData.Today, ShiftTestData.Blocks(ShiftTestData.Morning));
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Today,
             time: "09:00",
             minutes: 30);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "10:40"));
         await _fixture.CompleteWorkOrderAsync(workOrderId);
 
@@ -194,6 +203,7 @@ public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
         var starts = response.Employees.ToDictionary(
             employee => employee.EmployeeId,
             employee => employee.Day.Blocks.Single().StartLocal);
+
         starts[tenant.EmployeeId].Should().Be(new TimeOnly(hour: 9, minute: 0));
         starts[other.EmployeeId].Should().Be(new TimeOnly(hour: 10, minute: 0));
     }

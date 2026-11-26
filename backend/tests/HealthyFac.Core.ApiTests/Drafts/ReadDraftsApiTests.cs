@@ -47,6 +47,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         items.Select(item => item.GetProperty(propertyName: "id").GetString())
             .Should()
             .Equal(pending.EncryptedId, dismissed.EncryptedId);
+
         items.Select(item => item.GetProperty(propertyName: "state").GetString())
             .Should()
             .Equal("pending", "dismissed");
@@ -72,7 +73,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             body = LimitOneBody(next.ValueKind == JsonValueKind.Null ? null : next.GetRawText());
         }
 
-        seenIds.Should().BeEquivalentTo([first.EncryptedId, second.EncryptedId, third.EncryptedId]);
+        seenIds.Should().BeEquivalentTo(first.EncryptedId, second.EncryptedId, third.EncryptedId);
         body.Should().Be(LimitOneBody(after: null));
     }
 
@@ -119,11 +120,13 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
         var byId = items.ToDictionary(item => item.GetProperty(propertyName: "id").GetString()!);
 
         byId.Keys.Should().BeEquivalentTo(first.EncryptedId, second.EncryptedId);
+
         byId[first.EncryptedId]
             .GetProperty(propertyName: "machineName")
             .GetString()
             .Should()
             .Be(MachineApiTestData.MachineName);
+
         byId[second.EncryptedId]
             .GetProperty(propertyName: "machineId")
             .GetString()
@@ -184,16 +187,20 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{DraftApiTestData.MachineDraftsPath}/{draft.EncryptedId}",
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission));
+
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
         var current = document.RootElement.GetProperty(propertyName: "current");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         document.RootElement.GetProperty(propertyName: "draft")
             .GetProperty(propertyName: "isCreate")
             .GetBoolean()
             .Should()
             .BeFalse();
+
         current.GetProperty(propertyName: "rowVersion").GetUInt32().Should().Be(rowVersion);
         current.GetProperty(propertyName: "serialNumber").GetString().Should().Be(expected: "GET-UPDATE");
     }
@@ -216,6 +223,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
     {
         var machineId =
             _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "ATTEMPT-GROUPS"));
+
         await _fixture.ArrangeMachineDraftAsync(machineId);
         await _fixture.ArrangeMachineDraftAsync();
 
@@ -223,11 +231,15 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"v1/ingest-attempts/{_fixture.IdEncryptor.Encrypt(DraftApiTestData.AttemptId)}/drafts",
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission));
+
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+
         var groups = document.RootElement.GetProperty(propertyName: "groups").EnumerateArray().ToList();
+
         var existing = groups.Single(group =>
             group.GetProperty(propertyName: "machineId").ValueKind == JsonValueKind.String);
+
         var proposed = groups.Single(group =>
             group.GetProperty(propertyName: "machineId").ValueKind == JsonValueKind.Null);
 
@@ -245,6 +257,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"v1/ingest-attempts/{_fixture.IdEncryptor.Encrypt(Guid.CreateVersion7())}/drafts",
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission));
+
         using var document = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
@@ -267,6 +280,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             SearchPath(_fixture.IdEncryptor.Encrypt(machineId)),
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
             body);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -280,6 +294,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             SearchPath(_fixture.IdEncryptor.Encrypt(machineId)),
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
             body);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var document = JsonDocument.Parse(content);
@@ -297,6 +312,7 @@ public sealed class ReadDraftsApiTests(CoreApiFixture fixture)
             $"v1/ingest-attempts/{_fixture.IdEncryptor.Encrypt(attemptId)}/drafts/search",
             _fixture.CreateMachineClaims(DraftApiTestData.DraftReadPermission),
             body);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var document = JsonDocument.Parse(content);

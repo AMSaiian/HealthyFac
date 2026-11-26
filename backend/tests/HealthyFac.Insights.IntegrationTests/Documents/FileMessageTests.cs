@@ -116,6 +116,7 @@ public sealed class FileMessageTests(InsightsFixture fixture)
         var completed = IngestAttemptTestData.CreateCompleted();
         await _fixture.SaveAsync(completed, IngestAttemptTestData.CreateDocument(completed.Id));
         var newerAt = IngestAttemptTestData.Now.AddMinutes(value: 10);
+
         await _fixture.HandleMachineChangedAsync(
             IngestAttemptTestData.CompanyId, IngestAttemptTestData.FileId, MachineId, newerAt);
 

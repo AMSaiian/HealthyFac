@@ -24,11 +24,14 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithASilentOperationalMachine_OpensAnAlarmAndTheNextMessageResolvesIt()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 11, _fixture.Origin));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 140));
         await _fixture.EvaluateAsync(arrangement.MachineId);
         var opened = (await _fixture.LoadEpisodesAsync(arrangement.MachineId)).Single();
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.At(seconds: 150)));
 
@@ -51,12 +54,14 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithAMachineThatNeverSentAMessage_OpensOnlyAfterTheGoLiveStartPlusTheLimit()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.Database.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 arrangement.MachineId,
                 MachineRegistrationTestData.GoLiveDay,
                 _fixture.At(seconds: 1000),
                 _fixture.At(seconds: 0)));
+
         var counts = new List<int>();
 
         foreach (var seconds in new[] { 500, 1100, 1120, 1121 })
@@ -76,12 +81,14 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_BeforeTheGoLiveStart_OpensNothingEvenWithAnOldLastMessage()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.Database.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 arrangement.MachineId,
                 MachineRegistrationTestData.GoLiveDay,
                 _fixture.At(seconds: 1000),
                 _fixture.At(seconds: 0)));
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.Origin));
 
@@ -97,14 +104,17 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithAMessageBeforeTheGoLiveStart_OpensOnlyAtTheGoLiveStartPlusTheLimit()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.Database.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 arrangement.MachineId,
                 MachineRegistrationTestData.GoLiveDay,
                 _fixture.At(seconds: 1000),
                 _fixture.At(seconds: 0)));
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.Origin));
+
         var counts = new List<int>();
 
         foreach (var seconds in new[] { 1100, 1120, 1121 })
@@ -124,12 +134,14 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WithAMessageAfterTheGoLiveStart_OpensAtTheLastMessagePlusTheLimit()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.Database.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 arrangement.MachineId,
                 MachineRegistrationTestData.GoLiveDay,
                 _fixture.At(seconds: -100),
                 _fixture.At(seconds: -200)));
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.At(seconds: 10)));
 
@@ -145,8 +157,10 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task Evaluate_WhileTheWholeFleetIsSilent_OpensNoSilentMachineEpisode()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 11, _fixture.Origin));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 300));
         await CheckFleetAsync(_fixture.At(seconds: 300));
 
@@ -154,8 +168,10 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
 
         var episodes = await _fixture.LoadEpisodesAsync(arrangement.MachineId);
         var isSilent = _fixture.Database.GetSingleton<FleetSilence>().IsSilent;
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.At(seconds: 300)));
+
         await CheckFleetAsync(_fixture.At(seconds: 300));
 
         isSilent.Should().BeTrue();
@@ -166,20 +182,26 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
     public async Task CheckAsync_WhenTheFleetTurnsSilent_LogsOneWarningAndCountsOnce()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.Origin));
+
         var meterFactory = new ServiceCollection().AddMetrics()
             .BuildServiceProvider()
             .GetRequiredService<IMeterFactory>();
+
         using var collector = new MetricCollector<long>(
             meterFactory,
             ObservabilityConstants.Evaluation.Meter,
             ObservabilityConstants.Evaluation.Instruments.FleetSilences);
+
         var logger = new FakeLogger<FleetSilence>();
+
         var fleet = new FleetSilence(
             _fixture.Database.GetSingleton<IOptions<DetectionOptions>>(),
             new DetectionMetrics(meterFactory),
             logger);
+
         var silentAt = _fixture.At(SilenceLimitSeconds + 1);
         var aliveAt = _fixture.At(SilenceLimitSeconds - 1);
         var results = new List<bool>();
@@ -187,6 +209,7 @@ public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
         foreach (var now in new[] { aliveAt, silentAt, silentAt.AddSeconds(value: 10) })
         {
             using var scope = _fixture.Database.ScopeFactory.CreateScope();
+
             results.Add(
                 await fleet.CheckAsync(
                     scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>(), now, CancellationToken.None));

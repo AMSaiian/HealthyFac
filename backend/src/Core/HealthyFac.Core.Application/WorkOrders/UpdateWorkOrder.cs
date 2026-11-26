@@ -129,6 +129,7 @@ public sealed class UpdateWorkOrderRequestHandler(
     )
     {
         var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
+
         var stored = await (from row in _dbContext.WorkOrderHistories.AsNoTracking()
                 join workOrder in _dbContext.WorkOrders.AsNoTracking() on row.WorkOrderId equals workOrder.Id
                 where workOrder.Id == request.Id
@@ -136,6 +137,7 @@ public sealed class UpdateWorkOrderRequestHandler(
                     && row.Revision == workOrder.CurrentRevision
                 select new { workOrder.Estimate, row.AssigneeId, row.PlannedStartLocal })
             .SingleOrDefaultAsync(cancellationToken);
+
         var isScheduleCheckNeeded = request.Scope == AccessScope.Company
             && stored is not null
             && ((stored.AssigneeId is not null && stored.Estimate != estimate)
@@ -148,6 +150,7 @@ public sealed class UpdateWorkOrderRequestHandler(
                 IsolationLevel.Serializable,
                 cancellationToken)
             : await _dbContext.RunInTransactionAsync(token => UpdateAsync(request, token), cancellationToken);
+
         _notifier.PushScheduleChange(request.CompanyId, change.Assignment, change.Estimate);
     }
 
@@ -156,6 +159,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         var ownEmployeeId = request.Scope == AccessScope.Own
             ? await _ownEmployee.FindIdAsync(cancellationToken)
             : null;
+
         var workOrder = await _dbContext.WorkOrders
                 .Include(candidate => candidate.Files.OrderBy(link => link.Id))
                 .ApplyScope(request.Scope, request.CompanyId, ownEmployeeId, _currentUser.GetUserId())
@@ -165,6 +169,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         await _dbContext.WorkOrderHistories
             .Where(row => row.WorkOrderId == workOrder.Id && row.Revision == workOrder.CurrentRevision)
             .LoadAsync(cancellationToken);
+
         await EnsureMachineAsync(request, workOrder, cancellationToken);
 
         var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
@@ -183,14 +188,18 @@ public sealed class UpdateWorkOrderRequestHandler(
         await SaveAsync(cancellationToken);
 
         workOrder.ReplaceFiles(request.FileIds);
+
         _dbContext.WorkOrderFiles.AddRange(
             workOrder.Files.Where(link => _dbContext.Entry(link).State == EntityState.Detached));
+
         await SaveAsync(cancellationToken);
 
         var assigneeId = workOrder.Current.AssigneeId;
+
         var assigneeUserId = assigneeId is { } assignee && estimate != oldEstimate
             ? await _dbContext.FindIdentityUserIdAsync(assignee, cancellationToken)
             : null;
+
         var assignment = await _dbContext.BuildAssignmentChangeAsync(
             workOrder,
             scheduleChange,
@@ -232,9 +241,12 @@ public sealed class UpdateWorkOrderRequestHandler(
     )
     {
         var current = workOrder.Current;
+
         var isSlotChanged = request.AssigneeId != current.AssigneeId
             || request.PlannedStartLocal != current.PlannedStartLocal;
+
         var isEstimateChanged = estimate != workOrder.Estimate;
+
         if (current.Status == WorkOrderStatus.Completed && (isSlotChanged || isEstimateChanged))
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.CompletedScheduleLocked);
@@ -259,6 +271,7 @@ public sealed class UpdateWorkOrderRequestHandler(
                 workOrder.Id,
                 cancellationToken)
             : current.PlannedStartUtc!.Value;
+
         if (!isSlotChanged && isEstimateChanged)
         {
             await _scheduleChecks.EnsureSlotAsync(
@@ -289,6 +302,7 @@ public sealed class UpdateWorkOrderRequestHandler(
         var isMachineInCompany = await _dbContext.Machines
             .AsNoTracking()
             .AnyAsync(machine => machine.Id == machineId && machine.CompanyId == request.CompanyId, cancellationToken);
+
         if (!isMachineInCompany)
         {
             throw new NotFoundException(WorkOrderErrors.Rejections.MachineNotFound);

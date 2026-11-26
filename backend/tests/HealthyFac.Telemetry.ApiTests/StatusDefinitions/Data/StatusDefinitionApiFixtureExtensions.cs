@@ -19,11 +19,11 @@ public static class StatusDefinitionApiFixtureExtensions
         public string ApplyStatusDefinitionsBody(params string[] codes) =>
             new JsonObject
             {
-                [propertyName: "items"] = new JsonArray(
+                ["items"] = new JsonArray(
                     codes.Select(code => (JsonNode)new JsonObject
                         {
-                            [propertyName: "code"] = code,
-                            [propertyName: "severity"] = StatusDefinitionApiTestData.Severity,
+                            ["code"] = code,
+                            ["severity"] = StatusDefinitionApiTestData.Severity,
                         })
                         .ToArray()),
             }.ToJsonString();
@@ -31,22 +31,23 @@ public static class StatusDefinitionApiFixtureExtensions
         public string CreateStatusDefinitionBody(string code) =>
             new JsonObject
             {
-                [propertyName: "code"] = code,
-                [propertyName: "severity"] = StatusDefinitionApiTestData.Severity,
+                ["code"] = code,
+                ["severity"] = StatusDefinitionApiTestData.Severity,
             }.ToJsonString();
 
         public string CreateStatusDefinitionBody(string code, string description) =>
             new JsonObject
             {
-                [propertyName: "code"] = code,
-                [propertyName: "severity"] = StatusDefinitionApiTestData.Severity,
-                [propertyName: "description"] = description,
+                ["code"] = code,
+                ["severity"] = StatusDefinitionApiTestData.Severity,
+                ["description"] = description,
             }.ToJsonString();
 
         public async Task<string> ArrangeMachineAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var registration = new MachineRegistration(
                 Guid.CreateVersion7(),
                 GatewayIds.Create(),
@@ -65,6 +66,7 @@ public static class StatusDefinitionApiFixtureExtensions
             var encryptedMachineId = await fixture.ArrangeMachineAsync();
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var status = new StatusDefinition(
                 fixture.IdEncryptor.Decrypt(encryptedMachineId), code, StatusSeverity.Info, description: null);
 

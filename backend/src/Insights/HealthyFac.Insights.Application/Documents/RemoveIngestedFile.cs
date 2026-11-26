@@ -52,6 +52,7 @@ public sealed class RemoveIngestedFileRequestHandler(
             request.FileId,
             request.CompanyId,
             cancellationToken);
+
         if (attempt is not null)
         {
             var now = _timeProvider.GetUtcNow().UtcDateTime;
@@ -62,12 +63,14 @@ public sealed class RemoveIngestedFileRequestHandler(
                     && candidate.CompanyId == request.CompanyId
                     && candidate.State == IngestState.Failed,
                 cancellationToken);
+
             _outbox.Add(IngestStateMessages.Create(attempt, failedCount, now));
         }
 
         await _dbContext.IngestedDocuments
             .Where(document => document.Id == request.FileId && document.CompanyId == request.CompanyId)
             .ExecuteDeleteAsync(cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         if (attempt is not null)

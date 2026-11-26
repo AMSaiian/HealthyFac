@@ -34,6 +34,7 @@ public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     public async Task CoreRoute_WithWrongAudience_Returns401()
     {
         await using var gateway = _environment.CreateGateway(_core);
+
         using var client = gateway.CreateAuthenticatedClient(
             new TestTokenClaims { Audience = AuthenticationTestData.OtherAudience });
 

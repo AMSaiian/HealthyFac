@@ -60,18 +60,21 @@ public sealed class RealtimeAuthenticationTests(GatewayEnvironment environment) 
     {
         var subject = Guid.NewGuid();
         await using var gateway = _environment.CreateGateway(_core);
+
         await gateway.Services.GetRequiredService<ITokenRevocationStore>()
             .RevokeAsync(
                 subject,
                 DateTimeOffset.UtcNow - RevocationTestData.RevocationAge,
                 RevocationTestData.RevocationTimeToLive,
                 CancellationToken.None);
+
         var token = gateway.Tokens.CreateToken(
             RealtimeTestData.Claims(subject) with
             {
                 IssuedAt = DateTimeOffset.UtcNow - RevocationTestData.TokenAge,
                 Lifetime = TimeSpan.FromHours(hours: 1),
             });
+
         var webSocketClient = RealtimeTestData.CreateWebSocketClient(gateway);
 
         var act = async () => await webSocketClient.ConnectAsync(

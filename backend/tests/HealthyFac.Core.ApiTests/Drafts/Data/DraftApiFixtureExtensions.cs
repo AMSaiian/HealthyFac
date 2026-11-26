@@ -23,6 +23,7 @@ public static class DraftApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var owner = companyId ?? fixture.CompanyId;
+
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 owner,
@@ -33,6 +34,7 @@ public static class DraftApiFixtureExtensions
                 DraftApiTestData.ProposedName,
                 DraftApiTestData.ProposedSerialNumber,
                 description: null);
+
             dbContext.MachineDrafts.Add(draft);
             await dbContext.SaveChangesAsync();
 
@@ -64,6 +66,7 @@ public static class DraftApiFixtureExtensions
         public async Task<(string Name, string SerialNumber)> LoadMachineValuesAsync(Guid machineId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var machine = await scope.ServiceProvider.GetRequiredService<ICoreDbContext>()
                 .Machines
                 .AsNoTracking()
@@ -77,15 +80,18 @@ public static class DraftApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var messageType = TMessage.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<TMessage>(payload, JsonSerializerOptions.Web)!),
+            ];
         }
     }
 }

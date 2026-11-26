@@ -96,13 +96,14 @@ public sealed class CreateShiftTemplateVersionRequestHandler(
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var created = await _dbContext.RunInTransactionAsync(
+        var (versionId, change) = await _dbContext.RunInTransactionAsync(
             token => CreateAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
-        _notifier.PushShiftChanged(request.CompanyId, created.Change);
 
-        return new CreateShiftTemplateVersionResponse { Id = created.VersionId };
+        _notifier.PushShiftChanged(request.CompanyId, change);
+
+        return new CreateShiftTemplateVersionResponse { Id = versionId };
     }
 
     private async Task<(Guid VersionId, ShiftChange Change)> CreateAsync(
@@ -112,6 +113,7 @@ public sealed class CreateShiftTemplateVersionRequestHandler(
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+
         var shifts = await _reader.LoadWithAllVersionsAsync(
             request.EmployeeId,
             zone,
@@ -119,8 +121,10 @@ public sealed class CreateShiftTemplateVersionRequestHandler(
             DateOnly.FromDateTime(nowUtc).AddDays(ShiftValidationConstants.MaxDaysAhead + 2),
             isTracked: true,
             cancellationToken);
+
         var today = shifts.LocalDateOf(nowUtc);
         var lastDate = today.AddDays(ShiftValidationConstants.MaxDaysAhead);
+
         if (request.EffectiveFrom < today || request.EffectiveFrom > lastDate)
         {
             throw new AppValidationException(
@@ -133,10 +137,12 @@ public sealed class CreateShiftTemplateVersionRequestHandler(
         }
 
         var before = shifts.Resolve(request.EffectiveFrom, lastDate);
+
         var version = new ShiftTemplateVersion(
             request.EmployeeId,
             request.EffectiveFrom,
             ShiftTemplateDayInput.ToTemplateBlocks(request.Days));
+
         _dbContext.ShiftTemplateVersions.Add(version);
         shifts.Versions.Add(version);
         var after = shifts.Resolve(request.EffectiveFrom, lastDate);

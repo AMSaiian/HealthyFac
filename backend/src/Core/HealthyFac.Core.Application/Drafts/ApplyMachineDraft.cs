@@ -144,6 +144,7 @@ public sealed class ApplyMachineDraftRequestHandler(
     {
         var zone = await _companyZoneReader.FindZoneAsync(request.CompanyId, cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
+
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
         var expectedGoLiveOn = request.ExpectedGoLiveOn ?? MachineGoLiveRules.DayOf(nowUtc, zone);
         MachineGoLiveRules.EnsureNotBeforeToday(expectedGoLiveOn, nowUtc, zone);
@@ -158,7 +159,9 @@ public sealed class ApplyMachineDraftRequestHandler(
             request.Description,
             expectedGoLiveOn,
             nowUtc);
+
         _dbContext.Machines.Add(machine);
+
         _outbox.Add(
             new MachineCreated
             {

@@ -43,29 +43,35 @@ public sealed class MachineSnapshotReader(
                 machine.ExpectedGoLiveOn,
             })
             .ToListAsync(cancellationToken);
+
         var zones = await ReadZonesAsync(cancellationToken);
+
         var history = (await _coreDbContext.MachineStateHistories
                 .Select(row => new { row.MachineId, row.State, row.StartedAt })
                 .ToListAsync(cancellationToken))
             .ToLookup(
                 row => row.MachineId, row => new StateHistoryEntry { State = row.State, StartedAt = row.StartedAt });
+
         var registered = (await _telemetryDbContext.MachineRegistrations
                 .Select(registration => registration.Id)
                 .ToListAsync(cancellationToken))
             .ToHashSet();
+
         var definitions = await ReadDefinitionsAsync(cancellationToken);
 
-        return machines
-            .Where(machine => zones.ContainsKey(machine.CompanyId))
-            .Select(machine => new MachineSnapshot
-            {
-                MachineId = machine.Id, CompanyId = machine.CompanyId, Name = machine.Name,
-                SerialNumber = machine.SerialNumber, GatewayId = machine.GatewayId,
-                ExpectedGoLiveOn = machine.ExpectedGoLiveOn, Zone = zones[machine.CompanyId],
-                StateHistory = history[machine.Id].ToList(), IsRegistered = registered.Contains(machine.Id),
-                Definitions = definitions.GetValueOrDefault(machine.Id) ?? MachineDefinitions.Empty,
-            })
-            .ToList();
+        return
+        [
+            .. machines
+                .Where(machine => zones.ContainsKey(machine.CompanyId))
+                .Select(machine => new MachineSnapshot
+                {
+                    MachineId = machine.Id, CompanyId = machine.CompanyId, Name = machine.Name,
+                    SerialNumber = machine.SerialNumber, GatewayId = machine.GatewayId,
+                    ExpectedGoLiveOn = machine.ExpectedGoLiveOn, Zone = zones[machine.CompanyId],
+                    StateHistory = [.. history[machine.Id]], IsRegistered = registered.Contains(machine.Id),
+                    Definitions = definitions.GetValueOrDefault(machine.Id) ?? MachineDefinitions.Empty,
+                }),
+        ];
     }
 
     private async Task<Dictionary<Guid, TimeZoneInfo>> ReadZonesAsync(CancellationToken cancellationToken)
@@ -73,6 +79,7 @@ public sealed class MachineSnapshotReader(
         var companies = await _coreDbContext.Companies
             .Select(company => new { company.Id, company.TimeZoneId })
             .ToListAsync(cancellationToken);
+
         Dictionary<Guid, TimeZoneInfo> zones = [];
 
         foreach (var company in companies)
@@ -100,6 +107,7 @@ public sealed class MachineSnapshotReader(
                     Key = metric.Key, ValueKind = metric.ValueKind, Min = metric.Min, Max = metric.Max,
                     States = metric.States,
                 });
+
         var statuses = (await _telemetryDbContext.StatusDefinitions
                 .Select(status => new { status.MachineRegistrationId, status.Code })
                 .ToListAsync(cancellationToken))
@@ -110,6 +118,6 @@ public sealed class MachineSnapshotReader(
             .ToDictionary(
                 registrationId => registrationId,
                 registrationId => new MachineDefinitions
-                    { Metrics = metrics[registrationId].ToList(), StatusCodes = statuses[registrationId].ToList() });
+                    { Metrics = [.. metrics[registrationId]], StatusCodes = [.. statuses[registrationId]] });
     }
 }

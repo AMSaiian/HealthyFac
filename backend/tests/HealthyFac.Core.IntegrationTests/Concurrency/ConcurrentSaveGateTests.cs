@@ -30,10 +30,12 @@ public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
             }));
 
         failures.Should().OnlyContain(failure => failure == null);
+
         events.Should()
             .ContainInOrder(
                 ConcurrentSaveGateTestData.SlowParticipantReachedSave,
                 ConcurrentSaveGateTestData.FastParticipantSaved);
+
         race.SaveCounts.Should().Equal(1, 1);
     }
 
@@ -70,6 +72,7 @@ public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
             .BeOfType<TimeoutException>()
             .Which.Message.Should()
             .Contain(ConcurrentSaveGateTestData.OneOfTwoArrived);
+
         failures[1].Should().BeNull();
     }
 

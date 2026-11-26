@@ -65,10 +65,12 @@ public sealed class LoggingRequestHandlerDecoratorTests
         using var capture = new SpanCapture(
             ObservabilityConstants.Sources.UseCases,
             LoggingDecoratorTestData.TestSourceName);
+
         using var source = new ActivitySource(LoggingDecoratorTestData.TestSourceName);
         using var parent = source.StartActivity(LoggingDecoratorTestData.ParentActivityName);
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
+
         var decorator = new LoggingRequestHandlerDecorator<TestRequest, int>(
             new ThrowingHandler(new OperationCanceledException(cancellation.Token)),
             new CapturingLogger<LoggingRequestHandlerDecorator<TestRequest, int>>());
@@ -76,6 +78,7 @@ public sealed class LoggingRequestHandlerDecoratorTests
         var act = () => decorator.HandleAsync(new TestRequest(), cancellation.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
+
         capture.Spans.Should()
             .ContainSingle(span => IsUseCaseSpanOf(span, parent!))
             .Which.Status.Should()
@@ -88,8 +91,10 @@ public sealed class LoggingRequestHandlerDecoratorTests
         using var capture = new SpanCapture(
             ObservabilityConstants.Sources.UseCases,
             LoggingDecoratorTestData.TestSourceName);
+
         using var source = new ActivitySource(LoggingDecoratorTestData.TestSourceName);
         using var parent = source.StartActivity(LoggingDecoratorTestData.ParentActivityName);
+
         var decorator = new LoggingRequestHandlerDecorator<TestRequest, int>(
             new ThrowingHandler(new InvalidOperationException()),
             new CapturingLogger<LoggingRequestHandlerDecorator<TestRequest, int>>());
@@ -97,6 +102,7 @@ public sealed class LoggingRequestHandlerDecoratorTests
         var act = () => decorator.HandleAsync(new TestRequest(), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+
         capture.Spans.Should()
             .ContainSingle(span => IsUseCaseSpanOf(span, parent!))
             .Which.Status.Should()

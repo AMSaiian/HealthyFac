@@ -132,6 +132,6 @@ public sealed class AutomaticTieTests(DocumentDatabaseFixture fixture)
     {
         var ids = await _fixture.SeedFilesAsync(CompanyId, [UpdateFileTestData.CompanyFile()]);
 
-        return ids[index: 0];
+        return ids[0];
     }
 }

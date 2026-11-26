@@ -72,6 +72,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         using var capture = new SpanCapture(Constants.Ingest.Source);
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = async _ =>
         {
             await _fixture.CancelAttemptAsync(attemptId);
@@ -97,6 +98,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         await _fixture.RunWorkerAsync(TestContext.Current.CancellationToken);
 
         var modelSpans = capture.Spans;
+
         var contentTags = modelSpans
             .SelectMany(span => span.TagObjects)
             .Select(tag => tag.Key)
@@ -123,6 +125,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         var stages = durations.GetMeasurementSnapshot()
             .Select(measurement => measurement.Tags[Constants.Ingest.Tags.Stage])
             .ToList();
+
         var draftKinds = drafts.GetMeasurementSnapshot()
             .ToDictionary(
                 measurement => (string)measurement.Tags[Constants.Ingest.Tags.DraftKind]!,
@@ -132,20 +135,22 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
         attempt.Tags[Constants.Ingest.Tags.Result].Should().Be(Constants.Ingest.Results.Completed);
         attempts.Instrument!.Unit.Should().Be(expected: "{attempt}");
         durations.Instrument!.Unit.Should().Be(expected: "s");
+
         stages.Should()
             .BeEquivalentTo(
-                new[]
-                {
-                    Constants.Ingest.Stages.Convert,
-                    Constants.Ingest.Stages.Screen,
-                    Constants.Ingest.Stages.Embed,
-                    Constants.Ingest.Stages.Extract,
-                    Constants.Ingest.Stages.Store,
-                });
+            [
+                Constants.Ingest.Stages.Convert,
+                Constants.Ingest.Stages.Screen,
+                Constants.Ingest.Stages.Embed,
+                Constants.Ingest.Stages.Extract,
+                Constants.Ingest.Stages.Store,
+            ]);
+
         pages.LastMeasurement!.Value.Should().Be(expected: 2);
         pages.Instrument!.Unit.Should().Be(expected: "{page}");
         chunks.LastMeasurement!.Value.Should().Be(expected: 2);
         chunks.Instrument!.Unit.Should().Be(expected: "{chunk}");
+
         draftKinds.Should()
             .BeEquivalentTo(
                 new Dictionary<string, long>
@@ -154,6 +159,7 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
                     [Constants.Ingest.DraftKinds.Metric] = 1,
                     [Constants.Ingest.DraftKinds.Status] = 1,
                 });
+
         drafts.Instrument!.Unit.Should().Be(expected: "{draft}");
     }
 
@@ -197,11 +203,13 @@ public sealed class IngestTelemetryTests(InsightsFixture fixture)
     private async Task<ActivityTraceId> StartInsideATraceAsync()
     {
         using var source = new ActivitySource(StartSourceName);
+
         using var listener = new ActivityListener
         {
             ShouldListenTo = candidate => candidate.Name == StartSourceName,
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
         };
+
         ActivitySource.AddActivityListener(listener);
         using var start = source.StartActivity(name: "Start");
 

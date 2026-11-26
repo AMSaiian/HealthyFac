@@ -63,6 +63,7 @@ public sealed class ListShiftTemplateVersionsPreHandlerCheck(
     public async Task CheckAsync(ListShiftTemplateVersionsRequest request, CancellationToken cancellationToken)
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
+
         await request.Scope.EnsureEmployeeReadableAsync(
             _dbContext,
             _ownEmployee,
@@ -98,24 +99,30 @@ public sealed class ListShiftTemplateVersionsRequestHandler(ICoreDbContext dbCon
             })
             .ToListAsync(cancellationToken);
 
-        return rows
-            .Select(row => new ShiftTemplateVersionResponse
-            {
-                Id = row.Version.Id,
-                EffectiveFrom = row.Version.EffectiveFrom,
-                RowVersion = row.RowVersion,
-                Days = Weekday.All
-                    .Select(weekday => new ShiftTemplateDayResponse
-                    {
-                        Weekday = weekday,
-                        Blocks = row.Version.Blocks
-                            .Where(block => block.Weekday == weekday)
-                            .OrderBy(block => block.Start)
-                            .Select(block => new ShiftBlockInput { Start = block.Start, End = block.End })
-                            .ToList(),
-                    })
-                    .ToList(),
-            })
-            .ToList();
+        return
+        [
+            .. rows
+                .Select(row => new ShiftTemplateVersionResponse
+                {
+                    Id = row.Version.Id,
+                    EffectiveFrom = row.Version.EffectiveFrom,
+                    RowVersion = row.RowVersion,
+                    Days =
+                    [
+                        .. Weekday.All
+                            .Select(weekday => new ShiftTemplateDayResponse
+                            {
+                                Weekday = weekday,
+                                Blocks =
+                                [
+                                    .. row.Version.Blocks
+                                        .Where(block => block.Weekday == weekday)
+                                        .OrderBy(block => block.Start)
+                                        .Select(block => new ShiftBlockInput { Start = block.Start, End = block.End }),
+                                ],
+                            }),
+                    ],
+                }),
+        ];
     }
 }

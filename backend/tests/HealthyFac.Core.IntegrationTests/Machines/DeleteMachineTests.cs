@@ -48,7 +48,7 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         var message = messages.Where(candidate => candidate.MachineId == machineId).ToList();
 
         message.Should().ContainSingle();
-        message[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        message[0].CompanyId.Should().Be(tenant.CompanyId);
     }
 
     [Fact]
@@ -98,15 +98,18 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeMachineAsync(tenant);
+
         var otherMachineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.OtherMachineName,
             MachineTestData.OtherSerialNumber);
+
         var firstHistory = await _fixture.LoadStateHistoryAsync(machineId);
+
         await _fixture.AddStateRowAsync(
             machineId,
             MachineState.InMaintenance,
-            firstHistory[index: 0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
+            firstHistory[0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
 
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
@@ -123,10 +126,12 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await ArrangeMachineAsync(tenant);
         var firstHistory = await _fixture.LoadStateHistoryAsync(machineId);
+
         await _fixture.AddStateRowAsync(
             machineId,
             MachineState.InMaintenance,
-            firstHistory[index: 0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
+            firstHistory[0].StartedAt.AddDays(MachineTestData.EarlierStateDays));
+
         _fixture.Clock.Freeze(SoftDeleteQueryTestData.FirstDeleteAt);
         using var scope = _fixture.CreateUserScope(tenant.CompanyId);
 
@@ -137,13 +142,16 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
                 TestContext.Current.CancellationToken);
 
         var actorId = scope.ServiceProvider.GetRequiredService<ICurrentUserProvider>().TryGetUserId();
+
         var trackedHistory = scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .ChangeTracker
             .Entries<MachineStateHistory>()
             .ToList();
+
         var history = await _fixture.LoadStateHistoryAsync(machineId);
 
         trackedHistory.Should().BeEmpty();
+
         history.Should()
             .HaveCount(expected: 2)
             .And.OnlyContain(row => row.DeletedAt == SoftDeleteQueryTestData.FirstDeleteAt.UtcDateTime
@@ -197,8 +205,10 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
     public async Task DeleteMachine_WhenUpdateAndDeleteOverlap_OneSucceedsAndOneConflicts()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, MachineTestData.SerialNumber);
+
         using var race = _fixture.SaveGate.StartRace(MachineTestData.RaceParticipantCount);
 
         var failures = await Task.WhenAll(
@@ -209,6 +219,7 @@ public sealed class DeleteMachineTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()

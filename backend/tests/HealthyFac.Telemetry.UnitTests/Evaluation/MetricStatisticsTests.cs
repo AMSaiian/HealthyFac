@@ -215,6 +215,7 @@ public sealed class MetricStatisticsTests
     public void Apply_WithACounterThatDropsBack_RestartsTheTracker()
     {
         var statistics = new MetricStatistics(Guid.CreateVersion7(), operatingPhaseId: null);
+
         foreach (var (time, value) in SignalSeries.Ramp(from: 1000, perSecond: 1, count: 100, SignalSeries.Start))
         {
             statistics.Apply(value, time, isFrozen: false, MetricBehavior.Counter, Settings);

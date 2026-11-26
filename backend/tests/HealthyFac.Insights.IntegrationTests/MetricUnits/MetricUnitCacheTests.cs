@@ -1,5 +1,4 @@
 using HealthyFac.Insights.Application.MetricUnits;
-using HealthyFac.Insights.Infrastructure.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
@@ -55,7 +54,7 @@ public sealed class MetricUnitCacheTests(InsightsFixture fixture)
             .KeyTimeToLiveAsync(CatalogKey);
 
         timeToLive.Should().NotBeNull();
-        timeToLive!.Value.TotalSeconds.Should().BeInRange(MinTimeToLiveSeconds - 1, MaxTimeToLiveSeconds);
+        timeToLive.Value.TotalSeconds.Should().BeInRange(MinTimeToLiveSeconds - 1, MaxTimeToLiveSeconds);
     }
 
     [Fact]

@@ -22,6 +22,7 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
         var supervisorIds = await _fixture.SearchTitlesAsync(arranged.SupervisorClaims);
 
         workerIds.Should().BeEquivalentTo(arranged.AssignedToWorkerId, arranged.WorkerBacklogId);
+
         supervisorIds.Should()
             .BeEquivalentTo(
                 arranged.AssignedToWorkerId,
@@ -39,6 +40,7 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{WorkOrderApiTestData.BasePath}/{arranged.AssignedToOtherId}",
             arranged.WorkerClaims);
+
         var own = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get,
             $"{WorkOrderApiTestData.BasePath}/{arranged.AssignedToWorkerId}",
@@ -83,16 +85,17 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
     {
         var arranged = await ArrangeAsync();
         var order = await _fixture.ReadOrderAsync(arranged.WorkerClaims, arranged.AssignedToWorkerId);
+
         var body = new System.Text.Json.Nodes.JsonObject
         {
-            [propertyName: "title"] = WorkOrderApiTestData.Title,
-            [propertyName: "priority"] = "low",
-            [propertyName: "category"] = "repair",
-            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-            [propertyName: "fileIds"] = new System.Text.Json.Nodes.JsonArray(),
-            [propertyName: "assigneeId"] = arranged.WorkerEncryptedId,
-            [propertyName: "plannedStartLocal"] = _fixture.FutureStart(time: "10:00:00"),
-            [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+            ["title"] = WorkOrderApiTestData.Title,
+            ["priority"] = "low",
+            ["category"] = "repair",
+            ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            ["fileIds"] = new System.Text.Json.Nodes.JsonArray(),
+            ["assigneeId"] = arranged.WorkerEncryptedId,
+            ["plannedStartLocal"] = _fixture.FutureStart(time: "10:00:00"),
+            ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
         }.ToJsonString();
 
         var response = await _fixture.SendShiftRequestAsync(
@@ -113,6 +116,7 @@ public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
 
         var forbidden = await _fixture.SendShiftRequestAsync(
             HttpMethod.Post, WorkOrderApiTestData.SearchBatchPath, claims, body);
+
         var allowed = await _fixture.SendShiftRequestAsync(
             HttpMethod.Post, WorkOrderApiTestData.SearchBatchPath, readClaims, body);
 

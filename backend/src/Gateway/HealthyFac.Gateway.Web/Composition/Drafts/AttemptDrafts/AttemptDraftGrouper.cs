@@ -93,9 +93,11 @@ public static class AttemptDraftGrouper
     )
     {
         var machineId = ReadText(draft, TargetMachineIdProperty);
+
         var draftId = machineId is null
             ? ReadText(draft, TargetMachineDraftIdProperty) ?? ReadText(draft, ProposalEntryIdProperty)
             : null;
+
         var key = machineId is not null ? MachineKey + machineId : DraftKey + draftId;
 
         if (!byKey.TryGetValue(key, out var group))
@@ -114,6 +116,7 @@ public static class AttemptDraftGrouper
                 LookupMachineId = machineId,
                 LookupDraftId = draftId,
             };
+
             groups.Add(group);
             byKey[key] = group;
         }

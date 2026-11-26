@@ -43,10 +43,13 @@ public class MetricDefinitionConfiguration : IEntityTypeConfiguration<MetricDefi
             {
                 limits.Property(value => value.WarningLow)
                     .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.WarningLow);
+
                 limits.Property(value => value.WarningHigh)
                     .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.WarningHigh);
+
                 limits.Property(value => value.AlarmLow)
                     .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.AlarmLow);
+
                 limits.Property(value => value.AlarmHigh)
                     .HasColumnName(MetricDefinitionDatabaseConstants.LimitColumns.AlarmHigh);
             });

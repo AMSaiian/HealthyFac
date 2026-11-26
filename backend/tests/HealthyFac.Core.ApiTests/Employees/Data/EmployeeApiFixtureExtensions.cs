@@ -19,18 +19,20 @@ public static class EmployeeApiFixtureExtensions
         )
         {
             using var client = fixture.CreateClient();
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
 
             return await client.PostAsJsonAsync(
                 path,
-                new JsonObject { [propertyName: "employeeId"] = fixture.IdEncryptor.Encrypt(employeeId) });
+                new JsonObject { ["employeeId"] = fixture.IdEncryptor.Encrypt(employeeId) });
         }
 
         public async Task<HttpResponseMessage> PostEmployeeActionWithoutBodyAsync(string path, TestTokenClaims claims)
         {
             using var client = fixture.CreateClient();
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
@@ -41,6 +43,7 @@ public static class EmployeeApiFixtureExtensions
         public async Task<HttpResponseMessage> PostEmployeeSearchAsync(string path, TestTokenClaims claims)
         {
             using var client = fixture.CreateClient();
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
@@ -49,15 +52,16 @@ public static class EmployeeApiFixtureExtensions
                 path,
                 new JsonObject
                 {
-                    [propertyName: "offset"] = 0,
-                    [propertyName: "limit"] = 10,
-                    [propertyName: "filter"] = new JsonObject(),
+                    ["offset"] = 0,
+                    ["limit"] = 10,
+                    ["filter"] = new JsonObject(),
                 });
         }
 
         public async Task<HttpResponseMessage> GetEmployeeAsync(string path, TestTokenClaims claims)
         {
             using var client = fixture.CreateClient();
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));

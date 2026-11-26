@@ -67,14 +67,17 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
     public async Task CreateInvite_WithEmailOfEmployeeInOtherCase_ReturnsConflict()
     {
         var claims = _fixture.CreateSupervisorClaims();
+
         var created = await _fixture.PostCreateInviteAsync(
             claims,
             new Dictionary<string, object?>
             {
                 [EmployeeInviteApiTestData.EmailField] = EmployeeInviteApiTestData.LowerCaseEmail,
             });
+
         var invite = await _fixture.LoadInviteAsync(created);
         var accepted = await _fixture.PostAcceptInviteAnonymouslyAsync(invite);
+
         var mixedCase = new Dictionary<string, object?>
         {
             [EmployeeInviteApiTestData.EmailField] = EmployeeInviteApiTestData.MixedCaseEmail,

@@ -92,6 +92,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
     public async Task RunAsync(SeedEvent seedEvent, SeedContext context, CancellationToken cancellationToken)
     {
         var key = SeedItem.KeyOf(seedEvent.Item);
+
         if (_workOrderKeys.Contains(key))
         {
             await _workOrders.RunAsync(seedEvent, context, cancellationToken);
@@ -107,7 +108,8 @@ public sealed class TelemetryHistoryPart : ISeedPart
         }
 
         _run ??= await HistoryRun.CreateAsync(
-            _hosts.Telemetry, _file, _machinesFile, _machines.Values.ToList(), context, cancellationToken);
+            _hosts.Telemetry, _file, _machinesFile, [.. _machines.Values], context, cancellationToken);
+
         if (key == TelemetryHistoryConstants.MarkerKey)
         {
             await _run.WriteMarkerAsync(_file.MarkerMessageId, cancellationToken);
@@ -194,7 +196,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
         {
             At = RelativeMoment.FromTotalMinutes(totalMinutes: 0),
             Item = SeedItem.Of(TelemetryHistoryConstants.FileName, TelemetryHistoryConstants.MarkerKey),
-            Uses = machines.Keys.Select(MachineKey).ToList(),
+            Uses = [.. machines.Keys.Select(MachineKey)],
         };
 
     private static void AddStep(
@@ -205,6 +207,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
     )
     {
         var key = $"{TelemetryHistoryConstants.StepPrefix}.{moment}";
+
         if (!keys.Add(key))
         {
             return;
@@ -215,7 +218,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
             {
                 At = moment,
                 Item = SeedItem.Of(TelemetryHistoryConstants.FileName, key),
-                Uses = machines.Keys.Select(MachineKey).ToList(),
+                Uses = [.. machines.Keys.Select(MachineKey)],
             });
     }
 
@@ -229,6 +232,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
             file.SampleIntervalSeconds,
             _readCatchUpBatchReadings(),
             machines.Values.Max(machine => machine.Draft.Metrics.Count + machine.Draft.Statuses.Count));
+
         var events = new List<SeedEvent>();
         var keys = new HashSet<string>();
 
@@ -240,6 +244,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
         }
 
         AddStep(events, keys, RelativeMoment.FromTotalMinutes(totalMinutes: 0), machines);
+
         foreach (var moment in machinesFile.StateChanges.Select(change => change.At)
             .Concat(file.Drains.SelectMany(MaintenanceMoments)))
         {
@@ -298,9 +303,11 @@ public sealed class TelemetryHistoryPart : ISeedPart
         _drainsByOrderKey.Clear();
         var drains = file.Drains.Where(drain => drain.WorkOrder is not null).ToList();
         drains.ForEach(drain => _drainsByOrderKey[WorkOrderKeyOf(drain)] = drain);
+
         var events = _workOrders
             .ReadEventsOf(drains.Select(drain => WorkOrderOf(drain, drain.WorkOrder!)), people)
             .ToList();
+
         _workOrderKeys.UnionWith(events.Select(seedEvent => SeedItem.KeyOf(seedEvent.Item)));
         events.AddRange(drains.Select(LinkEvent));
 
@@ -311,6 +318,7 @@ public sealed class TelemetryHistoryPart : ISeedPart
     {
         var key = $"{drain.Key}{TelemetryHistoryConstants.LinkSuffix}";
         var item = SeedItem.Of(TelemetryHistoryConstants.FileName, key);
+
         _actions[key] = (context, cancellationToken) => DrainCaseLink.RunAsync(
             _hosts.Insights,
             item,
@@ -382,18 +390,22 @@ public sealed class TelemetryHistoryPart : ISeedPart
         var assignedAtUtc = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
         var firstDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(assignedAtUtc, zone));
         var lastDate = firstDate.AddDays(TelemetryHistoryConstants.PlannedStartSearchDays);
+
         var shifts = await reader.LoadAsync(
             assigneeId, zone, firstDate, lastDate, isTracked: false, cancellationToken);
+
         var blocks = shifts.Resolve(firstDate, lastDate)
             .SelectMany(day => day.Blocks)
             .OrderBy(block => block.StartUtc)
             .ToList();
+
         var stored = blocks.Count == 0
             ? []
             : await scope.ServiceProvider.GetRequiredService<EmployeeOccupancyReader>()
                 .ReadAsync(
                     companyId, assigneeId, assignedAtUtc, blocks.Max(block => block.EndUtc), excludeWorkOrderId: null,
                     cancellationToken);
+
         var startUtc = DrainPlannedStart.Choose(
             SeedCalendar.ToUtc(drain.Maintenance.From, context.Anchor, context.Zone).UtcDateTime,
             TimeSpan.FromMinutes(order.EstimateMinutes),

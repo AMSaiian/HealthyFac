@@ -42,11 +42,13 @@ public sealed class GeminiStructuredOutputTests
         await RunAsync();
 
         var body = ReadBody().RootElement;
+
         var declarations = body.GetProperty(propertyName: "tools")
             .EnumerateArray()
             .SelectMany(tool => tool.GetProperty(propertyName: "functionDeclarations").EnumerateArray())
             .Select(declaration => declaration.GetProperty(propertyName: "name").GetString())
             .ToList();
+
         declarations.Should().BeEquivalentTo(ToolNames);
         var generationConfig = body.GetProperty(propertyName: "generationConfig");
         generationConfig.TryGetProperty(propertyName: "responseMimeType", out _).Should().BeFalse();
@@ -92,6 +94,7 @@ public sealed class GeminiStructuredOutputTests
             vertexAI: false,
             apiKey: "test-api-key",
             clientOptions: new ClientOptions { HttpClientFactory = () => _handler.CreateClient(string.Empty) });
+
         var options = Options.Create(
             new GeminiOptions
             {
@@ -100,12 +103,15 @@ public sealed class GeminiStructuredOutputTests
                 ChatModel = Model,
                 TriageModel = Model,
             });
+
         var agentOptions = Options.Create(new AgentOptions { ExtractorMaxIterations = 10, MaxConsecutiveErrors = 3 });
+
         var registry = new ToolRegistry(
             new TestAdvisorScopes(),
             ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance),
             new FakeLogger(),
             new AgentJson(new PrefixIdEncryptor()));
+
         var extractor = new AgentDraftExtractor(
             client.AsIChatClient(Model),
             options,
@@ -113,7 +119,9 @@ public sealed class GeminiStructuredOutputTests
             new PassThroughProviderCalls(),
             registry,
             new FunctionToolCallIds());
+
         var input = ExtractionTestData.CreateInput();
+
         var session = new ExtractionSession
         {
             Buffer = new ExtractionBuffer(isMachineFile: false, fileMachineId: null, input.Units, input.Signals),

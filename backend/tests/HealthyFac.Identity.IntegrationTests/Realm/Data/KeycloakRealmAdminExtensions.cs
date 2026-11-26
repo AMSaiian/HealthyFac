@@ -27,7 +27,7 @@ public static class KeycloakRealmAdminExtensions
         {
             var clients = await fixture.GetAdminJsonAsync<JsonArray>($"clients?clientId={clientId}");
 
-            return clients.Single()![propertyName: "id"]!.GetValue<string>();
+            return clients.Single()!["id"]!.GetValue<string>();
         }
 
         public async Task<JsonObject> GetClientAsync(string clientUuid) =>
@@ -38,7 +38,8 @@ public static class KeycloakRealmAdminExtensions
             using var response = await fixture.SendAdminAsync(
                 HttpMethod.Post,
                 $"clients/{clientUuid}/roles",
-                new JsonObject { [propertyName: "name"] = roleName });
+                new JsonObject { ["name"] = roleName });
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return await fixture.GetAdminJsonAsync<JsonObject>($"clients/{clientUuid}/roles/{roleName}");
@@ -49,13 +50,15 @@ public static class KeycloakRealmAdminExtensions
             using var response = await fixture.SendAdminAsync(
                 HttpMethod.Post,
                 path: "roles",
-                new JsonObject { [propertyName: "name"] = roleName });
+                new JsonObject { ["name"] = roleName });
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             using var compositesResponse = await fixture.SendAdminAsync(
                 HttpMethod.Post,
                 $"roles/{roleName}/composites",
                 new JsonArray(composites.Select(role => role.DeepClone()).ToArray()));
+
             await compositesResponse.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return await fixture.GetAdminJsonAsync<JsonObject>($"roles/{roleName}");
@@ -68,10 +71,10 @@ public static class KeycloakRealmAdminExtensions
                 path: "client-scopes",
                 new JsonObject
                 {
-                    [propertyName: "name"] = name,
-                    [propertyName: "protocol"] = "openid-connect",
-                    [propertyName: "attributes"] = new JsonObject { [propertyName: "include.in.token.scope"] = "true" },
-                    [propertyName: "protocolMappers"] = new JsonArray(
+                    ["name"] = name,
+                    ["protocol"] = "openid-connect",
+                    ["attributes"] = new JsonObject { ["include.in.token.scope"] = "true" },
+                    ["protocolMappers"] = new JsonArray(
                         mappers.Select(mapper => mapper.DeepClone()).ToArray()),
                 });
 
@@ -81,9 +84,11 @@ public static class KeycloakRealmAdminExtensions
         public async Task AddClientScopeAsync(string clientUuid, string scopeId, bool isDefault)
         {
             var kind = isDefault ? "default" : "optional";
+
             using var response = await fixture.SendAdminAsync(
                 HttpMethod.Put,
                 $"clients/{clientUuid}/{kind}-client-scopes/{scopeId}");
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
 
@@ -93,6 +98,7 @@ public static class KeycloakRealmAdminExtensions
                 HttpMethod.Post,
                 $"client-scopes/{scopeId}/scope-mappings/clients/{roleClientUuid}",
                 new JsonArray(role.DeepClone()));
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
 
@@ -100,7 +106,7 @@ public static class KeycloakRealmAdminExtensions
         {
             var user = await fixture.GetAdminJsonAsync<JsonObject>($"clients/{clientUuid}/service-account-user");
 
-            return user[propertyName: "id"]!.GetValue<string>();
+            return user["id"]!.GetValue<string>();
         }
 
         public async Task AssignRealmRoleAsync(string userId, JsonObject role)
@@ -109,13 +115,14 @@ public static class KeycloakRealmAdminExtensions
                 HttpMethod.Post,
                 $"users/{userId}/role-mappings/realm",
                 new JsonArray(role.DeepClone()));
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
 
         public async Task SetUserEnabledAsync(Guid userId, bool isEnabled)
         {
             var user = await fixture.GetAdminJsonAsync<JsonObject>($"users/{userId}");
-            user[propertyName: "enabled"] = isEnabled;
+            user["enabled"] = isEnabled;
 
             using var response = await fixture.SendAdminAsync(HttpMethod.Put, $"users/{userId}", user);
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
@@ -137,6 +144,7 @@ public static class KeycloakRealmAdminExtensions
         {
             var adminToken = await fixture.Server.GetAdminTokenAsync();
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Server.BaseAddress) };
+
             using var request = new HttpRequestMessage(method, $"{RealmAdminPath}/{path}")
             {
                 Headers = { Authorization = new AuthenticationHeaderValue(BearerScheme, adminToken) },

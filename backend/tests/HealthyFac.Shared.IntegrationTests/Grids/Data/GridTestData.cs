@@ -69,6 +69,7 @@ public static class GridTestData
         for (var index = 0; index < SortRowCount; index++)
         {
             var at = SortBase.AddMinutes(faker.Random.Int(min: 0, max: 100_000));
+
             rows.Add(
                 new GridTestEntity
                 {
@@ -110,6 +111,7 @@ public static class GridTestData
         for (var index = 0; index < DatesRowCount; index++)
         {
             var at = DatesBase + DatesStep * index;
+
             rows.Add(
                 new GridTestEntity
                 {

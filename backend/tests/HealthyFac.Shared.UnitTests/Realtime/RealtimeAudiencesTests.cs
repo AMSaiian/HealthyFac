@@ -23,6 +23,7 @@ public sealed class RealtimeAudiencesTests
         var topics = RealtimeAudiences.TopicPermissions.Keys;
 
         topics.Should().BeEquivalentTo(RealtimeTopic.All);
+
         RealtimeAudiences.TopicPermissions.Values.Should()
             .OnlyContain(permission => !string.IsNullOrWhiteSpace(permission));
     }

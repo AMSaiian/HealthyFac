@@ -31,9 +31,10 @@ public sealed class GetAttemptDefinitionDraftsTests(TelemetryDatabaseFixture fix
                 (appliedId, DefinitionDraftState.Applied),
                 (dismissedId, DefinitionDraftState.Dismissed),
             ]);
+
         response.Metrics.Should().OnlyContain(draft => draft.TargetMachineId == machineId);
         response.Statuses.Should().ContainSingle().Which.Id.Should().Be(awaitingId);
-        response.Statuses[index: 0].State.Should().Be(DefinitionDraftState.AwaitingTarget);
+        response.Statuses[0].State.Should().Be(DefinitionDraftState.AwaitingTarget);
     }
 
     [Fact]

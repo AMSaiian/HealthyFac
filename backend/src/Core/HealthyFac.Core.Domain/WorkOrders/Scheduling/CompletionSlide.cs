@@ -37,6 +37,7 @@ public static class CompletionSlide
     )
     {
         var plannedEndUtc = completed.PlannedStartUtc + completed.Estimate;
+
         if (completedAtUtc <= plannedEndUtc)
         {
             return [];
@@ -47,17 +48,21 @@ public static class CompletionSlide
             .OrderBy(order => order.PlannedStartUtc)
             .ThenBy(order => order.Id)
             .ToList();
+
         var occupied = scheduled
             .Where(order => !IsMovable(order))
             .Select(order => Occupancy.Of(order.Id, order.PlannedStartUtc, order.Estimate, order.CompletedAtUtc))
             .ToList();
+
         occupied.Add(Occupancy.Of(completed.Id, completed.PlannedStartUtc, completed.Estimate, completedAtUtc));
 
         var moves = new List<SlideMove>();
         var cursorUtc = completedAtUtc;
+
         foreach (var order in movable)
         {
             var orderDate = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(order.PlannedStartUtc, zone));
+
             if (orderDate > day.Date)
             {
                 continue;
@@ -72,6 +77,7 @@ public static class CompletionSlide
 
             var fromUtc = order.PlannedStartUtc > cursorUtc ? order.PlannedStartUtc : cursorUtc;
             var startUtc = FindStart(SlotRules.RoundUpToGrid(fromUtc), order, day, occupied);
+
             if (startUtc is not { } found)
             {
                 moves.Add(new SlideMove { WorkOrderId = order.Id });
@@ -81,6 +87,7 @@ public static class CompletionSlide
 
             occupied.Add(Occupancy.Of(order.Id, found, order.Estimate, completedAtUtc: null));
             cursorUtc = found + order.Estimate;
+
             if (found != order.PlannedStartUtc)
             {
                 moves.Add(new SlideMove { WorkOrderId = order.Id, NewStartUtc = found });
@@ -103,13 +110,16 @@ public static class CompletionSlide
         foreach (var block in day.Blocks)
         {
             var candidateUtc = SlotRules.RoundUpToGrid(fromUtc > block.StartUtc ? fromUtc : block.StartUtc);
+
             while (candidateUtc + order.Estimate <= block.EndUtc)
             {
                 var slot = Occupancy.Of(order.Id, candidateUtc, order.Estimate, completedAtUtc: null);
+
                 var clashEndUtc = occupied
                     .Where(other => other.StartUtc < slot.EndUtc && slot.StartUtc < other.EndUtc)
                     .Select(other => (DateTime?)other.EndUtc)
                     .Max();
+
                 if (clashEndUtc is not { } clashEnd)
                 {
                     return candidateUtc;

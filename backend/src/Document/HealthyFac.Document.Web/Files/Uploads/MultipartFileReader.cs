@@ -26,7 +26,7 @@ public static class MultipartFileReader
             throw new AppValidationException([new ValidationFailure(FileKey, FileErrors.ExactlyOneFile)]);
         }
 
-        var file = files[index: 0];
+        var file = files[0];
 
         return new FileUpload
         {

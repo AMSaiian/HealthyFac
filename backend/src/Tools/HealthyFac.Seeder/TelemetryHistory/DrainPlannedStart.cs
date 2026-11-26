@@ -33,6 +33,7 @@ public static class DrainPlannedStart
     {
         var earliest =
             SlotRules.RoundUpToGrid(maintenanceStartUtc > assignedAtUtc ? maintenanceStartUtc : assignedAtUtc);
+
         var candidates = blocks.Select(block => block.StartUtc)
             .Concat(busy.Select(slot => slot.EndUtc))
             .Select(SlotRules.RoundUpToGrid)
@@ -40,9 +41,11 @@ public static class DrainPlannedStart
             .Prepend(earliest)
             .Distinct()
             .OrderBy(moment => moment);
+
         foreach (var candidate in candidates)
         {
             var slot = Occupancy.Of(Guid.Empty, candidate, estimate, completedAtUtc: null);
+
             if (blocks.Any(block => block.StartUtc <= candidate && slot.EndUtc <= block.EndUtc)
                 && !SlotRules.Overlaps(slot, busy))
             {

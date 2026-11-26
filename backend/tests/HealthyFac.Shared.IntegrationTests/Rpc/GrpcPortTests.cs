@@ -20,12 +20,14 @@ public sealed class GrpcPortTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var builder = WebApplication.CreateBuilder();
+
         builder.Configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
             {
-                [key: "HTTP_PORTS"] = $"{_apiPort};{_grpcPort}",
+                ["HTTP_PORTS"] = $"{_apiPort};{_grpcPort}",
                 [$"{GrpcEndpointOptions.SectionName}:Port"] = _grpcPort.ToString(),
             });
+
         builder.Services.AddSharedGrpc(builder.Environment, builder.Configuration);
         _app = builder.Build();
         _app.UseSharedGrpcPort();
@@ -72,6 +74,7 @@ public sealed class GrpcPortTests : IAsyncLifetime
     private async Task<HttpStatusCode> SendAsync(HttpMethod method, string path, int port, bool isGrpcCall)
     {
         using var client = new HttpClient();
+
         using var request = new HttpRequestMessage(method, $"http://127.0.0.1:{port}{path}")
         {
             Version = port == _grpcPort ? HttpVersion.Version20 : HttpVersion.Version11,

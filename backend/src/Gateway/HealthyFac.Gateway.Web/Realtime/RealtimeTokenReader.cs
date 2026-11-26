@@ -19,12 +19,14 @@ public sealed class RealtimeTokenReader : IPostConfigureOptions<JwtBearerOptions
         }
 
         var previous = options.Events.OnMessageReceived;
+
         options.Events.OnMessageReceived = async context =>
         {
             await previous(context);
 
             var isHubRequest = context.Request.Path.StartsWithSegments(RealtimeConstants.HubPath);
             var token = context.Request.Query[RealtimeConstants.AccessTokenQueryKey].ToString();
+
             if (isHubRequest && !string.IsNullOrEmpty(token))
             {
                 context.Token = token;

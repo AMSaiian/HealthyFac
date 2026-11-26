@@ -17,19 +17,19 @@ public static class RateLimitTestData
 
     public static IReadOnlyDictionary<string, string> DefaultLimitOfTwo { get; } = new Dictionary<string, string>
     {
-        [key: "RateLimiting:Default:PermitLimit"] = DefaultPermitLimit.ToString(),
-        [key: "RateLimiting:Default:WindowSeconds"] = "60",
+        ["RateLimiting:Default:PermitLimit"] = DefaultPermitLimit.ToString(),
+        ["RateLimiting:Default:WindowSeconds"] = "60",
     };
 
     public static IReadOnlyDictionary<string, string> BlobLimitOfThree { get; } = new Dictionary<string, string>
     {
-        [key: "RateLimiting:BlobDownload:PermitLimit"] = BlobPermitLimit.ToString(),
-        [key: "RateLimiting:BlobDownload:WindowSeconds"] = "60",
+        ["RateLimiting:BlobDownload:PermitLimit"] = BlobPermitLimit.ToString(),
+        ["RateLimiting:BlobDownload:WindowSeconds"] = "60",
     };
 
     public static IReadOnlyDictionary<string, string> StrictLimitOfThree { get; } = new Dictionary<string, string>
     {
-        [key: "RateLimiting:Strict:PermitLimit"] = StrictPermitLimit.ToString(),
-        [key: "RateLimiting:Strict:WindowSeconds"] = "60",
+        ["RateLimiting:Strict:PermitLimit"] = StrictPermitLimit.ToString(),
+        ["RateLimiting:Strict:WindowSeconds"] = "60",
     };
 }

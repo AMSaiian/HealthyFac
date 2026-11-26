@@ -14,5 +14,5 @@ public static class CompositionTestData
 
     public static readonly string[] ComposedClusterIds = ["core", "telemetry"];
 
-    public static TheoryData<string> ConfigurationFiles => new() { GatewaySettingsFile, GatewayComposeConfigFile };
+    public static TheoryData<string> ConfigurationFiles => [GatewaySettingsFile, GatewayComposeConfigFile];
 }

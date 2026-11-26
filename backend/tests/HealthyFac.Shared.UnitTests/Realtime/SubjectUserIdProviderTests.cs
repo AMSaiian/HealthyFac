@@ -24,6 +24,7 @@ public sealed class SubjectUserIdProviderTests
     {
         var connection = CreateConnection(
             RealtimeHubTestData.CreateUser(RealtimeHubTestData.WorkerPermissions, RealtimeHubTestData.CompanyText));
+
         new SubjectUserIdProvider().GetUserId(connection);
 
         var actor = ConnectionActor.Of(connection.Items, new System.Security.Claims.ClaimsPrincipal());

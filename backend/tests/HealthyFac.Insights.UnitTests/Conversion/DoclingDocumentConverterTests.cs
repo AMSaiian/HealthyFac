@@ -31,12 +31,15 @@ public sealed class DoclingDocumentConverterTests
                     [$"{DoclingOptions.SectionName}:MaxPages"] = DoclingTestData.MaxPages.ToString(),
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(_time);
+
         services.AddSingleton<IProviderCalls>(
             new ProviderResilience(
                 Options.Create(new IngestProcessingOptions { RetryDelayMilliseconds = 1 }),
                 _time));
+
         services.AddDoclingConverter(configuration);
         services.AddHttpClient(DoclingConstants.ClientName).ConfigurePrimaryHttpMessageHandler(() => _server);
         _converter = services.BuildServiceProvider().GetRequiredService<IDocumentConverter>();
@@ -52,9 +55,9 @@ public sealed class DoclingDocumentConverterTests
 
         document.PageCount.Should().Be(expected: 3);
         document.Chunks.Should().HaveCount(expected: 2);
-        document.Chunks[index: 0].Text.Should().Be(expected: "Operating limits.");
-        document.Chunks[index: 0].Location.Should().Be(expected: "pages 1-2: Manual > Limits");
-        document.Chunks[index: 1].Location.Should().Be(expected: "Manual > Pressure");
+        document.Chunks[0].Text.Should().Be(expected: "Operating limits.");
+        document.Chunks[0].Location.Should().Be(expected: "pages 1-2: Manual > Limits");
+        document.Chunks[1].Location.Should().Be(expected: "Manual > Pressure");
     }
 
     [Fact]
@@ -67,6 +70,7 @@ public sealed class DoclingDocumentConverterTests
 
         var polls = _server.Calls.Count(call => call.Path.StartsWith(value: "/v1/status/poll"));
         polls.Should().Be(expected: 3);
+
         _time.Delays.Should()
             .Equal(TimeSpan.FromSeconds(DoclingTestData.PollSeconds), TimeSpan.FromSeconds(seconds: 2));
     }

@@ -54,6 +54,7 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         _scopes = scopes;
         _context = context;
         _logger = logger;
+
         _schema = AIJsonUtilities.CreateJsonSchema(
             typeof(TArguments),
             _tool.Description,
@@ -85,6 +86,7 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         try
         {
             var bound = JsonSerializer.Deserialize<TArguments>(argumentsText, _json);
+
             (outcome, result) = bound is null
                 ? (ToolCallOutcome.Rejected, BadArgumentsText)
                 : (ToolCallOutcome.Succeeded, await CallAsync(bound, callContext, cancellationToken));
@@ -111,6 +113,7 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
         }
 
         _context.Streak?.Record(outcome != ToolCallOutcome.Succeeded);
+
         if (_context.Streak is { IsExceeded: true })
         {
             _context.EndLoop();
@@ -129,6 +132,7 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
             outcome == ToolCallOutcome.Succeeded ? result : JsonSerializer.Serialize(result, _json),
             stopwatch.Elapsed,
             cancellationToken);
+
         await _context.RenewLease(cancellationToken);
 
         if (outage is not null)
@@ -142,7 +146,7 @@ internal sealed class ToolFunction<TRequest, TArguments, TResponse> : AIFunction
 
     private static JsonNode HideGuidFormat(AIJsonSchemaCreateContext context, JsonNode node)
     {
-        if (node is JsonObject schema && schema[propertyName: "format"]?.GetValue<string>() == "uuid")
+        if (node is JsonObject schema && schema["format"]?.GetValue<string>() == "uuid")
         {
             schema.Remove(propertyName: "format");
         }

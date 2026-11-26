@@ -24,8 +24,8 @@ public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "links"]!.AsArray().Should().ContainSingle();
-        body[propertyName: "links"]![index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+        body["links"]!.AsArray().Should().ContainSingle();
+        body["links"]![0]!["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
     }
 
     [Fact]
@@ -50,5 +50,5 @@ public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
     }
 
     private static string IdsBody(params string[] ids) =>
-        new JsonObject { [propertyName: "ids"] = new JsonArray([.. ids.Select(id => (JsonNode)id)]) }.ToJsonString();
+        new JsonObject { ["ids"] = new JsonArray([.. ids.Select(id => (JsonNode)id)]) }.ToJsonString();
 }

@@ -19,6 +19,7 @@ public sealed class ChangeIngestedFileMachineInboxTests(SignalCaseFixture fixtur
         var completed = IngestAttemptTestData.CreateCompleted();
         await _fixture.Inner.SaveAsync(completed, IngestAttemptTestData.CreateDocument(completed.Id));
         var changedAt = IngestAttemptTestData.Now.AddMinutes(value: 5);
+
         var message = new FileMachineChanged
         {
             FileId = IngestAttemptTestData.FileId,

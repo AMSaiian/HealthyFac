@@ -28,6 +28,7 @@ public static class WorkOrderSortMap
         var workOrder = Expression.Parameter(typeof(WorkOrder), name: "workOrder");
         var priority = Expression.Property(workOrder, nameof(WorkOrder.Priority));
         Expression body = Expression.Constant(WorkOrderPriority.All[^1].Rank);
+
         foreach (var member in WorkOrderPriority.All.Reverse().Skip(count: 1))
         {
             body = Expression.Condition(

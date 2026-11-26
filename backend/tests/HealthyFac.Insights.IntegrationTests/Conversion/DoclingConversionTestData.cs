@@ -4,13 +4,40 @@ public static class DoclingConversionTestData
 {
     public static TheoryData<DoclingSampleFile> Files => new()
     {
-        { new DoclingSampleFile("sample-text.pdf", "pdf", ExpectedPageCount: 2, "pressure", HasLocation: true) },
-        { new DoclingSampleFile("sample.docx", "docx", ExpectedPageCount: 1, "pressure", HasLocation: true) },
-        { new DoclingSampleFile("sample.xlsx", "xlsx", ExpectedPageCount: 1, "pressure", HasLocation: true) },
-        { new DoclingSampleFile("sample.pptx", "pptx", ExpectedPageCount: 1, "pressure", HasLocation: true) },
-        { new DoclingSampleFile("sample.txt", "txt", ExpectedPageCount: 1, "pressure", HasLocation: false) },
-        { new DoclingSampleFile("sample.csv", "csv", ExpectedPageCount: 1, "pressure", HasLocation: false) },
-        { new DoclingSampleFile("sample.md", "md", ExpectedPageCount: 1, "pressure", HasLocation: true) },
+        {
+            new DoclingSampleFile(
+                FileName: "sample-text.pdf", Extension: "pdf", ExpectedPageCount: 2, KnownWord: "pressure",
+                HasLocation: true)
+        },
+        {
+            new DoclingSampleFile(
+                FileName: "sample.docx", Extension: "docx", ExpectedPageCount: 1, KnownWord: "pressure",
+                HasLocation: true)
+        },
+        {
+            new DoclingSampleFile(
+                FileName: "sample.xlsx", Extension: "xlsx", ExpectedPageCount: 1, KnownWord: "pressure",
+                HasLocation: true)
+        },
+        {
+            new DoclingSampleFile(
+                FileName: "sample.pptx", Extension: "pptx", ExpectedPageCount: 1, KnownWord: "pressure",
+                HasLocation: true)
+        },
+        {
+            new DoclingSampleFile(
+                FileName: "sample.txt", Extension: "txt", ExpectedPageCount: 1, KnownWord: "pressure",
+                HasLocation: false)
+        },
+        {
+            new DoclingSampleFile(
+                FileName: "sample.csv", Extension: "csv", ExpectedPageCount: 1, KnownWord: "pressure",
+                HasLocation: false)
+        },
+        {
+            new DoclingSampleFile(
+                FileName: "sample.md", Extension: "md", ExpectedPageCount: 1, KnownWord: "pressure", HasLocation: true)
+        },
     };
 }
 

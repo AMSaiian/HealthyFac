@@ -20,6 +20,7 @@ public static class IntakeObservabilityFixtureExtensions
         )
         {
             using var sender = new MqttClientFactory().CreateMqttClient();
+
             await sender.ConnectAsync(
                 new MqttClientOptionsBuilder()
                     .WithTcpServer(fixture.Broker.Host, fixture.Broker.Port)
@@ -34,6 +35,7 @@ public static class IntakeObservabilityFixtureExtensions
                     .WithUserProperty(propertyName, Encoding.UTF8.GetBytes(propertyValue))
                     .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
                     .Build());
+
             await sender.DisconnectAsync();
         }
     }

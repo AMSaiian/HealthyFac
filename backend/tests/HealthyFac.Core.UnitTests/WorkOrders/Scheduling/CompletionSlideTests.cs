@@ -152,12 +152,16 @@ public sealed class CompletionSlideTests
     {
         var completed = SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "09:00", minutes: 60);
         var monday = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "10:00", minutes: 60);
+
         var tuesday = SchedulingTestData.OrderAfter(
             number: 3, WorkOrderStatus.Blocked, days: 1, start: "09:00", minutes: 60);
+
         var clashing = SchedulingTestData.OrderAfter(
             number: 4, WorkOrderStatus.Staged, days: 2, start: "09:00", minutes: 60);
+
         var untouched = SchedulingTestData.OrderAfter(
             number: 5, WorkOrderStatus.Staged, days: 2, start: "11:00", minutes: 30);
+
         var running = SchedulingTestData.OrderAfter(
             number: 6, WorkOrderStatus.InProgress, days: 1, start: "13:00", minutes: 60);
 
@@ -180,6 +184,7 @@ public sealed class CompletionSlideTests
     public void Plan_WithCompletionOnALaterDateThatFitsNothing_SendsTheCompletionDateWorkOrderToTheBacklog()
     {
         var completed = SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "09:00", minutes: 60);
+
         var wednesday = SchedulingTestData.OrderAfter(
             number: 2, WorkOrderStatus.Staged, days: 2, start: "09:00", minutes: 60);
 
@@ -200,6 +205,7 @@ public sealed class CompletionSlideTests
     public void Plan_WithAWorkOrderAfterTheCompletionDate_LeavesItAlone()
     {
         var completed = SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "09:00", minutes: 60);
+
         var later = SchedulingTestData.OrderAfter(
             number: 2, WorkOrderStatus.Staged, days: 3, start: "09:00", minutes: 60);
 

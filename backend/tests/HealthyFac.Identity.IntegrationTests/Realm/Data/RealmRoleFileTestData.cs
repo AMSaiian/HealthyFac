@@ -8,11 +8,11 @@ public static class RealmRoleFileTestData
     private const string RealmFileName = "healthyfac-realm.json";
     private const string RealmFileDirectory = "realm";
 
-    public static TheoryData<string> RolesWithMachinePermissions => new()
-    {
+    public static TheoryData<string> RolesWithMachinePermissions =>
+    [
         RealmTestData.WorkerRoleName,
         RealmTestData.SupervisorRoleName,
-    };
+    ];
 
     public static JsonNode ReadRealm() =>
         JsonNode.Parse(File.ReadAllText(KeycloakFiles.Find(RealmFileDirectory, RealmFileName)))!;
@@ -23,10 +23,11 @@ public static class RealmRoleFileTestData
     public static IReadOnlyList<string> ReadRolePermissions(string roleName, string clientId)
     {
         var realm = ReadRealm();
-        var role = realm[propertyName: "roles"]![propertyName: "realm"]!.AsArray()
-            .Single(candidate => candidate![propertyName: "name"]!.GetValue<string>() == roleName)!;
 
-        return role[propertyName: "composites"]?[propertyName: "client"]?[clientId]
+        var role = realm["roles"]!["realm"]!.AsArray()
+            .Single(candidate => candidate!["name"]!.GetValue<string>() == roleName)!;
+
+        return role["composites"]?["client"]?[clientId]
                 ?.AsArray()
                 .Select(permission => permission!.GetValue<string>())
                 .ToList()

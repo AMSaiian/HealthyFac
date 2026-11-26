@@ -33,6 +33,7 @@ public sealed class MetricUnitSeedTests(TelemetryDatabaseFixture fixture)
     public async Task SeedRequiredDataAsync_WithChangedAbbreviation_StoresOneMoreMessageAndRestoresIt()
     {
         var before = await _fixture.CountMetricUnitsChangedAsync();
+
         await _fixture.ChangeAbbreviationAsync(
             MetricUnitTestData.CelsiusUnitName, MetricUnitTestData.WrongAbbreviation);
 

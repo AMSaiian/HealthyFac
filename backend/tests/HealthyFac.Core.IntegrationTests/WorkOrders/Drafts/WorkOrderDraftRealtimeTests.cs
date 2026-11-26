@@ -27,8 +27,10 @@ public sealed class WorkOrderDraftRealtimeTests(CoreDatabaseFixture fixture)
 
         var push = _fixture.RealtimeQueue.Items.Should().ContainSingle().Subject.Push;
         outcome.IsProcessed.Should().BeTrue();
+
         push.Group.Should()
             .Be(RealtimeGroups.ForKind(tenant.CompanyId, RealtimeNotificationKind.WorkOrderDraftCreated));
+
         push.Notification!.Data.Should()
             .BeEquivalentTo(new WorkOrderDraftCreatedData { DraftId = message.DraftId, Title = message.Title });
     }

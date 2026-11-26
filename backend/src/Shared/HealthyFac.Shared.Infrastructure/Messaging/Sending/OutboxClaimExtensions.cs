@@ -28,6 +28,7 @@ internal static class OutboxClaimExtensions
         )
         {
             var claimedIds = await dbContext.BuildOutboxClaimQuery(now).ToListAsyncLinqToDB(cancellationToken);
+
             if (claimedIds.Count == 0)
             {
                 return null;

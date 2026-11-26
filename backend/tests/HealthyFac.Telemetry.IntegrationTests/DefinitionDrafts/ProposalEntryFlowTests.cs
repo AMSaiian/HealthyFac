@@ -90,6 +90,7 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         metrics.Should().HaveCount(expectedRows, caseName);
         statuses.Should().HaveCount(expectedRows, caseName);
         phases.Should().HaveCount(expectedRows, caseName);
+
         metrics.Concat<IDefinitionDraft>(statuses)
             .Concat(phases)
             .Should()
@@ -126,6 +127,7 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
         var failures = await Task.WhenAll(
             race.RunAsync(() => ProposalEntryFlowTestData.Proposed(_fixture, ids)),
             race.RunAsync(() => ProposalEntryFlowTestData.Applied(_fixture, ids)));
+
         var failure = failures.Single(candidate => candidate is not null);
 
         await ProposalEntryFlowTestData.Proposed(_fixture, ids);

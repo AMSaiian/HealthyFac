@@ -19,6 +19,7 @@ public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
         await _fixture.AddPendingOutboxRowsAsync(
             MessagingMetricsTestData.PublishedMessageType,
             MessagingMetricsTestData.SingleRowCount);
+
         using var published = Collect<long>(Instruments.Published);
         var processor = _fixture.Create<OutboxProcessor>();
 
@@ -41,6 +42,7 @@ public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         using var handled = Collect<long>(Instruments.Handled);
         using var runs = Collect<double>(Instruments.RunDuration);
         var processor = _fixture.Create<InboxProcessor>();
@@ -69,6 +71,7 @@ public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         using var retried = Collect<long>(Instruments.Retried);
         using var failed = Collect<long>(Instruments.Failed);
         var processor = _fixture.Create<InboxProcessor>();
@@ -90,6 +93,7 @@ public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
         await _fixture.AddPingInboxRowAsync(
             MessagingMetricsTestData.PermanentRowId,
             InboxProcessorTestData.InvalidPayload);
+
         using var failed = Collect<long>(Instruments.Failed);
         using var retried = Collect<long>(Instruments.Retried);
         var processor = _fixture.Create<InboxProcessor>();
@@ -115,6 +119,7 @@ public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
                 MessagingMetricsTestData.AttemptLimitText,
                 InboxTestData.Now,
                 InboxProcessorTestData.MaxAttemptCount - 1));
+
         using var failed = Collect<long>(Instruments.Failed);
         var processor = _fixture.Create<InboxProcessor>();
 
@@ -137,6 +142,7 @@ public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
             InboxProcessorTestData.UserActorId,
             InboxProcessorTestData.UserCompanyId,
             InboxTestData.Now);
+
         using var failed = Collect<long>(Instruments.Failed);
         using var retried = Collect<long>(Instruments.Retried);
         using var runs = Collect<double>(Instruments.RunDuration);

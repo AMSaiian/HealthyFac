@@ -7,9 +7,9 @@ public static class InviteTokenLoggingTestData
     public const string Token = "0190a1b2c3d4.k1.c2lnbmF0dXJl";
     public const string TokenPropertyName = "Token";
 
-    public static TheoryData<object> RequestsWithToken => new()
-    {
+    public static TheoryData<object> RequestsWithToken =>
+    [
         new VerifyEmployeeInviteRequest { Token = Token },
         new AcceptEmployeeInviteRequest { Token = Token, FirstName = "Eva", LastName = "Stone" },
-    };
+    ];
 }

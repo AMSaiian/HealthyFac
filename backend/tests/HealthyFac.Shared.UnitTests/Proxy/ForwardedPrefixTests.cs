@@ -27,6 +27,7 @@ public sealed class ForwardedPrefixTests
     {
         using var host = await ForwardedPrefixHostFactory.StartAsync(
             ForwardedPrefixHostFactory.UntrustedClientAddress);
+
         using var client = host.GetTestClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri: "/v1/machines");
         request.Headers.Add(ForwardedPrefixHostFactory.ForwardedPrefixHeader, value: "/evil");

@@ -19,13 +19,14 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     public async Task SearchCompanyFiles_WithTiedAndUntiedFiles_ShowsMachineNameAndId()
     {
         var machineId = await RegisterMachineAsync(CompanyFilesGridTestData.PumpName);
+
         var ids = await _fixture.SeedFilesAsync(
             CompanyId, CompanyFilesGridTestData.CreateSeeds(machineId));
 
         var response = await SearchAsync();
 
-        var tied = response.Items.Single(item => item.Id == ids[index: 0]);
-        var untied = response.Items.Single(item => item.Id == ids[index: 1]);
+        var tied = response.Items.Single(item => item.Id == ids[0]);
+        var untied = response.Items.Single(item => item.Id == ids[1]);
 
         tied.MachineId.Should().Be(machineId);
         tied.MachineName.Should().Be(CompanyFilesGridTestData.PumpName);
@@ -37,6 +38,7 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     public async Task SearchCompanyFiles_WithUntiedFilter_ReturnsOnlyUntiedFiles()
     {
         var machineId = await RegisterMachineAsync(CompanyFilesGridTestData.PumpName);
+
         var ids = await _fixture.SeedFilesAsync(
             CompanyId, CompanyFilesGridTestData.CreateSeeds(machineId));
 
@@ -50,20 +52,21 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     public async Task SearchCompanyFiles_WithMachineFilter_ReturnsOnlyFilesOfThatMachine()
     {
         var machineId = await RegisterMachineAsync(CompanyFilesGridTestData.PumpName);
+
         var ids = await _fixture.SeedFilesAsync(
             CompanyId, CompanyFilesGridTestData.CreateSeeds(machineId));
 
         var response = await SearchAsync(
             new FileGridFilter { Machine = new FileMachineFilter { MachineIds = [machineId] } });
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 0]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[0]);
     }
 
     [Fact]
     public async Task SearchCompanyFiles_WithNeverFilter_ReturnsOnlyFilesWithoutIngest()
     {
         var ids = await _fixture.SeedFilesAsync(CompanyId, CompanyFilesGridTestData.CreateSeeds(tiedMachineId: null));
-        await ApplyStateAsync(ids[index: 0], IngestMessageStates.Failed, failedCount: 1);
+        await ApplyStateAsync(ids[0], IngestMessageStates.Failed, failedCount: 1);
 
         var response = await SearchAsync(
             new FileGridFilter { IngestState = new FileIngestStateFilter { States = [], IsNeverIncluded = true } });
@@ -75,8 +78,8 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     public async Task SearchCompanyFiles_WithFailedFilter_ReturnsOnlyFailedFiles()
     {
         var ids = await _fixture.SeedFilesAsync(CompanyId, CompanyFilesGridTestData.CreateSeeds(tiedMachineId: null));
-        await ApplyStateAsync(ids[index: 0], IngestMessageStates.Failed, failedCount: 1);
-        await ApplyStateAsync(ids[index: 1], IngestMessageStates.Completed, failedCount: 0);
+        await ApplyStateAsync(ids[0], IngestMessageStates.Failed, failedCount: 1);
+        await ApplyStateAsync(ids[1], IngestMessageStates.Completed, failedCount: 0);
 
         var response = await SearchAsync(
             new FileGridFilter
@@ -84,7 +87,7 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
                 IngestState = new FileIngestStateFilter { States = [IngestMessageStates.Failed] },
             });
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 0]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[0]);
     }
 
     [Fact]
@@ -92,6 +95,7 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     {
         var pumpId = await RegisterMachineAsync(CompanyFilesGridTestData.PumpName);
         var lathe = await RegisterMachineAsync(CompanyFilesGridTestData.LatheName);
+
         var ids = await _fixture.SeedFilesAsync(
             CompanyId,
             [
@@ -111,7 +115,7 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
                     Direction = SortDirection.Ascending,
                 }));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 0]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[1], ids[0]);
     }
 
     [Theory]
@@ -126,9 +130,10 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
         var ids = await _fixture.SeedFilesAsync(
             CompanyId,
             [new FileSeed(FileName: "file", extension, SizeBytes: 10, CompanyFilesGridTestData.UploadedAt)]);
+
         if (state is not null)
         {
-            await ApplyStateAsync(ids[index: 0], state, failedCount);
+            await ApplyStateAsync(ids[0], state, failedCount);
         }
 
         var response = await SearchAsync();

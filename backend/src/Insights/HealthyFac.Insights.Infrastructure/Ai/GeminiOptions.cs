@@ -38,12 +38,15 @@ public sealed class GeminiOptionsValidator : AbstractValidator<GeminiOptions>
         RuleFor(options => options.ChatModel).NotEmpty().WithMessage(GeminiMessages.ChatModelRequired);
         RuleFor(options => options.TriageModel).NotEmpty().WithMessage(GeminiMessages.TriageModelRequired);
         RuleFor(options => options.EmbeddingModel).NotEmpty().WithMessage(GeminiMessages.EmbeddingModelRequired);
+
         RuleFor(options => options.EmbeddingDimensions)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(GeminiMessages.EmbeddingDimensionsInvalid);
+
         RuleFor(options => options.MaxOutputTokens)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(GeminiMessages.MaxOutputTokensInvalid);
+
         RuleFor(options => options.EmbeddingParallelism)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(GeminiMessages.EmbeddingParallelismInvalid);

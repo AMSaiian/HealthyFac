@@ -21,6 +21,7 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
         await ChangeStateAsync(arrangement.MachineId, state, _fixture.At(seconds: -10));
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 95, count: 10, _fixture.Origin));
 
@@ -45,6 +46,7 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
         await ChangeStateAsync(arrangement.MachineId, state, _fixture.At(seconds: -10));
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 50, count: 1, _fixture.Origin));
 
@@ -61,8 +63,10 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
         await ChangeStateAsync(arrangement.MachineId, MachineStateValue.InMaintenance, _fixture.At(seconds: -10));
+
         await _fixture.SeedSamplesAsync(
             arrangement, EvaluationTestData.Constant(arrangement, value: 95, count: 10, _fixture.Origin));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 30));
         await _fixture.EvaluateAsync(arrangement.MachineId);
         await ChangeStateAsync(arrangement.MachineId, MachineStateValue.Operational, _fixture.At(seconds: 31));
@@ -84,6 +88,7 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
     )
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
@@ -91,6 +96,7 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
                 _fixture.Origin,
                 new Segment(Count: 70, Mean: 50, [], HasWiggle: true),
                 new Segment(Count: 5, Mean: 95, [])));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 90));
         await _fixture.EvaluateAsync(arrangement.MachineId);
         await ChangeStateAsync(arrangement.MachineId, state, _fixture.At(seconds: 100));
@@ -104,7 +110,7 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
         statistics.Any().Should().Be(!isReset, caseName);
         episodes.Single().State.Should().Be(isReset ? SignalEpisodeState.Resolved : SignalEpisodeState.Open, caseName);
         episodes.Single().ResolvedAt.Should().Be(isReset ? _fixture.At(seconds: 200) : (DateTime?)null, caseName);
-        messages.Last().State.Should().Be(isReset ? "resolved" : "open", caseName);
+        messages[^1].State.Should().Be(isReset ? "resolved" : "open", caseName);
     }
 
     [Theory]
@@ -151,12 +157,14 @@ public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
             arrangement.CuttingStatusId,
             isTracked: true,
             limits: null);
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             EvaluationTestData.Build(
                 arrangement,
                 _fixture.Origin,
                 new Segment(Count: 150, Mean: 50, [arrangement.CuttingStatusId], HasWiggle: true)));
+
         _fixture.Time.SetUtcNow(_fixture.At(seconds: 170));
         await _fixture.EvaluateAsync(arrangement.MachineId);
 

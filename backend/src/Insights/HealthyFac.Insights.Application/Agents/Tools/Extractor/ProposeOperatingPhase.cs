@@ -244,6 +244,7 @@ public sealed class ProposeOperatingPhaseToolRequestHandler
     )
     {
         var buffer = request.Buffer!;
+
         var phase = new ProposedPhase
         {
             DraftId = Guid.CreateVersion7(),
@@ -256,6 +257,7 @@ public sealed class ProposeOperatingPhaseToolRequestHandler
             Conditions = [.. request.Conditions.Select(condition => ResolveCondition(buffer, request, condition))],
             Limits = [.. request.Limits.Select(limit => ResolveLimit(buffer, request, limit))],
         };
+
         buffer.AddPhase(request.MachineId, phase);
 
         return Task.FromResult(

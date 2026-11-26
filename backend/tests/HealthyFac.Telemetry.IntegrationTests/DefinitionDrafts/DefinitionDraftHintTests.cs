@@ -17,6 +17,7 @@ public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
     public async Task ResolveDrafts_WithAMachineEntry_RecordsTheHintWithTheAttemptAndTheMachine()
     {
         var machineId = Guid.CreateVersion7();
+
         var message = new DraftsResolved
         {
             AttemptId = DefinitionDraftTestData.AttemptId,
@@ -34,6 +35,7 @@ public sealed class DefinitionDraftHintTests(TelemetryDatabaseFixture fixture)
     public async Task ApplyMachineDraft_WithAMachine_RecordsTheHintWithTheMachine()
     {
         var machineId = Guid.CreateVersion7();
+
         var message = new MachineDraftApplied
         {
             DraftId = Guid.CreateVersion7(),

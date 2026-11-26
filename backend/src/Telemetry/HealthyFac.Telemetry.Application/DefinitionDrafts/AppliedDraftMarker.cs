@@ -125,9 +125,11 @@ public sealed class AppliedDraftMarker(ITelemetryDbContext dbContext)
         }
 
         var ids = references.Select(reference => reference.DraftId).Distinct().ToList();
+
         var stored = await drafts
             .Where(draft => draft.CompanyId == companyId && ids.Contains(draft.Id))
             .ToDictionaryAsync(draft => draft.Id, cancellationToken);
+
         var seenIds = new HashSet<Guid>();
 
         foreach (var reference in references)

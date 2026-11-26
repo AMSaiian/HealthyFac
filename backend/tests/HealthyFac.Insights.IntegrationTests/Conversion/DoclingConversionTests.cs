@@ -7,7 +7,8 @@ public sealed class DoclingConversionTests(DoclingFixture fixture)
     private const string KnownScanWord = "OVERHEATING";
     private const string PumpWord = "pump";
 
-    private static readonly string FolderPath = Path.Combine(AppContext.BaseDirectory, "Conversion", "Files");
+    private static readonly string FolderPath = Path.Combine(
+        AppContext.BaseDirectory, path2: "Conversion", path3: "Files");
 
     private readonly DoclingFixture _fixture = fixture;
 
@@ -21,14 +22,16 @@ public sealed class DoclingConversionTests(DoclingFixture fixture)
             _ => Task.FromResult<Stream>(content),
             Path.GetFileNameWithoutExtension(sample.FileName),
             sample.Extension,
-            isCancelled: _ => Task.FromResult(false),
+            _ => Task.FromResult(false),
             TestContext.Current.CancellationToken);
 
         document.PageCount.Should().Be(sample.ExpectedPageCount);
         document.Chunks.Should().NotBeEmpty();
         document.Chunks.Should().OnlyContain(chunk => !string.IsNullOrWhiteSpace(chunk.Text));
-        document.Chunks.Should().Contain(
-            chunk => chunk.Text.Contains(sample.KnownWord, StringComparison.OrdinalIgnoreCase));
+
+        document.Chunks.Should()
+            .Contain(chunk => chunk.Text.Contains(sample.KnownWord, StringComparison.OrdinalIgnoreCase));
+
         document.Chunks.Any(chunk => chunk.Location != null).Should().Be(sample.HasLocation);
     }
 
@@ -41,23 +44,23 @@ public sealed class DoclingConversionTests(DoclingFixture fixture)
             _ => Task.FromResult<Stream>(content),
             fileName: "sample-scan",
             extension: "pdf",
-            isCancelled: _ => Task.FromResult(false),
+            _ => Task.FromResult(false),
             TestContext.Current.CancellationToken);
 
-        document.Chunks.Should().Contain(
-            chunk => chunk.Text.Contains(KnownScanWord, StringComparison.OrdinalIgnoreCase));
+        document.Chunks.Should()
+            .Contain(chunk => chunk.Text.Contains(KnownScanWord, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
     public async Task Convert_ForTextPdf_UsesThePageNumbersInTheLocation()
     {
-        await using var content = File.OpenRead(Path.Combine(FolderPath, "sample-text.pdf"));
+        await using var content = File.OpenRead(Path.Combine(FolderPath, path2: "sample-text.pdf"));
 
         var document = await _fixture.Converter.ConvertAsync(
             _ => Task.FromResult<Stream>(content),
             fileName: "sample-text",
             extension: "pdf",
-            isCancelled: _ => Task.FromResult(false),
+            _ => Task.FromResult(false),
             TestContext.Current.CancellationToken);
 
         document.Chunks.Should().Contain(chunk => chunk.Location != null && chunk.Location.StartsWith("page 1"));

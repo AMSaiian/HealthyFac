@@ -40,7 +40,7 @@ public sealed class HmacInviteTokenServiceTests
         var salt = _service.CreateSalt();
         var parts = _service.CreateToken(InviteTokenTestData.InviteId, salt).Split(separator: '.');
         var signature = parts[SignaturePartIndex];
-        parts[SignaturePartIndex] = (signature[index: 0] == 'A' ? 'B' : 'A') + signature[1..];
+        parts[SignaturePartIndex] = (signature[0] == 'A' ? 'B' : 'A') + signature[1..];
 
         var isValid = _service.IsValid(string.Join(separator: '.', parts), salt);
 
@@ -51,6 +51,7 @@ public sealed class HmacInviteTokenServiceTests
     public void IsValid_WithTokenOfOlderConfiguredKey_ReturnsTrue()
     {
         var salt = _service.CreateSalt();
+
         var tokenOfOlderKey = BuildService(InviteTokenTestData.OlderKeyId)
             .CreateToken(InviteTokenTestData.InviteId, salt);
 

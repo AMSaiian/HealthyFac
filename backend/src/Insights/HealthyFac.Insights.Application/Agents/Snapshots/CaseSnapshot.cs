@@ -24,10 +24,12 @@ public sealed record CaseSnapshot
         {
             MachineId = maintenanceCase.MachineId,
             CaseOpenedAt = maintenanceCase.OpenedAt,
-            Signals = maintenanceCase.Signals
-                .OrderBy(signal => signal.OpenedAt)
-                .ThenBy(signal => signal.Id)
-                .Select(CaseSnapshotSignal.From)
-                .ToList(),
+            Signals =
+            [
+                .. maintenanceCase.Signals
+                    .OrderBy(signal => signal.OpenedAt)
+                    .ThenBy(signal => signal.Id)
+                    .Select(CaseSnapshotSignal.From),
+            ],
         };
 }

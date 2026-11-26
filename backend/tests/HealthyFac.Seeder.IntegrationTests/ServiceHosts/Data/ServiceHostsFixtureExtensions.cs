@@ -61,14 +61,16 @@ public static class ServiceHostsFixtureExtensions
             using var client = new HttpClient { BaseAddress = new Uri(fixture.Keycloak.BaseAddress) };
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(scheme: "Bearer", adminToken);
             var path = string.Format(ServiceHostsTestData.ClientsPathFormat, SeederTestData.KeycloakRealm);
+
             var clients =
                 await client.GetJsonAsync<JsonArray>(
                     $"{path}?clientId={ServiceHostsTestData.AuthClientId}", TestContext.Current.CancellationToken);
-            var authClient = clients![index: 0]!.AsObject();
-            var attributes = authClient[propertyName: "attributes"]!.AsObject();
+
+            var authClient = clients![0]!.AsObject();
+            var attributes = authClient["attributes"]!.AsObject();
             attributes[ServiceHostsTestData.TokenLifespanAttribute] = seconds?.ToString();
 
-            using var response = await client.PutAsJsonAsync($"{path}/{authClient[propertyName: "id"]}", authClient);
+            using var response = await client.PutAsJsonAsync($"{path}/{authClient["id"]}", authClient);
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
     }

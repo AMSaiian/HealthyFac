@@ -51,7 +51,7 @@ public static class MachineStateTimeCalculator
             stateSeconds[rows[index].State.Value] += Math.Max(val1: 0.0, (end - start).TotalSeconds);
         }
 
-        var firstStart = rows.Count == 0 ? to : rows[index: 0].StartedAt;
+        var firstStart = rows.Count == 0 ? to : rows[0].StartedAt;
         var beforeEnd = firstStart < to ? firstStart : to;
 
         return new MachineStateTimes

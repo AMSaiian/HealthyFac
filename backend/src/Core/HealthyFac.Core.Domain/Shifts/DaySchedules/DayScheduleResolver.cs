@@ -36,6 +36,7 @@ public static class DayScheduleResolver
         var version = versions
             .Where(candidate => candidate.EffectiveFrom <= date)
             .MaxBy(candidate => candidate.EffectiveFrom);
+
         if (version is null)
         {
             return Create(date, zone, DayScheduleSource.None, []);
@@ -62,15 +63,17 @@ public static class DayScheduleResolver
         {
             Date = date,
             Source = source,
-            Blocks = times
-                .OrderBy(block => block.Start)
-                .Select(block => new DayBlock
-                {
-                    Start = block.Start,
-                    End = block.End,
-                    StartUtc = LocalTimes.ToUtc(date.ToDateTime(block.Start), zone),
-                    EndUtc = LocalTimes.ToUtc(date.ToDateTime(block.End), zone),
-                })
-                .ToList(),
+            Blocks =
+            [
+                .. times
+                    .OrderBy(block => block.Start)
+                    .Select(block => new DayBlock
+                    {
+                        Start = block.Start,
+                        End = block.End,
+                        StartUtc = LocalTimes.ToUtc(date.ToDateTime(block.Start), zone),
+                        EndUtc = LocalTimes.ToUtc(date.ToDateTime(block.End), zone),
+                    }),
+            ],
         };
 }

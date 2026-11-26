@@ -62,8 +62,10 @@ public sealed class IntegrationMessageValidationTests
         services.AddLogging();
         services.AddSingleton(probe ?? new HandlerProbe());
         services.AddUseCases(IntegrationMessageValidationTestData.Types);
+
         var validators = services.Where(descriptor => descriptor.ServiceType == typeof(IValidator<ValidatedMessage>))
             .ToList();
+
         validators.ForEach(descriptor => services.Remove(descriptor));
 
         return services;

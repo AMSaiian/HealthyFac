@@ -40,7 +40,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
             MachineTestData.CreateSearch(tenant.CompanyId, CreateStateFilter(MachineState.Operational)));
 
         response.Items.Select(item => item.Id).Should().Equal(machineId);
-        response.Items[index: 0].State.Should().Be(MachineState.Operational);
+        response.Items[0].State.Should().Be(MachineState.Operational);
     }
 
     [Fact]
@@ -48,6 +48,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         await ArrangeMachineWithPastMaintenanceAsync(tenant);
+
         var inMaintenanceIds = await _fixture.SeedMachinesAsync(
             tenant.CompanyId,
             [
@@ -63,16 +64,18 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
             MachineTestData.CreateSearch(tenant.CompanyId, CreateStateFilter(MachineState.InMaintenance)));
 
         response.Items.Select(item => item.Id).Should().Equal(inMaintenanceIds);
-        response.Items[index: 0].State.Should().Be(MachineState.InMaintenance);
+        response.Items[0].State.Should().Be(MachineState.InMaintenance);
     }
 
     [Fact]
     public async Task SearchMachines_WithFilterSortAndPage_ReturnsMatchingPage()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var ids = await _fixture.SeedMachinesAsync(
             tenant.CompanyId,
             MachineTestData.CreateFilterSeeds());
+
         var filter = new MachineGridFilter
         {
             Name = new TextFilter { Value = MachineTestData.LowerNamePrefix },
@@ -83,6 +86,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
                 To = MachineTestData.FirstCreatedAt.AddDays(value: 4),
             },
         };
+
         var sort = new GridSort<MachineSortColumn>
         {
             Column = MachineSortColumn.Name,
@@ -98,7 +102,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
                 MachineTestData.SecondPageOffset,
                 MachineTestData.PageSize));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 0]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[1], ids[0]);
         response.TotalCount.Should().Be(expected: 4);
     }
 
@@ -122,18 +126,22 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
     public async Task SearchMachines_WithGatewayIdFilter_ReturnsOnlyMachinesWithThatPrefix()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId,
             MachineTestData.GatewayIdWithPrefix,
             MachineTestData.SerialNumber);
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId,
             MachineTestData.GatewayIdWithoutPrefix,
             MachineTestData.OtherSerialNumber);
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId,
             MachineTestData.GatewayIdWithSecondPrefix,
             MachineTestData.ThirdSerialNumber);
+
         var filter = new MachineGridFilter
         {
             GatewayId = new TextFilter { Value = MachineTestData.GatewayIdPrefix },
@@ -146,7 +154,8 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
         response.Items.Select(item => item.GatewayId)
             .Should()
             .BeEquivalentTo(
-                new[] { MachineTestData.GatewayIdWithPrefix, MachineTestData.GatewayIdWithSecondPrefix });
+                MachineTestData.GatewayIdWithPrefix, MachineTestData.GatewayIdWithSecondPrefix);
+
         response.TotalCount.Should().Be(expected: 2);
     }
 
@@ -154,18 +163,22 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
     public async Task SearchMachines_SortedByGatewayId_ReturnsAscendingOrder()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId,
             MachineTestData.GatewayIdWithoutPrefix,
             MachineTestData.SerialNumber);
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId,
             MachineTestData.GatewayIdWithSecondPrefix,
             MachineTestData.OtherSerialNumber);
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId,
             MachineTestData.GatewayIdWithPrefix,
             MachineTestData.ThirdSerialNumber);
+
         var sort = new GridSort<MachineSortColumn>
         {
             Column = MachineSortColumn.GatewayId,
@@ -189,6 +202,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         await ArrangeGoLiveMachinesAsync(tenant);
+
         var filter = new MachineGridFilter
         {
             ExpectedGoLiveOn = new DateOnlyRangeFilter
@@ -216,6 +230,7 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         await ArrangeGoLiveMachinesAsync(tenant);
+
         var sort = new GridSort<MachineSortColumn>
         {
             Column = MachineSortColumn.ExpectedGoLiveOn,
@@ -236,11 +251,13 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
             MachineTestData.MachineName,
             MachineTestData.OtherSerialNumber,
             expectedGoLiveOn: MachineTestData.SecondGoLiveOn);
+
         await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.ThirdSerialNumber,
             expectedGoLiveOn: MachineTestData.ThirdGoLiveOn);
+
         await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
@@ -261,11 +278,13 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
         var inTelemetryList = await ArrangeMachineAsync(tenant, MachineTestData.OtherSerialNumber);
         var withNeither = await ArrangeMachineAsync(tenant, MachineTestData.ThirdSerialNumber);
         await _fixture.AddMachineDraftAsync(tenant.CompanyId, withMachineDraft);
+
         var filter = new MachineGridFilter
         {
             HasPendingDrafts = hasPendingDrafts,
             PendingDefinitionDraftMachineIds = [inTelemetryList],
         };
+
         Guid[] machineIds = [withMachineDraft, inTelemetryList, withNeither];
 
         var response = await _fixture.SearchMachinesAsync(
@@ -291,15 +310,17 @@ public sealed class SearchMachinesTests(CoreDatabaseFixture fixture)
         var ids = await _fixture.SeedMachinesAsync(
             tenant.CompanyId,
             MachineTestData.CreateSingleMachineSeed());
+
         await _fixture.AddStateRowAsync(
-            ids[index: 0],
+            ids[0],
             MachineState.InMaintenance,
             MachineTestData.FirstCreatedAt.AddDays(MachineTestData.EarlierStateDays));
+
         await _fixture.AddStateRowAsync(
-            ids[index: 0],
+            ids[0],
             MachineState.Operational,
             MachineTestData.FirstCreatedAt.AddDays(MachineTestData.LaterStateDays));
 
-        return ids[index: 0];
+        return ids[0];
     }
 }

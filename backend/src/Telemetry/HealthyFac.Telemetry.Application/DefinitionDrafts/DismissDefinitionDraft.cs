@@ -109,6 +109,7 @@ public sealed class DismissDefinitionDraftRequestHandler(ITelemetryDbContext dbC
                 candidate => candidate.Id == request.Id && candidate.CompanyId == request.CompanyId,
                 cancellationToken)
             ?? throw new NotFoundException(DefinitionDraftErrors.DraftNotFound);
+
         EnsureOpen(phase.State);
         phase.Dismiss();
     }

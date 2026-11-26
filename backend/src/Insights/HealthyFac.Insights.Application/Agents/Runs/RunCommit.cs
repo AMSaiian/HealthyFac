@@ -157,6 +157,7 @@ public sealed class RunCommit(
         var maintenanceCase = await _dbContext.MaintenanceCases
             .Include(candidate => candidate.Signals)
             .SingleAsync(candidate => candidate.Id == caseId, cancellationToken);
+
         var isCaseOpen = maintenanceCase.State == CaseState.Open;
         var hasUncoveredSignal = maintenanceCase.Signals.Any(signal => signal.IsOpen && signal.Coverage.IsUncovered);
 
@@ -243,6 +244,7 @@ public sealed class RunCommit(
     {
         var payload = ActionBuffering.Deserialize<ProposeWorkOrderPayload>(action);
         SignalsOf(maintenanceCase, payload.SignalIds).ForEach(signal => signal.MarkDrafted(action.Id));
+
         _outbox.Add(
             new WorkOrderDraftProposed
             {
@@ -260,5 +262,5 @@ public sealed class RunCommit(
     }
 
     private static List<MachineSignal> SignalsOf(MaintenanceCase maintenanceCase, IReadOnlyList<Guid> signalIds) =>
-        maintenanceCase.Signals.Where(signal => signalIds.Contains(signal.Id)).ToList();
+        [.. maintenanceCase.Signals.Where(signal => signalIds.Contains(signal.Id))];
 }

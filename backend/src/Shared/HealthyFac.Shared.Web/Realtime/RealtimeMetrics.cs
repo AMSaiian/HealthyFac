@@ -48,6 +48,7 @@ public sealed class RealtimeMetrics : IBackgroundItemDropObserver<RealtimePush>
     public void RecordPush(string target, string result, TimeSpan elapsed)
     {
         Count(target, result);
+
         _pushDuration.Record(
             elapsed.TotalSeconds,
             new KeyValuePair<string, object?>(Tags.Target, target),
@@ -65,8 +66,7 @@ public sealed class RealtimeMetrics : IBackgroundItemDropObserver<RealtimePush>
 
     private IEnumerable<Measurement<int>> ObserveQueueLength()
     {
-        var queue = _provider.GetService(typeof(BackgroundQueue<RealtimePush>)) as BackgroundQueue<RealtimePush>;
-        if (queue is null)
+        if (_provider.GetService(typeof(BackgroundQueue<RealtimePush>)) is not BackgroundQueue<RealtimePush> queue)
         {
             return [];
         }

@@ -14,11 +14,13 @@ public sealed class TelemetryModeTests(SeederFixture fixture)
     public async Task RunAsync_WithResetAndTelemetryOnAModeOneSeed_SeedsModeTwoWithTheMarker()
     {
         var baseDirectory = TelemetryHistorySeedTestData.CreateBaseDirectory(TelemetryHistorySeedTestData.TestScript);
+
         var first = await _fixture.RunJobAsync(
             [],
             TestContext.Current.CancellationToken,
             baseDirectory,
             anchor: TelemetryHistorySeedTestData.ThursdayAnchor);
+
         var hasHistoryBefore = await _fixture.HasReceivedMessageAsync(TelemetryHistorySeedTestData.MarkerMessageId);
 
         var reset = await _fixture.RunJobAsync(
@@ -68,6 +70,7 @@ public sealed class TelemetryModeTests(SeederFixture fixture)
     private async Task<string> SeedModeTwoAsync()
     {
         var baseDirectory = TelemetryHistorySeedTestData.CreateBaseDirectory(TelemetryHistorySeedTestData.TestScript);
+
         await _fixture.RunJobAsync(
             [TelemetryHistorySeedTestData.TelemetryArgument],
             TestContext.Current.CancellationToken,

@@ -43,9 +43,11 @@ public sealed class IngestPart : ISeedPart
         _actions.Clear();
         _embeddings = folder.Read<IngestEmbeddingsFile>(IngestConstants.EmbeddingsFileName);
         var events = new List<SeedEvent>();
+
         foreach (var setNumber in IngestConstants.SetNumbers)
         {
             var fileName = string.Format(IngestConstants.SetFilePattern, setNumber);
+
             foreach (var entry in folder.Read<IngestSetFile>(fileName).Entries)
             {
                 events.Add(UploadEvent(fileName, entry));
@@ -140,10 +142,12 @@ public sealed class IngestPart : ISeedPart
     )
     {
         var request = UploadRequest(item, entry, context.GetId(PeopleConstants.CompanyKey));
+
         var response = await _hosts.Document.SendAsync<UploadFileRequest, UploadFileResponse>(
             context.GetActor(entry.File.UploadedBy),
             request,
             cancellationToken);
+
         context.SetId(FileKey(entry), response.Id);
     }
 
@@ -160,12 +164,14 @@ public sealed class IngestPart : ISeedPart
 
         var attempt = AddAttempt(dbContext, entry, companyId, fileId, uploadedAt, queuedAt, finishedAt);
         AddDocument(dbContext, entry, companyId, fileId, uploadedAt);
+
         foreach (var run in entry.Runs)
         {
             AddRun(dbContext, run, attempt.Id, queuedAt);
         }
 
         var outbox = scope.ServiceProvider.GetRequiredService<IOutbox>();
+
         outbox.Add(
             new DraftsProposed
             {
@@ -176,6 +182,7 @@ public sealed class IngestPart : ISeedPart
                 QueuedAt = queuedAt,
                 Machines = entry.DraftsProposed.Machines,
             });
+
         outbox.Add(
             new IngestStateChanged
             {
@@ -185,6 +192,7 @@ public sealed class IngestPart : ISeedPart
                 FailedCount = 0,
                 ChangedAt = finishedAt,
             });
+
         await dbContext.SaveChangesAsync(cancellationToken);
         context.SetId(AttemptKey(entry), attempt.Id);
     }
@@ -200,6 +208,7 @@ public sealed class IngestPart : ISeedPart
     )
     {
         var bytes = _folder.ReadBytes(entry.File.Path);
+
         var attempt = new IngestAttempt(
             companyId,
             fileId,
@@ -210,13 +219,16 @@ public sealed class IngestPart : ISeedPart
             bytes.Length,
             queuedAt,
             traceParent: null);
+
         attempt.Claim(queuedAt + entry.Attempt.StartedAfter, finishedAt);
+
         attempt.Complete(
             finishedAt,
             entry.Attempt.PageCount,
             entry.Chunks.Count,
             entry.Attempt.ProposedDraftCount,
             warning: null);
+
         dbContext.IngestAttempts.Add(attempt).Property(nameof(IngestAttempt.Id)).CurrentValue = entry.Attempt.Id;
 
         return attempt;
@@ -238,13 +250,16 @@ public sealed class IngestPart : ISeedPart
             entry.Attempt.Id,
             Path.GetExtension(entry.File.Path)[1..].ToLowerInvariant(),
             entry.Attempt.PageCount);
+
         var chunks = entry.Chunks.OrderBy(chunk => chunk.Ordinal).ToList();
+
         foreach (var chunk in chunks)
         {
             document.AddChunk(chunk.Location, chunk.Text, Decode(FindVector(chunk.Id)));
         }
 
         dbContext.IngestedDocuments.Add(document);
+
         foreach (var (chunk, seed) in document.Chunks.Zip(chunks))
         {
             dbContext.Entry(chunk).Property(nameof(DocumentChunk.Id)).CurrentValue = seed.Id;
@@ -262,12 +277,14 @@ public sealed class IngestPart : ISeedPart
         var run = new AgentRun(AgentRole.FromValue(seed.Role), caseId: null, attemptId, queuedAt + seed.DueAfter);
         run.Claim(startedAt, startedAt);
         run.UseModel(seed.Model, seed.PromptVersion, seed.PromptHash);
+
         run.Complete(
             queuedAt + seed.FinishedAfter,
             verdict: null,
             verdictReason: null,
             seed.InputTokens,
             seed.OutputTokens);
+
         dbContext.AgentRuns.Add(run).Property(nameof(AgentRun.Id)).CurrentValue = seed.Id;
 
         foreach (var callSeed in seed.ToolCalls.OrderBy(call => call.Sequence))
@@ -281,6 +298,7 @@ public sealed class IngestPart : ISeedPart
                 ToolCallOutcome.FromValue(callSeed.Outcome),
                 callSeed.Result.GetRawText(),
                 callSeed.DurationMilliseconds);
+
             dbContext.AgentToolCalls.Add(call).Property(nameof(AgentToolCall.Id)).CurrentValue = callSeed.Id;
         }
     }

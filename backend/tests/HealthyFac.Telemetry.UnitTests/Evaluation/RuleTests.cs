@@ -48,8 +48,9 @@ public sealed class RuleTests
                 RuleDecisionKind.Escalate,
                 RuleDecisionKind.None,
                 RuleDecisionKind.Resolve);
-        decisions[index: 1].Severity.Should().Be(SignalSeverity.Warning);
-        decisions[index: 3].Severity.Should().Be(SignalSeverity.Alarm);
+
+        decisions[1].Severity.Should().Be(SignalSeverity.Warning);
+        decisions[3].Severity.Should().Be(SignalSeverity.Alarm);
     }
 
     [Fact]
@@ -82,9 +83,9 @@ public sealed class RuleTests
             .Select(value => Observe(streak, ThresholdRule.Evaluate(value, limits).Condition, ref open))
             .ToList();
 
-        decisions[index: 1].Kind.Should().Be(RuleDecisionKind.Open);
-        decisions[index: 1].Severity.Should().Be(SignalSeverity.Alarm);
-        decisions[index: 3].Kind.Should().Be(RuleDecisionKind.Resolve);
+        decisions[1].Kind.Should().Be(RuleDecisionKind.Open);
+        decisions[1].Severity.Should().Be(SignalSeverity.Alarm);
+        decisions[3].Kind.Should().Be(RuleDecisionKind.Resolve);
     }
 
     [Fact]
@@ -134,6 +135,7 @@ public sealed class RuleTests
     {
         var statistics =
             SignalSeries.Learn(SignalSeries.Ramp(from: 10, perSecond: 0.1, count: 1500, SignalSeries.Start));
+
         var sigma = SignalSeries.NoiseSigma;
 
         var (condition, snapshot) = TrendRule.Evaluate(
@@ -243,6 +245,7 @@ public sealed class RuleTests
             triggerPersistence: 1,
             Persistence,
             SignalSnapshot.Empty);
+
         var errorDecision = error.Observe(
             StatusRule.Evaluate(StatusSeverity.Error, isActive: true),
             openError,
@@ -276,6 +279,7 @@ public sealed class RuleTests
             triggerPersistence: 1,
             Persistence,
             SignalSnapshot.Empty);
+
         var second = streak.Observe(
             StatusRule.Evaluate(StatusSeverity.Warning, isActive: false),
             open,
@@ -322,12 +326,15 @@ public sealed class RuleTests
         var streak = NewStreak(SignalRule.Threshold);
         var breach = ThresholdRule.Evaluate(value: 95, Limits).Condition;
         var settleEnd = SignalSeries.Start.AddSeconds(value: 30);
+
         streak.Observe(
             breach, openSeverity: null, SignalSeries.Start, Persistence, Persistence, SignalSnapshot.Empty);
+
         streak.CountFrom(settleEnd);
 
         var first = streak.Observe(
             breach, openSeverity: null, settleEnd, Persistence, Persistence, SignalSnapshot.Empty);
+
         var second = streak.Observe(
             breach, openSeverity: null, settleEnd.AddSeconds(value: 1), Persistence, Persistence, SignalSnapshot.Empty);
 

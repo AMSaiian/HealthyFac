@@ -64,18 +64,14 @@ internal sealed class MachineMessageParser : IMachineMessageParser
     /// </summary>
     private static bool HasUnstorableText(JsonElement element)
     {
-        switch (element.ValueKind)
+        return element.ValueKind switch
         {
-            case JsonValueKind.String:
-                return IsUnstorable(element.GetString);
-            case JsonValueKind.Array:
-                return element.EnumerateArray().Any(HasUnstorableText);
-            case JsonValueKind.Object:
-                return element.EnumerateObject()
-                    .Any(property => IsUnstorable(() => property.Name) || HasUnstorableText(property.Value));
-            default:
-                return false;
-        }
+            JsonValueKind.String => IsUnstorable(element.GetString),
+            JsonValueKind.Array => element.EnumerateArray().Any(HasUnstorableText),
+            JsonValueKind.Object => element.EnumerateObject()
+                .Any(property => IsUnstorable(() => property.Name) || HasUnstorableText(property.Value)),
+            _ => false,
+        };
     }
 
     private static bool IsUnstorable(Func<string?> read)
@@ -120,11 +116,13 @@ internal sealed class MachineMessageParser : IMachineMessageParser
         }
 
         var errors = new List<IntakeError>();
+
         var metrics = CheckMetrics(
             schemaNode,
             payload.GetProperty(MetricSchemaConstants.Fields.Metrics),
             findings,
             errors);
+
         var statusCodes = CheckStatuses(payload.GetProperty(MetricSchemaConstants.Fields.Statuses), errors);
 
         return new ParsedMachineMessage
@@ -140,6 +138,7 @@ internal sealed class MachineMessageParser : IMachineMessageParser
     private static List<IntakeError> CheckEnvelope(JsonNode schemaNode, JsonElement payload, SchemaFindings findings)
     {
         var errors = new List<IntakeError>();
+
         var unknownFields = payload.EnumerateObject()
             .Where(property => findings.UnknownFields.Contains(property.Name));
 
@@ -222,10 +221,9 @@ internal sealed class MachineMessageParser : IMachineMessageParser
         var missingMetrics = RequiredNames(schemaMetrics).Where(required => !metrics.TryGetProperty(required, out _));
 
         errors.AddRange(
-            missingMetrics.Select(
-                required => Error(
-                    $"{MetricSchemaConstants.Fields.Metrics}.{required}",
-                    IntakeErrorCodes.MissingMetric)));
+            missingMetrics.Select(required => Error(
+                $"{MetricSchemaConstants.Fields.Metrics}.{required}",
+                IntakeErrorCodes.MissingMetric)));
 
         return values;
     }

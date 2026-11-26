@@ -75,7 +75,7 @@ public static class AllowedFileTypes
             MediaType = first.MediaType,
             AlternateExtensions = alternateExtensions,
             IsImage = isImage,
-            Formats = formats.Select(format => format.GetType()).ToArray(),
+            Formats = [.. formats.Select(format => format.GetType())],
         };
     }
 

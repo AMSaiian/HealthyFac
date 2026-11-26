@@ -15,13 +15,13 @@ public static class TelemetryApiTestData
     )
         => new Dictionary<string, string?>(TestTokenFactory.JwtSettings)
         {
-            [key: "ConnectionStrings:Database"] = databaseConnection,
-            [key: "ConnectionStrings:RabbitMq"] = brokerConnection,
-            [key: "Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
-            [key: "IdEncryption:Keys:0:Prefix"] = "v1_",
-            [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
-            [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
-            [key: "Redis:ConnectionString"] = RealtimeTestSettings.UnreachableRedis,
-            [key: "ServiceActors:AllowedClients:0"] = InsightsClientId,
+            ["ConnectionStrings:Database"] = databaseConnection,
+            ["ConnectionStrings:RabbitMq"] = brokerConnection,
+            ["Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
+            ["IdEncryption:Keys:0:Prefix"] = "v1_",
+            ["IdEncryption:Keys:0:Key"] = IdEncryptionKey,
+            ["IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
+            ["Redis:ConnectionString"] = RealtimeTestSettings.UnreachableRedis,
+            ["ServiceActors:AllowedClients:0"] = InsightsClientId,
         };
 }

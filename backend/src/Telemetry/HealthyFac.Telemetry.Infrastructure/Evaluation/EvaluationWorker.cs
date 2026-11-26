@@ -136,11 +136,13 @@ public sealed class EvaluationWorker(
             await handler.HandleAsync(
                 new EvaluateMachineRequest { MachineId = claimed.MachineId, CompanyId = claimed.CompanyId },
                 cancellationToken);
+
             _metrics.RecordRun(isCompleted: true, _timeProvider.GetElapsedTime(startedAt));
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
             _metrics.RecordRun(isCompleted: false, _timeProvider.GetElapsedTime(startedAt));
+
             _logger.LogError(
                 exception,
                 message: "The evaluation of machine {MachineId} failed. Its lease expires and a later round retries.",

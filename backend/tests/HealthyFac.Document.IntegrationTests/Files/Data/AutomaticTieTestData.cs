@@ -6,9 +6,8 @@ public static class AutomaticTieTestData
         new(year: 2026, month: 11, day: 9, hour: 8, minute: 0, second: 0, DateTimeKind.Utc);
 
     public static TheoryData<AutomaticTieSource> Sources =>
-        new()
-        {
-            AutomaticTieSource.DraftApplied,
-            AutomaticTieSource.MachineMatched,
-        };
+    [
+        AutomaticTieSource.DraftApplied,
+        AutomaticTieSource.MachineMatched,
+    ];
 }

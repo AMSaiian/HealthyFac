@@ -35,6 +35,7 @@ public static class MachineApiFixtureExtensions
         {
             using var client = fixture.CreateClient();
             using var request = new HttpRequestMessage(method, path);
+
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
@@ -50,17 +51,17 @@ public static class MachineApiFixtureExtensions
         public string CreateCreateBody(string description) =>
             new JsonObject
             {
-                [propertyName: "name"] = MachineApiTestData.MachineName,
-                [propertyName: "serialNumber"] = $"IMG-{Guid.NewGuid():N}",
-                [propertyName: "description"] = description,
-                [propertyName: "expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
+                ["name"] = MachineApiTestData.MachineName,
+                ["serialNumber"] = $"IMG-{Guid.NewGuid():N}",
+                ["description"] = description,
+                ["expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
             }.ToJsonString();
 
         public string CreateCreateBodyWithoutGoLive(string serialNumber) =>
             new JsonObject
             {
-                [propertyName: "name"] = MachineApiTestData.MachineName,
-                [propertyName: "serialNumber"] = serialNumber,
+                ["name"] = MachineApiTestData.MachineName,
+                ["serialNumber"] = serialNumber,
             }.ToJsonString();
 
         public async Task<bool> HasMachineAsync(string serialNumber)
@@ -74,16 +75,17 @@ public static class MachineApiFixtureExtensions
         public string CreateUpdateBody(string serialNumber) =>
             new JsonObject
             {
-                [propertyName: "name"] = MachineApiTestData.MachineName,
-                [propertyName: "serialNumber"] = serialNumber,
-                [propertyName: "expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
-                [propertyName: "state"] = MachineApiTestData.OperationalState,
+                ["name"] = MachineApiTestData.MachineName,
+                ["serialNumber"] = serialNumber,
+                ["expectedGoLiveOn"] = MachineApiTestData.FutureGoLiveOn,
+                ["state"] = MachineApiTestData.OperationalState,
             }.ToJsonString();
 
         public async Task<string> ArrangeMachineAsync(string serialNumber)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var machine = new Machine(
                 fixture.CompanyId,
                 GatewayIds.Create(),

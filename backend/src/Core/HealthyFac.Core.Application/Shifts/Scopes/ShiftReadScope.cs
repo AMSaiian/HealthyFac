@@ -33,6 +33,7 @@ public static class ShiftReadScope
             if (scope == AccessScope.Own)
             {
                 var ownId = await ownEmployee.FindIdAsync(cancellationToken);
+
                 if (ownId != employeeId)
                 {
                     throw new NotFoundException(ShiftErrors.Rejections.EmployeeNotFound);

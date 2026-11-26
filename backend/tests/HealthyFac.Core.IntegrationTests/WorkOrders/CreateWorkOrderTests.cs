@@ -20,6 +20,7 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         var otherCompanyId = await _fixture.CreateCompanyAsync(WorkOrderTestData.OtherCompanyName);
+
         var machineId = await _fixture.CreateMachineAsync(
             otherCompanyId,
             WorkOrderTestData.MachineName,
@@ -37,10 +38,12 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task CreateWorkOrder_WithDeletedMachine_ThrowsNotFound()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             WorkOrderTestData.MachineName,
             WorkOrderTestData.MachineSerialNumber);
+
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         var act = () => _fixture.CreateWorkOrderAsync(
@@ -119,6 +122,7 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
         workOrder.CurrentRevision.Should().Be(expected: 2);
         workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
         workOrder.Current.AssigneeId.Should().Be(tenant.EmployeeId);
+
         workOrder.Current.PlannedStartLocal.Should()
             .Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.ScheduledTime));
     }
@@ -138,10 +142,12 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeScheduledTenantAsync();
         _fixture.Clock.Release();
+
         var gone = await _fixture.ArrangeOtherEmployeeAsync(
             tenant.CompanyId,
             WorkOrderTestData.DeactivatedEmail,
             isDeactivated: true);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         var act = () => CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime, gone.EmployeeId);
@@ -230,11 +236,13 @@ public sealed class CreateWorkOrderTests(CoreDatabaseFixture fixture)
     private async Task<ShiftTenant> ArrangeScheduledTenantAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         return tenant;

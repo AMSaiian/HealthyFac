@@ -22,11 +22,13 @@ public sealed class IngestFileDeletedRaceTests(InsightsFixture fixture)
         var claimed = await _fixture.ClaimAttemptAsync();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _fixture.SaveHook.RunBeforeNextSave(async () =>
         {
             reached.TrySetResult();
             await release.Task;
         });
+
         var run = _fixture.RunClaimedAttemptAsync(claimed!, TestContext.Current.CancellationToken);
         await reached.Task;
         var delete = _fixture.HandleFileDeletedAsync(IngestAttemptTestData.CompanyId, IngestAttemptTestData.FileId);
@@ -46,11 +48,13 @@ public sealed class IngestFileDeletedRaceTests(InsightsFixture fixture)
         var claimed = await _fixture.ClaimAttemptAsync();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _fixture.SaveHook.RunBeforeNextSave(async () =>
         {
             reached.TrySetResult();
             await release.Task;
         });
+
         var delete = _fixture.HandleFileDeletedAsync(IngestAttemptTestData.CompanyId, IngestAttemptTestData.FileId);
         await reached.Task;
         var run = _fixture.RunClaimedAttemptAsync(claimed!, TestContext.Current.CancellationToken);

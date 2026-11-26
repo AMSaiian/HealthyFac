@@ -35,11 +35,12 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
             _fixture.StatusDefinitionsPath(machineId),
             claims,
             _fixture.CreateStatusDefinitionBody(StatusDefinitionApiTestData.Code));
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         response.Headers.Location!.ToString().Should().StartWith("/" + _fixture.StatusDefinitionsPath(machineId) + "/");
-        body.Should().Contain(response.Headers.Location.ToString().Split(separator: '/').Last());
+        body.Should().Contain(response.Headers.Location.ToString().Split(separator: '/')[^1]);
     }
 
     [Fact]
@@ -47,6 +48,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var machineId = await _fixture.ArrangeMachineAsync();
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.WritePermission);
+
         await _fixture.SendAsync(
             HttpMethod.Post,
             _fixture.StatusDefinitionsPath(machineId),
@@ -67,6 +69,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var machineId = await _fixture.ArrangeMachineAsync();
         using var client = _fixture.CreateClient();
+
         using var content = new StringContent(
             _fixture.ApplyStatusDefinitionsBody(StatusDefinitionApiTestData.Code),
             System.Text.Encoding.UTF8,
@@ -108,11 +111,15 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
             _fixture.ApplyStatusDefinitionsBody(
                 StatusDefinitionApiTestData.Code,
                 StatusDefinitionApiTestData.UpdatedCode));
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         body.IndexOf(StatusDefinitionApiTestData.Code, StringComparison.Ordinal)
-            .Should().BeLessThan(body.IndexOf(StatusDefinitionApiTestData.UpdatedCode, StringComparison.Ordinal));
+            .Should()
+            .BeLessThan(body.IndexOf(StatusDefinitionApiTestData.UpdatedCode, StringComparison.Ordinal));
+
         body.Should().Contain("\"isCreated\":true");
     }
 
@@ -151,6 +158,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.WritePermission);
 
         var response = await _fixture.SendAsync(
@@ -166,12 +174,14 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
 
         var response = await _fixture.SendAsync(
             HttpMethod.Get,
             $"{_fixture.StatusDefinitionsPath(status.MachineId)}/{status.Id}",
             claims);
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -183,6 +193,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
 
         var response = await _fixture.SendAsync(
@@ -199,6 +210,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.WritePermission);
 
         var response = await _fixture.SendAsync(
@@ -215,6 +227,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(
             StatusDefinitionApiTestData.ReadPermission,
             StatusDefinitionApiTestData.WritePermission);
@@ -232,6 +245,7 @@ public sealed class StatusDefinitionAuthorizationTests(TelemetryApiFixture fixtu
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.DeletePermission);
 
         var response = await _fixture.SendAsync(

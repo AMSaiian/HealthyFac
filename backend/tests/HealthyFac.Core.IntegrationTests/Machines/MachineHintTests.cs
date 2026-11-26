@@ -75,11 +75,13 @@ public sealed class MachineHintTests(CoreDatabaseFixture fixture)
     private async Task<Guid> ArrangeAsync(MachineTenant tenant)
     {
         _fixture.Clock.Freeze(MachineStateChangeTestData.CreatedNow);
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber,
             MachineTestData.LinkDescription);
+
         _fixture.Clock.Freeze(MachineStateChangeTestData.ChangedNow);
 
         return machineId;

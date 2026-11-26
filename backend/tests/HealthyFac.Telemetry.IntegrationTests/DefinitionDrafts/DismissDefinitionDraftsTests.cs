@@ -29,14 +29,17 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         var statuses = await _fixture.LoadStatusDraftsAsync();
 
         response.DismissedCount.Should().Be(OpenDraftsOfAMachine);
+
         metrics.Where(draft => draft.TargetMachineId == machineId)
             .Select(draft => draft.State)
             .Should()
             .BeEquivalentTo([DefinitionDraftState.Dismissed, DefinitionDraftState.Applied]);
+
         statuses.Where(draft => draft.TargetMachineId == machineId)
             .Select(draft => draft.State)
             .Should()
             .OnlyContain(state => state == DefinitionDraftState.Dismissed);
+
         metrics.Where(draft => draft.TargetMachineId == otherMachineId)
             .Select(draft => draft.State)
             .Should()
@@ -59,6 +62,7 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         var statuses = await _fixture.LoadStatusDraftsAsync();
 
         response.DismissedCount.Should().Be(OpenDraftsOfAMachine * 2);
+
         metrics.Concat<IDefinitionDraft>(statuses)
             .Should()
             .NotContain(draft => draft.State == DefinitionDraftState.Pending
@@ -95,6 +99,7 @@ public sealed class DismissDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
 
         race.SaveCounts.Should().Equal(1, 1);
         responses.Should().ContainSingle().Which.DismissedCount.Should().Be(OpenDraftsOfAMachine);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()

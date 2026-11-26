@@ -49,6 +49,7 @@ public static class HttpResponseMessageExtensions
     {
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         var buffer = new byte[HttpFailureConstants.MaxBodyBytes + 1];
+
         var length = await stream.ReadAtLeastAsync(
             buffer,
             buffer.Length,
@@ -60,6 +61,7 @@ public static class HttpResponseMessageExtensions
             var fields = JsonTopLevelFields.Read(
                 buffer.AsSpan(start: 0, Math.Min(length, HttpFailureConstants.MaxBodyBytes)),
                 length <= HttpFailureConstants.MaxBodyBytes);
+
             var reason = HttpErrorReasonReaders.Default.ReadReason(fields);
 
             return reason is { Length: > HttpFailureConstants.MaxReasonLength }

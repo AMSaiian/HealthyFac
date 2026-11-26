@@ -36,22 +36,31 @@ public static class MachineEndpoints
         public IEndpointRouteBuilder MapMachineEndpoints()
         {
             var group = app.MapGroup(MachineRoutes.BaseRoute);
+
             group.MapPost(MachineRoutes.Root, CreateAsync)
                 .RequireAuthorization(CorePermissions.Machines.Write);
+
             group.MapPost(MachineRoutes.Search, SearchAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
+
             group.MapPost(MachineRoutes.Names, LookupNamesAsync)
                 .RequireAuthorization(CorePermissions.Drafts.Read);
+
             group.MapPost(MachineRoutes.Lookup, LookupAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
+
             group.MapGet(MachineRoutes.ById, GetAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
+
             group.MapGet(MachineRoutes.StateTimes, GetStateTimesAsync)
                 .RequireAuthorization(CorePermissions.Machines.Read);
+
             group.MapPut(MachineRoutes.ById, UpdateAsync)
                 .RequireAuthorization(CorePermissions.Machines.Write);
+
             group.MapPost(MachineRoutes.State, ChangeStateAsync)
                 .RequireAuthorization(CorePermissions.Machines.Write);
+
             group.MapDelete(MachineRoutes.ById, DeleteAsync)
                 .RequireAuthorization(CorePermissions.Machines.Delete);
 

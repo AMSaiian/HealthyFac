@@ -17,8 +17,8 @@ public static class EmployeeTestData
     public static readonly Guid RoleId = Faker.Random.Guid();
     public static readonly Guid IdentityUserId = Faker.Random.Guid();
     public static readonly Guid OtherIdentityUserId = Faker.Random.Guid();
-    public static readonly byte[] TokenSalt = Faker.Random.Bytes(count: 32);
-    public static readonly byte[] RenewedTokenSalt = Faker.Random.Bytes(count: 32);
+    internal static readonly byte[] TokenSalt = Faker.Random.Bytes(count: 32);
+    internal static readonly byte[] RenewedTokenSalt = Faker.Random.Bytes(count: 32);
 
     public static readonly DateTime BeforeExpiry = new(
         year: 2026, month: 10, day: 21, hour: 12, minute: 0, second: 0, DateTimeKind.Utc);

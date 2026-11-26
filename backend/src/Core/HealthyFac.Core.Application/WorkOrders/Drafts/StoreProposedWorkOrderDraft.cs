@@ -78,6 +78,7 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
                 WorkOrderPriority.FromValue(request.Priority),
                 WorkOrderCategory.FromValue(request.Category),
                 request.EstimateMinutes));
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _notifier.AddToGroup(

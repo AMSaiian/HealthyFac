@@ -12,6 +12,7 @@ public static class OutboxFixtureExtensions
         {
             using var scope = fixture.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+
             for (var index = 0; index < count; index++)
             {
                 dbContext.OutboxMessages.Add(

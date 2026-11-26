@@ -28,20 +28,22 @@ public static class FreeSpans
         var nowOnGridUtc = SlotRules.RoundUpToGrid(nowUtc);
         var ordered = occupancies.OrderBy(occupancy => occupancy.StartUtc).ToList();
 
-        return day.Blocks
-            .SelectMany(block => Subtract(
-                block.StartUtc > nowOnGridUtc ? block.StartUtc : nowOnGridUtc, block.EndUtc, ordered))
-            .Select(span => (Start: SlotRules.RoundUpToGrid(span.Start), End: SlotRules.RoundDownToGrid(span.End)))
-            .Where(span => span.End - span.Start >= SlotRules.GridStep)
-            .OrderBy(span => span.Start)
-            .Select(span => new FreeSpan
-            {
-                StartUtc = span.Start,
-                EndUtc = span.End,
-                StartLocal = ToLocal(span.Start, zone),
-                EndLocal = ToLocal(span.End, zone),
-            })
-            .ToList();
+        return
+        [
+            .. day.Blocks
+                .SelectMany(block => Subtract(
+                    block.StartUtc > nowOnGridUtc ? block.StartUtc : nowOnGridUtc, block.EndUtc, ordered))
+                .Select(span => (Start: SlotRules.RoundUpToGrid(span.Start), End: SlotRules.RoundDownToGrid(span.End)))
+                .Where(span => span.End - span.Start >= SlotRules.GridStep)
+                .OrderBy(span => span.Start)
+                .Select(span => new FreeSpan
+                {
+                    StartUtc = span.Start,
+                    EndUtc = span.End,
+                    StartLocal = ToLocal(span.Start, zone),
+                    EndLocal = ToLocal(span.End, zone),
+                }),
+        ];
     }
 
     /// <summary>
@@ -59,6 +61,7 @@ public static class FreeSpans
     )
     {
         var cursor = startUtc;
+
         foreach (var occupancy in
             ordered.Where(occupancy => occupancy.EndUtc > startUtc && occupancy.StartUtc < endUtc))
         {

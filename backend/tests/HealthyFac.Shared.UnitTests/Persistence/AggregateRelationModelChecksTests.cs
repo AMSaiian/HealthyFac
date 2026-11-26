@@ -14,6 +14,7 @@ public sealed class AggregateRelationModelChecksTests
         var options = new DbContextOptionsBuilder<AggregateRelationTestModel>()
             .UseNpgsql(AggregateRelationTestModel.UnusedConnectionString)
             .Options;
+
         using var dbContext = new AggregateRelationTestModel(options);
 
         var wrongRelations = AggregateRelationModelChecks.FindWrongRelations(

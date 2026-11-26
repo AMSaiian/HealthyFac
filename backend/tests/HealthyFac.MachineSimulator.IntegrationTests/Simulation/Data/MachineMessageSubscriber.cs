@@ -25,6 +25,7 @@ public sealed class MachineMessageSubscriber : IAsyncDisposable
         _client.ApplicationMessageReceivedAsync += args =>
         {
             var message = args.ApplicationMessage;
+
             _messages.Enqueue(
                 new ReceivedMachineMessage(
                     message.Topic,
@@ -42,6 +43,7 @@ public sealed class MachineMessageSubscriber : IAsyncDisposable
                 .WithClientId($"subscriber-{Guid.NewGuid():N}")
                 .WithCredentials(MosquittoTestBroker.TelemetryUser, broker.TelemetryPassword)
                 .Build());
+
         await _client.SubscribeAsync(
             new MqttClientSubscribeOptionsBuilder()
                 .WithTopicFilter(SimulatorTestData.TopicFilter, MqttQualityOfServiceLevel.AtLeastOnce)
@@ -53,6 +55,7 @@ public sealed class MachineMessageSubscriber : IAsyncDisposable
     public async Task<IReadOnlyList<ReceivedMachineMessage>> WaitForAsync(int count, TimeSpan limit)
     {
         var deadline = DateTime.UtcNow + limit;
+
         while (_messages.Count < count && DateTime.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(milliseconds: 25));

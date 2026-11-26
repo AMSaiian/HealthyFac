@@ -26,8 +26,10 @@ public static class MetricUnitCatalogExtensions
 
             services.AddSingleton<IMetricUnitSource, TelemetryMetricUnitClient>();
             services.AddSingleton<RedisMetricUnitCatalog>();
+
             services.AddSingleton<IMetricUnitCatalog>(provider =>
                 provider.GetRequiredService<RedisMetricUnitCatalog>());
+
             services.AddSingleton<IMetricUnitCache>(provider => provider.GetRequiredService<RedisMetricUnitCatalog>());
 
             return services;

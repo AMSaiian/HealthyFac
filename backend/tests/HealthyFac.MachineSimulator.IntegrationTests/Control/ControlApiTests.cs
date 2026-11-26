@@ -18,6 +18,7 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
     public async Task List_WithTwoMachines_ReturnsThemOrderedByCompanyThenName()
     {
         var companyId = await _fixture.CreateCompanyAsync();
+
         foreach (var serialNumber in new[]
             { ControlApiTestData.SecondSerialNumber, SimulatorTestData.GenericSerialNumber })
         {
@@ -58,11 +59,13 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
         item.GetProperty(propertyName: "isRunning").GetBoolean().Should().BeTrue();
         item.GetProperty(propertyName: "isPublishing").GetBoolean().Should().BeTrue();
         item.GetProperty(propertyName: "expectedGoLiveOn").ValueKind.Should().Be(JsonValueKind.String);
+
         item.GetProperty(propertyName: "counters")
             .GetProperty(SimulatorTestData.CounterKey)
             .GetDouble()
             .Should()
             .Be(expected: 0);
+
         item.GetProperty(propertyName: "modules")
             .EnumerateArray()
             .Select(module => module.GetProperty(propertyName: "module").GetString())
@@ -153,7 +156,9 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
         var item = await client.GetJsonAsync<JsonElement>(
             ControlApiTestData.MachineRoute(machine.MachineId),
             TestContext.Current.CancellationToken);
+
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
         item.GetProperty(propertyName: "modules")
             .EnumerateArray()
             .Single(module =>
@@ -172,9 +177,12 @@ public sealed class ControlApiTests(SimulatorFixture fixture)
 
         var stop = await PutAsync(
             client, ControlApiTestData.RunRoute(machine.MachineId), ControlApiTestData.RunBody(isRunning: false));
+
         var whileStopped = await _fixture.TickExpectingNothingAsync();
+
         var start = await PutAsync(
             client, ControlApiTestData.RunRoute(machine.MachineId), ControlApiTestData.RunBody(isRunning: true));
+
         var afterStart = await _fixture.TickAsync();
 
         stop.StatusCode.Should().Be(HttpStatusCode.NoContent);

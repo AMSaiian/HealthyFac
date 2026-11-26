@@ -51,6 +51,7 @@ public sealed class TriageRunner(
     {
         var prompt = _prompts.For(AgentRole.Triage);
         run.UseModel(_model.ModelName, prompt.Version, prompt.Hash);
+
         var userMessage = AgentDataBlocks.Wrap(
             CaseBlockTag,
             JsonSerializer.Serialize(CaseSnapshot.From(maintenanceCase), _json.Snapshots));
@@ -79,6 +80,7 @@ public sealed class TriageRunner(
         var reason = answer.Verdict.Reason.Length > ReasonMaxLength
             ? answer.Verdict.Reason[..ReasonMaxLength]
             : answer.Verdict.Reason;
+
         run.Complete(now, AgentRunVerdict.FromValue(verdict.Value), reason, answer.InputTokens, answer.OutputTokens);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -94,6 +96,7 @@ public sealed class TriageRunner(
         if (verdict == TriageVerdictKind.Dismiss)
         {
             uncovered.ForEach(signal => signal.Dismiss());
+
             var hasCoveredOpenSignal = maintenanceCase.Signals.Any(signal => signal.IsOpen
                 && (signal.Coverage == SignalCoverage.Drafted || signal.Coverage == SignalCoverage.Linked));
 

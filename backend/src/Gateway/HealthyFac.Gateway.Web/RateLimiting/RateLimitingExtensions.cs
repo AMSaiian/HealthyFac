@@ -35,9 +35,11 @@ public static class RateLimitingExtensions
                 configuration);
 
             services.AddSingleton<RateLimitRejectionHandler>();
+
             services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
                 options.OnRejected = (context, cancellationToken) => context.HttpContext.RequestServices
                     .GetRequiredService<RateLimitRejectionHandler>()
                     .HandleAsync(context, cancellationToken);

@@ -103,12 +103,14 @@ public sealed record DraftSearchRequest
             && (columnText == DraftSortComparers.State || columnText == DraftSortComparers.ProposedAt)
                 ? columnText
                 : null;
+
         var direction = (node as JsonObject)?[DirectionProperty] is JsonValue directionValue
             && directionValue.TryGetValue<string>(out var directionText)
                 ? directionText
                 : null;
-        var isDirectionKnown = direction == DraftNames.SortDirections.Ascending
-            || direction == DraftNames.SortDirections.Descending;
+
+        var isDirectionKnown = direction is DraftNames.SortDirections.Ascending
+            or DraftNames.SortDirections.Descending;
 
         return (isDirectionKnown ? column : null, direction == DraftNames.SortDirections.Descending);
     }

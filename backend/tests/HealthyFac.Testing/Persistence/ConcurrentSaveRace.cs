@@ -30,7 +30,7 @@ public sealed class ConcurrentSaveRace : IDisposable
     /// participant saved once, because the gate holds the first save: a handler that gains an earlier save would
     /// make the gate hold the wrong one.
     /// </summary>
-    public IReadOnlyList<int> SaveCounts => _saveCounts.ToList();
+    public IReadOnlyList<int> SaveCounts => [.. _saveCounts];
 
     /// <summary>
     /// Runs one participant on its own flow, so its saves carry its participant ID.
@@ -43,6 +43,7 @@ public sealed class ConcurrentSaveRace : IDisposable
     public Task<Exception?> RunAsync(Func<Task> call)
     {
         var index = Interlocked.Increment(ref _startedCount) - 1;
+
         if (index >= _participantCount)
         {
             throw ConcurrentSaveGateErrors.TooManyParticipants(_participantCount);
@@ -74,12 +75,14 @@ public sealed class ConcurrentSaveRace : IDisposable
     internal async Task ArriveAsync(int index, CancellationToken cancellationToken)
     {
         var saveCount = Interlocked.Increment(ref _saveCounts[index]);
+
         if (saveCount > 1)
         {
             return;
         }
 
         var arrivedCount = Interlocked.Increment(ref _arrivedCount);
+
         if (arrivedCount >= _participantCount)
         {
             _released.TrySetResult();

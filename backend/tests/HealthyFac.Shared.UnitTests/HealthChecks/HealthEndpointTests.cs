@@ -56,6 +56,7 @@ public sealed class HealthEndpointTests
         var response = await host.GetOnPortAsync(HealthCheckConstants.Routes.Detailed, HealthHostFactory.HealthPort);
 
         using var report = JsonDocument.Parse(response.Body);
+
         var checkNames = report.RootElement
             .GetProperty(HealthCheckConstants.Properties.Checks)
             .EnumerateArray()

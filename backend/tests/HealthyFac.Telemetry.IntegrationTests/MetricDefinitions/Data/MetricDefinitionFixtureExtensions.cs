@@ -44,6 +44,7 @@ public static class MetricDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<
                     ApplyMetricDefinitionChangesRequest,
@@ -68,6 +69,7 @@ public static class MetricDefinitionFixtureExtensions
         public async Task<IReadOnlyList<KeyValuePair<string, string>>> LoadMetricUnitPairsAsync(Guid machineId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var rows = await scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>()
                 .MetricDefinitions
                 .AsNoTracking()
@@ -81,7 +83,7 @@ public static class MetricDefinitionFixtureExtensions
                 })
                 .ToListAsync();
 
-            return rows.Select(row => new KeyValuePair<string, string>(row.Key, $"{row.Kind}.{row.Unit}")).ToList();
+            return [.. rows.Select(row => new KeyValuePair<string, string>(row.Key, $"{row.Kind}.{row.Unit}"))];
         }
 
         public async Task<int> LoadMetricSchemaRevisionAsync(Guid machineId)

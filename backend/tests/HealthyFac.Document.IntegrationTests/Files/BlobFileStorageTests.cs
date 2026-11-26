@@ -31,6 +31,7 @@ public sealed class BlobFileStorageTests(DocumentDatabaseFixture fixture)
 
         var blob = _fixture.BlobService.GetBlobContainerClient(DatabaseTestData.ContainerName)
             .GetBlobClient(id.ToString());
+
         var properties = await blob.GetPropertiesAsync(cancellationToken: TestContext.Current.CancellationToken);
         var download = await blob.DownloadContentAsync(TestContext.Current.CancellationToken);
 
@@ -45,6 +46,7 @@ public sealed class BlobFileStorageTests(DocumentDatabaseFixture fixture)
         var id = Guid.CreateVersion7();
         using var scope = _fixture.ScopeFactory.CreateScope();
         var storage = scope.ServiceProvider.GetRequiredService<IFileStorage>();
+
         await storage.WriteAsync(
             id,
             FilePurpose.Attachment,

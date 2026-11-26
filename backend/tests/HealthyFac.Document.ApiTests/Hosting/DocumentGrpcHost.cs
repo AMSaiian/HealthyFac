@@ -28,9 +28,10 @@ public sealed class DocumentGrpcHost : IAsyncDisposable
 
         var hostSettings = new Dictionary<string, string?>(settings)
         {
-            [key: "Grpc:Port"] = GrpcPort.ToString(),
-            [key: "ServiceActors:AllowedClients:0"] = AllowedClientId,
+            ["Grpc:Port"] = GrpcPort.ToString(),
+            ["ServiceActors:AllowedClients:0"] = AllowedClientId,
         };
+
         _factory = new DocumentApiFactory(
             hostSettings,
             tokens,
@@ -39,6 +40,7 @@ public sealed class DocumentGrpcHost : IAsyncDisposable
                 options.Listen(IPAddress.Loopback, ApiPort);
                 options.Listen(IPAddress.Loopback, GrpcPort);
             }));
+
         _factory.UseKestrel();
         _factory.StartServer();
 

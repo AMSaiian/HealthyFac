@@ -21,10 +21,13 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var next = await CreateAssignedAsync(tenant, time: "11:00");
         var afternoon = await CreateAssignedAsync(tenant, time: "13:00");
         var fixedOrder = await CreateAssignedAsync(tenant, time: "15:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, fixedOrder, WorkOrderStatus.InProgress);
+
         var nextRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(next);
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "11:30"));
 
@@ -36,11 +39,15 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var newNextRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(next);
 
         movedNext.Current.Status.Should().Be(WorkOrderStatus.Staged);
+
         movedNext.Current.PlannedStartLocal.Should()
             .Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "13:00"));
+
         movedNext.CurrentRevision.Should().Be(expected: 3);
+
         movedAfternoon.Current.PlannedStartLocal.Should()
             .Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "14:00"));
+
         kept.Current.Status.Should().Be(WorkOrderStatus.InProgress);
         kept.Current.PlannedStartLocal.Should().Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "15:00"));
         newNextRowVersion.Should().NotBe(nextRowVersion);
@@ -52,8 +59,10 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTenantAsync();
         var finishing = await CreateAssignedAsync(tenant, time: "15:00");
         var last = await CreateAssignedAsync(tenant, time: "16:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "16:30"));
 
         await _fixture.ChangeStatusAsync(tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.Completed);
@@ -73,8 +82,10 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var tomorrow = await CreateAssignedAsync(tenant, time: "10:00");
         var clashing = await CreateAssignedAsync(tenant, time: "09:00", ShiftTestData.InTwoDays);
         var untouched = await CreateAssignedAsync(tenant, time: "11:00", ShiftTestData.InTwoDays);
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.InTwoDays, time: "10:00"));
         _fixture.RealtimeQueue.Clear();
 
@@ -86,6 +97,7 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
             .Where(hint => hint.Topic == RealtimeTopic.WorkOrders)
             .Select(hint => hint.WorkOrderId!.Value)
             .ToList();
+
         var sentBack = await _fixture.LoadWorkOrderAsync(tomorrow);
         var slid = await _fixture.LoadWorkOrderAsync(clashing);
         var kept = await _fixture.LoadWorkOrderAsync(untouched);
@@ -105,8 +117,10 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTenantAsync();
         var finishing = await CreateAssignedAsync(tenant, time: "10:00");
         var next = await CreateAssignedAsync(tenant, time: "11:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "10:30"));
 
         await _fixture.ChangeStatusAsync(tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.Completed);
@@ -114,6 +128,7 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var untouched = await _fixture.LoadWorkOrderAsync(next);
 
         untouched.CurrentRevision.Should().Be(expected: 2);
+
         untouched.Current.PlannedStartLocal.Should()
             .Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, time: "11:00"));
     }
@@ -124,8 +139,10 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTenantAsync();
         var finishing = await CreateAssignedAsync(tenant, time: "10:00");
         var next = await CreateAssignedAsync(tenant, time: "11:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.InProgress);
+
         var staleRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(next);
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "11:30"));
         await _fixture.ChangeStatusAsync(tenant.CompanyId, tenant.IdentityUserId, finishing, WorkOrderStatus.Completed);
@@ -147,11 +164,13 @@ public sealed class CompletionSlideTests(CoreDatabaseFixture fixture)
     private async Task<ShiftTenant> ArrangeTenantAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         return tenant;

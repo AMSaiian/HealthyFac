@@ -68,11 +68,13 @@ public sealed class RealtimeConnectionTests(GatewayEnvironment environment) : IA
     public async Task Connection_WhenTokenExpires_ClosesWithinFifteenSeconds()
     {
         await using var gateway = _environment.CreateGateway(_core);
+
         var token = gateway.Tokens.CreateToken(
             RealtimeTestData.Claims(Guid.NewGuid()) with
             {
                 Lifetime = ShortLifetime,
             });
+
         await using var client = await RealtimeTestClient.ConnectAsync(gateway, token);
 
         var isClosed = await client.WaitForCloseAsync(CloseTimeout);
@@ -102,6 +104,7 @@ public sealed class RealtimeConnectionTests(GatewayEnvironment environment) : IA
             $"{RealtimeConstants.HubPath}/negotiate?negotiateVersion=1",
             content: null,
             TestContext.Current.CancellationToken);
+
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
 
         return body.GetProperty(propertyName: "connectionToken").GetString()!;

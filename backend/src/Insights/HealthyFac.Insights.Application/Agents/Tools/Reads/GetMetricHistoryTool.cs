@@ -134,8 +134,10 @@ public sealed class GetMetricHistoryToolRequestHandler(
         }
 
         var machineSignals = await _catalog.GetAsync(request.MachineId, cancellationToken);
+
         var metric = machineSignals.Metrics.FirstOrDefault(candidate => candidate.Key == request.MetricKey)
             ?? throw new UnprocessableException(AgentMessages.UnknownMetricKey);
+
         var buckets = await _signals.GetMetricHistoryAsync(
             request.MachineId,
             metric.Id,

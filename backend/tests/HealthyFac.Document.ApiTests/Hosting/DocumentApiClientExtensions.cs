@@ -64,6 +64,7 @@ public static class DocumentApiClientExtensions
         {
             using var client = fixture.CreateClient();
             using var request = new HttpRequestMessage(method, path);
+
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));

@@ -59,6 +59,7 @@ public sealed class TokenExchangeClient(
             .Append(ServiceTokenConstants.OrganizationScope)
             .Distinct(StringComparer.Ordinal)
             .ToList();
+
         var key = TokenCacheKeys.ForExchangedToken(
             _serviceName,
             userId,

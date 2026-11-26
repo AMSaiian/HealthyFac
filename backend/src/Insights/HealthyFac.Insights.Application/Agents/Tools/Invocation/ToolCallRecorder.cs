@@ -30,6 +30,7 @@ public sealed class ToolCallRecorder(Guid runId, Func<Func<int, AgentToolCall>, 
                 var lastSequence = await dbContext.AgentToolCalls
                     .Where(call => call.RunId == runId)
                     .MaxAsync(call => (int?)call.Sequence, cancellationToken);
+
                 dbContext.AgentToolCalls.Add(createRow((lastSequence ?? 0) + 1));
                 await dbContext.SaveChangesAsync(cancellationToken);
             });

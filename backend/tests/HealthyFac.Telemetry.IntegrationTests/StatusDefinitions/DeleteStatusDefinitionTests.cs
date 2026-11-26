@@ -17,10 +17,12 @@ public sealed class DeleteStatusDefinitionTests(TelemetryDatabaseFixture fixture
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
             StatusDefinitionTestData.Code);
+
         await _fixture.DeleteStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
@@ -40,6 +42,7 @@ public sealed class DeleteStatusDefinitionTests(TelemetryDatabaseFixture fixture
         var tenant = _fixture.ArrangeMachineTenant();
         var otherTenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(otherTenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             otherTenant.CompanyId,
             machineId,

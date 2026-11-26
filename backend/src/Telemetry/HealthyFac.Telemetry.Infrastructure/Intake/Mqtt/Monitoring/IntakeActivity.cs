@@ -29,7 +29,9 @@ internal static class IntakeActivity
         var traceParent = message.UserProperties
             ?.FirstOrDefault(property => property.Name == MessageHeaders.TraceParent)
             ?.ReadValueAsString();
+
         var name = ObservabilityConstants.Intake.SpanName;
+
         var activity = ActivityContext.TryParse(traceParent, traceState: null, isRemote: true, out var parent)
             ? Source.StartActivity(name, ActivityKind.Consumer, parent)
             : Source.StartActivity(name, ActivityKind.Consumer);

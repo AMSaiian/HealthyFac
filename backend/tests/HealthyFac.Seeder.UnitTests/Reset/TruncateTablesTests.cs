@@ -19,6 +19,7 @@ public sealed class TruncateTablesTests
     {
         var keep = TruncateKeepList.For(service);
         var entityTables = model.GetEntityTypes().Select(entity => $"\"{entity.GetTableName()}\"").ToHashSet();
+
         var keepTables = model.GetEntityTypes()
             .Where(entity => keep.Contains(entity.ClrType))
             .Select(entity => $"\"{entity.GetTableName()}\"")

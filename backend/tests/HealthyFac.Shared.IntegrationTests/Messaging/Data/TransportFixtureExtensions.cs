@@ -13,6 +13,7 @@ public static class TransportFixtureExtensions
         public async Task<List<string>> WaitForErrorLogsAsync(Guid messageId)
         {
             using var cancellation = new CancellationTokenSource(TransportTestData.WaitTimeout);
+
             while (!cancellation.IsCancellationRequested && fixture.ReadErrorLogs(messageId).Count == 0)
             {
                 await Task.Delay(TransportTestData.PollDelay);
@@ -24,9 +25,10 @@ public static class TransportFixtureExtensions
         }
 
         public List<string> ReadErrorLogs(Guid messageId) =>
-            fixture.Logs.Entries
+        [
+            .. fixture.Logs.Entries
                 .Where(entry => entry.Level == LogLevel.Error && entry.Message.Contains(messageId.ToString()))
-                .Select(entry => entry.Message)
-                .ToList();
+                .Select(entry => entry.Message),
+        ];
     }
 }

@@ -17,6 +17,7 @@ public sealed class StatusDefinitionFakerTests
         var definitions = faker.Generate(StatusDefinitionFakerTestData.ItemCount);
 
         var validator = new CreateStatusDefinitionRequestValidator(new HtmlSanitizerRichTextPolicy());
+
         var failures = definitions
             .SelectMany(definition => validator.Validate(
                     new CreateStatusDefinitionRequest
@@ -29,6 +30,7 @@ public sealed class StatusDefinitionFakerTests
                     })
                 .Errors)
             .ToList();
+
         failures.Should().BeEmpty();
         definitions.Select(definition => definition.Code).Should().OnlyHaveUniqueItems();
     }

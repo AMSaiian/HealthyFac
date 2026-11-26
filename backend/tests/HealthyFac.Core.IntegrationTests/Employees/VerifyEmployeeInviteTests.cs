@@ -17,6 +17,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
     public async Task VerifyAsync_WithValidToken_ReturnsPrefillData()
     {
         var expiresAt = NextHour();
+
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyValidEmail,
             expiresAt);
@@ -49,6 +50,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyAcceptedEmail,
             NextHour());
+
         await _fixture.AcceptInviteAsync(arranged.Token);
 
         var act = () => VerifyAsync(arranged.Token);
@@ -64,6 +66,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.VerifyTamperedEmail,
             NextHour());
+
         var tamperedToken = arranged.Token[..^1] + (arranged.Token[^1] == 'A' ? 'B' : 'A');
 
         var act = () => VerifyAsync(tamperedToken);
@@ -101,6 +104,7 @@ public sealed class VerifyEmployeeInviteTests(CoreDatabaseFixture fixture)
         await verifyOldToken.Should()
             .ThrowAsync<NotFoundException>()
             .WithMessage(EmployeeInviteErrors.Rejections.InviteLinkInvalid);
+
         newTokenResponse.Email.Should().Be(InviteTestData.VerifyResendEmail);
     }
 

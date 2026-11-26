@@ -38,30 +38,35 @@ public sealed class ReadingRowWriter
 
         var connection = (NpgsqlConnection)dbContext.Database.GetDbConnection();
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
         var idOverrides = batch.Where(rows => rows.MessageId is not null)
             .ToDictionary(
                 rows => (object)rows.Received, rows => rows.MessageId!.Value, ReferenceEqualityComparer.Instance);
 
         await ImportAsync(
             connection, dbContext, batch.Select(rows => (object)rows.Received), idOverrides, cancellationToken);
+
         await ImportAsync(
             connection,
             dbContext,
             batch.SelectMany(rows => rows.Numeric).Cast<object>(),
             idOverrides: null,
             cancellationToken);
+
         await ImportAsync(
             connection,
             dbContext,
             batch.SelectMany(rows => rows.Discrete).Cast<object>(),
             idOverrides: null,
             cancellationToken);
+
         await ImportAsync(
             connection,
             dbContext,
             batch.SelectMany(rows => rows.Statuses).Cast<object>(),
             idOverrides: null,
             cancellationToken);
+
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -74,6 +79,7 @@ public sealed class ReadingRowWriter
     )
     {
         using var enumerator = entities.GetEnumerator();
+
         if (!enumerator.MoveNext())
         {
             return;
@@ -89,18 +95,22 @@ public sealed class ReadingRowWriter
         var command = $"COPY {target} ({string.Join(separator: ", ", columns)}) FROM STDIN (FORMAT BINARY)";
 
         await using var importer = await connection.BeginBinaryImportAsync(command, cancellationToken);
+
         do
         {
             var entity = enumerator.Current;
             await importer.StartRowAsync(cancellationToken);
+
             for (var index = 0; index < properties.Count; index++)
             {
                 var property = properties[index];
+
                 var value = idOverrides is not null
                     && property == idProperty
                     && idOverrides.TryGetValue(entity, out var overrideId)
                         ? overrideId
                         : property.GetGetter().GetClrValue(entity);
+
                 var provided = property.GetValueConverter() is { } converter && value is not null
                     ? converter.ConvertToProvider(value)
                     : value;
@@ -124,27 +134,35 @@ public sealed class ReadingRowWriter
         {
             case null:
                 await importer.WriteNullAsync(cancellationToken);
+
                 break;
             case Guid guid:
                 await importer.WriteAsync(guid, dataTypeName, cancellationToken);
+
                 break;
             case DateTime dateTime:
                 await importer.WriteAsync(dateTime, dataTypeName, cancellationToken);
+
                 break;
             case double number:
                 await importer.WriteAsync(number, dataTypeName, cancellationToken);
+
                 break;
             case bool flag:
                 await importer.WriteAsync(flag, dataTypeName, cancellationToken);
+
                 break;
             case int integer:
                 await importer.WriteAsync(integer, dataTypeName, cancellationToken);
+
                 break;
             case string text:
                 await importer.WriteAsync(text, dataTypeName, cancellationToken);
+
                 break;
             case byte[] bytes:
                 await importer.WriteAsync(bytes, dataTypeName, cancellationToken);
+
                 break;
             default:
                 throw new InvalidOperationException(

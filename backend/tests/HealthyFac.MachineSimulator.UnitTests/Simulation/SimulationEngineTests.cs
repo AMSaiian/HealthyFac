@@ -29,10 +29,12 @@ public sealed class SimulationEngineTests
     public SimulationEngineTests()
     {
         var options = Options.Create(new SimulatorOptions());
+
         _engine = new SimulationEngine(
             options,
             new Random(SimulationEngineTestData.Seed),
             NullLogger<SimulationEngine>.Instance);
+
         _loops = new SimulationLoops(
             _engine,
             _publisher,
@@ -52,6 +54,7 @@ public sealed class SimulationEngineTests
             _time.GetUtcNow().UtcDateTime);
 
         var tickTimes = new List<string>();
+
         for (var second = 0; second < 3; second++)
         {
             _time.Advance(TimeSpan.FromSeconds(seconds: 1));
@@ -83,6 +86,7 @@ public sealed class SimulationEngineTests
     {
         var snapshot = SimulationEngineTestData.Snapshot(
             serialNumber: "GEN-1", SimulationEngineTestData.LevelDefinitions);
+
         _engine.ApplyDiscovery([snapshot], SimulationEngineTestData.NoCounterStarts, _time.GetUtcNow().UtcDateTime);
 
         _engine.ApplyStatePoll([snapshot with { IsRegistered = false }], _time.GetUtcNow().UtcDateTime);
@@ -96,15 +100,18 @@ public sealed class SimulationEngineTests
     {
         var snapshot = SimulationEngineTestData.Snapshot(
             serialNumber: "GEN-1", SimulationEngineTestData.LevelDefinitions);
+
         _engine.ApplyDiscovery([snapshot], SimulationEngineTestData.NoCounterStarts, _time.GetUtcNow().UtcDateTime);
         await _loops.PublishTickAsync(CancellationToken.None);
+
         _engine.ApplyStatePoll(
             [snapshot with { Definitions = SimulationEngineTestData.LevelAndPressureDefinitions }],
             _time.GetUtcNow().UtcDateTime);
+
         await _loops.PublishTickAsync(CancellationToken.None);
 
-        MetricKeysOf(_publisher.Messages[index: 0].Payload).Should().Equal("level");
-        MetricKeysOf(_publisher.Messages[index: 1].Payload).Should().BeEquivalentTo("level", "pressure");
+        MetricKeysOf(_publisher.Messages[0].Payload).Should().Equal("level");
+        MetricKeysOf(_publisher.Messages[1].Payload).Should().BeEquivalentTo("level", "pressure");
     }
 
     [Fact]
@@ -113,8 +120,10 @@ public sealed class SimulationEngineTests
         var snapshot = SimulationEngineTestData.Snapshot(
             ScenarioBinding.CncSerialNumber,
             SimulationEngineTestData.CncDefinitions);
+
         _engine.ApplyDiscovery([snapshot], SimulationEngineTestData.NoCounterStarts, _time.GetUtcNow().UtcDateTime);
         _publisher.IsAccepting = false;
+
         using var collector = new MetricCollector<long>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,
@@ -124,7 +133,8 @@ public sealed class SimulationEngineTests
         await _loops.PublishTickAsync(CancellationToken.None);
 
         var view = _engine.Find(snapshot.MachineId, _time.GetUtcNow().UtcDateTime)!;
-        view.Counters[key: "machine.operating_hours"].Should().BeGreaterThan(expected: 0);
+        view.Counters["machine.operating_hours"].Should().BeGreaterThan(expected: 0);
+
         collector.GetMeasurementSnapshot()
             .Should()
             .ContainSingle()
@@ -139,6 +149,7 @@ public sealed class SimulationEngineTests
         var snapshot = SimulationEngineTestData.Snapshot(
             ScenarioBinding.CncSerialNumber,
             SimulationEngineTestData.CncDefinitions);
+
         _engine.ApplyDiscovery([snapshot], SimulationEngineTestData.NoCounterStarts, _time.GetUtcNow().UtcDateTime);
 
         var result = _engine.SetMode(snapshot.MachineId, ModuleName.Spindle, ModuleMode.Failure);
@@ -162,6 +173,7 @@ public sealed class SimulationEngineTests
     {
         var snapshot = SimulationEngineTestData.Snapshot(
             serialNumber: "GEN-1", SimulationEngineTestData.LevelDefinitions);
+
         _engine.ApplyDiscovery([snapshot], SimulationEngineTestData.NoCounterStarts, _time.GetUtcNow().UtcDateTime);
 
         var result = _engine.SetMode(snapshot.MachineId, ModuleName.Spindle, ModuleMode.Failure);
@@ -174,6 +186,7 @@ public sealed class SimulationEngineTests
     {
         var snapshot = SimulationEngineTestData.Snapshot(
             serialNumber: "GEN-1", SimulationEngineTestData.LevelDefinitions);
+
         _engine.ApplyDiscovery([snapshot], SimulationEngineTestData.NoCounterStarts, _time.GetUtcNow().UtcDateTime);
         _publisher.FailuresLeft = 1;
         await _loops.StartAsync(CancellationToken.None);
@@ -187,6 +200,7 @@ public sealed class SimulationEngineTests
     private async Task AdvanceUntilAsync(Func<bool> isDone)
     {
         var deadline = DateTime.UtcNow.AddSeconds(value: 10);
+
         while (!isDone() && DateTime.UtcNow < deadline)
         {
             _time.Advance(TimeSpan.FromSeconds(seconds: 1));
@@ -209,19 +223,23 @@ public sealed class SimulationEngineTests
     {
         using var document = JsonDocument.Parse(payload);
 
-        return document.RootElement.GetProperty(propertyName: "metrics")
-            .EnumerateObject()
-            .Select(item => item.Name)
-            .ToList();
+        return
+        [
+            .. document.RootElement.GetProperty(propertyName: "metrics")
+                .EnumerateObject()
+                .Select(item => item.Name),
+        ];
     }
 
     private static IReadOnlyList<string> StatusesOf(byte[] payload)
     {
         using var document = JsonDocument.Parse(payload);
 
-        return document.RootElement.GetProperty(propertyName: "statuses")
-            .EnumerateArray()
-            .Select(item => item.GetString()!)
-            .ToList();
+        return
+        [
+            .. document.RootElement.GetProperty(propertyName: "statuses")
+                .EnumerateArray()
+                .Select(item => item.GetString()!),
+        ];
     }
 }

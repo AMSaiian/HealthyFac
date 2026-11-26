@@ -19,6 +19,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
         var (companyId, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendExpiredEmail,
             DateTime.UtcNow.AddHours(value: -1));
+
         var oldInvite = await _fixture.LoadInviteAsync(inviteId);
 
         await ResendAsync(companyId, inviteId);
@@ -29,6 +30,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
             .BeCloseTo(
                 DateTime.UtcNow.AddHours(InviteTestData.ExpectedLifetimeHours),
                 TimeSpan.FromMinutes(minutes: 1));
+
         invite.TokenSalt.Should().NotEqual(oldInvite.TokenSalt);
     }
 
@@ -38,6 +40,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
         var (companyId, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendOutboxEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var countBefore = await CountInvitedMessagesAsync(inviteId);
 
         await ResendAsync(companyId, inviteId);
@@ -67,6 +70,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
         var (companyId, inviteId, token) = await ArrangeInviteAsync(
             InviteTestData.ResendAcceptedEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         await _fixture.AcceptInviteAsync(token);
 
         var act = () => ResendAsync(companyId, inviteId);
@@ -82,6 +86,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
         var (_, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendOtherCompanyEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var otherCompanyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
 
         var act = () => ResendAsync(otherCompanyId, inviteId);
@@ -97,6 +102,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
         var (companyId, inviteId, _) = await ArrangeInviteAsync(
             InviteTestData.ResendParallelEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var countBefore = await CountInvitedMessagesAsync(inviteId);
         using var race = _fixture.SaveGate.StartRace(InviteTestData.RaceParticipantCount);
 
@@ -108,6 +114,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
@@ -139,6 +146,7 @@ public sealed class ResendEmployeeInviteTests(CoreDatabaseFixture fixture)
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
         using var scope = _fixture.CreateUserScope(companyId);
+
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>();
 

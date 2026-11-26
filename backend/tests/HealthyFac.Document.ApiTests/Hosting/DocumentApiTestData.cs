@@ -33,13 +33,13 @@ public static class DocumentApiTestData
     )
         => new Dictionary<string, string?>(TestTokenFactory.JwtSettings)
         {
-            [key: "ConnectionStrings:Database"] = databaseConnection,
-            [key: "ConnectionStrings:RabbitMq"] = brokerConnection,
-            [key: "FileStorage:ConnectionString"] = storageConnection,
-            [key: "FileStorage:PublicBlobBaseUrl"] = PublicBlobBaseUrl,
-            [key: "Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
-            [key: "IdEncryption:Keys:0:Prefix"] = "v1_",
-            [key: "IdEncryption:Keys:0:Key"] = IdEncryptionKey,
-            [key: "IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
+            ["ConnectionStrings:Database"] = databaseConnection,
+            ["ConnectionStrings:RabbitMq"] = brokerConnection,
+            ["FileStorage:ConnectionString"] = storageConnection,
+            ["FileStorage:PublicBlobBaseUrl"] = PublicBlobBaseUrl,
+            ["Messaging:QueueName"] = $"{QueueNamePrefix}{Guid.NewGuid():N}",
+            ["IdEncryption:Keys:0:Prefix"] = "v1_",
+            ["IdEncryption:Keys:0:Key"] = IdEncryptionKey,
+            ["IdEncryption:Keys:0:IsDefault"] = bool.TrueString,
         };
 }

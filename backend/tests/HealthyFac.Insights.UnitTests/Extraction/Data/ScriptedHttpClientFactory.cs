@@ -38,12 +38,13 @@ public sealed class ScriptedHttpClientFactory(IDownstreamScopeHolder downstreamS
         )
         {
             var body = request.Content is null ? null : await request.Content.ReadAsStringAsync(cancellationToken);
+
             _calls.Add(
                 new RecordedCall(
                     request.Method.Method,
                     request.RequestUri!.AbsolutePath,
                     body,
-                    _downstreamScopes.Current.ToList()));
+                    [.. _downstreamScopes.Current]));
 
             return Respond(request, body);
         }

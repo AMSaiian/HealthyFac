@@ -42,6 +42,7 @@ public sealed class SearchDefinitionDraftsTests(TelemetryDatabaseFixture fixture
     public async Task Search_WithKindFilter_ReturnsOnlyThatKind()
     {
         var machineId = await ArrangeFiveDraftsAsync();
+
         var filter = new DefinitionDraftGridFilter
         {
             Kinds = new SetFilter<string> { Values = [DefinitionDraftKinds.Status] },
@@ -58,6 +59,7 @@ public sealed class SearchDefinitionDraftsTests(TelemetryDatabaseFixture fixture
     public async Task Search_WithStateFilter_ReturnsOnlyThoseStates()
     {
         var machineId = await ArrangeFiveDraftsAsync();
+
         var filter = new DefinitionDraftGridFilter
         {
             States = new SetFilter<DefinitionDraftState> { Values = [DefinitionDraftState.AwaitingTarget] },

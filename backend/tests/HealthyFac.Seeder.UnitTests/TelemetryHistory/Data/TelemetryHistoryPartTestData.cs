@@ -23,14 +23,14 @@ public static class TelemetryHistoryPartTestData
 
     public static void AddWorkOrder(JsonNode root, string createdAt = "h-1:50")
     {
-        root[propertyName: "drains"]![index: 0]![propertyName: "workOrder"] = new JsonObject
+        root["drains"]![0]!["workOrder"] = new JsonObject
         {
-            [propertyName: "title"] = "Replace the bearings",
-            [propertyName: "description"] = "<p>Replace the front bearings.</p>",
-            [propertyName: "priority"] = "high",
-            [propertyName: "category"] = "repair",
-            [propertyName: "estimateMinutes"] = 60,
-            [propertyName: "createdAt"] = createdAt,
+            ["title"] = "Replace the bearings",
+            ["description"] = "<p>Replace the front bearings.</p>",
+            ["priority"] = "high",
+            ["category"] = "repair",
+            ["estimateMinutes"] = 60,
+            ["createdAt"] = createdAt,
         };
     }
 
@@ -75,56 +75,56 @@ public static class TelemetryHistoryPartTestData
         new()
         {
             {
-                "unknown machine", root => root[propertyName: "steps"]![index: 0]![propertyName: "machine"] = "nobody",
+                "unknown machine", root => root["steps"]![0]!["machine"] = "nobody",
                 "telemetry.json#cabinet-step", "nobody"
             },
             {
-                "unknown module", root => root[propertyName: "drains"]![index: 0]![propertyName: "module"] = "coolantX",
+                "unknown module", root => root["drains"]![0]!["module"] = "coolantX",
                 "telemetry.json#lathe-spindle", "coolantX"
             },
             {
-                "unknown metric", root => root[propertyName: "steps"]![index: 0]![propertyName: "metric"] = "no.metric",
+                "unknown metric", root => root["steps"]![0]!["metric"] = "no.metric",
                 "telemetry.json#cabinet-step", "no.metric"
             },
             {
                 "unknown person",
-                root => root[propertyName: "drains"]![index: 0]![propertyName: "maintenance"]![propertyName: "by"] =
+                root => root["drains"]![0]!["maintenance"]!["by"] =
                     "nobody",
                 "telemetry.json#lathe-spindle", "nobody"
             },
             {
                 "moment before the window",
-                root => root[propertyName: "steps"]![index: 0]![propertyName: "from"] = "h-3",
+                root => root["steps"]![0]!["from"] = "h-3",
                 "telemetry.json#cabinet-step", "outside the window"
             },
             {
                 "moment after the anchor",
-                root => root[propertyName: "gaps"]![index: 0]![propertyName: "until"] = "h+1",
+                root => root["gaps"]![0]!["until"] = "h+1",
                 "telemetry.json#pump-gap", "outside the window"
             },
             {
                 "moment that is not in hours",
-                root => root[propertyName: "steps"]![index: 0]![propertyName: "from"] = "d-1",
+                root => root["steps"]![0]!["from"] = "d-1",
                 "telemetry.json#cabinet-step", "hour form"
             },
             {
                 "end not after start",
-                root => root[propertyName: "gaps"]![index: 0]![propertyName: "until"] = "h-0:40",
+                root => root["gaps"]![0]!["until"] = "h-0:40",
                 "telemetry.json#pump-gap", "ends at or before"
             },
             {
-                "drain hours zero", root => root[propertyName: "drains"]![index: 0]![propertyName: "drainHours"] = 0,
+                "drain hours zero", root => root["drains"]![0]!["drainHours"] = 0,
                 "telemetry.json#lathe-spindle", "DrainHours above 0"
             },
             {
                 "maintenance before 80 percent",
-                root => root[propertyName: "drains"]![index: 0]![propertyName: "maintenance"]![propertyName: "from"] =
+                root => root["drains"]![0]!["maintenance"]!["from"] =
                     "h-1:30",
                 "telemetry.json#lathe-spindle", "before 80 %"
             },
             {
                 "maintenance at the end of the drain",
-                root => root[propertyName: "drains"]![index: 0]![propertyName: "maintenance"]![propertyName: "from"] =
+                root => root["drains"]![0]!["maintenance"]!["from"] =
                     "h-1",
                 "telemetry.json#lathe-spindle", "or at or after the end"
             },
@@ -132,26 +132,26 @@ public static class TelemetryHistoryPartTestData
                 "step on a state metric",
                 root =>
                 {
-                    root[propertyName: "steps"]![index: 0]![propertyName: "machine"] = "compressor";
-                    root[propertyName: "steps"]![index: 0]![propertyName: "metric"] = "compressor.state";
+                    root["steps"]![0]!["machine"] = "compressor";
+                    root["steps"]![0]!["metric"] = "compressor.state";
                 },
                 "telemetry.json#cabinet-step", "not numeric"
             },
             {
                 "state outside the set",
-                root => root[propertyName: "overrides"]![index: 0]![propertyName: "values"]![
-                    propertyName: "compressor.state"] = "bogus",
+                root => root["overrides"]![0]!["values"]![
+                    "compressor.state"] = "bogus",
                 "telemetry.json#compressor-override", "compressor.state"
             },
             {
                 "number for a boolean",
-                root => root[propertyName: "overrides"]![index: 0]![propertyName: "values"]![
-                    propertyName: "drain.fault"] = 1,
+                root => root["overrides"]![0]!["values"]![
+                    "drain.fault"] = 1,
                 "telemetry.json#compressor-override", "drain.fault"
             },
             {
                 "status code that the draft does not have",
-                root => root[propertyName: "overrides"]![index: 0]![propertyName: "codes"] =
+                root => root["overrides"]![0]!["codes"] =
                     new JsonArray("S0002"),
                 "telemetry.json#compressor-override", "S0002"
             },
@@ -159,10 +159,10 @@ public static class TelemetryHistoryPartTestData
                 "status code in another case",
                 root =>
                 {
-                    var overrideSeed = root[propertyName: "overrides"]![index: 0]!;
-                    overrideSeed[propertyName: "machine"] = "lathe";
-                    overrideSeed[propertyName: "values"] = new JsonObject();
-                    overrideSeed[propertyName: "codes"] = new JsonArray("a112");
+                    var overrideSeed = root["overrides"]![0]!;
+                    overrideSeed["machine"] = "lathe";
+                    overrideSeed["values"] = new JsonObject();
+                    overrideSeed["codes"] = new JsonArray("a112");
                 },
                 "telemetry.json#compressor-override", "a112"
             },
@@ -170,8 +170,8 @@ public static class TelemetryHistoryPartTestData
                 "key shared by 2 lists",
                 root =>
                 {
-                    root[propertyName: "drains"]![index: 0]![propertyName: "key"] = "dup";
-                    root[propertyName: "gaps"]![index: 0]![propertyName: "key"] = "dup";
+                    root["drains"]![0]!["key"] = "dup";
+                    root["gaps"]![0]!["key"] = "dup";
                 },
                 "telemetry.json#dup", "drains and gaps"
             },
@@ -185,16 +185,16 @@ public static class TelemetryHistoryPartTestData
                 root =>
                 {
                     AddWorkOrder(root);
-                    ((JsonObject)root[propertyName: "drains"]![index: 0]!).Remove(propertyName: "maintenance");
+                    ((JsonObject)root["drains"]![0]!).Remove(propertyName: "maintenance");
                 },
                 "telemetry.json", "maintenance"
             },
             {
-                "window of 0 hours", root => root[propertyName: "windowHours"] = 0,
+                "window of 0 hours", root => root["windowHours"] = 0,
                 "telemetry.json#windowHours", "above 0"
             },
             {
-                "interval of 0 seconds", root => root[propertyName: "sampleIntervalSeconds"] = 0,
+                "interval of 0 seconds", root => root["sampleIntervalSeconds"] = 0,
                 "telemetry.json#sampleIntervalSeconds", "above 0"
             },
         };
@@ -205,6 +205,7 @@ public static class TelemetryHistoryPartTestData
         var root = JsonNode.Parse(BaseJson)!;
         change?.Invoke(root);
         File.WriteAllText(Path.Combine(target, FileName), root.ToJsonString());
+
         if (machinesChange is not null)
         {
             var machinesPath = Path.Combine(target, CommittedSeedTestData.MachinesFile);

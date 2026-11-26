@@ -21,11 +21,13 @@ public sealed class TieFileApiTests(DocumentApiFixture fixture)
             TieFileTestData.MachineOfFilePath(file.EncryptedId),
             claims,
             TieFileTestData.TieBody(machineId, file.RowVersion));
+
         var search = await _fixture.SendAsync(
             HttpMethod.Post,
             $"{UploadFileApiTestData.MachineFilesPath(machineId)}/search",
             claims,
             TieFileTestData.SearchBody);
+
         var searchBody = await search.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -38,11 +40,13 @@ public sealed class TieFileApiTests(DocumentApiFixture fixture)
         var machineId = await _fixture.ArrangeMachineAsync();
         var file = await _fixture.ArrangeFileAsync();
         var claims = _fixture.CreateClaims(TieFileTestData.WritePermission, TieFileTestData.ReadPermission);
+
         await _fixture.SendAsync(
             HttpMethod.Put,
             TieFileTestData.MachineOfFilePath(file.EncryptedId),
             claims,
             TieFileTestData.TieBody(machineId, file.RowVersion));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(file.EncryptedId);
 
         var response = await _fixture.SendAsync(
@@ -50,11 +54,13 @@ public sealed class TieFileApiTests(DocumentApiFixture fixture)
             TieFileTestData.MachineOfFilePath(file.EncryptedId),
             claims,
             TieFileTestData.UntieBody(rowVersion));
+
         var search = await _fixture.SendAsync(
             HttpMethod.Post,
             $"{UploadFileApiTestData.MachineFilesPath(machineId)}/search",
             claims,
             TieFileTestData.SearchBody);
+
         var searchBody = await search.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -67,6 +73,7 @@ public sealed class TieFileApiTests(DocumentApiFixture fixture)
         var machineId = await _fixture.ArrangeMachineAsync();
         var file = await _fixture.ArrangeFileAsync();
         var claims = _fixture.CreateClaims(TieFileTestData.WritePermission);
+
         await _fixture.SendAsync(
             HttpMethod.Put,
             TieFileTestData.MachineOfFilePath(file.EncryptedId),
@@ -168,12 +175,15 @@ public sealed class TieFileApiTests(DocumentApiFixture fixture)
         var machineId = await _fixture.ArrangeMachineAsync();
         var file = await _fixture.ArrangeFileAsync();
         var claims = _fixture.CreateClaims(TieFileTestData.WritePermission);
+
         await _fixture.SendAsync(
             HttpMethod.Put,
             TieFileTestData.MachineOfFilePath(file.EncryptedId),
             claims,
             TieFileTestData.TieBody(machineId, file.RowVersion));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(file.EncryptedId);
+
         await _fixture.SendAsync(
             HttpMethod.Delete,
             TieFileTestData.MachineOfFilePath(file.EncryptedId),
@@ -183,8 +193,8 @@ public sealed class TieFileApiTests(DocumentApiFixture fixture)
         var messages = await _fixture.ReadFileMachineChangedMessagesAsync();
 
         messages.Should().HaveCount(expected: 2);
-        messages[index: 0].MachineId.Should().Be(_fixture.IdEncryptor.Decrypt(machineId));
-        messages[index: 1].MachineId.Should().BeNull();
-        messages[index: 1].ChangedAt.Should().BeOnOrAfter(messages[index: 0].ChangedAt);
+        messages[0].MachineId.Should().Be(_fixture.IdEncryptor.Decrypt(machineId));
+        messages[1].MachineId.Should().BeNull();
+        messages[1].ChangedAt.Should().BeOnOrAfter(messages[0].ChangedAt);
     }
 }

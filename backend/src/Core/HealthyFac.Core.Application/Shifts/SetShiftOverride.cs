@@ -98,12 +98,14 @@ public sealed class SetShiftOverrideRequestHandler(
             token => SetAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+
         _notifier.PushShiftChanged(request.CompanyId, change);
     }
 
     private async Task<ShiftChange> SetAsync(SetShiftOverrideRequest request, CancellationToken cancellationToken)
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
+
         var shifts = await _reader.LoadAsync(
             request.EmployeeId,
             zone,
@@ -111,12 +113,14 @@ public sealed class SetShiftOverrideRequestHandler(
             request.Date,
             isTracked: true,
             cancellationToken);
+
         var today = shifts.LocalDateOf(_timeProvider.GetUtcNow().UtcDateTime);
         ShiftDateRules.EnsureInRange(request.Date, today);
 
         var before = shifts.Resolve(request.Date, request.Date);
         var times = request.Blocks.Select(block => block.ToTimes()).ToList();
         var existing = shifts.Overrides.SingleOrDefault();
+
         if (existing is null)
         {
             ReplaceByCreate(request, shifts, times);

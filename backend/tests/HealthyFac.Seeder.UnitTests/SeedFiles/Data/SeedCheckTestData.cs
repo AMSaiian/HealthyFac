@@ -176,17 +176,21 @@ public static class SeedCheckTestData
             Item = SeedItem.Of(file, key),
             Creates = creates ?? [],
             Uses = uses ?? [],
-            Requests = (requests ?? []).Select(request => new SeedRequest
+            Requests =
+            [
+                .. (requests ?? []).Select(request => new SeedRequest
                 {
                     Service = ServiceName.Core,
                     Request = request,
-                })
-                .ToList(),
-            Credentials = (credentials ?? []).Select(credential => new SeedCredential
+                }),
+            ],
+            Credentials =
+            [
+                .. (credentials ?? []).Select(credential => new SeedCredential
                 {
                     Username = credential.Username,
                     Password = credential.Password,
-                })
-                .ToList(),
+                }),
+            ],
         };
 }

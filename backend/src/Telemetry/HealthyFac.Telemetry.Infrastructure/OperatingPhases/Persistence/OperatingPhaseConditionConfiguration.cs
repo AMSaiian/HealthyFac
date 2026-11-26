@@ -32,6 +32,7 @@ public class OperatingPhaseConditionConfiguration : IEntityTypeConfiguration<Ope
                 table.HasCheckConstraint(
                     OperatingPhaseCheckNames.ConditionExactlyOneSource,
                     OperatingPhaseCheckNames.ConditionExactlyOneSourceSql);
+
                 table.HasCheckConstraint(
                     OperatingPhaseCheckNames.ConditionOperatorAllowed,
                     CheckConstraintSql.AllowedValues(

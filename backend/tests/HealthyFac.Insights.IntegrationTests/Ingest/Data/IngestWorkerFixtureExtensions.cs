@@ -29,6 +29,7 @@ public static class IngestWorkerFixtureExtensions
                 Extension = extension,
                 SizeBytes = 1024,
             };
+
             fixture.Files.Add(file);
 
             return file;
@@ -37,6 +38,7 @@ public static class IngestWorkerFixtureExtensions
         public async Task<Guid> StartAttemptAsync()
         {
             using var scope = fixture.CreateActorScope(UserActor());
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<StartIngestAttemptRequest, StartIngestAttemptResponse>>();
 

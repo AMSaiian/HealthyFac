@@ -66,6 +66,7 @@ public sealed class RealtimeHubGroupsTests
     public async Task OnConnectedAsync_WhenRedisFailsOnAJoin_KeepsTheConnectionAndLogsAWarning()
     {
         var logger = new FakeLogger<RealtimeHub>();
+
         var groups = new ThrowingGroupManager(
             new RedisConnectionException(
                 ConnectionFailureType.UnableToConnect,
@@ -73,6 +74,7 @@ public sealed class RealtimeHubGroupsTests
                 message: "down",
                 innerException: null,
                 CommandStatus.Unknown));
+
         var hub = CreateHub(groups, RealtimeHubTestData.SupervisorPermissions, RealtimeHubTestData.CompanyText, logger);
 
         await hub.OnConnectedAsync();

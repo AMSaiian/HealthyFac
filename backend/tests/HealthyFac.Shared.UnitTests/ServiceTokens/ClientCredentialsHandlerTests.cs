@@ -16,6 +16,7 @@ public sealed class ClientCredentialsHandlerTests
         using var response = await harness.CallAsync();
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
+
         harness.TokenEndpoint.Forms.Should()
             .ContainSingle()
             .Which
@@ -37,6 +38,7 @@ public sealed class ClientCredentialsHandlerTests
         using var second = await harness.CallAsync();
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -53,6 +55,7 @@ public sealed class ClientCredentialsHandlerTests
         using var second = await harness.CallAsync();
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 2);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -96,6 +99,7 @@ public sealed class ClientCredentialsHandlerTests
         var responses = await Task.WhenAll(calls);
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
+
         harness.Resource.Authorizations.Should()
             .HaveCount(ServiceTokenTestData.ParallelCallCount)
             .And.OnlyContain(authorization => authorization == $"{BearerPrefix}{ServiceTokenTestData.FirstToken}");
@@ -127,6 +131,7 @@ public sealed class ClientCredentialsHandlerTests
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
         exception.Which.Message.Should()
             .Contain(ServiceTokenTestData.InvalidClientDescription)
             .And.NotContain(ServiceTokenTestData.ClientSecret)
@@ -137,6 +142,7 @@ public sealed class ClientCredentialsHandlerTests
     public async Task ClientCredentialsHandler_InUseCaseWithDownstreamScope_RequestsServiceScope()
     {
         using var harness = new ServiceTokenHarness();
+
         var decorator = new DownstreamScopeRequestHandlerDecorator<DownstreamScopeCallRequest, string>(
             new DownstreamScopeCallHandler(harness),
             harness.DownstreamScopes);
@@ -150,6 +156,7 @@ public sealed class ClientCredentialsHandlerTests
     public async Task ClientCredentialsHandler_WithTwoDownstreamScopes_RequestsBothScopes()
     {
         using var harness = new ServiceTokenHarness();
+
         using var downstreamScope = harness.DownstreamScopes.Enter(
             ServiceTokenTestData.SecondDownstreamScope,
             ServiceTokenTestData.FirstDownstreamScope);
@@ -165,6 +172,7 @@ public sealed class ClientCredentialsHandlerTests
     public async Task ClientCredentialsHandler_WithSameDownstreamScopesInOtherOrder_ReusesToken()
     {
         using var harness = new ServiceTokenHarness();
+
         using (harness.DownstreamScopes.Enter(
             ServiceTokenTestData.FirstDownstreamScope,
             ServiceTokenTestData.SecondDownstreamScope))
@@ -186,6 +194,7 @@ public sealed class ClientCredentialsHandlerTests
     public async Task ClientCredentialsHandler_WithDifferentDownstreamScopes_FetchesSeparateTokens()
     {
         using var harness = new ServiceTokenHarness();
+
         using (harness.DownstreamScopes.Enter(ServiceTokenTestData.FirstDownstreamScope))
         {
             using var first = await harness.CallAsync();
@@ -197,6 +206,7 @@ public sealed class ClientCredentialsHandlerTests
         }
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 2);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -235,6 +245,7 @@ public sealed class ClientCredentialsHandlerTests
             ServiceTokenTestData.ResourceUrl, TestContext.Current.CancellationToken);
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",
@@ -273,10 +284,12 @@ public sealed class ClientCredentialsHandlerTests
         harness.Storage.HoldLock(ServiceTokenTestData.LockKey, ServiceTokenTestData.OtherInstanceOwner);
         var call = harness.CallAsync();
         await harness.Time.WaitForTimersAsync(count: 1);
+
         harness.Storage.StoreToken(
             ServiceTokenTestData.TokenKey,
             ServiceTokenTestData.OtherInstanceToken,
             harness.Time.GetUtcNow() + ServiceTokenTestData.NearExpiryAdvance);
+
         harness.Time.Advance(ServiceTokenTestData.PollAdvance);
 
         using var response = await call;
@@ -321,8 +334,10 @@ public sealed class ClientCredentialsHandlerTests
         var otherInstance = harness.CreateClient();
         harness.TokenEndpoint.HoldResponses();
         var firstCall = harness.CallAsync();
+
         var secondCall = otherInstance.GetAsync(
             ServiceTokenTestData.ResourceUrl, TestContext.Current.CancellationToken);
+
         await harness.Time.WaitForTimersAsync(count: 2);
         harness.TokenEndpoint.ReleaseResponses();
         using var first = await firstCall;
@@ -331,6 +346,7 @@ public sealed class ClientCredentialsHandlerTests
         using var second = await secondCall;
 
         harness.TokenEndpoint.RequestCount.Should().Be(expected: 1);
+
         harness.Resource.Authorizations.Should()
             .Equal(
                 $"{BearerPrefix}{ServiceTokenTestData.FirstToken}",

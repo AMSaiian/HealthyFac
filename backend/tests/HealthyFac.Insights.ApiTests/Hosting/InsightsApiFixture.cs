@@ -57,6 +57,7 @@ public sealed class InsightsApiFixture : IAsyncLifetime, IResetBeforeEachTest
         var options = new DbContextOptionsBuilder<InsightsDbContext>()
             .UseNpgsql(_database.ConnectionString, npgsql => npgsql.UseVector())
             .Options;
+
         await using var dbContext = new InsightsDbContext(options);
         await dbContext.Database.MigrateAsync();
 

@@ -27,6 +27,7 @@ public static class SimulatorFixtureExtensions
         {
             using var scope = fixture.CoreScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var company = new Company
             {
                 Name = SimulatorTestData.CompanyName,
@@ -46,8 +47,10 @@ public static class SimulatorFixtureExtensions
         )
         {
             using var scope = fixture.CreateCoreUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<CreateMachineRequest, CreateMachineResponse>>();
+
             var zone = TimeZoneInfo.FindSystemTimeZoneById(SimulatorTestData.CompanyTimeZoneId);
             var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime);
 
@@ -125,6 +128,7 @@ public static class SimulatorFixtureExtensions
             }
 
             using var statusScope = fixture.CreateTelemetryUserScope(machine.CompanyId);
+
             var statusHandler = statusScope.ServiceProvider.GetRequiredService<
                 IRequestHandler<ApplyStatusDefinitionChangesRequest, ApplyStatusDefinitionChangesResponse>>();
 
@@ -133,9 +137,13 @@ public static class SimulatorFixtureExtensions
                 {
                     CompanyId = machine.CompanyId,
                     MachineId = machine.MachineId,
-                    Items = definitions.Statuses
-                        .Select(status => new StatusDefinitionChange { Code = status.Code, Severity = status.Severity })
-                        .ToList(),
+                    Items =
+                    [
+                        .. definitions.Statuses.Select(status => new StatusDefinitionChange
+                        {
+                            Code = status.Code, Severity = status.Severity,
+                        }),
+                    ],
                 });
         }
 
@@ -158,6 +166,7 @@ public static class SimulatorFixtureExtensions
         {
             using var scope = fixture.TelemetryScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var metricId = await dbContext.MetricDefinitions
                 .Where(metric => metric.MachineRegistrationId == machineId && metric.Key == key)
                 .Select(metric => metric.Id)
@@ -165,6 +174,7 @@ public static class SimulatorFixtureExtensions
 
             dbContext.NumericReadings.Add(
                 new NumericReading(metricId, DateTime.UtcNow.AddMinutes(value: -1), value, isOutOfRange: false));
+
             await dbContext.SaveChangesAsync();
         }
 
@@ -182,6 +192,7 @@ public static class SimulatorFixtureExtensions
         public async Task<string> LoadSchemaJsonAsync(ArrangedMachine machine)
         {
             using var scope = fixture.CreateTelemetryUserScope(machine.CompanyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetMetricSchemaRequest, GetMetricSchemaResponse>>();
 
@@ -223,6 +234,7 @@ public static class SimulatorFixtureExtensions
         public async Task<IReadOnlyList<ReceivedMachineMessage>> TickAsync(int count = 1)
         {
             fixture.Subscriber.Clear();
+
             for (var tick = 1; tick <= count; tick++)
             {
                 fixture.Clock.Advance(TimeSpan.FromSeconds(seconds: 1));

@@ -16,6 +16,7 @@ public sealed class RealtimeNotifierTests
 
         fixture.Notifier.AddToGroup(
             RealtimeNotifierTestData.CompanyId, kind, new { Name = "data" }, isActorSkipped: true);
+
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -49,6 +50,7 @@ public sealed class RealtimeNotifierTests
             RealtimeNotificationKind.ShiftChanged,
             new { Name = "data" },
             isActorSkipped: true);
+
         fixture.Notifier.Push();
 
         fixture.Queue.Items.Should().BeEmpty();
@@ -64,6 +66,7 @@ public sealed class RealtimeNotifierTests
             RealtimeNotificationKind.ShiftChanged,
             new { Name = "data" },
             isActorSkipped: true);
+
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -83,6 +86,7 @@ public sealed class RealtimeNotifierTests
             RealtimeNotificationKind.ShiftChanged,
             new { Name = "data" },
             isActorSkipped: false);
+
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -100,6 +104,7 @@ public sealed class RealtimeNotifierTests
             RealtimeNotificationKind.WorkOrderBlocked,
             new { Name = "data" },
             isActorSkipped: true);
+
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -116,6 +121,7 @@ public sealed class RealtimeNotifierTests
             RealtimeNotificationKind.WorkOrderBlocked,
             new { Name = "data" },
             isActorSkipped: false);
+
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;
@@ -132,6 +138,7 @@ public sealed class RealtimeNotifierTests
             RealtimeNotificationKind.IngestFinished,
             new { Name = "data" },
             isActorSkipped: true);
+
         fixture.Notifier.Push();
 
         var push = fixture.Queue.Items.Should().ContainSingle().Subject.Push;

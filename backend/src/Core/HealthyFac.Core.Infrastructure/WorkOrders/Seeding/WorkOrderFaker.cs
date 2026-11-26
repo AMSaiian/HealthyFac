@@ -23,6 +23,7 @@ internal sealed class WorkOrderFaker : Faker<WorkOrder>
     public WorkOrderFaker(Guid companyId, IReadOnlyList<Guid> machineIds, int seed)
     {
         UseSeed(seed);
+
         CustomInstantiator(faker => WorkOrder.Create(
             companyId,
             faker.Hacker.Phrase().ClampLength(max: WorkOrderValidationConstants.TitleMaxLength),

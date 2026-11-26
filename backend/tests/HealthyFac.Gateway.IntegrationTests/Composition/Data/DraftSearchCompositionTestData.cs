@@ -16,7 +16,7 @@ public static class DraftSearchCompositionTestData
     public const int PageLimit = 2;
 
     /// <summary>The limits of the call count test: one below and one above the rows of a source.</summary>
-    public static TheoryData<int> Limits => new() { 5, 50 };
+    public static TheoryData<int> Limits => [5, 50];
 
     public static IReadOnlyList<StubDraftRow> CoreRows =>
     [
@@ -41,9 +41,8 @@ public static class DraftSearchCompositionTestData
     private const int LongListTelemetryCount = 20;
 
     /// <summary>Core finishes on the first page of the long list: it holds fewer rows than the limit.</summary>
-    public static IReadOnlyList<StubDraftRow> LongListCoreRows => CoreRows
-        .Select(row => row with { StateRank = 0 })
-        .ToList();
+    public static IReadOnlyList<StubDraftRow> LongListCoreRows =>
+        [.. CoreRows.Select(row => row with { StateRank = 0 })];
 
     /// <summary>Telemetry holds twice the limit, so it fills the pages after the first.</summary>
     public static IReadOnlyList<StubDraftRow> LongListTelemetryRows =>
@@ -69,7 +68,7 @@ public static class DraftSearchCompositionTestData
         + "\"}]}";
 
     private static StubDraftRow CoreRow(string id, int stateRank) =>
-        new(id, Kind: "machine", stateRank, new JsonObject { [propertyName: "machineName"] = "Core machine" });
+        new(id, Kind: "machine", stateRank, new JsonObject { ["machineName"] = "Core machine" });
 
     private static StubDraftRow TelemetryRow(
         string id,
@@ -84,7 +83,7 @@ public static class DraftSearchCompositionTestData
             stateRank,
             new JsonObject
             {
-                [propertyName: "machineId"] = machineId,
-                [propertyName: "targetMachineDraftId"] = targetMachineDraftId,
+                ["machineId"] = machineId,
+                ["targetMachineDraftId"] = targetMachineDraftId,
             });
 }

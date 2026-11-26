@@ -26,9 +26,9 @@ public sealed class RealtimePushHandlerTests
         fixture.Client.SendCount.Should().Be(expected: 4);
         fixture.Logger.Collector.GetSnapshot().Should().ContainSingle(entry => entry.Level == LogLevel.Warning);
 
-        measurement.Tags[key: "realtime.result"].Should().Be(expected: "failed");
+        measurement.Tags["realtime.result"].Should().Be(expected: "failed");
 
-        duration.Tags[key: "realtime.result"].Should().Be(expected: "failed");
+        duration.Tags["realtime.result"].Should().Be(expected: "failed");
         duration.Value.Should().BeGreaterThanOrEqualTo(RealtimePushHandlerTestData.MinimumRetrySeconds);
     }
 
@@ -38,10 +38,12 @@ public sealed class RealtimePushHandlerTests
         var control = new CircuitBreakerManualControl();
         await control.IsolateAsync(TestContext.Current.CancellationToken);
         var attempts = new AttemptCounter();
+
         var openBreaker = new ResiliencePipelineBuilder()
             .AddStrategy(_ => new CountingStrategy(attempts), new CountingStrategyOptions())
             .AddCircuitBreaker(new CircuitBreakerStrategyOptions { ManualControl = control })
             .Build();
+
         using var fixture = new PushHandlerFixture(openBreaker);
         using var pushes = fixture.CollectPushes();
         using var durations = fixture.CollectDurations();
@@ -55,9 +57,9 @@ public sealed class RealtimePushHandlerTests
         attempts.Count.Should().Be(expected: 1);
         fixture.Logger.Collector.GetSnapshot().Should().BeEmpty();
 
-        measurement.Tags[key: "realtime.result"].Should().Be(expected: "dropped");
+        measurement.Tags["realtime.result"].Should().Be(expected: "dropped");
 
-        duration.Tags[key: "realtime.result"].Should().Be(expected: "dropped");
+        duration.Tags["realtime.result"].Should().Be(expected: "dropped");
     }
 
     [Fact]
@@ -75,17 +77,19 @@ public sealed class RealtimePushHandlerTests
         fixture.Client.SendCount.Should().Be(expected: 1);
         fixture.Clients.UserCalls.Should().Equal(RealtimePushHandlerTestData.UserId.ToString());
 
-        measurement.Tags[key: "realtime.target"].Should().Be(expected: "shiftChanged");
-        measurement.Tags[key: "realtime.result"].Should().Be(expected: "sent");
+        measurement.Tags["realtime.target"].Should().Be(expected: "shiftChanged");
+        measurement.Tags["realtime.result"].Should().Be(expected: "sent");
+
         measurement.Tags.Values.Select(value => value?.ToString())
             .Should()
-            .NotContain(value => value!.Contains(RealtimePushHandlerTestData.UserId.ToString()));
+            .NotContain(value => value.Contains(RealtimePushHandlerTestData.UserId.ToString()));
 
-        duration.Tags[key: "realtime.target"].Should().Be(expected: "shiftChanged");
-        duration.Tags[key: "realtime.result"].Should().Be(expected: "sent");
+        duration.Tags["realtime.target"].Should().Be(expected: "shiftChanged");
+        duration.Tags["realtime.result"].Should().Be(expected: "sent");
+
         duration.Tags.Values.Select(value => value?.ToString())
             .Should()
-            .NotContain(value => value!.Contains(RealtimePushHandlerTestData.UserId.ToString()));
+            .NotContain(value => value.Contains(RealtimePushHandlerTestData.UserId.ToString()));
     }
 
     [Fact]
@@ -100,6 +104,7 @@ public sealed class RealtimePushHandlerTests
             .Should()
             .ContainSingle(candidate => candidate.TraceId == RealtimePushHandlerTestData.ParentContext.TraceId)
             .Subject;
+
         span.OperationName.Should().Be(expected: "Realtime.Push");
         span.ParentSpanId.Should().Be(RealtimePushHandlerTestData.ParentContext.SpanId);
         span.GetTagItem(key: "realtime.target").Should().Be(expected: "shiftChanged");
@@ -118,6 +123,6 @@ public sealed class RealtimePushHandlerTests
 
         var measurement = length.GetMeasurementSnapshot().Should().ContainSingle().Subject;
         measurement.Value.Should().Be(expected: 2);
-        measurement.Tags[key: "background_queue.item_type"].Should().Be(expected: "realtimePush");
+        measurement.Tags["background_queue.item_type"].Should().Be(expected: "realtimePush");
     }
 }

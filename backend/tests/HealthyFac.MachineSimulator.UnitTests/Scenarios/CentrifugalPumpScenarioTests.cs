@@ -18,11 +18,13 @@ public sealed class CentrifugalPumpScenarioTests
 
         sample.IsRunning.Should().BeTrue();
         sample.StatusCodes.Should().Equal("P-22");
-        sample.Values[key: "pump.state"].Should().Be(expected: "running");
-        sample.Values[key: "seal.leakage"].Should().Be(expected: false);
-        ((double)sample.Values[key: "flow.rate"]).Should()
+        sample.Values["pump.state"].Should().Be(expected: "running");
+        sample.Values["seal.leakage"].Should().Be(expected: false);
+
+        ((double)sample.Values["flow.rate"]).Should()
             .BeApproximately(expectedValue: 108, 108 * ValueNoise.MaxShare);
-        sample.Values[key: "pump.operating_hours"].Should().Be(expected: 12030d);
+
+        sample.Values["pump.operating_hours"].Should().Be(expected: 12030d);
     }
 
     [Theory]
@@ -40,7 +42,7 @@ public sealed class CentrifugalPumpScenarioTests
 
         var sample = _scenario.Sample(context);
 
-        ((double)sample.Values[key: "bearing_de.temperature"])
+        ((double)sample.Values["bearing_de.temperature"])
             .Should()
             .BeApproximately(expected, expected * CentrifugalPumpScenarioTestData.Tolerance, caseName);
     }
@@ -74,8 +76,8 @@ public sealed class CentrifugalPumpScenarioTests
 
         sample.IsRunning.Should().BeTrue();
         sample.StatusCodes.Should().BeEquivalentTo("P-22", "P-08");
-        sample.Values[key: "seal.leakage"].Should().Be(expected: true);
-        sample.Values[key: "pump.state"].Should().Be(expected: "running");
+        sample.Values["seal.leakage"].Should().Be(expected: true);
+        sample.Values["pump.state"].Should().Be(expected: "running");
     }
 
     [Fact]
@@ -88,15 +90,16 @@ public sealed class CentrifugalPumpScenarioTests
 
         sample.IsRunning.Should().BeFalse();
         sample.StatusCodes.Should().Equal("P-01");
-        sample.Values[key: "pump.state"].Should().Be(expected: "fault");
-        sample.Values[key: "flow.rate"].Should().Be(expected: 0d);
-        sample.Values[key: "motor.speed"].Should().Be(expected: 0d);
+        sample.Values["pump.state"].Should().Be(expected: "fault");
+        sample.Values["flow.rate"].Should().Be(expected: 0d);
+        sample.Values["motor.speed"].Should().Be(expected: 0d);
     }
 
     [Fact]
     public void Sample_WithTwoDrainingModulesOnFlow_AddsTheirOffsets()
     {
         var modules = ScenarioContextFactory.CreateModules(_scenario);
+
         foreach (var name in new[] { ModuleName.Suction, ModuleName.Discharge })
         {
             modules[name].SetMode(ModuleMode.Draining);
@@ -107,7 +110,7 @@ public sealed class CentrifugalPumpScenarioTests
 
         var sample = _scenario.Sample(context);
 
-        ((double)sample.Values[key: "flow.rate"]).Should()
+        ((double)sample.Values["flow.rate"]).Should()
             .BeApproximately(108 - 48 - 48, 12 * ValueNoise.MaxShare + 0.6);
     }
 }

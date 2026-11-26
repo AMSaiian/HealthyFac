@@ -61,6 +61,6 @@ public sealed class MetricUnitCatalogTests(TelemetryDatabaseFixture fixture)
 
         response.Kinds.Select(kind => kind.Name).Should().BeInAscendingOrder(StringComparer.Ordinal);
         temperature.Units.Select(unit => unit.Name).Should().Equal("DegreeCelsius", "DegreeFahrenheit", "Kelvin");
-        temperature.Units[index: 0].Abbreviation.Should().Be(MetricUnitTestData.CelsiusAbbreviation);
+        temperature.Units[0].Abbreviation.Should().Be(MetricUnitTestData.CelsiusAbbreviation);
     }
 }

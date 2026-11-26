@@ -6,21 +6,25 @@ namespace HealthyFac.Core.UnitTests.Authorization.Data;
 
 public static class CorePermissionsTestData
 {
-    public static IReadOnlyList<PermissionFeature> Features { get; } = typeof(CorePermissions)
-        .GetNestedTypes(BindingFlags.Public)
-        .Select(feature => new PermissionFeature
-        {
-            Name = feature.Name,
-            Constants = ReadConstants(feature),
-            All = (FrozenSet<string>)feature.GetField(nameof(CorePermissions.All))!.GetValue(obj: null)!,
-        })
-        .ToList();
+    public static IReadOnlyList<PermissionFeature> Features { get; } =
+    [
+        .. typeof(CorePermissions)
+            .GetNestedTypes(BindingFlags.Public)
+            .Select(feature => new PermissionFeature
+            {
+                Name = feature.Name,
+                Constants = ReadConstants(feature),
+                All = (FrozenSet<string>)feature.GetField(nameof(CorePermissions.All))!.GetValue(obj: null)!,
+            }),
+    ];
 
-    private static List<string> ReadConstants(Type feature) => feature
-        .GetFields(BindingFlags.Public | BindingFlags.Static)
-        .Where(field => field.IsLiteral && field.FieldType == typeof(string))
-        .Select(field => (string)field.GetRawConstantValue()!)
-        .ToList();
+    private static List<string> ReadConstants(Type feature) =>
+    [
+        .. feature
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!),
+    ];
 }
 
 public sealed record PermissionFeature

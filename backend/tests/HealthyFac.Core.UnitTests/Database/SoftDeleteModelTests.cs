@@ -45,9 +45,11 @@ public sealed class SoftDeleteModelTests
         var options = new DbContextOptionsBuilder<CoreDbContext>().UseNpgsql(UnusedConnectionString).Options;
         using var dbContext = new CoreDbContext(options);
 
-        return dbContext.GetService<IDesignTimeModel>()
-            .Model.GetEntityTypes()
-            .Where(entity => typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType))
-            .ToList();
+        return
+        [
+            .. dbContext.GetService<IDesignTimeModel>()
+                .Model.GetEntityTypes()
+                .Where(entity => typeof(ISoftDeletable).IsAssignableFrom(entity.ClrType)),
+        ];
     }
 }

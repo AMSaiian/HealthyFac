@@ -56,8 +56,10 @@ public sealed class EvaluationConstraintTests(TelemetryEvaluationFixture fixture
     public async Task Save_WithAnOpenEpisodeAfterTheFirstResolved_Succeeds()
     {
         var arrangement = await _fixture.Database.ArrangePhaseMachineAsync();
+
         var firstId = await _fixture.AddResolvableEpisodeAsync(
             arrangement, SignalRule.SilentMachine, metricId: null, statusId: null);
+
         await _fixture.ResolveEpisodeAsync(firstId);
 
         var secondId = await _fixture.AddResolvableEpisodeAsync(

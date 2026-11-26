@@ -19,9 +19,11 @@ public sealed class EmployeeRecipientsTests(CoreDatabaseFixture fixture)
         var companyId = await _fixture.CreateCompanyAsync(EmployeeRecipientsTestData.CompanyName);
         var first = await ArrangeAsync(companyId, EmployeeRecipientsTestData.FirstEmail);
         var second = await ArrangeAsync(companyId, EmployeeRecipientsTestData.SecondEmail);
+
         var unprovisionedId = await _fixture.ArrangeUnprovisionedEmployeeAsync(
             companyId,
             Options(EmployeeRecipientsTestData.UnprovisionedEmail));
+
         using var scope = _fixture.CreateUserScope(companyId);
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 

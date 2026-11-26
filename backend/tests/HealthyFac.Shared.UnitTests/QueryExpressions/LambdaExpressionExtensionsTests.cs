@@ -23,6 +23,7 @@ public sealed class LambdaExpressionExtensionsTests
     {
         Expression<Func<string, int, bool, bool>> template = (text, length, isLong) => isLong && text.Length > length;
         Expression<Func<string, int>> trimmedLength = value => value.Trim().Length;
+
         Expression<Func<string, bool>> startsWithPrefix =
             value => value.StartsWith(LambdaExpressionExtensionsTestData.Prefix);
 

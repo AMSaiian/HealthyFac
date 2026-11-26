@@ -32,8 +32,10 @@ internal static class GrpcInspection
     private static IEnumerable<string> FindMissingSetup(Assembly assembly)
     {
         var name = assembly.GetName().Name;
+
         var isSharedWebReferenced = assembly.GetReferencedAssemblies()
             .Any(reference => reference.Name == ConventionConstants.Grpc.SharedWebAssemblyName);
+
         if (!isSharedWebReferenced)
         {
             yield return $"{name} serves gRPC without a reference to {ConventionConstants.Grpc.SharedWebAssemblyName}";
@@ -42,11 +44,13 @@ internal static class GrpcInspection
         var settingsPath = Path.Combine(
             Path.GetDirectoryName(assembly.Location) ?? string.Empty,
             ConventionConstants.Grpc.SettingsFileName);
+
         var hasPort = File.Exists(settingsPath)
             && JsonDocument.Parse(File.ReadAllText(settingsPath))
                 .RootElement
                 .TryGetProperty(ConventionConstants.Grpc.SettingsSection, out var section)
             && section.TryGetProperty(ConventionConstants.Grpc.SettingsPort, out _);
+
         if (!hasPort)
         {
             yield return $"{name} serves gRPC without {ConventionConstants.Grpc.SettingsSection}:"

@@ -11,7 +11,7 @@ public sealed class ComposedClusterConfigurationTests
     {
         var text = File.ReadAllText(FindRepositoryFile(relativePath));
 
-        var clusters = JsonNode.Parse(text)![propertyName: "ReverseProxy"]![propertyName: "Clusters"]!.AsObject();
+        var clusters = JsonNode.Parse(text)!["ReverseProxy"]!["Clusters"]!.AsObject();
 
         clusters.Select(cluster => cluster.Key).Should().Contain(CompositionTestData.ComposedClusterIds);
     }

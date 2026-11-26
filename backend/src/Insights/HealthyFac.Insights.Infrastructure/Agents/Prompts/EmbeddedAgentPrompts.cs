@@ -52,6 +52,7 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     {
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName)
             ?? throw new InvalidOperationException(string.Format(MissingResourceMessage, resourceName));
+
         using var reader = new StreamReader(stream, Encoding.UTF8);
         var text = reader.ReadToEnd();
 

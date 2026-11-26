@@ -74,6 +74,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IAsyncLi
         await _fixture.WaitForTopicMessagesAsync(topic, expectedCount: 1);
         _fixture.SaveFailure.Arm(new TimeoutException());
         var nextSampledAt = ReceiveMachineMessageTestData.SampledAt.AddSeconds(value: 1);
+
         await _fixture.PublishAsync(
             topic,
             ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage(nextSampledAt)));
@@ -82,6 +83,7 @@ public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IAsyncLi
         await Task.Delay(TimeSpan.FromSeconds(seconds: 2), TestContext.Current.CancellationToken);
         var onTopic = await _fixture.Database.LoadReceivedMessagesByTopicAsync(topic);
         var storedForMachineAfter = await _fixture.Database.LoadReceivedMessagesAsync(machine.MachineId);
+
         var failed = onTopic
             .Where(message => message.Errors.Any(error => error.Code == IntakeErrorCodes.ProcessingFailed))
             .ToList();

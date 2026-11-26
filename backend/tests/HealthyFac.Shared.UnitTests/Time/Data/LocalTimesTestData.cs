@@ -15,6 +15,7 @@ public static class LocalTimesTestData
         get
         {
             var data = new TheoryData<string, string>();
+
             foreach (var dstCase in LoadCases())
             {
                 data.Add(dstCase.Local, dstCase.Utc);
@@ -29,6 +30,7 @@ public static class LocalTimesTestData
         get
         {
             var data = new TheoryData<string, bool>();
+
             foreach (var dstCase in LoadCases())
             {
                 data.Add(dstCase.Local, dstCase.IsSkipped);

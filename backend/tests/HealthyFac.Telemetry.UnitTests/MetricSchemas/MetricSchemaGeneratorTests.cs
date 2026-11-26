@@ -68,8 +68,9 @@ public sealed class MetricSchemaGeneratorTests
     {
         var schema = JsonNode.Parse(CreateSchema())!;
 
-        schema[propertyName: "$schema"]!.GetValue<string>().Should().Be(MetaSchemas.Draft202012Id.ToString());
-        schema[propertyName: "$id"]!.GetValue<string>()
+        schema["$schema"]!.GetValue<string>().Should().Be(MetaSchemas.Draft202012Id.ToString());
+
+        schema["$id"]!.GetValue<string>()
             .Should()
             .Be($"urn:healthyfac:gateways:{MetricSchemaTestData.GatewayId}:metrics:{MetricSchemaTestData.Revision}");
     }
@@ -78,26 +79,31 @@ public sealed class MetricSchemaGeneratorTests
     public void Generate_Always_CarriesRangeStatesUnitAndTitleAsAnnotations()
     {
         var properties =
-            JsonNode.Parse(CreateSchema())![propertyName: "properties"]![propertyName: "metrics"]![
-                propertyName: "properties"]!;
+            JsonNode.Parse(CreateSchema())!["properties"]!["metrics"]![
+                "properties"]!;
 
         var temperature = properties[MetricSchemaTestData.TemperatureKey]!;
         var mode = properties[MetricSchemaTestData.ModeKey]!;
 
-        temperature[propertyName: "title"]!.GetValue<string>().Should().Be(expected: "Spindle temperature");
-        temperature[propertyName: "x-healthyfac-range"]![propertyName: "min"]!.GetValue<double>()
+        temperature["title"]!.GetValue<string>().Should().Be(expected: "Spindle temperature");
+
+        temperature["x-healthyfac-range"]!["min"]!.GetValue<double>()
             .Should()
             .Be(expected: -20);
-        temperature[propertyName: "x-healthyfac-range"]![propertyName: "max"]!.GetValue<double>()
+
+        temperature["x-healthyfac-range"]!["max"]!.GetValue<double>()
             .Should()
             .Be(expected: 200);
-        temperature[propertyName: "x-healthyfac-unit"]![propertyName: "quantity"]!.GetValue<string>()
+
+        temperature["x-healthyfac-unit"]!["quantity"]!.GetValue<string>()
             .Should()
             .Be(expected: "Temperature");
-        temperature[propertyName: "x-healthyfac-unit"]![propertyName: "name"]!.GetValue<string>()
+
+        temperature["x-healthyfac-unit"]!["name"]!.GetValue<string>()
             .Should()
             .Be(expected: "DegreeCelsius");
-        mode[propertyName: "x-healthyfac-states"]!.AsArray()
+
+        mode["x-healthyfac-states"]!.AsArray()
             .Select(state => state!.GetValue<string>())
             .Should()
             .Equal("auto", "manual", "off");
@@ -107,8 +113,8 @@ public sealed class MetricSchemaGeneratorTests
     public void Generate_ForMetricWithoutRange_WritesNoRangeAnnotation()
     {
         var properties =
-            JsonNode.Parse(CreateSchema())![propertyName: "properties"]![propertyName: "metrics"]![
-                propertyName: "properties"]!;
+            JsonNode.Parse(CreateSchema())!["properties"]!["metrics"]![
+                "properties"]!;
 
         var door = properties[MetricSchemaTestData.DoorKey]!.AsObject();
 

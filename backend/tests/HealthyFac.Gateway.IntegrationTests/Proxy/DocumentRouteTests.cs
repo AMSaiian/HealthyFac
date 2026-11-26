@@ -81,6 +81,7 @@ public sealed class DocumentRouteTests(GatewayEnvironment environment) : IAsyncL
         gateway.UseKestrel();
         using var client = gateway.CreateAuthenticatedClient();
         using var body = new ZeroBodyContent(DocumentRouteTestData.BodyAboveCoreLimitBytes);
+
         using var request = new HttpRequestMessage(HttpMethod.Post, DocumentRouteTestData.CoreUploadPath)
         {
             Content = body,
@@ -101,6 +102,7 @@ public sealed class DocumentRouteTests(GatewayEnvironment environment) : IAsyncL
         gateway.UseKestrel();
         using var client = gateway.CreateAuthenticatedClient();
         using var body = new ZeroBodyContent(DocumentRouteTestData.BodyAboveRouteLimitBytes);
+
         using var request = new HttpRequestMessage(HttpMethod.Post, DocumentRouteTestData.UploadPath)
         {
             Content = body,

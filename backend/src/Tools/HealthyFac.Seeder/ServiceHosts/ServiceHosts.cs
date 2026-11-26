@@ -144,7 +144,7 @@ public sealed class ServiceHosts : IAsyncDisposable
     /// <summary>Creates the relay over the databases of the 5 hosts.</summary>
     /// <returns>The relay.</returns>
     public MessageRelay CreateRelay() =>
-        new(All.Select(host => (IRelayEndpoint)new DatabaseRelayEndpoint(host)).ToList());
+        new([.. All.Select(host => (IRelayEndpoint)new DatabaseRelayEndpoint(host))]);
 
     public async ValueTask DisposeAsync()
     {
@@ -163,6 +163,7 @@ public sealed class ServiceHosts : IAsyncDisposable
     private static void RemoveRebusRegistrations(IServiceCollection services)
     {
         var rebusDescriptors = services.Where(IsFromRebusAssembly).ToList();
+
         foreach (var descriptor in rebusDescriptors)
         {
             services.Remove(descriptor);
@@ -196,6 +197,7 @@ public sealed class ServiceHosts : IAsyncDisposable
                 provider.GetRequiredService<IOptions<ServiceTokenOptions>>(),
                 TimeProvider.System,
                 Random.Shared)));
+
         services.Replace(
             ServiceDescriptor.Singleton(provider => new TokenStore(
                 provider.GetRequiredService<ITokenCacheStorage>(),
@@ -203,6 +205,7 @@ public sealed class ServiceHosts : IAsyncDisposable
                 provider.GetRequiredService<IOptions<ServiceTokenOptions>>(),
                 provider.GetRequiredService<IOptions<ServiceOptions>>(),
                 provider.GetRequiredService<ILogger<TokenStore>>())));
+
         services.Replace(
             ServiceDescriptor.Singleton(provider => new ServiceTokenCache(
                 provider.GetRequiredService<TokenEndpointClient>(),
@@ -214,7 +217,9 @@ public sealed class ServiceHosts : IAsyncDisposable
     {
         var connectionStringKey = ConfigurationPath.Combine(
             SeederProcess.ConnectionStringsSection, connectionStringName);
+
         var connectionString = configuration[connectionStringKey];
+
         if (string.IsNullOrEmpty(connectionString))
         {
             return configuration;
@@ -244,6 +249,7 @@ public sealed class ServiceHosts : IAsyncDisposable
     )
     {
         var environment = new SeederHostEnvironment { ContentRootPath = baseDirectory };
+
         var built = new ConfigurationBuilder()
             .SetBasePath(baseDirectory)
             .AddJsonFile(Path.Combine(ServicesDirectory, name.Value, SettingsFileName), optional: false)
@@ -253,6 +259,7 @@ public sealed class ServiceHosts : IAsyncDisposable
             .AddJsonFile(Path.Combine(ServicesDirectory, name.Value, DeploymentFileName), optional: true)
             .AddConfiguration(rootConfiguration.GetSection($"{SectionPrefix}:{name.Value}"))
             .Build();
+
         var configuration = NameDatabaseSessions(built, connectionStringName);
 
         var services = new ServiceCollection();
@@ -270,6 +277,7 @@ public sealed class ServiceHosts : IAsyncDisposable
         UseRealClockForServiceTokens(services);
 
         var provider = services.BuildServiceProvider(validateScopes: true);
+
         try
         {
             provider.GetService<IStartupValidator>()?.Validate();
@@ -279,6 +287,6 @@ public sealed class ServiceHosts : IAsyncDisposable
             throw new InvalidOperationException(ServiceHostErrors.HostBuildFailed(name.Value, exception.Message));
         }
 
-        return new ServiceHost(name, provider, services.ToList(), initialize);
+        return new ServiceHost(name, provider, [.. services], initialize);
     }
 }

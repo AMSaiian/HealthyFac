@@ -61,11 +61,11 @@ public static class ProvisioningTestData
         DeactivatedAt = DateTime.UtcNow,
     };
 
-    public static TheoryData<EmployeeDeactivated> ValidDeactivatedMessages => new()
-    {
+    public static TheoryData<EmployeeDeactivated> ValidDeactivatedMessages =>
+    [
         CreateDeactivated(Guid.CreateVersion7()),
         CreateDeactivated(identityUserId: null),
-    };
+    ];
 
     public static TheoryData<EmployeeDeactivated, string> InvalidDeactivatedMessagesWithExpectedError => new()
     {

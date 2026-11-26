@@ -183,6 +183,7 @@ public sealed class ActorClaimsReaderTests
             [ActorTestData.CompanyId.ToString()],
             ActorTestData.EmployeeId.ToString(),
             IncomingTokenTestData.ServiceClientId);
+
         var headers = ActorClaimsTestData.ActorHeaders(
             ActorTestData.OtherUserId.ToString(),
             ActorTestData.OtherCompanyId.ToString());

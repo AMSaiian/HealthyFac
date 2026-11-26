@@ -79,6 +79,7 @@ public sealed class DocumentApiFixture : IAsyncLifetime, IResetBeforeEachTest
 
         await using var dbContext = new DocumentDbContext(
             new DbContextOptionsBuilder<DocumentDbContext>().UseNpgsql(_database.ConnectionString).Options);
+
         _resetter = await DatabaseResetter.CreateAsync(_database.ConnectionString, dbContext);
     }
 

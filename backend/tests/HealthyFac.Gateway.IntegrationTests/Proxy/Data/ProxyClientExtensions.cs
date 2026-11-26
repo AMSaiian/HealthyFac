@@ -20,9 +20,11 @@ public static class ProxyClientExtensions
         public async Task WaitForStatusAsync(string route, HttpStatusCode statusCode, TimeSpan waitLimit)
         {
             var startedAt = Stopwatch.GetTimestamp();
+
             while (Stopwatch.GetElapsedTime(startedAt) < waitLimit)
             {
                 using var response = await client.GetAsync(route);
+
                 if (response.StatusCode == statusCode)
                 {
                     return;

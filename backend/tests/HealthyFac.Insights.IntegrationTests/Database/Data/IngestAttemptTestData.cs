@@ -57,6 +57,7 @@ public static class IngestAttemptTestData
             attemptId,
             extension: "pdf",
             pageCount: 1);
+
         document.AddChunk(location: "page 1", text: "Text", new float[EmbeddingDimensions]);
 
         return document;
@@ -91,14 +92,17 @@ public static class IngestAttemptTestData
         {
             using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             limit.CancelAfter(timeout);
+
             while (true)
             {
                 using var scope = fixture.ScopeFactory.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<InsightsDbContext>();
+
                 var waiting = await dbContext.Database
                     .SqlQuery<int>(
                         $"SELECT count(*)::int AS \"Value\" FROM pg_stat_activity WHERE wait_event_type = 'Lock'")
                     .SingleAsync(limit.Token);
+
                 if (waiting > 0)
                 {
                     return;

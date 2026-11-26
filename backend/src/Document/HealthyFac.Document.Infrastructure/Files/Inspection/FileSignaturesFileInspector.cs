@@ -82,6 +82,7 @@ public sealed class FileSignaturesFileInspector : IFileInspector
     private static bool IsDeclaredTypeAgreeing(AllowedFileType type, string declaredContentType)
     {
         var isTextType = type.IsText;
+
         var isTypeless = string.IsNullOrWhiteSpace(declaredContentType)
             || declaredContentType.StartsWith(OctetStream, StringComparison.OrdinalIgnoreCase);
 

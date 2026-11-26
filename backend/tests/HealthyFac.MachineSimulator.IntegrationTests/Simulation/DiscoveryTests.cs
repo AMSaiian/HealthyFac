@@ -83,10 +83,12 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
     public async Task Tick_WithGoLiveDateInTheFuture_PublishesNothing()
     {
         var companyId = await _fixture.CreateCompanyAsync();
+
         var machine = await _fixture.CreateMachineAsync(
             companyId,
             SimulatorTestData.GenericSerialNumber,
             goLiveInDays: 2);
+
         await _fixture.RegisterMachineAsync(machine);
         await _fixture.DiscoverAsync();
 
@@ -101,10 +103,12 @@ public sealed class DiscoveryTests(SimulatorFixture fixture)
         var machine = await _fixture.ArrangeRunningMachineAsync(
             ScenarioBinding.CncSerialNumber,
             isDiscovered: false);
+
         await _fixture.StoreReadingAsync(
             machine.MachineId,
             SimulatorTestData.CounterKey,
             SimulatorTestData.StoredCounterValue);
+
         await _fixture.DiscoverAsync();
 
         var view = _fixture.Engine.Find(machine.MachineId, _fixture.Clock.GetUtcNow().UtcDateTime);

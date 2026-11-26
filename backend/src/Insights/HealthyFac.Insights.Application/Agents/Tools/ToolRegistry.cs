@@ -31,7 +31,7 @@ public sealed class ToolRegistry
         _json = json;
         _logger = logger;
         _scopes = scopes;
-        _toolTypes = toolTypes.ToList();
+        _toolTypes = [.. toolTypes];
     }
 
     /// <summary>
@@ -40,9 +40,7 @@ public sealed class ToolRegistry
     /// <param name="assembly">The assembly to scan.</param>
     /// <returns>The tool request types.</returns>
     public static IReadOnlyList<Type> FindToolTypes(Assembly assembly) =>
-        assembly.GetTypes()
-            .Where(type => type.GetCustomAttribute<AgentToolAttribute>() is not null)
-            .ToList();
+        [.. assembly.GetTypes().Where(type => type.GetCustomAttribute<AgentToolAttribute>() is not null)];
 
     /// <summary>
     /// Builds one function for each tool of the role.
@@ -54,11 +52,12 @@ public sealed class ToolRegistry
     /// Thrown when a type with the attribute does not implement the tool interface.
     /// </exception>
     public IReadOnlyList<AIFunction> For(AgentRole role, ToolContext context) =>
-        _toolTypes
+    [
+        .. _toolTypes
             .Select(type => (Type: type, Attribute: type.GetCustomAttribute<AgentToolAttribute>()!))
             .Where(tool => tool.Attribute.Role == role.Value)
-            .Select(tool => Build(tool.Type, tool.Attribute, context))
-            .ToList();
+            .Select(tool => Build(tool.Type, tool.Attribute, context)),
+    ];
 
     private AIFunction Build(Type type, AgentToolAttribute attribute, ToolContext context)
     {
@@ -66,6 +65,7 @@ public sealed class ToolRegistry
                 .SingleOrDefault(candidate => candidate.IsGenericType
                     && candidate.GetGenericTypeDefinition() == typeof(IAgentToolRequest<,,>))
             ?? throw new InvalidOperationException(string.Format(NotAToolMessage, type.Name));
+
         var arguments = contract.GetGenericArguments();
         var functionType = typeof(ToolFunction<,,>).MakeGenericType(type, arguments[1], arguments[2]);
 

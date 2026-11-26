@@ -4,16 +4,16 @@ namespace HealthyFac.Shared.UnitTests.CrossOrigin.Data;
 
 public static class CorsPolicyOptionsValidatorTestData
 {
-    public static TheoryData<int> AboveBrowserLimit => new()
-    {
+    public static TheoryData<int> AboveBrowserLimit =>
+    [
         7201,
-    };
+    ];
 
-    public static TheoryData<int> ValidPreflightMaxAges => new()
-    {
+    public static TheoryData<int> ValidPreflightMaxAges =>
+    [
         1,
         7200,
-    };
+    ];
 
     public static string AboveBrowserLimitMessage { get; } = CorsValidationMessages.PreflightMaxAgeAboveBrowserLimit
         .Replace(oldValue: "{ComparisonValue}", CorsConstants.MaxPreflightMaxAgeSeconds.ToString());

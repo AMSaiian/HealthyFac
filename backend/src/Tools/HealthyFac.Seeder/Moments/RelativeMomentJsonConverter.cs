@@ -10,6 +10,7 @@ public sealed class RelativeMomentJsonConverter : JsonConverter<RelativeMoment>
     public override RelativeMoment Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var text = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+
         try
         {
             return RelativeMoment.Parse(text ?? string.Empty);

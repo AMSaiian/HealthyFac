@@ -70,6 +70,7 @@ public sealed class DriftPipeline
         var z = Statistics.Z(min: 0, max: 200, SignalSeries.Settings);
         var (condition, snapshot) = DriftRule.Evaluate(value, z, Rules);
         FirstDriftConditionAt ??= condition.IsOpen ? time : null;
+
         var decision = _driftStreak.Observe(
             condition,
             _openDrift,
@@ -86,6 +87,7 @@ public sealed class DriftPipeline
     private void RunTrend(DateTime time, double value)
     {
         var forecast = Statistics.ForecastSeconds(alarmLow: null, AlarmHigh);
+
         var (condition, snapshot) = TrendRule.Evaluate(
             value,
             forecast,
@@ -93,7 +95,9 @@ public sealed class DriftPipeline
             Statistics.Sigma(min: 0, max: 200, SignalSeries.Settings),
             MetricBehavior.Level,
             Rules);
+
         FirstTrendConditionAt ??= condition.IsOpen ? time : null;
+
         var decision = _trendStreak.Observe(
             condition,
             _openTrend,

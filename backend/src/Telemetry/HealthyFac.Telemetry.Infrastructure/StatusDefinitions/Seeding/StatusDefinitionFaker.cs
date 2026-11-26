@@ -22,6 +22,7 @@ internal sealed class StatusDefinitionFaker : Faker<StatusDefinition>
     public StatusDefinitionFaker(MachineRegistration registration, int seed)
     {
         UseSeed(seed);
+
         CustomInstantiator(faker => new StatusDefinition(
             registration.Id,
             string.Format(CodeFormat, faker.IndexFaker + 1),

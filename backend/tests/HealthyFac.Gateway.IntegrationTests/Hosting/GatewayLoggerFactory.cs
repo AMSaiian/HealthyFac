@@ -31,6 +31,7 @@ public static class GatewayLoggerFactory
         }
 
         services.AddSingleton<Serilog.ILogger>(GetLogger);
+
         services.AddSingleton<ILoggerFactory>(provider =>
         {
             var hostLogger = GetLogger(provider);
@@ -47,6 +48,7 @@ public static class GatewayLoggerFactory
     public static async Task WaitForLineAsync(LogTextCapture logs, Func<string, bool> isMatch)
     {
         var deadline = DateTimeOffset.UtcNow + LineTimeout;
+
         while (DateTimeOffset.UtcNow < deadline && !logs.Lines.Any(isMatch))
         {
             await Task.Delay(PollInterval, TestContext.Current.CancellationToken);

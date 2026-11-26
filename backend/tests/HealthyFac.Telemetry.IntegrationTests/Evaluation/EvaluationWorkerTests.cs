@@ -24,6 +24,7 @@ public sealed class EvaluationWorkerTests(TelemetryEvaluationFixture fixture)
         var counts = await Task.WhenAll(
             worker.RunOnceAsync(CancellationToken.None),
             worker.RunOnceAsync(CancellationToken.None));
+
         var again = await worker.RunOnceAsync(CancellationToken.None);
 
         var evaluations = new List<DateTime?>();

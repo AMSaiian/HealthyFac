@@ -41,27 +41,31 @@ public record OperatingPhaseResponse
             Description = phase.Description,
             Priority = phase.Priority,
             IsTracked = phase.IsTracked,
-            Conditions = phase.Conditions
-                .Select(condition => new PhaseConditionResponse
-                {
-                    MetricDefinitionId = condition.MetricDefinitionId,
-                    StatusDefinitionId = condition.StatusDefinitionId,
-                    Operator = condition.Operator,
-                    Value = condition.Value,
-                    UpperValue = condition.UpperValue,
-                    States = condition.States,
-                })
-                .ToList(),
-            Limits = phase.Limits
-                .Select(limit => new PhaseLimitResponse
-                {
-                    MetricDefinitionId = limit.MetricDefinitionId,
-                    WarningLow = limit.WarningLow,
-                    WarningHigh = limit.WarningHigh,
-                    AlarmLow = limit.AlarmLow,
-                    AlarmHigh = limit.AlarmHigh,
-                })
-                .ToList(),
+            Conditions =
+            [
+                .. phase.Conditions
+                    .Select(condition => new PhaseConditionResponse
+                    {
+                        MetricDefinitionId = condition.MetricDefinitionId,
+                        StatusDefinitionId = condition.StatusDefinitionId,
+                        Operator = condition.Operator,
+                        Value = condition.Value,
+                        UpperValue = condition.UpperValue,
+                        States = condition.States,
+                    }),
+            ],
+            Limits =
+            [
+                .. phase.Limits
+                    .Select(limit => new PhaseLimitResponse
+                    {
+                        MetricDefinitionId = limit.MetricDefinitionId,
+                        WarningLow = limit.WarningLow,
+                        WarningHigh = limit.WarningHigh,
+                        AlarmLow = limit.AlarmLow,
+                        AlarmHigh = limit.AlarmHigh,
+                    }),
+            ],
             CreatedAt = phase.CreatedAt,
             UpdatedAt = phase.UpdatedAt,
         };

@@ -30,18 +30,20 @@ public sealed class CoreWorkOrderCatalog(IHttpClientFactory httpClientFactory, I
     {
         var payload = await ReadPayloadAsync(machineId, limit, cancellationToken);
 
-        return payload
-            .Select(item => new OpenWorkOrderInfo
-            {
-                Id = _idEncryptor.Decrypt(item.Id),
-                Title = item.Title,
-                Status = item.Status,
-                Priority = item.Priority,
-                Category = item.Category,
-                PlannedStartUtc = item.PlannedStartUtc,
-                PlannedEndUtc = item.PlannedEndUtc,
-            })
-            .ToList();
+        return
+        [
+            .. payload
+                .Select(item => new OpenWorkOrderInfo
+                {
+                    Id = _idEncryptor.Decrypt(item.Id),
+                    Title = item.Title,
+                    Status = item.Status,
+                    Priority = item.Priority,
+                    Category = item.Category,
+                    PlannedStartUtc = item.PlannedStartUtc,
+                    PlannedEndUtc = item.PlannedEndUtc,
+                }),
+        ];
     }
 
     /// <summary>
@@ -58,9 +60,11 @@ public sealed class CoreWorkOrderCatalog(IHttpClientFactory httpClientFactory, I
         try
         {
             using var client = _httpClientFactory.CreateClient(CoreClientNames.Client);
+
             using var response = await client.GetAsync(
                 string.Format(OpenWorkOrdersFormat, _idEncryptor.Encrypt(machineId), limit),
                 cancellationToken);
+
             await response.EnsureSuccessAsync(cancellationToken);
 
             return await response.Content.ReadFromJsonAsync<List<OpenWorkOrderPayload>>(cancellationToken) ?? [];

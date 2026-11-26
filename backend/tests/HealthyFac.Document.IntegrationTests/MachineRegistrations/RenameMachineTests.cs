@@ -33,6 +33,7 @@ public sealed class RenameMachineTests(DocumentDatabaseFixture fixture)
     {
         var created = MachineRegistrationTestData.CreateMessage();
         await _fixture.RegisterMachineAsync(created);
+
         await _fixture.RenameMachineAsync(
             MachineRegistrationTestData.CreateRenamedMessage(
                 created.MachineId, NewName, MachineRegistrationTestData.RenamedAt));

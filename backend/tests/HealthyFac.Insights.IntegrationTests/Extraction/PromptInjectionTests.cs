@@ -29,6 +29,7 @@ public sealed class PromptInjectionTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = _ => Task.FromResult(
             new ConvertedDocument
             {
@@ -52,6 +53,7 @@ public sealed class PromptInjectionTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = _ => Task.FromResult(
             new ConvertedDocument
             {
@@ -74,6 +76,7 @@ public sealed class PromptInjectionTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Chat.ScriptToolCall(
             callId: "machine-1", functionName: "propose_machine", MachineWithForeignTarget);
 

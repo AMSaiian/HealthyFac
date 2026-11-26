@@ -71,7 +71,8 @@ public sealed class TimelineRunner
             .OrderBy(entry => entry.At)
             .ToList();
 
-        await InitializeAsync(ordered.Count > 0 ? ordered[index: 0].At : _anchor, cancellationToken);
+        await InitializeAsync(ordered.Count > 0 ? ordered[0].At : _anchor, cancellationToken);
+
         if (_continueAfterInitializeAsync is not null && !await _continueAfterInitializeAsync(cancellationToken))
         {
             return;
@@ -88,6 +89,7 @@ public sealed class TimelineRunner
     private async Task InitializeAsync(DateTimeOffset earliest, CancellationToken cancellationToken)
     {
         _log(InitializationItem);
+
         try
         {
             _clock.Enter(earliest - InitializationLead, InitializationItem);
@@ -111,6 +113,7 @@ public sealed class TimelineRunner
     {
         var item = planned.Event.Item;
         _log(item);
+
         try
         {
             _clock.Enter(at, item);

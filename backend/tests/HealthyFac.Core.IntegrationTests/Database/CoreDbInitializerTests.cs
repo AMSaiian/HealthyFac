@@ -21,6 +21,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
 
         using var scope = _fixture.ScopeFactory.CreateScope();
+
         var roles = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
             .AsNoTracking()
@@ -46,11 +47,13 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
 
         using var scope = _fixture.ScopeFactory.CreateScope();
+
         var workerName = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
             .Where(role => role.Code == RoleCode.Worker)
             .Select(role => role.Name)
             .SingleAsync(TestContext.Current.CancellationToken);
+
         workerName.Should().NotBe(DatabaseTestData.ChangedRoleName);
     }
 
@@ -58,6 +61,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
     public async Task SeedRequiredDataAsync_WithSoftDeletedRole_AddsOneActiveRoleAndKeepsDeletedRowDeleted()
     {
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
+
         using (var deleteScope = _fixture.ScopeFactory.CreateScope())
         {
             await deleteScope.ServiceProvider.GetRequiredService<CoreDbContext>()
@@ -71,6 +75,7 @@ public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
         await SeedAsync(initializer => initializer.SeedRequiredDataAsync());
 
         using var scope = _fixture.ScopeFactory.CreateScope();
+
         var supervisors = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
             .Roles
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])

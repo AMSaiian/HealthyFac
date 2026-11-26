@@ -18,6 +18,7 @@ public sealed class GrpcPortMiddleware(IOptions<GrpcEndpointOptions> options) : 
     public Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         var isGrpcPort = context.Connection.LocalPort == _grpcPort;
+
         var isGrpcCall = context.Request.ContentType?.StartsWith(
                 GrpcConstants.ContentType,
                 StringComparison.OrdinalIgnoreCase)

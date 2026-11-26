@@ -60,6 +60,7 @@ internal sealed class ValidationRequestHandlerDecorator<TRequest, TResponse>(
         var applicableValidators = _validators.ToList();
 
         using var activity = UseCaseActivitySource.Instance.StartActivity(ObservabilityConstants.Spans.Validation);
+
         activity
             .WithTag(ObservabilityConstants.Tags.UseCase, requestName)
             .WithTag(ObservabilityConstants.Tags.ValidatorCount, applicableValidators.Count);

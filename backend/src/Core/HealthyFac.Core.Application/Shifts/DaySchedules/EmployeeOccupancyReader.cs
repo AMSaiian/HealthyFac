@@ -60,12 +60,14 @@ public sealed class EmployeeOccupancyReader(ICoreDbContext dbContext)
                 })
             .ToListAsync(cancellationToken);
 
-        return rows
-            .Select(row => Occupancy.Of(
-                row.Id,
-                row.PlannedStartUtc!.Value,
-                row.Estimate,
-                row.Status == WorkOrderStatus.Completed ? row.ChangedAt : null))
-            .ToList();
+        return
+        [
+            .. rows
+                .Select(row => Occupancy.Of(
+                    row.Id,
+                    row.PlannedStartUtc!.Value,
+                    row.Estimate,
+                    row.Status == WorkOrderStatus.Completed ? row.ChangedAt : null)),
+        ];
     }
 }

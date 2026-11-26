@@ -64,7 +64,7 @@ public sealed class EmployeeInviteAuthorizationTests(CoreApiFixture fixture)
     {
         var extraFields = new Dictionary<string, object?>
         {
-            [key: "companyId"] = _fixture.IdEncryptor.Encrypt(EmployeeInviteApiTestData.OtherCompanyId),
+            ["companyId"] = _fixture.IdEncryptor.Encrypt(EmployeeInviteApiTestData.OtherCompanyId),
         };
 
         var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);

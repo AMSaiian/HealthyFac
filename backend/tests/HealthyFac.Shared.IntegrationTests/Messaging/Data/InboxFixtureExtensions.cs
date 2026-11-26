@@ -19,6 +19,7 @@ public static class InboxFixtureExtensions
         {
             using var scope = fixture.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+
             dbContext.InboxMessages.Add(
                 new InboxMessage(
                     messageId,
@@ -58,6 +59,7 @@ public static class InboxFixtureExtensions
         public async Task<List<HandledCall>> WaitForHandledCallsAsync(string text)
         {
             using var cancellation = new CancellationTokenSource(TransportTestData.WaitTimeout);
+
             while (!cancellation.IsCancellationRequested && fixture.Recorder.CallsFor(text).Count == 0)
             {
                 await Task.Delay(TransportTestData.PollDelay);

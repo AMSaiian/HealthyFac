@@ -20,6 +20,7 @@ public static class TelemetryResourceHarness
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(settings)
             .Build();
+
         var services = new ServiceCollection()
             .AddSingleton<IConfiguration>(configuration)
             .AddSingleton<IHostEnvironment>(
@@ -28,6 +29,7 @@ public static class TelemetryResourceHarness
                     EnvironmentName = TelemetryResourceTestData.EnvironmentName,
                     ApplicationName = TelemetryResourceTestData.ApplicationName,
                 });
+
         services.AddServiceOptions(configuration);
         services.AddSharedTracing(configuration);
 

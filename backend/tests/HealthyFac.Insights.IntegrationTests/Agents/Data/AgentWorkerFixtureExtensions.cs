@@ -60,6 +60,7 @@ public static class AgentWorkerFixtureExtensions
 
             dbContext.AgentRuns.Add(
                 new AgentRun(role, caseId, ingestAttemptId: null, fixture.Time.GetUtcNow().UtcDateTime));
+
             await dbContext.SaveChangesAsync();
         }
 
@@ -114,6 +115,7 @@ public static class AgentWorkerFixtureExtensions
 
             dbContext.AgentActions.Add(
                 new AgentAction(runId, callId: "call-1", AgentActionKind.CloseCase, payload: "{}"));
+
             await dbContext.SaveChangesAsync();
         }
 

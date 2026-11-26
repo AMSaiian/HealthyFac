@@ -41,6 +41,7 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         workOrder.Files.Select(link => link.FileId)
             .Should()
             .BeEquivalentTo([WorkOrderTestData.FileB, WorkOrderTestData.FileC]);
+
         workOrder.Title.Should().Be(WorkOrderTestData.ChangedTitle);
         workOrder.Priority.Should().Be(WorkOrderPriority.Critical);
         linkRows.Should().Be(expected: 3);
@@ -100,6 +101,7 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         var workOrderId = await CreateBacklogAsync(tenant, WorkOrderTestData.FileA);
         var staleRowVersion = await _fixture.LoadWorkOrderRowVersionAsync(workOrderId);
+
         await _fixture.UpdateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -153,11 +155,13 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
     public async Task UpdateWorkOrder_WithLongerEstimateThatOverlapsTheNextOne_ThrowsSlotTaken()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         var first = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
         await CreateScheduledAsync(tenant, WorkOrderTestData.NextTime);
@@ -266,6 +270,7 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
 
         workOrder.CurrentRevision.Should().Be(expected: 4);
         workOrder.Current.Status.Should().Be(WorkOrderStatus.InProgress);
+
         workOrder.Current.PlannedStartLocal.Should()
             .Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.NextTime));
     }
@@ -278,11 +283,13 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         await _fixture.ChangeWorkOrderStatusAsync(scheduled.Id, WorkOrderStatus.InProgress);
         _fixture.Clock.Release();
         var other = await _fixture.ArrangeOtherEmployeeAsync(tenant.CompanyId, WorkOrderTestData.OtherAssigneeEmail);
+
         await _fixture.SeedVersionAsync(
             other.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         _fixture.RealtimeQueue.Clear();
 
@@ -294,8 +301,10 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         workOrder.CurrentRevision.Should().Be(expected: 4);
         workOrder.Current.AssigneeId.Should().Be(other.EmployeeId);
         workOrder.Current.Status.Should().Be(WorkOrderStatus.InProgress);
+
         pushes.Single(push => push.UserId == other.IdentityUserId).Notification!.Kind.Should()
             .Be(RealtimeNotificationKind.WorkOrderAssigned);
+
         pushes.Should().NotContain(push => push.UserId == tenant.IdentityUserId);
     }
 
@@ -306,12 +315,15 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         var scheduled = await CreateScheduledAsync(tenant, WorkOrderTestData.ScheduledTime);
         _fixture.Clock.Release();
         var other = await _fixture.ArrangeOtherEmployeeAsync(tenant.CompanyId, WorkOrderTestData.OtherAssigneeEmail);
+
         await _fixture.SeedVersionAsync(
             other.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
+
         await _fixture.CreateWorkOrderAsync(
             tenant.CompanyId,
             tenant.IdentityUserId,
@@ -371,10 +383,12 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeScheduledTenantAsync();
         var workOrderId = await CreateBacklogAsync(tenant);
         _fixture.Clock.Release();
+
         var gone = await _fixture.ArrangeOtherEmployeeAsync(
             tenant.CompanyId,
             WorkOrderTestData.DeactivatedEmail,
             isDeactivated: true);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         var act = () => UpdateScheduleAsync(tenant, workOrderId, gone.EmployeeId, WorkOrderTestData.ScheduledTime);
@@ -422,6 +436,7 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
 
         workOrder.CurrentRevision.Should().Be(expected: 3);
         workOrder.Current.Estimate.Should().Be(TimeSpan.FromMinutes(WorkOrderTestData.LongerEstimate));
+
         workOrder.Current.PlannedStartLocal.Should()
             .Be(ShiftTestData.LocalStart(ShiftTestData.Tomorrow, WorkOrderTestData.NextTime));
     }
@@ -492,6 +507,7 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<UnprocessableException>()
             .WithMessage(WorkOrderErrors.Rejections.CompletedScheduleLocked);
+
         var rowsAfter = await _fixture.CountHistoryRowsAsync(workOrderId);
         var day = await ReadDayAsync(tenant);
 
@@ -552,9 +568,12 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeScheduledTenantAsync();
         var created = await CreateScheduledAsync(tenant, time: "09:00");
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, created.Id, WorkOrderStatus.InProgress);
+
         _fixture.Clock.Freeze(LateCompletionAt);
+
         await _fixture.ChangeStatusAsync(
             tenant.CompanyId, tenant.IdentityUserId, created.Id, WorkOrderStatus.Completed);
 
@@ -576,11 +595,13 @@ public sealed class UpdateWorkOrderTests(CoreDatabaseFixture fixture)
     private async Task<ShiftTenant> ArrangeScheduledTenantAsync()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         return tenant;

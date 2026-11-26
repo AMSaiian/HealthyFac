@@ -27,14 +27,18 @@ public static class ShiftApiFixtureExtensions
         public async Task<ShiftApiEmployee> ArrangeActiveEmployeeAsync(string email)
         {
             var identityUserId = Guid.CreateVersion7();
+
             using var scope = fixture.ScopeFactory.CreateActorScope(
                 ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             var tokens = scope.ServiceProvider.GetRequiredService<IInviteTokenService>();
+
             var roleId = await dbContext.Roles
                 .Where(role => role.Code == RoleCode.Worker)
                 .Select(role => role.Id)
                 .SingleAsync();
+
             var salt = tokens.CreateSalt();
             var invite = new EmployeeInvite(fixture.CompanyId, email, roleId, salt, DateTime.UtcNow.AddHours(value: 1));
             dbContext.EmployeeInvites.Add(invite);
@@ -49,6 +53,7 @@ public static class ShiftApiFixtureExtensions
                         FirstName = ShiftApiTestData.FirstName,
                         LastName = ShiftApiTestData.LastName,
                     });
+
             await scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<IdentityProvisioned>>()
                 .HandleAsync(
@@ -80,6 +85,7 @@ public static class ShiftApiFixtureExtensions
         {
             using var client = fixture.CreateClient();
             using var request = new HttpRequestMessage(method, path);
+
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
@@ -110,7 +116,7 @@ public static class ShiftApiFixtureExtensions
         }
 
         public string CreateOverrideBody() =>
-            new JsonObject { [propertyName: "blocks"] = new JsonArray() }.ToJsonString();
+            new JsonObject { ["blocks"] = new JsonArray() }.ToJsonString();
     }
 }
 

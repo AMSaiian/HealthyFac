@@ -57,6 +57,7 @@ public sealed class TokenEndpointClient(
             [ServiceTokenConstants.Form.ClientId] = _options.ClientId,
             [ServiceTokenConstants.Form.ClientSecret] = _options.ClientSecret,
         };
+
         using var content = new FormUrlEncodedContent(form);
         using var client = _httpClientFactory.CreateClient(ServiceTokenConstants.TokenClientName);
 
@@ -64,6 +65,7 @@ public sealed class TokenEndpointClient(
         await response.EnsureSuccessAsync(cancellationToken);
 
         var body = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken);
+
         if (body is null || string.IsNullOrWhiteSpace(body.AccessToken) || body.ExpiresInSeconds <= 0)
         {
             throw ServiceTokenErrors.TokenResponseInvalid();

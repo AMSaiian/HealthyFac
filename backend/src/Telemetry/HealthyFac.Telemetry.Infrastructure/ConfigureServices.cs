@@ -62,6 +62,7 @@ public static class ConfigureServices
             services.AddScoped<AuditableEntityInterceptor>();
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);
+
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException(DatabaseConstants.Errors.MissingConnectionString);
@@ -76,6 +77,7 @@ public static class ConfigureServices
                             TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
                             errorCodesToAdd: null)
                         .ConfigureParentOnlyTracing());
+
                 options.UseExceptionProcessor();
 
                 options.AddInterceptors(
@@ -108,8 +110,10 @@ public static class ConfigureServices
 
             services.AddValidatedOptions<DetectionOptions, DetectionOptionsValidator>(
                 DetectionOptions.SectionName, configuration);
+
             services.AddValidatedOptions<MqttIntakeOptions, MqttIntakeOptionsValidator>(
                 MqttIntakeOptions.SectionName, configuration);
+
             services.AddSingleton<DetectionMetrics>();
             services.AddSingleton<FleetSilence>();
             services.AddScoped<EvaluationClaims>();

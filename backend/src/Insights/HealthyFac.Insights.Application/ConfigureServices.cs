@@ -30,6 +30,7 @@ public static class ConfigureServices
             services.AddSingleton<DraftProposalMapper>();
             services.AddScoped<RunCommit>();
             services.AddSingleton<AgentMetrics>();
+
             services.AddSingleton(provider => new ToolRegistry(
                 provider.GetRequiredService<IAdvisorScopes>(),
                 ToolRegistry.FindToolTypes(InsightsApplicationAssembly.Instance),

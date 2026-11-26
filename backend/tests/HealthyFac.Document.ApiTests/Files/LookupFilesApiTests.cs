@@ -26,11 +26,12 @@ public sealed class LookupFilesApiTests(DocumentApiFixture fixture)
             LookupPath,
             claims,
             IdsBody(file.EncryptedId, MalformedId));
+
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "files"]!.AsArray().Should().ContainSingle();
-        body[propertyName: "files"]![index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+        body["files"]!.AsArray().Should().ContainSingle();
+        body["files"]![0]!["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
     }
 
     [Fact]
@@ -55,5 +56,5 @@ public sealed class LookupFilesApiTests(DocumentApiFixture fixture)
     }
 
     private static string IdsBody(params string[] ids) =>
-        new JsonObject { [propertyName: "ids"] = new JsonArray([.. ids.Select(id => (JsonNode)id)]) }.ToJsonString();
+        new JsonObject { ["ids"] = new JsonArray([.. ids.Select(id => (JsonNode)id)]) }.ToJsonString();
 }

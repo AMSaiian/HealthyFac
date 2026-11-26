@@ -44,15 +44,17 @@ public sealed class MetricRemovalGuardTests(TelemetryDatabaseFixture fixture)
     public async Task Remove_MetricWithLimitRows_SoftDeletesItsRowsAndKeepsTheOtherRowsOfThePhase()
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
+
         var secondMetricId = await _fixture.AddNumericMetricAsync(
             arrangement.MachineId, MetricRemovalTestData.SecondNumericKey);
+
         var phaseId = await _fixture.AddPhaseWithLimitsAsync(
             arrangement, OperatingPhaseTestData.CuttingCode, arrangement.MetricId, secondMetricId);
 
         await _fixture.RemoveMetricsAsync(arrangement.MachineId, arrangement.MetricId);
 
-        var rows = await _fixture.LoadPhaseRowsAsync(phaseId);
-        rows.Limits.Single(limit => limit.MetricDefinitionId == arrangement.MetricId).DeletedAt.Should().NotBeNull();
-        rows.Limits.Single(limit => limit.MetricDefinitionId == secondMetricId).DeletedAt.Should().BeNull();
+        var (_, limits) = await _fixture.LoadPhaseRowsAsync(phaseId);
+        limits.Single(limit => limit.MetricDefinitionId == arrangement.MetricId).DeletedAt.Should().NotBeNull();
+        limits.Single(limit => limit.MetricDefinitionId == secondMetricId).DeletedAt.Should().BeNull();
     }
 }

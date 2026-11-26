@@ -73,6 +73,7 @@ public sealed class DismissDefinitionDraftTests(TelemetryDatabaseFixture fixture
         var foreignDraftId = await _fixture.StoreMetricDraftOnMachineAsync(otherCompanyId, machineId, isApplied: false);
 
         var foreignAct = () => _fixture.DismissDefinitionDraftAsync(DefinitionDraftTestData.CompanyId, foreignDraftId);
+
         var unknownAct = () => _fixture.DismissDefinitionDraftAsync(
             DefinitionDraftTestData.CompanyId, Guid.CreateVersion7());
 

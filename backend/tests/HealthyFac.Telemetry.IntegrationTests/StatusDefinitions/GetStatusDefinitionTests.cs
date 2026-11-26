@@ -18,6 +18,7 @@ public sealed class GetStatusDefinitionTests(TelemetryDatabaseFixture fixture)
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
@@ -36,10 +37,12 @@ public sealed class GetStatusDefinitionTests(TelemetryDatabaseFixture fixture)
     {
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
             StatusDefinitionTestData.Code);
+
         await _fixture.RemoveStatusDefinitionRowAsync(tenant, statusId);
 
         var act = () => _fixture.GetStatusDefinitionAsync(
@@ -56,6 +59,7 @@ public sealed class GetStatusDefinitionTests(TelemetryDatabaseFixture fixture)
         var tenant = _fixture.ArrangeMachineTenant();
         var otherTenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(otherTenant);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             otherTenant.CompanyId,
             machineId,

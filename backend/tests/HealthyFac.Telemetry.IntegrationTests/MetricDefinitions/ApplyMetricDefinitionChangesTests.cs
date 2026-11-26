@@ -19,11 +19,13 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithCreatedUpdatedDeleted_StoresAllAndRaisesRevision()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant,
             machineId,
             expectedRevision: 0,
             [MetricDefinitionTestData.NewNumeric(), MetricDefinitionTestData.NewBoolean()]);
+
         var existing = await _fixture.LoadMetricRowsAsync(machineId);
         var temperature = existing.Single(metric => metric.Key == MetricDefinitionTestData.TemperatureKey);
         var door = existing.Single(metric => metric.Key == MetricDefinitionTestData.DoorKey);
@@ -39,22 +41,27 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
         var rows = await _fixture.LoadMetricRowsAsync(machineId);
         var revisions = await _fixture.LoadSchemaRevisionsAsync(machineId);
         var registrationRevision = await _fixture.LoadMetricSchemaRevisionAsync(machineId);
-        var schema = JsonNode.Parse(revisions.Last().Schema)!;
-        var schemaKeys = schema[propertyName: "properties"]![propertyName: "metrics"]![propertyName: "properties"]!
+        var schema = JsonNode.Parse(revisions[^1].Schema)!;
+
+        var schemaKeys = schema["properties"]!["metrics"]!["properties"]!
             .AsObject()
             .Select(pair => pair.Key);
 
         response.Revision.Should().Be(expected: 2);
         registrationRevision.Should().Be(expected: 2);
         revisions.Select(revision => revision.Revision).Should().Equal(0, 1, 2);
+
         rows.Where(metric => metric.DeletedAt is null)
             .Select(metric => metric.Key)
             .Should()
             .Equal(MetricDefinitionTestData.ModeKey, MetricDefinitionTestData.TemperatureKey);
+
         rows.Single(metric => metric.Key == MetricDefinitionTestData.DoorKey).DeletedAt.Should().NotBeNull();
+
         rows.Single(metric => metric.Key == MetricDefinitionTestData.TemperatureKey)
             .Should()
             .BeEquivalentTo(new { Name = "Renamed", Min = 0.0, Max = 150.0 });
+
         schemaKeys.Should().Equal(MetricDefinitionTestData.ModeKey, MetricDefinitionTestData.TemperatureKey);
     }
 
@@ -62,8 +69,10 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithAnEqualUpdateOnly_KeepsTheRevisionAndStoresNoSchemaRevision()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewBoolean()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
 
         var response = await _fixture.ApplyMetricChangesAsync(
@@ -93,16 +102,18 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
 
         var units = await _fixture.LoadMetricUnitPairsAsync(machineId);
         var revisions = await _fixture.LoadSchemaRevisionsAsync(machineId);
-        var schema = JsonNode.Parse(revisions.Last().Schema)!;
-        var doorUnit = schema[propertyName: "properties"]![propertyName: "metrics"]![propertyName: "properties"]![
-            MetricDefinitionTestData.DoorKey]![propertyName: "x-healthyfac-unit"]!;
+        var schema = JsonNode.Parse(revisions[^1].Schema)!;
+
+        var doorUnit = schema["properties"]!["metrics"]!["properties"]![
+            MetricDefinitionTestData.DoorKey]!["x-healthyfac-unit"]!;
 
         units.Should()
             .Equal(
                 new KeyValuePair<string, string>(MetricDefinitionTestData.DoorKey, value: "Discrete.Boolean"),
                 new KeyValuePair<string, string>(MetricDefinitionTestData.ModeKey, value: "Discrete.State"));
-        doorUnit[propertyName: "quantity"]!.GetValue<string>().Should().Be(expected: "Discrete");
-        doorUnit[propertyName: "name"]!.GetValue<string>().Should().Be(expected: "Boolean");
+
+        doorUnit["quantity"]!.GetValue<string>().Should().Be(expected: "Discrete");
+        doorUnit["name"]!.GetValue<string>().Should().Be(expected: "Boolean");
     }
 
     [Fact]
@@ -174,6 +185,7 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithExistingActiveKey_ReturnsConflict()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewNumeric()]);
 
@@ -187,8 +199,10 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithKeyOfDeletedDefinition_Succeeds()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewNumeric()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
         await _fixture.ApplyMetricChangesAsync(tenant, machineId, expectedRevision: 1, deleted: [existing.Id]);
 
@@ -205,8 +219,10 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithDeleteAndCreateOfSameKeyInOneRequest_ReplacesTheDefinition()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewNumeric()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
 
         await _fixture.ApplyMetricChangesAsync(
@@ -218,7 +234,7 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
 
         var rows = await _fixture.LoadMetricRowsAsync(machineId);
 
-        rows.Where(metric => metric.DeletedAt is null).Single().ValueKind.Should().Be(MetricValueKind.Boolean);
+        rows.Single(metric => metric.DeletedAt is null).ValueKind.Should().Be(MetricValueKind.Boolean);
     }
 
     [Fact]
@@ -240,8 +256,10 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithSameIdInUpdatedAndDeleted_ReturnsBadRequest()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewNumeric()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
 
         var act = () => _fixture.ApplyMetricChangesAsync(
@@ -259,6 +277,7 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithUnknownUnitPair_ReturnsBadRequest()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         var created = MetricDefinitionTestData.NewNumeric() with
         {
             Unit = new MetricUnitReference { QuantityKind = "Temperature", Name = "Parsec" },
@@ -274,6 +293,7 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithUnitOfOtherQuantityKindWithSameName_UsesThePair()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         var created = MetricDefinitionTestData.NewNumeric() with
         {
             Unit = new MetricUnitReference { QuantityKind = "RelativeHumidity", Name = "Percent" },
@@ -284,14 +304,15 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
         await _fixture.ApplyMetricChangesAsync(tenant, machineId, expectedRevision: 0, [created]);
 
         var revisions = await _fixture.LoadSchemaRevisionsAsync(machineId);
-        var schema = JsonNode.Parse(revisions.Last().Schema)!;
-        var unit =
-            schema[propertyName: "properties"]![propertyName: "metrics"]![propertyName: "properties"]![
-                MetricDefinitionTestData.TemperatureKey]![
-                propertyName: "x-healthyfac-unit"]!;
+        var schema = JsonNode.Parse(revisions[^1].Schema)!;
 
-        unit[propertyName: "quantity"]!.GetValue<string>().Should().Be(expected: "RelativeHumidity");
-        unit[propertyName: "name"]!.GetValue<string>().Should().Be(expected: "Percent");
+        var unit =
+            schema["properties"]!["metrics"]!["properties"]![
+                MetricDefinitionTestData.TemperatureKey]![
+                "x-healthyfac-unit"]!;
+
+        unit["quantity"]!.GetValue<string>().Should().Be(expected: "RelativeHumidity");
+        unit["name"]!.GetValue<string>().Should().Be(expected: "Percent");
     }
 
     [Fact]
@@ -310,8 +331,10 @@ public sealed class ApplyMetricDefinitionChangesTests(TelemetryDatabaseFixture f
     public async Task Apply_WithRangeOnUpdateOfBoolean_ReturnsBadRequest()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewBoolean()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
 
         var act = () => _fixture.ApplyMetricChangesAsync(

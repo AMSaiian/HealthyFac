@@ -36,6 +36,7 @@ public static class ProvisioningFixtureExtensions
         public async Task ProvisionAsync(EmployeeAccepted message, IIdentityAdmin identityAdmin)
         {
             using var scope = fixture.CreateActorScope(message.CompanyId);
+
             var handler = new ProvisionIdentityRequestHandler(
                 identityAdmin,
                 scope.ServiceProvider.GetRequiredService<IOutbox>(),
@@ -70,6 +71,7 @@ public static class ProvisioningFixtureExtensions
         )
         {
             using var scope = fixture.CreateActorScope(message.CompanyId);
+
             var handler = new RevokeIdentityRequestHandler(
                 identityAdmin,
                 sessionRevoker,
@@ -83,8 +85,10 @@ public static class ProvisioningFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateActorScope(
                 ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
+
             var revokedAt = await scope.ServiceProvider.GetRequiredService<ITokenRevocationStore>()
                 .GetRevokedAtAsync(userId, CancellationToken.None);
+
             if (revokedAt is null)
             {
                 return null;
@@ -100,15 +104,18 @@ public static class ProvisioningFixtureExtensions
         public async Task<ProvisionedUser> LoadProvisionedUserAsync(Guid employeeId, Guid companyId)
         {
             var userId = await fixture.Keycloak.Admin.FindUserIdByEmployeeIdAsync(employeeId, CancellationToken.None);
+
             if (userId is null)
             {
                 return new ProvisionedUser { UserId = null, RoleNames = [], IsOrganizationMember = false };
             }
 
             var organizationId = await fixture.Keycloak.LoadOrganizationIdAsync(companyId);
+
             var memberIds = organizationId is null
                 ? []
                 : await fixture.Keycloak.LoadOrganizationMemberIdsAsync(organizationId.Value);
+
             var roleNames = await fixture.Keycloak.LoadRealmRoleNamesAsync(userId.Value);
 
             return new ProvisionedUser
@@ -135,14 +142,17 @@ public static class ProvisioningFixtureExtensions
         public async Task WaitForInboxMessageProcessedAsync(Guid messageId)
         {
             using var timeout = new CancellationTokenSource(ProvisioningTestData.WaitTimeout);
+
             while (true)
             {
                 using var scope = fixture.ScopeFactory.CreateActorScope(
                     ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
+
                 var isProcessed = await scope.ServiceProvider.GetRequiredService<AuthDbContext>()
                     .InboxMessages
                     .AsNoTracking()
                     .AnyAsync(message => message.Id == messageId && message.ProcessedOn != null, timeout.Token);
+
                 if (isProcessed)
                 {
                     return;
@@ -189,7 +199,9 @@ public static class ProvisioningFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateActorScope(
                 ServiceActor.DatabaseInitialization.For(ServiceName.Auth));
+
             var messageType = T.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<AuthDbContext>()
                 .OutboxMessages
                 .AsNoTracking()
@@ -197,10 +209,12 @@ public static class ProvisioningFixtureExtensions
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<T>(payload, JsonSerializerOptions.Web)!)
-                .Where(isMatch)
-                .ToList();
+            return
+            [
+                .. payloads
+                    .Select(payload => JsonSerializer.Deserialize<T>(payload, JsonSerializerOptions.Web)!)
+                    .Where(isMatch),
+            ];
         }
     }
 

@@ -32,17 +32,21 @@ public sealed class SearchMachineDraftsRequestValidator
         : base(MachineDraftSortColumn.All)
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DraftErrors.CompanyIdRequired);
+
         RuleFor(request => request.MachineId)
             .NotEmpty()
             .WithMessage(MachineErrors.MachineIdRequired)
             .When(request => request.MachineId is not null);
+
         RuleFor(request => request.AttemptId)
             .NotEmpty()
             .WithMessage(DraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DraftErrors.SearchScopeRequired);
+
         RuleFor(request => request.Filter!)
             .SetValidator(new MachineDraftGridFilterValidator())
             .When(request => request.Filter is not null);

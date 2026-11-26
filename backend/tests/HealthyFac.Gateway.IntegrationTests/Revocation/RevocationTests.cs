@@ -24,6 +24,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         var userId = Guid.NewGuid();
         await using var gateway = _environment.CreateGateway(_core);
         await RevokeAsync(gateway, userId);
+
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenAge));
 
@@ -39,6 +40,7 @@ public sealed class RevocationTests(GatewayEnvironment environment)
         var userId = Guid.NewGuid();
         await using var gateway = _environment.CreateGateway(_core);
         await RevokeAsync(gateway, userId);
+
         using var client = gateway.CreateAuthenticatedClient(
             RevocationTestData.CreateClaims(userId, RevocationTestData.TokenYoungAge));
 

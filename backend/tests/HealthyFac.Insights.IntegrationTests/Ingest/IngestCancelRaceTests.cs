@@ -50,11 +50,13 @@ public sealed class IngestCancelRaceTests(InsightsFixture fixture)
         var claimed = await _fixture.ClaimAttemptAsync();
         var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _fixture.Ingest.Embeddings.Before = async _ =>
         {
             reached.TrySetResult();
             await release.Task;
         };
+
         var run = _fixture.RunClaimedAttemptAsync(claimed!, TestContext.Current.CancellationToken);
         await reached.Task;
 

@@ -48,6 +48,7 @@ public sealed class DocumentFilesRpcTests(DocumentApiFixture fixture) : IAsyncLi
     public async Task GetFileLink_WithServiceTokenAndActorHeaders_ReturnsFileAndLink()
     {
         var file = await _fixture.ArrangeFileAsync();
+
         var token = _fixture.Tokens.CreateServiceToken(
             new TestServiceTokenClaims { ClientId = DocumentGrpcHost.AllowedClientId, Permissions = [ReadPermission] });
 
@@ -65,8 +66,10 @@ public sealed class DocumentFilesRpcTests(DocumentApiFixture fixture) : IAsyncLi
     public async Task GetFileLink_ReturnsALinkToTheStorageEndpoint()
     {
         var file = await _fixture.ArrangeFileAsync();
+
         var token = _fixture.Tokens.CreateServiceToken(
             new TestServiceTokenClaims { ClientId = DocumentGrpcHost.AllowedClientId, Permissions = [ReadPermission] });
+
         var storageEndpoint = new BlobServiceClient(_fixture.StorageConnectionString).Uri.AbsoluteUri;
 
         var reply = await _host.Client.GetFileLinkAsync(
@@ -158,11 +161,13 @@ public sealed class DocumentFilesRpcTests(DocumentApiFixture fixture) : IAsyncLi
     public async Task GrpcCall_OnTheApiPort_ReturnsNotFound()
     {
         using var client = _host.CreateApiClient();
+
         using var request = new HttpRequestMessage(
             HttpMethod.Post, requestUri: "/healthyfac.document.v1.DocumentFiles/GetFile")
         {
             Content = new ByteArrayContent([]),
         };
+
         request.Content.Headers.ContentType = new MediaTypeHeaderValue(mediaType: "application/grpc");
 
         using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);

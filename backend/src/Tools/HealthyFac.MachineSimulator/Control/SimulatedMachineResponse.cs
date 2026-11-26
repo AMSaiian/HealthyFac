@@ -51,7 +51,7 @@ public sealed record SimulatedMachineResponse
             IsRunning = view.IsRunning,
             IsPublishing = view.IsPublishing,
             Counters = view.Counters,
-            Modules = view.Modules.Select(ModuleResponse.From).ToList(),
+            Modules = [.. view.Modules.Select(ModuleResponse.From)],
         };
 }
 

@@ -34,6 +34,7 @@ public static class CaseApiFixtureExtensions
         {
             using var client = fixture.CreateClient();
             using var request = new HttpRequestMessage(method, path);
+
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 BearerScheme,
                 fixture.Tokens.CreateToken(claims));
@@ -55,10 +56,12 @@ public static class CaseApiFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
             var machineId = Guid.CreateVersion7();
+
             var maintenanceCase = new MaintenanceCase(
                 companyId ?? fixture.CompanyId,
                 machineId,
                 CaseApiTestData.Now);
+
             maintenanceCase.Add(
                 new MachineSignal(
                     Guid.CreateVersion7(),

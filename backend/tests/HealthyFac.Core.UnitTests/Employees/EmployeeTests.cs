@@ -118,6 +118,7 @@ public sealed class EmployeeTests
     public void IsLinkedTo_ForEachCase_ReturnsExpected(Guid? linkedIdentity, Guid? identityUserId, bool isLinked)
     {
         var employee = EmployeeTestData.CreateEmployee();
+
         if (linkedIdentity is { } identity)
         {
             employee.LinkIdentity(identity);

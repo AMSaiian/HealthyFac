@@ -10,12 +10,13 @@ public static class SeedPlan
     /// <param name="folder">The seed folder.</param>
     /// <returns>The events with their parts, in file order.</returns>
     public static IReadOnlyList<PlannedEvent> Load(IReadOnlyList<ISeedPart> parts, SeedFolder folder) =>
-        parts
+    [
+        .. parts
             .SelectMany(part => part.ReadEvents(folder)
                 .Select(seedEvent => new PlannedEvent
                 {
                     Part = part,
                     Event = seedEvent,
-                }))
-            .ToList();
+                })),
+    ];
 }

@@ -81,6 +81,7 @@ public sealed class GetSignalEpisodesToolRequestHandler(
     )
     {
         var to = _timeProvider.GetUtcNow().UtcDateTime;
+
         var episodes = await _signals.GetSignalEpisodesAsync(
             request.MachineId,
             to.AddHours(-_options.EpisodeRangeHours),
@@ -89,7 +90,7 @@ public sealed class GetSignalEpisodesToolRequestHandler(
 
         return new GetSignalEpisodesToolResponse
         {
-            Episodes = episodes.OrderByDescending(episode => episode.OpenedAt).Take(_options.EpisodeCount).ToList(),
+            Episodes = [.. episodes.OrderByDescending(episode => episode.OpenedAt).Take(_options.EpisodeCount)],
         };
     }
 }

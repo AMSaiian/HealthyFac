@@ -126,6 +126,7 @@ public sealed class UpdateDeleteFileApiTests(DocumentApiFixture fixture)
 
         using var update = await client.PutAsync(
             path, new StringContent(UpdateBody(file.RowVersion)), TestContext.Current.CancellationToken);
+
         using var delete = await client.DeleteAsync(path, TestContext.Current.CancellationToken);
 
         update.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

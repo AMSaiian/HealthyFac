@@ -41,6 +41,7 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> options, ILogger<SmtpE
             using var client = new SmtpClient();
             client.Timeout = (int)TimeSpan.FromSeconds(smtp.TimeoutSeconds).TotalMilliseconds;
             await client.ConnectAsync(smtp.Host, smtp.Port, MapSecurity(smtp.Security), cancellationToken);
+
             if (!string.IsNullOrWhiteSpace(smtp.UserName) && smtp.Password is { } password)
             {
                 await client.AuthenticateAsync(smtp.UserName, password, cancellationToken);

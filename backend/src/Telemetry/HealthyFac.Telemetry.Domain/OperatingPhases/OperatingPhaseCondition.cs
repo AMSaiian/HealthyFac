@@ -84,7 +84,7 @@ public sealed class OperatingPhaseCondition : IEntity, IAuditable, ISoftDeletabl
 
             if (value >= upperValue)
             {
-                throw OperatingPhaseInvariantErrors.ValuesNotAscending(value!.Value, upperValue.Value);
+                throw OperatingPhaseInvariantErrors.ValuesNotAscending(value.Value, upperValue.Value);
             }
         }
 
@@ -100,7 +100,7 @@ public sealed class OperatingPhaseCondition : IEntity, IAuditable, ISoftDeletabl
             Operator = conditionOperator,
             Value = conditionOperator.HasComparisonValue ? value : null,
             UpperValue = conditionOperator == PhaseConditionOperator.Between ? upperValue : null,
-            _states = conditionOperator == PhaseConditionOperator.In ? states!.ToList() : null,
+            _states = conditionOperator == PhaseConditionOperator.In ? [.. states!] : null,
         };
     }
 

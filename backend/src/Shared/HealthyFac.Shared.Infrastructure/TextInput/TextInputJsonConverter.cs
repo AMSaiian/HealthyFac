@@ -23,6 +23,7 @@ internal sealed class TextInputJsonConverter : JsonConverter<string>
     public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var value = reader.GetString()!;
+
         try
         {
             return TextInputPolicy.Normalize(value);

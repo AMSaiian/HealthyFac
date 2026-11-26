@@ -1,5 +1,4 @@
 using FluentValidation.Results;
-using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Scenarios.Modules;
 using HealthyFac.MachineSimulator.Simulation;
 using HealthyFac.Shared.Application.ErrorHandling;
@@ -34,10 +33,12 @@ public static class ControlEndpoints
 
     private static Ok<IReadOnlyList<SimulatedMachineResponse>> List(SimulationEngine engine, TimeProvider timeProvider)
     {
-        IReadOnlyList<SimulatedMachineResponse> machines = engine
-            .Snapshot(timeProvider.GetUtcNow().UtcDateTime)
-            .Select(SimulatedMachineResponse.From)
-            .ToList();
+        IReadOnlyList<SimulatedMachineResponse> machines =
+        [
+            .. engine
+                .Snapshot(timeProvider.GetUtcNow().UtcDateTime)
+                .Select(SimulatedMachineResponse.From),
+        ];
 
         return TypedResults.Ok(machines);
     }
@@ -85,11 +86,13 @@ public static class ControlEndpoints
         }
 
         var isKnownMachine = engine.Find(machineId, timeProvider.GetUtcNow().UtcDateTime) is not null;
+
         var result = ModuleName.TryFromValue(module, out var moduleName)
             ? engine.SetMode(machineId, moduleName, mode)
             : isKnownMachine
                 ? ControlResult.ModuleNotFound
                 : ControlResult.MachineNotFound;
+
         ThrowIfNotDone(result);
 
         return TypedResults.NoContent();

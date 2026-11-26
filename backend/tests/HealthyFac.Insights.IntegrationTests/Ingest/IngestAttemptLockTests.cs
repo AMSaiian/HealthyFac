@@ -37,6 +37,7 @@ public sealed class IngestAttemptLockTests(InsightsFixture fixture)
     )
     {
         await dbContext.IngestAttempts.SingleAsync(cancellationToken);
+
         await _fixture.HandleMachineChangedAsync(
             IngestAttemptTestData.CompanyId,
             IngestAttemptTestData.FileId,

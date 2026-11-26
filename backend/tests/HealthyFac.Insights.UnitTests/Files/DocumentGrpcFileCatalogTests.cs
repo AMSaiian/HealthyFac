@@ -28,7 +28,7 @@ public sealed class DocumentGrpcFileCatalogTests
             DocumentCatalogTestData.FileId, TestContext.Current.CancellationToken);
 
         file.Should().NotBeNull();
-        file!.FileId.Should().Be(DocumentCatalogTestData.FileId);
+        file.FileId.Should().Be(DocumentCatalogTestData.FileId);
         file.CompanyId.Should().Be(DocumentCatalogTestData.CompanyId);
         file.MachineId.Should().Be(DocumentCatalogTestData.MachineId);
         file.MachineChangedAt.Should().Be(DocumentCatalogTestData.ChangedAt);
@@ -81,7 +81,7 @@ public sealed class DocumentGrpcFileCatalogTests
             DocumentCatalogTestData.FileId, TestContext.Current.CancellationToken);
 
         link.Should().NotBeNull();
-        link!.File.FileId.Should().Be(DocumentCatalogTestData.FileId);
+        link.File.FileId.Should().Be(DocumentCatalogTestData.FileId);
         link.File.MachineId.Should().Be(DocumentCatalogTestData.MachineId);
         link.Url.Should().Be(DocumentCatalogTestData.LinkUrl);
         link.ExpiresAt.Should().Be(DocumentCatalogTestData.ExpiresAt);

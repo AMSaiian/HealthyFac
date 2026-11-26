@@ -14,8 +14,9 @@ internal static class InsightsModelFactory
         var options = new DbContextOptionsBuilder<InsightsDbContext>()
             .UseNpgsql(UnusedConnectionString, npgsql => npgsql.UseVector())
             .Options;
+
         using var dbContext = new InsightsDbContext(options);
 
-        return dbContext.GetService<IDesignTimeModel>().Model.GetEntityTypes().ToList();
+        return [.. dbContext.GetService<IDesignTimeModel>().Model.GetEntityTypes()];
     }
 }

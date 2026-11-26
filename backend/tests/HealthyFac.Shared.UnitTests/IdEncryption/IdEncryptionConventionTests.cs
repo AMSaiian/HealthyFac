@@ -44,8 +44,10 @@ public sealed class IdEncryptionConventionTests
         var machineIdString = parsed[IdEncryptionConventionTestData.MachineIdPropertyName]?.GetValue<string>();
         var tenantIdString = parsed[IdEncryptionConventionTestData.TenantIdPropertyName]?.GetValue<string>();
         var ignoredIdString = parsed[IdEncryptionConventionTestData.IgnoredIdPropertyName]?.GetValue<string>();
+
         var correlationTokenString = parsed[IdEncryptionConventionTestData.CorrelationTokenPropertyName]
             ?.GetValue<string>();
+
         var stepIdValue = parsed[IdEncryptionConventionTestData.StepIdPropertyName]?.GetValue<int>();
 
         idString.Should().StartWith(IdEncryptionConstants.CurrentVersionPrefix);

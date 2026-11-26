@@ -22,8 +22,10 @@ public sealed class DismissAllCompositionTests(GatewayEnvironment environment) :
     public async Task DismissMachineDrafts_WithBothServices_ReturnsTheSumOfTheCounts()
     {
         _stubs.Core.Respond(HttpMethod.Post, CompositionStubs.CoreMachineDismiss, status: 200, CountsCoreTwo);
+
         _stubs.Telemetry.Respond(
             HttpMethod.Post, CompositionStubs.TelemetryMachineDismiss, status: 200, CountsTelemetryThree);
+
         await using var gateway = _stubs.CreateGateway(_environment);
         using var client = gateway.CreateAuthenticatedClient();
 
@@ -33,15 +35,17 @@ public sealed class DismissAllCompositionTests(GatewayEnvironment environment) :
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "dismissedCount"]!.GetValue<int>().Should().Be(expected: 5);
+        body["dismissedCount"]!.GetValue<int>().Should().Be(expected: 5);
     }
 
     [Fact]
     public async Task DismissAttemptDrafts_WithBothServices_ReturnsTheSumOfTheCounts()
     {
         _stubs.Core.Respond(HttpMethod.Post, CompositionStubs.CoreAttemptDismiss, status: 200, CountsCoreTwo);
+
         _stubs.Telemetry.Respond(
             HttpMethod.Post, CompositionStubs.TelemetryAttemptDismiss, status: 200, CountsTelemetryThree);
+
         await using var gateway = _stubs.CreateGateway(_environment);
         using var client = gateway.CreateAuthenticatedClient();
 
@@ -50,7 +54,7 @@ public sealed class DismissAllCompositionTests(GatewayEnvironment environment) :
 
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
-        body[propertyName: "dismissedCount"]!.GetValue<int>().Should().Be(expected: 5);
+        body["dismissedCount"]!.GetValue<int>().Should().Be(expected: 5);
     }
 
     [Fact]
@@ -61,6 +65,7 @@ public sealed class DismissAllCompositionTests(GatewayEnvironment environment) :
             CompositionStubs.CoreMachineDismiss,
             status: 404,
             CompositionFailureTestData.NotFoundJson);
+
         await using var gateway = _stubs.CreateGateway(_environment);
         using var client = gateway.CreateAuthenticatedClient();
 

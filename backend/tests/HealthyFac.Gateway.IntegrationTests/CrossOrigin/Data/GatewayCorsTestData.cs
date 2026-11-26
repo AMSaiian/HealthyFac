@@ -13,7 +13,7 @@ public static class GatewayCorsTestData
     public const int PreflightCount = 5;
 
     public static TheoryData<string> AuthenticatedInviteRoutes { get; } =
-        new() { SearchInvitesRoute, ResendInviteRoute };
+        [SearchInvitesRoute, ResendInviteRoute];
 
     public static readonly HttpMethod PreflightMethod = HttpMethod.Options;
 

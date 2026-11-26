@@ -89,63 +89,83 @@ public sealed class DetectionOptionsValidator : AbstractValidator<DetectionOptio
         RuleFor(options => options.EvaluationIntervalSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.SettleLagSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.WarmUpSamples)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.SlowTauSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.FastTauSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.DriftLimit)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.DriftResolveLimit)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.LevelTauSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.TrendTauSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.HorizonSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.NoiseGuardFactor)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.Persistence)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.GapSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.SigmaFloorShare)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.CatchUpBatchReadings)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.SilenceLimitSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.PhaseDwellSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.UnknownModeDwellSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.SettleTimeSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.LeaseSeconds)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);
+
         RuleFor(options => options.HistoryBucketCap)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(DetectionMessages.ValueNotPositive);

@@ -20,11 +20,13 @@ internal static class MessageContractInspection
     internal static IEnumerable<string> FindDuplicates(IEnumerable<Assembly> assemblies)
     {
         var messages = GetMessages(assemblies).ToList();
+
         var sameMessageType = messages
             .GroupBy(GetMessageType, StringComparer.OrdinalIgnoreCase)
             .Where(group => group.Count() > 1)
             .Select(group =>
                 $"MessageType '{group.Key}' is declared by {string.Join(separator: ", ", group.Select(Describe))}");
+
         var sameName = messages
             .GroupBy(type => type.Name, StringComparer.Ordinal)
             .Where(group => group.Count() > 1)

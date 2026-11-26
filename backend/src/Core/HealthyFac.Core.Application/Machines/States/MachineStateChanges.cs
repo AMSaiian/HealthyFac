@@ -43,6 +43,7 @@ public static class MachineStateChanges
 
         machine.ChangeState(state, nowUtc);
         dbContext.Entry(machine).State = EntityState.Modified;
+
         outbox.Add(
             new MachineStateChanged
             {

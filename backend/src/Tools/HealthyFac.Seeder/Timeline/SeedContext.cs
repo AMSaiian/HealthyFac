@@ -8,8 +8,8 @@ namespace HealthyFac.Seeder.Timeline;
 /// </summary>
 public sealed class SeedContext
 {
-    private readonly Dictionary<string, Guid> _ids = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, ActorContext> _actors = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Guid> _ids = [with(StringComparer.Ordinal)];
+    private readonly Dictionary<string, ActorContext> _actors = [with(StringComparer.Ordinal)];
 
     public required DateTimeOffset Anchor { get; init; }
 

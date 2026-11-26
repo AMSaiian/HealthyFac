@@ -19,7 +19,7 @@ public sealed class PhaseIntervalLogTests
         var opened = log.Follow(Cutting, isSwitched: false, Start);
 
         opened.Should().NotBeNull();
-        opened!.OperatingPhaseId.Should().Be(Cutting);
+        opened.OperatingPhaseId.Should().Be(Cutting);
         opened.StartedAt.Should().Be(Start);
         opened.EndedAt.Should().BeNull();
         log.Open.Should().BeSameAs(opened);
@@ -35,7 +35,7 @@ public sealed class PhaseIntervalLogTests
 
         first.EndedAt.Should().Be(Start.AddMinutes(value: 5));
         next.Should().NotBeNull();
-        next!.OperatingPhaseId.Should().Be(Stopped);
+        next.OperatingPhaseId.Should().Be(Stopped);
         next.StartedAt.Should().Be(Start.AddMinutes(value: 5));
         log.Open.Should().BeSameAs(next);
     }
@@ -75,7 +75,7 @@ public sealed class PhaseIntervalLogTests
 
         first.EndedAt.Should().Be(Start.AddMinutes(value: 3));
         afterTheGap.Should().NotBeNull();
-        afterTheGap!.StartedAt.Should().Be(Start.AddMinutes(value: 60));
+        afterTheGap.StartedAt.Should().Be(Start.AddMinutes(value: 60));
     }
 
     [Fact]

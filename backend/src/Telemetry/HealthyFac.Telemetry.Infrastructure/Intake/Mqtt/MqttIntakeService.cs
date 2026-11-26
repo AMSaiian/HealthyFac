@@ -97,7 +97,7 @@ public sealed class MqttIntakeService(
     /// </summary>
     internal Task OrphanCheckCompleted => _orphanCheckCompleted.Task;
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_options.IsEnabled)
         {
@@ -105,9 +105,9 @@ public sealed class MqttIntakeService(
         }
 
         var consumers = Enumerable.Range(start: 0, _options.ConsumerCount)
-            .Select(index => RunConsumerAsync(index, cancellationToken));
+            .Select(index => RunConsumerAsync(index, stoppingToken));
 
-        await Task.WhenAll(consumers.Append(EmptyOrphansAsync(cancellationToken)));
+        await Task.WhenAll(consumers.Append(EmptyOrphansAsync(stoppingToken)));
     }
 
     private async Task RunConsumerAsync(int index, CancellationToken cancellationToken)
@@ -132,6 +132,7 @@ public sealed class MqttIntakeService(
         await using var session = CreateSession(index);
 
         await session.ConnectAsync(BuildClientOptions(index), cancellationToken);
+
         await session.Client.SubscribeAsync(
             new MqttClientSubscribeOptionsBuilder()
                 .WithTopicFilter(SharedFilter, MqttQualityOfServiceLevel.AtLeastOnce)
@@ -173,6 +174,7 @@ public sealed class MqttIntakeService(
 
             var startedAt = _timeProvider.GetTimestamp();
             var receivedAt = _timeProvider.GetUtcNow().UtcDateTime;
+
             using var activity = IntakeActivity.Start(
                 arguments.ApplicationMessage, _options.SharedGroup, session.Index);
 
@@ -226,6 +228,7 @@ public sealed class MqttIntakeService(
         catch (OperationCanceledException) when (timeout.IsTimedOut)
         {
             _metrics.RecordDrainTimeout();
+
             _logger.LogWarning(
                 message: "The MQTT consumer {ConsumerIndex} did not finish its messages in time. The session stays.",
                 index);
@@ -297,6 +300,7 @@ public sealed class MqttIntakeService(
         if (connectResult.IsSessionPresent)
         {
             _metrics.RecordOrphanEmptied(session.MessageCount);
+
             _logger.LogInformation(
                 message: "The MQTT intake emptied the orphan session {ConsumerIndex} ({MessageCount} messages).",
                 index,
@@ -313,7 +317,9 @@ public sealed class MqttIntakeService(
         await session.Client.UnsubscribeAsync(
             new MqttClientUnsubscribeOptionsBuilder().WithTopicFilter(SharedFilter).Build(),
             timeout.Token);
+
         session.InFlight.Touch();
+
         await WaitUntilAsync(
             () => session.InFlight.IsIdleFor(TimeSpan.FromSeconds(_options.DrainIdleSeconds)),
             timeout.Token);
@@ -326,6 +332,7 @@ public sealed class MqttIntakeService(
         await cleaning.ConnectAsync(
             BuildClientOptions(index, isCleanStart: true, sessionExpirySeconds: 0),
             cancellationToken);
+
         await cleaning.Client.DisconnectAsync(cancellationToken: cancellationToken);
     }
 
@@ -385,6 +392,7 @@ public sealed class MqttIntakeService(
             _logger.LogError(
                 exception,
                 message: "The MQTT intake hit a transient failure. The message stays unacknowledged for redelivery.");
+
             session.End();
 
             return new IntakeOutcome { Result = ObservabilityConstants.Intake.Results.Redelivery };
@@ -399,6 +407,7 @@ public sealed class MqttIntakeService(
             _logger.LogError(
                 storeException,
                 message: "The MQTT intake could not store a failed message. It stays unacknowledged for redelivery.");
+
             session.End();
 
             return new IntakeOutcome { Result = ObservabilityConstants.Intake.Results.Redelivery };
@@ -423,6 +432,7 @@ public sealed class MqttIntakeService(
                 exception,
                 "The MQTT intake could not acknowledge a message. "
                 + "The session ends and the broker delivers it again.");
+
             session.End();
         }
     }
@@ -452,6 +462,7 @@ public sealed class MqttIntakeService(
     )
     {
         using var scope = _scopeFactory.CreateActorScope(TelemetryServiceActors.Intake);
+
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ReceiveMachineMessageRequest, ReceiveMachineMessageResponse>>();
 

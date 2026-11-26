@@ -66,7 +66,7 @@ public static class Predicates
             return left;
         }
 
-        var rightBody = right.Inline(left.Parameters[index: 0]);
+        var rightBody = right.Inline(left.Parameters[0]);
 
         return Expression.Lambda<Func<T, bool>>(join(left.Body, rightBody), left.Parameters);
     }

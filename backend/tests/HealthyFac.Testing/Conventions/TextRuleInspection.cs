@@ -35,6 +35,7 @@ internal static class TextRuleInspection
 
             var stringMembers = type.GetStringMembers();
             var nestedMembers = type.GetNestedMembers();
+
             foreach (var nestedType in nestedMembers.Select(member => member.NestedType))
             {
                 queue.Enqueue(nestedType);
@@ -59,13 +60,14 @@ internal static class TextRuleInspection
                 violations.Add($"{type.DisplayName}.{member.Name}: no SingleLineText or MultilineText rule");
             }
 
-            foreach (var member in nestedMembers.Where(member => !HasRule(descriptor, member.Property, IsChildRule)))
+            foreach (var (property, _) in nestedMembers.Where(member => !HasRule(
+                descriptor, member.Property, IsChildRule)))
             {
-                violations.Add($"{type.DisplayName}.{member.Property.Name}: no child validator rule");
+                violations.Add($"{type.DisplayName}.{property.Name}: no child validator rule");
             }
         }
 
-        return violations.ToList();
+        return [.. violations];
     }
 
     private static Dictionary<Type, Type> FindValidatorTypes(IEnumerable<Type> types)
@@ -96,6 +98,7 @@ internal static class TextRuleInspection
     private static IValidator CreateValidator(Type validatorType)
     {
         var constructor = validatorType.GetConstructors().Single();
+
         var arguments = constructor.GetParameters()
             .Select(parameter => CreateStub(parameter.ParameterType))
             .ToArray();
@@ -127,15 +130,17 @@ internal static class TextRuleInspection
     private static bool IsChildRule(IRuleComponent component) => component.Validator is IChildValidatorAdaptor;
 
     private static List<PropertyInfo> GetStringMembers(this Type type) =>
-        type.GetReadableProperties()
-            .Where(property => property.PropertyType == typeof(string) || IsStringCollection(property.PropertyType))
-            .ToList();
+    [
+        .. type.GetReadableProperties()
+            .Where(property => property.PropertyType == typeof(string) || IsStringCollection(property.PropertyType)),
+    ];
 
     private static List<(PropertyInfo Property, Type NestedType)> GetNestedMembers(this Type type) =>
-        type.GetReadableProperties()
+    [
+        .. type.GetReadableProperties()
             .Select(property => (Property: property, NestedType: GetElementOrSelf(property.PropertyType)))
-            .Where(member => member.NestedType.IsProjectClassWithStrings())
-            .ToList();
+            .Where(member => member.NestedType.IsProjectClassWithStrings()),
+    ];
 
     private static IEnumerable<PropertyInfo> GetReadableProperties(this Type type) =>
         type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -151,6 +156,7 @@ internal static class TextRuleInspection
     private static Type GetElementOrSelf(Type type)
     {
         var underlying = Nullable.GetUnderlyingType(type) ?? type;
+
         if (underlying == typeof(string) || !typeof(IEnumerable).IsAssignableFrom(underlying))
         {
             return underlying;
@@ -195,6 +201,7 @@ internal static class TextRuleInspection
         }
 
         path ??= [];
+
         if (!path.Add(type))
         {
             return false;

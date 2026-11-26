@@ -74,8 +74,10 @@ public static class MachineRegistrationFixtureExtensions
         {
             await using var connection = new NpgsqlConnection(fixture.ConnectionString);
             await connection.OpenAsync(cancellationToken);
+
             await using var command = new NpgsqlCommand(
                 cmdText: "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'", connection);
+
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(seconds: 10));
 
@@ -130,10 +132,12 @@ public static class MachineRegistrationFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var unit = await dbContext.MeasurementUnits
                 .Include(candidate => candidate.QuantityKind)
                 .Where(candidate => candidate.QuantityKind.Name == "Temperature" && candidate.Name == "DegreeCelsius")
                 .SingleAsync();
+
             var metric = new MetricDefinition(
                 machineId,
                 key: "spindle.temperature",

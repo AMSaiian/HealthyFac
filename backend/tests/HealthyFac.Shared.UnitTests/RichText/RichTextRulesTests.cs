@@ -27,6 +27,7 @@ public sealed class RichTextRulesTests
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(RichTextRulesTestData.TooMuchFormattingMessage);
+
         policy.CallCount.Should().Be(expected: 0);
     }
 
@@ -54,6 +55,7 @@ public sealed class RichTextRulesTests
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(RichTextRulesTestData.NotAllowedMessage);
+
         policy.CallCount.Should().Be(expected: 1);
     }
 

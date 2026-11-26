@@ -82,6 +82,7 @@ public sealed class DismissWorkOrderDraftRequestHandler(
         }
 
         draft.Dismiss();
+
         _outbox.Add(
             new WorkOrderDraftDismissed
             {

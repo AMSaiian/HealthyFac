@@ -38,6 +38,7 @@ public static class HealthHostFactory
                 .ConfigureServices((context, services) =>
                 {
                     services.AddRouting();
+
                     services.AddSharedHealthChecks(context.Configuration)
                         .AddCheck(ReadyCheckName, () => HealthCheckResult.Healthy(), [HealthCheckConstants.ReadyTag]);
 
@@ -45,6 +46,7 @@ public static class HealthHostFactory
                     {
                         services.AddAuthentication(DenyScheme)
                             .AddScheme<AuthenticationSchemeOptions, DenyHandler>(DenyScheme, configureOptions: null);
+
                         services.AddAuthorizationBuilder()
                             .SetAuthenticatedFallbackPolicy();
                     }

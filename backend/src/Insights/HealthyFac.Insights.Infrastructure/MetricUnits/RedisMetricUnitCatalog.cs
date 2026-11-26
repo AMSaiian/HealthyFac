@@ -56,6 +56,7 @@ public sealed class RedisMetricUnitCatalog(
         try
         {
             var cached = await ReadAsync(cancellationToken);
+
             if (cached is not null)
             {
                 return cached;
@@ -89,6 +90,7 @@ public sealed class RedisMetricUnitCatalog(
     private async Task<IReadOnlyList<MetricUnit>> FetchAcrossInstancesAsync(CancellationToken cancellationToken)
     {
         var owner = Guid.NewGuid().ToString(format: "N");
+
         var isAcquired = await RunAsync(
             database => database.StringSetAsync(_lockKey, owner, _options.LockTimeout, When.NotExists),
             cancellationToken);
@@ -130,6 +132,7 @@ public sealed class RedisMetricUnitCatalog(
             await Task.Delay(pollInterval, _timeProvider, cancellationToken);
 
             var cached = await ReadAsync(cancellationToken);
+
             if (cached is not null)
             {
                 return cached;

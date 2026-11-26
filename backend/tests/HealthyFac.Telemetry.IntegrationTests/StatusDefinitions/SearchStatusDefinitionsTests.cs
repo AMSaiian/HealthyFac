@@ -21,15 +21,19 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var otherMachineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
+
         var activeId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
             StatusDefinitionTestData.Code);
+
         var deletedId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             machineId,
             StatusDefinitionTestData.OtherCode);
+
         await _fixture.RemoveStatusDefinitionRowAsync(tenant, deletedId);
+
         await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId,
             otherMachineId,
@@ -64,10 +68,12 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var ids = await _fixture.SeedStatusDefinitionsAsync(machineId, StatusDefinitionSearchTestData.CreateSeeds());
+
         var filter = new StatusDefinitionGridFilter
         {
             Code = new TextFilter { Value = StatusDefinitionSearchTestData.LowerAlphaPrefix },
         };
+
         var sort = new GridSort<StatusDefinitionSortColumn>
         {
             Column = StatusDefinitionSortColumn.Code,
@@ -78,7 +84,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
             tenant.CompanyId,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter, sort));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 0], ids[index: 1]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[0], ids[1]);
     }
 
     [Fact]
@@ -87,6 +93,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var ids = await _fixture.SeedStatusDefinitionsAsync(machineId, StatusDefinitionSearchTestData.CreateSeeds());
+
         var filter = new StatusDefinitionGridFilter
         {
             CreatedAt = new DateRangeFilter
@@ -95,6 +102,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
                 To = StatusDefinitionSearchTestData.FirstCreatedAt.AddDays(value: 3),
             },
         };
+
         var sort = new GridSort<StatusDefinitionSortColumn>
         {
             Column = StatusDefinitionSortColumn.Code,
@@ -105,7 +113,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
             tenant.CompanyId,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter, sort));
 
-        response.Items.Select(item => item.Id).Should().Equal(ids[index: 1], ids[index: 2]);
+        response.Items.Select(item => item.Id).Should().Equal(ids[1], ids[2]);
     }
 
     [Fact]
@@ -114,6 +122,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var ids = await _fixture.SeedStatusDefinitionsAsync(machineId, StatusDefinitionSearchTestData.CreateSeeds());
+
         var filter = new StatusDefinitionGridFilter
         {
             Severities = new SetFilter<StatusSeverity> { Values = [StatusSeverity.Info, StatusSeverity.Error] },
@@ -123,7 +132,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
             tenant.CompanyId,
             StatusDefinitionSearchTestData.CreateSearch(tenant.CompanyId, machineId, filter));
 
-        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[index: 1], ids[index: 2], ids[index: 3]]);
+        response.Items.Select(item => item.Id).Should().BeEquivalentTo([ids[1], ids[2], ids[3]]);
     }
 
     [Fact]
@@ -132,6 +141,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         await _fixture.SeedStatusDefinitionsAsync(machineId, StatusDefinitionSearchTestData.CreateSeeds());
+
         var sort = new GridSort<StatusDefinitionSortColumn>
         {
             Column = StatusDefinitionSortColumn.Severity,
@@ -173,6 +183,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var ids = await _fixture.SeedStatusDefinitionsAsync(machineId, StatusDefinitionSearchTestData.CreateSeeds());
+
         var sort = new GridSort<StatusDefinitionSortColumn>
         {
             Column = StatusDefinitionSortColumn.Code,
@@ -186,6 +197,7 @@ public sealed class SearchStatusDefinitionsTests(TelemetryDatabaseFixture fixtur
                 machineId,
                 sort: sort,
                 limit: StatusDefinitionSearchTestData.PageSize));
+
         var secondPage = await _fixture.SearchStatusDefinitionsAsync(
             tenant.CompanyId,
             StatusDefinitionSearchTestData.CreateSearch(

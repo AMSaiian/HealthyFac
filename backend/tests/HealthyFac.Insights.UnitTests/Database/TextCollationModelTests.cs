@@ -32,10 +32,11 @@ public sealed class TextCollationModelTests
     }
 
     private static List<IProperty> GetTextProperties() =>
-        InsightsModelFactory.GetEntityTypes()
+    [
+        .. InsightsModelFactory.GetEntityTypes()
             .SelectMany(entity => entity.GetProperties())
-            .Where(property => property.ClrType == typeof(string) && property.GetColumnType() != JsonbColumnType)
-            .ToList();
+            .Where(property => property.ClrType == typeof(string) && property.GetColumnType() != JsonbColumnType),
+    ];
 
     private static string ExpectedCollation(IProperty property) =>
         TextCollationModelTestData.CaseSensitiveColumns.Contains(Describe(property))

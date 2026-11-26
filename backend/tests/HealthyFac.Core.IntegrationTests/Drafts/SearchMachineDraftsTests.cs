@@ -48,6 +48,7 @@ public sealed class SearchMachineDraftsTests(CoreDatabaseFixture fixture)
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var machineId = await _fixture.ArrangeMachineAsync(tenant.CompanyId);
         var draftIds = new List<Guid>();
+
         for (var index = 0; index < DraftSearchTestData.NoFilterDraftCount; index++)
         {
             draftIds.Add(await _fixture.AddMachineDraftAsync(tenant.CompanyId, machineId));

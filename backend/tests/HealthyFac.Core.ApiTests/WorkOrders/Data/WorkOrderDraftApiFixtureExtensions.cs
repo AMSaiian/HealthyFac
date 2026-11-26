@@ -23,8 +23,10 @@ public static class WorkOrderDraftApiFixtureExtensions
         {
             var machineId = fixture.IdEncryptor.Decrypt(
                 await fixture.ArrangeMachineAsync(Guid.NewGuid().ToString(format: "N")));
+
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var draft = new WorkOrderDraft(
                 Guid.CreateVersion7(),
                 fixture.CompanyId,
@@ -47,14 +49,15 @@ public static class WorkOrderDraftApiFixtureExtensions
         {
             var body = new JsonObject
             {
-                [propertyName: "title"] = WorkOrderApiTestData.Title,
-                [propertyName: "priority"] = "high",
-                [propertyName: "category"] = "repair",
-                [propertyName: "estimateMinutes"] = estimateMinutes,
+                ["title"] = WorkOrderApiTestData.Title,
+                ["priority"] = "high",
+                ["category"] = "repair",
+                ["estimateMinutes"] = estimateMinutes,
             };
+
             if (rowVersion is not null)
             {
-                body[propertyName: "rowVersion"] = rowVersion;
+                body["rowVersion"] = rowVersion;
             }
 
             return body.ToJsonString();
@@ -78,6 +81,7 @@ public static class WorkOrderDraftApiFixtureExtensions
                 HttpMethod.Get,
                 $"{WorkOrderDraftApiTestData.BasePath}/{encryptedId}",
                 claims);
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return (await response.Content.ReadFromJsonAsync<JsonObject>())!;

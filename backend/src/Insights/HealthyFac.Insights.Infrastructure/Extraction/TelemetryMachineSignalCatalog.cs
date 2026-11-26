@@ -38,6 +38,7 @@ public sealed class TelemetryMachineSignalCatalog(
         var encryptedId = _idEncryptor.Encrypt(machineId);
 
         var metrics = await ReadMetricsAsync(client, encryptedId, cancellationToken);
+
         if (metrics is null)
         {
             return Empty();
@@ -59,6 +60,7 @@ public sealed class TelemetryMachineSignalCatalog(
         using var response = await client.GetAsync(
             string.Format(MetricDefinitionsFormat, encryptedId),
             cancellationToken);
+
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
@@ -85,6 +87,7 @@ public sealed class TelemetryMachineSignalCatalog(
                 string.Format(StatusSearchFormat, encryptedId),
                 new StatusSearchPayload { Offset = offset, Limit = GridValidationConstants.MaxLimit },
                 cancellationToken);
+
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return null;
@@ -92,6 +95,7 @@ public sealed class TelemetryMachineSignalCatalog(
 
             await response.EnsureSuccessAsync(cancellationToken);
             var page = await response.Content.ReadFromJsonAsync<StatusPagePayload>(cancellationToken);
+
             if (page is null || page.Items.Count == 0)
             {
                 return statuses;

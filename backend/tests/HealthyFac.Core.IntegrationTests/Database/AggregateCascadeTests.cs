@@ -40,10 +40,12 @@ public sealed class AggregateCascadeTests(CoreDatabaseFixture fixture)
     public async Task ExecuteDelete_MachineWithWorkOrder_FailsOnTheForeignKey()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
+
         var workOrder = WorkOrder.Create(
             tenant.CompanyId,
             WorkOrderTestData.Title,
@@ -52,6 +54,7 @@ public sealed class AggregateCascadeTests(CoreDatabaseFixture fixture)
             WorkOrderCategory.Repair,
             machineId,
             TimeSpan.FromHours(value: 1));
+
         await _fixture.SaveWorkOrderAsync(workOrder);
 
         var act = () => ExecuteDeleteMachineAsync(machineId);

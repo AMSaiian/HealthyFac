@@ -118,11 +118,13 @@ public sealed class UpdateMachineRequestHandler(
 
         var zone = await _companyZoneReader.FindZoneAsync(request.CompanyId, cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
+
         MachineGoLiveRules.EnsureNotBeforeCreation(request.ExpectedGoLiveOn, machine.CreatedAt, zone);
 
         var isRenamed = machine.Name != request.Name;
         var isGoLiveChanged = machine.ExpectedGoLiveOn != request.ExpectedGoLiveOn;
         machine.Update(request.Name, request.SerialNumber, request.Description, request.ExpectedGoLiveOn);
+
         var isStateChanged = MachineStateChanges.Apply(
             _dbContext, _outbox, machine, request.State, _timeProvider.GetUtcNow().UtcDateTime);
 

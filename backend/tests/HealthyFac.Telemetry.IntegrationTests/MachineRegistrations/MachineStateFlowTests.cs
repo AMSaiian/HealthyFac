@@ -33,6 +33,7 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
     public async Task ChangeMachineState_WithOlderStart_ChangesNothing()
     {
         var machineId = await ArrangeRegistrationAsync();
+
         await _fixture.ChangeMachineStateAsync(
             MachineRegistrationTestData.CreateStateMessage(
                 machineId,
@@ -76,6 +77,7 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
             ExpectedGoLiveOn = MachineRegistrationTestData.GoLiveDay,
             GoLiveStartsAt = MachineRegistrationTestData.GoLiveStart,
         };
+
         await _fixture.RegisterMachineAsync(message);
 
         await _fixture.RegisterMachineAsync(
@@ -113,6 +115,7 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
     public async Task ChangeMachineGoLiveDate_WithOlderChange_ChangesNothing()
     {
         var machineId = await ArrangeRegistrationAsync();
+
         await _fixture.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 machineId,
@@ -140,7 +143,9 @@ public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
             ExpectedGoLiveOn = MachineRegistrationTestData.GoLiveDay,
             GoLiveStartsAt = MachineRegistrationTestData.GoLiveStart,
         };
+
         await _fixture.RegisterMachineAsync(message);
+
         await _fixture.ChangeMachineGoLiveDateAsync(
             MachineRegistrationTestData.CreateGoLiveMessage(
                 message.MachineId,

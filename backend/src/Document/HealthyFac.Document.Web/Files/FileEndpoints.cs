@@ -54,11 +54,13 @@ public static class FileEndpoints
         public IEndpointRouteBuilder MapFileEndpoints()
         {
             var companyGroup = app.MapGroup(FileRoutes.CompanyBaseRoute);
+
             companyGroup.MapPost(FileRoutes.Root, UploadCompanyFileAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write)
                 .RequireRateLimiting(UploadLimits.PolicyName)
                 .WithMetadata(new RequestSizeLimitAttribute(AttachmentRequestLimit))
                 .DisableAntiforgery();
+
             companyGroup.MapPost(FileRoutes.Embedded, UploadEmbeddedImageAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Write)
                 .RequireRateLimiting(UploadLimits.PolicyName)
@@ -67,30 +69,42 @@ public static class FileEndpoints
 
             companyGroup.MapGet(FileRoutes.ById, GetCompanyFileAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
+
             companyGroup.MapPut(FileRoutes.ById, UpdateCompanyFileAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
+
             companyGroup.MapDelete(FileRoutes.ById, DeleteCompanyFileAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Delete);
+
             companyGroup.MapPut(FileRoutes.MachineOfFile, TieFileToMachineAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
+
             companyGroup.MapDelete(FileRoutes.MachineOfFile, UntieFileFromMachineAsync)
                 .RequireAuthorization(DocumentPermissions.CompanyFiles.Write);
+
             companyGroup.MapPost(FileRoutes.Links, GetFileLinksAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
+
             companyGroup.MapPost(FileRoutes.Lookup, LookupFilesAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
+
             companyGroup.MapPost(FileRoutes.Search, SearchCompanyFilesAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
 
             var machineGroup = app.MapGroup(FileRoutes.MachineBaseRoute);
+
             machineGroup.MapGet(FileRoutes.ById, GetMachineFileAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
+
             machineGroup.MapPut(FileRoutes.ById, UpdateMachineFileAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Write);
+
             machineGroup.MapDelete(FileRoutes.ById, DeleteMachineFileAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Delete);
+
             machineGroup.MapPost(FileRoutes.Search, SearchMachineFilesAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Read);
+
             machineGroup.MapPost(FileRoutes.Root, UploadMachineFileAsync)
                 .RequireAuthorization(DocumentPermissions.Files.Write)
                 .RequireRateLimiting(UploadLimits.PolicyName)

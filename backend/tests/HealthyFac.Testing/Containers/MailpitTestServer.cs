@@ -65,12 +65,14 @@ public sealed class MailpitTestServer : IAsyncDisposable
     {
         var list = await _client.GetJsonAsync<MailpitMessageList>(MessagesPath, CancellationToken.None);
 
-        return list!.Messages
-            .Select(message => new MailpitMessage(
-                message.Id,
-                message.To.Select(address => address.Address).ToList(),
-                message.Subject))
-            .ToList();
+        return
+        [
+            .. list!.Messages
+                .Select(message => new MailpitMessage(
+                    message.Id,
+                    [.. message.To.Select(address => address.Address)],
+                    message.Subject)),
+        ];
     }
 
     /// <summary>Deletes every stored message, so a test counts only the emails of its own run.</summary>

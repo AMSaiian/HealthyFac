@@ -128,6 +128,7 @@ public sealed class PushHandlerFixture : IDisposable
         RealtimeExtensions.ConfigurePushPipeline(retryBuilder, Time);
         var queueProvider = new ServiceCollection().AddSingleton(Queue).BuildServiceProvider();
         Metrics = new RealtimeMetrics(MeterFactory, queueProvider);
+
         Handler = new RealtimePushHandler(
             new FakeHubContext(Clients),
             new RedisResiliencePipeline(redisPipeline ?? ResiliencePipeline.Empty, new CircuitBreakerStateProvider()),
@@ -170,6 +171,7 @@ public sealed class PushHandlerFixture : IDisposable
     public async Task HandleAsync(RealtimePush push, ActivityContext parentContext = default(ActivityContext))
     {
         var handling = Handler.HandleAsync(push, parentContext, TestContext.Current.CancellationToken);
+
         while (!handling.IsCompleted)
         {
             Time.Advance(TimeSpan.FromSeconds(seconds: 1));

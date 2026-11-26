@@ -35,47 +35,58 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         var pump = machineIds[TelemetryHistorySeedTestData.Pump];
         var counts = await _fixture.CountMessagesByMachineAsync();
         var range = await _fixture.FindSampleRangeAsync();
+
         var gapCount = await _fixture.CountMessagesInRangeAsync(
             pump, At(expectation.PumpGapFrom), At(expectation.PumpGapUntil));
-        var broken = await _fixture.CountBrokenMessagesAsync();
+
+        var (withErrors, withoutSchemaOrPayload) = await _fixture.CountBrokenMessagesAsync();
         var hasMarker = await _fixture.HasReceivedMessageAsync(TelemetryHistorySeedTestData.MarkerMessageId);
         var latheStates = await _fixture.LoadStateRowsAsync(lathe);
         var pumpStates = await _fixture.LoadStateRowsAsync(pump);
+
         var latheSpeedInMaintenance = await _fixture.LoadNumericValuesAsync(
             lathe,
             TelemetryHistorySeedTestData.SpindleSpeed,
             At(expectation.LatheMaintenanceFrom).AddSeconds(value: 5),
             At(expectation.LatheMaintenanceUntil));
+
         var latheSpeedBefore = await _fixture.LoadNumericValuesAsync(
             lathe,
             TelemetryHistorySeedTestData.SpindleSpeed,
             At(TelemetryHistorySeedTestData.LatheSpeedBeforeFrom),
             At(TelemetryHistorySeedTestData.LatheSpeedBeforeUntil));
+
         var pumpSpeedInMaintenance = await _fixture.LoadNumericValuesAsync(
             pump,
             TelemetryHistorySeedTestData.PumpSpeed,
             At(expectation.PumpMaintenanceFrom).AddSeconds(value: 5),
             At(expectation.PumpMaintenanceUntil));
+
         var modeOne = await LoadModeOneCountsAsync();
 
         job.ExitCode.Should().Be(expected: 0);
         HistoryAssertions.AssertSamples(expectation, machineIds, counts, range);
         gapCount.Should().Be(expected: 0);
-        broken.WithErrors.Should().Be(expected: 0);
-        broken.WithoutSchemaOrPayload.Should().Be(expected: 0);
+        withErrors.Should().Be(expected: 0);
+        withoutSchemaOrPayload.Should().Be(expected: 0);
         hasMarker.Should().BeTrue();
+
         HasState(latheStates, TelemetryHistorySeedTestData.InMaintenance, At(expectation.LatheMaintenanceFrom))
             .Should()
             .BeTrue();
+
         HasState(latheStates, TelemetryHistorySeedTestData.Operational, At(expectation.LatheMaintenanceUntil))
             .Should()
             .BeTrue();
+
         HasState(pumpStates, TelemetryHistorySeedTestData.InMaintenance, At(expectation.PumpMaintenanceFrom))
             .Should()
             .BeTrue();
+
         HasState(pumpStates, TelemetryHistorySeedTestData.Operational, At(expectation.PumpMaintenanceUntil))
             .Should()
             .BeTrue();
+
         latheSpeedInMaintenance.Should().NotBeEmpty().And.OnlyContain(value => value == 0);
         latheSpeedBefore.Should().NotBeEmpty().And.Contain(value => value > 0);
         pumpSpeedInMaintenance.Should().NotBeEmpty().And.OnlyContain(value => value == 0);
@@ -111,6 +122,7 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         using var stop = new CancellationTokenSource();
         var baseDirectory = TelemetryHistorySeedTestData.CreateBaseDirectory(TelemetryHistorySeedTestData.TestScript);
         var log = new CancellingWriter(TelemetryHistorySeedTestData.CancelItem, stop);
+
         var stopped = await _fixture.RunJobAsync(
             [TelemetryHistorySeedTestData.TelemetryArgument],
             stop.Token,
@@ -142,10 +154,13 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         var order = orders.Single(candidate => candidate.Title == TelemetryHistorySeedTestData.DrainWorkOrderTitle);
         var history = order.History.OrderBy(row => row.Revision).ToList();
         var assignee = employees.Single(employee => employee.Id == order.Current.AssigneeId);
+
         var supervisor = employees.Single(employee =>
             employee.Email.StartsWith(TelemetryHistorySeedTestData.WorkOrderCreator));
+
         job.ExitCode.Should().Be(expected: 0);
         history.Select(row => row.Status).Should().Equal(WorkOrdersTestData.PumpSealStatuses);
+
         history.Select(row => row.CreatedAt)
             .Should()
             .BeEquivalentTo(
@@ -154,13 +169,16 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
                     .Using<DateTime>(context => context.Subject.Should()
                         .BeCloseTo(context.Expectation, TelemetryHistorySeedTestData.StateTolerance))
                     .WhenTypeIs<DateTime>());
+
         assignee.Email.Should().StartWith(TelemetryHistorySeedTestData.MaintenanceActor);
         order.Current.Estimate.Should().Be(TimeSpan.FromMinutes(minutes: 60));
         order.Current.PlannedStartUtc.Should().Be(TelemetryHistorySeedTestData.DrainPlannedStartUtc);
+
         history.Take(count: 2)
             .Select(row => row.CreatedBy)
             .Should()
             .OnlyContain(userId => userId == supervisor.IdentityUserId);
+
         order.CreatedBy.Should().Be(supervisor.IdentityUserId!.Value);
     }
 
@@ -206,24 +224,32 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
         var orders = await _fixture.LoadWorkOrdersAsync();
         var order = orders.Single(candidate => candidate.Title == TelemetryHistorySeedTestData.DrainWorkOrderTitle);
         var overrideEnd = At(TelemetryHistorySeedTestData.TestExpectation.LatheOverrideUntil);
+
         var drainCase = cases.Single(candidate => candidate.MachineId == machineIds[TelemetryHistorySeedTestData.Lathe]
             && candidate.State == CaseState.Resolved
             && candidate.OpenedAt > overrideEnd);
+
         var caseSignals = signals.Where(signal => signal.CaseId == drainCase.Id).ToList();
         var link = At(TelemetryHistorySeedTestData.LinkMoment);
+
         var openAtLink = caseSignals.Where(signal => signal.OpenedAt <= link
                 && (signal.ResolvedAt is null || signal.ResolvedAt > link))
             .ToList();
+
         var plannerRuns = runs.Where(run => run.CaseId == drainCase.Id && run.Role == AgentRole.Planner).ToList();
         var linkActions = actions.Where(action => plannerRuns.Select(run => run.Id).Contains(action.RunId)).ToList();
         var action = linkActions.Should().ContainSingle().Subject;
         var payload = ActionBuffering.Deserialize<LinkWorkOrderPayload>(action);
         var outcome = await _fixture.LoadCaseOutcomeAsync(drainCase.Id, TestContext.Current.CancellationToken);
+
         var toolCalls = await _fixture.LoadToolCallsAsync(
             drainCase.Id, plannerRuns.Single().Id, TestContext.Current.CancellationToken);
+
         openAtLink.Should().NotBeEmpty();
+
         openAtLink.Should()
             .OnlyContain(signal => signal.Coverage == SignalCoverage.Linked && signal.WorkOrderId == order.Id);
+
         caseSignals.Except(openAtLink).Should().OnlyContain(signal => signal.Coverage != SignalCoverage.Linked);
         plannerRuns.Should().ContainSingle().Which.State.Should().Be(AgentRunState.Completed);
         action.Kind.Should().Be(AgentActionKind.LinkWorkOrder);
@@ -246,6 +272,7 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
     {
         await _fixture.RunFullSeedAsync(
             TestContext.Current.CancellationToken, TelemetryHistorySeedTestData.ThursdayAnchor);
+
         var machineIds = await _fixture.LoadMachineIdsByKeyAsync();
         var orders = await _fixture.LoadWorkOrdersAsync();
 
@@ -255,15 +282,17 @@ public sealed class TelemetryHistorySeedTests(SeederFixture fixture)
             TelemetryHistorySeedTestData.PumpDrain,
             PeopleTestData.CompanyId,
             machineIds[TelemetryHistorySeedTestData.Pump],
-            orders[index: 0].Id,
+            orders[0].Id,
             TestContext.Current.CancellationToken));
 
         var (runs, _) = await _fixture.LoadAgentRunsAsync();
+
         failure.Should()
             .BeOfType<SeedFileException>()
             .Which.Message.Should()
             .Contain(TelemetryHistorySeedTestData.PumpLinkItem)
             .And.Contain(expected: "no open case");
+
         runs.Should().NotContain(run => run.Role == AgentRole.Planner);
     }
 

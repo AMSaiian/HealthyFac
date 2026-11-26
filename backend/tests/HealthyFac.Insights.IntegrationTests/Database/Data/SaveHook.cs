@@ -13,7 +13,7 @@ public sealed class SaveHook : SaveChangesInterceptor
 
     public void RunBeforeNextSave(Func<Task> action) => Interlocked.Exchange(ref _next, action);
 
-    public void Clear() => Interlocked.Exchange(ref _next, null);
+    public void Clear() => Interlocked.Exchange(ref _next, value: null);
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -21,7 +21,8 @@ public sealed class SaveHook : SaveChangesInterceptor
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var action = Interlocked.Exchange(ref _next, null);
+        var action = Interlocked.Exchange(ref _next, value: null);
+
         if (action is not null)
         {
             await action();

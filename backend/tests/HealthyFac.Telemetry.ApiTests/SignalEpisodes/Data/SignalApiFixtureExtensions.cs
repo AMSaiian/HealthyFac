@@ -22,16 +22,19 @@ public static class SignalApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var registration = new MachineRegistration(
                 Guid.CreateVersion7(),
                 GatewayIds.Create(),
                 fixture.CompanyId,
                 new DateOnly(year: 2020, month: 1, day: 1),
                 new DateTime(year: 2019, month: 12, day: 31, hour: 22, minute: 0, second: 0, DateTimeKind.Utc));
+
             var unit = await dbContext.MeasurementUnits
                 .Include(candidate => candidate.QuantityKind)
                 .Where(candidate => candidate.QuantityKind.Name == "Temperature" && candidate.Name == "DegreeCelsius")
                 .SingleAsync();
+
             var metric = new MetricDefinition(
                 registration.Id,
                 SignalApiTestData.MetricKey,
@@ -68,6 +71,7 @@ public static class SignalApiFixtureExtensions
                     SignalApiTestData.RangeStart.AddSeconds(value: 10),
                     operatingPhaseId: null,
                     new SignalSnapshot { Value = 91, Limit = 90, PhaseCode = SignalApiTestData.PhaseCode }));
+
             await dbContext.SaveChangesAsync();
 
             return new SignalArrangement(registration.Id, metric.Id);

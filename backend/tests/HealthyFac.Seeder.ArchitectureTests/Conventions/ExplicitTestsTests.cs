@@ -10,10 +10,13 @@ public sealed partial class ExplicitTestsTests
         "backend/tests/HealthyFac.Seeder.IntegrationTests",
     ];
 
+    private static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
     [Fact]
     public void SeederTests_AreExplicit()
     {
         var repositoryRoot = FindRepositoryRoot();
+
         var attributes = SeederTestFolders
             .SelectMany(folder => Directory.EnumerateFiles(
                 Path.Combine(repositoryRoot, folder),
@@ -24,15 +27,18 @@ public sealed partial class ExplicitTestsTests
             .ToList();
 
         attributes.Should().NotBeEmpty(because: "a moved folder must not pass with no test found");
+
         var violations = attributes
             .Where(attribute => !attribute.IsExplicit)
             .Select(attribute => $"{attribute.File}:{attribute.Line}");
+
         string.Join(Environment.NewLine, violations).Should().BeEmpty();
     }
 
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
         while (directory is not null
             && !File.Exists(Path.Combine(directory.FullName, path2: "backend", path3: "HealthyFac.slnx")))
         {
@@ -46,7 +52,7 @@ public sealed partial class ExplicitTestsTests
 
     private static bool IsBuildOutput(string file)
     {
-        var segments = file.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var segments = file.Split(PathSeparators);
 
         return segments.Contains(value: "bin") || segments.Contains(value: "obj");
     }
@@ -54,6 +60,7 @@ public sealed partial class ExplicitTestsTests
     private static IEnumerable<TestAttribute> ReadTestAttributes(string file)
     {
         var lines = File.ReadAllLines(file);
+
         for (var index = 0; index < lines.Length; index++)
         {
             if (!TestAttributeRegex().IsMatch(lines[index]))

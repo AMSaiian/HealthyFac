@@ -22,6 +22,7 @@ public sealed class ProposalEntryTests
 
         isChanged.Should().Be(expectedIsChanged, caseName);
         entry.State.Should().Be(expectedState, caseName);
+
         entry.MachineId.Should()
             .Be(
                 expectedState == ProposalEntryState.OnMachine && expectedIsChanged

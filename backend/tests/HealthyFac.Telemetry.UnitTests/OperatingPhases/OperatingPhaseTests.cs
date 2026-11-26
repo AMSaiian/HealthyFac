@@ -148,7 +148,9 @@ public sealed class OperatingPhaseTests
         var phase = OperatingPhaseTestData.CreatePhase(
             [OperatingPhaseTestData.CreateStatusCondition()],
             [OperatingPhaseTestData.CreateLimit(OperatingPhaseTestData.NumericMetricId)]);
+
         var storedRow = phase.Limits.Single();
+
         var newRow = OperatingPhaseLimit.Create(
             OperatingPhaseTestData.NumericMetricId,
             MetricValueKind.Numeric,

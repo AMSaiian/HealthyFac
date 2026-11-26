@@ -79,7 +79,7 @@ public class CreateOperatingPhaseRequestHandler(ITelemetryDbContext dbContext)
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var body = await _dbContext.BuildPhaseBodyAsync(request, request.MachineId, cancellationToken);
+        var (conditions, limits) = await _dbContext.BuildPhaseBodyAsync(request, request.MachineId, cancellationToken);
 
         var phase = new OperatingPhase(
             request.MachineId,
@@ -88,8 +88,9 @@ public class CreateOperatingPhaseRequestHandler(ITelemetryDbContext dbContext)
             request.Description,
             request.Priority,
             request.IsTracked,
-            body.Conditions,
-            body.Limits);
+            conditions,
+            limits);
+
         _dbContext.OperatingPhases.Add(phase);
 
         try

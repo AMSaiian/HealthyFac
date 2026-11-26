@@ -66,11 +66,13 @@ internal sealed class HistoryRun
     {
         var windowStart = context.Anchor.UtcDateTime.AddHours(-file.WindowHours);
         var runs = new List<MachineRun>();
+
         foreach (var machine in machines.OrderBy(candidate => candidate.Index))
         {
             var machineId = context.GetId($"{machine.Key}{MachinesConstants.MachineSuffix}");
             var data = await ReadDataAsync(telemetry, machineId, cancellationToken);
-            var changes = ResolveChanges(machine.Key, file, machinesFile, context, windowStart);
+            var changes = ResolveChanges(machine.Key, file, machinesFile, context);
+
             var snapshot = new MachineSnapshot
             {
                 MachineId = machineId,
@@ -92,6 +94,7 @@ internal sealed class HistoryRun
                 IsRegistered = true,
                 Definitions = data.Definitions,
             };
+
             var events = new HistoryEvents(
                 file.Drains.Where(drain => drain.Machine == machine.Key),
                 file.Steps.Where(step => step.Machine == machine.Key),
@@ -99,12 +102,13 @@ internal sealed class HistoryRun
                 file.Overrides.Where(overrideSeed => overrideSeed.Machine == machine.Key),
                 context.Anchor,
                 context.Zone);
+
             var simulation = new HistorySimulation(
                 snapshot,
                 windowStart,
                 TimeSpan.FromSeconds(file.SampleIntervalSeconds),
                 new Random(file.RandomSeed + machine.Index),
-                changes.Where(change => change.StartedAt > windowStart).ToList(),
+                [.. changes.Where(change => change.StartedAt > windowStart)],
                 events);
 
             runs.Add(new MachineRun { Key = machine.Key, MachineId = machineId, Data = data, Simulation = simulation });
@@ -126,10 +130,12 @@ internal sealed class HistoryRun
         }
 
         var batch = new List<HistoryRows>();
+
         foreach (var machine in _machines)
         {
             var samples = machine.Simulation.Run(_lastTo, at);
             var isLast = machine == _machines[^1];
+
             foreach (var sample in samples)
             {
                 if (isLast && sample.SampledAt == _anchor.UtcDateTime)
@@ -144,10 +150,12 @@ internal sealed class HistoryRun
         }
 
         _lastTo = at;
+
         using (var scope = _telemetry.CreateScope(TelemetryServiceActors.Evaluator))
         {
             await _writer.WriteAsync(
                 scope.ServiceProvider.GetRequiredService<TelemetryDbContext>(), batch, cancellationToken);
+
             await scope.ServiceProvider.GetRequiredService<FleetSilence>()
                 .CheckAsync(scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>(), at, cancellationToken);
         }
@@ -170,10 +178,12 @@ internal sealed class HistoryRun
     public async Task WriteMarkerAsync(Guid markerMessageId, CancellationToken cancellationToken)
     {
         var last = _machines[^1];
+
         var sample = _anchorSample
             ?? throw new InvalidOperationException(TelemetryHistoryErrors.AnchorSampleMissing(last.Key));
 
         using var scope = _telemetry.CreateScope(TelemetryServiceActors.Evaluator);
+
         await _writer.WriteAsync(
             scope.ServiceProvider.GetRequiredService<TelemetryDbContext>(),
             [last.Builder(_telemetry).Build(sample, markerMessageId)],
@@ -188,18 +198,22 @@ internal sealed class HistoryRun
     {
         using var scope = telemetry.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Telemetry));
         var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
         var registration = await dbContext.MachineRegistrations
             .AsNoTracking()
             .SingleAsync(candidate => candidate.Id == machineId, cancellationToken);
+
         var schema = await dbContext.MetricSchemaRevisions
             .AsNoTracking()
             .Where(revision => revision.MachineRegistrationId == machineId)
             .OrderByDescending(revision => revision.Revision)
             .FirstAsync(cancellationToken);
+
         var metrics = await dbContext.MetricDefinitions
             .AsNoTracking()
             .Where(metric => metric.MachineRegistrationId == machineId)
             .ToListAsync(cancellationToken);
+
         var statuses = await dbContext.StatusDefinitions
             .AsNoTracking()
             .Where(status => status.MachineRegistrationId == machineId)
@@ -214,22 +228,25 @@ internal sealed class HistoryRun
             SchemaRevision = schema.Revision,
             SchemaJson = schema.Schema,
             MetricIdsByKey = metrics.ToDictionary(metric => metric.Key, metric => metric.Id, StringComparer.Ordinal),
-            StatusDefinitions = statuses
-                .Select(status => new StatusDefinitionKey { Id = status.Id, Code = status.Code })
-                .ToList(),
+            StatusDefinitions =
+            [
+                .. statuses.Select(status => new StatusDefinitionKey { Id = status.Id, Code = status.Code }),
+            ],
             Definitions = new MachineDefinitions
             {
-                Metrics = metrics
-                    .Select(metric => new MetricInfo
-                    {
-                        Key = metric.Key,
-                        ValueKind = metric.ValueKind,
-                        Min = metric.Min,
-                        Max = metric.Max,
-                        States = metric.States,
-                    })
-                    .ToList(),
-                StatusCodes = statuses.Select(status => status.Code).ToList(),
+                Metrics =
+                [
+                    .. metrics
+                        .Select(metric => new MetricInfo
+                        {
+                            Key = metric.Key,
+                            ValueKind = metric.ValueKind,
+                            Min = metric.Min,
+                            Max = metric.Max,
+                            States = metric.States,
+                        }),
+                ],
+                StatusCodes = [.. statuses.Select(status => status.Code)],
             },
         };
     }
@@ -238,8 +255,7 @@ internal sealed class HistoryRun
         string machine,
         TelemetryFile file,
         MachinesFile machinesFile,
-        SeedContext context,
-        DateTime windowStart
+        SeedContext context
     ) =>
     [
         .. machinesFile.StateChanges

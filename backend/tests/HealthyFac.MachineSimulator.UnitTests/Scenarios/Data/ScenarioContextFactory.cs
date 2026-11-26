@@ -43,6 +43,7 @@ public static class ScenarioContextFactory
     {
         var modules = CreateModules(scenario);
         modules[name].SetMode(mode);
+
         if (mode == ModuleMode.Draining)
         {
             modules[name].Advance(DrainDuration * progress, DrainDuration);

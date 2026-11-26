@@ -21,6 +21,7 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.RevokeOpenEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var rowVersion = await LoadRowVersionAsync(arranged.InviteId);
 
         await RevokeAsync(arranged.CompanyId, arranged.InviteId, rowVersion);
@@ -29,6 +30,7 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
         var verify = () => VerifyAsync(arranged.Token);
 
         isDeleted.Should().BeTrue();
+
         await verify.Should()
             .ThrowAsync<NotFoundException>()
             .WithMessage(EmployeeInviteErrors.Rejections.InviteLinkInvalid);
@@ -40,15 +42,16 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.RevokeAgainEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var rowVersion = await LoadRowVersionAsync(arranged.InviteId);
         await RevokeAsync(arranged.CompanyId, arranged.InviteId, rowVersion);
 
-        var again = await _fixture.CreateInviteAsync(
+        var (inviteId, _) = await _fixture.CreateInviteAsync(
             arranged.CompanyId,
             InviteTestData.RevokeAgainEmail,
             DateTime.UtcNow.AddHours(value: 1));
 
-        again.InviteId.Should().NotBe(arranged.InviteId);
+        inviteId.Should().NotBe(arranged.InviteId);
     }
 
     [Fact]
@@ -57,6 +60,7 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.RevokeAcceptedEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         await _fixture.AcceptInviteAsync(arranged.Token);
         var rowVersion = await LoadRowVersionAsync(arranged.InviteId);
 
@@ -73,6 +77,7 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.RevokeStaleEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var staleRowVersion = await LoadRowVersionAsync(arranged.InviteId);
         await ResendAsync(arranged.CompanyId, arranged.InviteId);
 
@@ -89,6 +94,7 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
         var arranged = await _fixture.ArrangeInviteAsync(
             InviteTestData.RevokeOtherCompanyEmail,
             DateTime.UtcNow.AddHours(value: 1));
+
         var otherCompanyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
         var rowVersion = await LoadRowVersionAsync(arranged.InviteId);
 
@@ -133,6 +139,7 @@ public sealed class RevokeEmployeeInviteTests(CoreDatabaseFixture fixture)
     private async Task ResendAsync(Guid companyId, Guid inviteId)
     {
         using var scope = _fixture.CreateUserScope(companyId);
+
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<ResendEmployeeInviteRequest, ResendEmployeeInviteResponse>>();
 

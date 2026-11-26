@@ -30,6 +30,7 @@ public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fix
 
         var claims = KeycloakRealmFixtureExtensions.DecodePayload(echo.ReceivedToken!);
         claims.Audiences().Should().Equal(TokenExchangeTestData.TargetClientId);
+
         claims[TokenExchangeTestData.SubjectClaim]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.SupervisorIdentityId.ToString());
@@ -50,13 +51,16 @@ public sealed class TokenExchangeHandlerTests(KeycloakRealmCollectionFixture fix
                     [$"{ServiceOptions.SectionName}:Name"] = ServiceName.Core.Value,
                 })
             .Build();
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddServiceOptions(configuration);
         services.AddSharedRedis(configuration);
         services.AddServiceTokens(configuration);
+
         services.AddSingleton<IIncomingAccessTokenAccessor>(
             new FixedIncomingAccessTokenAccessor(subjectToken, RealmTestData.SupervisorIdentityId));
+
         services.AddHttpClient(TokenExchangeTestData.EchoClientName)
             .AddUserDelegatedToken(TokenExchangeTestData.TargetClientId, TokenExchangeTestData.ExchangeScopes)
             .ConfigurePrimaryHttpMessageHandler(() => echo);

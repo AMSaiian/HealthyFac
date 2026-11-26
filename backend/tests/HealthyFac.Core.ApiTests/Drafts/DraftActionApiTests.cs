@@ -28,6 +28,7 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
     {
         var machineId =
             _fixture.IdEncryptor.Decrypt(await _fixture.ArrangeMachineAsync(serialNumber: "DISMISS-UPDATE"));
+
         var draft = await _fixture.ArrangeMachineDraftAsync(machineId);
         await _fixture.ArrangeMachineDraftAsync(machineId);
 
@@ -102,6 +103,7 @@ public sealed class DraftActionApiTests(CoreApiFixture fixture)
             HttpMethod.Post,
             DraftApiTestData.DismissMachineDraftsPath(encryptedMachineId),
             _fixture.CreateMachineClaims(DraftApiTestData.DraftWritePermission));
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
 

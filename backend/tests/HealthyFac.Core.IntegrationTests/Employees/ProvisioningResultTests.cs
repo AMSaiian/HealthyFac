@@ -124,6 +124,7 @@ public sealed class ProvisioningResultTests(CoreDatabaseFixture fixture)
     {
         var arranged = await _fixture.ArrangeProvisioningEmployeeAsync(
             ProvisioningTestData.CompleteDeactivatedTwiceEmail);
+
         await _fixture.DeactivateEmployeeAsync(arranged.CompanyId, arranged.EmployeeId, Guid.CreateVersion7());
         var identityUserId = Guid.CreateVersion7();
         await _fixture.CompleteProvisioningAsync(arranged.EmployeeId, identityUserId);

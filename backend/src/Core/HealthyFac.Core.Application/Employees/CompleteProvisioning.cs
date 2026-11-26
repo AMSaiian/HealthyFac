@@ -41,6 +41,7 @@ public sealed class CompleteProvisioningRequestHandler(
 
         var isAlreadyCompleted = employee.IsLinkedTo(request.IdentityUserId)
             && (employee.Status == EmployeeStatus.Active || employee.Status == EmployeeStatus.Deactivated);
+
         if (isAlreadyCompleted)
         {
             return;
@@ -49,6 +50,7 @@ public sealed class CompleteProvisioningRequestHandler(
         if (employee.Status == EmployeeStatus.Deactivated)
         {
             employee.LinkIdentity(request.IdentityUserId);
+
             _outbox.Add(
                 new EmployeeDeactivated
                 {

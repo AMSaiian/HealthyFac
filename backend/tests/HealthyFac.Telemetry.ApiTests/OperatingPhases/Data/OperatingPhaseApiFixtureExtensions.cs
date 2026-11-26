@@ -15,17 +15,17 @@ public static class OperatingPhaseApiFixtureExtensions
         public string OperatingPhaseBody(string code, string encryptedStatusId, int priority) =>
             new JsonObject
             {
-                [propertyName: "code"] = code,
-                [propertyName: "name"] = code,
-                [propertyName: "priority"] = priority,
-                [propertyName: "isTracked"] = true,
-                [propertyName: "conditions"] = new JsonArray(
+                ["code"] = code,
+                ["name"] = code,
+                ["priority"] = priority,
+                ["isTracked"] = true,
+                ["conditions"] = new JsonArray(
                     new JsonObject
                     {
-                        [propertyName: "statusDefinitionId"] = encryptedStatusId,
-                        [propertyName: "operator"] = "active",
+                        ["statusDefinitionId"] = encryptedStatusId,
+                        ["operator"] = "active",
                     }),
-                [propertyName: "limits"] = new JsonArray(),
+                ["limits"] = new JsonArray(),
             }.ToJsonString();
 
         public async Task<EncryptedStatusDefinition> ArrangePhaseMachineAsync() =>

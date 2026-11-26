@@ -48,14 +48,14 @@ public sealed class InsightsServiceTokenTests(KeycloakRealmCollectionFixture fix
     {
         var form = new Dictionary<string, string>
         {
-            [key: "grant_type"] = "client_credentials",
-            [key: "client_id"] = RealmTestData.InsightsClientId,
-            [key: "client_secret"] = RealmTestData.InsightsClientSecret,
+            ["grant_type"] = "client_credentials",
+            ["client_id"] = RealmTestData.InsightsClientId,
+            ["client_secret"] = RealmTestData.InsightsClientSecret,
         };
 
         if (scope is not null)
         {
-            form[key: "scope"] = scope;
+            form["scope"] = scope;
         }
 
         var response = await _realm.RequestTokenAsync(form);

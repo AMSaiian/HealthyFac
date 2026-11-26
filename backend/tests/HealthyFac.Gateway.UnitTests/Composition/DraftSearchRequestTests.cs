@@ -26,7 +26,7 @@ public sealed class DraftSearchRequestTests
         var request = DraftSearchRequest.TryRead(JsonNode.Parse(json: """{"limit":5}""")!.AsObject(), out _);
 
         request.Should().NotBeNull();
-        request!.SortColumn.Should().Be(DraftSortComparers.State);
+        request.SortColumn.Should().Be(DraftSortComparers.State);
         request.IsDescending.Should().BeFalse();
     }
 

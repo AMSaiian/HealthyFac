@@ -43,6 +43,7 @@ public sealed class GetEmployeeDaySchedulePreHandlerCheck(
     public async Task CheckAsync(GetEmployeeDayScheduleRequest request, CancellationToken cancellationToken)
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
+
         await request.Scope.EnsureEmployeeReadableAsync(
             _dbContext,
             _ownEmployee,

@@ -22,6 +22,7 @@ public sealed class LocalTimesTests
                     LocalTimesTestData.UtcFormat,
                     CultureInfo.InvariantCulture,
                     DateTimeStyles.AdjustToUniversal));
+
         result.Kind.Should().Be(DateTimeKind.Utc);
     }
 

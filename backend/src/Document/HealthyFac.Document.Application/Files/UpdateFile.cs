@@ -99,6 +99,7 @@ public sealed class UpdateFileRequestHandler(IDocumentDbContext dbContext)
             ?? throw new NotFoundException(FileErrors.FileNotFound);
 
         var fileName = FileNames.StripStoredExtension(request.FileName, file.Extension);
+
         if (fileName.Length == 0)
         {
             throw new AppValidationException([new ValidationFailure(FileNameKey, FileErrors.NameRequired)]);

@@ -18,6 +18,7 @@ public sealed class IngestSeedTests(SeederFixture fixture)
         var files = await _fixture.LoadFileRefsAsync();
         files.Should().HaveCount(IngestTestData.FileCount);
         files.Should().OnlyContain(file => file.IngestState == FileIngestState.Completed);
+
         foreach (var file in files)
         {
             var committed = await File.ReadAllBytesAsync(
@@ -25,6 +26,7 @@ public sealed class IngestSeedTests(SeederFixture fixture)
                     AppContext.BaseDirectory,
                     IngestTestData.DocumentPaths.Single(path => path.Contains(file.FileName))),
                 TestContext.Current.CancellationToken);
+
             var blob = await _fixture.ReadBlobAsync(file.Id);
             SHA256.HashData(blob).Should().Equal(SHA256.HashData(committed));
             file.Sha256.Should().Equal(SHA256.HashData(committed));

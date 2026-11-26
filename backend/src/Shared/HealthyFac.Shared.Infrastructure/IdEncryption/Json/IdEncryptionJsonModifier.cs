@@ -50,6 +50,7 @@ public static class IdEncryptionJsonModifier
             }
 
             var converter = ResolveConverter(property.PropertyType, encryptor);
+
             if (converter is not null)
             {
                 property.CustomConverter = converter;

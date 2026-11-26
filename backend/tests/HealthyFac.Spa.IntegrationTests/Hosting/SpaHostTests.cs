@@ -16,10 +16,11 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
-        var htmlNonces = NonceInHtml().Matches(html).Select(match => match.Groups[groupnum: 1].Value).ToList();
+        var htmlNonces = NonceInHtml().Matches(html).Select(match => match.Groups[1].Value).ToList();
+
         var headerNonce = NonceInHeader()
             .Match(response.Headers.GetValues(HeaderNames.ContentSecurityPolicy).Single())
-            .Groups[groupnum: 1].Value;
+            .Groups[1].Value;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         html.Should().NotContain(SpaFactory.NoncePlaceholder);
@@ -41,9 +42,9 @@ public sealed partial class SpaHostTests
 
         NonceInHeader()
             .Match(firstHeader)
-            .Groups[groupnum: 1]
+            .Groups[1]
             .Value.Should()
-            .NotBe(NonceInHeader().Match(secondHeader).Groups[groupnum: 1].Value);
+            .NotBe(NonceInHeader().Match(secondHeader).Groups[1].Value);
     }
 
     [Fact]
@@ -71,6 +72,7 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync(
             requestUri: "/maintenance/cases/v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             TestContext.Current.CancellationToken);
+
         var html = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -104,7 +106,8 @@ public sealed partial class SpaHostTests
     public async Task GetHashedAsset_WithConfiguredSeconds_ReturnsThatMaxAge()
     {
         await using var spa = new SpaFactory(
-            settings: new Dictionary<string, string> { [key: "Spa:ImmutableCacheSeconds"] = "60" });
+            settings: new Dictionary<string, string> { ["Spa:ImmutableCacheSeconds"] = "60" });
+
         using var client = spa.CreateClient();
 
         var response = await client.GetAsync($"/{SpaFactory.HashedAssetName}", TestContext.Current.CancellationToken);
@@ -116,7 +119,8 @@ public sealed partial class SpaHostTests
     public async Task GetRoot_WithConfiguredPermissionsPolicy_ReturnsThatHeader()
     {
         await using var spa = new SpaFactory(
-            settings: new Dictionary<string, string> { [key: "Spa:PermissionsPolicy"] = "camera=(self)" });
+            settings: new Dictionary<string, string> { ["Spa:PermissionsPolicy"] = "camera=(self)" });
+
         using var client = spa.CreateClient();
 
         var response = await client.GetAsync(requestUri: "/", TestContext.Current.CancellationToken);
@@ -166,10 +170,12 @@ public sealed partial class SpaHostTests
     public async Task GetConfigJson_WithConfiguredSeconds_ReturnsPublicMaxAge()
     {
         await using var spa = new SpaFactory(
-            settings: new Dictionary<string, string> { [key: "Spa:RuntimeConfigCacheSeconds"] = "60" });
+            settings: new Dictionary<string, string> { ["Spa:RuntimeConfigCacheSeconds"] = "60" });
+
         using var client = spa.CreateClient();
 
         var response = await client.GetAsync(requestUri: "/config.json", TestContext.Current.CancellationToken);
+
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
@@ -185,6 +191,7 @@ public sealed partial class SpaHostTests
         using var client = spa.CreateClient();
 
         var response = await client.GetAsync(requestUri: "/config.json", TestContext.Current.CancellationToken);
+
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
@@ -203,6 +210,7 @@ public sealed partial class SpaHostTests
         var response = await client.GetAsync($"/{SpaFactory.SilentSsoFileName}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         response.Headers.GetValues(HeaderNames.ContentSecurityPolicy)
             .Should()
             .Equal("default-src 'none'; script-src 'self'; frame-ancestors 'self'");

@@ -45,6 +45,7 @@ public sealed class FakeEmbeddingGenerator : IEmbeddingGenerator<string, Embeddi
         }
 
         Interlocked.Increment(ref _callCount);
+
         if (Failure is not null)
         {
             throw Failure;
@@ -58,11 +59,12 @@ public sealed class FakeEmbeddingGenerator : IEmbeddingGenerator<string, Embeddi
         }
 
         var size = options?.Dimensions ?? DefaultDimensions;
+
         var embeddings = values
             .Select(_ => new Embedding<float>(Enumerable.Repeat(element: 1f, size).ToArray()))
             .ToList();
 
-        return new GeneratedEmbeddings<Embedding<float>>(embeddings);
+        return [with(embeddings)];
     }
 
     public object? GetService(Type serviceType, object? serviceKey = null) => null;

@@ -37,6 +37,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         var userId = await _fixture.Keycloak.Admin.FindUserIdByEmployeeIdAsync(
             message.EmployeeId,
             CancellationToken.None);
+
         var attributes = await _fixture.Keycloak.LoadUserAttributesAsync(userId!.Value);
 
         attributes.Keys.Should().BeEquivalentTo(ProvisioningTestData.EmployeeIdAttribute);
@@ -52,9 +53,11 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
         await _fixture.ProvisionAsync(message);
 
         var userCount = await _fixture.CountUsersWithEmailAsync(message.Email);
+
         var userId = await _fixture.Keycloak.Admin.FindUserIdByEmployeeIdAsync(
             message.EmployeeId,
             CancellationToken.None);
+
         var provisioned = await _fixture.LoadProvisionedAsync(message.EmployeeId);
 
         userCount.Should().Be(expected: 1);
@@ -71,6 +74,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
 
         var failed = await _fixture.LoadProvisioningFailedAsync(message.EmployeeId);
         var provisioned = await _fixture.LoadProvisionedAsync(message.EmployeeId);
+
         var userId = await _fixture.Keycloak.Admin.FindUserIdByEmployeeIdAsync(
             message.EmployeeId,
             CancellationToken.None);
@@ -79,6 +83,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
             .ContainSingle()
             .Which.Reason.Should()
             .Be(IdentityProvisioningFailureReasons.OrganizationNotFound);
+
         provisioned.Should().BeEmpty();
         userId.Should().BeNull();
     }
@@ -99,6 +104,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
             .ContainSingle()
             .Which.Reason.Should()
             .Be(IdentityProvisioningFailureReasons.EmailAlreadyRegistered);
+
         provisioned.Should().BeEmpty();
         mailCount.Should().Be(expected: 0);
     }
@@ -118,6 +124,7 @@ public sealed class ProvisionIdentityTests(ProvisioningFixture fixture)
             .ContainSingle()
             .Which.Reason.Should()
             .Be(IdentityProvisioningFailureReasons.RoleNotFound);
+
         provisioned.Should().BeEmpty();
         identityAdmin.PasswordEmailUserIds.Should().BeEmpty();
     }

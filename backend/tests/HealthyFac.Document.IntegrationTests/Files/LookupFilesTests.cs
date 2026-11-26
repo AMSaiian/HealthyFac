@@ -20,6 +20,7 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
     {
         var machineId = await _fixture.RegisterMachineAsync(GetFileLinksTestData.CompanyId);
         var uploadedAt = GetFileLinksTestData.UploadedAt;
+
         var ids = await _fixture.SeedFilesAsync(
             GetFileLinksTestData.CompanyId,
             [
@@ -32,20 +33,22 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
                     FileName: "foreign", Extension: "pdf", SizeBytes: 10, uploadedAt,
                     CompanyId: GetFileLinksTestData.OtherCompanyId),
             ]);
-        await _fixture.DeleteFileRefAsync(GetFileLinksTestData.CompanyId, ids[index: 3]);
+
+        await _fixture.DeleteFileRefAsync(GetFileLinksTestData.CompanyId, ids[3]);
+
         var requested = ids.Select(_fixture.Encrypt)
             .Concat([GetFileLinksTestData.MalformedId, _fixture.Encrypt(Guid.CreateVersion7())])
-            .Append(_fixture.Encrypt(ids[index: 0]));
+            .Append(_fixture.Encrypt(ids[0]));
 
         var response = await LookupAsync(GetFileLinksTestData.CompanyId, requested);
 
-        response.Files.Select(file => file.Id).Should().BeEquivalentTo([ids[index: 0], ids[index: 2]]);
-        var machineFile = response.Files.Single(file => file.Id == ids[index: 2]);
+        response.Files.Select(file => file.Id).Should().BeEquivalentTo([ids[0], ids[2]]);
+        var machineFile = response.Files.Single(file => file.Id == ids[2]);
         machineFile.MachineId.Should().Be(machineId);
         machineFile.FileName.Should().Be(expected: "machine");
         machineFile.Extension.Should().Be(expected: "pdf");
         machineFile.SizeBytes.Should().Be(expected: 20);
-        response.Files.Single(file => file.Id == ids[index: 0]).MachineId.Should().BeNull();
+        response.Files.Single(file => file.Id == ids[0]).MachineId.Should().BeNull();
     }
 
     [Fact]
@@ -59,6 +62,7 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
                 CompanyId = GetFileLinksTestData.CompanyId,
                 Ids = [.. Enumerable.Range(start: 0, FileValidationConstants.LookupIdsMaxCount).Select(_ => "id")],
             });
+
         var above = validator.Validate(
             new LookupFilesRequest
             {

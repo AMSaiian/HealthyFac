@@ -15,6 +15,7 @@ public sealed class LookupMachineNamesApiTests(CoreApiFixture fixture)
     {
         var ids = Enumerable.Range(start: 0, MachineApiTestData.NameLookupTooManyIds)
             .Select(_ => $"\"{_fixture.IdEncryptor.Encrypt(Guid.CreateVersion7())}\"");
+
         var body = $"{{\"machineIds\":[{string.Join(separator: ",", ids)}],\"machineDraftIds\":[]}}";
 
         var response = await _fixture.SendMachineRequestAsync(

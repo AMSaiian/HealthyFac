@@ -198,6 +198,7 @@ public static class TelemetryHistorySeedTestData
     {
         var folder = Directory.CreateTempSubdirectory().FullName;
         var source = Path.Combine(AppContext.BaseDirectory, SeedProgram.SeedFolderName);
+
         foreach (var directory in Directory.GetDirectories(source, searchPattern: "*", SearchOption.AllDirectories))
         {
             Directory.CreateDirectory(directory.Replace(source, folder));
@@ -209,11 +210,12 @@ public static class TelemetryHistorySeedTestData
         }
 
         File.WriteAllText(Path.Combine(folder, TelemetryFile), script);
+
         if (extraWorkOrder is not null)
         {
             var path = Path.Combine(folder, WorkOrdersFile);
             var root = JsonNode.Parse(File.ReadAllText(path))!;
-            root[propertyName: "workOrders"]!.AsArray().Add(JsonNode.Parse(extraWorkOrder));
+            root["workOrders"]!.AsArray().Add(JsonNode.Parse(extraWorkOrder));
             File.WriteAllText(path, root.ToJsonString());
         }
 

@@ -51,11 +51,13 @@ public sealed class SampleBatchReader(ITelemetryDbContext dbContext)
             return [];
         }
 
-        var first = times[index: 0];
+        var first = times[0];
         var last = times[^1];
+
         var numericIds = metrics.Where(metric => metric.ValueKind == MetricValueKind.Numeric)
             .Select(metric => metric.Id)
             .ToList();
+
         var discreteIds = metrics.Where(metric => metric.ValueKind != MetricValueKind.Numeric)
             .Select(metric => metric.Id)
             .ToList();
@@ -66,12 +68,14 @@ public sealed class SampleBatchReader(ITelemetryDbContext dbContext)
                 && reading.SampledAt >= first
                 && reading.SampledAt <= last)
             .ToListAsync(cancellationToken);
+
         var discrete = await _dbContext.DiscreteReadings
             .AsNoTracking()
             .Where(reading => discreteIds.Contains(reading.MetricDefinitionId)
                 && reading.SampledAt >= first
                 && reading.SampledAt <= last)
             .ToListAsync(cancellationToken);
+
         var statuses = await _dbContext.StatusReadings
             .AsNoTracking()
             .Where(reading => statusIds.Contains(reading.StatusDefinitionId)
@@ -83,20 +87,22 @@ public sealed class SampleBatchReader(ITelemetryDbContext dbContext)
         var discreteByTime = discrete.ToLookup(reading => reading.SampledAt);
         var statusByTime = statuses.ToLookup(reading => reading.SampledAt);
 
-        return times
-            .Select(time => new Sample
-            {
-                SampledAt = time,
-                Values = new SampleValues
+        return
+        [
+            .. times
+                .Select(time => new Sample
                 {
-                    Numeric = numericByTime[time]
-                        .ToDictionary(reading => reading.MetricDefinitionId, reading => reading.Value),
-                    Discrete = discreteByTime[time]
-                        .ToDictionary(reading => reading.MetricDefinitionId, reading => reading.Value),
-                    ActiveStatusIds = statusByTime[time].Select(reading => reading.StatusDefinitionId).ToHashSet(),
-                },
-            })
-            .ToList();
+                    SampledAt = time,
+                    Values = new SampleValues
+                    {
+                        Numeric = numericByTime[time]
+                            .ToDictionary(reading => reading.MetricDefinitionId, reading => reading.Value),
+                        Discrete = discreteByTime[time]
+                            .ToDictionary(reading => reading.MetricDefinitionId, reading => reading.Value),
+                        ActiveStatusIds = statusByTime[time].Select(reading => reading.StatusDefinitionId).ToHashSet(),
+                    },
+                }),
+        ];
     }
 
     /// <summary>

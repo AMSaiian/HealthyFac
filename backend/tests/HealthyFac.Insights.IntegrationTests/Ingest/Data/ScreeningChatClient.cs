@@ -47,10 +47,12 @@ public sealed partial class ScreeningChatClient : IChatClient
     )
     {
         var text = string.Join(Environment.NewLine, messages.Select(message => message.Text));
+
         var indexes = ChunkIndexPattern()
             .Matches(text)
-            .Select(match => int.Parse(match.Groups[groupnum: 1].Value))
+            .Select(match => int.Parse(match.Groups[1].Value))
             .ToList();
+
         _batches.Add(indexes);
 
         if (Failure is not null && (FailFromCall == 0 || _batches.Count >= FailFromCall))
@@ -69,6 +71,7 @@ public sealed partial class ScreeningChatClient : IChatClient
             isSafe = !UnsafeIndexes.Contains(index),
             reason = UnsafeIndexes.Contains(index) ? UnsafeReason : SafeReason,
         });
+
         var answer = JsonSerializer.Serialize(new { verdicts });
 
         return new ChatResponse(new ChatMessage(ChatRole.Assistant, answer))

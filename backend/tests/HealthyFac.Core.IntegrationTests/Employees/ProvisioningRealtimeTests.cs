@@ -28,6 +28,7 @@ public sealed class ProvisioningRealtimeTests(CoreDatabaseFixture fixture)
         var push = _fixture.RealtimeQueue.Items.Should().ContainSingle().Subject.Push;
         outcome.IsProcessed.Should().BeTrue();
         push.Group.Should().Be(RealtimeGroups.ForKind(tenant.CompanyId, RealtimeNotificationKind.ProvisioningFailed));
+
         push.Notification!.Data.Should()
             .BeEquivalentTo(
                 new ProvisioningFailedData

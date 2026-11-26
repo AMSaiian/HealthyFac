@@ -20,7 +20,7 @@ public static class TruncateTables
         var entities = model.GetEntityTypes().Where(entity => entity.GetTableName() is not null).ToList();
         var kept = entities.Where(entity => keep.Contains(entity.ClrType)).Select(Quote).ToHashSet();
 
-        return entities.Select(Quote).Where(table => !kept.Contains(table)).Distinct().Order().ToList();
+        return [.. entities.Select(Quote).Where(table => !kept.Contains(table)).Distinct().Order()];
     }
 
     /// <summary>Builds the statement.</summary>

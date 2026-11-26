@@ -12,6 +12,7 @@ public sealed class MachineSignalTests
     public void Apply_WithAResolveThatHasNoLimit_KeepsTheValueAndTheLimitOfTheCrossing()
     {
         var signal = CaseTestData.CreateSignalWithValues(CrossingValue, CrossingLimit);
+
         var resolve = new SignalChange
         {
             Rule = SignalRule.Threshold,
@@ -36,6 +37,7 @@ public sealed class MachineSignalTests
     public void Apply_WithAnEscalationOfAnOpenSignal_TakesTheNewValueAndLimit()
     {
         var signal = CaseTestData.CreateSignalWithValues(CrossingValue, CrossingLimit);
+
         var escalation = new SignalChange
         {
             Rule = SignalRule.Threshold,

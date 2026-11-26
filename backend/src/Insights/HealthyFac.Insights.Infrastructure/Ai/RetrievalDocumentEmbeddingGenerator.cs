@@ -25,6 +25,7 @@ public sealed class RetrievalDocumentEmbeddingGenerator(IEmbeddingGenerator<stri
     )
     {
         var taskOptions = options is null ? new EmbeddingGenerationOptions() : options.Clone();
+
         taskOptions.RawRepresentationFactory = _ => new EmbedContentConfig
         {
             TaskType = TaskType,

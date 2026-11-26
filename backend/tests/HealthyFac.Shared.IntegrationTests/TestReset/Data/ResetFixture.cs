@@ -29,8 +29,10 @@ public sealed class ResetFixture : IAsyncLifetime, IResetBeforeEachTest
 
         await using var dbContext = CreateDbContext();
         await dbContext.Database.EnsureCreatedAsync();
+
         dbContext.ReferenceItems.AddRange(
             ResetTestData.ReferenceItemNames.Select(name => new ReferenceItem { Name = name }));
+
         await dbContext.SaveChangesAsync();
         await SeedBaseDataAsync(dbContext);
 
@@ -38,6 +40,7 @@ public sealed class ResetFixture : IAsyncLifetime, IResetBeforeEachTest
 
         await using var connection = await new ConnectionFactory { Uri = new Uri(_broker.ConnectionString) }
             .CreateConnectionAsync();
+
         await using var channel = await connection.CreateChannelAsync();
         await channel.QueueDeclareAsync(ResetTestData.QueueName, durable: true, exclusive: false, autoDelete: false);
     }

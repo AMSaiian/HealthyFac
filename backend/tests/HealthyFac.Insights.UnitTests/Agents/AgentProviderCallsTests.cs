@@ -33,10 +33,12 @@ public sealed class AgentProviderCallsTests
                 throw AgentProviderCallsTestData.Transient();
             },
             TestContext.Current.CancellationToken);
+
         await DriveAsync(task);
 
         var act = () => task;
         await act.Should().ThrowAsync<ProviderUnavailableException>();
+
         callTimes.Select(time => (time - AgentProviderCallsTestData.Start).TotalSeconds)
             .Should()
             .Equal(0, 10, 40, 130);
@@ -55,6 +57,7 @@ public sealed class AgentProviderCallsTests
                 return calls < 3 ? throw AgentProviderCallsTestData.Transient() : Task.FromResult(calls);
             },
             TestContext.Current.CancellationToken);
+
         await DriveAsync(task);
 
         var result = await task;
@@ -76,6 +79,7 @@ public sealed class AgentProviderCallsTests
                     AgentProviderCallsTestData.ProviderText, inner: null, HttpStatusCode.Unauthorized);
             },
             TestContext.Current.CancellationToken);
+
         await DriveAsync(task);
 
         var act = () => task;

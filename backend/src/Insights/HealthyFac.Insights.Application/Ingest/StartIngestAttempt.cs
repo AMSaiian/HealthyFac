@@ -85,6 +85,7 @@ public sealed class StartIngestAttemptRequestHandler(
     )
     {
         var file = await _fileCatalog.GetFileForUserAsync(request.FileId, cancellationToken);
+
         if (file is null || file.CompanyId != request.CompanyId || file.Purpose != IngestRules.AttachmentPurpose)
         {
             throw new NotFoundException(IngestErrors.FileNotFound);
@@ -101,10 +102,12 @@ public sealed class StartIngestAttemptRequestHandler(
             .Where(attempt => attempt.FileId == file.FileId && attempt.CompanyId == request.CompanyId)
             .Select(attempt => attempt.State)
             .ToListAsync(cancellationToken);
+
         var failedCount = states.Count(state => state == IngestState.Failed);
         EnsureCanStart(states, failedCount);
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+
         var attempt = new IngestAttempt(
             request.CompanyId,
             file.FileId,
@@ -115,6 +118,7 @@ public sealed class StartIngestAttemptRequestHandler(
             file.SizeBytes,
             now,
             Activity.Current?.Id);
+
         _dbContext.IngestAttempts.Add(attempt);
         _outbox.Add(IngestStateMessages.Create(attempt, failedCount, now));
 

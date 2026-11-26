@@ -23,21 +23,25 @@ public sealed class OperatingPhaseApiTests(TelemetryApiFixture fixture)
             path,
             write,
             _fixture.OperatingPhaseBody(OperatingPhaseApiTestData.Code, arranged.Id, priority: 0));
+
         var location = created.Headers.Location!.ToString();
-        var phaseId = location.Split(separator: '/').Last();
+        var phaseId = location.Split(separator: '/')[^1];
 
         var fetched = await _fixture.SendAsync(HttpMethod.Get, $"{path}/{phaseId}", read);
         var listed = await _fixture.SendAsync(HttpMethod.Get, path, read);
+
         var updated = await _fixture.SendAsync(
             HttpMethod.Put,
             $"{path}/{phaseId}",
             write,
             _fixture.OperatingPhaseBody(code: "stopped", arranged.Id, priority: 4));
+
         var reordered = await _fixture.SendAsync(
             HttpMethod.Put,
             $"{path}/{OperatingPhaseApiTestData.OrderSegment}",
             write,
-            new JsonObject { [propertyName: "phaseIds"] = new JsonArray(phaseId) }.ToJsonString());
+            new JsonObject { ["phaseIds"] = new JsonArray(phaseId) }.ToJsonString());
+
         var deleted = await _fixture.SendAsync(HttpMethod.Delete, $"{path}/{phaseId}", write);
         var afterDelete = await _fixture.SendAsync(HttpMethod.Get, $"{path}/{phaseId}", read);
         var fetchedBody = await fetched.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);

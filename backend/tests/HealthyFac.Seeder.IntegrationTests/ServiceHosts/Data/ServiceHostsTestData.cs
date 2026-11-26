@@ -20,6 +20,7 @@ public static class ServiceHostsTestData
     {
         var path = Path.Combine(
             AppContext.BaseDirectory, path2: "services", service, path4: "appsettings.Development.json");
+
         using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
 
         return document.RootElement.GetProperty(section).GetProperty(key).GetString();

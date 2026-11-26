@@ -102,6 +102,7 @@ public static class CaseReadFixtureExtensions
                         ResolvedAt = state == SignalState.Resolved ? CaseTestData.Now.AddMinutes(minutes + 1) : null,
                         Sequence = 1,
                     });
+
                 maintenanceCase.Add(signal);
                 ids.Add(signal.Id);
             }
@@ -146,6 +147,7 @@ public static class CaseReadFixtureExtensions
                         EstimateMinutes = 60,
                     },
                     JsonSerializerOptions.Web));
+
             action.Commit();
             await fixture.SaveAsync(action);
 

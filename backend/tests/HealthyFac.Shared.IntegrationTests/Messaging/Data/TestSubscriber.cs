@@ -50,7 +50,7 @@ public sealed class TestSubscriber : IDisposable
     public Task SubscribeAsync(string topic) => _bus.Advanced.Topics.Subscribe(topic);
 
     public List<ReceivedMessage> ReceivedOfType(string messageType)
-        => _received.Where(message => message.Type == messageType).ToList();
+        => [.. _received.Where(message => message.Type == messageType)];
 
     /// <summary>
     /// Waits until at least <paramref name="count"/> messages of the type arrived, then waits a quiet period,
@@ -60,6 +60,7 @@ public sealed class TestSubscriber : IDisposable
     public async Task<List<ReceivedMessage>> WaitForMessagesAsync(string messageType, int count)
     {
         using var cancellation = new CancellationTokenSource(TransportTestData.WaitTimeout);
+
         while (!cancellation.IsCancellationRequested && ReceivedOfType(messageType).Count < count)
         {
             await Task.Delay(TransportTestData.PollDelay);

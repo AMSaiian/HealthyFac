@@ -69,6 +69,7 @@ public sealed class SimulatedMachine
         var change = SnapshotChange.None;
 
         var kind = ScenarioBinding.KindOf(snapshot.SerialNumber);
+
         if (kind != _scenario.Kind)
         {
             _scenario = ScenarioBinding.Create(kind);
@@ -77,6 +78,7 @@ public sealed class SimulatedMachine
         }
 
         var resetAt = FindMaintenanceReset(snapshot);
+
         if (resetAt is { } at)
         {
             foreach (var module in _modules.Values)
@@ -164,9 +166,11 @@ public sealed class SimulatedMachine
             });
 
         List<(ModuleName, DrainMilestone)> milestones = [];
+
         if (sample.IsRunning)
         {
             RunTime += elapsed;
+
             foreach (var key in sample.GrowingCounters.Where(_counters.ContainsKey))
             {
                 _counters[key] += elapsed.TotalHours;
@@ -184,7 +188,7 @@ public sealed class SimulatedMachine
     private void Bind()
     {
         _modules = _scenario.Modules.ToDictionary(module => module.Name, module => new ModuleState(module.Kind));
-        _counters = new Dictionary<string, double>(_scenario.CounterStartValues);
+        _counters = [with(_scenario.CounterStartValues)];
         _memory.Clear();
         RunTime = TimeSpan.Zero;
     }
@@ -198,6 +202,7 @@ public sealed class SimulatedMachine
         {
             var isMaintenanceEnd = rows[index - 1].State == MachineState.InMaintenance
                 && rows[index].State == MachineState.Operational;
+
             if (isMaintenanceEnd && rows[index].StartedAt > LastReset)
             {
                 resetAt = rows[index].StartedAt;

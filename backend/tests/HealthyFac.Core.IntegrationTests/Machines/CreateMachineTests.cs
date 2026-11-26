@@ -53,6 +53,7 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var gatewayId = GatewayIds.Create();
+
         await _fixture.AddMachineWithGatewayIdAsync(
             tenant.CompanyId, gatewayId, MachineTestData.SerialNumber);
 
@@ -77,19 +78,21 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var message = messages.Where(candidate => candidate.MachineId == machineId).ToList();
 
         message.Should().ContainSingle();
-        message[index: 0].GatewayId.Should().Be(machine.GatewayId);
-        message[index: 0].CompanyId.Should().Be(tenant.CompanyId);
-        message[index: 0].Name.Should().Be(MachineTestData.MachineName);
+        message[0].GatewayId.Should().Be(machine.GatewayId);
+        message[0].CompanyId.Should().Be(tenant.CompanyId);
+        message[0].Name.Should().Be(MachineTestData.MachineName);
     }
 
     [Fact]
     public async Task CreateMachine_WithTakenSerialNumber_StoresNoOutboxRow()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
+
         var before = await _fixture.ReadOutboxMessagesAsync<MachineCreated>();
 
         var act = () => _fixture.CreateMachineAsync(
@@ -118,15 +121,16 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var history = await _fixture.LoadStateHistoryAsync(machineId);
 
         history.Should().ContainSingle();
-        history[index: 0].State.Should().Be(MachineState.Operational);
-        history[index: 0].StartedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
-        history[index: 0].DeletedAt.Should().BeNull();
+        history[0].State.Should().Be(MachineState.Operational);
+        history[0].StartedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+        history[0].DeletedAt.Should().BeNull();
     }
 
     [Fact]
     public async Task CreateMachine_WithSerialNumberInOtherCase_ThrowsConflict()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
@@ -144,10 +148,12 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
     public async Task CreateMachine_WithSerialNumberOfDeletedMachine_Succeeds()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var firstId = await _fixture.CreateMachineAsync(
             tenant.CompanyId,
             MachineTestData.MachineName,
             MachineTestData.SerialNumber);
+
         await _fixture.DeleteMachineAsync(tenant.CompanyId, firstId);
 
         var secondId = await _fixture.CreateMachineAsync(
@@ -166,6 +172,7 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
         var otherTenant = await _fixture.ArrangeMachineTenantAsync(MachineTestData.OtherCompanyName);
+
         await _fixture.CreateMachineAsync(
             otherTenant.CompanyId,
             MachineTestData.MachineName,
@@ -216,7 +223,7 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
         var machine = await _fixture.LoadMachineRowAsync(machineId);
 
         machine.Description.Should().Be(MachineTestData.FormattedDescriptionAtVisibleLimit);
-        machine.Description!.Length.Should().BeGreaterThan(MachineTestData.DescriptionLimit);
+        machine.Description.Length.Should().BeGreaterThan(MachineTestData.DescriptionLimit);
     }
 
     [Fact]
@@ -233,11 +240,13 @@ public sealed class CreateMachineTests(CoreDatabaseFixture fixture)
 
         race.SaveCounts.Should().Equal(1, 1);
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(MachineErrors.SerialNumberTaken);
+
         rows.Should().ContainSingle();
     }
 

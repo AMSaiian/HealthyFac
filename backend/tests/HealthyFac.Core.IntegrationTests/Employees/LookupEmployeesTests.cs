@@ -17,10 +17,13 @@ public sealed class LookupEmployeesTests(CoreDatabaseFixture fixture)
     {
         var companyId = await _fixture.CreateCompanyAsync(LookupEmployeesTestData.CompanyName);
         var otherCompanyId = await _fixture.CreateCompanyAsync(LookupEmployeesTestData.OtherCompanyName);
+
         var ann = await ArrangeAsync(
             companyId, LookupEmployeesTestData.AnnEmail, LookupEmployeesTestData.AnnFirstName, isDeactivated: false);
+
         await ArrangeAsync(
             companyId, LookupEmployeesTestData.BobEmail, LookupEmployeesTestData.BobFirstName, isDeactivated: true);
+
         await ArrangeAsync(
             otherCompanyId, LookupEmployeesTestData.CaraEmail, LookupEmployeesTestData.CaraFirstName,
             isDeactivated: false);
@@ -43,8 +46,10 @@ public sealed class LookupEmployeesTests(CoreDatabaseFixture fixture)
     public async Task Lookup_WithPartOfTheFullNameInAnotherCase_MatchesFirstAndLastName()
     {
         var companyId = await _fixture.CreateCompanyAsync(LookupEmployeesTestData.CompanyName);
+
         await ArrangeAsync(
             companyId, LookupEmployeesTestData.AnnEmail, LookupEmployeesTestData.AnnFirstName, isDeactivated: false);
+
         var cara = await ArrangeAsync(
             companyId, LookupEmployeesTestData.CaraEmail, LookupEmployeesTestData.CaraFirstName, isDeactivated: false);
 

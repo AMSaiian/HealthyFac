@@ -46,7 +46,7 @@ public sealed class SeedCompletion
     {
         var lastSet = string.Format(IngestConstants.SetFilePattern, IngestConstants.SetNumbers[^1]);
 
-        return folder.Read<IngestSetFile>(lastSet).Entries[^1].DraftsProposed.Machines[index: 0].DraftId;
+        return folder.Read<IngestSetFile>(lastSet).Entries[^1].DraftsProposed.Machines[0].DraftId;
     }
 
     /// <summary>
@@ -72,6 +72,7 @@ public sealed class SeedCompletion
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var hasCompany = await dbContext.Companies.AnyAsync(cancellationToken);
         var hasLastDraft = await dbContext.MachineDrafts.AnyAsync(draft => draft.Id == _lastDraftId, cancellationToken);
+
         if (!hasCompany)
         {
             return SeedState.Empty;
@@ -84,6 +85,7 @@ public sealed class SeedCompletion
 
         using var telemetryScope =
             _telemetry.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Telemetry));
+
         var messages = telemetryScope.ServiceProvider.GetRequiredService<TelemetryDbContext>().ReceivedMessages;
         var hasMarkerMessage = await messages.AnyAsync(message => message.Id == _markerMessageId, cancellationToken);
 

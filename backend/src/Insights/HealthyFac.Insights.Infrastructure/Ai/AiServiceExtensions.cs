@@ -84,6 +84,7 @@ public static class AiServiceExtensions
                     Parallelism = options.EmbeddingParallelism,
                 };
             });
+
             services.AddSingleton<ChunkEmbedder>();
 
             return services;

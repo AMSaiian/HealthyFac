@@ -23,13 +23,14 @@ public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(StatusDefinitionApiTestData.Code);
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.ReadPermission);
+
         var path = pathTemplate
-            .Replace("{machineId}", status.MachineId.ToString())
-            .Replace("{statusDefinitionId}", status.Id.ToString());
+            .Replace(oldValue: "{machineId}", status.MachineId.ToString())
+            .Replace(oldValue: "{statusDefinitionId}", status.Id.ToString());
 
         var response = await _fixture.SendAsync(new HttpMethod(method), path, claims, body);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound, caseName);
     }
 
     [Fact]
@@ -51,6 +52,7 @@ public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.WritePermission);
 
         var response = await _fixture.SendAsync(
@@ -67,6 +69,7 @@ public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.DeletePermission);
 
         var response = await _fixture.SendAsync(
@@ -82,6 +85,7 @@ public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.WritePermission);
 
         var response = await _fixture.SendAsync(
@@ -98,6 +102,7 @@ public sealed class StatusDefinitionRouteTests(TelemetryApiFixture fixture)
     {
         var status = await _fixture.ArrangeStatusDefinitionAsync(
             StatusDefinitionApiTestData.Code);
+
         var claims = _fixture.CreateClaims(StatusDefinitionApiTestData.DeletePermission);
 
         var response = await _fixture.SendAsync(

@@ -66,6 +66,7 @@ public sealed class DoclingDocumentConverter(
                 return await SubmitAsync(client, content, fileName, extension, token);
             },
             linked.Token);
+
         await WaitAsync(client, taskId, isCancelled, linked, cancellationToken);
         var result = await ReadResultAsync(client, taskId, linked.Token);
 
@@ -80,14 +81,17 @@ public sealed class DoclingDocumentConverter(
             DoclingConstants.Location.SheetExtension => DoclingConstants.Location.SheetLabel,
             _ => DoclingConstants.Location.PageLabel,
         };
+
         var pages = (chunk.PageNumbers ?? []).Distinct().Order().ToList();
+
         var pagePart = pages.Count switch
         {
             0 => string.Empty,
-            1 => $"{label} {pages[index: 0].ToString(CultureInfo.InvariantCulture)}",
-            _ => $"{label}s {pages[index: 0].ToString(CultureInfo.InvariantCulture)}"
+            1 => $"{label} {pages[0].ToString(CultureInfo.InvariantCulture)}",
+            _ => $"{label}s {pages[0].ToString(CultureInfo.InvariantCulture)}"
                 + $"{DoclingConstants.Location.PageRangeSeparator}{pages[^1].ToString(CultureInfo.InvariantCulture)}",
         };
+
         var headingPart = string.Join(DoclingConstants.Location.HeadingSeparator, chunk.Headings ?? []);
 
         return string.Join(
@@ -107,14 +111,16 @@ public sealed class DoclingDocumentConverter(
         new()
         {
             PageCount = CountPages(result),
-            Chunks = result.Chunks
-                .Where(chunk => !string.IsNullOrWhiteSpace(chunk.Text))
-                .Select(chunk => new ConvertedChunk
-                {
-                    Location = BuildLocation(chunk, extension) is { Length: > 0 } location ? location : null,
-                    Text = chunk.Text!,
-                })
-                .ToList(),
+            Chunks =
+            [
+                .. result.Chunks
+                    .Where(chunk => !string.IsNullOrWhiteSpace(chunk.Text))
+                    .Select(chunk => new ConvertedChunk
+                    {
+                        Location = BuildLocation(chunk, extension) is { Length: > 0 } location ? location : null,
+                        Text = chunk.Text!,
+                    }),
+            ],
         };
 
     private async Task<string> SubmitAsync(
@@ -160,6 +166,7 @@ public sealed class DoclingDocumentConverter(
         while (true)
         {
             var hasUserCancelled = await isCancelled(cancellationToken);
+
             if (hasUserCancelled)
             {
                 await linked.CancelAsync();
@@ -172,6 +179,7 @@ public sealed class DoclingDocumentConverter(
                     using var response = await client.GetAsync(
                         string.Format(DoclingConstants.PollPathFormat, taskId),
                         token);
+
                     await response.EnsureSuccessAsync(token);
 
                     return await response.Content.ReadFromJsonAsync<DoclingTaskStatus>(JsonOptions, token);
@@ -204,6 +212,7 @@ public sealed class DoclingDocumentConverter(
                 using var response = await client.GetAsync(
                     string.Format(DoclingConstants.ResultPathFormat, taskId),
                     token);
+
                 await response.EnsureSuccessAsync(token);
 
                 return await response.Content.ReadFromJsonAsync<DoclingChunkResult>(JsonOptions, token);

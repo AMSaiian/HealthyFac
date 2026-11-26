@@ -239,6 +239,7 @@ public class OperatingPhase : IEntity, IAuditable, ISoftDeletable, IVersioned
             .Where(condition => condition.MetricDefinitionId is not null)
             .Select(condition => condition.MetricDefinitionId!.Value)
             .ToHashSet();
+
         var limitOnConditionMetric =
             limits.FirstOrDefault(limit => conditionMetricIds.Contains(limit.MetricDefinitionId));
 

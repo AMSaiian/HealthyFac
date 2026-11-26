@@ -188,6 +188,7 @@ public sealed class SimulatorFixture : IAsyncLifetime, IResetBeforeEachTest
     private static async Task WaitUntilAsync(Func<bool> isDone, Action? nudge = null)
     {
         var deadline = DateTime.UtcNow + SimulatorTestData.WaitLimit;
+
         while (!isDone() && DateTime.UtcNow < deadline)
         {
             nudge?.Invoke();
@@ -258,11 +259,11 @@ public sealed class SimulatorFixture : IAsyncLifetime, IResetBeforeEachTest
                 ReadOnly(_coreConnectionString),
             [$"ConnectionStrings:{SimulatorDatabaseConstants.ConnectionStrings.Telemetry}"] =
                 ReadOnly(_telemetryConnectionString),
-            [key: "Mqtt:Host"] = _broker.Host,
-            [key: "Mqtt:Port"] = _broker.Port.ToString(),
-            [key: "Mqtt:Username"] = MosquittoTestBroker.SenderUser,
-            [key: "Mqtt:Password"] = _broker.SenderPassword,
-            [key: "Mqtt:ReconnectDelay"] = SimulatorTestData.ReconnectDelay.ToString(),
-            [key: "Simulator:RandomSeed"] = SimulatorTestData.RandomSeed.ToString(),
+            ["Mqtt:Host"] = _broker.Host,
+            ["Mqtt:Port"] = _broker.Port.ToString(),
+            ["Mqtt:Username"] = MosquittoTestBroker.SenderUser,
+            ["Mqtt:Password"] = _broker.SenderPassword,
+            ["Mqtt:ReconnectDelay"] = SimulatorTestData.ReconnectDelay.ToString(),
+            ["Simulator:RandomSeed"] = SimulatorTestData.RandomSeed.ToString(),
         };
 }

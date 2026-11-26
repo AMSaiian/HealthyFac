@@ -55,6 +55,7 @@ public static class SignalCaseFixtureExtensions
             where TMessage : IIntegrationMessage
         {
             var messageId = Guid.CreateVersion7();
+
             using (var scope = fixture.Inner.ScopeFactory.CreateScope())
             {
                 await scope.ServiceProvider.GetRequiredService<IInbox>()
@@ -69,6 +70,7 @@ public static class SignalCaseFixtureExtensions
 
             var processor = fixture.Inner.GetSingleton<IEnumerable<IHostedService>>()
                 .Single(service => service.GetType().Name == InboxProcessorTypeName);
+
             await processor.StartAsync(CancellationToken.None);
 
             try
@@ -96,6 +98,7 @@ public static class SignalCaseFixtureExtensions
         public async Task<InboxOutcome> LoadInboxOutcomeAsync(Guid messageId)
         {
             using var scope = fixture.Inner.ScopeFactory.CreateScope();
+
             var row = await scope.ServiceProvider.GetRequiredService<InsightsDbContext>()
                 .InboxMessages
                 .AsNoTracking()
@@ -199,6 +202,7 @@ public static class SignalCaseFixtureExtensions
         {
             using var scope = fixture.Inner.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
+
             var maintenanceCase = await dbContext.MaintenanceCases
                 .Include(candidate => candidate.Signals)
                 .SingleAsync(candidate => candidate.Id == caseId);

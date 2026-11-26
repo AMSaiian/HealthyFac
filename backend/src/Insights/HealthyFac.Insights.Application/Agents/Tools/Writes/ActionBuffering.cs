@@ -149,10 +149,12 @@ public static class ActionBuffering
                 && (action.Kind == AgentActionKind.ProposeWorkOrder || action.Kind == AgentActionKind.LinkWorkOrder))
             .ToListAsync(cancellationToken);
 
-        return actions
-            .SelectMany(action => action.Kind == AgentActionKind.ProposeWorkOrder
-                ? Deserialize<ProposeWorkOrderPayload>(action).SignalIds
-                : Deserialize<LinkWorkOrderPayload>(action).SignalIds)
-            .ToHashSet();
+        return
+        [
+            .. actions
+                .SelectMany(action => action.Kind == AgentActionKind.ProposeWorkOrder
+                    ? Deserialize<ProposeWorkOrderPayload>(action).SignalIds
+                    : Deserialize<LinkWorkOrderPayload>(action).SignalIds),
+        ];
     }
 }

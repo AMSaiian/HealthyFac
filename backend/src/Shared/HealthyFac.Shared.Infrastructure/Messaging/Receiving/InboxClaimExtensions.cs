@@ -27,6 +27,7 @@ internal static class InboxClaimExtensions
         )
         {
             var claimedIds = await dbContext.BuildInboxClaimQuery(now).ToListAsyncLinqToDB(cancellationToken);
+
             if (claimedIds.Count == 0)
             {
                 return null;

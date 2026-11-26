@@ -41,6 +41,7 @@ public static class ResetFixtureExtensions
         {
             await using var connection = await new ConnectionFactory { Uri = new Uri(fixture.BrokerConnectionString) }
                 .CreateConnectionAsync();
+
             await using var channel = await connection.CreateChannelAsync(
                 new CreateChannelOptions(
                     publisherConfirmationsEnabled: true,

@@ -18,12 +18,14 @@ internal static class UseCasePartInspection
         var types = assemblies.SelectMany(assembly => assembly.GetSourceTypes())
             .Where(type => type is { IsClass: true, IsAbstract: false, ContainsGenericParameters: false })
             .ToList();
+
         var violations = new SortedSet<string>(StringComparer.Ordinal);
 
         foreach (var request in types.Where(type => type.ImplementsGeneric(typeof(IRequest<>))))
         {
             var isMessage = typeof(IIntegrationMessage).IsAssignableFrom(request);
             var parts = types.Where(type => IsPartOf(type, request)).ToList();
+
             var anchorNamespace = isMessage
                 ? parts.FirstOrDefault(part => !IsValidatorOf(part, request))?.Namespace
                 : request.Namespace;
@@ -37,7 +39,7 @@ internal static class UseCasePartInspection
             }
         }
 
-        return violations.ToList();
+        return [.. violations];
     }
 
     private static bool IsPartOf(Type candidate, Type request) =>

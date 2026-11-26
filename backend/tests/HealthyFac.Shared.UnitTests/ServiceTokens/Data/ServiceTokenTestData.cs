@@ -67,11 +67,11 @@ public static class ServiceTokenTestData
 
     public static string LockKey => TokenCacheKeys.ForLock(ServiceName, TokenKey);
 
-    public static TheoryData<ServiceTokenOptions> ValidOptions => new()
-    {
+    public static TheoryData<ServiceTokenOptions> ValidOptions =>
+    [
         CreateOptions(),
         CreateOptions(LockPollJustBelowTimeoutMilliseconds),
-    };
+    ];
 
     public static TheoryData<ServiceTokenOptions, string> InvalidOptionsWithExpectedError => new()
     {

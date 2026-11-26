@@ -31,17 +31,21 @@ public sealed class SearchDefinitionDraftsRequestValidator
         : base(DefinitionDraftSortColumn.All)
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DefinitionDraftErrors.CompanyIdRequired);
+
         RuleFor(request => request.MachineId)
             .NotEmpty()
             .WithMessage(DefinitionDraftErrors.MachineIdRequired)
             .When(request => request.MachineId is not null);
+
         RuleFor(request => request.AttemptId)
             .NotEmpty()
             .WithMessage(DefinitionDraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DefinitionDraftErrors.SearchScopeRequired);
+
         RuleFor(request => request.Filter!)
             .SetValidator(new DefinitionDraftGridFilterValidator())
             .When(request => request.Filter is not null);

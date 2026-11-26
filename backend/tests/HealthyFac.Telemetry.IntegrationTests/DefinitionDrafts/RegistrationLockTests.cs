@@ -60,12 +60,14 @@ public sealed class RegistrationLockTests(TelemetryDatabaseFixture fixture)
     private async Task<FlowIds> ArrangeAwaitingChildrenOnRegisteredMachineAsync()
     {
         var ids = FlowIds.Create();
+
         await _fixture.RegisterMachineAsync(
             MachineRegistrationTestData.CreateMessage() with
             {
                 MachineId = ids.MachineId,
                 CompanyId = DefinitionDraftTestData.CompanyId,
             });
+
         await ProposalEntryFlowTestData.Proposed(_fixture, ids);
         await ProposalEntryFlowTestData.AcceptedOnMachineDraft(_fixture, ids);
 

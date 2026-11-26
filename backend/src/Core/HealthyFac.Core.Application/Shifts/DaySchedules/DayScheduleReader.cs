@@ -80,9 +80,11 @@ public sealed class DayScheduleReader(ICoreDbContext dbContext, CompanyZoneReade
     )
     {
         var employeeVersions = _dbContext.ShiftTemplateVersions.Where(version => version.EmployeeId == employeeId);
+
         var versions = (isRangeOnly ? employeeVersions.InForceBetween(from, to) : employeeVersions)
             .Include(version => version.Blocks.OrderBy(block => block.Id))
             .OrderBy(version => version.Id);
+
         var overrides = _dbContext.ShiftOverrides
             .Include(shiftOverride => shiftOverride.Blocks.OrderBy(block => block.Id))
             .Where(shiftOverride => shiftOverride.EmployeeId == employeeId

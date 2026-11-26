@@ -37,6 +37,7 @@ public static class TransportExtensions
         public IServiceCollection AddMessagingTransport(IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString(MessagingConstants.RabbitMqConnectionStringName);
+
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw MessagingErrors.MissingBrokerConnectionString();
@@ -45,6 +46,7 @@ public static class TransportExtensions
             services.AddValidatedOptions<MessagingOptions, MessagingOptionsValidator>(
                 MessagingOptions.SectionName,
                 configuration);
+
             GetOrAddIntegrationMessageRegistry(services);
             services.AddScoped<IntegrationMessageDispatcher>();
             services.AddSingleton(_ => new BrokerConnectionProvider(new Uri(connectionString)));
@@ -61,6 +63,7 @@ public static class TransportExtensions
                     options.RetryStrategy(maxDeliveryAttempts: MessagingConstants.MaxDeliveryAttempts);
                     options.FailFastOn<InvalidIntegrationMessageException>();
                 }));
+
             services.AddRebusHandler<IntegrationEnvelopeHandler>();
             services.AddHostedService<SubscriptionHostedService>();
 
@@ -86,6 +89,7 @@ public static class TransportExtensions
         {
             var isHandlerRegistered = services.Any(descriptor =>
                 descriptor.ServiceType == typeof(IRequestHandler<TMessage, Unit>));
+
             if (!isHandlerRegistered)
             {
                 throw MessagingErrors.MessageHandlerMissing(TMessage.MessageType);
@@ -122,6 +126,7 @@ public static class TransportExtensions
             .Select(descriptor => descriptor.ImplementationInstance)
             .OfType<IntegrationMessageRegistry>()
             .FirstOrDefault();
+
         if (registry is not null)
         {
             return registry;

@@ -53,10 +53,12 @@ public static class EmployeeInviteFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var roleId = await dbContext.Roles
                 .Where(role => role.Code == RoleCode.Worker)
                 .Select(role => role.Id)
                 .SingleAsync();
+
             var salt = fixture.InviteTokenService.CreateSalt();
             var invite = new EmployeeInvite(companyId, email, roleId, salt, expiresAt);
 
@@ -69,6 +71,7 @@ public static class EmployeeInviteFixtureExtensions
         public async Task<Guid> AcceptInviteAsync(string token, string firstName = InviteTestData.EmployeeFirstName)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var response = await scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<AcceptEmployeeInviteRequest, AcceptEmployeeInviteResponse>>()
                 .HandleAsync(
@@ -125,15 +128,18 @@ public static class EmployeeInviteFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var messageType = TMessage.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<TMessage>(payload, MessagingJsonOptions.Instance)!),
+            ];
         }
 
         public async Task<string> CreateTokenFromStoredSaltAsync(Guid inviteId)

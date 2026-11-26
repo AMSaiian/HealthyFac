@@ -59,6 +59,7 @@ public sealed class FallbackRateLimiterTests
     {
         var createLocalCallCount = 0;
         var primary = FallbackRateLimiterTestData.CreateGrantingPrimary();
+
         await using var limiter = new FallbackRateLimiter(
             primary,
             () =>

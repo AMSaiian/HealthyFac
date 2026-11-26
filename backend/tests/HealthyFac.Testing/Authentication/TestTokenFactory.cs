@@ -45,9 +45,9 @@ public sealed class TestTokenFactory
     /// <summary>The configuration values that make a host validate the tokens of this factory.</summary>
     public static IReadOnlyDictionary<string, string?> JwtSettings { get; } = new Dictionary<string, string?>
     {
-        [key: "Jwt:Issuer"] = Issuer,
-        [key: "Jwt:MetadataAddress"] = MetadataAddress,
-        [key: "Jwt:Audience"] = Audience,
+        ["Jwt:Issuer"] = Issuer,
+        ["Jwt:MetadataAddress"] = MetadataAddress,
+        ["Jwt:Audience"] = Audience,
         [IsHttpsMetadataRequiredSetting] = bool.FalseString,
     };
 

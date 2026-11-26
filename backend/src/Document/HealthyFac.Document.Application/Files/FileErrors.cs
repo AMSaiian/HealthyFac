@@ -40,6 +40,7 @@ public static class FileErrors
     public static readonly string DescriptionTooMuchFormatting =
         $"The description formatting is too large. The stored HTML must have at most {RichTextConstants.HtmlMaxLength} "
         + "characters.";
+
     public const string CompanyIdRequired = "The company is required.";
     public const string MachineIdRequired = "The machine is required.";
     public const string MachineFilterIdsRequired = "The machine filter needs its machine IDs.";

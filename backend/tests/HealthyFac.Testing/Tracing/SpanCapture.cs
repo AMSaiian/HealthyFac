@@ -20,13 +20,14 @@ public sealed class SpanCapture : IDisposable
         _listener = new ActivityListener
         {
             ShouldListenTo = source => sourceNames.Contains(source.Name),
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStopped = _spans.Enqueue,
         };
+
         ActivitySource.AddActivityListener(_listener);
     }
 
-    public IReadOnlyList<Activity> Spans => _spans.ToList();
+    public IReadOnlyList<Activity> Spans => [.. _spans];
 
     /// <summary>
     /// Waits until at least <paramref name="expectedCount"/> finished spans match the filter, or until the
@@ -35,12 +36,13 @@ public sealed class SpanCapture : IDisposable
     public async Task<IReadOnlyList<Activity>> WaitForSpansAsync(Func<Activity, bool> filter, int expectedCount)
     {
         using var cancellation = new CancellationTokenSource(WaitTimeout);
+
         while (!cancellation.IsCancellationRequested && Spans.Count(filter) < expectedCount)
         {
             await Task.Delay(PollDelay);
         }
 
-        return Spans.Where(filter).ToList();
+        return [.. Spans.Where(filter)];
     }
 
     public void Dispose() => _listener.Dispose();

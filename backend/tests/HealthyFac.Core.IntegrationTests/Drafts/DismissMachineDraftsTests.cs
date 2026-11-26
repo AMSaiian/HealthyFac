@@ -65,11 +65,13 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var response = await _fixture.DismissAttemptDraftsAsync(tenant.CompanyId, attemptId);
 
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
+
         var pendingCompanies = machineDrafts.Where(draft => draft.State == DraftState.Pending)
             .Select(draft => (draft.CompanyId, draft.AttemptId))
             .ToList();
 
         response.DismissedCount.Should().Be(expected: 1);
+
         pendingCompanies.Should()
             .BeEquivalentTo(
                 [(tenant.CompanyId, DraftTestData.AttemptId), (otherTenant.CompanyId, attemptId)]);
@@ -142,11 +144,13 @@ public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
         var machineDrafts = await _fixture.LoadMachineDraftsAsync();
         race.SaveCounts.Should().Equal(1, 1);
         responses.Should().ContainSingle().Which.DismissedCount.Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()
             .Which.Message.Should()
             .Be(DraftErrors.DraftChanged);
+
         machineDrafts.Should().OnlyContain(draft => draft.State == DraftState.Dismissed);
     }
 }

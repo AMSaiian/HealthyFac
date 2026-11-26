@@ -59,6 +59,7 @@ public sealed class ServiceTokenCache(
         {
             [ServiceTokenConstants.Form.GrantType] = ServiceTokenConstants.Form.ClientCredentialsGrant,
         };
+
         if (scopes.Count > 0)
         {
             grantFields[ServiceTokenConstants.Form.Scope] = string.Join(ServiceTokenConstants.ScopeSeparator, scopes);

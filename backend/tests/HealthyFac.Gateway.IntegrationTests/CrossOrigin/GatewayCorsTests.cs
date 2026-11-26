@@ -33,6 +33,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
         using var response = await client.SendPreflightAsync(GatewayCorsTestData.CoreInvitesRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
         response.Headers.GetValues(GatewayCorsTestData.AllowOriginHeader)
             .Should()
             .Equal(GatewayFactory.DefaultCorsOrigin);
@@ -49,6 +50,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
         using var response = await client.SendPreflightAsync(GatewayCorsTestData.VerifyInviteRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
         response.Headers.GetValues(GatewayCorsTestData.AllowOriginHeader)
             .Should()
             .Equal(GatewayFactory.DefaultCorsOrigin);
@@ -64,6 +66,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
         using var response = await client.SendPreflightAsync(route);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
         response.Headers.GetValues(GatewayCorsTestData.AllowOriginHeader)
             .Should()
             .Equal(GatewayFactory.DefaultCorsOrigin);
@@ -78,6 +81,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
         using var response = await client.GetFromOriginAsync(GatewayCorsTestData.MachinesRoute);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         response.Headers.GetValues(GatewayCorsTestData.AllowOriginHeader)
             .Should()
             .Equal(GatewayFactory.DefaultCorsOrigin);
@@ -89,6 +93,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
         await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.DefaultLimitOfTwo);
         using var client = gateway.CreateClient();
         var preflightStatusCodes = new List<HttpStatusCode>();
+
         for (var attempt = 0; attempt < GatewayCorsTestData.PreflightCount; attempt++)
         {
             using var preflight = await client.SendPreflightAsync(GatewayCorsTestData.CoreInvitesRoute);
@@ -108,6 +113,7 @@ public sealed class GatewayCorsTests(GatewayEnvironment environment) : IAsyncLif
         await using var gateway = _environment.CreateGateway(
             _core,
             settings: GatewayCorsTestData.CreateKeycloakSettings(_keycloak.Address));
+
         using var client = gateway.CreateClient();
 
         using var response = await client.SendPreflightAsync(GatewayCorsTestData.TokenRoute);

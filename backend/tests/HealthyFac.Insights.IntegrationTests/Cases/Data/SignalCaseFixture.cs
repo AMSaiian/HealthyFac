@@ -15,6 +15,7 @@ public sealed class SignalCaseFixture : IAsyncLifetime, IResetBeforeEachTest
     public SignalCaseFixture()
     {
         Time = new FakeTimeProvider(CaseTestData.Now);
+
         Inner = new InsightsFixture(
             configureSettings: null,
             services =>

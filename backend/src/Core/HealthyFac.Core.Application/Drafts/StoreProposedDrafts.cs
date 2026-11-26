@@ -46,6 +46,7 @@ public sealed class StoreProposedDraftsRequestHandler(
                     request,
                     DraftResolution.Rejected,
                     [.. request.Machines.Select(entry => new ResolvedEntry { EntryId = entry.DraftId })]));
+
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return;
@@ -59,6 +60,7 @@ public sealed class StoreProposedDraftsRequestHandler(
         {
             var target = await ResolveTargetAsync(request, entry, cancellationToken);
             AddMachineDraft(request, entry, target, existingIds);
+
             resolvedEntries.Add(
                 new ResolvedEntry
                 {
@@ -118,6 +120,7 @@ public sealed class StoreProposedDraftsRequestHandler(
             .OfType<Guid>()
             .Distinct()
             .ToList();
+
         var foundCount = await _dbContext.Machines
             .Where(machine => machine.CompanyId == request.CompanyId && targetIds.Contains(machine.Id))
             .CountAsync(cancellationToken);
@@ -179,6 +182,7 @@ public sealed class StoreProposedDraftsRequestHandler(
             : string.Equals(entry.SerialNumber, target.SerialNumber, StringComparison.OrdinalIgnoreCase)
                 ? null
                 : entry.SerialNumber;
+
         var hasProposal = target is null
             || entry.Name is not null
             || entry.Description is not null

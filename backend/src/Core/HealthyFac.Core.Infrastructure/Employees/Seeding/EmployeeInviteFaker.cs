@@ -24,6 +24,7 @@ internal sealed class EmployeeInviteFaker : Faker<EmployeeInvite>
     )
     {
         UseSeed(seed);
+
         CustomInstantiator(faker => new EmployeeInvite(
             companyId,
             faker.Internet.Email(

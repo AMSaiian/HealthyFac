@@ -21,6 +21,7 @@ public sealed class RedisTokenCacheStorageTests
         await act.Should()
             .ThrowAsync<TokenStorageException>()
             .WithMessage(ServiceTokenErrors.StorageSkipped().Message);
+
         counter.CallCount.Should().Be(expected: 0);
     }
 

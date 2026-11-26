@@ -30,5 +30,5 @@ public static class HttpFailureErrors
     private static string WithoutQuery(Uri uri) =>
         uri.IsAbsoluteUri
             ? uri.GetLeftPart(UriPartial.Path)
-            : uri.OriginalString.Split(QuerySeparator, FragmentSeparator)[0];
+            : uri.OriginalString.Split(QuerySeparator)[0].Split(FragmentSeparator)[0];
 }

@@ -75,6 +75,7 @@ public static class InboxProcessorTestData
             traceParent: null,
             UserActorId,
             UserCompanyId);
+
         for (var attempt = 0; attempt < attemptCount; attempt++)
         {
             row.RecordFailure(receivedOn.AddHours(value: -1), SeededError, NoAttemptLimit);
@@ -93,6 +94,7 @@ public static class InboxProcessorTestData
             traceParent: null,
             UserActorId,
             UserCompanyId);
+
         row.RecordFailure(receivedOn, SeededError, maxAttemptCount: 1);
 
         return row;

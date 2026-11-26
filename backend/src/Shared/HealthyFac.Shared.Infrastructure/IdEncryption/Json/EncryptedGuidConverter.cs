@@ -22,6 +22,7 @@ public sealed class EncryptedGuidConverter(IIdEncryptor encryptor) : JsonConvert
     )
     {
         var encrypted = reader.GetString();
+
         if (string.IsNullOrEmpty(encrypted))
         {
             return Guid.Empty;

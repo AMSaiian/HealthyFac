@@ -4,7 +4,6 @@ using HealthyFac.MachineSimulator.Control;
 using HealthyFac.MachineSimulator.Machines;
 using HealthyFac.MachineSimulator.Machines.Snapshots;
 using HealthyFac.MachineSimulator.Publishing;
-using HealthyFac.MachineSimulator.Scenarios;
 using HealthyFac.MachineSimulator.Simulation;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Configuration;
@@ -48,12 +47,14 @@ public static class ConfigureServices
         public IServiceCollection AddSimulatorServices(IConfiguration configuration, IHostEnvironment environment)
         {
             services.AddSimulatorOptions(configuration);
-            services.AddSimulatorDatabases(configuration, environment);
+            services.AddSimulatorDatabases(configuration);
             services.AddSharedTime();
+
             services.AddSingleton(provider =>
                 provider.GetRequiredService<IOptions<SimulatorOptions>>().Value.RandomSeed is { } seed
                     ? new Random(seed)
                     : Random.Shared);
+
             services.AddSimulation();
             services.AddSimulatorApi();
             services.AddSimulatorObservability(configuration);
@@ -66,22 +67,26 @@ public static class ConfigureServices
             services.AddValidatedOptions<SimulatorOptions, SimulatorOptionsValidator>(
                 SimulatorOptions.SectionName,
                 configuration);
+
             services.AddValidatedOptions<SimulatorMqttOptions, SimulatorMqttOptionsValidator>(
                 SimulatorMqttOptions.SectionName,
                 configuration);
+
             services.AddSingleton<IOptions<ServiceOptions>>(Options.Create(new ServiceOptions { Name = ServiceName }));
 
             return services;
         }
 
-        private IServiceCollection AddSimulatorDatabases(IConfiguration configuration, IHostEnvironment environment)
+        private IServiceCollection AddSimulatorDatabases(IConfiguration configuration)
         {
             services.AddDbContext<CoreDbContext>(options => ConfigureReadOnly(
                 options, configuration, SimulatorDatabaseConstants.ConnectionStrings.Core));
+
             services.AddScoped<ICoreDbContext>(provider => provider.GetRequiredService<CoreDbContext>());
 
             services.AddDbContext<TelemetryDbContext>(options => ConfigureReadOnly(
                 options, configuration, SimulatorDatabaseConstants.ConnectionStrings.Telemetry));
+
             services.AddScoped<ITelemetryDbContext>(provider => provider.GetRequiredService<TelemetryDbContext>());
 
             return services;
@@ -95,8 +100,10 @@ public static class ConfigureServices
             services.AddSingleton<SimulationEngine>();
             services.AddSingleton<SimulatorMetrics>();
             services.AddSingleton<MqttMachineMessagePublisher>();
+
             services.AddSingleton<IMachineMessagePublisher>(provider =>
                 provider.GetRequiredService<MqttMachineMessagePublisher>());
+
             services.AddHostedService(provider => provider.GetRequiredService<MqttMachineMessagePublisher>());
             services.AddHostedService<SimulationLoops>();
 
@@ -117,8 +124,10 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
+
             services.ConfigureOpenTelemetryTracerProvider(tracing =>
                 tracing.AddSource(ObservabilityConstants.Simulator.Source));
+
             services.ConfigureOpenTelemetryMeterProvider(metrics =>
                 metrics.AddMeter(ObservabilityConstants.Simulator.Meter));
 
@@ -174,6 +183,7 @@ public static class ConfigureServices
     private static void ConfigureReadOnly(DbContextOptionsBuilder options, IConfiguration configuration, string name)
     {
         var connectionString = configuration.GetConnectionString(name);
+
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(SimulatorErrors.MissingConnectionString(name));

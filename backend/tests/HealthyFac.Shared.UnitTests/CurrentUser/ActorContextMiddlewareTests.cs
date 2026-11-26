@@ -35,6 +35,7 @@ public sealed class ActorContextMiddlewareTests
         using var host = await ActorHostFactory.StartAsync(
             IncomingTokenTestData.ServicePrincipal,
             ActorClaimsTestData.AllowedServiceClients);
+
         using var client = host.GetTestClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, ActorHostFactory.UserIdPath);
         request.Headers.Add(ActorHeaderNames.ActorId, ActorTestData.UserId.ToString());

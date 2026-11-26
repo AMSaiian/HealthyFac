@@ -75,6 +75,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
         var userId = await _fixture.Admin.CreateUserAsync(
             KeycloakAdminTestData.CreateIdentity(),
             CancellationToken.None);
+
         await _fixture.SetPasswordAsync(userId, KeycloakAdminTestData.NewPassword);
 
         var hasPassword = await _fixture.Admin.HasPasswordAsync(userId, CancellationToken.None);
@@ -88,6 +89,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
         var userId = await _fixture.Admin.CreateUserAsync(
             KeycloakAdminTestData.CreateIdentity(),
             CancellationToken.None);
+
         var organizationId = await _fixture.LoadOrganizationIdAsync(KeycloakAdminTestData.CompanyId);
         await _fixture.Admin.AddOrganizationMemberAsync(organizationId!.Value, userId, CancellationToken.None);
 
@@ -104,6 +106,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
         var userId = await _fixture.Admin.CreateUserAsync(
             KeycloakAdminTestData.CreateIdentity(),
             CancellationToken.None);
+
         await _fixture.Admin.AssignRealmRoleAsync(userId, KeycloakAdminTestData.WorkerRoleName, CancellationToken.None);
 
         await _fixture.Admin.AssignRealmRoleAsync(userId, KeycloakAdminTestData.WorkerRoleName, CancellationToken.None);
@@ -149,12 +152,14 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
         var userId = await _fixture.Admin.CreateUserAsync(
             KeycloakAdminTestData.CreateIdentity(),
             CancellationToken.None);
+
         var admin = _fixture.CreateAdmin(KeycloakAdminTestData.UnregisteredSpaUrl);
 
         var act = () => admin.SendSetPasswordEmailAsync(userId, CancellationToken.None);
 
         var exception = await act.Should().ThrowAsync<HttpRequestException>();
         exception.Which.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
         exception.Which.Message.Should()
             .Contain($"{userId}/execute-actions-email")
             .And.Contain(KeycloakAdminTestData.RedirectUriRejection)
@@ -167,6 +172,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
         var userId = await _fixture.Admin.CreateUserAsync(
             KeycloakAdminTestData.CreateIdentity(),
             CancellationToken.None);
+
         var wasEnabledBefore = await _fixture.IsUserEnabledAsync(userId);
 
         await _fixture.Admin.DisableUserAsync(userId, CancellationToken.None);
@@ -190,6 +196,7 @@ public sealed class KeycloakIdentityAdminTests(ProvisioningFixture fixture)
         var attributesAfter = await _fixture.LoadUserAttributesAsync(userId);
 
         attributesAfter[KeycloakAdminTestData.LocaleAttribute].Should().Equal(KeycloakAdminTestData.UkrainianLocale);
+
         attributesAfter.Where(attribute => attribute.Key != KeycloakAdminTestData.LocaleAttribute)
             .Should()
             .BeEquivalentTo(

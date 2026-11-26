@@ -67,6 +67,7 @@ public class TransportFixture : IAsyncLifetime
         await _broker.StartAsync();
 
         var builder = Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings());
+
         builder.Configuration.AddInMemoryCollection(
             new Dictionary<string, string?>
             {
@@ -75,17 +76,21 @@ public class TransportFixture : IAsyncLifetime
                 [TransportTestData.PollingIntervalKey] = TransportTestData.PollingIntervalMilliseconds,
                 [TransportTestData.ServiceNameKey] = ServiceName.Core.Value,
             });
+
         builder.Logging.AddProvider(Logs);
         builder.Services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(InboxTestData.Now)));
         builder.Services.AddActorContext();
         builder.Services.AddServiceOptions(builder.Configuration);
         builder.Services.AddScoped<AuditableEntityInterceptor>();
+
         builder.Services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((provider, options) =>
         {
             options.UseNpgsql(_database.ConnectionString)
                 .AddInterceptors(provider.GetRequiredService<AuditableEntityInterceptor>());
+
             ConfigureDbContext(options, _database.ConnectionString);
         });
+
         builder.Services.AddMessagingTransport(builder.Configuration);
         builder.Services.AddScoped<OutboxMessagePublisher>();
         builder.Services.AddScoped<InboxMessageRunner>();
@@ -105,6 +110,7 @@ public class TransportFixture : IAsyncLifetime
         ConfigureServices(builder.Services);
 
         _host = builder.Build();
+
         using (var scope = _host.Services.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
@@ -188,13 +194,16 @@ public class TransportFixture : IAsyncLifetime
     public async Task<InboxMessage?> WaitForInboxMessageAsync(Guid messageId)
     {
         using var cancellation = new CancellationTokenSource(TransportTestData.WaitTimeout);
+
         while (!cancellation.IsCancellationRequested)
         {
             using var scope = CreateScope();
+
             var message = await scope.ServiceProvider.GetRequiredService<TestServiceDbContext>()
                 .InboxMessages
                 .AsNoTracking()
                 .SingleOrDefaultAsync(stored => stored.Id == messageId);
+
             if (message is not null)
             {
                 return message;
@@ -222,11 +231,13 @@ public class TransportFixture : IAsyncLifetime
     public async Task WaitForQueueToSettleAsync()
     {
         using var cancellation = new CancellationTokenSource(TransportTestData.WaitTimeout);
+
         while (!cancellation.IsCancellationRequested)
         {
             var readyCount = await RabbitMqQueueReader.CountReadyMessagesAsync(
                 _broker.ConnectionString,
                 TransportTestData.QueueName);
+
             if (readyCount == 0)
             {
                 break;

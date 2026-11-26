@@ -57,8 +57,10 @@ public sealed class RegisterMachineRequestHandler(
             request.GoLiveStartsAt);
 
         _dbContext.MachineRegistrations.Add(registration);
+
         _dbContext.MachineEvaluations.Add(
             new MachineEvaluation(registration.Id, _timeProvider.GetUtcNow().UtcDateTime));
+
         _dbContext.MetricSchemaRevisions.Add(
             new MetricSchemaRevision(
                 registration.Id,

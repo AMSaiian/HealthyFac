@@ -10,6 +10,7 @@ public sealed class KeycloakImageTagTests
     public void FinalStage_OfKeycloakDockerfile_UsesTheTestImage()
     {
         var dockerfile = KeycloakFiles.Find("Dockerfile");
+
         var finalFromLine = File.ReadLines(dockerfile)
             .Last(line => line.StartsWith(FromPrefix, StringComparison.Ordinal));
 

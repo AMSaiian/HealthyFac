@@ -177,6 +177,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
     {
         using var cancellation = new CancellationTokenSource();
         using var scope = _fixture.CreateUserScope(UploadFileTestData.CompanyId);
+
         var handler = CreateHandler(
             scope,
             new CancellingFileStorage(scope.ServiceProvider.GetRequiredService<IFileStorage>(), cancellation));
@@ -197,6 +198,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
         using var scope = _fixture.CreateUserScope(UploadFileTestData.CompanyId);
+
         var handler = scope.ServiceProvider
             .GetRequiredService<IRequestHandler<UploadFileRequest, UploadFileResponse>>();
 
@@ -216,6 +218,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
     {
         using var capture = new SpanCapture(
             ObservabilityConstants.Sources.UseCases, ObservabilityConstants.Files.Source);
+
         using var parent = new Activity(operationName: "test").Start();
 
         var response = await _fixture.UploadCompanyFileAsync(
@@ -280,6 +283,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
                 return await _fixture.RegisterMachineAsync(UploadFileTestData.OtherCompanyId);
             case Cases.DeletedRegistration:
                 var machineId = await _fixture.RegisterMachineAsync(UploadFileTestData.CompanyId);
+
                 await _fixture.UnregisterMachineAsync(
                     new MachineDeleted
                     {

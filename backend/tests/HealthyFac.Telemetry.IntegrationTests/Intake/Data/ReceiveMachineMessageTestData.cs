@@ -34,14 +34,14 @@ public static class ReceiveMachineMessageTestData
     ) =>
         new()
         {
-            [propertyName: "sampledAt"] = (sampledAt ?? SampledAt).ToString(format: "O"),
-            [propertyName: "metrics"] = new JsonObject
+            ["sampledAt"] = (sampledAt ?? SampledAt).ToString(format: "O"),
+            ["metrics"] = new JsonObject
             {
                 [TemperatureKey] = temperature ?? 71.5,
                 [DoorKey] = door ?? true,
                 [ModeKey] = mode ?? "auto",
             },
-            [propertyName: "statuses"] = new JsonArray(
+            ["statuses"] = new JsonArray(
                 (statuses ?? [ErrorStatus, WarningStatus]).Select(code => (JsonNode)code).ToArray()),
         };
 
@@ -49,24 +49,24 @@ public static class ReceiveMachineMessageTestData
 
     public static byte[] Bytes(string text) => Encoding.UTF8.GetBytes(text);
 
-    public static TheoryData<double> OutOfRangeTemperatures => new() { -20.1, 200.1 };
+    public static TheoryData<double> OutOfRangeTemperatures => [-20.1, 200.1];
 
-    public static TheoryData<double> RangeEdgeTemperatures => new() { -20.0, 200.0 };
+    public static TheoryData<double> RangeEdgeTemperatures => [-20.0, 200.0];
 
-    public static TheoryData<string> MalformedTopics => new()
-    {
+    public static TheoryData<string> MalformedTopics =>
+    [
         "healthyfac/gateways/BADID/messages",
         "healthyfac/gateways/abc/messages",
         "other/topic",
         "healthyfac/gateways//messages",
-    };
+    ];
 
-    public static TheoryData<string> LoneSurrogateMessages => new()
-    {
+    public static TheoryData<string> LoneSurrogateMessages =>
+    [
         """{"sampledAt":"2026-11-06T10:14:55.0000000Z","metrics":{"spindle.mode":"\ud800"},"statuses":[]}""",
         """{"sampledAt":"2026-11-06T10:14:55.0000000Z","metrics":{"bad\ud800key":1},"statuses":[]}""",
         """{"sampledAt":"2026-11-06T10:14:55.0000000Z","metrics":{},"statuses":["\ud800"]}""",
-    };
+    ];
 
     public static TheoryData<string, string> EnvelopeFailures => new()
     {

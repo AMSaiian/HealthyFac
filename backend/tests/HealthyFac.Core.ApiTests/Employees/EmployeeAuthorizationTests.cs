@@ -17,7 +17,7 @@ public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
 
         var response = await _fixture.PostEmployeeActionWithoutBodyAsync(path, claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, because: caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, caseName);
     }
 
     [Fact]
@@ -76,6 +76,7 @@ public sealed class EmployeeAuthorizationTests(CoreApiFixture fixture)
         {
             Permissions = [EmployeeApiTestData.MachinesReadPermission],
         };
+
         var withRead = _fixture.CreateSupervisorClaims() with { Permissions = [EmployeeApiTestData.ReadPermission] };
 
         var forbidden = await _fixture.PostEmployeeSearchAsync(EmployeeApiTestData.LookupPath, withoutRead);

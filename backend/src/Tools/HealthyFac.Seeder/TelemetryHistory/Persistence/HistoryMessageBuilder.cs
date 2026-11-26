@@ -26,6 +26,7 @@ public sealed class HistoryMessageBuilder(IMachineMessageParser parser, HistoryM
     {
         var built = MachinePayloadBuilder.Build(sample.Sample, _data.Definitions, sample.SampledAt);
         var payload = _parser.ReadPayload(built.Json);
+
         if (payload.ErrorCode is not null)
         {
             throw new InvalidOperationException(
@@ -33,18 +34,20 @@ public sealed class HistoryMessageBuilder(IMachineMessageParser parser, HistoryM
         }
 
         var parsed = _parser.Parse(_data.SchemaJson, payload.Text!, sample.SampledAt);
+
         if (parsed.IsEnvelopeFailure)
         {
-            var code = parsed.Errors[index: 0].Code;
+            var code = parsed.Errors[0].Code;
 
             throw new InvalidOperationException(
                 TelemetryHistoryErrors.PayloadRejected(_data.GatewayId, sample.SampledAt, code));
         }
 
         var readings = AcceptedMessageReadings.Build(parsed, _data.MetricIdsByKey, _data.StatusDefinitions);
+
         if (readings.Errors.Count > 0)
         {
-            var code = readings.Errors[index: 0].Code;
+            var code = readings.Errors[0].Code;
 
             throw new InvalidOperationException(
                 TelemetryHistoryErrors.PayloadRejected(_data.GatewayId, sample.SampledAt, code));

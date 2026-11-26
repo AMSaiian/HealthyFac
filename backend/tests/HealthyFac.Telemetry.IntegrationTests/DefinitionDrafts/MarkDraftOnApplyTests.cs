@@ -20,11 +20,15 @@ public sealed class MarkDraftOnApplyTests(TelemetryDatabaseFixture fixture)
     public async Task ApplyMetrics_WithACreatedAndAnUpdatedDraft_StoresTheDefinitionsAndAppliesBothDrafts()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewBoolean()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
+
         var createdDraftId =
             await _fixture.StoreMetricDraftOnMachineAsync(tenant.CompanyId, machineId, isApplied: false);
+
         var updatedDraftId =
             await _fixture.StoreMetricDraftOnMachineAsync(tenant.CompanyId, machineId, isApplied: false);
 
@@ -40,6 +44,7 @@ public sealed class MarkDraftOnApplyTests(TelemetryDatabaseFixture fixture)
 
         response.Revision.Should().Be(expected: 2);
         rows.Should().HaveCount(expected: 2);
+
         drafts.Where(draft => draft.Id == createdDraftId || draft.Id == updatedDraftId)
             .Select(draft => draft.State)
             .Should()
@@ -50,8 +55,10 @@ public sealed class MarkDraftOnApplyTests(TelemetryDatabaseFixture fixture)
     public async Task ApplyMetrics_WithAnEqualUpdatedDraftOnly_AppliesTheDraftAndKeepsTheRevision()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         await _fixture.ApplyMetricChangesAsync(
             tenant, machineId, expectedRevision: 0, [MetricDefinitionTestData.NewBoolean()]);
+
         var existing = (await _fixture.LoadMetricRowsAsync(machineId)).Single();
         var draftId = await _fixture.StoreMetricDraftOnMachineAsync(tenant.CompanyId, machineId, isApplied: false);
 
@@ -87,8 +94,10 @@ public sealed class MarkDraftOnApplyTests(TelemetryDatabaseFixture fixture)
     public async Task UpdateStatus_WithADraft_AppliesTheDraft()
     {
         var (tenant, machineId) = await ArrangeAsync();
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId, machineId, MarkDraftOnApplyTestData.StatusCode);
+
         var draftId = await _fixture.StorePendingStatusDraftOnMachineAsync(tenant.CompanyId, machineId);
 
         await _fixture.UpdateStatusDefinitionAsync(
@@ -129,6 +138,7 @@ public sealed class MarkDraftOnApplyTests(TelemetryDatabaseFixture fixture)
         exception.Errors.Should()
             .ContainSingle(error => error.PropertyName == "draftId"
                 && error.ErrorMessage == DefinitionDraftErrors.DraftNotUsable);
+
         rows.Should().BeEmpty();
     }
 
@@ -236,6 +246,7 @@ public sealed class MarkDraftOnApplyTests(TelemetryDatabaseFixture fixture)
                 _fixture, tenant.CompanyId, machineId, draftId, arg5: 1, [firstStatusId, secondStatusId])));
 
         race.SaveCounts.Should().Equal(1, 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<ConflictException>()

@@ -98,15 +98,15 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
             claims,
             new JsonObject
             {
-                [propertyName: "status"] = "inProgress",
-                [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+                ["status"] = "inProgress",
+                ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
             }.ToJsonString());
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         var problem = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
 
-        problem![propertyName: "status"]!.GetValue<int>().Should().Be(expected: 422);
-        problem[propertyName: "detail"]!.GetValue<string>().Should().NotBeNullOrEmpty();
+        problem!["status"]!.GetValue<int>().Should().Be(expected: 422);
+        problem["detail"]!.GetValue<string>().Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -118,10 +118,10 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
             HttpMethod.Post,
             WorkOrderApiTestData.SearchBatchPath,
             claims,
-            new JsonObject { [propertyName: "searches"] = new JsonArray([null]) }.ToJsonString());
+            new JsonObject { ["searches"] = new JsonArray { null } }.ToJsonString());
 
         var problem = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
-        var errorKeys = problem![propertyName: "errors"]?.AsObject().Select(error => error.Key).ToList() ?? [];
+        var errorKeys = problem!["errors"]?.AsObject().Select(error => error.Key).ToList() ?? [];
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         errorKeys.Should().Equal("searches[0]");
@@ -140,12 +140,12 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
             claims,
             new JsonObject
             {
-                [propertyName: "status"] = null,
-                [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+                ["status"] = null,
+                ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
             }.ToJsonString());
 
         var problem = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
-        var errorKeys = problem![propertyName: "errors"]?.AsObject().Select(error => error.Key).ToList() ?? [];
+        var errorKeys = problem!["errors"]?.AsObject().Select(error => error.Key).ToList() ?? [];
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         errorKeys.Should().Equal("status");
@@ -157,7 +157,8 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
         var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
         var order = await _fixture.ReadOrderAsync(claims, id);
-        var body = UpdateBody(order[propertyName: "rowVersion"]!.GetValue<uint>());
+        var body = UpdateBody(order["rowVersion"]!.GetValue<uint>());
+
         var first = await _fixture.SendShiftRequestAsync(
             HttpMethod.Put, $"{WorkOrderApiTestData.BasePath}/{id}", claims, body);
 
@@ -168,7 +169,7 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var problem = await second.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
 
-        problem![propertyName: "status"]!.GetValue<int>().Should().Be(expected: 409);
+        problem!["status"]!.GetValue<int>().Should().Be(expected: 409);
     }
 
     [Fact]
@@ -178,15 +179,16 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
         var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
         var order = await _fixture.ReadOrderAsync(claims, id);
+
         var body = new JsonObject
         {
-            [propertyName: "title"] = WorkOrderApiTestData.Title,
-            [propertyName: "priority"] = "low",
-            [propertyName: "category"] = "repair",
-            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-            [propertyName: "fileIds"] = new JsonArray(),
-            [propertyName: "assigneeId"] = worker.EncryptedId,
-            [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+            ["title"] = WorkOrderApiTestData.Title,
+            ["priority"] = "low",
+            ["category"] = "repair",
+            ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            ["fileIds"] = new JsonArray(),
+            ["assigneeId"] = worker.EncryptedId,
+            ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
         }.ToJsonString();
 
         var response = await _fixture.SendShiftRequestAsync(
@@ -202,9 +204,11 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         await _fixture.SeedWorkWeekAsync(worker.EmployeeId);
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
         var start = _fixture.FutureStart(StartTime);
+
         var id = await _fixture.CreateOrderAsync(
             claims,
             _fixture.CreateOrderBody(encryptedAssigneeId: worker.EncryptedId, plannedStartLocal: start));
+
         var date = start[..start.IndexOf(value: 'T')];
 
         var response = await _fixture.SendShiftRequestAsync(
@@ -215,10 +219,10 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         var problem = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
-        var listed = problem![propertyName: "workOrders"]!.AsArray();
+        var listed = problem!["workOrders"]!.AsArray();
 
         listed.Should().ContainSingle();
-        listed[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(id);
+        listed[0]!["id"]!.GetValue<string>().Should().Be(id);
     }
 
     [Theory]
@@ -255,14 +259,15 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
         var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
         var changes = new JsonArray();
+
         for (var index = 0; index < WorkOrderApiTestData.OverApplyLimit; index++)
         {
             changes.Add(
                 new JsonObject
                 {
-                    [propertyName: "workOrderId"] = id,
-                    [propertyName: "rowVersion"] = 1,
-                    [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+                    ["workOrderId"] = id,
+                    ["rowVersion"] = 1,
+                    ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
                 });
         }
 
@@ -270,7 +275,7 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
             HttpMethod.Post,
             WorkOrderApiTestData.ApplyPath,
             claims,
-            new JsonObject { [propertyName: "changes"] = changes }.ToJsonString());
+            new JsonObject { ["changes"] = changes }.ToJsonString());
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -283,16 +288,17 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
         var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
         var order = await _fixture.ReadOrderAsync(claims, id);
+
         var body = new JsonObject
         {
-            [propertyName: "changes"] = new JsonArray(
+            ["changes"] = new JsonArray(
                 new JsonObject
                 {
-                    [propertyName: "workOrderId"] = id,
-                    [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
-                    [propertyName: "assigneeId"] = worker.EncryptedId,
-                    [propertyName: "plannedStartLocal"] = WorkOrderApiTestData.PastStart,
-                    [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+                    ["workOrderId"] = id,
+                    ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
+                    ["assigneeId"] = worker.EncryptedId,
+                    ["plannedStartLocal"] = WorkOrderApiTestData.PastStart,
+                    ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
                 }),
         }.ToJsonString();
 
@@ -301,22 +307,22 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
         var problem = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
-        var failures = problem![propertyName: "changes"]!.AsArray();
+        var failures = problem!["changes"]!.AsArray();
 
         failures.Should().ContainSingle();
-        failures[index: 0]![propertyName: "workOrderId"]!.GetValue<string>().Should().Be(id);
-        failures[index: 0]![propertyName: "reason"]!.GetValue<string>().Should().Be(expected: "startOutOfRange");
+        failures[0]!["workOrderId"]!.GetValue<string>().Should().Be(id);
+        failures[0]!["reason"]!.GetValue<string>().Should().Be(expected: "startOutOfRange");
     }
 
     private static string UpdateBody(uint rowVersion) =>
         new JsonObject
         {
-            [propertyName: "title"] = WorkOrderApiTestData.Title,
-            [propertyName: "priority"] = "low",
-            [propertyName: "category"] = "repair",
-            [propertyName: "estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-            [propertyName: "fileIds"] = new JsonArray(),
-            [propertyName: "rowVersion"] = rowVersion,
+            ["title"] = WorkOrderApiTestData.Title,
+            ["priority"] = "low",
+            ["category"] = "repair",
+            ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
+            ["fileIds"] = new JsonArray(),
+            ["rowVersion"] = rowVersion,
         }.ToJsonString();
 
     private Task<HttpResponseMessage> PostAsync(Testing.Authentication.TestTokenClaims claims, string body) =>

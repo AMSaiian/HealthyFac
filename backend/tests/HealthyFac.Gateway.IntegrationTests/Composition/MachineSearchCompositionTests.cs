@@ -37,13 +37,13 @@ public sealed class MachineSearchCompositionTests(GatewayEnvironment environment
 
         var page = await PostAsync(client, json: """{"offset":0,"limit":25,"filter":{}}""");
 
-        var counts = page[propertyName: "items"]!.AsArray()
+        var counts = page["items"]!.AsArray()
             .ToDictionary(
-                item => item![propertyName: "id"]!.GetValue<string>(),
-                item => item![propertyName: "pendingDraftCount"]!.GetValue<int>());
+                item => item!["id"]!.GetValue<string>(),
+                item => item!["pendingDraftCount"]!.GetValue<int>());
 
-        counts[key: "m1"].Should().Be(expected: 3);
-        counts[key: "m2"].Should().Be(expected: 0);
+        counts["m1"].Should().Be(expected: 3);
+        counts["m2"].Should().Be(expected: 0);
         _stubs.Telemetry.Requests.Should().ContainSingle();
     }
 
@@ -55,24 +55,25 @@ public sealed class MachineSearchCompositionTests(GatewayEnvironment environment
     {
         await using var gateway = _stubs.CreateGateway(_environment);
         using var client = gateway.CreateAuthenticatedClient();
+
         var body = new JsonObject
         {
-            [propertyName: "offset"] = 0,
-            [propertyName: "limit"] = 25,
-            [propertyName: "filter"] = new JsonObject
+            ["offset"] = 0,
+            ["limit"] = 25,
+            ["filter"] = new JsonObject
             {
-                [propertyName: "hasPendingDrafts"] = hasPendingDrafts,
-                [propertyName: "pendingDefinitionDraftMachineIds"] = new JsonArray("evil"),
+                ["hasPendingDrafts"] = hasPendingDrafts,
+                ["pendingDefinitionDraftMachineIds"] = new JsonArray("evil"),
             },
         };
 
         await PostAsync(client, body.ToJsonString());
 
         var filter = CoreFilter();
-        var ids = filter[propertyName: "pendingDefinitionDraftMachineIds"]!.AsArray();
+        var ids = filter["pendingDefinitionDraftMachineIds"]!.AsArray();
 
         ids.Select(id => id!.GetValue<string>()).Should().Equal("m1");
-        filter[propertyName: "hasPendingDrafts"]!.GetValue<bool>().Should().Be(hasPendingDrafts);
+        filter["hasPendingDrafts"]!.GetValue<bool>().Should().Be(hasPendingDrafts);
     }
 
     [Fact]
@@ -91,7 +92,7 @@ public sealed class MachineSearchCompositionTests(GatewayEnvironment environment
     {
         var request = _stubs.Core.Requests.Single(candidate => candidate.Path == CompositionStubs.CoreMachineSearch);
 
-        return JsonNode.Parse(request.Body)![propertyName: "filter"]!.AsObject();
+        return JsonNode.Parse(request.Body)!["filter"]!.AsObject();
     }
 
     private static async Task<JsonNode> PostAsync(HttpClient client, string json)

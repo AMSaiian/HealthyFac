@@ -30,15 +30,19 @@ public static class ServiceTokenExtensions
         public IServiceCollection AddServiceTokens(IConfiguration configuration)
         {
             services.AddSharedTime();
+
             services.AddValidatedOptions<ServiceTokenOptions, ServiceTokenOptionsValidator>(
                 ServiceTokenOptions.SectionName,
                 configuration);
+
             services.AddHttpClient(ServiceTokenConstants.TokenClientName);
+
             services.TryAddSingleton(provider => new TokenEndpointClient(
                 provider.GetRequiredService<IHttpClientFactory>(),
                 provider.GetRequiredService<IOptions<ServiceTokenOptions>>(),
                 provider.GetRequiredService<TimeProvider>(),
                 Random.Shared));
+
             services.TryAddSingleton<ITokenCacheStorage, RedisTokenCacheStorage>();
             services.TryAddSingleton<TokenStore>();
             services.TryAddSingleton<ServiceTokenCache>();

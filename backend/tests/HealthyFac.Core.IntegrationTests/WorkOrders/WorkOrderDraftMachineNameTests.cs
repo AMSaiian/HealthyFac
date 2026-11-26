@@ -20,8 +20,10 @@ public sealed class WorkOrderDraftMachineNameTests(CoreDatabaseFixture fixture)
     public async Task Search_ForADraftOfAMachine_ReturnsTheNameOfTheMachine()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, serialNumber: "DN-1");
+
         var draftId = await _fixture.SaveWorkOrderDraftAsync(tenant.CompanyId, machineId);
 
         var page = await SearchAsync(tenant.CompanyId);
@@ -35,12 +37,15 @@ public sealed class WorkOrderDraftMachineNameTests(CoreDatabaseFixture fixture)
     public async Task Get_ForADraftOfADeletedMachine_KeepsTheNameOfTheMachine()
     {
         var tenant = await _fixture.ArrangeMachineTenantAsync();
+
         var machineId = await _fixture.CreateMachineAsync(
             tenant.CompanyId, MachineTestData.MachineName, serialNumber: "DN-2");
+
         var draftId = await _fixture.SaveWorkOrderDraftAsync(tenant.CompanyId, machineId);
         await _fixture.DeleteMachineAsync(tenant.CompanyId, machineId);
 
         using var scope = _fixture.CreateUserScope(tenant.CompanyId);
+
         var response = await scope.ServiceProvider
             .GetRequiredService<IRequestHandler<GetWorkOrderDraftRequest, WorkOrderDraftResponse>>()
             .HandleAsync(

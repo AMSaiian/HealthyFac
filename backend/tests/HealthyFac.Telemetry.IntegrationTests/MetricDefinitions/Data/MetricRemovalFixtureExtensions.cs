@@ -30,6 +30,7 @@ public static class MetricRemovalFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var condition = OperatingPhaseCondition.Create(
                 PhaseConditionSource.Metric(
                     arrangement.StateMetricId,
@@ -39,6 +40,7 @@ public static class MetricRemovalFixtureExtensions
                 value: null,
                 upperValue: null,
                 MetricRemovalTestData.RunningStates);
+
             var phase = new OperatingPhase(
                 arrangement.MachineId,
                 code,
@@ -75,12 +77,14 @@ public static class MetricRemovalFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var condition = OperatingPhaseCondition.Create(
                 PhaseConditionSource.Status(arrangement.StatusId),
                 PhaseConditionOperator.Active,
                 value: null,
                 upperValue: null,
                 states: null);
+
             var phase = new OperatingPhase(
                 arrangement.MachineId,
                 code,
@@ -133,6 +137,7 @@ public static class MetricRemovalFixtureExtensions
                 machineId,
                 revision,
                 [MetricDefinitionTestData.NewNumeric(key)]);
+
             var rows = await fixture.LoadMetricRowsAsync(machineId);
 
             return rows.Single(metric => metric.Key == key).Id;

@@ -83,6 +83,7 @@ public sealed class DocumentDatabaseFixture : IAsyncLifetime, IResetBeforeEachTe
             [DatabaseTestData.ConnectionStringKey] = _database.ConnectionString,
             [DatabaseTestData.FileStorageConnectionStringKey] = _storage.ConnectionString,
         };
+
         _configureSettings?.Invoke(settings);
 
         var configuration = new ConfigurationBuilder()

@@ -21,6 +21,7 @@ public sealed class WorkOrderDraftMessageLimitsTests
     {
         WorkOrderDraftMessageLimits.Priorities.All.Should()
             .BeEquivalentTo(WorkOrderPriority.All.Select(priority => priority.Value));
+
         WorkOrderDraftMessageLimits.Categories.All.Should()
             .BeEquivalentTo(WorkOrderCategory.All.Select(category => category.Value));
     }

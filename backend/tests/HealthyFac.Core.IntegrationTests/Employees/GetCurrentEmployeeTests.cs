@@ -14,6 +14,7 @@ public sealed class GetCurrentEmployeeTests(CoreDatabaseFixture fixture)
     public async Task GetCurrentEmployee_WithEmployeeOfTheActor_ReturnsOwnData()
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
+
         var seed = await _fixture.ArrangeEmployeeAsync(
             companyId,
             new EmployeeSeedOptions
@@ -47,6 +48,7 @@ public sealed class GetCurrentEmployeeTests(CoreDatabaseFixture fixture)
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
         var otherCompanyId = await _fixture.CreateCompanyAsync(EmployeeSearchTestData.OtherCompanyName);
+
         var seed = await _fixture.ArrangeEmployeeAsync(
             otherCompanyId,
             new EmployeeSeedOptions

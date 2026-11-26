@@ -19,9 +19,11 @@ public sealed class MachineRegistrationTests
         var result = registration.ChangeState(MachineRegistrationState.OutOfService, startedAt);
 
         result.Should().Be(isChanged, caseName);
+
         registration.State.Should()
             .Be(
                 isChanged ? MachineRegistrationState.OutOfService : MachineRegistrationState.InMaintenance);
+
         registration.StateStartedAt.Should().Be(isChanged ? startedAt : MachineRegistrationTestData.StoredTime);
     }
 
@@ -48,6 +50,7 @@ public sealed class MachineRegistrationTests
     )
     {
         var registration = MachineRegistrationTestData.Create();
+
         registration.ChangeGoLive(
             MachineRegistrationTestData.StoredDay,
             MachineRegistrationTestData.StoredDayStart,
@@ -57,11 +60,13 @@ public sealed class MachineRegistrationTests
 
         result.Should().Be(isChanged, caseName);
         registration.ExpectedGoLiveOn.Should().Be(isChanged ? day : MachineRegistrationTestData.StoredDay);
+
         registration.GoLiveStartsAt.Should()
             .Be(
                 isChanged && day != MachineRegistrationTestData.StoredDay
                     ? MachineRegistrationTestData.OtherDayStart
                     : MachineRegistrationTestData.StoredDayStart);
+
         registration.GoLiveChangedAt.Should().Be(isChanged ? changedAt : MachineRegistrationTestData.StoredTime);
     }
 }

@@ -4,8 +4,8 @@ public static class IntakeTopicTestData
 {
     public const string ValidGatewayId = "abcdefghijklmnop";
 
-    public static TheoryData<string> InvalidTopics => new()
-    {
+    public static TheoryData<string> InvalidTopics =>
+    [
         string.Empty,
         "healthyfac/gateways/abcdefghijklmnop",
         "healthyfac/gateways/abcdefghijklmnop/messages/extra",
@@ -16,5 +16,5 @@ public static class IntakeTopicTestData
         "healthyfac/gateways/abcdefgh/jklmnop/messages",
         "other/abcdefghijklmnop/messages",
         "/healthyfac/gateways/abcdefghijklmnop/messages",
-    };
+    ];
 }

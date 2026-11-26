@@ -21,6 +21,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
                 UploadFileTestData.PdfName, UploadFileTestData.Pdf, UploadFileTestData.PdfType),
             UploadFileTestData.Description,
             TestContext.Current.CancellationToken);
+
         var rowVersion = await _fixture.LoadRowVersionAsync(response.Id);
 
         var file = await _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, response.Id);
@@ -38,6 +39,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     public async Task GetCompanyFile_WithMachineAttachment_ReturnsIt()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
@@ -45,9 +47,9 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
                     FileName: "machine", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
             ]);
 
-        var file = await _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[index: 0]);
+        var file = await _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[0]);
 
-        file.Id.Should().Be(ids[index: 0]);
+        file.Id.Should().Be(ids[0]);
         file.MachineId.Should().Be(machineId);
     }
 
@@ -55,6 +57,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     public async Task GetMachineFile_WithAttachmentOfTheMachine_ReturnsIt()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
@@ -62,9 +65,9 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
                     FileName: "machine", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
             ]);
 
-        var file = await _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[index: 0]);
+        var file = await _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[0]);
 
-        file.Id.Should().Be(ids[index: 0]);
+        file.Id.Should().Be(ids[0]);
         file.FileName.Should().Be(expected: "machine");
         file.MachineId.Should().Be(machineId);
     }
@@ -74,13 +77,16 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     {
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
-        var rowVersion = await _fixture.LoadRowVersionAsync(ids[index: 0]);
+
+        var rowVersion = await _fixture.LoadRowVersionAsync(ids[0]);
+
         await _fixture.UpdateCompanyFileAsync(
             UpdateFileTestData.CompanyId,
-            UpdateFileTestData.CompanyUpdate(ids[index: 0], rowVersion, fileName: "first"));
-        var storedRowVersion = await _fixture.LoadRowVersionAsync(ids[index: 0]);
+            UpdateFileTestData.CompanyUpdate(ids[0], rowVersion, fileName: "first"));
 
-        var file = await _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[index: 0]);
+        var storedRowVersion = await _fixture.LoadRowVersionAsync(ids[0]);
+
+        var file = await _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[0]);
 
         file.RowVersion.Should().Be(storedRowVersion);
         file.RowVersion.Should().NotBe(rowVersion);
@@ -100,7 +106,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.OtherCompanyId, [UpdateFileTestData.CompanyFile()]);
 
-        var act = () => _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[index: 0]);
+        var act = () => _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[0]);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -123,9 +129,10 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     {
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
-        await _fixture.DeleteFileRefAsync(UpdateFileTestData.CompanyId, ids[index: 0]);
 
-        var act = () => _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[index: 0]);
+        await _fixture.DeleteFileRefAsync(UpdateFileTestData.CompanyId, ids[0]);
+
+        var act = () => _fixture.GetCompanyFileAsync(UpdateFileTestData.CompanyId, ids[0]);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -135,6 +142,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
         var otherMachineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
@@ -143,7 +151,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
                     otherMachineId),
             ]);
 
-        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[index: 0]);
+        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[0]);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -152,10 +160,11 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     public async Task GetMachineFile_WithCompanyFileWithoutMachine_Throws404()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
 
-        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[index: 0]);
+        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[0]);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -164,10 +173,11 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     public async Task GetMachineFile_WithMachineOfAnotherCompany_Throws404()
     {
         var otherMachineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.OtherCompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId, [UpdateFileTestData.CompanyFile()]);
 
-        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, otherMachineId, ids[index: 0]);
+        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, otherMachineId, ids[0]);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -176,12 +186,14 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     public async Task GetMachineFile_WithDeletedMachine_Throws404()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);
+
         var ids = await _fixture.SeedFilesAsync(
             UpdateFileTestData.CompanyId,
             [
                 new FileSeed(
                     FileName: "machine", Extension: "pdf", SizeBytes: 10, UpdateFileTestData.UploadedAt, machineId),
             ]);
+
         await _fixture.UnregisterMachineAsync(
             new MachineDeleted
             {
@@ -189,7 +201,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
                 CompanyId = UpdateFileTestData.CompanyId,
             });
 
-        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[index: 0]);
+        var act = () => _fixture.GetMachineFileAsync(UpdateFileTestData.CompanyId, machineId, ids[0]);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }

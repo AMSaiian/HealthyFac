@@ -42,10 +42,12 @@ public sealed class HostHealthTests(SimulatorFixture fixture)
     public async Task Tick_WithBrokerStopped_DropsMessagesLogsOneWarningAndResumesAfterTheRestart()
     {
         await _fixture.ArrangeRunningMachineAsync(SimulatorTestData.GenericSerialNumber);
+
         using var collector = new MetricCollector<long>(
             _fixture.GetSimulatorSingleton<IMeterFactory>(),
             ObservabilityConstants.Simulator.Meter,
             ObservabilityConstants.Simulator.Instruments.Messages);
+
         await _fixture.StopBrokerAsync();
         await WaitForDisconnectAsync();
         await AdvanceUntilAsync(() => CountOutcome(collector, SimulatorTestData.DroppedOutcome) >= 2);
@@ -58,6 +60,7 @@ public sealed class HostHealthTests(SimulatorFixture fixture)
             .Where(entry => entry.Level == LogLevel.Warning
                 && entry.Message.Contains(SimulatorTestData.DisconnectWarning))
             .ToList();
+
         warnings.Should().ContainSingle();
         CountOutcome(collector, SimulatorTestData.DroppedOutcome).Should().BeGreaterThanOrEqualTo(expected: 2);
         afterRestart.Should().ContainSingle();
@@ -75,6 +78,7 @@ public sealed class HostHealthTests(SimulatorFixture fixture)
                 && entry.Message.StartsWith(SimulatorTestData.FoundMachineInformation))
             .Should()
             .Be(expected: 1);
+
         entries
             .Where(entry => entry.Message.Contains(_fixture.Broker.SenderPassword)
                 || entry.Message.Contains(SimulatorTestData.PasswordMarker)
@@ -90,6 +94,7 @@ public sealed class HostHealthTests(SimulatorFixture fixture)
     private async Task AdvanceUntilAsync(Func<bool> isDone)
     {
         var deadline = DateTime.UtcNow + SimulatorTestData.WaitLimit;
+
         while (!isDone() && DateTime.UtcNow < deadline)
         {
             _fixture.Clock.Advance(SimulatorTestData.ReconnectDelay);
@@ -102,6 +107,7 @@ public sealed class HostHealthTests(SimulatorFixture fixture)
     private async Task WaitForDisconnectAsync()
     {
         var deadline = DateTime.UtcNow + SimulatorTestData.WaitLimit;
+
         while (_fixture.Publisher.IsConnected && DateTime.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(milliseconds: 100));

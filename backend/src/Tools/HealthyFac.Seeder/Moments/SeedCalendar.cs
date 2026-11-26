@@ -27,6 +27,7 @@ public static class SeedCalendar
 
         var date = ToDate(moment, anchor, zone);
         var local = date.ToDateTime(time, DateTimeKind.Unspecified);
+
         if (zone.IsInvalidTime(local))
         {
             throw new MomentException(MomentErrors.TimeDoesNotExist(moment.ToString(), date));
@@ -61,12 +62,14 @@ public static class SeedCalendar
     private static DateOnly AddWorkdays(DateOnly seedDay, int count)
     {
         var current = seedDay;
+
         while (!IsWorkday(current))
         {
             current = current.AddDays(value: 1);
         }
 
         var step = Math.Sign(count);
+
         for (var left = Math.Abs(count); left > 0; left--)
         {
             do

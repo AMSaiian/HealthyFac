@@ -135,11 +135,13 @@ public static class WorkOrderHintTestData
     public static async Task<ShiftTenant> ArrangeTenantAsync(CoreDatabaseFixture fixture)
     {
         var tenant = await fixture.ArrangeShiftTenantAsync();
+
         await fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
 
         return tenant;

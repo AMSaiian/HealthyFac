@@ -21,12 +21,13 @@ public sealed class GetFileApiTests(DocumentApiFixture fixture)
 
         var response = await _fixture.SendAsync(
             HttpMethod.Get, $"{UploadFileApiTestData.CompanyFilesPath}/{file.EncryptedId}", claims);
+
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "id"]!.GetValue<string>().Should().Be(file.EncryptedId);
-        body[propertyName: "fileName"]!.GetValue<string>().Should().Be(expected: "manual");
-        body[propertyName: "rowVersion"]!.GetValue<uint>().Should().Be(file.RowVersion);
+        body["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+        body["fileName"]!.GetValue<string>().Should().Be(expected: "manual");
+        body["rowVersion"]!.GetValue<uint>().Should().Be(file.RowVersion);
     }
 
     [Fact]
@@ -38,11 +39,12 @@ public sealed class GetFileApiTests(DocumentApiFixture fixture)
 
         var response = await _fixture.SendAsync(
             HttpMethod.Get, $"{UploadFileApiTestData.MachineFilesPath(machineId)}/{file.EncryptedId}", claims);
+
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "id"]!.GetValue<string>().Should().Be(file.EncryptedId);
-        body[propertyName: "machineId"]!.GetValue<string>().Should().Be(machineId);
+        body["id"]!.GetValue<string>().Should().Be(file.EncryptedId);
+        body["machineId"]!.GetValue<string>().Should().Be(machineId);
     }
 
     [Fact]
@@ -53,6 +55,7 @@ public sealed class GetFileApiTests(DocumentApiFixture fixture)
 
         var companyResponse = await _fixture.SendAsync(
             HttpMethod.Get, $"{UploadFileApiTestData.CompanyFilesPath}/{MalformedId}", claims);
+
         var machineResponse = await _fixture.SendAsync(
             HttpMethod.Get, $"{UploadFileApiTestData.MachineFilesPath(machineId)}/{MalformedId}", claims);
 
@@ -69,6 +72,7 @@ public sealed class GetFileApiTests(DocumentApiFixture fixture)
 
         var companyResponse = await _fixture.SendAsync(
             HttpMethod.Get, $"{UploadFileApiTestData.CompanyFilesPath}/{file.EncryptedId}", claims);
+
         var machineResponse = await _fixture.SendAsync(
             HttpMethod.Get, $"{UploadFileApiTestData.MachineFilesPath(machineId)}/{file.EncryptedId}", claims);
 
@@ -85,6 +89,7 @@ public sealed class GetFileApiTests(DocumentApiFixture fixture)
 
         using var companyResponse = await client.GetAsync(
             $"{UploadFileApiTestData.CompanyFilesPath}/{file.EncryptedId}", TestContext.Current.CancellationToken);
+
         using var machineResponse = await client.GetAsync(
             $"{UploadFileApiTestData.MachineFilesPath(machineId)}/{file.EncryptedId}",
             TestContext.Current.CancellationToken);

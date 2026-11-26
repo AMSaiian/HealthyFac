@@ -45,14 +45,14 @@ public sealed class ResponseBodyStream(Stream inner, HttpResponseMessage respons
 
     public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
-    protected override void Dispose(bool isDisposing)
+    protected override void Dispose(bool disposing)
     {
-        if (isDisposing)
+        if (disposing)
         {
             _inner.Dispose();
             _response.Dispose();
         }
 
-        base.Dispose(isDisposing);
+        base.Dispose(disposing);
     }
 }

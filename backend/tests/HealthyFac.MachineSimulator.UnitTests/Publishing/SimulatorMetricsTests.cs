@@ -20,6 +20,7 @@ public sealed class SimulatorMetricsTests
     public void RecordMessage_WithPublishedAndDropped_CountsEachWithItsTags()
     {
         var metrics = new SimulatorMetrics(_meterFactory);
+
         using var collector = new MetricCollector<long>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,
@@ -30,11 +31,11 @@ public sealed class SimulatorMetricsTests
 
         var measurements = collector.GetMeasurementSnapshot();
         measurements.Should().HaveCount(expected: 2);
-        measurements[index: 0].Value.Should().Be(expected: 1);
-        measurements[index: 0].Tags[Tags.Scenario].Should().Be(expected: "cncTurningCenter");
-        measurements[index: 0].Tags[Tags.Outcome].Should().Be(expected: "published");
-        measurements[index: 1].Tags[Tags.Scenario].Should().Be(expected: "generic");
-        measurements[index: 1].Tags[Tags.Outcome].Should().Be(expected: "dropped");
+        measurements[0].Value.Should().Be(expected: 1);
+        measurements[0].Tags[Tags.Scenario].Should().Be(expected: "cncTurningCenter");
+        measurements[0].Tags[Tags.Outcome].Should().Be(expected: "published");
+        measurements[1].Tags[Tags.Scenario].Should().Be(expected: "generic");
+        measurements[1].Tags[Tags.Outcome].Should().Be(expected: "dropped");
         collector.Instrument!.Unit.Should().Be(expected: "{message}");
     }
 
@@ -42,6 +43,7 @@ public sealed class SimulatorMetricsTests
     public void RecordPoll_WithDuration_RecordsSecondsWithThePollTag()
     {
         var metrics = new SimulatorMetrics(_meterFactory);
+
         using var collector = new MetricCollector<double>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,
@@ -60,6 +62,7 @@ public sealed class SimulatorMetricsTests
     {
         var metrics = new SimulatorMetrics(_meterFactory);
         metrics.SetPublishingSource(() => 3);
+
         using var collector = new MetricCollector<int>(
             _meterFactory,
             ObservabilityConstants.Simulator.Meter,

@@ -15,21 +15,26 @@ public sealed class MessageValidatorRegistrationTests(SeederFixture fixture)
     {
         var missing = new List<string>();
         var validatedCount = 0;
+
         foreach (var host in _fixture.Hosts.All)
         {
             using var scope = host.CreateScope(SeederTestData.InitializationActor);
             var registry = scope.ServiceProvider.GetRequiredService<IntegrationMessageRegistry>();
+
             foreach (var messageType in registry.MessageClrTypes)
             {
                 var validatorInterface = typeof(IValidator<>).MakeGenericType(messageType);
+
                 var hasValidatorClass = AssemblyScanner.FindValidatorsInAssembly(messageType.Assembly)
                     .Any(result => result.InterfaceType == validatorInterface);
+
                 if (!hasValidatorClass)
                 {
                     continue;
                 }
 
                 validatedCount++;
+
                 if (scope.ServiceProvider.GetService(validatorInterface) is null)
                 {
                     missing.Add($"{host.Name.Value}: {messageType.Name}");

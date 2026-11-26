@@ -48,7 +48,7 @@ public static class ApplyMetricDefinitionChangesRequestExtensions
                 ExpectedRevision = request.ExpectedRevision,
                 Created = request.Created,
                 Updated = request.Updated,
-                Deleted = request.Deleted.Select(id => DecryptDeleted(id, idEncryptor)).ToList(),
+                Deleted = [.. request.Deleted.Select(id => DecryptDeleted(id, idEncryptor))],
             };
     }
 

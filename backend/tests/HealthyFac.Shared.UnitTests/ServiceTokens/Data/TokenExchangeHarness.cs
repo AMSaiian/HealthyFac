@@ -17,12 +17,14 @@ public sealed class TokenExchangeHarness : IDisposable
     public TokenExchangeHarness()
     {
         var serviceOptions = Options.Create(new ServiceOptions { Name = ServiceTokenTestData.ServiceName });
+
         var store = new TokenStore(
             Storage,
             Time,
             Options.Create(ServiceTokenTestData.Options),
             serviceOptions,
             NullLogger<TokenStore>.Instance);
+
         var exchangeClient = new TokenExchangeClient(
             new TokenEndpointClient(
                 new FixedHttpClientFactory(TokenEndpoint),

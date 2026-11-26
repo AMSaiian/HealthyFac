@@ -101,34 +101,42 @@ public sealed class AggregateRelationTestModel(DbContextOptions<AggregateRelatio
                 .WithOne()
                 .HasForeignKey(child => child.RootId)
                 .OnDelete(DeleteBehavior.Cascade);
+
             root.HasMany(candidate => candidate.CompositeCascadedChildren)
                 .WithOne()
                 .HasForeignKey(child => child.RootId)
                 .OnDelete(DeleteBehavior.Cascade);
+
             root.HasMany(candidate => candidate.RestrictedChildren)
                 .WithOne()
                 .HasForeignKey(child => child.RootId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             root.HasMany(candidate => candidate.LinkedRows)
                 .WithOne()
                 .HasForeignKey(row => row.RootId)
                 .IsRequired(required: false)
                 .OnDelete(DeleteBehavior.Restrict);
+
             root.OwnsMany(candidate => candidate.OwnedItems);
             root.OwnsOne(candidate => candidate.OwnedValue);
         });
+
         modelBuilder.Entity<PlantedCompositeCascadedChild>()
             .HasKey(child => new { child.RootId, child.Position });
+
         modelBuilder.Entity<PlantedRestrictedReference>()
             .HasOne<PlantedOtherRoot>()
             .WithMany()
             .HasForeignKey(reference => reference.OtherRootId)
             .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<PlantedCascadedReference>()
             .HasOne<PlantedOtherRoot>()
             .WithMany()
             .HasForeignKey(reference => reference.OtherRootId)
             .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<PlantedSetNullReference>()
             .HasOne<PlantedOtherRoot>()
             .WithMany()

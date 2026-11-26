@@ -16,6 +16,7 @@ public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
     public async Task Start_ForPdfAttachment_StoresTheQueuedAttemptWithTheSnapshotAndTheMessage()
     {
         var machineId = Guid.CreateVersion7();
+
         _fixture.ArrangeFile(
             StartIngestAttemptTestData.Pdf, StartIngestAttemptTestData.Attachment, machineId: machineId);
 
@@ -68,7 +69,7 @@ public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
     public async Task Start_ForFileOfAnotherCompany_Returns404()
     {
         _fixture.ArrangeFile(
-            StartIngestAttemptTestData.Pdf, StartIngestAttemptTestData.Attachment, companyId: Guid.CreateVersion7());
+            StartIngestAttemptTestData.Pdf, StartIngestAttemptTestData.Attachment, Guid.CreateVersion7());
 
         var response = await StartAsync();
 
@@ -139,6 +140,7 @@ public sealed class StartIngestAttemptApiTests(InsightsApiFixture fixture)
     public async Task Start_WithoutToken_Returns401()
     {
         using var client = _fixture.CreateClient();
+
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
             StartIngestAttemptTestData.StartPath(_fixture.IdEncryptor.Encrypt(StartIngestAttemptTestData.FileId)));

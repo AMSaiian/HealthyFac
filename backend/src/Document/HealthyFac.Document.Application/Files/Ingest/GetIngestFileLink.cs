@@ -87,6 +87,7 @@ public sealed class GetIngestFileLinkRequestHandler(IDocumentDbContext dbContext
                         && candidate.Purpose == FilePurpose.Attachment,
                     cancellationToken)
             ?? throw new NotFoundException(FileErrors.FileNotFound);
+
         var link = _linkIssuer.Issue(file, request.Audience);
 
         return new IngestFileLinkResponse

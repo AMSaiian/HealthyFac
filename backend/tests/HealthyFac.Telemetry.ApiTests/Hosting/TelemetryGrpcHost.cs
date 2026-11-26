@@ -23,7 +23,7 @@ public sealed class TelemetryGrpcHost : IAsyncDisposable
     {
         var apiPort = FreePort();
         var grpcPort = FreePort();
-        var hostSettings = new Dictionary<string, string?>(settings) { [key: "Grpc:Port"] = grpcPort.ToString() };
+        var hostSettings = new Dictionary<string, string?>(settings) { ["Grpc:Port"] = grpcPort.ToString() };
 
         _factory = new TelemetryApiFactory(
             hostSettings,
@@ -33,6 +33,7 @@ public sealed class TelemetryGrpcHost : IAsyncDisposable
                 options.Listen(IPAddress.Loopback, apiPort);
                 options.Listen(IPAddress.Loopback, grpcPort);
             }));
+
         _factory.UseKestrel();
         _factory.StartServer();
 

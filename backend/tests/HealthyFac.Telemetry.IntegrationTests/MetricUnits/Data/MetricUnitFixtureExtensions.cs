@@ -79,6 +79,7 @@ public static class MetricUnitFixtureExtensions
         public async Task<ListMetricUnitsResponse> ListMetricUnitsAsync()
         {
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<HealthyFac.Shared.Application.UseCases.IRequestHandler<ListMetricUnitsRequest,
                     ListMetricUnitsResponse>>();

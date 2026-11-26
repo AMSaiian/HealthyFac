@@ -21,7 +21,7 @@ public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
         var registration = await _fixture.LoadRegistrationAsync(message.MachineId);
 
         registration.Should().NotBeNull();
-        registration!.GatewayId.Should().Be(message.GatewayId);
+        registration.GatewayId.Should().Be(message.GatewayId);
         registration.CompanyId.Should().Be(message.CompanyId);
         registration.MetricSchemaRevision.Should().Be(expected: 0);
         registration.DeletedAt.Should().BeNull();
@@ -38,10 +38,12 @@ public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
         var schema = JsonNode.Parse(revisions.Single().Schema)!;
 
         revisions.Single().Revision.Should().Be(expected: 0);
-        schema[propertyName: "$id"]!.GetValue<string>()
+
+        schema["$id"]!.GetValue<string>()
             .Should()
             .Be($"urn:healthyfac:gateways:{message.GatewayId}:metrics:0");
-        schema[propertyName: "properties"]![propertyName: "metrics"]![propertyName: "properties"]!.AsObject()
+
+        schema["properties"]!["metrics"]!["properties"]!.AsObject()
             .Should()
             .BeEmpty();
     }
@@ -51,6 +53,7 @@ public sealed class RegisterMachineTests(TelemetryDatabaseFixture fixture)
     {
         var message = MachineRegistrationTestData.CreateMessage();
         await _fixture.RegisterMachineAsync(message);
+
         var changed = message with
         {
             GatewayId = GatewayIds.Create(),

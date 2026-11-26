@@ -41,10 +41,12 @@ public sealed class AgentRunClaims(
             {
                 claimed = null;
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
+
                 var run = await _dbContext.AgentRuns.ClaimFirstAsync(
                     candidate => candidate.State == AgentRunState.Queued && candidate.DueAt <= now,
                     candidate => candidate.DueAt,
                     token);
+
                 if (run is null)
                 {
                     return;
@@ -76,19 +78,23 @@ public sealed class AgentRunClaims(
             {
                 interruptedRole = null;
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
+
                 var run = await _dbContext.AgentRuns.ClaimFirstAsync(
                     candidate => candidate.State == AgentRunState.Running && candidate.LeaseUntil < now,
                     candidate => candidate.LeaseUntil,
                     token);
+
                 if (run is null)
                 {
                     return;
                 }
 
                 run.Interrupt(now);
+
                 var actions = await _dbContext.AgentActions
                     .Where(candidate => candidate.RunId == run.Id && candidate.State == AgentActionState.Buffered)
                     .ToListAsync(token);
+
                 actions.ForEach(action => action.Discard());
                 await _dbContext.SaveChangesAsync(token);
                 interruptedRole = run.Role;

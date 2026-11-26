@@ -68,6 +68,7 @@ public sealed class ListShiftOverridesPreHandlerCheck(
     public async Task CheckAsync(ListShiftOverridesRequest request, CancellationToken cancellationToken)
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
+
         await request.Scope.EnsureEmployeeReadableAsync(
             _dbContext,
             _ownEmployee,
@@ -105,17 +106,21 @@ public sealed class ListShiftOverridesRequestHandler(ICoreDbContext dbContext)
             })
             .ToListAsync(cancellationToken);
 
-        return rows
-            .Select(row => new ShiftOverrideResponse
-            {
-                Id = row.Override.Id,
-                Date = row.Override.Date,
-                RowVersion = row.RowVersion,
-                Blocks = row.Override.Blocks
-                    .OrderBy(block => block.Start)
-                    .Select(block => new ShiftBlockInput { Start = block.Start, End = block.End })
-                    .ToList(),
-            })
-            .ToList();
+        return
+        [
+            .. rows
+                .Select(row => new ShiftOverrideResponse
+                {
+                    Id = row.Override.Id,
+                    Date = row.Override.Date,
+                    RowVersion = row.RowVersion,
+                    Blocks =
+                    [
+                        .. row.Override.Blocks
+                            .OrderBy(block => block.Start)
+                            .Select(block => new ShiftBlockInput { Start = block.Start, End = block.End }),
+                    ],
+                }),
+        ];
     }
 }

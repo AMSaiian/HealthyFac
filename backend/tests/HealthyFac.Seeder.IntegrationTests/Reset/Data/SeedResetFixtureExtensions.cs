@@ -26,6 +26,7 @@ public static class SeedResetFixtureExtensions
         {
             var folder = new SeedFolder(Path.Combine(AppContext.BaseDirectory, SeedProgram.SeedFolderName));
             fixture.EnterNextMoment(item: "reset");
+
             var reset = new SeedReset(
                 fixture.Hosts,
                 new KeycloakAccounts(fixture.Hosts.Auth),
@@ -49,6 +50,7 @@ public static class SeedResetFixtureExtensions
         {
             var folder = new SeedFolder(Path.Combine(AppContext.BaseDirectory, SeedProgram.SeedFolderName));
             fixture.EnterNextMoment(item: "reset");
+
             var reset = new SeedReset(
                 fixture.Hosts,
                 new KeycloakAccounts(fixture.Hosts.Auth),
@@ -71,6 +73,7 @@ public static class SeedResetFixtureExtensions
         public async Task AddExtraMemberAsync(CancellationToken cancellationToken)
         {
             var organizationId = await fixture.FindOrganizationAsync(SeedCompletionTestData.CompanyId);
+
             var userId = await new KeycloakAccounts(fixture.Hosts.Auth).CreateUserAsync(
                 Guid.CreateVersion7(),
                 SeedResetTestData.ExtraEmail,
@@ -78,14 +81,17 @@ public static class SeedResetFixtureExtensions
                 SeedResetTestData.ExtraLastName,
                 SeedResetTestData.ExtraPassword,
                 cancellationToken);
+
             await fixture.AddMemberAsync(organizationId!.Value, userId);
         }
 
         public async Task AddExtraBlobAsync(CancellationToken cancellationToken)
         {
             using var scope = fixture.Hosts.Document.CreateScope(SeederTestData.InitializationActor);
+
             var container = scope.ServiceProvider.GetRequiredService<BlobServiceClient>()
                 .GetBlobContainerClient(IngestTestData.BlobContainer);
+
             await container.GetBlobClient(SeedResetTestData.ExtraBlobName)
                 .UploadAsync(BinaryData.FromString(SeedResetTestData.ExtraBlobName), cancellationToken);
         }

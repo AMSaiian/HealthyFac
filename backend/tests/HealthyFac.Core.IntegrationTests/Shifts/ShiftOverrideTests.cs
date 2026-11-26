@@ -33,6 +33,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.Tomorrow,
@@ -51,10 +52,12 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         await _fixture.SetOverrideAsync(tenant, ShiftTestData.Tomorrow, []);
 
         var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
@@ -72,10 +75,12 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.SetOverrideAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.Blocks(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
 
         await _fixture.SetOverrideAsync(
@@ -94,10 +99,12 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.SetOverrideAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.Blocks(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
 
         await _fixture.SetOverrideAsync(
@@ -117,10 +124,12 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.SetOverrideAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.Blocks(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
 
         await _fixture.DeleteOverrideAsync(tenant, ShiftTestData.Tomorrow, rowVersion);
@@ -135,10 +144,12 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.WorkWeek(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Tomorrow,
@@ -157,6 +168,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
             .ContainSingle()
             .Which.Id.Should()
             .Be(workOrderId);
+
         day.Source.Should().Be(DayScheduleSource.Template);
     }
 
@@ -164,11 +176,13 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     public async Task SetOverride_ForTodayThatRemovesAnEndedBlock_ThrowsPastBlockChanged()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "14:00"));
 
         var act = () => _fixture.SetOverrideAsync(
@@ -264,6 +278,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
         await _fixture.SetOverrideAsync(tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks(ShiftTestData.Morning));
         var staleRowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Tomorrow);
+
         await _fixture.SetOverrideAsync(
             tenant,
             ShiftTestData.Tomorrow,
@@ -361,6 +376,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
         var day = await _fixture.ResolveDayAsync(tenant, ShiftTestData.Today);
 
         day.Source.Should().Be(DayScheduleSource.Override);
+
         day.Blocks.Select(block => $"{block.Start:HH:mm}-{block.End:HH:mm}")
             .Should()
             .Equal("09:00-12:00", "13:00-17:00");
@@ -372,6 +388,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
         var tenant = await ArrangeTodayAsync(time: "14:02", ShiftTestData.Morning, ShiftTestData.Afternoon);
         await _fixture.SeedOverrideAsync(tenant.EmployeeId, ShiftTestData.Today);
         var staleRowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Today);
+
         await _fixture.SetOverrideAsync(
             tenant,
             ShiftTestData.Today,
@@ -391,11 +408,13 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     {
         var tenant = await ArrangeTodayAsync(time: "12:02", ShiftTestData.Morning);
         await _fixture.SeedOverrideAsync(tenant.EmployeeId, ShiftTestData.Today, "08:00-16:00");
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Today,
             time: "14:00",
             minutes: 60);
+
         var rowVersion = await _fixture.LoadOverrideRowVersionAsync(tenant.EmployeeId, ShiftTestData.Today);
 
         var act = () => _fixture.DeleteOverrideAsync(tenant, ShiftTestData.Today, rowVersion);
@@ -404,6 +423,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
         var day = await _fixture.ResolveDayAsync(tenant, ShiftTestData.Today);
 
         exception.Message.Should().Be(ShiftErrors.Rejections.WorkOrdersOutsideShift);
+
         exception.Extensions[ShiftChangeGuard.WorkOrdersKey]
             .Should()
             .BeAssignableTo<IReadOnlyList<AffectedWorkOrder>>()
@@ -411,6 +431,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
             .ContainSingle()
             .Which.Id.Should()
             .Be(workOrderId);
+
         day.Blocks.Select(block => $"{block.Start:HH:mm}-{block.End:HH:mm}").Should().Equal("08:00-16:00");
     }
 
@@ -418,11 +439,13 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     public async Task SetOverride_ThatShortensTodayUnderARunningWorkOrder_ThrowsWithTheWorkOrder()
     {
         var tenant = await ArrangeTodayAsync(time: "14:00", "08:00-17:00");
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Today,
             time: "13:30",
             minutes: 120);
+
         await _fixture.ChangeWorkOrderStatusAsync(workOrderId, WorkOrderStatus.InProgress);
 
         await AssertOutsideShiftAsync(tenant, workOrderId);
@@ -432,6 +455,7 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     public async Task SetOverride_ThatShortensTodayUnderADelayedWorkOrder_ThrowsWithTheWorkOrder()
     {
         var tenant = await ArrangeTodayAsync(time: "14:00", "08:00-17:00");
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Today,
@@ -445,11 +469,13 @@ public sealed class ShiftOverrideTests(CoreDatabaseFixture fixture)
     public async Task SetOverride_ThatShortensTodayUnderACompletedWorkOrder_Succeeds()
     {
         var tenant = await ArrangeTodayAsync(time: "14:00", "08:00-17:00");
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Today,
             time: "13:30",
             minutes: 120);
+
         await _fixture.CompleteWorkOrderAsync(workOrderId);
 
         await _fixture.SetOverrideAsync(tenant, ShiftTestData.Today, ShiftTestData.Blocks("08:00-14:05"));

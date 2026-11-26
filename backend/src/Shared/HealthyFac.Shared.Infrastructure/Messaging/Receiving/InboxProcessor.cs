@@ -53,9 +53,11 @@ internal sealed class InboxProcessor(
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         var startedAt = _timeProvider.GetTimestamp();
+
         try
         {
             bool isClaimed;
+
             do
             {
                 isClaimed = await ProcessNextAsync(cancellationToken);
@@ -133,11 +135,13 @@ internal sealed class InboxProcessor(
     {
         using var scope = _scopeFactory.CreateActorScope(
             ServiceActor.InboxProcessor.For(_serviceOptions.Value.ToServiceName()));
+
         var dbContext = scope.ServiceProvider.GetRequiredService<IInboxDbContext>();
 
         var message = await dbContext.InboxMessages.SingleOrDefaultAsync(
             stored => stored.Id == messageId && stored.ProcessedOn == null && stored.FailedOn == null,
             cancellationToken);
+
         if (message is null)
         {
             _logger.LogWarning(exception, message: "Handling inbox message {MessageId} failed.", messageId);

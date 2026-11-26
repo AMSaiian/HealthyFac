@@ -26,6 +26,7 @@ public static class EmployeeSearchFixtureExtensions
 
             var identityUserId = Guid.CreateVersion7();
             await fixture.CompleteProvisioningAsync(employeeId, identityUserId);
+
             if (options.IsDeactivated)
             {
                 await fixture.ChangeEmployeeAsync(employeeId, employee => employee.Deactivate());
@@ -44,11 +45,13 @@ public static class EmployeeSearchFixtureExtensions
                 options.Email,
                 options.RoleCode,
                 DateTime.UtcNow.AddHours(value: 1));
+
             var token = fixture.InviteTokenService.CreateToken(
                 inviteId,
                 (await fixture.LoadInviteAsync(inviteId)).TokenSalt);
 
             using var scope = fixture.ScopeFactory.CreateScope();
+
             var response = await scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<AcceptEmployeeInviteRequest, AcceptEmployeeInviteResponse>>()
                 .HandleAsync(
@@ -71,10 +74,12 @@ public static class EmployeeSearchFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var roleId = await dbContext.Roles
                 .Where(role => role.Code == roleCode)
                 .Select(role => role.Id)
                 .SingleAsync();
+
             var invite = new EmployeeInvite(
                 companyId,
                 email,

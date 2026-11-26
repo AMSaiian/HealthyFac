@@ -42,7 +42,9 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
             _stoppedRedis.ConnectionString,
             _core.Address,
             IPAddress.Parse(DownClientAddress));
+
         using var client = gateway.CreateAuthenticatedClient();
+
         using var firstFailure = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
 
@@ -56,6 +58,7 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
     {
         var store = new FlakyRevocationStore();
         var time = new FakeTimeProvider(DateTimeOffset.UtcNow);
+
         await using var gateway = _environment.CreateGateway(
             _core,
             configureServices: services =>
@@ -63,15 +66,21 @@ public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
                 services.Replace(ServiceDescriptor.Singleton<ITokenRevocationStore>(store));
                 services.Replace(ServiceDescriptor.Singleton<TimeProvider>(time));
             });
+
         using var client = gateway.CreateAuthenticatedClient();
+
         await gateway.Services.GetRequiredService<RedisResiliencePipeline>()
             .FailAsync(RedisConstants.Resilience.MinimumThroughput - 1);
+
         using var failedRead = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
+
         using var skippedRead = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
+
         var readsWhileOpen = store.ReadCount;
         time.Advance(RedisConstants.Resilience.BreakDuration);
+
         using var probeRead = await client.GetAsync(
             RevocationTestData.CoreRoute, TestContext.Current.CancellationToken);
 

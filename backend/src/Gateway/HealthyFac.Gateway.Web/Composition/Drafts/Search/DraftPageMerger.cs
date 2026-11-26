@@ -46,6 +46,7 @@ public static class DraftPageMerger
     )
     {
         var comparer = DraftSortComparers.For(sortColumn);
+
         var rows = coreRows
             .Select((row, index) => ToMergeRow(row, CoreOrder, index, comparer))
             .Concat(telemetryRows.Select((row, index) => ToMergeRow(row, TelemetryOrder, index, comparer)))
@@ -54,6 +55,7 @@ public static class DraftPageMerger
         var ordered = isDescending
             ? rows.OrderByDescending(row => row.Position.SortValue, comparer)
             : rows.OrderBy(row => row.Position.SortValue, comparer);
+
         var taken = ordered.ThenBy(row => row.Source).ThenBy(row => row.Index).Take(limit).ToList();
 
         var takenCore = taken.Where(row => row.Source == CoreOrder).ToList();

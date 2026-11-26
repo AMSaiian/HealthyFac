@@ -42,6 +42,7 @@ public sealed class PeoplePart : ISeedPart
     {
         _file = folder.Read<CompanyFile>(PeopleConstants.FileName);
         _actions.Clear();
+
         var events = new List<SeedEvent>
         {
             Add(
@@ -71,6 +72,7 @@ public sealed class PeoplePart : ISeedPart
     private static TimeOnly ShiftTime(PersonSeed person)
     {
         var item = SeedItem.Of(PeopleConstants.FileName, $"{person.Key}{PeopleConstants.AcceptedSuffix}");
+
         if (person.AcceptedAt.Time is not { } acceptedTime)
         {
             throw new SeedFileException(PeopleErrors.AcceptNeedsTime(item));
@@ -93,9 +95,11 @@ public sealed class PeoplePart : ISeedPart
     private SeedEvent InviteEvent(PersonSeed person)
     {
         var inviter = person.InvitedBy;
+
         Func<SeedContext, CancellationToken, Task> action = inviter is null
             ? (context, token) => InviteFirstSupervisorAsync(person, context, token)
             : (context, token) => InviteAsync(person, context, token);
+
         var uses = inviter is null
             ? new[] { PeopleConstants.CompanyKey }
             : [PeopleConstants.CompanyKey, UserKey(inviter)];
@@ -192,6 +196,7 @@ public sealed class PeoplePart : ISeedPart
     private async Task CreateCompanyAsync(SeedContext context, CancellationToken cancellationToken)
     {
         var companySeed = _file.Company;
+
         using (var scope = _hosts.Core.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core)))
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
@@ -216,6 +221,7 @@ public sealed class PeoplePart : ISeedPart
         var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
         var tokens = scope.ServiceProvider.GetRequiredService<IInviteTokenService>();
         var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+
         var roleId = await dbContext.Roles
             .Where(role => role.Code == person.Role)
             .Select(role => role.Id)
@@ -234,6 +240,7 @@ public sealed class PeoplePart : ISeedPart
             context.GetActor(person.InvitedBy!),
             InviteRequest(person),
             cancellationToken);
+
         context.SetId(InviteKey(person.Key), response.Id);
     }
 
@@ -243,6 +250,7 @@ public sealed class PeoplePart : ISeedPart
             context.GetActor(invite.InvitedBy),
             OpenInviteRequest(invite),
             cancellationToken);
+
         context.SetId(InviteKey(invite.Email), response.Id);
     }
 
@@ -265,6 +273,7 @@ public sealed class PeoplePart : ISeedPart
             KnownActors.Anonymous,
             AcceptRequest(person, token),
             cancellationToken);
+
         var userId = await _accounts.CreateUserAsync(
             response.EmployeeId,
             person.Email,
@@ -275,6 +284,7 @@ public sealed class PeoplePart : ISeedPart
 
         context.SetId(EmployeeKey(person.Key), response.EmployeeId);
         context.SetId(UserKey(person.Key), userId);
+
         context.SetActor(
             person.Key,
             new ActorContext
@@ -289,6 +299,7 @@ public sealed class PeoplePart : ISeedPart
     private async Task<string> CreateTokenAsync(Guid inviteId, CancellationToken cancellationToken)
     {
         using var scope = _hosts.Core.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+
         var salt = await scope.ServiceProvider.GetRequiredService<CoreDbContext>()
                 .EmployeeInvites
                 .Where(invite => invite.Id == inviteId)
@@ -371,9 +382,10 @@ public sealed class PeoplePart : ISeedPart
             CompanyId = _file.Company.Id,
             EmployeeId = employeeId,
             Date = date,
-            Blocks = shiftOverride.Blocks
-                .Select(block => new ShiftBlockInput { Start = block.From, End = block.To })
-                .ToList(),
+            Blocks =
+            [
+                .. shiftOverride.Blocks.Select(block => new ShiftBlockInput { Start = block.From, End = block.To }),
+            ],
         };
 
     private static SeedRequest CoreRequest(object request) =>

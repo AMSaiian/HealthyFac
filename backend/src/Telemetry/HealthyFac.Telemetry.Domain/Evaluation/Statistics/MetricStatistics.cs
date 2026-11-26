@@ -103,6 +103,7 @@ public class MetricStatistics : IEntity
         }
 
         MeanIntervalSeconds ??= deltaSeconds;
+
         var isRestarted = deltaSeconds > settings.GapSeconds
             || (behavior == MetricBehavior.Counter && IsWarm && x < Level);
 

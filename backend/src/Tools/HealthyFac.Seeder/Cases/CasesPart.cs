@@ -34,6 +34,7 @@ public sealed class CasesPart : ISeedPart
     {
         _file = folder.Read<CasesFile>(CasesConstants.FileName);
         var item = SeedItem.Of(CasesConstants.FileName, CasesConstants.CaseKey);
+
         if (_file.Signal.Coverage != SignalCoverage.Drafted)
         {
             throw new SeedFileException(CasesErrors.CoverageNotSupported(item, _file.Signal.Coverage.Value));
@@ -58,13 +59,17 @@ public sealed class CasesPart : ISeedPart
         var companyId = context.GetId(PeopleConstants.CompanyKey);
         var machineId = context.GetId($"{_file.Case.Machine}{CasesConstants.MachineSuffix}");
         var openedAt = SeedCalendar.ToUtc(_file.Case.OpenedAt, context.Anchor, context.Zone).UtcDateTime;
+
         using var scope =
             _hosts.Insights.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Insights, companyId));
+
         var dbContext = scope.ServiceProvider.GetRequiredService<InsightsDbContext>();
 
         var maintenanceCase = new MaintenanceCase(companyId, machineId, openedAt);
+
         dbContext.MaintenanceCases.Add(maintenanceCase).Property(nameof(MaintenanceCase.Id)).CurrentValue =
             _file.Case.Id;
+
         var signal = new MachineSignal(
             _file.Signal.Id,
             machineId,
@@ -80,6 +85,7 @@ public sealed class CasesPart : ISeedPart
                 OpenedAt = openedAt,
                 Sequence = CasesConstants.FirstSequence,
             });
+
         signal.MarkDrafted(_file.WorkOrderDraft.DraftId);
         maintenanceCase.Add(signal);
 
@@ -98,6 +104,7 @@ public sealed class CasesPart : ISeedPart
                     Category = _file.WorkOrderDraft.Category,
                     EstimateMinutes = _file.WorkOrderDraft.EstimateMinutes,
                 });
+
         await dbContext.SaveChangesAsync(cancellationToken);
         context.SetId(CasesConstants.CaseKey, _file.Case.Id);
     }
@@ -106,6 +113,7 @@ public sealed class CasesPart : ISeedPart
     {
         var machinesFile = folder.Read<MachinesFile>(MachinesConstants.FileName);
         var machine = machinesFile.Machines.FirstOrDefault(candidate => candidate.Key == _file.Case.Machine);
+
         if (machine is null)
         {
             return;
@@ -115,6 +123,7 @@ public sealed class CasesPart : ISeedPart
             .Entries
             .SelectMany(entry => entry.DraftsProposed.Machines)
             .FirstOrDefault(candidate => candidate.DraftId == machine.DraftId);
+
         if (draft is not null && draft.Metrics.All(metric => metric.Key != _file.Signal.MetricKey))
         {
             throw new SeedFileException(CasesErrors.MetricUnknown(item, _file.Signal.MetricKey, machine.Key));

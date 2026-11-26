@@ -47,9 +47,11 @@ public sealed class MqttMachineMessagePublisher(
         }
 
         var topic = $"{IntakeConstants.TopicPrefix}{gatewayId}{IntakeConstants.TopicSuffix}";
+
         using var activity = Source.StartActivity(
             ObservabilityConstants.Simulator.PublishSpanName,
             ActivityKind.Producer);
+
         activity?.SetTag(ObservabilityConstants.Messaging.Tags.SystemName, ObservabilityConstants.Intake.MqttSystem);
         activity?.SetTag(ObservabilityConstants.Messaging.Tags.DestinationName, topic);
 
@@ -58,6 +60,7 @@ public sealed class MqttMachineMessagePublisher(
             .WithPayload(new ReadOnlySequence<byte>(payload))
             .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
             .WithRetainFlag(value: false);
+
         if (activity?.Id is { } traceParent)
         {
             builder.WithUserProperty(MessageHeaders.TraceParent, Encoding.UTF8.GetBytes(traceParent));
@@ -91,6 +94,7 @@ public sealed class MqttMachineMessagePublisher(
         };
 
         using var timer = new PeriodicTimer(_options.ReconnectDelay, _timeProvider);
+
         do
         {
             await ConnectIfNeededAsync(stoppingToken);
@@ -132,12 +136,14 @@ public sealed class MqttMachineMessagePublisher(
         try
         {
             await _client.ConnectAsync(BuildClientOptions(), cancellationToken);
+
             _logger.LogInformation(
                 _hasConnected
                     ? "Reconnected to the MQTT broker {Host}:{Port}"
                     : "Connected to the MQTT broker {Host}:{Port}",
                 _options.Host,
                 _options.Port);
+
             _hasConnected = true;
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)

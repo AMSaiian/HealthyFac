@@ -8,30 +8,31 @@ public static class BlockListTestData
     private const string TimeFormat = "HH:mm";
 
     public static IReadOnlyList<ShiftBlockInput> Blocks(string[] ranges) =>
-        ranges.Select(range =>
+    [
+        .. ranges.Select(range =>
+        {
+            var parts = range.Split(separator: '-');
+
+            return new ShiftBlockInput
             {
-                var parts = range.Split(separator: '-');
+                Start = TimeOnly.ParseExact(parts[0], TimeFormat, CultureInfo.InvariantCulture),
+                End = TimeOnly.ParseExact(parts[1], TimeFormat, CultureInfo.InvariantCulture),
+            };
+        }),
+    ];
 
-                return new ShiftBlockInput
-                {
-                    Start = TimeOnly.ParseExact(parts[0], TimeFormat, CultureInfo.InvariantCulture),
-                    End = TimeOnly.ParseExact(parts[1], TimeFormat, CultureInfo.InvariantCulture),
-                };
-            })
-            .ToList();
-
-    public static TheoryData<string[]> InvalidLists => new()
-    {
+    public static TheoryData<string[]> InvalidLists =>
+    [
         new[] { "08:00-12:00", "11:00-15:00" },
         new[] { "08:00-12:03" },
         new[] { "08:02-12:00" },
         new[] { "12:00-08:00" },
         new[] { "08:00-08:00" },
         new[] { "13:00-17:00", "08:00-12:00" },
-    };
+    ];
 
-    public static TheoryData<string[]> ValidLists => new()
-    {
+    public static TheoryData<string[]> ValidLists =>
+    [
         new[] { "08:00-12:00", "12:00-16:00" },
         new[] { "08:00-12:00", "13:00-17:00" },
         new string[] { },
@@ -39,5 +40,5 @@ public static class BlockListTestData
         {
             "01:00-02:00", "03:00-04:00", "05:00-06:00", "07:00-08:00", "09:00-10:00", "11:00-12:00", "13:00-14:00",
         },
-    };
+    ];
 }

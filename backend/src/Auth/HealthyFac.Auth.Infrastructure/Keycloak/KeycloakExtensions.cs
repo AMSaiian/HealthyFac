@@ -23,6 +23,7 @@ public static class KeycloakExtensions
         public IServiceCollection AddKeycloakIdentityAdmin(IConfiguration configuration)
         {
             services.AddServiceTokens(configuration);
+
             services.AddValidatedOptions<KeycloakAdminOptions, KeycloakAdminOptionsValidator>(
                 KeycloakAdminOptions.SectionName,
                 configuration);
@@ -30,9 +31,11 @@ public static class KeycloakExtensions
             services.AddHttpClient<IIdentityAdmin, KeycloakIdentityAdmin>((provider, client) =>
                 {
                     var options = provider.GetRequiredService<IOptions<KeycloakAdminOptions>>().Value;
+
                     client.BaseAddress = new Uri(
                         $"{options.BaseAddress.TrimEnd(KeycloakAdminConstants.PathSeparator)}"
                         + $"{KeycloakAdminConstants.PathSeparator}");
+
                     client.Timeout = TimeSpan.FromSeconds(KeycloakAdminConstants.RequestTimeoutSeconds);
                 })
                 .AddClientCredentialsToken();

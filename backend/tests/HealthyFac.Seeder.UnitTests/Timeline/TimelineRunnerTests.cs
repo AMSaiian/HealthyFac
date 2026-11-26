@@ -12,6 +12,7 @@ public sealed class TimelineRunnerTests
     {
         var log = new List<string>();
         var clock = new SeedClock();
+
         var first = new RecordingSeedPart(
             clock,
             log,
@@ -19,8 +20,10 @@ public sealed class TimelineRunnerTests
                 TimelineTestData.Event(file: "a.json", key: "late", at: "d-1 11:00"),
                 TimelineTestData.Event(file: "a.json", key: "early", at: "d-3 09:00"),
             ]);
+
         var second = new RecordingSeedPart(
             clock, log, [TimelineTestData.Event(file: "b.json", key: "middle", at: "d-2 08:30")]);
+
         var runner = CreateRunner(clock, log);
 
         await runner.RunAsync(Plan(first, second), CreateContext(), CancellationToken.None);
@@ -43,6 +46,7 @@ public sealed class TimelineRunnerTests
     {
         var log = new List<string>();
         var clock = new SeedClock();
+
         var part = new RecordingSeedPart(
             clock,
             log,
@@ -53,6 +57,7 @@ public sealed class TimelineRunnerTests
         {
             FailingItem = "a.json#first",
         };
+
         var runner = CreateRunner(clock, log);
 
         var act = () => runner.RunAsync(Plan(part), CreateContext(), CancellationToken.None);
@@ -61,6 +66,7 @@ public sealed class TimelineRunnerTests
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(
                 $"*a.json#first*{TimelineTestData.PartError}*");
+
         log.Where(entry => entry.StartsWith(value: "run ", StringComparison.Ordinal))
             .Should()
             .Equal("run a.json#first at 07:00");
@@ -71,6 +77,7 @@ public sealed class TimelineRunnerTests
     {
         var log = new List<string>();
         var clock = new SeedClock();
+
         var part = new RecordingSeedPart(
             clock,
             log,
@@ -79,13 +86,14 @@ public sealed class TimelineRunnerTests
                 TimelineTestData.Event(file: "a.json", key: "two", at: "d-1 09:00"),
                 TimelineTestData.Event(file: "a.json", key: "three", at: "d-1 09:00"),
             ]);
+
         var runner = CreateRunner(clock, log);
 
         await runner.RunAsync(Plan(part), CreateContext(), CancellationToken.None);
 
         part.Reads.Select(read => read.Item).Should().Equal("a.json#one", "a.json#two", "a.json#three");
-        part.Reads[index: 1].First.Should().BeAfter(part.Reads[index: 0].Last);
-        part.Reads[index: 2].First.Should().BeAfter(part.Reads[index: 1].Last);
+        part.Reads[1].First.Should().BeAfter(part.Reads[0].Last);
+        part.Reads[2].First.Should().BeAfter(part.Reads[1].Last);
     }
 
     private static TimelineRunner CreateRunner(SeedClock clock, List<string> log) =>
@@ -110,11 +118,12 @@ public sealed class TimelineRunnerTests
     private static SeedContext CreateContext() => new() { Anchor = TimelineTestData.Anchor, Zone = Kyiv };
 
     private static List<PlannedEvent> Plan(params RecordingSeedPart[] parts) =>
-        parts.SelectMany(part => part.ReadEvents(null!)
-                .Select(seedEvent => new PlannedEvent
-                {
-                    Part = part,
-                    Event = seedEvent,
-                }))
-            .ToList();
+    [
+        .. parts.SelectMany(part => part.ReadEvents(null!)
+            .Select(seedEvent => new PlannedEvent
+            {
+                Part = part,
+                Event = seedEvent,
+            })),
+    ];
 }

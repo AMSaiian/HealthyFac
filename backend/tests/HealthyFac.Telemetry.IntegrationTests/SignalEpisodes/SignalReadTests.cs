@@ -17,6 +17,7 @@ public sealed class SignalReadTests(TelemetryEvaluationFixture fixture)
     public async Task GetMetricHistory_WithAnHourAnd120Buckets_GroupsTheReadingsIn30SecondBuckets()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             new[] { 5, 10, 35, 3599 }.Select((second, index) => Sample(arrangement, second, (index + 1) * 10)));
@@ -36,6 +37,7 @@ public sealed class SignalReadTests(TelemetryEvaluationFixture fixture)
     public async Task GetMetricHistory_WithAReadingOutsideTheRange_LeavesItOut()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.SeedSamplesAsync(
             arrangement,
             [
@@ -104,12 +106,16 @@ public sealed class SignalReadTests(TelemetryEvaluationFixture fixture)
     public async Task GetSignalEpisodes_WithARange_ReturnsTheOverlappingEpisodesWithTheirSnapshotsInOpenOrder()
     {
         var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
+
         await _fixture.AddEpisodeAtAsync(
             arrangement, SignalRule.Threshold, _fixture.At(seconds: 200), resolvedAt: null);
+
         await _fixture.AddEpisodeAtAsync(
             arrangement, SignalRule.Drift, _fixture.At(seconds: 100), _fixture.At(seconds: 150));
+
         await _fixture.AddEpisodeAtAsync(
             arrangement, SignalRule.Trend, _fixture.At(seconds: -500), _fixture.At(seconds: -1));
+
         await _fixture.AddEpisodeAtAsync(arrangement, SignalRule.Status, _fixture.At(seconds: 5000), resolvedAt: null);
 
         var response = await _fixture.GetSignalEpisodesUseCaseAsync(

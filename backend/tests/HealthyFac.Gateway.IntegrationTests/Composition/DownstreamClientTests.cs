@@ -53,10 +53,12 @@ public sealed class DownstreamClientTests(GatewayEnvironment environment) : IAsy
         var forwarded = _core.Requests.Single();
 
         forwarded.Headers[CompositionTestData.TraceParentHeader].Should().NotBeNullOrEmpty();
+
         forwarded.Headers.Should()
             .ContainKey(expected: "Authorization")
             .WhoseValue.Should()
             .Be(CompositionTestData.BearerToken);
+
         forwarded.Headers.Should().NotContainKey(CompositionTestData.ActorIdHeader);
         forwarded.Headers.Should().NotContainKey(CompositionTestData.CompanyIdHeader);
     }
@@ -83,7 +85,7 @@ public sealed class DownstreamClientTests(GatewayEnvironment environment) : IAsy
         var error = result.Should().BeOfType<DownstreamResult.ClientError>().Subject;
 
         error.Status.Should().Be(expected: 404);
-        error.Problem[propertyName: "title"]!.GetValue<string>().Should().Be(expected: "Not found");
+        error.Problem["title"]!.GetValue<string>().Should().Be(expected: "Not found");
     }
 
     private GatewayFactory CreateGateway() =>

@@ -27,6 +27,7 @@ public sealed class CloseCaseByUserRequestValidator : AbstractValidator<CloseCas
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(CaseErrors.CompanyIdRequired);
         RuleFor(request => request.Id).NotEmpty().WithMessage(CaseErrors.CaseIdRequired);
+
         RuleFor(request => request.Reason)
             .NotEmpty()
             .SingleLineText()

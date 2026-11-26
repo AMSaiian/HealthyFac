@@ -65,6 +65,7 @@ public sealed class WorkOrderCreation(
                 .AnyAsync(
                     machine => machine.Id == machineId && machine.CompanyId == request.CompanyId,
                     cancellationToken);
+
             if (!isMachineInCompany)
             {
                 throw new NotFoundException(WorkOrderErrors.Rejections.MachineNotFound);
@@ -72,6 +73,7 @@ public sealed class WorkOrderCreation(
         }
 
         var estimate = TimeSpan.FromMinutes(request.EstimateMinutes);
+
         var workOrder = WorkOrder.Create(
             request.CompanyId,
             request.Title,
@@ -80,6 +82,7 @@ public sealed class WorkOrderCreation(
             request.Category,
             request.MachineId,
             estimate);
+
         workOrder.ReplaceFiles(request.FileIds);
 
         if (request is { AssigneeId: { } assigneeId, PlannedStartLocal: { } plannedStartLocal })
@@ -91,6 +94,7 @@ public sealed class WorkOrderCreation(
                 estimate,
                 workOrder.Id,
                 cancellationToken);
+
             workOrder.Assign(assigneeId, plannedStartLocal, startUtc);
         }
 

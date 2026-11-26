@@ -39,15 +39,18 @@ public static class ConventionChecks
             .Where(type => type is { IsClass: true, IsAbstract: false })
             .Where(type => type.Name.EndsWith(ConventionConstants.Options.TypeSuffix, StringComparison.Ordinal))
             .ToList();
+
         var childTypes = optionsTypes
             .SelectMany(type => type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             .SelectMany(property => property.PropertyType.ExpandWrappedTypes())
             .ToHashSet();
 
-        return optionsTypes
-            .Where(type => !childTypes.Contains(type) && !type.HasSectionName)
-            .Select(type => type.DisplayName)
-            .ToList();
+        return
+        [
+            .. optionsTypes
+                .Where(type => !childTypes.Contains(type) && !type.HasSectionName)
+                .Select(type => type.DisplayName),
+        ];
     }
 
     /// <summary>
@@ -62,7 +65,8 @@ public static class ConventionChecks
     /// <param name="assembly">The assembly to inspect.</param>
     /// <returns>The names of the methods with a wrong prefix.</returns>
     public static IReadOnlyList<string> FindExtensionMethodsWithWrongPrefix(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .Where(type => type is { IsAbstract: true, IsSealed: true })
             .SelectMany(type => type.GetMethods(TypeInspection.DeclaredMembers))
             .Where(method => method.IsDefined(typeof(ExtensionAttribute), inherit: false)
@@ -70,8 +74,8 @@ public static class ConventionChecks
             .Select(method => (Method: method, Prefix: GetExpectedPrefix(method.GetParameters()[0].ParameterType)))
             .Where(item => item.Prefix is not null
                 && !item.Method.Name.StartsWith(item.Prefix, StringComparison.Ordinal))
-            .Select(item => $"{item.Method.DeclaringType!.DisplayName}.{item.Method.Name}")
-            .ToList();
+            .Select(item => $"{item.Method.DeclaringType!.DisplayName}.{item.Method.Name}"),
+    ];
 
     /// <summary>
     /// Finds the namespaces whose root folder has a technical name (e.g., <c>Services</c>). The root folder is the
@@ -86,10 +90,11 @@ public static class ConventionChecks
         Assembly assembly,
         IReadOnlySet<string> technicalNames
     ) =>
-        GetFolderPaths(assembly)
+    [
+        .. GetFolderPaths(assembly)
             .Where(path => technicalNames.Contains(path.Folders[0]))
-            .Select(path => path.Namespace)
-            .ToList();
+            .Select(path => path.Namespace),
+    ];
 
     /// <summary>
     /// Finds the boolean properties, fields, and parameters without an <c>is</c>, <c>has</c>, or <c>can</c> prefix.
@@ -99,10 +104,11 @@ public static class ConventionChecks
     /// <param name="assembly">The assembly to inspect.</param>
     /// <returns>The names of the members without a prefix.</returns>
     public static IReadOnlyList<string> FindBooleansWithoutPrefix(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .Where(type => !type.IsEnum && !typeof(Delegate).IsAssignableFrom(type))
-            .SelectMany(FindBooleansWithoutPrefix)
-            .ToList();
+            .SelectMany(FindBooleansWithoutPrefix),
+    ];
 
     /// <summary>
     /// Finds the <see cref="CancellationToken"/> parameters that are not named <c>cancellationToken</c>. The check
@@ -113,9 +119,7 @@ public static class ConventionChecks
     /// <param name="assembly">The assembly to inspect.</param>
     /// <returns>The names of the methods with the wrong parameter name.</returns>
     public static IReadOnlyList<string> FindCancellationTokensWithWrongName(Assembly assembly) =>
-        assembly.GetSourceTypes()
-            .SelectMany(FindCancellationTokensWithWrongName)
-            .ToList();
+        [.. assembly.GetSourceTypes().SelectMany(FindCancellationTokensWithWrongName)];
 
     /// <summary>
     /// Finds the properties and fields that carry an attribute (e.g., <c>[JsonPropertyName]</c>, which a project
@@ -125,15 +129,16 @@ public static class ConventionChecks
     /// <param name="attributeType">The attribute to look for.</param>
     /// <returns>The names of the members that carry the attribute.</returns>
     public static IReadOnlyList<string> FindMembersWithAttribute(Assembly assembly, Type attributeType) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .SelectMany(type => type.GetProperties(TypeInspection.DeclaredMembers)
                 .Where(property => property.IsDefined(attributeType, inherit: false))
                 .Select(property => $"{type.DisplayName}.{property.Name}")
                 .Concat(
                     type.GetFields(TypeInspection.DeclaredMembers)
                         .Where(field => field.IsDefined(attributeType, inherit: false))
-                        .Select(field => $"{type.DisplayName}.{field.Name}")))
-            .ToList();
+                        .Select(field => $"{type.DisplayName}.{field.Name}"))),
+    ];
 
     /// <summary>
     /// Finds the protected abstract methods whose name does not end with <c>Internal</c> or <c>InternalAsync</c>.
@@ -141,15 +146,16 @@ public static class ConventionChecks
     /// <param name="assembly">The assembly to inspect.</param>
     /// <returns>The names of the methods with a wrong suffix.</returns>
     public static IReadOnlyList<string> FindAbstractStepsWithoutInternalSuffix(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .Where(type => type.IsClass)
             .SelectMany(type => type.GetMethods(TypeInspection.DeclaredMembers))
             .Where(method => method.IsAbstract
                 && (method.IsFamily || method.IsFamilyOrAssembly || method.IsFamilyAndAssembly))
             .Where(method => !method.Name.EndsWith(ConventionConstants.StepNames.Suffix, StringComparison.Ordinal)
                 && !method.Name.EndsWith(ConventionConstants.StepNames.AsyncSuffix, StringComparison.Ordinal))
-            .Select(method => $"{method.DeclaringType!.DisplayName}.{method.Name}")
-            .ToList();
+            .Select(method => $"{method.DeclaringType!.DisplayName}.{method.Name}"),
+    ];
 
     /// <summary>
     /// Finds the primary constructor parameters that the class body reads. The compiler stores such a parameter in
@@ -159,19 +165,21 @@ public static class ConventionChecks
     /// <param name="assembly">The assembly to inspect.</param>
     /// <returns>The names of the captured parameters with their types.</returns>
     public static IReadOnlyList<string> FindCapturedPrimaryConstructorParameters(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .SelectMany(type =>
                 type.GetFields(BindingFlags.DeclaredOnly | BindingFlags.NonPublic | BindingFlags.Instance))
             .Select(field => (Field: field, Match: CapturedParameter.Match(field.Name)))
             .Where(item => item.Match.Success)
-            .Select(item => DescribeCapturedParameter(item.Field, item.Match))
-            .ToList();
+            .Select(item => DescribeCapturedParameter(item.Field, item.Match)),
+    ];
 
     public static IReadOnlyList<string> FindPositionalRecords(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .Where(type => type.IsRecord && type.HasGeneratedDeconstruct)
-            .Select(type => type.DisplayName)
-            .ToList();
+            .Select(type => type.DisplayName),
+    ];
 
     /// <summary>
     /// Finds the handlers that implement <see cref="IRequestHandler{TRequest}"/> directly. Only the shared adapter
@@ -186,11 +194,13 @@ public static class ConventionChecks
             throwOnError: true
         );
 
-        return assembly.GetSourceTypes()
-            .Where(type => type is { IsClass: true, IsAbstract: false } && type != adapterType)
-            .Where(type => type.ImplementsGeneric(typeof(IRequestHandler<>)))
-            .Select(type => type.DisplayName)
-            .ToList();
+        return
+        [
+            .. assembly.GetSourceTypes()
+                .Where(type => type is { IsClass: true, IsAbstract: false } && type != adapterType)
+                .Where(type => type.ImplementsGeneric(typeof(IRequestHandler<>)))
+                .Select(type => type.DisplayName),
+        ];
     }
 
     /// <summary>
@@ -200,7 +210,8 @@ public static class ConventionChecks
     /// <param name="assembly">The test assembly to inspect.</param>
     /// <returns>One line for each shared fixture type, with the names of its test classes.</returns>
     public static IReadOnlyList<string> FindSharedClassFixtures(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .SelectMany(testClass => testClass.GetInterfaces()
                 .Where(implemented => implemented.IsGenericType
                     && implemented.GetGenericTypeDefinition() == typeof(IClassFixture<>))
@@ -208,8 +219,8 @@ public static class ConventionChecks
             .GroupBy(usage => usage.Fixture)
             .Where(group => group.Count() > 1)
             .Select(group => $"{group.Key.DisplayName}: "
-                + string.Join(separator: ", ", group.Select(usage => usage.TestClass.DisplayName)))
-            .ToList();
+                + string.Join(separator: ", ", group.Select(usage => usage.TestClass.DisplayName))),
+    ];
 
     /// <summary>
     /// Finds the collection fixture types that do not implement <see cref="IResetBeforeEachTest"/>. Such a fixture
@@ -218,7 +229,8 @@ public static class ConventionChecks
     /// <param name="assembly">The test assembly to inspect.</param>
     /// <returns>The names of the collection fixture types without a reset.</returns>
     public static IReadOnlyList<string> FindCollectionFixturesWithoutReset(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .Where(type => type.IsDefined(typeof(CollectionDefinitionAttribute), inherit: false))
             .SelectMany(collection => collection.GetInterfaces()
                 .Where(implemented => implemented.IsGenericType
@@ -226,14 +238,15 @@ public static class ConventionChecks
                 .Select(implemented => implemented.GetGenericArguments()[0]))
             .Distinct()
             .Where(fixture => !typeof(IResetBeforeEachTest).IsAssignableFrom(fixture))
-            .Select(fixture => fixture.DisplayName)
-            .ToList();
+            .Select(fixture => fixture.DisplayName),
+    ];
 
     public static IReadOnlyList<string> FindControllers(Assembly assembly) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .Where(typeof(ControllerBase).IsAssignableFrom)
-            .Select(type => type.DisplayName)
-            .ToList();
+            .Select(type => type.DisplayName),
+    ];
 
     /// <summary>
     /// Finds convention-based middleware: a type whose constructor takes the <see cref="RequestDelegate"/> of the
@@ -336,13 +349,14 @@ public static class ConventionChecks
     /// <inheritdoc cref="KeysetSortMapsUseSupportedKeys(Assembly)"/>
     /// <param name="types">The types to inspect.</param>
     public static IReadOnlyList<string> KeysetSortMapsUseSupportedKeys(IEnumerable<Type> types) =>
-        types
+    [
+        .. types
             .SelectMany(type => type.GetFields(
                 BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
             .Where(field => field.IsInitOnly && IsKeysetSortMap(field.FieldType))
             .Where(ThrowsOnRead)
-            .Select(field => $"{field.DeclaringType?.FullName}.{field.Name}")
-            .ToList();
+            .Select(field => $"{field.DeclaringType?.FullName}.{field.Name}"),
+    ];
 
     /// <summary>
     /// Finds the types that begin a database transaction (<c>BeginTransaction</c> or <c>BeginTransactionAsync</c> on
@@ -359,13 +373,14 @@ public static class ConventionChecks
     /// <inheritdoc cref="FindTransactionStarts(Assembly)"/>
     /// <param name="types">The types to inspect.</param>
     public static IReadOnlyList<string> FindTransactionStarts(IEnumerable<Type> types) =>
-        types
+    [
+        .. types
             .Where(type => !type.IsNested && type.FullName != ConventionConstants.Transactions.RunnerType)
             .SelectMany(type => MethodCallInspection.FindCalls(type, IsTransactionStart)
                 .Select(call => $"{type.DisplayName}: calls {call.Callee.DeclaringType!.Name}.{call.Callee.Name}"))
             .Distinct()
-            .Order(StringComparer.Ordinal)
-            .ToList();
+            .Order(StringComparer.Ordinal),
+    ];
 
     /// <summary>
     /// Finds the service contexts (a concrete <see cref="DbContext"/> that implements
@@ -382,13 +397,14 @@ public static class ConventionChecks
     /// <inheritdoc cref="FindContextsWithoutSaveTransaction(Assembly)"/>
     /// <param name="types">The types to inspect.</param>
     public static IReadOnlyList<string> FindContextsWithoutSaveTransaction(IEnumerable<Type> types) =>
-        types
+    [
+        .. types
             .Where(type => type is { IsClass: true, IsAbstract: false }
                 && typeof(DbContext).IsAssignableFrom(type)
                 && typeof(ITransactionalDbContext).IsAssignableFrom(type))
             .SelectMany(FindMissingSaveOverrides)
-            .Order(StringComparer.Ordinal)
-            .ToList();
+            .Order(StringComparer.Ordinal),
+    ];
 
     private static IEnumerable<string> FindMissingSaveOverrides(Type type)
     {
@@ -443,12 +459,13 @@ public static class ConventionChecks
     /// <inheritdoc cref="FindInboxHandlerTransactions(Assembly)"/>
     /// <param name="types">The types to inspect.</param>
     public static IReadOnlyList<string> FindInboxHandlerTransactions(IEnumerable<Type> types) =>
-        types
+    [
+        .. types
             .Where(type => type is { IsClass: true, IsAbstract: false } && IsInboxHandler(type))
             .Where(type => MethodCallInspection.FindCalls(type, IsRunInTransaction).Any())
             .Select(type => $"{type.DisplayName}: calls {ConventionConstants.Transactions.RunInTransactionMethod}")
-            .Order(StringComparer.Ordinal)
-            .ToList();
+            .Order(StringComparer.Ordinal),
+    ];
 
     /// <summary>
     /// Finds the background queue item types that break the item rules. An item type is the <c>TItem</c> of an
@@ -480,7 +497,7 @@ public static class ConventionChecks
                 .Where(property => IsForbiddenItemType(property.PropertyType))
                 .Select(property => $"{item.DisplayName}.{property.Name}: type {property.PropertyType.Name}"));
 
-        return multipleHandlers.Concat(forbiddenProperties).Order(StringComparer.Ordinal).ToList();
+        return [.. multipleHandlers.Concat(forbiddenProperties).Order(StringComparer.Ordinal)];
     }
 
     private static bool IsForbiddenItemType(Type type) =>
@@ -567,19 +584,23 @@ public static class ConventionChecks
     private static IEnumerable<string> FindBooleansWithoutPrefix(Type type)
     {
         var externalMethods = type.GetExternalInterfaceMethods();
+
         var properties = type.GetProperties(TypeInspection.DeclaredMembers)
             .Where(property => property.PropertyType.IsBoolean && !property.IsCompilerGenerated)
             .Where(property => !property.GetAccessors(nonPublic: true)
                 .Any(accessor => accessor.IsNamedElsewhere(externalMethods)))
             .Select(property => property.Name);
+
         var fields = type.GetFields(TypeInspection.DeclaredMembers)
             .Where(field => field.FieldType.IsBoolean && !field.IsCompilerGenerated)
             .Select(field => field.Name);
+
         var methods = type.GetMethods(TypeInspection.DeclaredMembers)
             .Where(method => !method.IsSpecialName)
             .Cast<MethodBase>()
             .Concat(type.GetConstructors(TypeInspection.DeclaredMembers))
             .Where(method => !method.IsCompilerGenerated && !method.IsNamedElsewhere(externalMethods));
+
         var parameters = methods
             .SelectMany(method => method.GetParameters())
             .Where(parameter => parameter.ParameterType.IsBoolean && parameter.Name is not null)
@@ -623,11 +644,12 @@ public static class ConventionChecks
     }
 
     private static IReadOnlyList<string> FindConstructorParameters(Assembly assembly, Func<Type, bool> isForbidden) =>
-        assembly.GetSourceTypes()
+    [
+        .. assembly.GetSourceTypes()
             .SelectMany(type =>
                 type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
             .SelectMany(constructor => constructor.GetParameters())
             .Where(parameter => isForbidden(parameter.ParameterType))
-            .Select(parameter => $"{parameter.Member.DeclaringType!.DisplayName}({parameter.Name})")
-            .ToList();
+            .Select(parameter => $"{parameter.Member.DeclaringType!.DisplayName}({parameter.Name})"),
+    ];
 }

@@ -61,6 +61,7 @@ public sealed class AgentWorkerTests(SignalCaseFixture fixture)
         await _fixture.HandleSignalAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
         _fixture.Agents.TriageChat.Script(TriageTestData.Answer(verdict: "dismiss"));
         _fixture.Time.Advance(TimeSpan.FromSeconds(CaseTestData.DebounceSeconds));
+
         _fixture.Agents.TriageChat.Before = async () =>
         {
             _fixture.Time.Advance(TimeSpan.FromSeconds(AgentTestData.PastLeaseSeconds));

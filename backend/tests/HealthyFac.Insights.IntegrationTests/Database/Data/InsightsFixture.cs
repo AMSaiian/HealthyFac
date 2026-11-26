@@ -96,6 +96,7 @@ public sealed class InsightsFixture : IAsyncLifetime, IResetBeforeEachTest
             [DatabaseTestData.RabbitMqConnectionStringKey] = _broker.ConnectionString,
             [DatabaseTestData.RedisConnectionStringKey] = _redis.ConnectionString,
         };
+
         _configureSettings?.Invoke(settings);
 
         var configuration = new ConfigurationBuilder()

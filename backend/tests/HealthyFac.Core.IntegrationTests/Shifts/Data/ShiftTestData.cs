@@ -36,7 +36,8 @@ public static class ShiftTestData
     public static readonly IReadOnlyList<int> WinnerSaveCounts = [1, 1];
 
     /// <summary>The local "now" of the tests, a Monday after the spring DST change: 09:30 in Kyiv.</summary>
-    public static readonly DateTime NowLocal = new(year: 2027, month: 4, day: 12, hour: 9, minute: 30, second: 0);
+    public static readonly DateTime NowLocal = new(
+        year: 2027, month: 4, day: 12, hour: 9, minute: 30, second: 0, DateTimeKind.Unspecified);
 
     public static readonly DateOnly Today = new(year: 2027, month: 4, day: 12);
     public static readonly DateOnly Tomorrow = Today.AddDays(value: 1);
@@ -66,16 +67,17 @@ public static class ShiftTestData
         return new ShiftBlockInput { Start = ParseTime(parts[0]), End = ParseTime(parts[1]) };
     }
 
-    public static IReadOnlyList<ShiftBlockInput> Blocks(params string[] ranges) => ranges.Select(Block).ToList();
+    public static IReadOnlyList<ShiftBlockInput> Blocks(params string[] ranges) => [.. ranges.Select(Block)];
 
     public static IReadOnlyList<ShiftTemplateDayInput> WorkWeek(params string[] ranges) =>
-        Weekday.All
+    [
+        .. Weekday.All
             .Select(weekday => new ShiftTemplateDayInput
             {
                 Weekday = weekday,
                 Blocks = weekday == Weekday.Saturday || weekday == Weekday.Sunday ? [] : Blocks(ranges),
-            })
-            .ToList();
+            }),
+    ];
 
     public static IEnumerable<(Weekday Weekday, BlockTimes Times)> WorkWeekBlocks(params string[] ranges) =>
         ShiftTemplateDayInput.ToTemplateBlocks(WorkWeek(ranges));

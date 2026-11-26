@@ -27,15 +27,19 @@ public sealed class StoreProposedDefinitionDraftsTests(TelemetryDatabaseFixture 
 
         metrics.Should().HaveCount(expected: 2);
         statuses.Should().HaveCount(expected: 2);
+
         metrics.Concat<IDefinitionDraft>(statuses)
             .Should()
             .OnlyContain(draft => draft.State == DefinitionDraftState.AwaitingTarget);
+
         metrics.Single(draft => draft.ProposalEntryId == withTarget.DraftId)
             .TargetMachineId.Should()
             .Be(targetMachineId);
+
         metrics.Single(draft => draft.ProposalEntryId == withoutTarget.DraftId)
             .TargetMachineId.Should()
             .BeNull();
+
         entries.Select(entry => entry.Id).Should().BeEquivalentTo([withTarget.DraftId, withoutTarget.DraftId]);
         entries.Should().OnlyContain(entry => entry.State == ProposalEntryState.Awaiting);
     }

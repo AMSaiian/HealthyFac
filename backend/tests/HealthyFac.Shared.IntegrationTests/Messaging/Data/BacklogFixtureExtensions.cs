@@ -17,6 +17,7 @@ public static class BacklogFixtureExtensions
         {
             using var scope = fixture.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
+
             for (var index = 0; index < MessagingMetricsTestData.PendingOutboxCount; index++)
             {
                 dbContext.OutboxMessages.Add(
@@ -38,6 +39,7 @@ public static class BacklogFixtureExtensions
                     traceParent: null,
                     InboxTestData.ActorId,
                     InboxTestData.CompanyId));
+
             dbContext.InboxMessages.Add(
                 InboxProcessorTestData.CreateFailedRow(
                     Guid.CreateVersion7(),
@@ -56,9 +58,11 @@ public static class BacklogFixtureExtensions
             using var scope = fixture.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TestServiceDbContext>();
             var outboxRows = await dbContext.OutboxMessages.Where(row => row.ProcessedOn == null).ToListAsync();
+
             var inboxRows = await dbContext.InboxMessages
                 .Where(row => row.ProcessedOn == null && row.FailedOn == null)
                 .ToListAsync();
+
             outboxRows.ForEach(row => row.MarkPublished(InboxTestData.Now));
             inboxRows.ForEach(row => row.MarkProcessed(InboxTestData.Now));
 

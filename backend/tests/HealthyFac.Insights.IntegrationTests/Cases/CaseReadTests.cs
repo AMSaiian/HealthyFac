@@ -46,6 +46,7 @@ public sealed class CaseReadTests(InsightsFixture fixture)
         await _fixture.SaveCaseWithSignalsAsync(maintenanceCase, (SignalState.Open, 0));
         var run = await _fixture.SaveCompletedRunAsync(maintenanceCase.Id, AgentRole.Planner, verdict: null, FinalText);
         var draftId = await _fixture.SaveCommittedProposalAsync(run.Id, ProposalTitle);
+
         await _fixture.HandleDraftAppliedAsync(
             new WorkOrderDraftApplied
             {
@@ -70,6 +71,7 @@ public sealed class CaseReadTests(InsightsFixture fixture)
         await _fixture.SaveCaseWithSignalsAsync(maintenanceCase, (SignalState.Open, 0));
         var run = await _fixture.SaveCompletedRunAsync(maintenanceCase.Id, AgentRole.Planner, verdict: null, FinalText);
         var draftId = await _fixture.SaveCommittedProposalAsync(run.Id, ProposalTitle);
+
         await _fixture.HandleDraftDismissedAsync(
             new WorkOrderDraftDismissed
             {
@@ -113,6 +115,7 @@ public sealed class CaseReadTests(InsightsFixture fixture)
     public async Task SearchCaseSignals_WithOpenAndResolvedSignals_OrdersOpenFirstThenNewestAndPages()
     {
         var maintenanceCase = CaseTestData.CreateOpenCase();
+
         var ids = await _fixture.SaveCaseWithSignalsAsync(
             maintenanceCase,
             (SignalState.Resolved, 30),
@@ -122,12 +125,13 @@ public sealed class CaseReadTests(InsightsFixture fixture)
 
         var first = await _fixture.SearchCaseSignalsUseCaseAsync(
             CaseTestData.CompanyId, maintenanceCase.Id, offset: 0, limit: 3);
+
         var second = await _fixture.SearchCaseSignalsUseCaseAsync(
             CaseTestData.CompanyId, maintenanceCase.Id, offset: 3, limit: 3);
 
         first.TotalCount.Should().Be(expected: 4);
-        first.Items.Select(item => item.Id).Should().Equal(ids[index: 2], ids[index: 1], ids[index: 0]);
-        second.Items.Select(item => item.Id).Should().Equal(ids[index: 3]);
+        first.Items.Select(item => item.Id).Should().Equal(ids[2], ids[1], ids[0]);
+        second.Items.Select(item => item.Id).Should().Equal(ids[3]);
     }
 
     [Fact]
@@ -135,15 +139,19 @@ public sealed class CaseReadTests(InsightsFixture fixture)
     {
         var maintenanceCase = CaseTestData.CreateOpenCase();
         await _fixture.SaveCaseWithSignalsAsync(maintenanceCase, (SignalState.Open, 0));
+
         var oldest = await _fixture.SaveCompletedRunAsync(
             maintenanceCase.Id, AgentRole.Triage, AgentRunVerdict.Escalate, reason: null);
+
         var middle = await _fixture.SaveCompletedRunAsync(
             maintenanceCase.Id, AgentRole.Planner, verdict: null, reason: null);
+
         var newest = await _fixture.SaveCompletedRunAsync(
             maintenanceCase.Id, AgentRole.Planner, verdict: null, reason: null);
 
         var first = await _fixture.SearchCaseRunsUseCaseAsync(
             CaseTestData.CompanyId, maintenanceCase.Id, offset: 0, limit: 2);
+
         var second = await _fixture.SearchCaseRunsUseCaseAsync(
             CaseTestData.CompanyId, maintenanceCase.Id, offset: 2, limit: 2);
 
@@ -157,8 +165,10 @@ public sealed class CaseReadTests(InsightsFixture fixture)
     {
         var maintenanceCase = CaseTestData.CreateOpenCase();
         await _fixture.SaveCaseWithSignalsAsync(maintenanceCase, (SignalState.Open, 0));
+
         var run = await _fixture.SaveCompletedRunAsync(
             maintenanceCase.Id, AgentRole.Planner, verdict: null, reason: null);
+
         await _fixture.SaveAsync(
             CaseTestData.CreateToolCall(run.Id, sequence: 2),
             CaseTestData.CreateToolCall(run.Id, sequence: 1));
@@ -188,12 +198,15 @@ public sealed class CaseReadTests(InsightsFixture fixture)
     {
         var maintenanceCase = CaseTestData.CreateOpenCase();
         await _fixture.SaveCaseWithSignalsAsync(maintenanceCase, (SignalState.Open, 0));
+
         var run = await _fixture.SaveCompletedRunAsync(
             maintenanceCase.Id, AgentRole.Planner, verdict: null, reason: null);
 
         var header = () => _fixture.GetCaseUseCaseAsync(OtherCompanyId, maintenanceCase.Id);
+
         var signals = () =>
             _fixture.SearchCaseSignalsUseCaseAsync(OtherCompanyId, maintenanceCase.Id, offset: 0, limit: 10);
+
         var runs = () => _fixture.SearchCaseRunsUseCaseAsync(OtherCompanyId, maintenanceCase.Id, offset: 0, limit: 10);
         var toolCalls = () => _fixture.GetRunToolCallsUseCaseAsync(OtherCompanyId, maintenanceCase.Id, run.Id);
 

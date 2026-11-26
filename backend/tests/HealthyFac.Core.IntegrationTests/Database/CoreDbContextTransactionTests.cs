@@ -28,6 +28,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
                 {
                     Name = TransactionTestData.CommittedCompanyName, TimeZoneId = TransactionTestData.CompanyTimeZoneId,
                 };
+
                 dbContext.Companies.Add(company);
                 await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -54,6 +55,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
                     Name = TransactionTestData.RolledBackCompanyName,
                     TimeZoneId = TransactionTestData.CompanyTimeZoneId,
                 });
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             throw new TransactionTestException();
@@ -71,11 +73,13 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
     {
         using var scope = _fixture.ScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
         dbContext.Companies.Add(
             new Company
             {
                 Name = TransactionTestData.UnsavedCompanyName, TimeZoneId = TransactionTestData.CompanyTimeZoneId,
             });
+
         var isOperationRun = false;
 
         var act = () => dbContext.RunInTransactionAsync(_ =>
@@ -88,6 +92,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(PersistenceErrors.UnsavedChangesBeforeTransaction().Message);
+
         isOperationRun.Should().BeFalse();
     }
 
@@ -132,6 +137,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
                     Name = TransactionTestData.EndedTransactionCompanyName,
                     TimeZoneId = TransactionTestData.CompanyTimeZoneId,
                 });
+
             await dbContext.Database.CommitTransactionAsync(cancellationToken);
         });
 
@@ -178,16 +184,19 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
         var act = () => dbContext.RunInTransactionAsync(async outerToken =>
         {
             var outerTransaction = dbContext.Database.CurrentTransaction;
+
             await dbContext.RunInTransactionAsync(
                 async innerToken =>
                 {
                     isTransactionShared = dbContext.Database.CurrentTransaction == outerTransaction;
+
                     dbContext.Companies.Add(
                         new Company
                         {
                             Name = TransactionTestData.JoinedRolledBackCompanyName,
                             TimeZoneId = TransactionTestData.CompanyTimeZoneId,
                         });
+
                     await dbContext.SaveChangesAsync(innerToken);
                 }, outerToken);
 
@@ -215,6 +224,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
                 {
                     Name = TransactionTestData.TrackedCompanyName, TimeZoneId = TransactionTestData.CompanyTimeZoneId,
                 };
+
                 dbContext.Companies.Add(company);
                 await dbContext.SaveChangesAsync(outerToken);
                 await dbContext.RunInTransactionAsync(_ => Task.CompletedTask, outerToken);
@@ -272,6 +282,7 @@ public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<InvalidOperationException>()
             .WithMessage(PersistenceErrors.UnsavedChangesBeforeTransaction().Message);
+
         isOperationRun.Should().BeFalse();
     }
 

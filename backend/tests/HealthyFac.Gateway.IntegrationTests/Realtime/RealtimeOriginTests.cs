@@ -57,11 +57,14 @@ public sealed class RealtimeOriginTests(GatewayEnvironment environment) : IAsync
         gateway.UseKestrel(port: 0);
         using var client = gateway.CreateClient();
         var token = gateway.Tokens.CreateToken(RealtimeTestData.Claims(Guid.NewGuid()));
+
         var uri = new UriBuilder(new Uri(client.BaseAddress!, RealtimeConstants.HubPath))
         {
             Scheme = Uri.UriSchemeWs,
         }.Uri;
+
         var socket = new ClientWebSocket();
+
         if (origin is not null)
         {
             socket.Options.SetRequestHeader(headerName: "Origin", origin);

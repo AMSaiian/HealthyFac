@@ -15,12 +15,12 @@ public static class ProxyFailureTestData
     public static IReadOnlyDictionary<string, string> OneSecondActivityTimeout { get; } =
         new Dictionary<string, string>
         {
-            [key: "ReverseProxy:Clusters:core:HttpRequest:ActivityTimeout"] = "00:00:01",
+            ["ReverseProxy:Clusters:core:HttpRequest:ActivityTimeout"] = "00:00:01",
         };
 
     public static IReadOnlyDictionary<string, string> OneSecondHealthCheckInterval { get; } =
         new Dictionary<string, string>
         {
-            [key: "ReverseProxy:Clusters:core:HealthCheck:Active:Interval"] = "00:00:01",
+            ["ReverseProxy:Clusters:core:HealthCheck:Active:Interval"] = "00:00:01",
         };
 }

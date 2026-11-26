@@ -53,6 +53,7 @@ public sealed class PayloadTests(SimulatorFixture fixture)
                 .GetDateTime())
             .Select(time => time.ToUniversalTime().ToString(format: "O"))
             .ToList();
+
         times.Should().Equal(expectedTimes);
     }
 
@@ -67,6 +68,7 @@ public sealed class PayloadTests(SimulatorFixture fixture)
         var span = (await spans.WaitForSpansAsync(
             candidate => candidate.DisplayName == ObservabilityConstants.Simulator.PublishSpanName,
             expectedCount: 1)).Single();
+
         span.Kind.Should().Be(System.Diagnostics.ActivityKind.Producer);
         messages.Single().UserProperties[MessageHeaders.TraceParent].Should().Be(span.Id);
     }

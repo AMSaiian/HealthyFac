@@ -34,9 +34,11 @@ public static class WorkOrderPersistence
                         candidate => candidate.Id == workOrderId && candidate.CompanyId == companyId,
                         cancellationToken)
                 ?? throw new NotFoundException(WorkOrderErrors.Rejections.WorkOrderNotFound);
+
             await dbContext.WorkOrderHistories
                 .Where(row => row.WorkOrderId == workOrder.Id && row.Revision == workOrder.CurrentRevision)
                 .LoadAsync(cancellationToken);
+
             dbContext.Entry(workOrder).Property(stored => stored.RowVersion).OriginalValue = rowVersion;
 
             return workOrder;
@@ -77,6 +79,7 @@ public static class WorkOrderPersistence
             var oldAssigneeUserId = oldAssigneeId is { } oldId
                 ? await dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
                 : null;
+
             var newAssigneeUserId = slot is not null
                 ? await dbContext.FindIdentityUserIdAsync(slot.AssigneeId, cancellationToken)
                 : null;

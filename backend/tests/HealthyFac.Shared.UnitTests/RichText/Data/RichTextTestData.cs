@@ -4,15 +4,15 @@ public static class RichTextTestData
 {
     public const string FileId = "v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
-    public static TheoryData<string> FileImageSamples => new()
-    {
+    public static TheoryData<string> FileImageSamples =>
+    [
         $"<p><img data-file-id=\"{FileId}\" alt=\"pump\"></p>",
         $"<p><img data-file-id=\"{FileId}\"></p>",
         $"<p><img data-file-id=\"{FileId}\" alt=\"{new string(c: 'a', count: 255)}\"></p>",
-    };
+    ];
 
-    public static TheoryData<string> RejectedFileImages => new()
-    {
+    public static TheoryData<string> RejectedFileImages =>
+    [
         "<p><img src=\"https://x/y.png\"></p>",
         "<p><img src=\"data:image/png;base64,AA==\"></p>",
         "<p><img data-file-id=\"abc\"></p>",
@@ -24,10 +24,10 @@ public static class RichTextTestData
         "<p alt=\"x\">a</p>",
         $"<p><span data-file-id=\"{FileId}\">a</span></p>",
         $"<p><img data-file-id=\"{FileId}\" alt=\"{new string(c: 'a', count: 256)}\"></p>",
-    };
+    ];
 
-    public static TheoryData<string> ToolbarSamples => new()
-    {
+    public static TheoryData<string> ToolbarSamples =>
+    [
         "<p><strong>a</strong></p>",
         "<p><em>a</em></p>",
         "<p><u>a</u></p>",
@@ -48,19 +48,19 @@ public static class RichTextTestData
         "<p><strong>a&nbsp;</strong><em>b&nbsp;</em><u>c</u><s>d</s></p>",
         "<ol><li><a href=\"https://example.com\" rel=\"noopener noreferrer\" target=\"_blank\">first</a></li></ol>"
         + "<ul><li>b</li></ul>",
-    };
+    ];
 
-    public static TheoryData<string> RejectedDataLists => new()
-    {
+    public static TheoryData<string> RejectedDataLists =>
+    [
         "<ol><li data-list=\"x\">a</li></ol>",
         "<ol><li data-list=\"\">a</li></ol>",
         "<ol><li data-list=\"Checked\">a</li></ol>",
         "<ol><li data-list=\"checked unchecked\">a</li></ol>",
         "<ol><li data-list=\"bullet\">a</li><li data-list=\"todo\">b</li></ol>",
-    };
+    ];
 
-    public static TheoryData<string> HostileHtml => new()
-    {
+    public static TheoryData<string> HostileHtml =>
+    [
         "<script>alert(1)</script>",
         "<p>a</p><script>alert(1)</script>",
         "<img src=x onerror=alert(1)>",
@@ -72,7 +72,7 @@ public static class RichTextTestData
         "<p onclick=\"alert(1)\">a</p>",
         "<p><!-- comment -->a</p>",
         "<h1>a</h1>",
-    };
+    ];
 
     public static TheoryData<string, int> VisibleLengthCases => new()
     {

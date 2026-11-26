@@ -20,7 +20,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
         var registration = await _fixture.LoadRegistrationAsync(message.MachineId);
 
         registration.Should().NotBeNull();
-        registration!.CompanyId.Should().Be(message.CompanyId);
+        registration.CompanyId.Should().Be(message.CompanyId);
         registration.Name.Should().Be(message.Name);
         registration.DeletedAt.Should().BeNull();
     }
@@ -30,6 +30,7 @@ public sealed class RegisterMachineTests(DocumentDatabaseFixture fixture)
     {
         var message = MachineRegistrationTestData.CreateMessage();
         await _fixture.RegisterMachineAsync(message);
+
         var changed = message with
         {
             GatewayId = GatewayIds.Create(),

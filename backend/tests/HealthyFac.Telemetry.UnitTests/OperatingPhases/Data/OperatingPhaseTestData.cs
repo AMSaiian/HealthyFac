@@ -34,6 +34,7 @@ public static class OperatingPhaseTestData
             ("boolean metric", BooleanSource, MetricValueKind.Boolean.Value),
             ("state set metric", StateSource, MetricValueKind.StateSet.Value),
         };
+
         var operatorKinds = new Dictionary<PhaseConditionOperator, string?>
         {
             [PhaseConditionOperator.Active] = null,
@@ -47,6 +48,7 @@ public static class OperatingPhaseTestData
             [PhaseConditionOperator.IsFalse] = MetricValueKind.Boolean.Value,
             [PhaseConditionOperator.In] = MetricValueKind.StateSet.Value,
         };
+
         var data = new TheoryData<string, PhaseConditionOperator, PhaseConditionSource, bool>();
 
         foreach (var (conditionOperator, operatorKind) in operatorKinds)

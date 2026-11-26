@@ -24,7 +24,7 @@ public sealed class GetPendingDefinitionDraftCountsTests(TelemetryDatabaseFixtur
         var response = await _fixture.GetPendingDefinitionDraftCountsAsync(companyId);
 
         response.Counts.Should().ContainSingle().Which.MachineId.Should().Be(machineId);
-        response.Counts[index: 0].Count.Should().Be(expected: 2);
+        response.Counts[0].Count.Should().Be(expected: 2);
         response.Counts.Select(count => count.MachineId).Should().NotContain(emptyMachineId);
     }
 

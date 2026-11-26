@@ -48,45 +48,45 @@ public static class IngestAttemptTestData
         return attempt;
     }
 
-    public static TheoryData<IngestState> InterruptibleStates => new()
-    {
+    public static TheoryData<IngestState> InterruptibleStates =>
+    [
         IngestState.Queued,
         IngestState.InProcess,
-    };
+    ];
 
-    public static TheoryData<IngestState> StatesThatAFileDeleteStops => new()
-    {
+    public static TheoryData<IngestState> StatesThatAFileDeleteStops =>
+    [
         IngestState.Queued,
         IngestState.InProcess,
         IngestState.Completed,
-    };
+    ];
 
-    public static TheoryData<IngestState> StatesThatAFileDeleteLeaves => new()
-    {
+    public static TheoryData<IngestState> StatesThatAFileDeleteLeaves =>
+    [
         IngestState.Failed,
         IngestState.Interrupted,
-    };
+    ];
 
-    public static TheoryData<IngestState> FinalStates => new()
-    {
+    public static TheoryData<IngestState> FinalStates =>
+    [
         IngestState.Completed,
         IngestState.Failed,
         IngestState.Interrupted,
-    };
+    ];
 
-    public static TheoryData<IngestState> StatesThatAreNotInProcess => new()
-    {
+    public static TheoryData<IngestState> StatesThatAreNotInProcess =>
+    [
         IngestState.Queued,
         IngestState.Completed,
         IngestState.Failed,
         IngestState.Interrupted,
-    };
+    ];
 
-    public static TheoryData<IngestState> StatesThatAreNotQueued => new()
-    {
+    public static TheoryData<IngestState> StatesThatAreNotQueued =>
+    [
         IngestState.InProcess,
         IngestState.Completed,
         IngestState.Failed,
         IngestState.Interrupted,
-    };
+    ];
 }

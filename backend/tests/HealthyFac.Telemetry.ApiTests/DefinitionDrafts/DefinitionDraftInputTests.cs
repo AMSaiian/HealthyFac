@@ -21,6 +21,7 @@ public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
             DefinitionDraftInputTestData.DismissPath(draft.DraftId),
             claims,
             DefinitionDraftInputTestData.DismissBody);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -31,6 +32,7 @@ public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
     public async Task ApplyMetrics_WithADraftThatIsNotPending_Returns422WithTheDraftNotPendingKey()
     {
         var draft = await _fixture.ArrangeDismissedMetricDraftAsync();
+
         var claims = _fixture.CreateClaims(
             MetricDefinitionApiTestData.ReadPermission,
             MetricDefinitionApiTestData.WritePermission);
@@ -40,6 +42,7 @@ public sealed class DefinitionDraftInputTests(TelemetryApiFixture fixture)
             _fixture.DefinitionsPath(draft.MachineId),
             claims,
             _fixture.ApplyBodyWithDraft(draft.DraftId));
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);

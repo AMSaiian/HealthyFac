@@ -34,9 +34,11 @@ public static class HistoryAssertions
     {
         counts[machineIds[TelemetryHistorySeedTestData.Lathe]].Should().Be(expectation.SampleCount);
         counts[machineIds[TelemetryHistorySeedTestData.Compressor]].Should().Be(expectation.SampleCount);
+
         counts[machineIds[TelemetryHistorySeedTestData.Pump]]
             .Should()
             .Be(expectation.SampleCount - expectation.GapSampleCount);
+
         range.First.Should().Be(At($"h-{expectation.WindowHours}"));
         range.Last.Should().Be(At(moment: "h-0"));
     }
@@ -51,6 +53,7 @@ public static class HistoryAssertions
         var lathe = machineIds[TelemetryHistorySeedTestData.Lathe];
         var pump = machineIds[TelemetryHistorySeedTestData.Pump];
         var compressor = machineIds[TelemetryHistorySeedTestData.Compressor];
+
         foreach (var (machine, from, maintenanceStart, maintenanceEnd) in new[]
             {
                 (lathe, At(expectation.LatheDrainFrom), At(expectation.LatheMaintenanceFrom),
@@ -78,6 +81,7 @@ public static class HistoryAssertions
         }
 
         var stepEnd = At(expectation.CompressorStepUntil);
+
         episodes.Should()
             .Contain(episode => episode.MachineId == compressor
                 && episode.Rule == TelemetryHistorySeedTestData.Drift
@@ -86,7 +90,9 @@ public static class HistoryAssertions
                 && episode.OpenedAt < stepEnd
                 && episode.ResolvedAt > stepEnd
                 && episode.ResolvedAt <= stepEnd + RuleDelay);
+
         var gapEnd = At(expectation.PumpGapUntil);
+
         episodes.Should()
             .Contain(episode => episode.MachineId == pump
                 && episode.Rule == TelemetryHistorySeedTestData.SilentMachine
@@ -94,7 +100,9 @@ public static class HistoryAssertions
                 && episode.OpenedAt <= At(expectation.PumpGapFrom) + SilenceLead + evaluationStep
                 && episode.ResolvedAt >= gapEnd
                 && episode.ResolvedAt <= gapEnd + RuleDelay);
+
         var overrideEnd = At(expectation.LatheOverrideUntil);
+
         episodes.Should()
             .Contain(episode => episode.MachineId == lathe
                 && episode.Rule == TelemetryHistorySeedTestData.UnknownMode
@@ -102,6 +110,7 @@ public static class HistoryAssertions
                 && episode.OpenedAt <= overrideEnd
                 && episode.ResolvedAt >= overrideEnd
                 && episode.ResolvedAt <= overrideEnd + RuleDelay);
+
         episodes.Should().OnlyContain(episode => episode.State == TelemetryHistorySeedTestData.Resolved);
     }
 
@@ -114,6 +123,7 @@ public static class HistoryAssertions
     {
         var resolved = cases.Where(maintenanceCase => maintenanceCase.State == CaseState.Resolved).ToList();
         var open = cases.Where(maintenanceCase => maintenanceCase.State == CaseState.Open).ToList();
+
         resolved.GroupBy(maintenanceCase => maintenanceCase.MachineId)
             .ToDictionary(group => group.Key, group => group.Count())
             .Should()
@@ -124,7 +134,9 @@ public static class HistoryAssertions
                     [machineIds[TelemetryHistorySeedTestData.Pump]] = 2,
                     [machineIds[TelemetryHistorySeedTestData.Compressor]] = 1,
                 });
+
         open.Should().ContainSingle().Which.MachineId.Should().Be(machineIds[TelemetryHistorySeedTestData.Lathe]);
+
         foreach (var maintenanceCase in resolved)
         {
             var own = signals.Where(signal => signal.CaseId == maintenanceCase.Id).ToList();
@@ -132,9 +144,11 @@ public static class HistoryAssertions
             own.Should().NotBeEmpty().And.OnlyContain(signal => signal.MachineId == maintenanceCase.MachineId);
             own.Should().OnlyContain(signal => signal.ResolvedAt != null);
             maintenanceCase.OpenedAt.Should().Be(own.Min(signal => signal.OpenedAt));
+
             maintenanceCase.OpenedAt.Should()
                 .BeOnOrAfter(At($"h-{expectation.WindowHours}"))
                 .And.BeOnOrBefore(At(moment: "h-0"));
+
             maintenanceCase.ClosedAt.Should().BeOnOrAfter(lastResolved).And.BeOnOrBefore(lastResolved + RuleDelay);
         }
     }
@@ -167,26 +181,33 @@ public static class HistoryAssertions
             (TelemetryHistorySeedTestData.Pump, expectation.PumpMaintenanceFrom,
                 TelemetryHistorySeedTestData.PumpWorkOrderTitle),
         ];
+
         var plannerRuns = runs.Where(run => run.Role == AgentRole.Planner).ToList();
         plannerRuns.Should().HaveCount(drains.Length);
+
         foreach (var (machine, maintenance, title) in drains)
         {
             var link = At(maintenance).AddMinutes(value: -1);
             var order = orders.Single(candidate => candidate.Title == title);
+
             var openAtLink = signals.Where(signal => signal.MachineId == machineIds[machine]
                     && signal.OpenedAt <= link
                     && (signal.ResolvedAt is null || signal.ResolvedAt > link))
                 .ToList();
+
             var caseId = openAtLink.Select(signal => signal.CaseId).Distinct().Should().ContainSingle().Subject;
             var run = plannerRuns.Where(candidate => candidate.CaseId == caseId).Should().ContainSingle().Subject;
             var action = actions.Where(candidate => candidate.RunId == run.Id).Should().ContainSingle().Subject;
             var payload = ActionBuffering.Deserialize<LinkWorkOrderPayload>(action);
 
             order.Current.Status.Should().Be(WorkOrderStatus.Completed, machine);
+
             openAtLink.Should()
                 .OnlyContain(
                     signal => signal.Coverage == SignalCoverage.Linked && signal.WorkOrderId == order.Id, machine);
+
             run.State.Should().Be(AgentRunState.Completed, machine);
+
             toolCalls.Where(call => call.RunId == run.Id)
                 .Should()
                 .ContainSingle(
@@ -194,6 +215,7 @@ public static class HistoryAssertions
                         && call.Outcome == ToolCallOutcome.Succeeded
                         && call.Sequence == 1
                         && call.CallId == action.CallId, machine);
+
             action.Kind.Should().Be(AgentActionKind.LinkWorkOrder, machine);
             action.State.Should().Be(AgentActionState.Committed, machine);
             payload.WorkOrderId.Should().Be(order.Id, machine);

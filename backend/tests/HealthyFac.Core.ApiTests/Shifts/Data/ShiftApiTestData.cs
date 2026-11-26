@@ -30,20 +30,21 @@ public static class ShiftApiTestData
     {
         var effectiveFrom = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(daysAhead);
         var days = new JsonArray();
+
         foreach (var weekday in new[] { "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday" })
         {
             days.Add(
                 new JsonObject
                 {
-                    [propertyName: "weekday"] = weekday,
-                    [propertyName: "blocks"] = new JsonArray(blockRanges.Select(ToBlock).ToArray()),
+                    ["weekday"] = weekday,
+                    ["blocks"] = new JsonArray(blockRanges.Select(ToBlock).ToArray()),
                 });
         }
 
         return new JsonObject
         {
-            [propertyName: "effectiveFrom"] = effectiveFrom.ToString(format: "yyyy-MM-dd"),
-            [propertyName: "days"] = days,
+            ["effectiveFrom"] = effectiveFrom.ToString(format: "yyyy-MM-dd"),
+            ["days"] = days,
         }.ToJsonString();
     }
 
@@ -77,6 +78,6 @@ public static class ShiftApiTestData
     {
         var parts = blockRange.Split(separator: '-');
 
-        return new JsonObject { [propertyName: "start"] = parts[0], [propertyName: "end"] = parts[1] };
+        return new JsonObject { ["start"] = parts[0], ["end"] = parts[1] };
     }
 }

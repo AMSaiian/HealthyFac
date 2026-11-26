@@ -32,6 +32,7 @@ public sealed class ApplicationExceptionHandlerTests
     {
         var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
         var handler = new ApplicationExceptionHandler();
+
         var exception = new UnprocessableException(Message)
         {
             Extensions = new Dictionary<string, object?> { [ExtensionKey] = new[] { ExtensionValue } },

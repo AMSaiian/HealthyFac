@@ -40,6 +40,7 @@ internal sealed class SchemaFindings
         var results = schema.Evaluate(
             payload,
             new EvaluationOptions { OutputFormat = OutputFormat.List, RequireFormatValidation = true });
+
         var findings = new SchemaFindings();
 
         foreach (var detail in (results.Details ?? []).Where(detail => !detail.IsValid))
@@ -51,7 +52,7 @@ internal sealed class SchemaFindings
     }
 
     private static string[] Segments(JsonPointer pointer) =>
-        Enumerable.Range(start: 0, pointer.SegmentCount).Select(index => pointer[index].ToString()).ToArray();
+        [.. Enumerable.Range(start: 0, pointer.SegmentCount).Select(index => pointer[index].ToString())];
 
     private void Add(EvaluationResults detail)
     {

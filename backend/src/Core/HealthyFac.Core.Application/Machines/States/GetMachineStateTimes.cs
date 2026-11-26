@@ -101,13 +101,18 @@ public sealed class GetMachineStateTimesRequestHandler(ICoreDbContext dbContext)
             .Where(row => row.MachineId == request.MachineId)
             .Select(row => new MachineStateSpan { State = row.State, StartedAt = row.StartedAt })
             .ToListAsync(cancellationToken);
+
         var times = MachineStateTimeCalculator.Calculate(rows, request.From, request.To);
 
         return new MachineStateTimesResponse
         {
-            States = times.StateSeconds
-                .Select(entry => new MachineStateTimeResponse { State = entry.Key, Seconds = entry.Value })
-                .ToList(),
+            States =
+            [
+                .. times.StateSeconds.Select(entry => new MachineStateTimeResponse
+                {
+                    State = entry.Key, Seconds = entry.Value,
+                }),
+            ],
             BeforeCreationSeconds = times.BeforeCreationSeconds,
         };
     }

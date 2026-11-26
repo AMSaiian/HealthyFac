@@ -11,6 +11,7 @@ public sealed class WorkOrderTests
         var workOrder = WorkOrderTestData.CreateBacklog();
 
         workOrder.CurrentRevision.Should().Be(expected: 1);
+
         workOrder.Current.Should()
             .BeEquivalentTo(
                 new
@@ -20,6 +21,7 @@ public sealed class WorkOrderTests
                     AssigneeId = (Guid?)null,
                     WorkOrderId = workOrder.Id,
                 });
+
         workOrder.Current.PlannedStartLocal.Should().BeNull();
         workOrder.Current.PlannedStartUtc.Should().BeNull();
     }
@@ -35,9 +37,9 @@ public sealed class WorkOrderTests
         workOrder.Current.Status.Should().Be(WorkOrderStatus.Staged);
         workOrder.Current.AssigneeId.Should().Be(WorkOrderTestData.AssigneeId);
         workOrder.Current.PlannedStartLocal.Should().Be(WorkOrderTestData.StartLocal);
-        workOrder.Current.PlannedStartLocal!.Value.Kind.Should().Be(DateTimeKind.Unspecified);
+        workOrder.Current.PlannedStartLocal.Value.Kind.Should().Be(DateTimeKind.Unspecified);
         workOrder.Current.PlannedStartUtc.Should().Be(WorkOrderTestData.StartUtc);
-        workOrder.Current.PlannedStartUtc!.Value.Kind.Should().Be(DateTimeKind.Utc);
+        workOrder.Current.PlannedStartUtc.Value.Kind.Should().Be(DateTimeKind.Utc);
     }
 
     [Fact]
@@ -155,6 +157,7 @@ public sealed class WorkOrderTests
         var removed = workOrder.ReplaceFiles([WorkOrderTestData.FileB, WorkOrderTestData.FileC]);
 
         removed.Should().ContainSingle().Which.FileId.Should().Be(WorkOrderTestData.FileA);
+
         workOrder.Files.Select(link => link.FileId)
             .Should()
             .BeEquivalentTo([WorkOrderTestData.FileB, WorkOrderTestData.FileC]);

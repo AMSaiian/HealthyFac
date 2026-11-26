@@ -10,7 +10,7 @@ public sealed class SlotRulesTests
     public void FitsOneBlock_WithSlotInsideOneBlock_ReturnsTrue(string caseName, string start, int minutes)
     {
         var result = SlotRules.FitsOneBlock(
-            SchedulingTestData.Slot(number: 1, start: start, minutes: minutes), SchedulingTestData.Day());
+            SchedulingTestData.Slot(number: 1, start, minutes), SchedulingTestData.Day());
 
         result.Should().BeTrue(because: caseName);
     }

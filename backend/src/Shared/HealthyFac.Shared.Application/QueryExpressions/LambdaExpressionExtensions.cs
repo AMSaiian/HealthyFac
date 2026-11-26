@@ -17,7 +17,7 @@ public static class LambdaExpressionExtensions
         /// <param name="argument">The expression that takes the place of the parameter.</param>
         /// <returns>The body of <paramref name="lambda"/> with <paramref name="argument"/> embedded.</returns>
         public Expression Inline(Expression argument) =>
-            ReplacingExpressionVisitor.Replace(lambda.Parameters[index: 0], argument, lambda.Body);
+            ReplacingExpressionVisitor.Replace(lambda.Parameters[0], argument, lambda.Body);
     }
 
     extension<TSource, TPart, TResult>(Expression<Func<TSource, TPart, TResult>> template)
@@ -30,9 +30,10 @@ public static class LambdaExpressionExtensions
         /// <returns>A lambda over the first parameter of the template.</returns>
         public Expression<Func<TSource, TResult>> Embed(Expression<Func<TSource, TPart>> selector)
         {
-            var sourceParameter = template.Parameters[index: 0];
+            var sourceParameter = template.Parameters[0];
+
             var body = ReplacingExpressionVisitor.Replace(
-                template.Parameters[index: 1],
+                template.Parameters[1],
                 selector.Inline(sourceParameter),
                 template.Body
             );
@@ -55,15 +56,17 @@ public static class LambdaExpressionExtensions
             Expression<Func<TSource, TSecond>> secondSelector
         )
         {
-            var sourceParameter = template.Parameters[index: 0];
+            var sourceParameter = template.Parameters[0];
             var firstBody = firstSelector.Inline(sourceParameter);
             var secondBody = secondSelector.Inline(sourceParameter);
+
             var bodyWithFirst = ReplacingExpressionVisitor.Replace(
-                template.Parameters[index: 1],
+                template.Parameters[1],
                 firstBody,
                 template.Body
             );
-            var body = ReplacingExpressionVisitor.Replace(template.Parameters[index: 2], secondBody, bodyWithFirst);
+
+            var body = ReplacingExpressionVisitor.Replace(template.Parameters[2], secondBody, bodyWithFirst);
 
             return Expression.Lambda<Func<TSource, TResult>>(body, sourceParameter);
         }

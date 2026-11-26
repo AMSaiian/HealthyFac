@@ -34,6 +34,7 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
     public SoftDeleteDbContext CreateDbContext()
     {
         var currentUser = new ActorCurrentUserProvider(_holder);
+
         var options = new DbContextOptionsBuilder<SoftDeleteDbContext>()
             .UseNpgsql(_database.ConnectionString)
             .AddInterceptors(new SoftDeleteInterceptor(TimeProvider, currentUser))
@@ -45,6 +46,7 @@ public sealed class SoftDeleteFixture : IAsyncLifetime
     public UnguardedSoftDeleteDbContext CreateUnguardedDbContext()
     {
         var currentUser = new ActorCurrentUserProvider(_holder);
+
         var options = new DbContextOptionsBuilder<UnguardedSoftDeleteDbContext>()
             .UseNpgsql(_database.ConnectionString)
             .AddInterceptors(new SoftDeleteInterceptor(TimeProvider, currentUser))

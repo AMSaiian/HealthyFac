@@ -30,17 +30,18 @@ public sealed class ScopedServiceTokenFixture
         var serviceUuid = await Realm.CreateClientAsync(
             new JsonObject
             {
-                [propertyName: "clientId"] = ScopedServiceTokenTestData.ServiceClientId,
-                [propertyName: "enabled"] = true,
-                [propertyName: "publicClient"] = false,
-                [propertyName: "secret"] = ScopedServiceTokenTestData.ServiceClientSecret,
-                [propertyName: "standardFlowEnabled"] = false,
-                [propertyName: "directAccessGrantsEnabled"] = false,
-                [propertyName: "serviceAccountsEnabled"] = true,
-                [propertyName: "fullScopeAllowed"] = false,
-                [propertyName: "defaultClientScopes"] = new JsonArray(
-                    ServiceClientDefaultScopes.Select(scope => (JsonNode)JsonValue.Create(scope)!).ToArray()),
+                ["clientId"] = ScopedServiceTokenTestData.ServiceClientId,
+                ["enabled"] = true,
+                ["publicClient"] = false,
+                ["secret"] = ScopedServiceTokenTestData.ServiceClientSecret,
+                ["standardFlowEnabled"] = false,
+                ["directAccessGrantsEnabled"] = false,
+                ["serviceAccountsEnabled"] = true,
+                ["fullScopeAllowed"] = false,
+                ["defaultClientScopes"] = new JsonArray(
+                    ServiceClientDefaultScopes.Select(scope => (JsonNode)JsonValue.Create(scope)).ToArray()),
             });
+
         await Realm.AssignRealmRoleAsync(await Realm.GetServiceAccountUserIdAsync(serviceUuid), serviceRole);
 
         await AddDownstreamScopeAsync(serviceUuid, coreUuid, ScopedServiceTokenTestData.FirstScope, first);

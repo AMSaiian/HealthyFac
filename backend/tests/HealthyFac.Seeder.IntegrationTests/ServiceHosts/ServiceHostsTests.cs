@@ -52,6 +52,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
     public async Task SendAsync_WithAnInvalidRequest_ThrowsTheValidationException()
     {
         await _fixture.InitializeHostsAsync(TestContext.Current.CancellationToken);
+
         var request = new CreateMachineRequest
         {
             Name = string.Empty,
@@ -166,6 +167,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
     {
         var settings = _fixture.CreateSettings();
         settings[ServiceHostsTestData.BlobUrlKey] = ServiceHostsTestData.OverrideBlobUrl;
+
         await using var hosts = SeederHosts.Create(
             SeederFixture.CreateConfiguration(settings),
             new SeedClock(),
@@ -208,6 +210,7 @@ public sealed class ServiceHostsTests(SeederFixture fixture)
     {
         _fixture.EnterNextMoment(item: "token");
         await _fixture.SetAuthClientTokenLifespanAsync(ServiceHostsTestData.ShortLifespanSeconds);
+
         try
         {
             var first = await _fixture.GetAuthTokenAsync(TestContext.Current.CancellationToken);

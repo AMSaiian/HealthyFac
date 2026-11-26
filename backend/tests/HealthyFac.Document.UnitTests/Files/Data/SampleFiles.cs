@@ -83,8 +83,10 @@ public static class SampleFiles
             foreach (var (name, content) in entries)
             {
                 var entry = archive.CreateEntry(name);
+
                 using var writer = new StreamWriter(
                     entry.Open(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
                 writer.Write(content);
             }
         }

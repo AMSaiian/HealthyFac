@@ -51,7 +51,7 @@ public static class SimulatorTestData
     public static readonly TimeSpan ShortWait = TimeSpan.FromSeconds(seconds: 2);
 
     private static readonly string DemoIngestFile = Path.Combine(
-        [AppContext.BaseDirectory, "seed", "demo", "ingest", "set-1.json"]);
+        AppContext.BaseDirectory, "seed", "demo", "ingest", "set-1.json");
 
     public static TheoryData<string, ScenarioKind> DemoMachines =>
         new()
@@ -62,13 +62,12 @@ public static class SimulatorTestData
         };
 
     public static TheoryData<string> AllSerialNumbers =>
-        new()
-        {
-            ScenarioBinding.CncSerialNumber,
-            ScenarioBinding.PumpSerialNumber,
-            ScenarioBinding.CompressorSerialNumber,
-            GenericSerialNumber,
-        };
+    [
+        ScenarioBinding.CncSerialNumber,
+        ScenarioBinding.PumpSerialNumber,
+        ScenarioBinding.CompressorSerialNumber,
+        GenericSerialNumber,
+    ];
 
     public static DemoDefinitions ReadDemoDefinitions(string serialNumber)
     {
@@ -90,16 +89,19 @@ public static class SimulatorTestData
         }
 
         using var document = JsonDocument.Parse(File.ReadAllText(DemoIngestFile));
+
         var calls = document.RootElement.GetProperty(propertyName: "entries")
             .EnumerateArray()
             .Select(CollectToolCalls)
             .Single(entryCalls => entryCalls.Any(call => IsMachineOf(call, serialNumber)));
+
         var metrics = calls
             .Where(call => ToolNameOf(call) == ProposeMetricTool)
             .Select(call => call.GetProperty(propertyName: "arguments"))
             .Where(IsAppliedWithoutReview)
             .Select(ToMetric)
             .ToList();
+
         var statuses = calls
             .Where(call => ToolNameOf(call) == ProposeStatusTool)
             .Select(call => call.GetProperty(propertyName: "arguments"))
@@ -122,9 +124,11 @@ public static class SimulatorTestData
     {
         var calls = new List<JsonElement>();
         var pending = new Stack<JsonElement>([entry]);
+
         while (pending.Count > 0)
         {
             var node = pending.Pop();
+
             if (node.ValueKind == JsonValueKind.Array)
             {
                 node.EnumerateArray().ToList().ForEach(pending.Push);

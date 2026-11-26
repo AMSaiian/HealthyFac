@@ -133,7 +133,7 @@ public static class WorkOrderTestData
         };
 
     public static TheoryData<int> InvalidBatchSizes { get; } =
-        new() { 0, WorkOrderValidationConstants.BatchMaxSearches + 1 };
+        [0, WorkOrderValidationConstants.BatchMaxSearches + 1];
 
     public static TheoryData<string, int, string> StartsOutsideTheRules => new()
     {

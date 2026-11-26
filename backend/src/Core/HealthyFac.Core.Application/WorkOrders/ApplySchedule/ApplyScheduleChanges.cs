@@ -133,6 +133,7 @@ public sealed class ApplyScheduleChangesRequestHandler(
             token => ApplyAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+
         foreach (var notification in applied.Notifications)
         {
             _notifier.AddScheduleChange(request.CompanyId, notification.Assignment, notification.Estimate);
@@ -148,15 +149,17 @@ public sealed class ApplyScheduleChangesRequestHandler(
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
         var targets = await LoadTargetsAsync(request, zone, cancellationToken);
         var failures = await FindFailuresAsync(request.CompanyId, targets, zone, cancellationToken);
+
         if (failures.Count > 0)
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.ScheduleChangesRejected)
             {
-                Extensions = new Dictionary<string, object?> { [key: "changes"] = failures },
+                Extensions = new Dictionary<string, object?> { ["changes"] = failures },
             };
         }
 
         var notifications = new List<Notification>();
+
         foreach (var target in targets)
         {
             var oldEstimate = target.WorkOrder.Estimate;
@@ -165,11 +168,14 @@ public sealed class ApplyScheduleChangesRequestHandler(
             var scheduleChange = target.WorkOrder.Reschedule(target.Slot, target.Estimate);
             _dbContext.AddNewHistoryRows(target.WorkOrder, previousRevision);
             _dbContext.Entry(target.WorkOrder).State = EntityState.Modified;
+
             var assignment = await _dbContext.BuildAssignmentChangeAsync(
                 target.WorkOrder, scheduleChange, oldAssigneeId, target.Slot, cancellationToken);
+
             var assigneeUserId = target.Slot is { } slot && target.Estimate != oldEstimate
                 ? await _dbContext.FindIdentityUserIdAsync(slot.AssigneeId, cancellationToken)
                 : null;
+
             notifications.Add(
                 new Notification
                 {
@@ -190,13 +196,15 @@ public sealed class ApplyScheduleChangesRequestHandler(
         return new Applied
         {
             Notifications = notifications,
-            WorkOrders = targets
-                .Select(target => new AppliedWorkOrder
-                {
-                    Id = target.WorkOrder.Id,
-                    RowVersion = target.WorkOrder.RowVersion,
-                })
-                .ToList(),
+            WorkOrders =
+            [
+                .. targets
+                    .Select(target => new AppliedWorkOrder
+                    {
+                        Id = target.WorkOrder.Id,
+                        RowVersion = target.WorkOrder.RowVersion,
+                    }),
+            ],
         };
     }
 
@@ -207,10 +215,12 @@ public sealed class ApplyScheduleChangesRequestHandler(
     )
     {
         var ids = request.Changes.Select(change => change.WorkOrderId).Order().ToList();
+
         var workOrders = await _dbContext.WorkOrders
             .Where(candidate => ids.Contains(candidate.Id) && candidate.CompanyId == request.CompanyId)
             .OrderBy(candidate => candidate.Id)
             .ToListAsync(cancellationToken);
+
         if (workOrders.Count != ids.Count)
         {
             throw new NotFoundException(WorkOrderErrors.Rejections.WorkOrderNotFound);
@@ -224,9 +234,11 @@ public sealed class ApplyScheduleChangesRequestHandler(
             .LoadAsync(cancellationToken);
 
         var targets = new List<Target>();
+
         foreach (var change in request.Changes)
         {
             var workOrder = workOrders.Single(candidate => candidate.Id == change.WorkOrderId);
+
             if (workOrder.RowVersion != change.RowVersion)
             {
                 throw new ConflictException(WorkOrderErrors.Rejections.WorkOrderChanged);
@@ -252,15 +264,19 @@ public sealed class ApplyScheduleChangesRequestHandler(
         var statuses = new Dictionary<Guid, EmployeeStatus>();
         var shiftsByAssignee = new Dictionary<Guid, EmployeeShifts>();
         var occupanciesByAssignee = new Dictionary<Guid, List<Occupancy>>();
+
         foreach (var assigneeId in assigneeIds)
         {
             var assigneeTargets = slotTargets.Where(target => target.Slot!.AssigneeId == assigneeId).ToList();
+
             var status = await _scheduleChecks.FindAssigneeStatusAsync(companyId, assigneeId, cancellationToken)
                 ?? throw new NotFoundException(WorkOrderErrors.Rejections.AssigneeNotFound);
+
             statuses[assigneeId] = status;
 
             var dates = assigneeTargets.Select(target => DateOnly.FromDateTime(target.Slot!.PlannedStartLocal))
                 .ToList();
+
             shiftsByAssignee[assigneeId] = await _reader.LoadAsync(
                 assigneeId, zone, dates.Min(), dates.Max(), isTracked: false, cancellationToken);
 
@@ -271,16 +287,21 @@ public sealed class ApplyScheduleChangesRequestHandler(
                 assigneeTargets.Max(target => target.Slot!.PlannedStartUtc.Add(target.Estimate)),
                 excludeWorkOrderId: null,
                 cancellationToken);
-            occupanciesByAssignee[assigneeId] = stored
-                .Where(occupancy => !changedIds.Contains(occupancy.WorkOrderId))
-                .Concat(assigneeTargets.Select(target => target.OccupancyOf(target.Slot!)))
-                .ToList();
+
+            occupanciesByAssignee[assigneeId] =
+            [
+                .. stored
+                    .Where(occupancy => !changedIds.Contains(occupancy.WorkOrderId)),
+                .. assigneeTargets.Select(target => target.OccupancyOf(target.Slot!)),
+            ];
         }
 
         var failures = new List<ScheduleChangeFailure>();
+
         foreach (var target in targets)
         {
             var reason = FindReason(target, statuses, shiftsByAssignee, occupanciesByAssignee, zone);
+
             if (reason is not null)
             {
                 failures.Add(new ScheduleChangeFailure { WorkOrderId = target.WorkOrder.Id, Reason = reason });
@@ -315,6 +336,7 @@ public sealed class ApplyScheduleChangesRequestHandler(
 
         var isSlotMoved = target.WorkOrder.Current.AssigneeId != slot.AssigneeId
             || target.WorkOrder.Current.PlannedStartLocal != slot.PlannedStartLocal;
+
         if (isSlotMoved && !_scheduleChecks.IsStartInRange(slot.PlannedStartLocal, slot.PlannedStartUtc, zone))
         {
             return ScheduleChangeRejection.StartOutOfRange;
@@ -322,6 +344,7 @@ public sealed class ApplyScheduleChangesRequestHandler(
 
         var date = DateOnly.FromDateTime(slot.PlannedStartLocal);
         var occupancy = target.OccupancyOf(slot);
+
         if (!SlotRules.FitsOneBlock(occupancy, shiftsByAssignee[slot.AssigneeId].Resolve(date, date).Single()))
         {
             return ScheduleChangeRejection.OutsideShift;

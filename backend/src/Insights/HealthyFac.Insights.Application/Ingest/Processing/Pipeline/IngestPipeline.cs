@@ -93,9 +93,11 @@ public sealed class IngestPipeline(
                 token => _fileCatalog.GetFileLinkForWorkerAsync(attempt.FileId, token),
                 cancellationToken)
             ?? throw new IngestFailureException(IngestErrorCode.FileNotFound);
+
         await EnsureActiveAsync(isNoLongerActive, cancellationToken);
 
         var converted = await ConvertAsync(attempt, link, isNoLongerActive, cancellationToken);
+
         if (converted.PageCount > _options.MaxPages)
         {
             throw new IngestFailureException(IngestErrorCode.TooManyPages);
@@ -118,6 +120,7 @@ public sealed class IngestPipeline(
         await EnsureActiveAsync(isNoLongerActive, cancellationToken);
 
         var isMachineFile = link.File.MachineId is not null;
+
         var mapped = await ExtractAndMapAsync(
             attempt,
             link,
@@ -127,6 +130,7 @@ public sealed class IngestPipeline(
             isMachineFile,
             extraction,
             cancellationToken);
+
         await EnsureActiveAsync(isNoLongerActive, cancellationToken);
 
         return new IngestPipelineResult
@@ -146,6 +150,7 @@ public sealed class IngestPipeline(
     )
     {
         var isInactive = await isNoLongerActive(cancellationToken);
+
         if (isInactive)
         {
             throw new AttemptNoLongerActiveException();
@@ -250,6 +255,7 @@ public sealed class IngestPipeline(
         try
         {
             var buffer = new ExtractionBuffer(isMachineFile, link.File.MachineId, units, signals);
+
             var input = new ExtractionInput
             {
                 CompanyId = attempt.CompanyId,
@@ -258,6 +264,7 @@ public sealed class IngestPipeline(
                 Signals = signals,
                 IsMachineFile = isMachineFile,
             };
+
             await _extractor.ExtractAsync(
                 input, new ExtractionSession { Buffer = buffer, Log = log }, cancellationToken);
 
@@ -272,6 +279,7 @@ public sealed class IngestPipeline(
                     FileMachineId = link.File.MachineId,
                     QueuedAt = attempt.QueuedAt,
                 });
+
             log.Complete(_timeProvider.GetUtcNow().UtcDateTime);
 
             return mapped;

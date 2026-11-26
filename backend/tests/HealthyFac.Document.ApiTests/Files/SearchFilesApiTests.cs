@@ -62,6 +62,7 @@ public sealed class SearchFilesApiTests(DocumentApiFixture fixture)
 
         var response = await _fixture.SendAsync(
             HttpMethod.Post, $"{UploadFileApiTestData.CompanyFilesPath}/search", claims, body);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -78,18 +79,23 @@ public sealed class SearchFilesApiTests(DocumentApiFixture fixture)
 
         var response = await _fixture.SendAsync(
             HttpMethod.Post, $"{UploadFileApiTestData.CompanyFilesPath}/search", claims, WithoutFilterBody);
+
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
+
         var ids = document.RootElement.GetProperty(propertyName: "items")
             .EnumerateArray()
             .Select(item => _fixture.IdEncryptor.Decrypt(item.GetProperty(propertyName: "id").GetString()!))
             .ToList();
+
         var totalCount = document.RootElement.GetProperty(propertyName: "totalCount").GetInt32();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         ids.Should()
             .BeEquivalentTo(
                 [_fixture.IdEncryptor.Decrypt(first.EncryptedId), _fixture.IdEncryptor.Decrypt(second.EncryptedId)]);
+
         totalCount.Should().Be(expected: 2);
     }
 }

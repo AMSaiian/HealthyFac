@@ -54,6 +54,7 @@ public sealed class GridRequestValidatorTests
     public void Validate_WithUnknownSortColumn_Fails()
     {
         var validator = new TestGridRequestValidator([TestSortColumn.Name]);
+
         var sort = new GridSort<TestSortColumn>
             { Column = TestSortColumn.CreatedAt, Direction = SortDirection.Ascending };
 
@@ -87,6 +88,7 @@ public sealed class GridRequestValidatorTests
             .ContainSingle()
             .Which.ErrorMessage.Should()
             .Be(GridErrors.Validation.DateRangeNotUtc);
+
         toResult.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Be(GridErrors.Validation.DateRangeNotUtc);
     }
 

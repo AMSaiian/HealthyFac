@@ -22,13 +22,17 @@ public static class OpenMachineWorkOrdersFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateActorScope(
                 ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var company = new Company
             {
                 Name = Guid.NewGuid().ToString(format: "N"),
                 TimeZoneId = CoreApiTestData.CompanyTimeZoneId,
             };
+
             dbContext.Companies.Add(company);
+
             var machine = new Machine(
                 company.Id,
                 GatewayIds.Create(),
@@ -51,7 +55,7 @@ public static class OpenMachineWorkOrdersFixtureExtensions
         )
         {
             var body = JsonNode.Parse(fixture.CreateOrderBody(title))!.AsObject();
-            body[propertyName: "machineId"] = encryptedMachineId;
+            body["machineId"] = encryptedMachineId;
 
             return await fixture.CreateOrderAsync(claims, body.ToJsonString());
         }
@@ -68,7 +72,8 @@ public static class OpenMachineWorkOrdersFixtureExtensions
                     title,
                     encryptedAssigneeId: encryptedAssigneeId,
                     plannedStartLocal: fixture.FutureStart(WorkOrderApiTestData.StartTime)))!.AsObject();
-            body[propertyName: "machineId"] = encryptedMachineId;
+
+            body["machineId"] = encryptedMachineId;
             var id = await fixture.CreateOrderAsync(claims, body.ToJsonString());
             await fixture.RejectOrderAsync(claims, id);
 
@@ -78,10 +83,11 @@ public static class OpenMachineWorkOrdersFixtureExtensions
         public async Task RejectOrderAsync(TestTokenClaims claims, string encryptedId)
         {
             var order = await fixture.ReadOrderAsync(claims, encryptedId);
+
             var body = new JsonObject
             {
-                [propertyName: "status"] = "rejected",
-                [propertyName: "rowVersion"] = order[propertyName: "rowVersion"]!.GetValue<uint>(),
+                ["status"] = "rejected",
+                ["rowVersion"] = order["rowVersion"]!.GetValue<uint>(),
             };
 
             var response = await fixture.SendShiftRequestAsync(
@@ -89,6 +95,7 @@ public static class OpenMachineWorkOrdersFixtureExtensions
                 $"{WorkOrderApiTestData.BasePath}/{encryptedId}/status",
                 claims,
                 body.ToJsonString());
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
         }
 

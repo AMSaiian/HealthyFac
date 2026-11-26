@@ -29,14 +29,17 @@ public sealed class CompositionRateLimitTests(GatewayEnvironment environment) : 
         for (var attempt = 0; attempt <= RateLimitTestData.DefaultPermitLimit; attempt++)
         {
             using var content = new StringContent(MachineSearchBody, Encoding.UTF8, MediaTypeNames.Application.Json);
+
             using var response = await client.PostAsync(
                 CompositionStubs.PublicMachineSearch, content, TestContext.Current.CancellationToken);
+
             statusCodes.Add(response.StatusCode);
         }
 
         statusCodes.Take(RateLimitTestData.DefaultPermitLimit)
             .Should()
             .OnlyContain(status => status == HttpStatusCode.OK);
-        statusCodes.Last().Should().Be(HttpStatusCode.TooManyRequests);
+
+        statusCodes[^1].Should().Be(HttpStatusCode.TooManyRequests);
     }
 }

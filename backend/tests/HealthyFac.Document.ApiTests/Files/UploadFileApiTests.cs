@@ -67,6 +67,7 @@ public sealed class UploadFileApiTests(DocumentApiFixture fixture)
     public async Task UploadCompanyFile_WithRenamedPng_Returns400FileTypeNotAllowed()
     {
         var claims = _fixture.CreateClaims(UploadFileApiTestData.CompanyWritePermission);
+
         var file = new MultipartFile(
             FileName: "scheme.pdf",
             UploadFileApiTestData.PdfType,
@@ -229,11 +230,14 @@ public sealed class UploadFileApiTests(DocumentApiFixture fixture)
     public async Task UploadConcurrency_WithFullQueue_Returns429()
     {
         var inspector = new GatedFileInspector();
+
         await using var factory = _fixture.CreateFactoryWithStorage(
             _fixture.StorageConnectionString,
             services => services.Replace(ServiceDescriptor.Singleton<IFileInspector>(inspector)));
+
         using var client = factory.CreateClient();
         var claims = _fixture.CreateClaims(UploadFileApiTestData.CompanyWritePermission);
+
         var accepted = Enumerable.Range(start: 0, UploadFileApiTestData.PermitLimit + UploadFileApiTestData.QueueLimit)
             .Select(_ => _fixture.SendMultipartAsync(
                 UploadFileApiTestData.CompanyFilesPath,
@@ -241,6 +245,7 @@ public sealed class UploadFileApiTests(DocumentApiFixture fixture)
                 [Pdf(fileName: "queued.pdf", length: 100)],
                 client: client))
             .ToList();
+
         await WaitUntilAsync(() => inspector.EnteredCount == UploadFileApiTestData.PermitLimit);
         await Task.Delay(TimeSpan.FromSeconds(seconds: 1), TestContext.Current.CancellationToken);
 

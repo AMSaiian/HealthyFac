@@ -1,3 +1,4 @@
+using System.Globalization;
 using HealthyFac.Seeder.Moments;
 using HealthyFac.Seeder.UnitTests.Moments.Data;
 
@@ -43,6 +44,6 @@ public sealed class SeedCalendarTests
     {
         var parts = input.Split(separator: '|');
 
-        return (DateTimeOffset.Parse(parts[0]), parts[1]);
+        return (DateTimeOffset.Parse(parts[0], CultureInfo.InvariantCulture), parts[1]);
     }
 }

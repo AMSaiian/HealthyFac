@@ -51,6 +51,7 @@ public sealed class AgentPlannerModel(
             MaximumIterationsPerRequest = _agentOptions.PlannerMaxIterations,
             MaximumConsecutiveErrorsPerRequest = _agentOptions.MaxConsecutiveErrors,
         };
+
         var agent = BuildAgent(invoking, systemPrompt, tools, toolMode: null);
 
         var session = await agent.CreateSessionAsync(cancellationToken);
@@ -62,10 +63,12 @@ public sealed class AgentPlannerModel(
         if (await needsDecision(cancellationToken))
         {
             var decisionAgent = BuildAgent(invoking, systemPrompt, decisionTools, ChatToolMode.RequireAny);
+
             var decision = await decisionAgent.RunAsync(
                 AgentMessages.PlannerDecisionMessage,
                 session,
                 cancellationToken: cancellationToken);
+
             inputTokens += decision.Usage?.InputTokenCount ?? 0;
             outputTokens += decision.Usage?.OutputTokenCount ?? 0;
             finalText = decision.Text;

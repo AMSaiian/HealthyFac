@@ -35,6 +35,7 @@ public sealed class GateDatabaseFixture : IAsyncLifetime, IResetBeforeEachTest
     private GateDbContext CreateContext(ConcurrentSaveGate? gate = null)
     {
         var options = new DbContextOptionsBuilder<GateDbContext>().UseNpgsql(_database.ConnectionString);
+
         if (gate is not null)
         {
             options.AddInterceptors(gate);

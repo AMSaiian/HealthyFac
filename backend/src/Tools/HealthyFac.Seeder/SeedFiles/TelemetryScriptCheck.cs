@@ -24,6 +24,7 @@ internal static class TelemetryScriptCheck
         {
             var failures = new List<SeedCheckFailure>();
             var maintenances = FindMaintenances(script, anchor, zone, failures);
+
             failures.AddRange(
                 FindSpans(script, anchor, zone)
                     .Select(span => (Span: span, Maintenance: FindOverlap(span, maintenances)))
@@ -57,11 +58,14 @@ internal static class TelemetryScriptCheck
             })
             .Concat(script.Telemetry.Drains.SelectMany(drain => DrainChanges(drain, anchor, zone)))
             .GroupBy(change => change.Machine);
+
         var maintenances = new List<Maintenance>();
+
         foreach (var machineChanges in changes)
         {
             var state = MachineState.Operational;
             Change? start = null;
+
             foreach (var change in machineChanges.OrderBy(candidate => candidate.At))
             {
                 if (change.State == state)
@@ -73,6 +77,7 @@ internal static class TelemetryScriptCheck
                 }
 
                 state = change.State;
+
                 if (state == MachineState.InMaintenance)
                 {
                     start = change;

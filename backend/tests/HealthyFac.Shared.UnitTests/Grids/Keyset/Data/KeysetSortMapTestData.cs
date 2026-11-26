@@ -16,7 +16,7 @@ public static class KeysetSortMapTestData
         public static readonly FrozenDictionary<string, IKeysetSortKey<KeysetSortKeyTestRow>> Instance =
             new Dictionary<string, IKeysetSortKey<KeysetSortKeyTestRow>>
             {
-                [key: "number"] = KeysetSortKey.For((KeysetSortKeyTestRow row) => row.NullableNumber),
+                ["number"] = KeysetSortKey.For((KeysetSortKeyTestRow row) => row.NullableNumber),
             }.ToFrozenDictionary();
     }
 
@@ -25,8 +25,8 @@ public static class KeysetSortMapTestData
         public static readonly FrozenDictionary<string, IKeysetSortKey<KeysetSortKeyTestRow>> Instance =
             new Dictionary<string, IKeysetSortKey<KeysetSortKeyTestRow>>
             {
-                [key: "number"] = KeysetSortKey.For((KeysetSortKeyTestRow row) => row.Number),
-                [key: "at"] = KeysetSortKey.For((KeysetSortKeyTestRow row) => row.At),
+                ["number"] = KeysetSortKey.For((KeysetSortKeyTestRow row) => row.Number),
+                ["at"] = KeysetSortKey.For((KeysetSortKeyTestRow row) => row.At),
             }.ToFrozenDictionary();
     }
 }

@@ -13,7 +13,5 @@ internal static class DownstreamScopeNames
     /// <param name="downstreamScopes">The short names of the downstream scopes.</param>
     /// <returns>The Keycloak scope names, in the order of <paramref name="downstreamScopes"/>.</returns>
     public static List<string> Prefix(string serviceName, IEnumerable<string> downstreamScopes) =>
-        downstreamScopes
-            .Select(name => $"{serviceName}{ServiceTokenConstants.DownstreamScopeSeparator}{name}")
-            .ToList();
+        [.. downstreamScopes.Select(name => $"{serviceName}{ServiceTokenConstants.DownstreamScopeSeparator}{name}")];
 }

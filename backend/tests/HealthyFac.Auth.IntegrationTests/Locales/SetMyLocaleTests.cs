@@ -28,6 +28,7 @@ public sealed class SetMyLocaleTests
     {
         var identityAdmin = new FakeIdentityAdmin { IsUnavailable = true };
         var handler = new SetMyLocaleRequestHandler(identityAdmin, new FixedCurrentUserProvider(Guid.CreateVersion7()));
+
         var act = () => handler.HandleAsync(
             new SetMyLocaleRequest { Locale = Locale.Ukrainian },
             TestContext.Current.CancellationToken);

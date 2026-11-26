@@ -82,6 +82,7 @@ public sealed class TriageRunTests(SignalCaseFixture fixture)
     public async Task Run_WithAnAnswer_StoresTheRunOfTheLog()
     {
         await ArrangeAsync(TriageTestData.Answer(verdict: "watch"));
+
         _fixture.Agents.TriageChat.Usage = new UsageDetails
         {
             InputTokenCount = TriageTestData.InputTokens,
@@ -110,10 +111,12 @@ public sealed class TriageRunTests(SignalCaseFixture fixture)
         await _fixture.RunAgentWorkerOnceAsync();
 
         var sent = _fixture.Agents.TriageChat.SentTexts.Should().ContainSingle().Subject;
+
         sent.Should()
             .Contain(expected: "<case>")
             .And.Contain(expected: "</case>")
             .And.Contain(expected: "spindle.temperature");
+
         sent.Should()
             .Contain(CaseTestData.Encrypt(CaseTestData.MachineId))
             .And.NotContain(CaseTestData.MachineId.ToString());
@@ -123,6 +126,7 @@ public sealed class TriageRunTests(SignalCaseFixture fixture)
     public async Task Run_WhenTheProviderStaysUnavailable_FailsAfterFourCallsAndChangesNoSignal()
     {
         await ArrangeAsync(TriageTestData.Answer(verdict: "dismiss"));
+
         _fixture.Agents.TriageChat.Failure = new HttpRequestException(
             message: "unavailable", inner: null, HttpStatusCode.ServiceUnavailable);
 

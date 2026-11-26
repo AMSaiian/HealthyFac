@@ -14,8 +14,10 @@ public sealed class TelemetryResourceTests
         attributes.Should().Contain(Attributes.ServiceNamespace, ObservabilityConstants.Resource.Namespace);
         attributes.Should().Contain(Attributes.ServiceName, TelemetryResourceTestData.ServiceName);
         attributes.Should().Contain(Attributes.ServiceVersion, TelemetryResourceTestData.ExpectedVersion);
+
         attributes.Should()
             .Contain(Attributes.DeploymentEnvironment, TelemetryResourceTestData.ExpectedEnvironmentName);
+
         attributes.Should().ContainKey(Attributes.ServiceInstanceId);
     }
 
@@ -25,10 +27,12 @@ public sealed class TelemetryResourceTests
         var attributes = TelemetryResourceHarness.BuildTracerResource(TelemetryResourceTestData.OverrideSettings);
 
         attributes.Should().Contain(Attributes.ServiceName, TelemetryResourceTestData.OverriddenServiceName);
+
         attributes.Should()
             .Contain(
                 Attributes.DeploymentEnvironment,
                 TelemetryResourceTestData.OverriddenEnvironmentName);
+
         attributes.Should().Contain(Attributes.ServiceNamespace, ObservabilityConstants.Resource.Namespace);
     }
 }

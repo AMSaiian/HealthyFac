@@ -34,6 +34,6 @@ public sealed class CapturingLogger<T> : ILogger<T>
             Exception = exception,
             Properties = state is IEnumerable<KeyValuePair<string, object?>> values
                 ? values.ToDictionary(pair => pair.Key, pair => pair.Value)
-                : new Dictionary<string, object?>(),
+                : [],
         });
 }

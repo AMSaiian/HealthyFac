@@ -28,9 +28,9 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         using var document = JsonDocument.Parse(content);
         var items = document.RootElement.GetProperty(propertyName: "items");
         items.GetArrayLength().Should().Be(expected: 1);
-        items[index: 0].GetProperty(propertyName: "id").GetString().Should().Be(_fixture.IdEncryptor.Encrypt(caseId));
-        items[index: 0].GetProperty(propertyName: "highestOpenSeverity").GetString().Should().Be(expected: "alarm");
-        items[index: 0].GetProperty(propertyName: "signalCount").GetInt32().Should().Be(expected: 1);
+        items[0].GetProperty(propertyName: "id").GetString().Should().Be(_fixture.IdEncryptor.Encrypt(caseId));
+        items[0].GetProperty(propertyName: "highestOpenSeverity").GetString().Should().Be(expected: "alarm");
+        items[0].GetProperty(propertyName: "signalCount").GetInt32().Should().Be(expected: 1);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         var totalCount = document.RootElement.GetProperty(propertyName: "totalCount").GetInt32();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        ids.Should().BeEquivalentTo([_fixture.IdEncryptor.Encrypt(first), _fixture.IdEncryptor.Encrypt(second)]);
+        ids.Should().BeEquivalentTo(_fixture.IdEncryptor.Encrypt(first), _fixture.IdEncryptor.Encrypt(second));
         totalCount.Should().Be(expected: 2);
     }
 
@@ -70,7 +70,7 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
 
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
-        var item = document.RootElement.GetProperty(propertyName: "items")[index: 0];
+        var item = document.RootElement.GetProperty(propertyName: "items")[0];
         item.GetProperty(propertyName: "isAiUnavailable").GetBoolean().Should().Be(isAiUnavailable, caseName);
         item.GetProperty(propertyName: "lastRunState").GetString().Should().Be(expected: "failed");
     }
@@ -90,11 +90,13 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
         document.RootElement.GetProperty(propertyName: "signalCount").GetInt32().Should().Be(expected: 1);
+
         document.RootElement.GetProperty(propertyName: "outcome")
             .GetProperty(propertyName: "kind")
             .GetString()
             .Should()
             .Be(expected: "aiUnavailable");
+
         document.RootElement.TryGetProperty(propertyName: "signals", out _).Should().BeFalse();
         document.RootElement.TryGetProperty(propertyName: "runs", out _).Should().BeFalse();
     }
@@ -114,7 +116,8 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
         document.RootElement.GetProperty(propertyName: "totalCount").GetInt32().Should().Be(expected: 1);
-        document.RootElement.GetProperty(propertyName: "items")[index: 0]
+
+        document.RootElement.GetProperty(propertyName: "items")[0]
             .GetProperty(propertyName: "coverage")
             .GetString()
             .Should()
@@ -136,7 +139,7 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
-        var run = document.RootElement.GetProperty(propertyName: "items")[index: 0];
+        var run = document.RootElement.GetProperty(propertyName: "items")[0];
         run.GetProperty(propertyName: "errorCode").GetString().Should().Be(expected: "providerUnavailable");
         run.TryGetProperty(propertyName: "toolCalls", out _).Should().BeFalse();
     }
@@ -191,6 +194,7 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
             CaseApiTestData.ClosePath(_fixture.IdEncryptor.Encrypt(caseId)),
             _fixture.CreateCaseClaims(CaseApiTestData.WritePermission),
             new { reason = Reason });
+
         var maintenanceCase = await _fixture.LoadCaseAsync(caseId);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -237,10 +241,11 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         var available = await SearchAsync(new { isAiUnavailable = false });
 
         (await ReadIdsAsync(unavailable)).Should().Equal(_fixture.IdEncryptor.Encrypt(failedCaseId));
+
         (await ReadIdsAsync(available))
             .Should()
             .BeEquivalentTo(
-                [_fixture.IdEncryptor.Encrypt(changedCaseId), _fixture.IdEncryptor.Encrypt(withoutRunCaseId)]);
+                _fixture.IdEncryptor.Encrypt(changedCaseId), _fixture.IdEncryptor.Encrypt(withoutRunCaseId));
     }
 
     [Fact]
@@ -281,6 +286,7 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
 
         var both = await SearchAsync(
             new { isAiUnavailable = true, lastRunStates = new { values = new[] { "failed" } } });
+
         var contradicting = await SearchAsync(
             new { isAiUnavailable = true, lastRunStates = new { values = new[] { "completed" } } });
 
@@ -298,7 +304,7 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
 
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
-        var item = document.RootElement.GetProperty(propertyName: "items")[index: 0];
+        var item = document.RootElement.GetProperty(propertyName: "items")[0];
         item.GetProperty(propertyName: "isAiUnavailable").GetBoolean().Should().BeFalse();
         item.GetProperty(propertyName: "lastRunState").GetString().Should().Be(expected: "skipped");
     }
@@ -316,14 +322,17 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
             CaseApiTestData.SearchPath,
             writeOnly,
             new { offset = 0, limit = 20 });
+
         var get = await _fixture.SendCaseRequestAsync(
             HttpMethod.Get,
             CaseApiTestData.ByIdPath(encryptedId),
             writeOnly);
+
         var run = await _fixture.SendCaseRequestAsync(
             HttpMethod.Post,
             CaseApiTestData.RunsPath(encryptedId),
             readOnly);
+
         var close = await _fixture.SendCaseRequestAsync(
             HttpMethod.Post,
             CaseApiTestData.ClosePath(encryptedId),
@@ -347,10 +356,12 @@ public sealed class CaseApiTests(InsightsApiFixture fixture)
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         using var document = JsonDocument.Parse(content);
 
-        return document.RootElement.GetProperty(propertyName: "items")
-            .EnumerateArray()
-            .Select(item => item.GetProperty(propertyName: "id").GetString()!)
-            .ToList();
+        return
+        [
+            .. document.RootElement.GetProperty(propertyName: "items")
+                .EnumerateArray()
+                .Select(item => item.GetProperty(propertyName: "id").GetString()!),
+        ];
     }
 
     private Task<HttpResponseMessage> RunAgainAsync(Guid caseId) =>

@@ -27,7 +27,7 @@ public sealed class FileInspectorTests
             stream, extension, declaredType, FilePurpose.Attachment, TestContext.Current.CancellationToken);
 
         inspection.Type.Should().NotBeNull(name);
-        inspection.Type!.Extension.Should().Be(AllowedFileTypes.FindByExtension(extension)!.Extension);
+        inspection.Type.Extension.Should().Be(AllowedFileTypes.FindByExtension(extension)!.Extension);
     }
 
     [Theory]

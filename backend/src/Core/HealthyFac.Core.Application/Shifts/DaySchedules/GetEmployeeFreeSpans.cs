@@ -72,6 +72,7 @@ public sealed class GetEmployeeFreeSpansPreHandlerCheck(
     public async Task CheckAsync(GetEmployeeFreeSpansRequest request, CancellationToken cancellationToken)
     {
         _currentUser.GetActor().EnsureCompany(request.CompanyId);
+
         await request.Scope.EnsureEmployeeReadableAsync(
             _dbContext,
             _ownEmployee,
@@ -103,6 +104,7 @@ public sealed class GetEmployeeFreeSpansRequestHandler(
     )
     {
         var zone = await _reader.GetZoneAsync(request.CompanyId, cancellationToken);
+
         var shifts = await _reader.LoadAsync(
             request.EmployeeId,
             zone,
@@ -110,6 +112,7 @@ public sealed class GetEmployeeFreeSpansRequestHandler(
             request.Date,
             isTracked: false,
             cancellationToken);
+
         var occupancies = await _occupancyReader.ReadAsync(
             request.CompanyId,
             request.EmployeeId,

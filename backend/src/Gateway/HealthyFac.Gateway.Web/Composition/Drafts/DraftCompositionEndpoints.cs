@@ -26,18 +26,22 @@ public static class DraftCompositionEndpoints
                 .RequireCors(CorsConstants.PolicyName)
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
                 .RequireRateLimiting(RateLimitPolicyNames.Default);
+
             app.MapPost(DraftCompositionRoutes.AttemptDraftSearch, SearchAttemptDraftsAsync)
                 .RequireCors(CorsConstants.PolicyName)
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
                 .RequireRateLimiting(RateLimitPolicyNames.Default);
+
             app.MapGet(DraftCompositionRoutes.AttemptDrafts, GetAttemptDraftsAsync)
                 .RequireCors(CorsConstants.PolicyName)
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
                 .RequireRateLimiting(RateLimitPolicyNames.Default);
+
             app.MapPost(DraftCompositionRoutes.MachineDraftDismiss, DismissMachineDraftsAsync)
                 .RequireCors(CorsConstants.PolicyName)
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)
                 .RequireRateLimiting(RateLimitPolicyNames.Default);
+
             app.MapPost(DraftCompositionRoutes.AttemptDraftDismiss, DismissAttemptDraftsAsync)
                 .RequireCors(CorsConstants.PolicyName)
                 .RequireAuthorization(GatewayConstants.AuthenticatedPolicyName)

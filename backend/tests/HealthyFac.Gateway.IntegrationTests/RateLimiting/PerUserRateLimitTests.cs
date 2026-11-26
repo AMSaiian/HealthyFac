@@ -22,12 +22,15 @@ public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
     {
         await using var gateway = _environment.CreateGateway(_core, settings: RateLimitTestData.DefaultLimitOfTwo);
         using var firstUserClient = gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });
+
         using var secondUserClient =
             gateway.CreateAuthenticatedClient(new TestTokenClaims { Subject = Guid.NewGuid() });
+
         await firstUserClient.SpendDefaultLimitAsync();
 
         using var firstUserResponse = await firstUserClient.GetAsync(
             RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
+
         using var secondUserResponse = await secondUserClient.GetAsync(
             RateLimitTestData.MachinesRoute, TestContext.Current.CancellationToken);
 

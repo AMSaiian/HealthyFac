@@ -30,6 +30,7 @@ public sealed class EvaluationWorkerMetricsTests(TelemetryEvaluationFixture fixt
             .Which.Should()
             .Match<CollectedMeasurement<long>>(measurement =>
                 measurement.Value == 1 && HasResult(measurement.Tags, "completed"));
+
         durations.GetMeasurementSnapshot()
             .Should()
             .ContainSingle()

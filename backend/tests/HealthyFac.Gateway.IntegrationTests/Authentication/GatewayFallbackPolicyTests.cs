@@ -21,6 +21,7 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(
             _core,
             settings: FallbackPolicyTestData.UnprotectedRouteSettings);
+
         using var client = gateway.CreateClient();
 
         using var response = await client.GetAsync(
@@ -37,6 +38,7 @@ public sealed class GatewayFallbackPolicyTests(GatewayEnvironment environment)
         await using var gateway = _environment.CreateGateway(
             _core,
             settings: FallbackPolicyTestData.UnprotectedRouteSettings);
+
         using var client = gateway.CreateAuthenticatedClient();
 
         using var response = await client.GetAsync(

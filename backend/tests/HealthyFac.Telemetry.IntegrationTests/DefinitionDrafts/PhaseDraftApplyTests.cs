@@ -29,6 +29,7 @@ public sealed class PhaseDraftApplyTests(TelemetryDatabaseFixture fixture)
             machineId,
             expectedRevision: 0,
             [MetricDefinitionTestData.NewNumeric() with { DraftId = ids.MetricId }]);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId, machineId, code: "E104", draftId: ids.StatusId);
 
@@ -68,11 +69,13 @@ public sealed class PhaseDraftApplyTests(TelemetryDatabaseFixture fixture)
         var tenant = _fixture.ArrangeMachineTenant();
         var machineId = await _fixture.CreateStatusDefinitionMachineAsync(tenant);
         var ids = await _fixture.StorePendingPhaseProposalAsync(tenant, machineId);
+
         await _fixture.ApplyMetricChangesAsync(
             tenant,
             machineId,
             expectedRevision: 0,
             [MetricDefinitionTestData.NewNumeric() with { DraftId = ids.MetricId }]);
+
         var statusId = await _fixture.CreateStatusDefinitionAsync(
             tenant.CompanyId, machineId, code: "E104", draftId: ids.StatusId);
 

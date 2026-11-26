@@ -31,14 +31,17 @@ public sealed class DismissDefinitionDraftsRequestValidator : AbstractValidator<
     public DismissDefinitionDraftsRequestValidator()
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DefinitionDraftErrors.CompanyIdRequired);
+
         RuleFor(request => request.MachineId)
             .NotEmpty()
             .WithMessage(DefinitionDraftErrors.MachineIdRequired)
             .When(request => request.MachineId is not null);
+
         RuleFor(request => request.AttemptId)
             .NotEmpty()
             .WithMessage(DefinitionDraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
+
         RuleFor(request => request)
             .Must(request => request.MachineId is null != request.AttemptId is null)
             .WithMessage(DefinitionDraftErrors.SearchScopeRequired);
@@ -101,6 +104,7 @@ public sealed class DismissDefinitionDraftsRequestHandler(ITelemetryDbContext db
                 && (request.AttemptId == null || draft.AttemptId == request.AttemptId))
             .Where(OpenDefinitionDrafts.Predicate<MetricDefinitionDraft>())
             .ToListAsync(cancellationToken);
+
         var statusDrafts = await _dbContext.StatusDefinitionDrafts
             .Where(draft => draft.CompanyId == request.CompanyId
                 && (request.MachineId == null || draft.TargetMachineId == request.MachineId)

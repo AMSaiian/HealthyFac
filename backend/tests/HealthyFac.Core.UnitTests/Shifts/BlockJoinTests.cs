@@ -32,11 +32,12 @@ public sealed class BlockJoinTests
     }
 
     private static List<BlockTimes> Parse(string blocks) =>
-        ShiftTestData.Blocks(blocks)
+    [
+        .. ShiftTestData.Blocks(blocks)
             .Select(block => new BlockTimes
             {
                 Start = block.Start,
                 End = block.End,
-            })
-            .ToList();
+            }),
+    ];
 }

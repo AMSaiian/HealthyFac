@@ -45,6 +45,7 @@ public sealed class FakeDoclingServer : HttpMessageHandler
         var body = request.Content is null
             ? string.Empty
             : Encoding.UTF8.GetString(await request.Content.ReadAsByteArrayAsync(cancellationToken));
+
         var apiKey = request.Headers.TryGetValues(name: "X-Api-Key", out var values) ? values.Single() : null;
         _calls.Add(new RecordedDoclingCall(request.Method.Method, request.RequestUri!.AbsolutePath, apiKey, body));
 

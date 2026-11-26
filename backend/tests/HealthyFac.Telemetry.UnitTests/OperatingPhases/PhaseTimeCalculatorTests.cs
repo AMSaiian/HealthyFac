@@ -69,6 +69,7 @@ public sealed class PhaseTimeCalculatorTests
 
         result.UnknownModeSeconds.Should().Be(10 * 60);
         result.NoDataSeconds.Should().Be(25 * 60);
+
         (result.PhaseSeconds.Values.Sum() + result.UnknownModeSeconds + result.NoDataSeconds)
             .Should()
             .Be((To - From).TotalSeconds);

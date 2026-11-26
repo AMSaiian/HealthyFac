@@ -140,17 +140,19 @@ public static class HistorySimulationTestData
 
         return new MachineDefinitions
         {
-            Metrics = draft.Metrics
-                .Select(metric => new MetricInfo
-                {
-                    Key = metric.Key!,
-                    ValueKind = MetricValueKind.FromValue(metric.ValueKind!),
-                    Min = metric.Min,
-                    Max = metric.Max,
-                    States = metric.States,
-                })
-                .ToList(),
-            StatusCodes = draft.Statuses.Select(status => status.Code!).ToList(),
+            Metrics =
+            [
+                .. draft.Metrics
+                    .Select(metric => new MetricInfo
+                    {
+                        Key = metric.Key!,
+                        ValueKind = MetricValueKind.FromValue(metric.ValueKind!),
+                        Min = metric.Min,
+                        Max = metric.Max,
+                        States = metric.States,
+                    }),
+            ],
+            StatusCodes = [.. draft.Statuses.Select(status => status.Code!)],
         };
     }
 }

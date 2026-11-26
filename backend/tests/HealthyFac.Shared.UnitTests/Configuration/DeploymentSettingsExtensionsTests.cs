@@ -29,6 +29,7 @@ public sealed class DeploymentSettingsExtensionsTests : IDisposable
     public void AddDeploymentSettingsFile_WithEnvironmentVariable_EnvironmentVariableWins()
     {
         WriteDeploymentFile();
+
         Environment.SetEnvironmentVariable(
             DeploymentSettingsExtensionsTestData.EnvironmentVariableName,
             DeploymentSettingsExtensionsTestData.EnvironmentValue);

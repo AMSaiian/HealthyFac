@@ -58,6 +58,7 @@ public static class WorkOrderChangeNotifications
             }
 
             notifier.AddEstimateEvent(estimate);
+
             notifier.AddHint(
                 companyId,
                 new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = estimate.WorkOrderId });
@@ -107,6 +108,7 @@ public static class WorkOrderChangeNotifications
             notifier.AddHint(
                 companyId,
                 new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = change.WorkOrderId });
+
             foreach (var movedId in change.SlideMoves.Select(move => move.WorkOrderId).Distinct())
             {
                 notifier.AddHint(
@@ -126,12 +128,14 @@ public static class WorkOrderChangeNotifications
         {
             notifier.AddHint(
                 companyId, new RealtimeHint { Topic = RealtimeTopic.WorkOrders, WorkOrderId = workOrderId });
+
             notifier.Push();
         }
 
         private void AddAssignmentEvents(WorkOrderAssignmentChange change)
         {
             var isSameAssignee = change.OldAssigneeId is not null && change.OldAssigneeId == change.NewAssigneeId;
+
             if (isSameAssignee)
             {
                 notifier.AddRescheduled(change);

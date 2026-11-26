@@ -41,9 +41,12 @@ public static class AggregateRelationModelChecks
         var expected = foreignKey is { PrincipalToDependent.IsCollection: true, IsRequired: true }
             ? DeleteBehavior.Cascade
             : DeleteBehavior.Restrict;
+
         var properties = string.Join(separator: ", ", foreignKey.Properties.Select(property => property.Name));
+
         var relation = $"{foreignKey.DeclaringEntityType.DisplayName()}.{properties} -> "
             + foreignKey.PrincipalEntityType.DisplayName();
+
         if (foreignKey.DeleteBehavior != expected)
         {
             return $"{relation}: {foreignKey.DeleteBehavior}, expected {expected}";

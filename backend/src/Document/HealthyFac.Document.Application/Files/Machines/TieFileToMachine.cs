@@ -88,6 +88,7 @@ public sealed class TieFileToMachineRequestHandler(
         var changedAt = _timeProvider.GetUtcNow().UtcDateTime;
         _dbContext.Entry(file).Property(stored => stored.RowVersion).OriginalValue = request.RowVersion;
         file.TieTo(request.MachineId, changedAt);
+
         _outbox.Add(
             new FileMachineChanged
             {

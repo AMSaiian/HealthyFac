@@ -49,6 +49,7 @@ public sealed class IngestRealtimeTests(InsightsFixture fixture)
         _fixture.ArrangeFile();
         var attemptId = await _fixture.StartAttemptAsync();
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+
         _fixture.Ingest.Converter.Behavior = async cancellationToken =>
         {
             await stop.CancelAsync();
@@ -56,6 +57,7 @@ public sealed class IngestRealtimeTests(InsightsFixture fixture)
 
             return FakeDocumentConverter.DefaultDocument;
         };
+
         _fixture.RealtimeQueue.Clear();
 
         var act = () => _fixture.RunWorkerAsync(stop.Token);
@@ -115,6 +117,7 @@ public sealed class IngestRealtimeTests(InsightsFixture fixture)
         var push = _fixture.RealtimeQueue.Items.Should().ContainSingle().Subject.Push;
         push.UserId.Should().Be(IngestWorkerTestData.UserId);
         push.Notification!.Kind.Should().Be(RealtimeNotificationKind.IngestFinished);
+
         push.Notification.Data.Should()
             .BeEquivalentTo(new IngestFinishedData { AttemptId = attemptId, FileName = FileName, State = state });
     }
@@ -130,6 +133,7 @@ public sealed class IngestRealtimeTests(InsightsFixture fixture)
                 new FileDeleted { FileId = IngestAttemptTestData.FileId, CompanyId = IngestAttemptTestData.CompanyId },
                 token),
             TestContext.Current.CancellationToken);
+
         scope.ServiceProvider.GetRequiredService<IRealtimeNotifier>().Push();
     }
 }

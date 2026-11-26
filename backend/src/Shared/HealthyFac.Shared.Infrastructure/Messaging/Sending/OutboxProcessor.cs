@@ -48,9 +48,11 @@ internal sealed class OutboxProcessor(
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         var startedAt = _timeProvider.GetTimestamp();
+
         try
         {
             ClaimResult result;
+
             do
             {
                 result = await PublishNextAsync(cancellationToken);

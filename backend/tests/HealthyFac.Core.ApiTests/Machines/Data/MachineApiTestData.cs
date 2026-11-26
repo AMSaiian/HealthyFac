@@ -63,13 +63,13 @@ public static class MachineApiTestData
     public const string SearchNullStatesBody =
         "{\"offset\":0,\"limit\":25,\"filter\":{\"states\":{\"values\":null}}}";
 
-    public static TheoryData<string> BadFilterBodies => new()
-    {
+    public static TheoryData<string> BadFilterBodies =>
+    [
         SearchOffsetDateBoundBody,
         SearchUnspecifiedDateBoundBody,
         SearchNullTextValueBody,
         SearchNullStatesBody,
-    };
+    ];
 
     public static TheoryData<string, string> BadStateBodies => new()
     {

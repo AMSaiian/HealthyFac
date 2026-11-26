@@ -42,6 +42,7 @@ public sealed class CompositionFailureTests(GatewayEnvironment environment) : IA
             CompositionStubs.TelemetryMachineDismiss,
             status: 403,
             CompositionFailureTestData.ForbiddenJson);
+
         await using var gateway = _stubs.CreateGateway(_environment);
         using var client = gateway.CreateAuthenticatedClient();
 
@@ -58,11 +59,13 @@ public sealed class CompositionFailureTests(GatewayEnvironment environment) : IA
             CompositionStubs.CoreMachineDismiss,
             status: 404,
             CompositionFailureTestData.NotFoundJson);
+
         _stubs.Telemetry.Respond(
             HttpMethod.Post,
             CompositionStubs.TelemetryMachineDismiss,
             status: 403,
             CompositionFailureTestData.ForbiddenJson);
+
         await using var gateway = _stubs.CreateGateway(_environment);
         using var client = gateway.CreateAuthenticatedClient();
 

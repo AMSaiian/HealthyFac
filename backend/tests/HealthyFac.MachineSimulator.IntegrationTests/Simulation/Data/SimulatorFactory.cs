@@ -33,6 +33,7 @@ public sealed class SimulatorFactory(
         }
 
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(_settings));
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<TimeProvider>();

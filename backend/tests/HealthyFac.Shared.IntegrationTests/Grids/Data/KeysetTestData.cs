@@ -97,7 +97,8 @@ public static class KeysetTestData
     };
 
     public static List<GridTestEntity> CreateRows() =>
-        Enumerable
+    [
+        .. Enumerable
             .Range(start: 0, RowCount)
             .Select(index => new GridTestEntity
             {
@@ -109,8 +110,8 @@ public static class KeysetTestData
                 Key = Guid.CreateVersion7(),
                 Big = BigBase + index % 4,
                 Ratio = index % 3 * 0.25,
-            })
-            .ToList();
+            }),
+    ];
 
     public static IEnumerable<KeysetTestItem> Order(
         IEnumerable<KeysetTestItem> items,
@@ -127,6 +128,7 @@ public static class KeysetTestData
             "at" => item => item.At,
             _ => item => item.Name,
         };
+
         IComparer<object> comparer = columnName == "name"
             ? Comparer<object>.Create((left, right) =>
                 StringComparer.OrdinalIgnoreCase.Compare((string)left, (string)right))

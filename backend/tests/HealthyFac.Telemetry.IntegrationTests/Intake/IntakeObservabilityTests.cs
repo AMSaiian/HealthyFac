@@ -37,16 +37,20 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsync
     public async Task Intake_WithMessage_RecordsConsumerSpanCounterAndDuration(IntakeResultCase scenario)
     {
         var machine = await _fixture.Database.ArrangeIntakeMachineAsync();
+
         var topic = scenario.IsLongTopic
             ? ReceiveMachineMessageTestData.TopicFor(IntakeObservabilityTestData.LongGatewayId)
             : ReceiveMachineMessageTestData.TopicFor(machine.GatewayId);
+
         var payload = scenario.Json is null
             ? ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage())
             : ReceiveMachineMessageTestData.Bytes(scenario.Json);
+
         using var capture = new SpanCapture(Constants.Intake.Source);
         using var counter = Collect<long>(Constants.Intake.Instruments.Messages);
         using var duration = Collect<double>(Constants.Intake.Instruments.HandleDuration);
         await PublishRepeatedFirstAsync(scenario, topic, payload, capture);
+
         if (scenario.IsFailureArmed)
         {
             _fixture.SaveFailure.Arm(new InvalidOperationException(message: "The test made this save fail."));
@@ -56,13 +60,16 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsync
 
         var expectedSpans = scenario.IsRepeated ? 2 : 1;
         var spans = await capture.WaitForSpansAsync(span => IsOnTopic(span, topic), expectedSpans);
-        var span = spans.Last();
+        var span = spans[^1];
+
         var counted = counter.GetMeasurementSnapshot()
             .Where(measurement => HasResult(measurement, scenario.Result))
             .ToList();
+
         var timed = duration.GetMeasurementSnapshot()
             .Where(measurement => HasResult(measurement, scenario.Result))
             .ToList();
+
         var expectedStatus = scenario.Result == Constants.Intake.Results.Failed
             ? ActivityStatusCode.Error
             : ActivityStatusCode.Unset;
@@ -98,6 +105,7 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsync
 
         var spans = await capture.WaitForSpansAsync(span => IsOnTopic(span, topic), expectedCount: 2);
         var redelivery = spans.Single(span => HasResultTag(span, Constants.Intake.Results.Redelivery));
+
         var results = counter.GetMeasurementSnapshot()
             .Select(measurement => measurement.Tags.GetValueOrDefault(Constants.Intake.Tags.Result))
             .ToList();
@@ -119,6 +127,7 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsync
             ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage()));
 
         var consumer = (await capture.WaitForSpansAsync(span => IsOnTopic(span, topic), expectedCount: 1)).Single();
+
         var useCase = capture.Spans.Single(span => span.Source.Name == Constants.Sources.UseCases
             && span.DisplayName == nameof(ReceiveMachineMessageRequest)
             && span.TraceId == consumer.TraceId);
@@ -184,6 +193,7 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsync
             .BeInRange(
                 IntakeObservabilityTestData.Lag.TotalSeconds,
                 IntakeObservabilityTestData.Lag.TotalSeconds + 30);
+
         measurement.Tags.Should().BeEmpty();
     }
 
@@ -249,15 +259,18 @@ public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsync
             ReceiveMachineMessageTestData.Bytes(ReceiveMachineMessageTestData.CreateMessage()));
 
         var span = (await capture.WaitForSpansAsync(span => IsOnTopic(span, topic), expectedCount: 1)).Single();
+
         var tags = counter.GetMeasurementSnapshot()
             .SelectMany(measurement => measurement.Tags)
             .Concat(duration.GetMeasurementSnapshot().SelectMany(measurement => measurement.Tags))
             .ToList();
 
         tags.Should().NotBeEmpty();
+
         tags.Select(tag => tag.Key)
             .Should()
             .OnlyContain(key => IntakeObservabilityTestData.AllowedTagKeys.Contains(key));
+
         tags.Select(tag => tag.Value?.ToString()).Should().NotContain(machine.GatewayId);
         span.DisplayName.Should().NotContain(machine.GatewayId);
     }

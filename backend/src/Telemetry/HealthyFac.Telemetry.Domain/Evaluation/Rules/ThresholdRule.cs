@@ -27,6 +27,7 @@ public static class ThresholdRule
         var opening = openLimits ?? limits;
         var isWarningBeyond = value > opening.WarningHigh || value < opening.WarningLow;
         var isAlarmBeyond = value > opening.AlarmHigh || value < opening.AlarmLow;
+
         var isResolveBeyond = value > (limits.WarningHigh ?? limits.AlarmHigh)
             || value < (limits.WarningLow ?? limits.AlarmLow);
 

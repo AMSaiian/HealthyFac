@@ -19,6 +19,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
     {
         var machineId = await _fixture.RegisterMachineAsync(GetFileLinksTestData.CompanyId);
         var uploadedAt = GetFileLinksTestData.UploadedAt;
+
         var ids = await _fixture.SeedFilesAsync(
             GetFileLinksTestData.CompanyId,
             [
@@ -31,15 +32,17 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
                     FileName: "foreign", Extension: "pdf", SizeBytes: 10, uploadedAt,
                     CompanyId: GetFileLinksTestData.OtherCompanyId),
             ]);
-        await _fixture.DeleteFileRefAsync(GetFileLinksTestData.CompanyId, ids[index: 3]);
+
+        await _fixture.DeleteFileRefAsync(GetFileLinksTestData.CompanyId, ids[3]);
+
         var requested = ids.Select(_fixture.Encrypt)
             .Concat([GetFileLinksTestData.MalformedId, _fixture.Encrypt(Guid.CreateVersion7())])
-            .Append(_fixture.Encrypt(ids[index: 0]));
+            .Append(_fixture.Encrypt(ids[0]));
 
         var response = await _fixture.GetFileLinksAsync(
             GetFileLinksTestData.CompanyId, requested);
 
-        response.Links.Select(link => link.Id).Should().BeEquivalentTo([ids[index: 0], ids[index: 1], ids[index: 2]]);
+        response.Links.Select(link => link.Id).Should().BeEquivalentTo([ids[0], ids[1], ids[2]]);
     }
 
     [Fact]
@@ -51,28 +54,34 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
                 new FileSeed(FileName: "Pump manual", Extension: "pdf", SizeBytes: 10, GetFileLinksTestData.UploadedAt),
                 new FileSeed(FileName: "scheme", Extension: "png", SizeBytes: 10, GetFileLinksTestData.UploadedAt),
             ]);
+
         var issuer = _fixture.CreateIssuer(GetFileLinksTestData.FixedNow, Environments.Production);
-        var pdf = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 0]), FileLinkAudience.Public);
-        var png = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 1]), FileLinkAudience.Public);
+        var pdf = issuer.Issue(await _fixture.LoadFileRowAsync(ids[0]), FileLinkAudience.Public);
+        var png = issuer.Issue(await _fixture.LoadFileRowAsync(ids[1]), FileLinkAudience.Public);
         var query = pdf.Query;
 
         pdf.Url.Should()
-            .StartWith($"{GetFileLinksTestData.PublicBaseUrl}/{DatabaseTestData.ContainerName}/{ids[index: 0]}?");
-        query[name: "sp"].Should().Be(expected: "r");
-        query[name: "sr"].Should().Be(expected: "b");
-        query[name: "spr"].Should().Be(expected: "https");
-        query[name: "st"]
+            .StartWith($"{GetFileLinksTestData.PublicBaseUrl}/{DatabaseTestData.ContainerName}/{ids[0]}?");
+
+        query["sp"].Should().Be(expected: "r");
+        query["sr"].Should().Be(expected: "b");
+        query["spr"].Should().Be(expected: "https");
+
+        query["st"]
             .Should()
             .Be(
                 GetFileLinksTestData.FixedNow.AddMinutes(minutes: -1).ToString(GetFileLinksTestData.SasTimeFormat));
-        query[name: "se"]
+
+        query["se"]
             .Should()
             .Be(
                 GetFileLinksTestData.FixedNow.AddSeconds(GetFileLinksTestData.LifetimeSeconds)
                     .ToString(GetFileLinksTestData.SasTimeFormat));
-        query[name: "rsct"].Should().Be(expected: "application/pdf");
-        query[name: "rscd"].Should().StartWith(expected: "attachment; filename=");
-        png.Query[name: "rscd"].Should().Be(expected: "inline");
+
+        query["rsct"].Should().Be(expected: "application/pdf");
+        query["rscd"].Should().StartWith(expected: "attachment; filename=");
+        png.Query["rscd"].Should().Be(expected: "inline");
+
         pdf.ExpiresAt.Should()
             .Be(GetFileLinksTestData.FixedNow.AddSeconds(GetFileLinksTestData.LifetimeSeconds).UtcDateTime);
     }
@@ -83,21 +92,24 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
         var ids = await _fixture.SeedFilesAsync(
             GetFileLinksTestData.CompanyId,
             [new FileSeed(FileName: "a", Extension: "pdf", SizeBytes: 10, GetFileLinksTestData.UploadedAt)]);
+
         var issuer = _fixture.CreateIssuer(GetFileLinksTestData.FixedNow, Environments.Development);
 
-        var link = issuer.Issue(await _fixture.LoadFileRowAsync(ids[index: 0]), FileLinkAudience.Public);
+        var link = issuer.Issue(await _fixture.LoadFileRowAsync(ids[0]), FileLinkAudience.Public);
 
-        link.Query[name: "spr"].Should().Be(expected: "https,http");
+        link.Query["spr"].Should().Be(expected: "https,http");
     }
 
     [Fact]
     public async Task GetFileLinks_WithValidLink_ReadsTheBytesFromTheStorage()
     {
         var content = UploadFileTestData.Pdf;
+
         var response = await _fixture.UploadCompanyFileAsync(
             GetFileLinksTestData.CompanyId,
             UploadFileTestData.CreateUpload(UploadFileTestData.PdfName, content, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
+
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow, Environments.Development);
         var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Public);
         using var client = new HttpClient();
@@ -119,6 +131,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
             UploadFileTestData.CreateUpload(
                 UploadFileTestData.PdfName, UploadFileTestData.Pdf, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
+
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow.AddHours(hours: -1), Environments.Development);
         var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Public);
         using var client = new HttpClient();
@@ -136,6 +149,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
             UploadFileTestData.CreateUpload(
                 UploadFileTestData.PdfName, UploadFileTestData.Pdf, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
+
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow, Environments.Development);
         var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Public);
         var tampered = new Uri(_fixture.RebaseOnStorage(link).AbsoluteUri.Replace(oldValue: "sig=", newValue: "sig=A"));
@@ -150,10 +164,12 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
     public async Task Issue_WithInternalAudience_PointsAtTheStorageEndpoint()
     {
         var content = UploadFileTestData.Pdf;
+
         var response = await _fixture.UploadCompanyFileAsync(
             GetFileLinksTestData.CompanyId,
             UploadFileTestData.CreateUpload(UploadFileTestData.PdfName, content, UploadFileTestData.PdfType),
             cancellationToken: TestContext.Current.CancellationToken);
+
         var issuer = _fixture.CreateIssuer(DateTimeOffset.UtcNow, Environments.Development);
         var link = issuer.Issue(await _fixture.LoadFileRowAsync(response.Id), FileLinkAudience.Internal);
         using var client = new HttpClient();
@@ -165,6 +181,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
             .StartWith(
                 $"{_fixture.BlobService.Uri.AbsoluteUri.TrimEnd(trimChar: '/')}/"
                 + $"{DatabaseTestData.ContainerName}/{response.Id}?");
+
         read.StatusCode.Should().Be(HttpStatusCode.OK);
         bytes.Should().Equal(content);
     }
@@ -175,15 +192,16 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
         var ids = await _fixture.SeedFilesAsync(
             GetFileLinksTestData.CompanyId,
             [new FileSeed(FileName: "a", Extension: "pdf", SizeBytes: 10, GetFileLinksTestData.UploadedAt)]);
+
         var issuer = _fixture.CreateIssuer(GetFileLinksTestData.FixedNow, Environments.Production);
-        var file = await _fixture.LoadFileRowAsync(ids[index: 0]);
+        var file = await _fixture.LoadFileRowAsync(ids[0]);
 
         var publicLink = issuer.Issue(file, FileLinkAudience.Public);
         var internalLink = issuer.Issue(file, FileLinkAudience.Internal);
 
         publicLink.Url.Should().StartWith(GetFileLinksTestData.PublicBaseUrl);
         internalLink.Url.Should().NotStartWith(GetFileLinksTestData.PublicBaseUrl);
-        internalLink.Query[name: "sig"].Should().Be(publicLink.Query[name: "sig"]);
+        internalLink.Query["sig"].Should().Be(publicLink.Query["sig"]);
     }
 
     [Fact]
@@ -194,6 +212,7 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
         var atLimit = validator.Validate(
             new GetFileLinksRequest
                 { CompanyId = GetFileLinksTestData.CompanyId, Ids = GetFileLinksTestData.IdsAtTheLimit });
+
         var above = validator.Validate(
             new GetFileLinksRequest
             {

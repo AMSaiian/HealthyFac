@@ -39,6 +39,7 @@ internal sealed class ConsumerSession : IAsyncDisposable
 
             return Task.CompletedTask;
         };
+
         _client.ApplicationMessageReceivedAsync += async arguments =>
         {
             await onMessage(arguments, this);

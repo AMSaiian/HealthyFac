@@ -19,6 +19,7 @@ public sealed class IngestMachineChangeRaceTests(InsightsFixture fixture)
         _fixture.ArrangeFile(machineId: null);
         await _fixture.StartAttemptAsync();
         var changedAt = IngestAttemptTestData.Now.AddMinutes(value: 5);
+
         _fixture.Ingest.Converter.Behavior = async _ =>
         {
             await _fixture.HandleMachineChangedAsync(
@@ -40,6 +41,7 @@ public sealed class IngestMachineChangeRaceTests(InsightsFixture fixture)
     {
         _fixture.ArrangeFile(machineId: FirstMachineId);
         await _fixture.StartAttemptAsync();
+
         _fixture.Ingest.Converter.Behavior = async _ =>
         {
             await _fixture.HandleMachineChangedAsync(

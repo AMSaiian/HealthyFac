@@ -33,6 +33,7 @@ public static class StatusDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<CreateStatusDefinitionRequest, CreateStatusDefinitionResponse>>();
 
@@ -57,6 +58,7 @@ public static class StatusDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<ApplyStatusDefinitionChangesRequest,
                     ApplyStatusDefinitionChangesResponse>>();
@@ -77,6 +79,7 @@ public static class StatusDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetStatusDefinitionRequest, StatusDefinitionResponse>>();
 
@@ -95,6 +98,7 @@ public static class StatusDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<UpdateStatusDefinitionRequest>>();
 
@@ -118,6 +122,7 @@ public static class StatusDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<DeleteStatusDefinitionRequest>>();
 
@@ -131,6 +136,7 @@ public static class StatusDefinitionFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<SearchStatusDefinitionsRequest,
                     GridResponse<StatusDefinitionResponse>>>();
@@ -145,6 +151,7 @@ public static class StatusDefinitionFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var statuses = seeds
                 .Select(seed => new StatusDefinition(machineId, seed.Code, seed.Severity, description: null))
                 .ToList();
@@ -161,7 +168,7 @@ public static class StatusDefinitionFixtureExtensions
                         .SetProperty(candidate => candidate.UpdatedAt, seed.UpdatedAt));
             }
 
-            return statuses.Select(status => status.Id).ToList();
+            return [.. statuses.Select(status => status.Id)];
         }
 
         public async Task<StatusDefinition> LoadStatusDefinitionRowAsync(Guid statusId)

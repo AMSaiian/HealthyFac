@@ -93,6 +93,7 @@ public class CreateMachineRequestHandler(
     {
         var zone = await _companyZoneReader.FindZoneAsync(request.CompanyId, cancellationToken)
             ?? throw new NotFoundException(MachineErrors.MachineNotFound);
+
         MachineGoLiveRules.EnsureNotBeforeToday(
             request.ExpectedGoLiveOn,
             _timeProvider.GetUtcNow().UtcDateTime,
@@ -118,6 +119,7 @@ public class CreateMachineRequestHandler(
         }
 
         _dbContext.Machines.Add(machine);
+
         _outbox.Add(
             new MachineCreated
             {

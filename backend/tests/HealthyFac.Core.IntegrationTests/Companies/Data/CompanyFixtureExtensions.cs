@@ -28,6 +28,7 @@ public static class CompanyFixtureExtensions
         public async Task<GetCurrentCompanyResponse> GetCurrentCompanyAsync(Guid companyId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<IRequestHandler<GetCurrentCompanyRequest, GetCurrentCompanyResponse>>();
 

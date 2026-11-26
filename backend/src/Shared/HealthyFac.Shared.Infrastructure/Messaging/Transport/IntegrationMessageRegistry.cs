@@ -25,12 +25,12 @@ public delegate Task IntegrationMessageDispatch(
 public sealed class IntegrationMessageRegistry
 {
     private readonly Dictionary<string, (Type MessageClrType, IntegrationMessageDispatch Dispatch)> _registrations =
-        new(StringComparer.Ordinal);
+        [with(StringComparer.Ordinal)];
 
     public IReadOnlyCollection<string> MessageTypes => _registrations.Keys;
 
     internal IReadOnlyCollection<Type> MessageClrTypes =>
-        _registrations.Values.Select(registration => registration.MessageClrType).ToList();
+        [.. _registrations.Values.Select(registration => registration.MessageClrType)];
 
     /// <summary>
     /// Adds a message contract and its typed dispatch. A service has exactly one use case for each message type:
@@ -48,6 +48,7 @@ public sealed class IntegrationMessageRegistry
         where TMessage : IIntegrationMessage, IRequest
     {
         var messageType = TMessage.MessageType;
+
         if (_registrations.TryGetValue(messageType, out var registration))
         {
             throw registration.MessageClrType == typeof(TMessage)

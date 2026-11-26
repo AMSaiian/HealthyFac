@@ -83,6 +83,7 @@ public sealed class RunCaseAgainRequestHandler(IInsightsDbContext dbContext, Tim
                 request.Id,
                 ingestAttemptId: null,
                 _timeProvider.GetUtcNow().UtcDateTime));
+
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

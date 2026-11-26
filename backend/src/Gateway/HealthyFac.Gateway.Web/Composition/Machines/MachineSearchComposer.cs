@@ -48,6 +48,7 @@ public sealed class MachineSearchComposer(DownstreamClient downstreamClient)
         var filter = coreBody[FilterProperty] as JsonObject;
         filter?.Remove(PendingMachineIdsProperty);
         var isFilteredByDrafts = filter?[HasPendingDraftsProperty] is JsonValue flag && flag.TryGetValue<bool>(out _);
+
         var countsTask = _downstreamClient.SendAsync(
             ComposedClusters.Telemetry,
             HttpMethod.Get,
@@ -68,7 +69,8 @@ public sealed class MachineSearchComposer(DownstreamClient downstreamClient)
             }
 
             filter![PendingMachineIdsProperty] = new JsonArray(
-                [.. ReadCounts(counts).Select(count => JsonValue.Create(count.MachineId)!)]);
+                [.. ReadCounts(counts).Select(count => JsonValue.Create(count.MachineId))]);
+
             results = [await CallCoreAsync(version, coreBody, incoming, cancellationToken), counts];
         }
         else
@@ -80,7 +82,7 @@ public sealed class MachineSearchComposer(DownstreamClient downstreamClient)
         {
             ComposedOutcome.Failure failure => ComposedResults.Problem(failure.Status, failure.Problem),
             ComposedOutcome.Success success =>
-                Results.Json(AddCounts((JsonObject)success.Bodies[index: 0], results[1])),
+                Results.Json(AddCounts((JsonObject)success.Bodies[0], results[1])),
             _ => throw new InvalidOperationException(),
         };
     }

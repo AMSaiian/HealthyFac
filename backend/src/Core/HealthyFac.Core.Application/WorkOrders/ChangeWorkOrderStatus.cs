@@ -106,6 +106,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
                 IsolationLevel.Serializable,
                 cancellationToken)
             : await ChangeAsync(request, cancellationToken);
+
         _notifier.PushStatusChange(request.CompanyId, change);
     }
 
@@ -117,10 +118,12 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
         var ownEmployeeId = request.Scope == AccessScope.Own
             ? await _ownEmployee.FindIdAsync(cancellationToken)
             : null;
+
         var workOrder = await _dbContext.WorkOrders
                 .ApplyScope(request.Scope, request.CompanyId, ownEmployeeId, _currentUser.GetUserId())
                 .SingleOrDefaultAsync(candidate => candidate.Id == request.Id, cancellationToken)
             ?? throw new NotFoundException(WorkOrderErrors.Rejections.WorkOrderNotFound);
+
         await _dbContext.WorkOrderHistories
             .Where(row => row.WorkOrderId == workOrder.Id && row.Revision == workOrder.CurrentRevision)
             .LoadAsync(cancellationToken);
@@ -135,6 +138,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
         var previousRevisions = new Dictionary<Guid, int> { [workOrder.Id] = previousRevision };
 
         IReadOnlyList<WorkOrderSlideMove> slideMoves = [];
+
         if (request.Status == WorkOrderStatus.Completed)
         {
             slideMoves = await SlideAsync(
@@ -215,7 +219,9 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
                     && row.PlannedStartUtc < dayEndUtc))
             .OrderBy(candidate => candidate.Id)
             .ToListAsync(cancellationToken);
+
         var otherIds = others.Select(order => order.Id).ToList();
+
         await (from row in _dbContext.WorkOrderHistories
                 join order in _dbContext.WorkOrders on row.WorkOrderId equals order.Id
                 where otherIds.Contains(order.Id) && row.Revision == order.CurrentRevision
@@ -223,6 +229,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
             .LoadAsync(cancellationToken);
 
         var shifts = await _reader.LoadAsync(assigneeId, zone, date, lastDate, isTracked: false, cancellationToken);
+
         var moves = CompletionSlide.Plan(
             new SlideWorkOrder
             {
@@ -232,19 +239,22 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
                 Estimate = completed.Estimate,
             },
             completedAtUtc,
-            others.Select(ToSlideWorkOrder).ToList(),
+            [.. others.Select(ToSlideWorkOrder)],
             shifts.Resolve(lastDate, lastDate).Single(),
             zone);
 
         var assigneeUserId = moves.Count == 0
             ? null
             : await _dbContext.FindIdentityUserIdAsync(assigneeId, cancellationToken);
+
         var slideMoves = new List<WorkOrderSlideMove>();
+
         foreach (var move in moves)
         {
             var order = others.Single(candidate => candidate.Id == move.WorkOrderId);
             previousRevisions[order.Id] = order.CurrentRevision;
             DateTime? newStartLocal = null;
+
             if (move.NewStartUtc is { } newStartUtc)
             {
                 newStartLocal = TimeZoneInfo.ConvertTimeFromUtc(newStartUtc, zone);
@@ -256,6 +266,7 @@ public sealed class ChangeWorkOrderStatusRequestHandler(
             }
 
             changedOrders.Add(order);
+
             slideMoves.Add(
                 new WorkOrderSlideMove
                 {

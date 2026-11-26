@@ -73,12 +73,14 @@ internal static class TelemetryHistoryChecks
     private static void CheckKeysAreUnique(TelemetryFile file)
     {
         var listsByKey = new Dictionary<string, string>();
+
         var keys = file.Drains.Select(drain => (drain.Key, List: TelemetryHistoryConstants.DrainsList))
             .Concat(file.Steps.Select(step => (step.Key, List: TelemetryHistoryConstants.StepsList)))
             .Concat(file.Gaps.Select(gap => (gap.Key, List: TelemetryHistoryConstants.GapsList)))
             .Concat(
                 file.Overrides.Select(overrideSeed =>
                     (overrideSeed.Key, List: TelemetryHistoryConstants.OverridesList)));
+
         foreach (var (key, list) in keys)
         {
             if (!listsByKey.TryAdd(key, list))
@@ -114,6 +116,7 @@ internal static class TelemetryHistoryChecks
         }
 
         var minutes = moment.TotalMinutes;
+
         if (minutes > 0 || minutes < -file.WindowHours * RelativeMoment.MinutesPerHour)
         {
             throw new SeedFileException(TelemetryHistoryErrors.MomentOutsideWindow(item, moment, file.WindowHours));
@@ -124,6 +127,7 @@ internal static class TelemetryHistoryChecks
     {
         CheckMoment(file, item, from);
         CheckMoment(file, item, until);
+
         if (until.TotalMinutes <= from.TotalMinutes)
         {
             throw new SeedFileException(TelemetryHistoryErrors.EndNotAfterStart(item));
@@ -139,6 +143,7 @@ internal static class TelemetryHistoryChecks
     {
         var item = ItemOf(drain.Key);
         var machine = FindMachine(item, drain.Machine, machines);
+
         if (machine.Scenario.Modules.All(module => module.Name.Value != drain.Module))
         {
             throw new SeedFileException(TelemetryHistoryErrors.ModuleUnknown(item, drain.Module, drain.Machine));
@@ -159,6 +164,7 @@ internal static class TelemetryHistoryChecks
         CheckWorkOrder(file, drain);
         var drainMinutes = drain.DrainHours * RelativeMoment.MinutesPerHour;
         var sinceStart = drain.Maintenance.From.TotalMinutes - drain.From.TotalMinutes;
+
         if (sinceStart < drainMinutes * ModuleState.AlarmProgress || sinceStart >= drainMinutes)
         {
             throw new SeedFileException(TelemetryHistoryErrors.MaintenanceOutsideDrainRange(item));
@@ -175,6 +181,7 @@ internal static class TelemetryHistoryChecks
         var item = ItemOf($"{drain.Key}{TelemetryHistoryConstants.WorkOrderSuffix}");
         CheckMoment(file, item, workOrder.CreatedAt);
         var assignedMinutes = workOrder.CreatedAt.TotalMinutes + TelemetryHistoryConstants.AssignDelayMinutes;
+
         if (assignedMinutes >= LinkMoment(drain).TotalMinutes)
         {
             throw new SeedFileException(TelemetryHistoryErrors.WorkOrderNotBeforeLink(item));
@@ -190,6 +197,7 @@ internal static class TelemetryHistoryChecks
         var item = ItemOf(step.Key);
         var machine = FindMachine(item, step.Machine, machines);
         var metric = FindMetric(item, step.Metric, machine);
+
         if (metric.ValueKind != MetricValueKind.Numeric.Value)
         {
             throw new SeedFileException(TelemetryHistoryErrors.StepMetricNotNumeric(item, step.Metric));
@@ -206,9 +214,11 @@ internal static class TelemetryHistoryChecks
     {
         var item = ItemOf(overrideSeed.Key);
         var machine = FindMachine(item, overrideSeed.Machine, machines);
+
         foreach (var (key, value) in overrideSeed.Values)
         {
             var metric = FindMetric(item, key, machine);
+
             if (!IsFit(metric, value))
             {
                 throw new SeedFileException(
@@ -217,6 +227,7 @@ internal static class TelemetryHistoryChecks
         }
 
         var unknownCode = overrideSeed.Codes.FirstOrDefault(code => !HasStatusCode(machine, code));
+
         if (unknownCode is not null)
         {
             throw new SeedFileException(TelemetryHistoryErrors.StatusCodeUnknown(item, unknownCode, machine.Key));

@@ -22,6 +22,7 @@ public sealed class TransportExtensionsTests
     {
         var services = new ServiceCollection();
         services.AddScoped<IRequestHandler<RegistryFirstMessage, Unit>, RegistryMessageHandler<RegistryFirstMessage>>();
+
         services
             .AddScoped<IRequestHandler<RegistrySecondMessage, Unit>, RegistryMessageHandler<RegistrySecondMessage>>();
 

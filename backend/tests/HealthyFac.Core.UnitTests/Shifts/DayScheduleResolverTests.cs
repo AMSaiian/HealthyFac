@@ -13,6 +13,7 @@ public sealed class DayScheduleResolverTests
         var version = ShiftTestData.Version(
             new DateOnly(year: 2027, month: 1, day: 1),
             ShiftTestData.Template(Weekday.Monday, start: "08:00", end: "12:00"));
+
         var shiftOverride = ShiftTestData.Override(
             ShiftTestData.Monday, ShiftTestData.Times(start: "10:00", end: "11:00"));
 
@@ -28,6 +29,7 @@ public sealed class DayScheduleResolverTests
         var version = ShiftTestData.Version(
             new DateOnly(year: 2027, month: 1, day: 1),
             ShiftTestData.Template(Weekday.Monday, start: "08:00", end: "12:00"));
+
         var shiftOverride = ShiftTestData.Override(ShiftTestData.Monday);
 
         var day = DayScheduleResolver.Resolve(ShiftTestData.Monday, ShiftTestData.Zone, [version], shiftOverride);
@@ -48,6 +50,7 @@ public sealed class DayScheduleResolverTests
         var day = DayScheduleResolver.Resolve(ShiftTestData.Monday, ShiftTestData.Zone, [version], shiftOverride: null);
 
         day.Source.Should().Be(DayScheduleSource.Template);
+
         day.Blocks.Select(block => block.Start)
             .Should()
             .Equal(new TimeOnly(hour: 8, minute: 0), new TimeOnly(hour: 13, minute: 0));
@@ -72,9 +75,11 @@ public sealed class DayScheduleResolverTests
         var first = ShiftTestData.Version(
             new DateOnly(year: 2027, month: 1, day: 1),
             ShiftTestData.Template(Weekday.Monday, start: "08:00", end: "12:00"));
+
         var second = ShiftTestData.Version(
             new DateOnly(year: 2027, month: 4, day: 5),
             ShiftTestData.Template(Weekday.Monday, start: "09:00", end: "10:00"));
+
         var third = ShiftTestData.Version(
             new DateOnly(year: 2027, month: 5, day: 1),
             ShiftTestData.Template(Weekday.Monday, start: "10:00", end: "11:00"));

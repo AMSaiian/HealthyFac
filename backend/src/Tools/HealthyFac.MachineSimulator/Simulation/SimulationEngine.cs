@@ -39,7 +39,7 @@ public sealed class SimulationEngine(
     {
         lock (_gate)
         {
-            return _machines.Keys.ToList();
+            return [.. _machines.Keys];
         }
     }
 
@@ -69,12 +69,14 @@ public sealed class SimulationEngine(
                 }
 
                 var machine = new SimulatedMachine(snapshot, now, _options.DrainDuration, _random);
+
                 if (counterStarts.TryGetValue(snapshot.MachineId, out var readings))
                 {
                     machine.ApplyCounterStart(readings);
                 }
 
                 _machines[snapshot.MachineId] = machine;
+
                 _logger.LogInformation(
                     message:
                     "Found the machine {MachineId} with the scenario {Scenario}; the counters start at {Counters}",
@@ -126,6 +128,7 @@ public sealed class SimulationEngine(
             {
                 LogGate(machine, now);
                 var result = machine.Tick(now, elapsed);
+
                 if (result is null)
                 {
                     continue;
@@ -134,11 +137,12 @@ public sealed class SimulationEngine(
                 LogTick(machine, result);
                 var payload = MachinePayloadBuilder.Build(result.Sample, machine.Snapshot.Definitions, now);
                 WarnSkipped(machine, payload);
+
                 messages.Add(
                     new PendingMessage
                     {
                         GatewayId = machine.Snapshot.GatewayId, Scenario = machine.ScenarioKind, Payload = payload.Json,
-                        Keys = result.Sample.Values.Keys.ToList(), Codes = result.Sample.StatusCodes,
+                        Keys = [.. result.Sample.Values.Keys], Codes = result.Sample.StatusCodes,
                     });
             }
 
@@ -169,6 +173,7 @@ public sealed class SimulationEngine(
             }
 
             machine.SetRunning(isRunning);
+
             _logger.LogInformation(
                 message: "The machine {MachineId} is now {Run}", machineId, isRunning ? "running" : "stopped");
 
@@ -209,11 +214,13 @@ public sealed class SimulationEngine(
     {
         lock (_gate)
         {
-            return _machines.Values
-                .Select(machine => ToView(machine, now))
-                .OrderBy(view => view.CompanyId)
-                .ThenBy(view => view.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            return
+            [
+                .. _machines.Values
+                    .Select(machine => ToView(machine, now))
+                    .OrderBy(view => view.CompanyId)
+                    .ThenBy(view => view.Name, StringComparer.OrdinalIgnoreCase),
+            ];
         }
     }
 
@@ -241,15 +248,17 @@ public sealed class SimulationEngine(
             IsRunning = machine.IsRunning,
             IsPublishing = machine.IsPublishing(now),
             Counters = new Dictionary<string, double>(machine.Counters),
-            Modules = machine.ModuleDefinitions
-                .Select(definition => new ModuleView
-                {
-                    Module = definition.Name,
-                    Kind = definition.Kind,
-                    Mode = machine.Modules[definition.Name].Mode,
-                    DrainProgress = machine.Modules[definition.Name].Progress,
-                })
-                .ToList(),
+            Modules =
+            [
+                .. machine.ModuleDefinitions
+                    .Select(definition => new ModuleView
+                    {
+                        Module = definition.Name,
+                        Kind = definition.Kind,
+                        Mode = machine.Modules[definition.Name].Mode,
+                        DrainProgress = machine.Modules[definition.Name].Progress,
+                    }),
+            ],
         };
 
     private void RemoveMissing(IReadOnlyList<MachineSnapshot> snapshots)
@@ -288,12 +297,14 @@ public sealed class SimulationEngine(
     private void LogGate(SimulatedMachine machine, DateTime now)
     {
         var isPublishing = machine.IsPublishing(now);
+
         if (_gates.TryGetValue(machine.Snapshot.MachineId, out var wasPublishing) && wasPublishing == isPublishing)
         {
             return;
         }
 
         _gates[machine.Snapshot.MachineId] = isPublishing;
+
         _logger.LogInformation(
             message: "The machine {MachineId} {Gate} (registered {IsRegistered}, live {IsLive})",
             machine.Snapshot.MachineId,
@@ -326,6 +337,7 @@ public sealed class SimulationEngine(
         var isTripStop = !result.Sample.IsRunning && machine.Snapshot.CurrentState == MachineState.Operational;
         var wasTripStop = _stopsByTrip.GetValueOrDefault(machine.Snapshot.MachineId);
         _stopsByTrip[machine.Snapshot.MachineId] = isTripStop;
+
         if (isTripStop && !wasTripStop)
         {
             _logger.LogInformation(
@@ -336,16 +348,13 @@ public sealed class SimulationEngine(
 
     private void WarnSkipped(SimulatedMachine machine, BuiltPayload payload)
     {
-        foreach (var key in payload.SkippedKeys)
+        foreach (var key in payload.SkippedKeys.Where(key => _warnedKeys.Add((machine.Snapshot.MachineId, key))))
         {
-            if (_warnedKeys.Add((machine.Snapshot.MachineId, key)))
-            {
-                _logger.LogWarning(
-                    message:
-                    "The scenario value of the key {Key} does not fit the value kind of the machine {MachineId}",
-                    key,
-                    machine.Snapshot.MachineId);
-            }
+            _logger.LogWarning(
+                message:
+                "The scenario value of the key {Key} does not fit the value kind of the machine {MachineId}",
+                key,
+                machine.Snapshot.MachineId);
         }
     }
 }

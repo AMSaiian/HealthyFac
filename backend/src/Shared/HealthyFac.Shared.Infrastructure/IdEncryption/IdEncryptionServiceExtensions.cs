@@ -24,6 +24,7 @@ public static class IdEncryptionServiceExtensions
                 IdEncryptionOptions.SectionName,
                 configuration
             );
+
             services.AddSingleton<IIdEncryptor, AesKwIdEncryptor>();
 
             return services;

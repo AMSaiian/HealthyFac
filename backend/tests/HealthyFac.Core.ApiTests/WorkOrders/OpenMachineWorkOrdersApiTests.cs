@@ -34,8 +34,9 @@ public sealed class OpenMachineWorkOrdersApiTests(CoreApiFixture fixture)
         var items = (await response.Content.ReadFromJsonAsync<JsonArray>(TestContext.Current.CancellationToken))!;
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         items.Should().ContainSingle();
-        items[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(openId);
-        items[index: 0]!.AsObject()
+        items[0]!["id"]!.GetValue<string>().Should().Be(openId);
+
+        items[0]!.AsObject()
             .Select(property => property.Key)
             .Should()
             .BeEquivalentTo("id", "title", "status", "priority", "category", "plannedStartUtc", "plannedEndUtc");
@@ -53,7 +54,7 @@ public sealed class OpenMachineWorkOrdersApiTests(CoreApiFixture fixture)
 
         var items = (await response.Content.ReadFromJsonAsync<JsonArray>(TestContext.Current.CancellationToken))!;
         items.Should().ContainSingle();
-        items[index: 0]![propertyName: "id"]!.GetValue<string>().Should().Be(secondId);
+        items[0]!["id"]!.GetValue<string>().Should().Be(secondId);
     }
 
     [Fact]

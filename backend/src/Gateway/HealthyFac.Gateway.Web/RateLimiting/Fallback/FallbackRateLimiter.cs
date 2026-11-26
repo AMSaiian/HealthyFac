@@ -58,12 +58,14 @@ internal sealed class FallbackRateLimiter(
         get
         {
             var primaryIdleDuration = _primary.IdleDuration;
+
             if (!_local.IsValueCreated)
             {
                 return primaryIdleDuration;
             }
 
             var localIdleDuration = _local.Value.IdleDuration;
+
             if (primaryIdleDuration is null || localIdleDuration is null)
             {
                 return null;

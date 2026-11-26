@@ -43,6 +43,7 @@ public static class ConfigureServices
             services.AddSharedTime();
 
             var connectionString = configuration.GetConnectionString(DatabaseConstants.ConnectionStringName);
+
             if (string.IsNullOrWhiteSpace(connectionString))
             {
                 throw new InvalidOperationException(DatabaseConstants.Errors.MissingConnectionString);
@@ -57,6 +58,7 @@ public static class ConfigureServices
                             TimeSpan.FromSeconds(DatabaseConstants.Retry.MaxDelaySeconds),
                             errorCodesToAdd: null)
                         .ConfigureParentOnlyTracing());
+
                 options.UseExceptionProcessor();
 
                 if (environment.IsDevelopment())

@@ -16,17 +16,21 @@ public sealed class SearchEmployeeInvitesTests(CoreDatabaseFixture fixture)
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
         var otherCompanyId = await _fixture.CreateCompanyAsync(EmployeeSearchTestData.OtherCompanyName);
+
         var acceptedInviteId = await _fixture.CreateInviteWithRoleAsync(
             companyId,
             EmployeeSearchTestData.AcceptedEmail,
             RoleCode.Worker,
             DateTime.UtcNow.AddHours(value: 1));
+
         await _fixture.AcceptInviteByIdAsync(acceptedInviteId);
+
         await _fixture.CreateInviteWithRoleAsync(
             companyId,
             EmployeeSearchTestData.PendingEmail,
             RoleCode.Supervisor,
             DateTime.UtcNow.AddHours(value: 1));
+
         await _fixture.CreateInviteWithRoleAsync(
             otherCompanyId,
             EmployeeSearchTestData.OtherInviteEmail,
@@ -39,23 +43,26 @@ public sealed class SearchEmployeeInvitesTests(CoreDatabaseFixture fixture)
 
         response.TotalCount.Should().Be(expected: 1);
         response.Items.Should().ContainSingle().Which.Email.Should().Be(EmployeeSearchTestData.PendingEmail);
-        response.Items[index: 0].RoleCode.Should().Be(RoleCode.Supervisor);
+        response.Items[0].RoleCode.Should().Be(RoleCode.Supervisor);
     }
 
     [Fact]
     public async Task SearchEmployeeInvites_WithExpiredAndValidInvite_FlagsOnlyTheExpiredOne()
     {
         var companyId = await _fixture.CreateCompanyAsync(InviteTestData.CompanyName);
+
         await _fixture.CreateInviteWithRoleAsync(
             companyId,
             EmployeeSearchTestData.ExpiredEmail,
             RoleCode.Worker,
             DateTime.UtcNow.AddHours(value: -1));
+
         await _fixture.CreateInviteWithRoleAsync(
             companyId,
             EmployeeSearchTestData.PendingEmail,
             RoleCode.Worker,
             DateTime.UtcNow.AddHours(value: 1));
+
         var sort = new GridSort<EmployeeInviteSortColumn>
         {
             Column = EmployeeInviteSortColumn.ExpiresAt,

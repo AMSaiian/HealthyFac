@@ -78,6 +78,7 @@ public class ResendEmployeeInviteRequestHandler(
         }
 
         invite.Renew(_tokenService.CreateSalt(), _tokenService.GetExpiresAt(_timeProvider.GetUtcNow().UtcDateTime));
+
         _outbox.Add(
             new EmployeeInvited
             {
@@ -85,6 +86,7 @@ public class ResendEmployeeInviteRequestHandler(
                 CompanyId = invite.CompanyId,
                 Email = invite.Email,
             });
+
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);

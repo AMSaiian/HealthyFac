@@ -36,12 +36,11 @@ public static class TextInputTestData
         };
 
     public static TheoryData<TextInputRequest> ValidRequests =>
-        new()
-        {
-            new TextInputRequest { Name = PlainText, Tags = [PlainText] },
-            new TextInputRequest { Notes = MultilineText },
-            new TextInputRequest(),
-        };
+    [
+        new TextInputRequest { Name = PlainText, Tags = [PlainText] },
+        new TextInputRequest { Notes = MultilineText },
+        new TextInputRequest(),
+    ];
 
     /// <summary>
     /// JSON input and the request that the shared options must read from it.

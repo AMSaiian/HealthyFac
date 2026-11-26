@@ -19,12 +19,13 @@ public sealed class SignalApiTests(TelemetryApiFixture fixture)
             HttpMethod.Get,
             _fixture.MetricHistoryPath(arrangement, SignalApiTestData.BucketCount),
             _fixture.CreateClaims(SignalApiTestData.ReadPermission));
+
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body[propertyName: "buckets"]!.AsArray().Should().HaveCount(expected: 2);
-        body[propertyName: "buckets"]![index: 0]![propertyName: "avg"]!.GetValue<double>().Should().Be(expected: 15);
-        body[propertyName: "buckets"]![index: 0]![propertyName: "count"]!.GetValue<long>().Should().Be(expected: 2);
+        body["buckets"]!.AsArray().Should().HaveCount(expected: 2);
+        body["buckets"]![0]!["avg"]!.GetValue<double>().Should().Be(expected: 15);
+        body["buckets"]![0]!["count"]!.GetValue<long>().Should().Be(expected: 2);
     }
 
     [Fact]
@@ -36,14 +37,15 @@ public sealed class SignalApiTests(TelemetryApiFixture fixture)
             HttpMethod.Get,
             _fixture.SignalEpisodesPath(arrangement),
             _fixture.CreateClaims(SignalApiTestData.ReadPermission));
+
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))!;
-        var episode = body[propertyName: "items"]![index: 0]!;
+        var episode = body["items"]![0]!;
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        episode[propertyName: "rule"]!.GetValue<string>().Should().Be(expected: "threshold");
-        episode[propertyName: "metricKey"]!.GetValue<string>().Should().Be(SignalApiTestData.MetricKey);
-        episode[propertyName: "value"]!.GetValue<double>().Should().Be(expected: 91);
-        episode[propertyName: "phaseCode"]!.GetValue<string>().Should().Be(SignalApiTestData.PhaseCode);
+        episode["rule"]!.GetValue<string>().Should().Be(expected: "threshold");
+        episode["metricKey"]!.GetValue<string>().Should().Be(SignalApiTestData.MetricKey);
+        episode["value"]!.GetValue<double>().Should().Be(expected: 91);
+        episode["phaseCode"]!.GetValue<string>().Should().Be(SignalApiTestData.PhaseCode);
     }
 
     [Fact]
@@ -54,6 +56,7 @@ public sealed class SignalApiTests(TelemetryApiFixture fixture)
 
         var history = await _fixture.SendAsync(
             HttpMethod.Get, _fixture.MetricHistoryPath(arrangement, SignalApiTestData.BucketCount), claims);
+
         var episodes = await _fixture.SendAsync(HttpMethod.Get, _fixture.SignalEpisodesPath(arrangement), claims);
 
         history.StatusCode.Should().Be(HttpStatusCode.Forbidden);

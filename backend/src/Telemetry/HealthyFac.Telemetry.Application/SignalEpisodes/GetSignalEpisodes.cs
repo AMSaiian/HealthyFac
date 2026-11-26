@@ -135,11 +135,13 @@ public sealed class GetSignalEpisodesRequestHandler(ITelemetryDbContext dbContex
             .OrderBy(episode => episode.OpenedAt)
             .ThenBy(episode => episode.Id)
             .ToListAsync(cancellationToken);
+
         var metricKeys = await _dbContext.MetricDefinitions
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AsNoTracking()
             .Where(metric => metric.MachineRegistrationId == request.MachineId)
             .ToDictionaryAsync(metric => metric.Id, metric => metric.Key, cancellationToken);
+
         var statusCodes = await _dbContext.StatusDefinitions
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AsNoTracking()
@@ -148,7 +150,7 @@ public sealed class GetSignalEpisodesRequestHandler(ITelemetryDbContext dbContex
 
         return new SignalEpisodesResponse
         {
-            Items = episodes.Select(episode => ToResponse(episode, metricKeys, statusCodes)).ToList(),
+            Items = [.. episodes.Select(episode => ToResponse(episode, metricKeys, statusCodes))],
         };
     }
 

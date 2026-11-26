@@ -51,6 +51,7 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         await _fixture.CreateVersionAsync(
             tenant, ShiftTestData.Tomorrow, ShiftTestData.WorkWeek(ShiftTestData.Morning));
 
@@ -67,10 +68,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
 
         await _fixture.UpdateVersionAsync(
@@ -91,11 +94,14 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         var oldRowVersion = await _fixture.LoadRowVersionAsync(versionId);
+
         await _fixture.UpdateVersionAsync(
             tenant,
             versionId,
@@ -120,10 +126,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "09:30"));
 
@@ -143,10 +151,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.Tomorrow,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "09:30"));
 
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
@@ -163,10 +173,13 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var olderId = await _fixture.SeedVersionAsync(
             tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -30), ShiftTestData.Morning);
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -10), ShiftTestData.Afternoon);
+
         var rowVersion = await _fixture.LoadRowVersionAsync(olderId);
 
         var act = () => _fixture.UpdateVersionAsync(
@@ -185,10 +198,13 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var olderId = await _fixture.SeedVersionAsync(
             tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -30), ShiftTestData.Morning);
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId, ShiftTestData.Today.AddDays(value: -10), ShiftTestData.Afternoon);
+
         var rowVersion = await _fixture.LoadRowVersionAsync(olderId);
 
         var act = () => _fixture.DeleteVersionAsync(tenant, olderId, rowVersion);
@@ -203,10 +219,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
 
         await _fixture.UpdateVersionAsync(
@@ -226,10 +244,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
 
         await _fixture.DeleteVersionAsync(tenant, versionId, rowVersion);
@@ -244,6 +264,7 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
@@ -265,15 +286,18 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning, ShiftTestData.Afternoon));
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.InTwoDays,
             time: "14:00",
             minutes: 60);
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
 
         var act = () => _fixture.UpdateVersionAsync(
@@ -292,6 +316,7 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
             .ContainSingle()
             .Which.Id.Should()
             .Be(workOrderId);
+
         day.Blocks.Should().HaveCount(expected: 2);
     }
 
@@ -300,6 +325,7 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "14:00"));
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
@@ -341,10 +367,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
         using var race = _fixture.SaveGate.StartRace(ShiftTestData.RaceParticipantCount);
 
@@ -370,11 +398,14 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         var staleRowVersion = await _fixture.LoadRowVersionAsync(versionId);
+
         await _fixture.UpdateVersionAsync(
             tenant,
             versionId,
@@ -395,10 +426,12 @@ public sealed class ShiftTemplateVersionTests(CoreDatabaseFixture fixture)
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "09:30"));
+
         var versionId = await _fixture.CreateVersionAsync(
             tenant,
             ShiftTestData.InTwoDays,
             ShiftTestData.WorkWeek(ShiftTestData.Morning));
+
         var rowVersion = await _fixture.LoadRowVersionAsync(versionId);
         using var race = _fixture.SaveGate.StartRace(ShiftTestData.RaceParticipantCount);
 

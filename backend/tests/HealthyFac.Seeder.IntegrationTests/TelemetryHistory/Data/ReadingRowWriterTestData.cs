@@ -24,6 +24,7 @@ public static class ReadingRowWriterTestData
     {
         var anchor = PeopleTestData.Anchor;
         var start = anchor.UtcDateTime.AddHours(value: -1);
+
         var snapshot = new MachineSnapshot
         {
             MachineId = machineId,
@@ -40,12 +41,14 @@ public static class ReadingRowWriterTestData
             IsRegistered = true,
             Definitions = data.Definitions,
         };
+
         var events = new HistoryEvents(
             [], [], [], [], anchor, TimeZoneInfo.FindSystemTimeZoneById(PeopleTestData.ZoneId));
+
         var simulation = new HistorySimulation(
             snapshot, start, TimeSpan.FromSeconds(seconds: 1), new Random(Seed: 1), [], events);
 
-        return simulation.Run(start, start.AddSeconds(value: 1))[index: 0];
+        return simulation.Run(start, start.AddSeconds(value: 1))[0];
     }
 
     public static HistoryMachineData WithoutStatuses(HistoryMachineData data) =>

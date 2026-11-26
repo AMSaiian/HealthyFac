@@ -27,11 +27,13 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
     public async Task BlobRoute_WithValidLink_ReturnsTheBytesWithTheSignedHeadersAndNoSniff()
     {
         var id = await _storage.UploadAsync(DocumentBlobRouteTestData.Content, DocumentBlobRouteTestData.PdfType);
+
         var query = _storage.SignRead(
             id,
             DateTimeOffset.UtcNow.AddMinutes(minutes: 5),
             DocumentBlobRouteTestData.PdfType,
             DocumentBlobRouteTestData.AttachmentDisposition);
+
         await using var gateway = CreateGateway();
         using var client = gateway.CreateClient();
 
@@ -62,8 +64,10 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
     public async Task BlobRoute_WithChangedSignature_Returns403()
     {
         var id = await _storage.UploadAsync(DocumentBlobRouteTestData.Content, DocumentBlobRouteTestData.PdfType);
+
         var query = _storage.SignRead(id, DateTimeOffset.UtcNow.AddMinutes(minutes: 5))
             .Replace(DocumentBlobRouteTestData.SignatureMarker, $"{DocumentBlobRouteTestData.SignatureMarker}A");
+
         await using var gateway = CreateGateway();
         using var client = gateway.CreateClient();
 
@@ -91,12 +95,14 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
     {
         await using var storageStandIn = new EchoServer();
         await storageStandIn.StartAsync();
+
         await using var gateway = _environment.CreateGateway(
             _core,
             settings: new Dictionary<string, string>
             {
                 [GatewaySettingKeys.DocumentStorageAddress] = storageStandIn.Address,
             });
+
         using var client = gateway.CreateAuthenticatedClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, Path(Guid.CreateVersion7(), query: "sp=r"));
         request.Headers.Add(DocumentBlobRouteTestData.CookieHeader, DocumentBlobRouteTestData.CookieValue);
@@ -118,6 +124,7 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
         var query = _storage.SignRead(id, DateTimeOffset.UtcNow.AddMinutes(minutes: 5));
         await using var gateway = CreateGateway();
         using var client = gateway.CreateClient();
+
         using var request = new HttpRequestMessage(new HttpMethod(method), Path(id, query))
         {
             Content = new StringContent(DocumentBlobRouteTestData.StaleUpdateBody),
@@ -135,10 +142,11 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
     {
         var id = await _storage.UploadAsync(DocumentBlobRouteTestData.Content, DocumentBlobRouteTestData.PdfType);
         var query = _storage.SignRead(id, DateTimeOffset.UtcNow.AddMinutes(minutes: 5));
-        var encodedSignature = Regex.Match(query, SignaturePattern).Groups[groupnum: 1].Value;
+        var encodedSignature = Regex.Match(query, SignaturePattern).Groups[1].Value;
         var signatures = new[] { encodedSignature, Uri.UnescapeDataString(encodedSignature) };
         var spans = new SpanTagCapture();
         var logs = new LogTextCapture();
+
         await using var gateway = CreateGateway(
             new Dictionary<string, string>
             {
@@ -149,9 +157,11 @@ public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, Azuri
                 services.ConfigureOpenTelemetryTracerProvider(tracing => tracing.AddProcessor(spans));
                 GatewayLoggerFactory.CaptureHostLogs(services, logs);
             });
+
         using var client = gateway.CreateClient();
 
         using var response = await client.GetAsync(Path(id, query), TestContext.Current.CancellationToken);
+
         await GatewayLoggerFactory.WaitForLineAsync(
             logs,
             line => line.Contains(value: "responded") && line.Contains(id.ToString()));

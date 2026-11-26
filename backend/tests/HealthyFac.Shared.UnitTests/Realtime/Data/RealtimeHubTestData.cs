@@ -62,12 +62,14 @@ public static class RealtimeHubTestData
     )
     {
         var claims = permissions.Select(permission => new Claim(KeycloakClaimTypes.Permissions, permission)).ToList();
+
         if (organization is not null)
         {
             claims.Add(new Claim(KeycloakClaimTypes.Organization, organization));
         }
 
         claims.Add(new Claim(JwtRegisteredClaimNames.Sub, UserId.ToString()));
+
         if (hasEmployee)
         {
             claims.Add(new Claim(KeycloakClaimTypes.EmployeeId, EmployeeId.ToString()));

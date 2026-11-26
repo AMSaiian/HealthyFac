@@ -45,6 +45,7 @@ public sealed class SimulatedMachineTests
     {
         var machine = SimulatedMachineTestData.Create(
             SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber));
+
         machine.TrySetMode(ModuleName.Spindle, ModuleMode.Draining, SimulatedMachineTestData.LongDrainDuration);
 
         for (var second = 0; second < 4 * 3600; second++)
@@ -60,17 +61,18 @@ public sealed class SimulatedMachineTests
     {
         var machine = SimulatedMachineTestData.Create(
             SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber));
+
         machine.TrySetMode(ModuleName.Spindle, ModuleMode.Draining);
         machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
         var progress = machine.Modules[ModuleName.Spindle].Progress;
-        var hours = machine.Counters[key: "machine.operating_hours"];
+        var hours = machine.Counters["machine.operating_hours"];
         machine.SetRunning(isRunning: false);
 
         var result = machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
 
         result.Should().BeNull();
         machine.Modules[ModuleName.Spindle].Progress.Should().Be(progress);
-        machine.Counters[key: "machine.operating_hours"].Should().Be(hours);
+        machine.Counters["machine.operating_hours"].Should().Be(hours);
     }
 
     [Fact]
@@ -91,6 +93,7 @@ public sealed class SimulatedMachineTests
         var snapshot = SimulatedMachineTestData.Snapshot(
             history: SimulatedMachineTestData.Row(
                 MachineState.InMaintenance, SimulatedMachineTestData.Now.AddDays(value: -1)));
+
         var machine = SimulatedMachineTestData.Create(snapshot);
 
         var result = machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
@@ -105,14 +108,15 @@ public sealed class SimulatedMachineTests
             SimulatedMachineTestData.CncSerialNumber,
             history: SimulatedMachineTestData.Row(
                 MachineState.InMaintenance, SimulatedMachineTestData.Now.AddDays(value: -1)));
+
         var machine = SimulatedMachineTestData.Create(snapshot);
         machine.TrySetMode(ModuleName.Hydraulics, ModuleMode.Draining);
 
         var result = machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
 
         result.Should().NotBeNull();
-        result!.Sample.IsRunning.Should().BeFalse();
-        result.Sample.Values[key: "spindle.speed"].Should().Be(expected: 0d);
+        result.Sample.IsRunning.Should().BeFalse();
+        result.Sample.Values["spindle.speed"].Should().Be(expected: 0d);
         machine.RunTime.Should().Be(TimeSpan.Zero);
         machine.Modules[ModuleName.Hydraulics].Progress.Should().Be(expected: 0);
     }
@@ -184,6 +188,7 @@ public sealed class SimulatedMachineTests
     {
         var machine = SimulatedMachineTestData.Create(
             SimulatedMachineTestData.Snapshot(SimulatedMachineTestData.CncSerialNumber));
+
         machine.TrySetMode(ModuleName.Hydraulics, ModuleMode.Draining);
         machine.Tick(SimulatedMachineTestData.Now, TimeSpan.FromSeconds(seconds: 18));
         var progress = machine.Modules[ModuleName.Hydraulics].Progress;
@@ -203,7 +208,7 @@ public sealed class SimulatedMachineTests
 
         machine.Tick(SimulatedMachineTestData.Now, SimulatedMachineTestData.OneSecond);
 
-        machine.Counters[key: "machine.operating_hours"].Should().BeApproximately(1.0 / 3600, precision: 1e-12);
+        machine.Counters["machine.operating_hours"].Should().BeApproximately(1.0 / 3600, precision: 1e-12);
     }
 
     [Fact]
@@ -218,7 +223,7 @@ public sealed class SimulatedMachineTests
 
         change.Should().Be(SnapshotChange.Rebound);
         machine.ScenarioKind.Should().Be(ScenarioKind.CentrifugalPump);
-        machine.Counters[key: "pump.operating_hours"].Should().Be(expected: 12030);
+        machine.Counters["pump.operating_hours"].Should().Be(expected: 12030);
         machine.Modules.Keys.Should().NotContain(ModuleName.Spindle);
     }
 
@@ -229,10 +234,10 @@ public sealed class SimulatedMachineTests
             SimulatedMachineTestData.Snapshot(ScenarioBinding.CompressorSerialNumber));
 
         machine.ApplyCounterStart(
-            new Dictionary<string, double> { [key: "running.hours"] = 100.5, [key: "other"] = 1 });
+            new Dictionary<string, double> { ["running.hours"] = 100.5, ["other"] = 1 });
 
-        machine.Counters[key: "running.hours"].Should().Be(expected: 100.5);
-        machine.Counters[key: "loaded.hours"].Should().Be(expected: 11860);
+        machine.Counters["running.hours"].Should().Be(expected: 100.5);
+        machine.Counters["loaded.hours"].Should().Be(expected: 11860);
         machine.Counters.Should().NotContainKey(unexpected: "other");
     }
 }

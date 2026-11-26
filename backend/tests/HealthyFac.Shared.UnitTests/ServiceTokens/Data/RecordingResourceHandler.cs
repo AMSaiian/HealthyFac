@@ -23,6 +23,7 @@ public sealed class RecordingResourceHandler : HttpMessageHandler
     )
     {
         _authorizations.Enqueue(request.Headers.Authorization?.ToString());
+
         _actorHeaders.Enqueue(
             (ReadHeader(request, ActorHeaderNames.ActorId), ReadHeader(request, ActorHeaderNames.CompanyId)));
 

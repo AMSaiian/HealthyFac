@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
@@ -38,7 +39,9 @@ public static class WorkOrderApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateActorScope(
                 ServiceActor.DatabaseInitialization.For(ServiceName.Core));
+
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var blocks = Weekday.All
                 .Where(weekday => weekday != Weekday.Saturday && weekday != Weekday.Sunday)
                 .SelectMany(weekday => new[]
@@ -51,6 +54,7 @@ public static class WorkOrderApiFixtureExtensions
             dbContext.ShiftTemplateVersions.Add(
                 new ShiftTemplateVersion(
                     employeeId, DateOnly.FromDateTime(DateTime.UtcNow).AddDays(value: -30), blocks));
+
             await dbContext.SaveChangesAsync();
         }
 
@@ -65,6 +69,7 @@ public static class WorkOrderApiFixtureExtensions
         )
         {
             var fileIds = new JsonArray();
+
             for (var index = 0; index < fileCount; index++)
             {
                 fileIds.Add(fixture.IdEncryptor.Encrypt(Guid.CreateVersion7()));
@@ -72,17 +77,18 @@ public static class WorkOrderApiFixtureExtensions
 
             var body = new JsonObject
             {
-                [propertyName: "title"] = title ?? WorkOrderApiTestData.Title,
-                [propertyName: "description"] = description,
-                [propertyName: "priority"] = priority,
-                [propertyName: "category"] = "repair",
-                [propertyName: "estimateMinutes"] = estimateMinutes,
-                [propertyName: "fileIds"] = fileIds,
+                ["title"] = title ?? WorkOrderApiTestData.Title,
+                ["description"] = description,
+                ["priority"] = priority,
+                ["category"] = "repair",
+                ["estimateMinutes"] = estimateMinutes,
+                ["fileIds"] = fileIds,
             };
+
             if (encryptedAssigneeId is not null)
             {
-                body[propertyName: "assigneeId"] = encryptedAssigneeId;
-                body[propertyName: "plannedStartLocal"] = plannedStartLocal;
+                body["assigneeId"] = encryptedAssigneeId;
+                body["plannedStartLocal"] = plannedStartLocal;
             }
 
             return body.ToJsonString();
@@ -94,6 +100,7 @@ public static class WorkOrderApiFixtureExtensions
         public string FutureStart(string time)
         {
             var date = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(WorkOrderApiTestData.FirstFutureDaysAhead);
+
             while (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             {
                 date = date.AddDays(value: 1);
@@ -109,10 +116,11 @@ public static class WorkOrderApiFixtureExtensions
                 WorkOrderApiTestData.BasePath,
                 claims,
                 body);
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
             var created = await response.Content.ReadFromJsonAsync<JsonObject>();
 
-            return created![propertyName: "id"]!.GetValue<string>();
+            return created!["id"]!.GetValue<string>();
         }
 
         public async Task<JsonObject> ReadOrderAsync(TestTokenClaims claims, string encryptedId)
@@ -121,6 +129,7 @@ public static class WorkOrderApiFixtureExtensions
                 HttpMethod.Get,
                 $"{WorkOrderApiTestData.BasePath}/{encryptedId}",
                 claims);
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
 
             return (await response.Content.ReadFromJsonAsync<JsonObject>())!;
@@ -133,12 +142,11 @@ public static class WorkOrderApiFixtureExtensions
                 WorkOrderApiTestData.SearchPath,
                 claims,
                 WorkOrderApiTestData.SearchBody);
+
             await response.EnsureSuccessAsync(TestContext.Current.CancellationToken);
             var page = await response.Content.ReadFromJsonAsync<JsonObject>();
 
-            return page![propertyName: "items"]!.AsArray()
-                .Select(item => item![propertyName: "id"]!.GetValue<string>())
-                .ToList();
+            return [.. page!["items"]!.AsArray().Select(item => item!["id"]!.GetValue<string>())];
         }
     }
 
@@ -146,6 +154,10 @@ public static class WorkOrderApiFixtureExtensions
     {
         var parts = range.Split(separator: '-');
 
-        return new BlockTimes { Start = TimeOnly.Parse(parts[0]), End = TimeOnly.Parse(parts[1]) };
+        return new BlockTimes
+        {
+            Start = TimeOnly.Parse(parts[0], CultureInfo.InvariantCulture),
+            End = TimeOnly.Parse(parts[1], CultureInfo.InvariantCulture),
+        };
     }
 }

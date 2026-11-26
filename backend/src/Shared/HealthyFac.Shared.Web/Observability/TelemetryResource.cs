@@ -34,6 +34,7 @@ public static class TelemetryResource
     {
         var serviceOptions = services.GetRequiredService<IOptions<ServiceOptions>>().Value;
         var environment = services.GetRequiredService<IHostEnvironment>();
+
         var version = Assembly.Load(new AssemblyName(environment.ApplicationName))
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion;

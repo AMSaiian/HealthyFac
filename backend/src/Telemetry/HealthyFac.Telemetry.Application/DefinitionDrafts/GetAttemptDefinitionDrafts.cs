@@ -69,6 +69,7 @@ public sealed class GetAttemptDefinitionDraftsRequestHandler(ITelemetryDbContext
             .AsNoTracking()
             .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)
             .ToListAsync(cancellationToken);
+
         var statuses = await _dbContext.StatusDefinitionDrafts
             .AsNoTracking()
             .Where(draft => draft.CompanyId == request.CompanyId && draft.AttemptId == request.AttemptId)

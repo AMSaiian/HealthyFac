@@ -46,6 +46,7 @@ public sealed class IngestMetrics
     public void RecordAttempt(string result, string? errorCode, string? interruptReason)
     {
         var tags = new TagList { { Tags.Result, result } };
+
         if (errorCode is not null)
         {
             tags.Add(Tags.ErrorCode, errorCode);
@@ -102,6 +103,7 @@ public sealed class IngestMetrics
     private IEnumerable<Measurement<double>> ObserveOldestPendingAge()
     {
         var backlog = _backlog;
+
         if (backlog is null)
         {
             return [];

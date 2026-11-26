@@ -36,6 +36,7 @@ public static class OpenApiExtensions
         public IEndpointRouteBuilder MapSharedOpenApi()
         {
             var environment = app.ServiceProvider.GetRequiredService<IHostEnvironment>();
+
             if (!environment.IsDevelopment())
             {
                 return app;

@@ -34,10 +34,12 @@ public static class OperatingPhaseFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var unit = await dbContext.MeasurementUnits
                 .Include(candidate => candidate.QuantityKind)
                 .SingleAsync(candidate => candidate.QuantityKind.Name == DiscreteUnits.KindName
                     && candidate.Name == DiscreteUnits.StateName);
+
             var metric = new MetricDefinition(
                 machineId,
                 OperatingPhaseTestData.StateMetricKey,
@@ -59,6 +61,7 @@ public static class OperatingPhaseFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             var status = new StatusDefinition(
                 machineId, OperatingPhaseTestData.StatusCode, StatusSeverity.Info, description: null);
 
@@ -114,11 +117,13 @@ public static class OperatingPhaseFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<TelemetryDbContext>();
+
             var conditions = await dbContext.Set<OperatingPhaseCondition>()
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()
                 .Where(condition => EF.Property<Guid>(condition, "PhaseId") == phaseId)
                 .ToListAsync();
+
             var limits = await dbContext.Set<OperatingPhaseLimit>()
                 .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
                 .AsNoTracking()

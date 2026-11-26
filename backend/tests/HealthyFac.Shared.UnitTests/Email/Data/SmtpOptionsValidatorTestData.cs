@@ -10,13 +10,13 @@ public static class SmtpOptionsValidatorTestData
     private const string UserName = "mailer";
     private const string Password = "secret";
 
-    public static TheoryData<SmtpOptions> ValidOptions => new()
-    {
+    public static TheoryData<SmtpOptions> ValidOptions =>
+    [
         CreateOptions(),
         CreateOptions(options => options with { UserName = UserName, Password = Password }),
         CreateOptions(options => options with { TimeoutSeconds = EmailConstants.Timeout.MinSeconds }),
         CreateOptions(options => options with { TimeoutSeconds = EmailConstants.Timeout.MaxSeconds }),
-    };
+    ];
 
     public static TheoryData<SmtpOptions, string> InvalidOptionsWithExpectedError => new()
     {

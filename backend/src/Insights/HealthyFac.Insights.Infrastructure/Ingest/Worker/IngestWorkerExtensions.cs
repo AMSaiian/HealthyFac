@@ -30,6 +30,7 @@ public static class IngestWorkerExtensions
             services.AddHttpClient(
                 HttpBlobStreamSource.ClientName,
                 client => client.Timeout = Timeout.InfiniteTimeSpan);
+
             services.AddSingleton<IBlobStreamSource, HttpBlobStreamSource>();
             services.AddSingleton<IProviderCalls, ProviderResilience>();
             services.AddScoped<IngestAttemptClaims>();

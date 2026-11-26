@@ -43,6 +43,7 @@ public static class TransactionRunner
         }
 
         var openTransaction = dbContext.Database.CurrentTransaction;
+
         if (openTransaction is not null)
         {
             return await JoinAsync(dbContext, openTransaction, operation, isolationLevel, cancellationToken);
@@ -86,12 +87,14 @@ public static class TransactionRunner
                 {
                     await using var transaction = await dbContext.Database.BeginTransactionAsync(
                         IsolationLevel.ReadCommitted, token);
+
                     var attemptCount = await save(arg1: false, token);
                     await transaction.CommitAsync(token);
 
                     return attemptCount;
                 },
                 cancellationToken);
+
         if (isAcceptingAllChanges)
         {
             dbContext.ChangeTracker.AcceptAllChanges();
@@ -126,6 +129,7 @@ public static class TransactionRunner
 
                 return attemptCount;
             });
+
         if (isAcceptingAllChanges)
         {
             dbContext.ChangeTracker.AcceptAllChanges();
@@ -143,6 +147,7 @@ public static class TransactionRunner
     )
     {
         var openLevel = openTransaction.GetDbTransaction().IsolationLevel;
+
         if (openLevel != isolationLevel)
         {
             throw PersistenceErrors.IsolationLevelDiffersFromOpenTransaction(openLevel, isolationLevel);

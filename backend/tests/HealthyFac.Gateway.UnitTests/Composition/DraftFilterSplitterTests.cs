@@ -23,9 +23,11 @@ public sealed class DraftFilterSplitterTests
 
         split.Core.IsSkipped.Should().Be(isCoreSkipped, caseName);
         split.Telemetry.IsSkipped.Should().Be(isTelemetrySkipped, caseName);
+
         JsonNode.DeepEquals(split.Core.Filter, expectedCoreJson is null ? null : JsonNode.Parse(expectedCoreJson))
             .Should()
             .BeTrue(caseName);
+
         JsonNode.DeepEquals(
                 split.Telemetry.Filter,
                 expectedTelemetryJson is null ? null : JsonNode.Parse(expectedTelemetryJson))

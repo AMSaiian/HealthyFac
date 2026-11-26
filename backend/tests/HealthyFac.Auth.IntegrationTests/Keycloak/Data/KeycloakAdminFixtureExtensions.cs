@@ -25,7 +25,7 @@ public static class KeycloakAdminFixtureExtensions
             var members = await fixture.Api.GetAsync<List<OrganizationMemberRepresentation>>(
                 $"{OrganizationsPath}/{organizationId}/members");
 
-            return members.Select(member => member.Id).ToList();
+            return [.. members.Select(member => member.Id)];
         }
 
         public async Task<IReadOnlyList<string>> LoadRealmRoleNamesAsync(Guid userId)
@@ -33,20 +33,21 @@ public static class KeycloakAdminFixtureExtensions
             var roles = await fixture.Api.GetAsync<List<RoleRepresentation>>(
                 $"{UsersPath}/{userId}/role-mappings/realm");
 
-            return roles.Select(role => role.Name).ToList();
+            return [.. roles.Select(role => role.Name)];
         }
 
         public async Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> LoadUserAttributesAsync(Guid userId)
         {
             var user = await fixture.Api.GetAsync<JsonObject>($"{UsersPath}/{userId}");
 
-            return user[propertyName: "attributes"]
+            return user["attributes"]
                     ?.AsObject()
                     .ToDictionary(
                         attribute => attribute.Key,
-                        attribute => (IReadOnlyList<string>)attribute.Value!.AsArray()
-                            .Select(value => value!.GetValue<string>())
-                            .ToList())
+                        attribute => (IReadOnlyList<string>)
+                        [
+                            .. attribute.Value!.AsArray().Select(value => value!.GetValue<string>()),
+                        ])
                 ?? [];
         }
 
@@ -54,7 +55,7 @@ public static class KeycloakAdminFixtureExtensions
         {
             var user = await fixture.Api.GetAsync<JsonObject>($"{UsersPath}/{userId}");
 
-            return user[propertyName: "enabled"]!.GetValue<bool>();
+            return user["enabled"]!.GetValue<bool>();
         }
 
         public Task SetPasswordAsync(Guid userId, string password)
@@ -66,10 +67,12 @@ public static class KeycloakAdminFixtureExtensions
         public async Task<MailpitMessage> WaitForMailToAsync(string email)
         {
             using var timeout = new CancellationTokenSource(MailTimeout);
+
             while (true)
             {
                 var messages = await fixture.Mailpit.GetMessagesAsync();
                 var message = messages.FirstOrDefault(candidate => candidate.To.Contains(email));
+
                 if (message is not null)
                 {
                     return message;

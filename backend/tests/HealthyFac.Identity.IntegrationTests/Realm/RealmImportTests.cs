@@ -34,8 +34,8 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
 
         var client = await _fixture.GetClientAsync(uuid);
 
-        client[propertyName: "rootUrl"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
-        client[propertyName: "baseUrl"]!.GetValue<string>().Should().Be(expected: "/");
+        client["rootUrl"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
+        client["baseUrl"]!.GetValue<string>().Should().Be(expected: "/");
     }
 
     [Fact]
@@ -43,16 +43,20 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
     {
         var claims = await _fixture.GetSupervisorAccessTokenClaimsAsync();
 
-        claims[propertyName: "sub"]!.GetValue<string>().Should().Be(RealmTestData.SupervisorIdentityId.ToString());
-        claims[propertyName: "organization"]!.AsArray()
+        claims["sub"]!.GetValue<string>().Should().Be(RealmTestData.SupervisorIdentityId.ToString());
+
+        claims["organization"]!.AsArray()
             .Select(value => value!.GetValue<string>())
             .Should()
             .Equal(RealmTestData.CompanyId.ToString());
+
         claims[RealmTestData.EmployeeIdAttribute]!.GetValue<string>()
             .Should()
             .Be(RealmTestData.SupervisorEmployeeId.ToString());
-        claims[propertyName: "aud"]!.ToJsonString().Should().Contain(RealmTestData.CoreClientId);
-        (claims[propertyName: "exp"]!.GetValue<long>() - claims[propertyName: "iat"]!.GetValue<long>())
+
+        claims["aud"]!.ToJsonString().Should().Contain(RealmTestData.CoreClientId);
+
+        (claims["exp"]!.GetValue<long>() - claims["iat"]!.GetValue<long>())
             .Should()
             .Be(RealmTestData.AccessTokenLifespanSeconds);
     }
@@ -97,6 +101,7 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
             .Should()
             .BeEquivalentTo(RealmTestData.ExpectedPermissions)
             .And.NotContain(RealmTestData.SupervisorRoleName);
+
         claims.Select(claim => claim.Key).Should().NotContain(RealmTestData.RoleContainerClaims);
     }
 
@@ -122,6 +127,7 @@ public sealed class RealmImportTests(KeycloakRealmCollectionFixture fixture)
         var claims = await _fixture.GetAuthServiceAccessTokenClaimsAsync();
 
         claims[RealmTestData.ClientIdClaim]!.GetValue<string>().Should().Be(RealmTestData.AuthClientId);
+
         claims.Select(claim => claim.Key)
             .Should()
             .NotContain(RealmTestData.RemovedServiceAccountClaims)

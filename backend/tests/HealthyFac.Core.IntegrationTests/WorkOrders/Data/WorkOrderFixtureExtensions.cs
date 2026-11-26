@@ -37,6 +37,7 @@ public static class WorkOrderFixtureExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
             dbContext.WorkOrders.Add(workOrder);
+
             if (currentRevision is { } revision)
             {
                 dbContext.Entry(workOrder).Property(entity => entity.CurrentRevision).CurrentValue = revision;
@@ -49,6 +50,7 @@ public static class WorkOrderFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             dbContext.WorkOrderHistories.Add(
                 new WorkOrderHistory(
                     workOrderId,
@@ -58,6 +60,7 @@ public static class WorkOrderFixtureExtensions
                     plannedStartLocal: null,
                     plannedStartUtc: null,
                     TimeSpan.FromHours(value: 1)));
+
             await dbContext.SaveChangesAsync();
         }
 

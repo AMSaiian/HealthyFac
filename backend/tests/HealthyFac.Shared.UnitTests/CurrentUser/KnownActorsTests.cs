@@ -16,6 +16,7 @@ public sealed class KnownActorsTests
         var ids = actors.Select(actor => actor.UserId).ToList();
 
         ids.Should().OnlyHaveUniqueItems();
+
         ids.Select(id => id.ToString()[KnownActorsTestData.VersionCharacterIndex].ToString())
             .Should()
             .AllBe(KnownActorsTestData.VersionDigits);

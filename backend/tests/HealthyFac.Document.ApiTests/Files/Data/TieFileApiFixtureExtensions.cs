@@ -40,6 +40,7 @@ public static class TieFileApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IDocumentDbContext>();
+
             var image = new FileRef(
                 fixture.CompanyId,
                 machineId: null,
@@ -61,6 +62,7 @@ public static class TieFileApiFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var messageType = FileMachineChanged.MessageType;
+
             var payloads = await scope.ServiceProvider.GetRequiredService<DocumentDbContext>()
                 .OutboxMessages
                 .Where(message => message.Type == messageType)
@@ -68,9 +70,11 @@ public static class TieFileApiFixtureExtensions
                 .Select(message => message.Payload)
                 .ToListAsync();
 
-            return payloads
-                .Select(payload => JsonSerializer.Deserialize<FileMachineChanged>(payload, JsonSerializerOptions.Web)!)
-                .ToList();
+            return
+            [
+                .. payloads.Select(payload =>
+                    JsonSerializer.Deserialize<FileMachineChanged>(payload, JsonSerializerOptions.Web)!),
+            ];
         }
     }
 }

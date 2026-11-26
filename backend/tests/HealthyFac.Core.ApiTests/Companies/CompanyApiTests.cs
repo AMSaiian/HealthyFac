@@ -19,8 +19,8 @@ public sealed class CompanyApiTests(CoreApiFixture fixture)
         var body = await response.Content.ReadFromJsonAsync<JsonObject>(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body![propertyName: "name"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyName);
-        body[propertyName: "timeZoneId"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyTimeZoneId);
+        body!["name"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyName);
+        body["timeZoneId"]!.GetValue<string>().Should().Be(CoreApiTestData.CompanyTimeZoneId);
     }
 
     [Fact]

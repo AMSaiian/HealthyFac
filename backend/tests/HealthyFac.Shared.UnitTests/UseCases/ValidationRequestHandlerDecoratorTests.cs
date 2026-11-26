@@ -33,7 +33,7 @@ public sealed class ValidationRequestHandlerDecoratorTests
         var entry = _logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Information).Subject;
         entry.Exception.Should().BeNull();
         var errors = entry.Properties[ErrorsKey].Should().BeAssignableTo<IDictionary<string, string[]>>().Subject;
-        errors[key: "name"].Should().ContainSingle(ValidationMessages.NameRequired);
+        errors["name"].Should().ContainSingle(ValidationMessages.NameRequired);
     }
 
     [Fact]

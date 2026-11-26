@@ -36,6 +36,7 @@ public sealed class PeoplePartTests
     private static SeedFolder CreateFolder(string acceptedAt)
     {
         var directory = Directory.CreateTempSubdirectory().FullName;
+
         File.WriteAllText(
             Path.Combine(directory, PeoplePartTestData.FileName), PeoplePartTestData.CompanyJson(acceptedAt));
 

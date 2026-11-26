@@ -44,7 +44,7 @@ public sealed class KeycloakAccountsTests(SeederFixture fixture)
         var claims = await _fixture.SignInAsync(AccountsTestData.Email, AccountsTestData.Password);
         foundId.Should().Be(userId);
         hasPassword.Should().BeTrue();
-        claims[propertyName: "sub"]!.GetValue<string>().Should().Be(userId.ToString());
+        claims["sub"]!.GetValue<string>().Should().Be(userId.ToString());
     }
 
     [Fact(Explicit = true)]
@@ -53,13 +53,16 @@ public sealed class KeycloakAccountsTests(SeederFixture fixture)
         _fixture.EnterNextMoment(item: "accounts");
         var accounts = new KeycloakAccounts(_fixture.Hosts.Auth);
         var companyId = AccountsTestData.CompanyId;
+
         var organizationId = await accounts.CreateOrganizationAsync(
             companyId,
             AccountsTestData.OrganizationName,
             TestContext.Current.CancellationToken);
+
         var employeeIds = Enumerable.Range(start: 0, AccountsTestData.MemberCount)
             .Select(_ => Guid.CreateVersion7())
             .ToList();
+
         foreach (var employeeId in employeeIds)
         {
             var userId = await accounts.CreateUserAsync(
@@ -69,6 +72,7 @@ public sealed class KeycloakAccountsTests(SeederFixture fixture)
                 AccountsTestData.LastName,
                 AccountsTestData.Password,
                 TestContext.Current.CancellationToken);
+
             await _fixture.AddMemberAsync(organizationId, userId);
         }
 

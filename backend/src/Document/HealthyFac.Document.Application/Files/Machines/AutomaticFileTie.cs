@@ -72,6 +72,7 @@ public sealed class AutomaticFileTie(IDocumentDbContext dbContext, IOutbox outbo
 
         var changedAt = _timeProvider.GetUtcNow().UtcDateTime;
         file.TieTo(machineId, changedAt);
+
         _outbox.Add(
             new FileMachineChanged
             {

@@ -65,6 +65,7 @@ public sealed class EvaluationClaims(
             {
                 claimed = null;
                 var now = _timeProvider.GetUtcNow().UtcDateTime;
+
                 var evaluation = await _dbContext.MachineEvaluations.ClaimFirstAsync(
                     candidate => candidate.DueAt <= now
                         && (candidate.LeaseUntil == null || candidate.LeaseUntil < now)

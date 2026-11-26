@@ -22,31 +22,32 @@ public static class RelayFixtureExtensions
         public async Task<(Guid CompanyId, Guid MachineId)> CreateMachineAsync()
         {
             fixture.EnterNextMoment(item: "machine-create");
-            using (var scope = fixture.Hosts.Core.CreateScope(SeederTestData.InitializationActor))
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
-                dbContext.Companies.Add(
-                    new Company
-                    {
-                        Name = RelayTestData.CompanyName,
-                        TimeZoneId = RelayTestData.CompanyTimeZoneId,
-                    });
-                await dbContext.SaveChangesAsync();
-                var companyId = await dbContext.Companies.Select(company => company.Id).SingleAsync();
-                var actor = RelayTestData.ActorOf(companyId);
-                var response = await fixture.Hosts.Core.SendAsync<CreateMachineRequest, CreateMachineResponse>(
-                    actor,
-                    new CreateMachineRequest
-                    {
-                        Name = RelayTestData.MachineName,
-                        SerialNumber = RelayTestData.SerialNumber,
-                        CompanyId = companyId,
-                        ExpectedGoLiveOn = RelayTestData.GoLiveOn,
-                    },
-                    CancellationToken.None);
+            using var scope = fixture.Hosts.Core.CreateScope(SeederTestData.InitializationActor);
+            var dbContext = scope.ServiceProvider.GetRequiredService<CoreDbContext>();
 
-                return (companyId, response.Id);
-            }
+            dbContext.Companies.Add(
+                new Company
+                {
+                    Name = RelayTestData.CompanyName,
+                    TimeZoneId = RelayTestData.CompanyTimeZoneId,
+                });
+
+            await dbContext.SaveChangesAsync();
+            var companyId = await dbContext.Companies.Select(company => company.Id).SingleAsync();
+            var actor = RelayTestData.ActorOf(companyId);
+
+            var response = await fixture.Hosts.Core.SendAsync<CreateMachineRequest, CreateMachineResponse>(
+                actor,
+                new CreateMachineRequest
+                {
+                    Name = RelayTestData.MachineName,
+                    SerialNumber = RelayTestData.SerialNumber,
+                    CompanyId = companyId,
+                    ExpectedGoLiveOn = RelayTestData.GoLiveOn,
+                },
+                CancellationToken.None);
+
+            return (companyId, response.Id);
         }
 
         /// <summary>Adds MachineStateChanged messages to the Core outbox in one save.</summary>
@@ -57,6 +58,7 @@ public static class RelayFixtureExtensions
         )
         {
             var moment = fixture.EnterNextMoment(item: "state-changes");
+
             var messages = Enumerable.Range(start: 1, count)
                 .Select(index => new MachineStateChanged
                 {
@@ -76,6 +78,7 @@ public static class RelayFixtureExtensions
         {
             using var scope = fixture.Hosts.Core.CreateScope(RelayTestData.ActorOf(companyId));
             var outbox = scope.ServiceProvider.GetRequiredService<IOutbox>();
+
             foreach (var message in messages)
             {
                 outbox.Add(message);
@@ -109,10 +112,12 @@ public static class RelayFixtureExtensions
         public async Task<int> CountOpenMessagesAsync()
         {
             var openCount = 0;
+
             foreach (var host in fixture.Hosts.All)
             {
                 var outbox = await fixture.LoadOutboxAsync(host);
                 var inbox = await fixture.LoadInboxAsync(host);
+
                 openCount += outbox.Count(message => message.ProcessedOn is null)
                     + inbox.Count(message => message.ProcessedOn is null);
             }

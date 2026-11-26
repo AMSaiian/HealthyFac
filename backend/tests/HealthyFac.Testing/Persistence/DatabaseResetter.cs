@@ -50,6 +50,7 @@ public sealed class DatabaseResetter
             .Select(entityType => entityType.GetSchema() ?? context.Model.GetDefaultSchema() ?? DefaultSchema)
             .Distinct()
             .ToArray();
+
         var ignoredTables = ignoredEntityTypes
             .Select(context.Model.FindEntityType)
             .Select(entityType => ToTable(entityType!, context.Model))
@@ -58,6 +59,7 @@ public sealed class DatabaseResetter
 
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
+
         var respawner = await Respawner.CreateAsync(
             connection,
             new RespawnerOptions

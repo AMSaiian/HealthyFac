@@ -29,10 +29,12 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         message.SchemaRevision.Should().Be(expected: 1);
         message.RawPayload.Should().BeNull();
         message.Payload.Should().NotBeNull();
+
         readings.Numeric.Should()
             .ContainSingle()
             .Which.Should()
             .BeEquivalentTo(new { Value = 71.5, IsOutOfRange = false });
+
         readings.Discrete.Select(reading => reading.Value).Should().BeEquivalentTo("true", "auto");
         readings.Discrete.Should().OnlyContain(reading => !reading.IsOutOfRange);
         readings.Statuses.Should().HaveCount(expected: 2);
@@ -117,6 +119,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
             .Which.Should()
             .BeEquivalentTo(
                 new { Path = "metrics.spindle.temperature", Code = IntakeErrorCodes.WrongType });
+
         readings.Numeric.Should().BeEmpty();
         readings.Discrete.Should().HaveCount(expected: 2);
         readings.Statuses.Should().HaveCount(expected: 2);
@@ -129,7 +132,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var message = ReceiveMachineMessageTestData.CreateMessage();
-        message[propertyName: "metrics"]![propertyName: "extra.key"] = 1;
+        message["metrics"]!["extra.key"] = 1;
 
         var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
@@ -149,7 +152,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
         var message = ReceiveMachineMessageTestData.CreateMessage();
-        message[propertyName: "metrics"]!.AsObject().Remove(ReceiveMachineMessageTestData.DoorKey);
+        message["metrics"]!.AsObject().Remove(ReceiveMachineMessageTestData.DoorKey);
 
         var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
@@ -162,6 +165,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
             .Which.Should()
             .BeEquivalentTo(
                 new { Path = "metrics.door.open", Code = IntakeErrorCodes.MissingMetric });
+
         readings.Numeric.Should().ContainSingle();
         readings.Discrete.Should().ContainSingle();
 
@@ -172,6 +176,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     public async Task Receive_WithUnknownStatusCode_StoresErrorAndTheKnownStatus()
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
+
         var message = ReceiveMachineMessageTestData.CreateMessage(
             statuses: [ReceiveMachineMessageTestData.ErrorStatus, ReceiveMachineMessageTestData.UnknownStatus]);
 
@@ -191,6 +196,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     public async Task Receive_WithStatusTwice_StoresOneReadingAndError()
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
+
         var message = ReceiveMachineMessageTestData.CreateMessage(
             statuses: [ReceiveMachineMessageTestData.ErrorStatus, ReceiveMachineMessageTestData.ErrorStatus]);
 
@@ -230,6 +236,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     public async Task Receive_WithSampledAtOneMinuteAhead_IsValid()
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
+
         var message = ReceiveMachineMessageTestData.CreateMessage(
             ReceiveMachineMessageTestData.ReceivedAt.AddMinutes(value: 1));
 
@@ -247,6 +254,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     public async Task Receive_WithSampledAtJustAboveOneMinuteAhead_IsEnvelopeFailure()
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
+
         var message = ReceiveMachineMessageTestData.CreateMessage(
             ReceiveMachineMessageTestData.ReceivedAt.AddMinutes(value: 1).AddTicks(value: 1));
 
@@ -365,7 +373,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         var response = await _fixture.ReceiveAsync(topic, payload);
 
-        var stored = (await _fixture.LoadReceivedMessagesByTopicAsync(topic)).First();
+        var stored = (await _fixture.LoadReceivedMessagesByTopicAsync(topic))[0];
 
         stored.MachineRegistrationId.Should().BeNull();
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.MalformedGatewayId);
@@ -382,7 +390,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 
         var response = await _fixture.ReceiveAsync(topic, payload);
 
-        var stored = (await _fixture.LoadReceivedMessagesByTopicAsync(topic)).First();
+        var stored = (await _fixture.LoadReceivedMessagesByTopicAsync(topic))[0];
 
         stored.MachineRegistrationId.Should().BeNull();
         stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnknownGateway);
@@ -449,12 +457,13 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
     public async Task Receive_ForMachineWithoutDefinitions_AcceptsEmptyMetricsAndStatuses()
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync(isWithDefinitions: false);
+
         var payload = ReceiveMachineMessageTestData.Bytes(
             new JsonObject
             {
-                [propertyName: "sampledAt"] = ReceiveMachineMessageTestData.SampledAt.ToString(format: "O"),
-                [propertyName: "metrics"] = new JsonObject(),
-                [propertyName: "statuses"] = new JsonArray(),
+                ["sampledAt"] = ReceiveMachineMessageTestData.SampledAt.ToString(format: "O"),
+                ["metrics"] = new JsonObject(),
+                ["statuses"] = new JsonArray(),
             });
 
         await _fixture.ReceiveAsync(ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), payload);

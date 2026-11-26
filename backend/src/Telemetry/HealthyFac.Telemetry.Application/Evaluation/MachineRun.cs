@@ -62,6 +62,7 @@ internal sealed class MachineRun
         _statistics = statistics.ToDictionary(row => (row.MetricDefinitionId, row.OperatingPhaseId));
         _streaks = streaks.ToDictionary(streak => (streak.Rule, streak.SubjectId));
         _changes = changes;
+
         _statisticsSettings = new StatisticsSettings
         {
             WarmUpSamples = options.WarmUpSamples,
@@ -72,6 +73,7 @@ internal sealed class MachineRun
             GapSeconds = options.GapSeconds,
             SigmaFloorShare = options.SigmaFloorShare,
         };
+
         _ruleSettings = new RuleSettings
         {
             Persistence = options.Persistence,
@@ -82,6 +84,7 @@ internal sealed class MachineRun
             DriftDurationSeconds = options.Persistence * options.FastTauSeconds,
             TrendDurationSeconds = options.Persistence * options.TrendTauSeconds,
         };
+
         _phaseSettings = new PhaseSettings
         {
             PhaseDwellSeconds = options.PhaseDwellSeconds,
@@ -107,14 +110,17 @@ internal sealed class MachineRun
     )
     {
         var machineId = registration.Id;
+
         var metrics = await dbContext.MetricDefinitions
             .AsNoTracking()
             .Where(metric => metric.MachineRegistrationId == machineId)
             .ToListAsync(cancellationToken);
+
         var statuses = await dbContext.StatusDefinitions
             .AsNoTracking()
             .Where(status => status.MachineRegistrationId == machineId)
             .ToListAsync(cancellationToken);
+
         var phases = await dbContext.OperatingPhases
             .AsNoTracking()
             .Include(phase => phase.Conditions)
@@ -122,20 +128,26 @@ internal sealed class MachineRun
             .Where(phase => phase.MachineRegistrationId == machineId)
             .OrderBy(phase => phase.Priority)
             .ToListAsync(cancellationToken);
+
         var metricIds = metrics.Select(metric => metric.Id).ToList();
+
         var statistics = await dbContext.MetricStatistics
             .Where(row => metricIds.Contains(row.MetricDefinitionId))
             .ToListAsync(cancellationToken);
+
         var streaks = await dbContext.RuleStreaks
             .Where(streak => streak.MachineRegistrationId == machineId)
             .ToListAsync(cancellationToken);
+
         var openInterval = await dbContext.PhaseIntervals
             .Where(interval => interval.MachineRegistrationId == machineId && interval.EndedAt == null)
             .SingleOrDefaultAsync(cancellationToken);
+
         var openEpisodes = await dbContext.SignalEpisodes
             .Where(episode => episode.MachineRegistrationId == machineId
                 && episode.State == SignalEpisodeState.Open)
             .ToListAsync(cancellationToken);
+
         var changes = new EpisodeChanges(
             dbContext,
             outbox,
@@ -196,6 +208,7 @@ internal sealed class MachineRun
         var phase = HasPhases ? _phases.FirstOrDefault(candidate => candidate.Id == tracking.CurrentPhaseId) : null;
         isLearningOpen = isLearningOpen && (!HasPhases || phase is not null);
         var phaseId = phase?.Id;
+
         var candidate = HasPhases && matched is not null && matched != tracking.CurrentPhaseId
             ? _phases.FirstOrDefault(other => other.Id == matched)
             : null;
@@ -248,9 +261,11 @@ internal sealed class MachineRun
         }
 
         var latest = await reader.LatestReceivedAtAsync(_machineId, cancellationToken);
+
         var since = latest is { } lastMessage && lastMessage > registration.GoLiveStartsAt
             ? lastMessage
             : registration.GoLiveStartsAt;
+
         var limit = TimeSpan.FromSeconds(_options.SilenceLimitSeconds);
 
         if (now < registration.GoLiveStartsAt || now - since <= limit)
@@ -259,6 +274,7 @@ internal sealed class MachineRun
         }
 
         _intervals.Close(_lastSampleAt ?? since);
+
         _changes.Open(
             SignalRule.SilentMachine,
             metricId: null,
@@ -327,6 +343,7 @@ internal sealed class MachineRun
     private void LearnAndRun(MetricDefinition metric, double value, MetricLimits limits, DateTime t, Guid? phaseId)
     {
         var row = GetStatistics(metric.Id, phaseId);
+
         var update = row.Apply(
             value,
             t,
@@ -387,6 +404,7 @@ internal sealed class MachineRun
     )
     {
         var streak = GetStreak(rule, metricId ?? statusId);
+
         var decision = streak.Observe(
             condition,
             _changes.FindOpen(rule, metricId, statusId)?.Severity,

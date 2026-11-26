@@ -14,7 +14,7 @@ public sealed class MessageStateTests
         var cappedDelays = MessagingTestData.ScheduleRetries(message, MessagingTestData.CappedRetryCount);
 
         firstDelays.Should().Equal(MessagingTestData.ExpectedFirstDelays);
-        cappedDelays.Last().Should().Be(TimeSpan.FromSeconds(MessagingTestData.MaxRetryDelaySeconds));
+        cappedDelays[^1].Should().Be(TimeSpan.FromSeconds(MessagingTestData.MaxRetryDelaySeconds));
         message.AttemptCount.Should().Be(3 + MessagingTestData.CappedRetryCount);
     }
 
@@ -28,7 +28,7 @@ public sealed class MessageStateTests
         var cappedDelays = MessagingTestData.RecordFailures(message, MessagingTestData.CappedRetryCount);
 
         firstDelays.Should().Equal(MessagingTestData.ExpectedFirstDelays);
-        cappedDelays.Last().Should().Be(TimeSpan.FromSeconds(MessagingTestData.MaxRetryDelaySeconds));
+        cappedDelays[^1].Should().Be(TimeSpan.FromSeconds(MessagingTestData.MaxRetryDelaySeconds));
         message.AttemptCount.Should().Be(3 + MessagingTestData.CappedRetryCount);
     }
 
@@ -114,6 +114,7 @@ public sealed class MessageStateTests
     public void RecordFailure_AfterFailed_Throws()
     {
         var message = MessagingTestData.CreateInboxMessage();
+
         message.RecordFailure(
             MessagingTestData.Now,
             MessagingTestData.RetryError,
@@ -132,6 +133,7 @@ public sealed class MessageStateTests
     public void InboxMarkProcessed_AfterFailed_Throws()
     {
         var message = MessagingTestData.CreateInboxMessage();
+
         message.RecordFailure(
             MessagingTestData.Now,
             MessagingTestData.RetryError,

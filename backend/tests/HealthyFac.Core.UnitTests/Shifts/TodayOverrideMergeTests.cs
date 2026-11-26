@@ -25,6 +25,7 @@ public sealed class TodayOverrideMergeTests
         result.Select(block => block.StartUtc)
             .Should()
             .Equal(ShiftTestData.Blocks(expected).Select(block => block.StartUtc), caseName);
+
         result.Select(block => block.EndUtc)
             .Should()
             .Equal(ShiftTestData.Blocks(expected).Select(block => block.EndUtc), caseName);

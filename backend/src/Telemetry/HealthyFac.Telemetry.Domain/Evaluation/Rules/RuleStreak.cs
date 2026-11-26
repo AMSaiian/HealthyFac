@@ -135,6 +135,7 @@ public class RuleStreak : IEntity
     private RuleDecision Open(int triggerPersistence, SignalSnapshot snapshot, DateTime at, TimeSpan minimum)
     {
         var isLongEnough = IsLongEnough(OpenSince, at, minimum);
+
         var severity =
             EscalateCount >= triggerPersistence && isLongEnough
                 ? SignalSeverity.Alarm

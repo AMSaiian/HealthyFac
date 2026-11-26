@@ -64,12 +64,14 @@ internal sealed class IntegrationEnvelopeHandler(
     )
     {
         var isMessageIdValid = Guid.TryParse(rawMessageId, out var messageId);
+
         if (!isMessageIdValid || messageId == Guid.Empty)
         {
             throw MessagingErrors.MessageIdInvalid(rawMessageId);
         }
 
         var isActorValid = Guid.TryParse(headers.GetValueOrDefault(ActorHeaderNames.ActorId), out var actorId);
+
         if (!isActorValid || actorId == Guid.Empty)
         {
             throw MessagingErrors.ActorHeaderMissing(rawMessageId);

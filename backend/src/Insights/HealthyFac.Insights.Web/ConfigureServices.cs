@@ -77,6 +77,7 @@ public static class ConfigureServices
                 options.LowercaseUrls = true;
                 options.LowercaseQueryStrings = true;
             });
+
             services.AddSharedJsonOptions();
             services.AddIdEncryption(configuration);
             services.AddSharedApiVersioning();
@@ -90,6 +91,7 @@ public static class ConfigureServices
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
             services.AddSharedMetrics(configuration);
+
             services.AddSharedHealthChecks(configuration)
                 .AddDbContextCheck<InsightsDbContext>(
                     DatabaseConstants.HealthCheckName,

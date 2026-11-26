@@ -22,8 +22,10 @@ internal sealed class HealthyOnlyDestinationsPolicy : IAvailableDestinationsPoli
     public IReadOnlyList<DestinationState> GetAvailalableDestinations(
         ClusterConfig config,
         IReadOnlyList<DestinationState> allDestinations
-    ) => allDestinations
-        .Where(destination => destination.Health.Active != DestinationHealth.Unhealthy
-            && destination.Health.Passive != DestinationHealth.Unhealthy)
-        .ToList();
+    ) =>
+    [
+        .. allDestinations
+            .Where(destination => destination.Health.Active != DestinationHealth.Unhealthy
+                && destination.Health.Passive != DestinationHealth.Unhealthy),
+    ];
 }

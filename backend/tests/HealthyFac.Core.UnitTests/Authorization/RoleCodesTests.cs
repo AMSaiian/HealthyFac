@@ -9,6 +9,7 @@ public sealed class RoleCodesTests
     public void RoleCodes_EqualJobRolesInRealmFile()
     {
         var roleCodes = RoleCode.All.Select(roleCode => roleCode.Value);
+
         var jobRoles = RealmRolesTestData.ReadJobRoles()
             .Where(role => role.CorePermissions.Count > 0 || role.Name == RoleCode.Worker.Value)
             .Select(role => role.Name);

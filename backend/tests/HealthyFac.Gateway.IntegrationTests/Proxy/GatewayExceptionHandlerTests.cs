@@ -57,6 +57,6 @@ public sealed class GatewayExceptionHandlerTests
     {
         context.Response.Body.Position = 0;
 
-        return await new StreamReader(context.Response.Body).ReadToEndAsync();
+        return await new StreamReader(context.Response.Body).ReadToEndAsync(TestContext.Current.CancellationToken);
     }
 }

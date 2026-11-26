@@ -20,11 +20,13 @@ public sealed class AssignWorkOrderRaceTests(CoreDatabaseFixture fixture)
     public async Task AssignWorkOrder_WithTwoParallelAssignsToOverlappingSlots_EndsWithOneSuccessAndOneSlotTaken()
     {
         var tenant = await _fixture.ArrangeShiftTenantAsync();
+
         await _fixture.SeedVersionAsync(
             tenant.EmployeeId,
             ShiftTestData.Today.AddDays(value: -30),
             ShiftTestData.Morning,
             ShiftTestData.Afternoon);
+
         _fixture.Clock.Freeze(ShiftTestData.NowAt(time: "07:00"));
         var first = await CreateBacklogAsync(tenant);
         var second = await CreateBacklogAsync(tenant);
@@ -38,11 +40,13 @@ public sealed class AssignWorkOrderRaceTests(CoreDatabaseFixture fixture)
             race.RunAsync(() => AssignAsync(tenant, second, WorkOrderTestData.OverlappingTime, secondRowVersion)));
 
         failures.Count(failure => failure is null).Should().Be(expected: 1);
+
         failures.Single(failure => failure is not null)
             .Should()
             .BeOfType<UnprocessableException>()
             .Which.Message.Should()
             .Be(WorkOrderErrors.Rejections.SlotTaken);
+
         race.SaveCounts.Should().Equal(ShiftTestData.UniqueRaceSaveCounts);
         (_fixture.Transactions.Count - transactionsBefore).Should().Be(TransactionsOfOneWinnerAndOneRepeatedLoser);
     }

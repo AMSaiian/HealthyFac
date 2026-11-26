@@ -24,6 +24,7 @@ internal static class JsonTopLevelFields
     {
         var fields = new Dictionary<string, JsonTopLevelField>(StringComparer.Ordinal);
         var reader = new Utf8JsonReader(json, isComplete, default(JsonReaderState));
+
         if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject)
         {
             return fields;
@@ -32,6 +33,7 @@ internal static class JsonTopLevelFields
         while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
         {
             var name = reader.GetString();
+
             if (!reader.Read())
             {
                 return fields;

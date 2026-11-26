@@ -68,9 +68,11 @@ public sealed class GenericScenario : IMachineScenario
     {
         var (low, high) = RangeOf(metric.Min, metric.Max);
         var width = high - low;
+
         var next = context.Memory.TryGetValue(metric.Key, out var last)
             ? last + (context.Random.NextDouble() * 2 - 1) * MaxStepShare * width
             : low + width / 2;
+
         var clamped = Math.Clamp(next, low, high);
         context.Memory[metric.Key] = clamped;
 

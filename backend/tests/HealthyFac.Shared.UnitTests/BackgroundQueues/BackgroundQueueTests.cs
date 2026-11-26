@@ -20,6 +20,7 @@ public sealed class BackgroundQueueTests
 
         provider.GetRequiredService<IBackgroundQueue<QueueTestItem>>()
             .Enqueue(new QueueTestItem { Number = 1 }, BackgroundQueueTestHost.ParentContext);
+
         await BackgroundQueueTestHost.WaitUntilAsync(() => !log.Entries.IsEmpty, TestContext.Current.CancellationToken);
         await BackgroundQueueTestHost.StopAsync(provider, TestContext.Current.CancellationToken);
 
@@ -39,9 +40,11 @@ public sealed class BackgroundQueueTests
 
         queue.Enqueue(new QueueTestItem { Number = 1 }, default(ActivityContext));
         queue.Enqueue(new QueueTestItem { Number = 2 }, default(ActivityContext));
+
         await BackgroundQueueTestHost.WaitUntilAsync(
             () => log.Entries.Count == 2,
             TestContext.Current.CancellationToken);
+
         await BackgroundQueueTestHost.StopAsync(provider, TestContext.Current.CancellationToken);
 
         log.Entries.Select(entry => entry.ScopeId).Distinct().Should().HaveCount(expected: 2);
@@ -57,8 +60,11 @@ public sealed class BackgroundQueueTests
         queue.Enqueue(new QueueTestItem { Number = 1 }, default(ActivityContext));
         await log.Started.Task.WaitAsync(BackgroundQueueTestHost.Wait, TestContext.Current.CancellationToken);
 
-        await Task.Run(() => queue.Enqueue(new QueueTestItem { Number = 2 }, default(ActivityContext)))
+        await Task.Run(
+                () => queue.Enqueue(new QueueTestItem { Number = 2 }, default(ActivityContext)),
+                TestContext.Current.CancellationToken)
             .WaitAsync(BackgroundQueueTestHost.EnqueueLimit, TestContext.Current.CancellationToken);
+
         var count = provider.GetRequiredService<BackgroundQueue<QueueTestItem>>().Count;
         log.Gate.SetResult();
         await BackgroundQueueTestHost.StopAsync(provider, TestContext.Current.CancellationToken);
@@ -91,14 +97,18 @@ public sealed class BackgroundQueueTests
     {
         var log = new HandlerLog { IsFailingOnCancel = true };
         var logs = new FakeLoggerProvider();
+
         await using var provider = BackgroundQueueTestHost.Build(
             log,
             handlerCount: 1,
             hasDropObserver: true,
             logs);
+
         await BackgroundQueueTestHost.StartAsync(provider, TestContext.Current.CancellationToken);
+
         provider.GetRequiredService<IBackgroundQueue<QueueTestItem>>()
             .Enqueue(new QueueTestItem { Number = 1 }, default(ActivityContext));
+
         await log.Started.Task.WaitAsync(BackgroundQueueTestHost.Wait, TestContext.Current.CancellationToken);
         using var stopLimit = new CancellationTokenSource(TimeSpan.FromMilliseconds(milliseconds: 300));
 

@@ -5,18 +5,18 @@ namespace HealthyFac.Shared.UnitTests.Configuration.Data;
 
 public static class UriRuleBuilderExtensionsTestData
 {
-    public static TheoryData<string> AbsoluteHttpUris => new()
-    {
+    public static TheoryData<string> AbsoluteHttpUris =>
+    [
         "https://auth.healthyfac.test/realms/healthyfac",
         "http://keycloak:8080/realms/healthyfac",
-    };
+    ];
 
-    public static TheoryData<string> OtherValues => new()
-    {
+    public static TheoryData<string> OtherValues =>
+    [
         string.Empty,
         "/relative/path",
         "ftp://files.healthyfac.test/export",
-    };
+    ];
 
     public static InlineValidator<UriSetting> CreateValidator() =>
         new() { validator => validator.RuleFor(setting => setting.Value).MustBeAbsoluteHttpUri() };

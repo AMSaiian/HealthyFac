@@ -23,6 +23,7 @@ public sealed class BrokerConnectionProviderTests(TransportCollectionFixture fix
     {
         await using var provider = _fixture.CreateBrokerConnectionProvider();
         var firstConnection = await provider.GetConnectionAsync(TestContext.Current.CancellationToken);
+
         await firstConnection.CloseAsync(
             BrokerTestData.CloseReplyCode,
             BrokerTestData.CloseReplyText,

@@ -38,8 +38,10 @@ public sealed class PostgreSqlFixture : IAsyncLifetime, IResetBeforeEachTest
         services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(InboxTestData.Now)));
         services.AddActorContext();
         services.AddMessagingMetrics();
+
         services.AddMessagingDbContext<ITestServiceDbContext, TestServiceDbContext>((_, options) =>
             options.UseNpgsql(_database.ConnectionString));
+
         Services = services.BuildServiceProvider(validateScopes: true);
 
         using var scope = Services.CreateScope();

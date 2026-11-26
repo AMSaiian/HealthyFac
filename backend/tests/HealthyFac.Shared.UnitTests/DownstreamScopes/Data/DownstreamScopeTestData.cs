@@ -29,7 +29,7 @@ public sealed class DownstreamScopeProbeHandler<TRequest>(IDownstreamScopeHolder
 
     public Task<string> HandleAsync(TRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
-        SeenScopes = _holder.Current.ToList();
+        SeenScopes = [.. _holder.Current];
 
         return Task.FromResult(string.Empty);
     }

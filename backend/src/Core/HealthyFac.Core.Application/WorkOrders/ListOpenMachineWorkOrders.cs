@@ -114,17 +114,19 @@ public sealed class ListOpenMachineWorkOrdersRequestHandler(ICoreDbContext dbCon
             .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
-        return rows
-            .Select(row => new OpenWorkOrderResponse
-            {
-                Id = row.Id,
-                Title = row.Title,
-                Status = row.Current.Status,
-                Priority = row.Priority,
-                Category = row.Category,
-                PlannedStartUtc = row.Current.PlannedStartUtc,
-                PlannedEndUtc = row.Current.PlannedStartUtc?.Add(row.Estimate),
-            })
-            .ToList();
+        return
+        [
+            .. rows
+                .Select(row => new OpenWorkOrderResponse
+                {
+                    Id = row.Id,
+                    Title = row.Title,
+                    Status = row.Current.Status,
+                    Priority = row.Priority,
+                    Category = row.Category,
+                    PlannedStartUtc = row.Current.PlannedStartUtc,
+                    PlannedEndUtc = row.Current.PlannedStartUtc?.Add(row.Estimate),
+                }),
+        ];
     }
 }

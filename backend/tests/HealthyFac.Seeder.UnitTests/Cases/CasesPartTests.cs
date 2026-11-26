@@ -11,7 +11,7 @@ public sealed class CasesPartTests
     [Fact(Explicit = true)]
     public void ReadEvents_WithACoverageOtherThanDrafted_FailsWithTheItem()
     {
-        var folder = CreateFolder(signal => signal[propertyName: "coverage"] = "watched");
+        var folder = CreateFolder(signal => signal["coverage"] = "watched");
         var part = new CasesPart(null!);
 
         var act = () => part.ReadEvents(folder);
@@ -22,7 +22,7 @@ public sealed class CasesPartTests
     [Fact(Explicit = true)]
     public void ReadEvents_WithAMetricKeyThatTheMachineDoesNotHave_FailsWithTheFileTheItemAndTheRule()
     {
-        var folder = CreateFolder(signal => signal[propertyName: "metricKey"] = CasesPartTestData.UnknownMetricKey);
+        var folder = CreateFolder(signal => signal["metricKey"] = CasesPartTestData.UnknownMetricKey);
         var part = new CasesPart(null!);
 
         var act = () => part.ReadEvents(folder);
@@ -46,5 +46,5 @@ public sealed class CasesPartTests
     private static SeedFolder CreateFolder(Action<JsonNode> changeSignal) =>
         CommittedSeedTestData.CopyWith(
             CasesPartTestData.FileName,
-            root => changeSignal(root[propertyName: "signal"]!));
+            root => changeSignal(root["signal"]!));
 }

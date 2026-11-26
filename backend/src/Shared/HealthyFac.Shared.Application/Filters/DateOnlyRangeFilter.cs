@@ -30,7 +30,7 @@ public sealed record DateOnlyRangeFilter
                         Expression.GreaterThanOrEqual(
                             Expression.Convert(selector.Body, typeof(DateOnly?)),
                             Bound(nameof(From))),
-                        selector.Parameters[index: 0]))
+                        selector.Parameters[0]))
             .And(
                 To is null
                     ? null
@@ -38,7 +38,7 @@ public sealed record DateOnlyRangeFilter
                         Expression.LessThan(
                             Expression.Convert(selector.Body, typeof(DateOnly?)),
                             Bound(nameof(To))),
-                        selector.Parameters[index: 0]));
+                        selector.Parameters[0]));
 
     private static Expression<Func<T, bool>> ToLambda<T>(Expression body, ParameterExpression parameter) =>
         Expression.Lambda<Func<T, bool>>(body, parameter);

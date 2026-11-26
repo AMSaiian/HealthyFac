@@ -93,6 +93,7 @@ public sealed class DeactivateEmployeeRequestHandler(
 
         var deactivatedAt = _timeProvider.GetUtcNow().UtcDateTime;
         employee.Deactivate();
+
         _outbox.Add(
             new EmployeeDeactivated
             {

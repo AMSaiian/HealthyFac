@@ -18,6 +18,7 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{MachineApiTestData.InvalidEncryptedId}",
             claims);
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -52,6 +53,7 @@ public sealed class MachineInputTests(CoreApiFixture fixture)
             HttpMethod.Get,
             $"{MachineApiTestData.MachinesPath}/{encrypted}",
             claims);
+
         var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);

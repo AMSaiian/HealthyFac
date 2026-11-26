@@ -31,30 +31,34 @@ public static class TodayOverrideMerge
             .Select(block => (Block: block, Part: Cut(block, block.StartUtc, Min(block.EndUtc, nowGridUtc))))
             .Where(candidate => candidate.Part is not null)
             .ToList();
+
         var templateParts = templateBlocks
             .Select(block => Cut(block, Max(block.StartUtc, nowGridUtc), block.EndUtc))
             .OfType<DayBlock>()
             .ToList();
 
-        var running = overrideParts.Find(candidate =>
+        var (_, part) = overrideParts.Find(candidate =>
             candidate.Block.EndUtc > nowUtc && candidate.Part!.EndUtc == nowGridUtc);
+
         var templateStart = templateParts.Find(part => part.StartUtc == nowGridUtc);
         var parts = overrideParts.Select(candidate => candidate.Part!).ToList();
-        if (running.Part is not null && templateStart is not null)
+
+        if (part is not null && templateStart is not null)
         {
-            parts.Remove(running.Part);
+            parts.Remove(part);
             templateParts.Remove(templateStart);
+
             parts.Add(
                 new DayBlock
                 {
-                    Start = running.Part.Start,
+                    Start = part.Start,
                     End = templateStart.End,
-                    StartUtc = running.Part.StartUtc,
+                    StartUtc = part.StartUtc,
                     EndUtc = templateStart.EndUtc,
                 });
         }
 
-        return parts.Concat(templateParts).OrderBy(part => part.StartUtc).ToList();
+        return [.. parts.Concat(templateParts).OrderBy(part => part.StartUtc)];
     }
 
     private static DayBlock? Cut(DayBlock block, DateTime startUtc, DateTime endUtc) =>

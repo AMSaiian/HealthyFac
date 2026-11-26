@@ -12,7 +12,7 @@ public static class WorkOrderSeedVariants
     public static string BearingVibrationOutsideShift() =>
         Create(
             WorkOrdersFile, root =>
-                FindOrder(root, key: "bearing-vibration")[propertyName: "assignment"]![propertyName: "plannedStart"] =
+                FindOrder(root, key: "bearing-vibration")["assignment"]!["plannedStart"] =
                     "wd+1 07:00");
 
     public static string PumpCouplingSlotTaken() =>
@@ -20,22 +20,22 @@ public static class WorkOrderSeedVariants
             WorkOrdersFile,
             root =>
             {
-                var assignment = FindOrder(root, key: "pump-coupling")[propertyName: "assignment"]!;
-                assignment[propertyName: "assignee"] = "petro";
-                assignment[propertyName: "at"] = "wd-2 09:00";
-                assignment[propertyName: "plannedStart"] = "wd-1 10:00";
-                FindOrder(root, key: "pump-coupling")[propertyName: "estimateMinutes"] = 60;
+                var assignment = FindOrder(root, key: "pump-coupling")["assignment"]!;
+                assignment["assignee"] = "petro";
+                assignment["at"] = "wd-2 09:00";
+                assignment["plannedStart"] = "wd-1 10:00";
+                FindOrder(root, key: "pump-coupling")["estimateMinutes"] = 60;
             });
 
     public static string StatusChangeOnBacklogOrder() =>
         Create(
             WorkOrdersFile,
-            root => FindOrder(root, key: "wear-rings")[propertyName: "statusChanges"]!.AsArray()
+            root => FindOrder(root, key: "wear-rings")["statusChanges"]!.AsArray()
                 .Add(
                     new JsonObject
                     {
-                        [propertyName: "at"] = "d-1 10:00", [propertyName: "by"] = "taras",
-                        [propertyName: "status"] = "inProgress",
+                        ["at"] = "d-1 10:00", ["by"] = "taras",
+                        ["status"] = "inProgress",
                     }));
 
     public static string CoolantCheckWithRepeatedStatus() =>
@@ -43,24 +43,27 @@ public static class WorkOrderSeedVariants
             WorkOrdersFile,
             root =>
             {
-                var changes = FindOrder(root, key: "coolant-check")[propertyName: "statusChanges"]!.AsArray();
+                var changes = FindOrder(root, key: "coolant-check")["statusChanges"]!.AsArray();
+
                 changes.Add(
                     new JsonObject
                     {
-                        [propertyName: "at"] = "wd-1 15:10", [propertyName: "by"] = "sofiia",
-                        [propertyName: "status"] = "inProgress",
+                        ["at"] = "wd-1 15:10", ["by"] = "sofiia",
+                        ["status"] = "inProgress",
                     });
+
                 changes.Add(
                     new JsonObject
                     {
-                        [propertyName: "at"] = "wd-1 15:20", [propertyName: "by"] = "sofiia",
-                        [propertyName: "status"] = "blocked",
+                        ["at"] = "wd-1 15:20", ["by"] = "sofiia",
+                        ["status"] = "blocked",
                     });
+
                 changes.Add(
                     new JsonObject
                     {
-                        [propertyName: "at"] = "wd-1 15:30", [propertyName: "by"] = "nadiia",
-                        [propertyName: "status"] = "inProgress",
+                        ["at"] = "wd-1 15:30", ["by"] = "nadiia",
+                        ["status"] = "inProgress",
                     });
             });
 
@@ -69,16 +72,16 @@ public static class WorkOrderSeedVariants
             MachinesFile,
             root =>
             {
-                var machines = root[propertyName: "machines"]!.AsArray();
-                var copy = JsonNode.Parse(machines[index: 0]!.ToJsonString())!.AsObject();
-                copy[propertyName: "key"] = "pump-again";
-                copy[propertyName: "appliedAt"] = "d-14 10:50";
+                var machines = root["machines"]!.AsArray();
+                var copy = JsonNode.Parse(machines[0]!.ToJsonString())!.AsObject();
+                copy["key"] = "pump-again";
+                copy["appliedAt"] = "d-14 10:50";
                 machines.Add(copy);
             });
 
     private static JsonNode FindOrder(JsonNode root, string key) =>
-        root[propertyName: "workOrders"]!.AsArray()
-            .Single(order => order![propertyName: "key"]!.GetValue<string>() == key)!;
+        root["workOrders"]!.AsArray()
+            .Single(order => order!["key"]!.GetValue<string>() == key)!;
 
     private static string Create(string fileName, Action<JsonNode> change)
     {

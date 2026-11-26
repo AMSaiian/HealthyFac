@@ -33,6 +33,91 @@ dotnet_diagnostic.IDE0040.severity = warning
 dotnet_diagnostic.IDE0200.severity = warning
 dotnet_diagnostic.IDE1006.severity = warning
 
+# Sonar rules that conflict with the repo conventions (approved by Artur, 2026-11-25)
+# S1144: an entity `private set` is set by EF Core, so the rule sees it as unused.
+dotnet_diagnostic.S1144.severity = none
+# S3218: constants classes nest static classes by concern (backend-general, Constant Grouping).
+dotnet_diagnostic.S3218.severity = none
+# S3241: `Add...` extension methods return IServiceCollection for chaining.
+dotnet_diagnostic.S3241.severity = none
+# S1075: constants classes hold URIs on purpose (backend-general, No Magic Values).
+dotnet_diagnostic.S1075.severity = none
+# S108: the shutdown catch of OperationCanceledException is empty on purpose.
+dotnet_diagnostic.S108.severity = none
+# S2094: agent tool argument records and derived Web request records have no members.
+dotnet_diagnostic.S2094.severity = none
+# S6667: the catch logs the type and status, then wraps and rethrows.
+dotnet_diagnostic.S6667.severity = none
+# S1244: value object Equals compares exact values.
+dotnet_diagnostic.S1244.severity = none
+# S2245: a seeded Random gives deterministic data.
+dotnet_diagnostic.S2245.severity = none
+# S4790: MD5 builds stable seed IDs, not a security value.
+dotnet_diagnostic.S4790.severity = none
+# S5122: AllowAnyOrigin applies only when the configured origin is `*`.
+dotnet_diagnostic.S5122.severity = none
+# S2743: the Enumeration<T> catalog is one static field per closed type.
+dotnet_diagnostic.S2743.severity = none
+# S4035: Enumeration<T> is abstract by design.
+dotnet_diagnostic.S4035.severity = none
+# S2326: IRequest<out TResponse> is a marker interface.
+dotnet_diagnostic.S2326.severity = none
+# S2325: a method that can be static stays an instance method (Artur).
+dotnet_diagnostic.S2325.severity = none
+# S3358: a nested ternary works against Variable Inlining.
+dotnet_diagnostic.S3358.severity = none
+# S2139: startup initializers log, then rethrow.
+dotnet_diagnostic.S2139.severity = none
+dotnet_diagnostic.S103.severity = warning
+
+# Modern syntax, enforced at build time
+dotnet_diagnostic.IDE0017.severity = warning
+dotnet_diagnostic.IDE0019.severity = warning
+dotnet_diagnostic.IDE0020.severity = warning
+dotnet_diagnostic.IDE0028.severity = warning
+dotnet_diagnostic.IDE0029.severity = warning
+dotnet_diagnostic.IDE0030.severity = warning
+dotnet_diagnostic.IDE0031.severity = warning
+dotnet_diagnostic.IDE0038.severity = warning
+dotnet_diagnostic.IDE0041.severity = warning
+dotnet_diagnostic.IDE0042.severity = warning
+dotnet_diagnostic.IDE0054.severity = warning
+dotnet_diagnostic.IDE0056.severity = warning
+dotnet_diagnostic.IDE0057.severity = warning
+dotnet_diagnostic.IDE0062.severity = warning
+dotnet_diagnostic.IDE0063.severity = warning
+dotnet_diagnostic.IDE0066.severity = warning
+dotnet_diagnostic.IDE0071.severity = warning
+dotnet_diagnostic.IDE0074.severity = warning
+dotnet_diagnostic.IDE0075.severity = warning
+dotnet_diagnostic.IDE0078.severity = warning
+dotnet_diagnostic.IDE0083.severity = warning
+dotnet_diagnostic.IDE0090.severity = warning
+dotnet_diagnostic.IDE0150.severity = warning
+dotnet_diagnostic.IDE0161.severity = warning
+dotnet_diagnostic.IDE0170.severity = warning
+dotnet_diagnostic.IDE0180.severity = warning
+dotnet_diagnostic.IDE0230.severity = warning
+dotnet_diagnostic.IDE0250.severity = warning
+dotnet_diagnostic.IDE0251.severity = warning
+dotnet_diagnostic.IDE0260.severity = warning
+dotnet_diagnostic.IDE0270.severity = warning
+dotnet_diagnostic.IDE0300.severity = warning
+dotnet_diagnostic.IDE0301.severity = warning
+dotnet_diagnostic.IDE0302.severity = warning
+dotnet_diagnostic.IDE0303.severity = warning
+dotnet_diagnostic.IDE0304.severity = warning
+dotnet_diagnostic.IDE0305.severity = warning
+dotnet_diagnostic.IDE0306.severity = warning
+dotnet_diagnostic.IDE0330.severity = warning
+dotnet_diagnostic.IDE0340.severity = warning
+dotnet_diagnostic.IDE0350.severity = warning
+dotnet_diagnostic.IDE0360.severity = warning
+dotnet_diagnostic.IDE0016.severity = warning
+dotnet_diagnostic.IDE0018.severity = warning
+dotnet_diagnostic.IDE1005.severity = warning
+dotnet_style_prefer_collection_expression = when_types_loosely_match:warning
+
 # Naming: private instance fields use _camelCase. A rule with modifiers is more specific, so it takes precedence:
 # private const and static fields keep PascalCase at suggestion level and never need the prefix.
 dotnet_naming_rule.private_constant_fields_should_be_pascal_case.symbols = private_constant_fields
@@ -60,7 +145,7 @@ dotnet_naming_style.underscore_camel_case.required_prefix = _
 csharp_new_line_before_members_in_object_initializers = false
 csharp_preferred_modifier_order = public, private, protected, internal, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:suggestion
 csharp_style_prefer_method_group_conversion = true:warning
-csharp_style_prefer_utf8_string_literals = true:suggestion
+csharp_style_prefer_utf8_string_literals = true:warning
 csharp_style_var_elsewhere = true:warning
 csharp_style_var_for_built_in_types = true:warning
 csharp_style_var_when_type_is_apparent = true:warning
@@ -83,7 +168,7 @@ resharper_arguments_anonymous_function = positional
 resharper_arguments_literal = named
 resharper_arguments_named = positional
 resharper_arguments_other = positional
-resharper_arguments_skip_single = false
+resharper_arguments_skip_single = true
 resharper_arguments_string_literal = named
 resharper_autodetect_indent_settings = false
 resharper_braces_for_for = required
@@ -91,6 +176,11 @@ resharper_braces_for_foreach = required
 resharper_braces_for_ifelse = required
 resharper_braces_for_while = required
 resharper_csharp_allow_far_alignment = true
+resharper_csharp_blank_lines_after_block_statements = 1
+resharper_csharp_blank_lines_after_multiline_statements = 1
+resharper_csharp_blank_lines_before_block_statements = 1
+resharper_csharp_blank_lines_before_control_transfer_statements = 1
+resharper_csharp_blank_lines_before_multiline_statements = 1
 resharper_csharp_keep_blank_lines_in_code = 1
 resharper_csharp_keep_blank_lines_in_declarations = 1
 resharper_csharp_wrap_after_declaration_lpar = true
@@ -161,6 +251,21 @@ resharper_suggest_var_or_type_simple_types_highlighting = hint
 resharper_web_config_module_not_resolved_highlighting = warning
 resharper_web_config_type_not_resolved_highlighting = warning
 resharper_web_config_wrong_module_highlighting = warning
+
+[**/Migrations/*.cs]
+# EF Core generates new[] { ... } in every migration; the hand-written parts keep every other rule.
+dotnet_diagnostic.IDE0300.severity = none
+dotnet_diagnostic.IDE0301.severity = none
+dotnet_diagnostic.IDE0302.severity = none
+dotnet_diagnostic.IDE0303.severity = none
+dotnet_diagnostic.IDE0304.severity = none
+dotnet_diagnostic.IDE0305.severity = none
+dotnet_diagnostic.IDE0306.severity = none
+dotnet_diagnostic.S103.severity = none
+
+[backend/tests/HealthyFac.Shared.IntegrationTests/Persistence/SoftDeleteTests.cs]
+# S6966: these tests prove the synchronous SaveChanges path of the soft delete interceptor (Artur, 2026-11-26).
+dotnet_diagnostic.S6966.severity = none
 
 [*.css]
 indent_size = 2

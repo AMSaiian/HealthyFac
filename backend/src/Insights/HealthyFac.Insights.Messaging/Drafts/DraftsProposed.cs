@@ -293,7 +293,7 @@ public class ProposedMetricValidator : AbstractValidator<ProposedMetric>
 
         RuleFor(metric => metric)
             .Must(metric => !metric.HasLimits)
-            .When(metric => metric.ValueKind is not null && metric.ValueKind != DraftMessageLimits.ValueKinds.Numeric)
+            .When(metric => metric.ValueKind is not null and not DraftMessageLimits.ValueKinds.Numeric)
             .WithMessage(DraftMessageErrors.Validation.LimitsOnlyForNumeric);
 
         RuleFor(metric => metric.Behavior)

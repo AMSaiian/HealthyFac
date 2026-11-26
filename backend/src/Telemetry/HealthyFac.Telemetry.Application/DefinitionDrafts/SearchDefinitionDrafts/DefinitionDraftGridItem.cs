@@ -84,6 +84,7 @@ public record DefinitionDraftGridItem : IEntity<Guid>, IKeysetGridItem<Definitio
                 MachineId = draft.TargetMachineId,
                 TargetMachineDraftId = draft.TargetMachineDraftId,
             });
+
         var statusRows = statusDrafts
             .Where(draft => draft.CompanyId == companyId
                 && (machineId == null || draft.TargetMachineId == machineId)

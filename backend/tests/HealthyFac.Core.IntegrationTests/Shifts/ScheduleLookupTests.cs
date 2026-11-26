@@ -26,12 +26,15 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
         var response = await DaysAsync(tenant, tuesday, saturday);
 
         response.TimeZoneId.Should().Be(ShiftTestData.ZoneId);
+
         response.Days.Single(day => day.Date == saturday)
             .Should()
             .BeEquivalentTo(Summary(saturday, hasBlocks: false, longestFreeMinutes: 0));
+
         response.Days.Single(day => day.Date == tuesday)
             .Should()
             .BeEquivalentTo(Summary(tuesday, hasBlocks: true, longestFreeMinutes: 240));
+
         response.Days.Single(day => day.Date == wednesday)
             .Should()
             .BeEquivalentTo(Summary(wednesday, hasBlocks: true, longestFreeMinutes: 120));
@@ -65,6 +68,7 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
     public async Task ScheduleDays_WithAnExcludedWorkOrder_CountsItsSlotAsFree()
     {
         var tenant = await ArrangeAsync(time: "09:30", ShiftTestData.Morning);
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.InTwoDays,
@@ -80,11 +84,13 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
     public async Task FreeSpans_WithALateCompletedWorkOrder_OccupiesUpToTheCompletionMoment()
     {
         var tenant = await ArrangeAsync(time: "09:30", ShiftTestData.Morning);
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Tomorrow,
             time: "09:00",
             minutes: 60);
+
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "10:07"));
         await _fixture.CompleteWorkOrderAsync(workOrderId);
         _fixture.Clock.Freeze(ShiftTestData.NowOn(ShiftTestData.Tomorrow, time: "07:00"));
@@ -104,6 +110,7 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
         var response = await SpansAsync(tenant, ShiftTestData.Tomorrow);
 
         response.Date.Should().Be(ShiftTestData.Tomorrow);
+
         response.Spans.Select(span => $"{span.StartLocal:HH:mm}-{span.EndLocal:HH:mm}")
             .Should()
             .Equal("08:00-12:00", "13:00-17:00");
@@ -113,6 +120,7 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
     public async Task FreeSpans_ForAnOverrideWithTouchingBlocks_GivesOneSpanAcrossTheJoin()
     {
         var tenant = await ArrangeAsync(time: "09:30", ShiftTestData.Morning, Afternoon);
+
         await _fixture.SetOverrideAsync(
             tenant, ShiftTestData.Tomorrow, ShiftTestData.Blocks("08:00-12:00", "12:00-13:00"));
 
@@ -132,6 +140,7 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
         response.Spans.Select(span => $"{span.StartLocal:HH:mm}-{span.EndLocal:HH:mm}")
             .Should()
             .Equal("08:00-09:00", "10:00-12:00");
+
         response.Spans.Should().OnlyContain(span => span.StartLocal.Minute % 5 == 0 && span.EndLocal.Minute % 5 == 0);
     }
 
@@ -153,6 +162,7 @@ public sealed class ScheduleLookupTests(CoreDatabaseFixture fixture)
     public async Task FreeSpans_WithAnExcludedWorkOrder_CountsItsSlotAsFree()
     {
         var tenant = await ArrangeAsync(time: "09:30", ShiftTestData.Morning);
+
         var workOrderId = await _fixture.ArrangeStagedWorkOrderAsync(
             tenant,
             ShiftTestData.Tomorrow,

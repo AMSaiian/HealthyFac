@@ -24,7 +24,7 @@ public sealed class DismissDraftTests(CoreDatabaseFixture fixture)
         var messages = await _fixture.ReadOutboxMessagesAsync<MachineDraftDismissed>();
 
         messages.Should().ContainSingle().Which.DraftId.Should().Be(draftId);
-        messages[index: 0].CompanyId.Should().Be(tenant.CompanyId);
+        messages[0].CompanyId.Should().Be(tenant.CompanyId);
     }
 
     [Fact]

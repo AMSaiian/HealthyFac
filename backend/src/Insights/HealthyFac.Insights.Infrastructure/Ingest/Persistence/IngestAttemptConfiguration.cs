@@ -84,18 +84,23 @@ public class IngestAttemptConfiguration : IEntityTypeConfiguration<IngestAttempt
             table.HasCheckConstraint(
                 ConstraintName(nameof(IngestAttempt.PageCount), NotNegativeRule),
                 sql: "page_count IS NULL OR page_count >= 0");
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(IngestAttempt.ChunkCount), NotNegativeRule),
                 sql: "chunk_count IS NULL OR chunk_count >= 0");
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(IngestAttempt.ProposedDraftCount), NotNegativeRule),
                 sql: "proposed_draft_count IS NULL OR proposed_draft_count >= 0");
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(IngestAttempt.ErrorCode), ErrorCodeRule),
                 $"error_code IS NULL OR state = '{IngestState.Failed.Value}'");
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(IngestAttempt.InterruptReason), InterruptReasonRule),
                 $"interrupt_reason IS NULL OR state = '{IngestState.Interrupted.Value}'");
+
             table.HasCheckConstraint(
                 ConstraintName(nameof(IngestAttempt.FinishedAt), FinishedAtRule),
                 $"finished_at IS NULL OR state NOT IN ('{IngestState.Queued.Value}', '{IngestState.InProcess.Value}')");

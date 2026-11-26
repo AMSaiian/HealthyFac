@@ -70,6 +70,7 @@ public sealed class SeedReset
     {
         var targets = CreateTargets();
         var busyDatabase = await FindBusyDatabaseAsync(targets, cancellationToken);
+
         if (busyDatabase is not null)
         {
             await _output.WriteLineAsync(ResetErrors.DatabaseInUse(busyDatabase));
@@ -78,6 +79,7 @@ public sealed class SeedReset
         }
 
         await DeleteMarkerMessageAsync(cancellationToken);
+
         if (AfterMarkerMessageDeleted is not null)
         {
             await AfterMarkerMessageDeleted();
@@ -86,6 +88,7 @@ public sealed class SeedReset
         cancellationToken.ThrowIfCancellationRequested();
 
         await DeleteMarkerDraftAsync(cancellationToken);
+
         if (AfterMarkerDeleted is not null)
         {
             await AfterMarkerDeleted();
@@ -95,6 +98,7 @@ public sealed class SeedReset
 
         await _accounts.DeleteOrganizationWithMembersAsync(_companyId, cancellationToken);
         await DeleteBlobsAsync(cancellationToken);
+
         foreach (var target in targets)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -141,10 +145,12 @@ public sealed class SeedReset
     )
     {
         var names = targets.Select(ReadDatabaseName).ToArray();
-        using var scope = targets[index: 0]
+
+        using var scope = targets[0]
             .Host.CreateScope(
-                ServiceActor.DatabaseInitialization.For(targets[index: 0].Host.Name));
-        var dbContext = targets[index: 0].GetContext(scope.ServiceProvider);
+                ServiceActor.DatabaseInitialization.For(targets[0].Host.Name));
+
+        var dbContext = targets[0].GetContext(scope.ServiceProvider);
         await using var command = new NpgsqlCommand(ResetConstants.BusySessionSql);
         command.Parameters.AddWithValue(ResetConstants.NamesParameter, names);
         command.Parameters.AddWithValue(ResetConstants.OwnParameter, SeederProcess.ApplicationName);
@@ -165,11 +171,15 @@ public sealed class SeedReset
     private async Task DeleteBlobsAsync(CancellationToken cancellationToken)
     {
         using var scope = _hosts.Document.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Document));
+
         var containerName = scope.ServiceProvider.GetRequiredService<IOptions<FileStorageOptions>>()
             .Value.ContainerName;
+
         var container = scope.ServiceProvider.GetRequiredService<BlobServiceClient>()
             .GetBlobContainerClient(containerName);
+
         var isPresent = await container.ExistsAsync(cancellationToken);
+
         if (!isPresent.Value)
         {
             return;

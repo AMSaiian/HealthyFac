@@ -49,31 +49,34 @@ internal static class DrainCaseLink
     {
         using var scope =
             insights.CreateScope(ServiceActor.DatabaseInitialization.For(ServiceName.Insights, companyId));
+
         var dbContext = scope.ServiceProvider.GetRequiredService<InsightsDbContext>();
         var now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+
         var openCase = await dbContext.MaintenanceCases
-            .Where(candidate => candidate.MachineId == machineId && candidate.State == CaseState.Open)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (openCase is null)
-        {
-            throw new SeedFileException(TelemetryHistoryErrors.LinkNeedsOpenCase(item, drain.Machine));
-        }
+                .Where(candidate => candidate.MachineId == machineId && candidate.State == CaseState.Open)
+                .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new SeedFileException(TelemetryHistoryErrors.LinkNeedsOpenCase(item, drain.Machine));
 
         var signals = await dbContext.MachineSignals
             .Where(signal => signal.CaseId == openCase.Id && signal.State == SignalState.Open)
             .ToListAsync(cancellationToken);
+
         var run = new AgentRun(AgentRole.Planner, openCase.Id, ingestAttemptId: null, now);
         run.Claim(now, now);
         run.Complete(now, verdict: null, verdictReason: null, inputTokens: 0, outputTokens: 0);
+
         var action = new AgentAction(
             run.Id,
             $"seed-{drain.Key}",
             AgentActionKind.LinkWorkOrder,
             ActionBuffering.Serialize(
                 new LinkWorkOrderPayload
-                    { SignalIds = signals.Select(signal => signal.Id).ToList(), WorkOrderId = workOrderId }));
+                    { SignalIds = [.. signals.Select(signal => signal.Id)], WorkOrderId = workOrderId }));
+
         action.Commit();
         var toolJson = scope.ServiceProvider.GetRequiredService<IAgentJson>().Tools;
+
         var toolCall = new AgentToolCall(
             run.Id,
             sequence: 1,
@@ -81,7 +84,7 @@ internal static class DrainCaseLink
             LinkWorkOrderToolRequest.ToolName,
             JsonSerializer.Serialize(
                 new LinkWorkOrderArguments
-                    { WorkOrderId = workOrderId, EpisodeIds = signals.Select(signal => signal.Id).ToList() },
+                    { WorkOrderId = workOrderId, EpisodeIds = [.. signals.Select(signal => signal.Id)] },
                 toolJson),
             ToolCallOutcome.Succeeded,
             JsonSerializer.Serialize(
@@ -92,6 +95,7 @@ internal static class DrainCaseLink
                 },
                 toolJson),
             durationMilliseconds: 0);
+
         signals.ForEach(signal => signal.MarkLinked(workOrderId));
         dbContext.AgentRuns.Add(run);
         dbContext.AgentActions.Add(action);

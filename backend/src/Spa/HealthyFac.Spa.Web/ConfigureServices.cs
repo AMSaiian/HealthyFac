@@ -32,10 +32,12 @@ public static class ConfigureServices
         {
             services.AddServiceOptions(configuration);
             services.AddValidatedOptions<SpaOptions, SpaOptionsValidator>(SpaOptions.SectionName, configuration);
+
             services.AddSingleton(provider => IndexDocument.IndexDocument.Load(
                 Path.GetFullPath(
                     provider.GetRequiredService<IOptions<SpaOptions>>().Value.ContentRoot,
                     AppContext.BaseDirectory)));
+
             services.AddSharedForwardedHeaders(configuration);
             services.AddProblemDetails();
             services.AddAuthorizationBuilder().SetAuthenticatedFallbackPolicy();
@@ -48,8 +50,10 @@ public static class ConfigureServices
         {
             services.AddSharedLogging(configuration);
             services.AddSharedTracing(configuration);
+
             services.Configure<AspNetCoreTraceInstrumentationOptions>(options =>
                 options.Filter = context => !StaticAssetRequests.IsStaticAsset(context.Request.Path));
+
             services.AddSharedMetrics(configuration);
             services.AddSharedHealthChecks(configuration);
 

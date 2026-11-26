@@ -172,7 +172,9 @@ public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbCo
                     existing.Code,
                     item.Severity ?? existing.Severity,
                     item.Description ?? existing.Description);
+
                 applied.Add(new AppliedStatusDefinition { Code = existing.Code, Id = existing.Id, IsCreated = false });
+
                 continue;
             }
 
@@ -181,6 +183,7 @@ public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbCo
                 item.Code,
                 item.Severity ?? StatusSeverity.Info,
                 item.Description);
+
             _dbContext.StatusDefinitions.Add(created);
             applied.Add(new AppliedStatusDefinition { Code = created.Code, Id = created.Id, IsCreated = true });
         }
@@ -188,16 +191,17 @@ public class ApplyStatusDefinitionChangesRequestHandler(ITelemetryDbContext dbCo
         await _draftMarker.MarkStatusDraftsAsync(
             request.CompanyId,
             request.MachineId,
-            request.Items
-                .Select((item, index) => (item.DraftId, Path: $"items[{index}].draftId", applied[index].Id))
-                .Where(reference => reference.DraftId is not null)
-                .Select(reference => new DraftReference
-                {
-                    Path = reference.Path,
-                    DraftId = reference.DraftId!.Value,
-                    DefinitionId = reference.Id,
-                })
-                .ToList(),
+            [
+                .. request.Items
+                    .Select((item, index) => (item.DraftId, Path: $"items[{index}].draftId", applied[index].Id))
+                    .Where(reference => reference.DraftId is not null)
+                    .Select(reference => new DraftReference
+                    {
+                        Path = reference.Path,
+                        DraftId = reference.DraftId!.Value,
+                        DefinitionId = reference.Id,
+                    }),
+            ],
             cancellationToken);
 
         try

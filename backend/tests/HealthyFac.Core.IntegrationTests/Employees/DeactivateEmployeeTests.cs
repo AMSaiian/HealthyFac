@@ -25,9 +25,9 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture)
 
         employee.Status.Should().Be(EmployeeStatus.Deactivated);
         messages.Should().ContainSingle();
-        messages[index: 0].CompanyId.Should().Be(arranged.CompanyId);
-        messages[index: 0].IdentityUserId.Should().Be(identityUserId);
-        messages[index: 0].DeactivatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(minutes: 1));
+        messages[0].CompanyId.Should().Be(arranged.CompanyId);
+        messages[0].IdentityUserId.Should().Be(identityUserId);
+        messages[0].DeactivatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(minutes: 1));
     }
 
     [Fact]
@@ -55,6 +55,7 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeIsSelf);
+
         var employee = await _fixture.LoadEmployeeAsync(arranged.EmployeeId);
         var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
@@ -90,6 +91,7 @@ public sealed class DeactivateEmployeeTests(CoreDatabaseFixture fixture)
         await act.Should()
             .ThrowAsync<UnprocessableException>()
             .WithMessage(EmployeeProvisioningErrors.Rejections.EmployeeAlreadyDeactivated);
+
         var messages = await _fixture.ReadDeactivatedMessagesAsync(arranged.EmployeeId);
 
         messages.Should().ContainSingle();

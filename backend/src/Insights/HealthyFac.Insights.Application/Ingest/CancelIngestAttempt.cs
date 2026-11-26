@@ -90,6 +90,7 @@ public sealed class CancelIngestAttemptRequestHandler(
                 && candidate.CompanyId == attempt.CompanyId
                 && candidate.State == IngestState.Failed,
             cancellationToken);
+
         _outbox.Add(IngestStateMessages.Create(attempt, failedCount, now));
 
         try
@@ -107,6 +108,7 @@ public sealed class CancelIngestAttemptRequestHandler(
             attempt.FileName,
             IngestState.Interrupted,
             isActorSkipped: true);
+
         _notifier.Push();
     }
 }

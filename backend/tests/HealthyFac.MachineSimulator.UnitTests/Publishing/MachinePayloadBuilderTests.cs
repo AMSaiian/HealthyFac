@@ -10,7 +10,7 @@ public sealed class MachinePayloadBuilderTests
     public void Build_WithDefinedKeysAndCodes_WritesTheEnvelopeWithUtcTime()
     {
         var sample = MachinePayloadBuilderTestData.Sample(
-            new Dictionary<string, object> { [key: "speed"] = 12.5, [key: "running"] = true, [key: "mode"] = "auto" },
+            new Dictionary<string, object> { ["speed"] = 12.5, ["running"] = true, ["mode"] = "auto" },
             "S002");
 
         var payload = MachinePayloadBuilder.Build(
@@ -21,22 +21,27 @@ public sealed class MachinePayloadBuilderTests
         using var document = JsonDocument.Parse(payload.Json);
         var root = document.RootElement;
         root.GetProperty(propertyName: "sampledAt").GetString().Should().Be(expected: "2026-03-10T23:30:05.0000000Z");
+
         root.GetProperty(propertyName: "metrics")
             .GetProperty(propertyName: "speed")
             .GetDouble()
             .Should()
             .Be(expected: 12.5);
+
         root.GetProperty(propertyName: "metrics").GetProperty(propertyName: "running").GetBoolean().Should().BeTrue();
+
         root.GetProperty(propertyName: "metrics")
             .GetProperty(propertyName: "mode")
             .GetString()
             .Should()
             .Be(expected: "auto");
+
         root.GetProperty(propertyName: "statuses")
             .EnumerateArray()
             .Select(item => item.GetString())
             .Should()
             .Equal("S002");
+
         payload.SkippedKeys.Should().BeEmpty();
     }
 
@@ -44,7 +49,7 @@ public sealed class MachinePayloadBuilderTests
     public void Build_WithUndefinedKeyAndUndefinedCode_DropsBoth()
     {
         var sample = MachinePayloadBuilderTestData.Sample(
-            new Dictionary<string, object> { [key: "speed"] = 1d, [key: "unknown"] = 2d },
+            new Dictionary<string, object> { ["speed"] = 1d, ["unknown"] = 2d },
             "S002",
             "X999");
 
@@ -54,16 +59,19 @@ public sealed class MachinePayloadBuilderTests
             MachinePayloadBuilderTestData.SampledAt);
 
         using var document = JsonDocument.Parse(payload.Json);
+
         document.RootElement.GetProperty(propertyName: "metrics")
             .EnumerateObject()
             .Select(item => item.Name)
             .Should()
             .Equal("speed");
+
         document.RootElement.GetProperty(propertyName: "statuses")
             .EnumerateArray()
             .Select(item => item.GetString())
             .Should()
             .Equal("S002");
+
         payload.SkippedKeys.Should().BeEmpty();
     }
 
@@ -71,7 +79,7 @@ public sealed class MachinePayloadBuilderTests
     public void Build_WithValueOfAnotherKind_DropsTheKeyAndReportsIt()
     {
         var sample = MachinePayloadBuilderTestData.Sample(
-            new Dictionary<string, object> { [key: "speed"] = "fast", [key: "running"] = true });
+            new Dictionary<string, object> { ["speed"] = "fast", ["running"] = true });
 
         var payload = MachinePayloadBuilder.Build(
             sample,
@@ -79,11 +87,13 @@ public sealed class MachinePayloadBuilderTests
             MachinePayloadBuilderTestData.SampledAt);
 
         using var document = JsonDocument.Parse(payload.Json);
+
         document.RootElement.GetProperty(propertyName: "metrics")
             .EnumerateObject()
             .Select(item => item.Name)
             .Should()
             .Equal("running");
+
         payload.SkippedKeys.Should().Equal("speed");
     }
 

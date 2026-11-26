@@ -82,6 +82,7 @@ public sealed class MoveWorkOrderRequestHandler(
             token => MoveAsync(request, token),
             IsolationLevel.Serializable,
             cancellationToken);
+
         _notifier.PushAssignmentChange(request.CompanyId, change);
     }
 
@@ -95,7 +96,9 @@ public sealed class MoveWorkOrderRequestHandler(
             request.Id,
             request.RowVersion,
             cancellationToken);
+
         var current = workOrder.Current;
+
         if (current.Status == WorkOrderStatus.Backlog)
         {
             throw new UnprocessableException(WorkOrderErrors.Rejections.NotScheduled);
@@ -107,6 +110,7 @@ public sealed class MoveWorkOrderRequestHandler(
         }
 
         var assigneeId = request.AssigneeId ?? current.AssigneeId!.Value;
+
         var startUtc = await _scheduleChecks.EnsureAsync(
             request.CompanyId,
             assigneeId,
@@ -132,6 +136,7 @@ public sealed class MoveWorkOrderRequestHandler(
         var oldAssigneeUserId = oldAssigneeId is { } oldId
             ? await _dbContext.FindIdentityUserIdAsync(oldId, cancellationToken)
             : null;
+
         var newAssigneeUserId = await _dbContext.FindIdentityUserIdAsync(assigneeId, cancellationToken);
 
         return new WorkOrderAssignmentChange
