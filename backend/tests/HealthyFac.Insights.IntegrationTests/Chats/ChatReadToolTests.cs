@@ -4,10 +4,12 @@ using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats;
 
 [Collection(ChatTurnCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatReadToolTests(ChatTurnFixture fixture)
 {
     private const string ForeignGuidText = "11111111-1111-1111-1111-111111111111";
@@ -15,9 +17,9 @@ public sealed class ChatReadToolTests(ChatTurnFixture fixture)
     private readonly ChatTurnFixture _fixture = fixture;
 
     [Theory]
-    [InlineData("search_machines", """{"name":"Pre"}""")]
-    [InlineData("get_work_order", """{"workOrderId":"%ID%"}""")]
+    [MemberData(nameof(ChatReadToolTestData.NotFoundTools), MemberType = typeof(ChatReadToolTestData))]
     public async Task ChatTool_WhenTheReadIsNotFoundOrNotAllowed_GivesTheModelTheFixedTextAndLogsNoReplyBody(
+        string caseName,
         string toolName,
         string argumentsTemplate
     )
@@ -29,7 +31,7 @@ public sealed class ChatReadToolTests(ChatTurnFixture fixture)
             toolName,
             argumentsTemplate.Replace(oldValue: "%ID%", encryptedId));
 
-        result.Should().Contain(ChatToolErrors.NotFoundOrNotAllowed);
+        result.Should().Contain(ChatToolErrors.NotFoundOrNotAllowed, caseName);
         var call = (await _fixture.ReadToolCallsAsync(runId)).Should().ContainSingle().Subject;
         call.Outcome.Should().Be(ToolCallOutcome.Rejected);
         call.Result.Should().Be($"\"{ChatToolErrors.NotFoundOrNotAllowed}\"");
@@ -50,8 +52,10 @@ public sealed class ChatReadToolTests(ChatTurnFixture fixture)
             .Should()
             .BeOfType<SearchMachinesArguments>()
             .Subject;
+
         arguments.Name.Should().Be(expected: "Pre");
         arguments.Limit.Should().Be(expected: 5);
+
         typeof(SearchMachinesArguments).GetProperties()
             .Select(property => property.Name)
             .Should()
@@ -62,6 +66,7 @@ public sealed class ChatReadToolTests(ChatTurnFixture fixture)
     public async Task SearchMachines_WithAMachineAnswer_ReturnsEncryptedIdsOnly()
     {
         var machineId = Guid.CreateVersion7();
+
         _fixture.Fakes.Reads.MachinesAnswer = new SearchMachinesResponse
         {
             TotalCount = 1,

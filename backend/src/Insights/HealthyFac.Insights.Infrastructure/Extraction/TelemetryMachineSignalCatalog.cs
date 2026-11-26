@@ -2,8 +2,8 @@ using Grpc.Core;
 using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Telemetry;
-using HealthyFac.Insights.Infrastructure.WorkOrders;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Infrastructure.Rpc;
 using HealthyFac.Telemetry.Contracts.Definitions;
 
 namespace HealthyFac.Insights.Infrastructure.Extraction;
@@ -39,19 +39,19 @@ public sealed class TelemetryMachineSignalCatalog(
 
             return new MachineSignals
             {
-                Metrics = reply.Metrics.Select(metric => ToReference(metric.Id, metric.Key)).ToList(),
-                Statuses = reply.Statuses.Select(status => ToReference(status.Id, status.Code)).ToList(),
+                Metrics = [.. reply.Metrics.Select(metric => ToReference(metric.Id, metric.Key))],
+                Statuses = [.. reply.Statuses.Select(status => ToReference(status.Id, status.Code))],
             };
         }
         catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
         {
             return new MachineSignals { Metrics = [], Statuses = [] };
         }
-        catch (RpcException exception) when (CoreWorkOrderCatalog.IsCancelledByCaller(exception, cancellationToken))
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
         {
             throw new OperationCanceledException(exception.Message, exception, cancellationToken);
         }
-        catch (RpcException exception) when (GrpcTelemetrySignals.IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }

@@ -5,7 +5,9 @@ import { ButtonDirective } from 'primeng/button';
 import { Drawer } from 'primeng/drawer';
 import { Tooltip } from 'primeng/tooltip';
 
+import { ASSISTANT_PATH } from '@assistant/assistant-paths';
 import { ChatsListStore } from '@assistant/chats-list.store';
+import { createListReloadRule } from '@assistant/chats-list.store.utils';
 import { ChatPicker } from '@shared/chat/chat-picker/chat-picker';
 import { ChatView } from '@shared/chat/chat-view/chat-view';
 import { CHAT_MESSAGES_PAGE_SIZE } from '@shared/chat/chat.store.utils';
@@ -30,18 +32,11 @@ export class ChatDrawer {
   protected readonly drawerStyle = { top: '3.75rem', bottom: '0', height: 'auto' };
 
   private readonly _router = inject(Router);
-  private _seenEndedCount = this.chat.endedCount();
-  private _seenDeletedChatId = this.chat.deletedChatId();
+  private readonly _shouldReloadList = createListReloadRule(this.chat.endedCount(), this.chat.deletedChatId());
 
   constructor() {
     effect(() => {
-      const endedCount = this.chat.endedCount();
-      const deletedChatId = this.chat.deletedChatId();
-      const isTurnEnded = endedCount !== this._seenEndedCount;
-      const isChatDeleted = deletedChatId !== null && deletedChatId !== this._seenDeletedChatId;
-      this._seenEndedCount = endedCount;
-      this._seenDeletedChatId = deletedChatId;
-      if (!isTurnEnded && !isChatDeleted) {
+      if (!this._shouldReloadList(this.chat.endedCount(), this.chat.deletedChatId())) {
         return;
       }
       untracked(() => {
@@ -52,6 +47,6 @@ export class ChatDrawer {
 
   protected openPage(): void {
     const chatId = this.chat.openChatId();
-    this._router.navigate(chatId === null ? ['/assistant'] : ['/assistant', chatId]).catch(() => undefined);
+    this._router.navigate(chatId === null ? [ASSISTANT_PATH] : [ASSISTANT_PATH, chatId]).catch(() => undefined);
   }
 }

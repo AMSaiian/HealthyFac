@@ -6,7 +6,7 @@ using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
 namespace HealthyFac.Insights.Application.Chats.Tools.Reads;
 
-public sealed record GetSignalEpisodesArguments
+public sealed record GetMachineSignalEpisodesArguments
 {
     public required Guid MachineId { get; init; }
 
@@ -22,22 +22,27 @@ public sealed record GetSignalEpisodesArguments
     IsRead = true,
     Permissions = [ChatToolPermissions.Telemetry.SignalsRead],
     Activity = "signals")]
-public sealed record GetSignalEpisodesToolRequest
-    : IAgentToolRequest<GetSignalEpisodesToolRequest, GetSignalEpisodesArguments, GetSignalEpisodesResponse>
+public sealed record GetMachineSignalEpisodesToolRequest
+    : IAgentToolRequest<GetMachineSignalEpisodesToolRequest, GetMachineSignalEpisodesArguments,
+        GetMachineSignalEpisodesResponse>
 {
     public const string ToolName = "get_machine_signal_episodes";
 
     public const string ToolDescription =
         "Reads the signal episodes of a machine that overlap a range: the rule, the severity, the state, the "
-        + "metric or status that caused it, and when it opened and resolved.";
+        + "metric or status that caused it, and when it opened and resolved. "
+        + AgentToolTexts.UtcTimes;
 
-    public required GetSignalEpisodesArguments Arguments { get; init; }
+    public required GetMachineSignalEpisodesArguments Arguments { get; init; }
 
-    public static GetSignalEpisodesToolRequest Create(GetSignalEpisodesArguments arguments, ToolContext context) =>
+    public static GetMachineSignalEpisodesToolRequest Create(
+        GetMachineSignalEpisodesArguments arguments,
+        ToolContext context
+    ) =>
         new() { Arguments = arguments };
 }
 
-public sealed record GetSignalEpisodesResponse
+public sealed record GetMachineSignalEpisodesResponse
 {
     public required IReadOnlyList<ChatSignalEpisode> Episodes { get; init; }
 }
@@ -71,32 +76,34 @@ public sealed record ChatSignalEpisode
     public DateTime? ResolvedAt { get; init; }
 }
 
-public sealed class GetSignalEpisodesArgumentsValidator : AbstractValidator<GetSignalEpisodesArguments>
+public sealed class GetMachineSignalEpisodesArgumentsValidator : AbstractValidator<GetMachineSignalEpisodesArguments>
 {
-    public GetSignalEpisodesArgumentsValidator()
+    public GetMachineSignalEpisodesArgumentsValidator()
     {
         this.AddIdRule(arguments => arguments.MachineId);
         this.AddRangeRule(arguments => arguments.From, arguments => arguments.To);
     }
 }
 
-public sealed class GetSignalEpisodesToolRequestValidator : AbstractValidator<GetSignalEpisodesToolRequest>
+public sealed class
+    GetMachineSignalEpisodesToolRequestValidator : AbstractValidator<GetMachineSignalEpisodesToolRequest>
 {
-    public GetSignalEpisodesToolRequestValidator()
+    public GetMachineSignalEpisodesToolRequestValidator()
     {
-        RuleFor(request => request.Arguments).SetValidator(new GetSignalEpisodesArgumentsValidator());
+        RuleFor(request => request.Arguments).SetValidator(new GetMachineSignalEpisodesArgumentsValidator());
     }
 }
 
-public sealed class GetSignalEpisodesToolPreHandlerCheck : PassThroughPreHandlerCheck<GetSignalEpisodesToolRequest>;
+public sealed class
+    GetMachineSignalEpisodesToolPreHandlerCheck : PassThroughPreHandlerCheck<GetMachineSignalEpisodesToolRequest>;
 
-public sealed class GetSignalEpisodesToolRequestHandler(IChatReads reads)
-    : IRequestHandler<GetSignalEpisodesToolRequest, GetSignalEpisodesResponse>
+public sealed class GetMachineSignalEpisodesToolRequestHandler(IChatReads reads)
+    : IRequestHandler<GetMachineSignalEpisodesToolRequest, GetMachineSignalEpisodesResponse>
 {
     private readonly IChatReads _reads = reads;
 
-    public Task<GetSignalEpisodesResponse> HandleAsync(
-        GetSignalEpisodesToolRequest request,
+    public Task<GetMachineSignalEpisodesResponse> HandleAsync(
+        GetMachineSignalEpisodesToolRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     ) =>
         _reads.GetSignalEpisodesAsync(request.Arguments, cancellationToken);

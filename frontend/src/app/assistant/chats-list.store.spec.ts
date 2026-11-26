@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { ChatsListStore } from '@assistant/chats-list.store';
-import { CHATS_PAGE_SIZE } from '@assistant/chats-list.store.utils';
+import { CHATS_PAGE_SIZE, createListReloadRule } from '@assistant/chats-list.store.utils';
 import { type ChatListItem, ChatState } from '@shared/chat/chat';
 import { toKeysetPosition } from '@shared/grid/requests/grid-request';
 
@@ -20,7 +20,7 @@ function setup(): { store: InstanceType<typeof ChatsListStore>; http: HttpTestin
   return { store: TestBed.inject(ChatsListStore), http: TestBed.inject(HttpTestingController) };
 }
 
-describe('ChatsListStore', () => {
+describe('ChatsListStore', { tags: ['Chat'] }, () => {
   it('loadNext_WithANextPosition_SendsItAsAfterAndAppendsThePage', () => {
     const { store, http } = setup();
     const position = toKeysetPosition({ key: 'p1' });
@@ -65,5 +65,24 @@ describe('ChatsListStore', () => {
 
     expect(nextPageRequest.cancelled).toBe(true);
     expect(store.items().map((row) => row.id)).toEqual(['new', 'a']);
+  });
+});
+
+describe('createListReloadRule', { tags: ['Chat'] }, () => {
+  it('rule_WhenATurnEndsOrANewChatIsDeleted_ReloadsOnceForEach', () => {
+    const shouldReload = createListReloadRule(0, null);
+
+    expect(shouldReload(0, null)).toBe(false);
+    expect(shouldReload(1, null)).toBe(true);
+    expect(shouldReload(1, null)).toBe(false);
+    expect(shouldReload(1, 'c1')).toBe(true);
+    expect(shouldReload(1, 'c1')).toBe(false);
+    expect(shouldReload(1, 'c2')).toBe(true);
+  });
+
+  it('rule_WhenTheHostOpensWithADeletedChat_DoesNotReloadForIt', () => {
+    const shouldReload = createListReloadRule(2, 'c1');
+
+    expect(shouldReload(2, 'c1')).toBe(false);
   });
 });

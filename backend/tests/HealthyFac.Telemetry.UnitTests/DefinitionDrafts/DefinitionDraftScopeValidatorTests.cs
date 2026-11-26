@@ -1,9 +1,12 @@
 using HealthyFac.Telemetry.Application.DefinitionDrafts;
 using HealthyFac.Telemetry.Application.DefinitionDrafts.SearchDefinitionDrafts;
 using HealthyFac.Telemetry.UnitTests.DefinitionDrafts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.DefinitionDrafts;
 
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class DefinitionDraftScopeValidatorTests
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000c01");
@@ -52,6 +55,27 @@ public sealed class DefinitionDraftScopeValidatorTests
         };
 
         var result = new DismissDefinitionDraftsRequestValidator().Validate(request);
+
+        result.IsValid.Should().Be(isValid, caseName);
+    }
+
+    [Theory]
+    [MemberData(nameof(DefinitionDraftScopeTestData.GetScopes), MemberType = typeof(DefinitionDraftScopeTestData))]
+    public void GetGroups_WithScope_NeedsExactlyOneOfAttemptAndChat(
+        string caseName,
+        Guid? attemptId,
+        Guid? chatId,
+        bool isValid
+    )
+    {
+        var request = new GetAttemptDefinitionDraftsRequest
+        {
+            CompanyId = CompanyId,
+            AttemptId = attemptId,
+            ChatId = chatId,
+        };
+
+        var result = new GetAttemptDefinitionDraftsRequestValidator().Validate(request);
 
         result.IsValid.Should().Be(isValid, caseName);
     }

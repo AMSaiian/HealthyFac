@@ -203,6 +203,7 @@ public sealed class FakeChatReads : IChatReads
     public Task<ChatEmployee?> FindEmployeeAsync(Guid employeeId, CancellationToken cancellationToken)
     {
         Calls.Add(employeeId);
+
         if (Failure is not null)
         {
             throw Failure;
@@ -217,18 +218,18 @@ public sealed class FakeChatReads : IChatReads
     ) =>
         Answer<GetMachineStateTimesResponse>(arguments, answer: null);
 
-    public Task<GetMetricHistoryResponse> GetMetricHistoryAsync(
-        GetMetricHistoryArguments arguments,
+    public Task<GetMachineMetricHistoryResponse> GetMetricHistoryAsync(
+        GetMachineMetricHistoryArguments arguments,
         int bucketCount,
         CancellationToken cancellationToken
     ) =>
-        Answer<GetMetricHistoryResponse>(arguments, answer: null);
+        Answer<GetMachineMetricHistoryResponse>(arguments, answer: null);
 
-    public Task<GetSignalEpisodesResponse> GetSignalEpisodesAsync(
-        GetSignalEpisodesArguments arguments,
+    public Task<GetMachineSignalEpisodesResponse> GetSignalEpisodesAsync(
+        GetMachineSignalEpisodesArguments arguments,
         CancellationToken cancellationToken
     ) =>
-        Answer<GetSignalEpisodesResponse>(arguments, answer: null);
+        Answer<GetMachineSignalEpisodesResponse>(arguments, answer: null);
 
     public Task<GetPhaseTimesResponse> GetPhaseTimesAsync(
         GetPhaseTimesArguments arguments,
@@ -270,6 +271,7 @@ public sealed class FakeChatReads : IChatReads
         where TResponse : class
     {
         Calls.Add(arguments);
+
         if (Failure is not null)
         {
             throw Failure;

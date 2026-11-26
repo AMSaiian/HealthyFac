@@ -16,5 +16,18 @@ public static class DefinitionDraftScopeTestData
         { "AllThree", Id, Id, Id, false },
         { "Neither", null, null, null, false },
         { "EmptyChat", null, null, Guid.Empty, false },
+        { "EmptyMachine", Guid.Empty, null, null, false },
+        { "EmptyAttempt", null, Guid.Empty, null, false },
+    };
+
+    /// <summary>The case name, the attempt ID, the chat ID, and whether the grouped read request is valid.</summary>
+    public static TheoryData<string, Guid?, Guid?, bool> GetScopes => new()
+    {
+        { "AttemptOnly", Id, null, true },
+        { "ChatOnly", null, Id, true },
+        { "Both", Id, Id, false },
+        { "Neither", null, null, false },
+        { "EmptyChat", null, Guid.Empty, false },
+        { "EmptyAttempt", Guid.Empty, null, false },
     };
 }

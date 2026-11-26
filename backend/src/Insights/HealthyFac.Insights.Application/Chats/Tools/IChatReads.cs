@@ -33,14 +33,14 @@ public interface IChatReads
     /// <param name="bucketCount">The number of buckets, which the server owns.</param>
     /// <param name="cancellationToken">The token that cancels the call.</param>
     /// <returns>The non-empty buckets in time order.</returns>
-    Task<GetMetricHistoryResponse> GetMetricHistoryAsync(
-        GetMetricHistoryArguments arguments,
+    Task<GetMachineMetricHistoryResponse> GetMetricHistoryAsync(
+        GetMachineMetricHistoryArguments arguments,
         int bucketCount,
         CancellationToken cancellationToken
     );
 
-    Task<GetSignalEpisodesResponse> GetSignalEpisodesAsync(
-        GetSignalEpisodesArguments arguments,
+    Task<GetMachineSignalEpisodesResponse> GetSignalEpisodesAsync(
+        GetMachineSignalEpisodesArguments arguments,
         CancellationToken cancellationToken
     );
 

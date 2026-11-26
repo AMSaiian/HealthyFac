@@ -1,4 +1,3 @@
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.ClientFactory;
 using HealthyFac.Core.Contracts.Employees;
@@ -14,6 +13,7 @@ using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Insights.Infrastructure.WorkOrders;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Shared.Infrastructure.Rpc;
 using HealthyFac.Telemetry.Contracts.Definitions;
 using HealthyFac.Telemetry.Contracts.Signals;
 
@@ -49,13 +49,14 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                     Limit = arguments.Limit ?? GridValidationConstants.MaxLimit,
                     Offset = arguments.Offset ?? 0,
                 };
+
                 request.States.AddRange(arguments.States ?? []);
                 var reply = await Machines().SearchMachinesAsync(request, cancellationToken: cancellationToken);
 
                 return new SearchMachinesResponse
                 {
                     TotalCount = reply.TotalCount,
-                    Machines = reply.Machines.Select(ToMachine).ToList(),
+                    Machines = [.. reply.Machines.Select(ToMachine)],
                 };
             },
             cancellationToken);
@@ -71,6 +72,7 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                     .GetMachineAsync(
                         new GetMachineRequest { MachineId = arguments.MachineId.ToString() },
                         cancellationToken: cancellationToken);
+
                 var definitions = await Definitions()
                     .ListDefinitionsAsync(
                         new ListDefinitionsRequest { MachineId = arguments.MachineId.ToString() },
@@ -79,15 +81,17 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                 return new GetMachineResponse
                 {
                     Machine = ToMachine(machine),
-                    Metrics = definitions.Metrics.Select(ToMetric).ToList(),
-                    Statuses = definitions.Statuses
-                        .Select(status => new ChatStatusDefinition
-                        {
-                            Id = Guid.Parse(status.Id),
-                            Code = status.Code,
-                            Severity = status.Severity,
-                        })
-                        .ToList(),
+                    Metrics = [.. definitions.Metrics.Select(ToMetric)],
+                    Statuses =
+                    [
+                        .. definitions.Statuses
+                            .Select(status => new ChatStatusDefinition
+                            {
+                                Id = Guid.Parse(status.Id),
+                                Code = status.Code,
+                                Severity = status.Severity,
+                            }),
+                    ],
                 };
             },
             cancellationToken);
@@ -104,23 +108,25 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                         new GetMachineStateTimesRequest
                         {
                             MachineId = arguments.MachineId.ToString(),
-                            From = ToTimestamp(arguments.From),
-                            To = ToTimestamp(arguments.To),
+                            From = RpcTimestamps.ToTimestamp(arguments.From),
+                            To = RpcTimestamps.ToTimestamp(arguments.To),
                         },
                         cancellationToken: cancellationToken);
 
                 return new GetMachineStateTimesResponse
                 {
-                    States = reply.States
-                        .Select(state => new ChatStateTime { State = state.State, Seconds = state.Seconds })
-                        .ToList(),
+                    States =
+                    [
+                        .. reply.States
+                            .Select(state => new ChatStateTime { State = state.State, Seconds = state.Seconds }),
+                    ],
                     BeforeCreationSeconds = reply.BeforeCreationSeconds,
                 };
             },
             cancellationToken);
 
-    public Task<GetMetricHistoryResponse> GetMetricHistoryAsync(
-        GetMetricHistoryArguments arguments,
+    public Task<GetMachineMetricHistoryResponse> GetMetricHistoryAsync(
+        GetMachineMetricHistoryArguments arguments,
         int bucketCount,
         CancellationToken cancellationToken
     ) =>
@@ -133,30 +139,32 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                         {
                             MachineId = arguments.MachineId.ToString(),
                             MetricDefinitionId = arguments.MetricDefinitionId.ToString(),
-                            From = ToTimestamp(arguments.From),
-                            To = ToTimestamp(arguments.To),
+                            From = RpcTimestamps.ToTimestamp(arguments.From),
+                            To = RpcTimestamps.ToTimestamp(arguments.To),
                             BucketCount = bucketCount,
                         },
                         cancellationToken: cancellationToken);
 
-                return new GetMetricHistoryResponse
+                return new GetMachineMetricHistoryResponse
                 {
-                    Buckets = reply.Buckets
-                        .Select(bucket => new ChatMetricBucket
-                        {
-                            Start = bucket.Start.ToDateTime(),
-                            Avg = bucket.Avg,
-                            Min = bucket.Min,
-                            Max = bucket.Max,
-                            Count = bucket.Count,
-                        })
-                        .ToList(),
+                    Buckets =
+                    [
+                        .. reply.Buckets
+                            .Select(bucket => new ChatMetricBucket
+                            {
+                                Start = bucket.Start.ToDateTime(),
+                                Avg = bucket.Avg,
+                                Min = bucket.Min,
+                                Max = bucket.Max,
+                                Count = bucket.Count,
+                            }),
+                    ],
                 };
             },
             cancellationToken);
 
-    public Task<GetSignalEpisodesResponse> GetSignalEpisodesAsync(
-        GetSignalEpisodesArguments arguments,
+    public Task<GetMachineSignalEpisodesResponse> GetSignalEpisodesAsync(
+        GetMachineSignalEpisodesArguments arguments,
         CancellationToken cancellationToken
     ) =>
         CallAsync(
@@ -167,12 +175,12 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                         new GetSignalEpisodesRequest
                         {
                             MachineId = arguments.MachineId.ToString(),
-                            From = ToTimestamp(arguments.From),
-                            To = ToTimestamp(arguments.To),
+                            From = RpcTimestamps.ToTimestamp(arguments.From),
+                            To = RpcTimestamps.ToTimestamp(arguments.To),
                         },
                         cancellationToken: cancellationToken);
 
-                return new GetSignalEpisodesResponse { Episodes = reply.Episodes.Select(ToEpisode).ToList() };
+                return new GetMachineSignalEpisodesResponse { Episodes = [.. reply.Episodes.Select(ToEpisode)] };
             },
             cancellationToken);
 
@@ -188,22 +196,24 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                         new GetPhaseTimesRequest
                         {
                             MachineId = arguments.MachineId.ToString(),
-                            From = ToTimestamp(arguments.From),
-                            To = ToTimestamp(arguments.To),
+                            From = RpcTimestamps.ToTimestamp(arguments.From),
+                            To = RpcTimestamps.ToTimestamp(arguments.To),
                         },
                         cancellationToken: cancellationToken);
 
                 return new GetPhaseTimesResponse
                 {
-                    Phases = reply.Phases
-                        .Select(phase => new ChatPhaseTime
-                        {
-                            Code = phase.Code,
-                            Name = phase.Name,
-                            IsTracked = phase.IsTracked,
-                            Seconds = phase.Seconds,
-                        })
-                        .ToList(),
+                    Phases =
+                    [
+                        .. reply.Phases
+                            .Select(phase => new ChatPhaseTime
+                            {
+                                Code = phase.Code,
+                                Name = phase.Name,
+                                IsTracked = phase.IsTracked,
+                                Seconds = phase.Seconds,
+                            }),
+                    ],
                     UnknownModeSeconds = reply.UnknownModeSeconds,
                     NoDataSeconds = reply.NoDataSeconds,
                 };
@@ -226,16 +236,17 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                     SortColumn = arguments.SortColumn ?? string.Empty,
                     SortDirection = arguments.SortDirection ?? string.Empty,
                 };
+
                 request.Statuses.AddRange(arguments.Statuses ?? []);
 
                 if (arguments.PlannedFrom is { } plannedFrom)
                 {
-                    request.PlannedFrom = ToTimestamp(plannedFrom);
+                    request.PlannedFrom = RpcTimestamps.ToTimestamp(plannedFrom);
                 }
 
                 if (arguments.PlannedTo is { } plannedTo)
                 {
-                    request.PlannedTo = ToTimestamp(plannedTo);
+                    request.PlannedTo = RpcTimestamps.ToTimestamp(plannedTo);
                 }
 
                 var reply = await WorkOrders().SearchWorkOrdersAsync(request, cancellationToken: cancellationToken);
@@ -243,7 +254,7 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                 return new SearchWorkOrdersResponse
                 {
                     TotalCount = reply.TotalCount,
-                    WorkOrders = reply.WorkOrders.Select(ToWorkOrderRow).ToList(),
+                    WorkOrders = [.. reply.WorkOrders.Select(ToWorkOrderRow)],
                 };
             },
             cancellationToken);
@@ -276,6 +287,7 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                     .LookupEmployeesAsync(
                         new LookupEmployeesRequest { EmployeeId = employeeId.ToString() },
                         cancellationToken: cancellationToken);
+
                 var employee = reply.Employees.SingleOrDefault();
 
                 return employee is null
@@ -298,13 +310,15 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
 
                 return new SearchEmployeesResponse
                 {
-                    Employees = reply.Employees
-                        .Select(employee => new ChatEmployee
-                        {
-                            Id = Guid.Parse(employee.Id),
-                            DisplayName = employee.DisplayName,
-                        })
-                        .ToList(),
+                    Employees =
+                    [
+                        .. reply.Employees
+                            .Select(employee => new ChatEmployee
+                            {
+                                Id = Guid.Parse(employee.Id),
+                                DisplayName = employee.DisplayName,
+                            }),
+                    ],
                 };
             },
             cancellationToken);
@@ -344,12 +358,14 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                 {
                     Date = company.Date,
                     TimeZoneId = company.TimeZoneId,
-                    Days = company.Employees
-                        .Select(employee => ToDay(
-                            employee.Day,
-                            Guid.Parse(employee.EmployeeId),
-                            $"{employee.FirstName} {employee.LastName}"))
-                        .ToList(),
+                    Days =
+                    [
+                        .. company.Employees
+                            .Select(employee => ToDay(
+                                employee.Day,
+                                Guid.Parse(employee.EmployeeId),
+                                $"{employee.FirstName} {employee.LastName}")),
+                    ],
                 };
             },
             cancellationToken);
@@ -374,10 +390,12 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
                 {
                     Date = reply.Date,
                     TimeZoneId = reply.TimeZoneId,
-                    Spans = reply.Spans
-                        .Select(span => new ChatScheduleBlock
-                            { StartLocal = span.StartLocal, EndLocal = span.EndLocal })
-                        .ToList(),
+                    Spans =
+                    [
+                        .. reply.Spans
+                            .Select(span => new ChatScheduleBlock
+                                { StartLocal = span.StartLocal, EndLocal = span.EndLocal }),
+                    ],
                 };
             },
             cancellationToken);
@@ -397,17 +415,19 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
 
                 return new SearchFilesResponse
                 {
-                    Files = reply.Files
-                        .Select(file => new ChatFile
-                        {
-                            FileId = Guid.Parse(file.FileId),
-                            FileName = file.FileName,
-                            Extension = file.Extension,
-                            ContentType = file.ContentType,
-                            SizeBytes = file.SizeBytes,
-                            MachineId = file.HasMachineId ? Guid.Parse(file.MachineId) : null,
-                        })
-                        .ToList(),
+                    Files =
+                    [
+                        .. reply.Files
+                            .Select(file => new ChatFile
+                            {
+                                FileId = Guid.Parse(file.FileId),
+                                FileName = file.FileName,
+                                Extension = file.Extension,
+                                ContentType = file.ContentType,
+                                SizeBytes = file.SizeBytes,
+                                MachineId = file.HasMachineId ? Guid.Parse(file.MachineId) : null,
+                            }),
+                    ],
                 };
             },
             cancellationToken);
@@ -422,18 +442,15 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
         {
             throw new NotFoundException(ChatToolErrors.NotFoundOrNotAllowed);
         }
-        catch (RpcException exception) when (CoreWorkOrderCatalog.IsCancelledByCaller(exception, cancellationToken))
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
         {
             throw new OperationCanceledException(exception.Message, exception, cancellationToken);
         }
-        catch (RpcException exception) when (CoreWorkOrderCatalog.IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }
     }
-
-    private static Timestamp ToTimestamp(DateTime value) =>
-        Timestamp.FromDateTime(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
     private static ChatMachine ToMachine(MachineReply machine) =>
         new()
@@ -456,7 +473,7 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
             Unit = metric.Unit,
             Min = metric.HasMin ? metric.Min : null,
             Max = metric.HasMax ? metric.Max : null,
-            States = metric.States.ToList(),
+            States = [.. metric.States],
         };
 
     private static ChatSignalEpisode ToEpisode(SignalEpisode episode) =>
@@ -511,18 +528,20 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
             EstimateMinutes = reply.EstimateMinutes,
             IsDelayed = reply.IsDelayed,
             CreatedAt = reply.CreatedAt.ToDateTime(),
-            History = reply.History
-                .Select(row => new ChatWorkOrderHistoryRow
-                {
-                    Revision = row.Revision,
-                    Status = row.Status,
-                    AssigneeId = row.HasAssigneeId ? Guid.Parse(row.AssigneeId) : null,
-                    AssigneeName = row.HasAssigneeName ? row.AssigneeName : null,
-                    PlannedStart = row.PlannedStart?.ToDateTime(),
-                    EstimateMinutes = row.EstimateMinutes,
-                    CreatedAt = row.CreatedAt.ToDateTime(),
-                })
-                .ToList(),
+            History =
+            [
+                .. reply.History
+                    .Select(row => new ChatWorkOrderHistoryRow
+                    {
+                        Revision = row.Revision,
+                        Status = row.Status,
+                        AssigneeId = row.HasAssigneeId ? Guid.Parse(row.AssigneeId) : null,
+                        AssigneeName = row.HasAssigneeName ? row.AssigneeName : null,
+                        PlannedStart = row.PlannedStart?.ToDateTime(),
+                        EstimateMinutes = row.EstimateMinutes,
+                        CreatedAt = row.CreatedAt.ToDateTime(),
+                    }),
+            ],
         };
 
     private static ChatScheduleDay ToDay(EmployeeScheduleReply day, Guid employeeId, string? employeeName) =>
@@ -531,21 +550,29 @@ public sealed class GrpcChatReads(GrpcClientFactory clientFactory) : IChatReads
             EmployeeId = employeeId,
             EmployeeName = employeeName,
             Source = day.Source,
-            Blocks = day.Blocks
-                .Select(block => new ChatScheduleBlock { StartLocal = block.StartLocal, EndLocal = block.EndLocal })
-                .ToList(),
-            WorkOrders = day.WorkOrders
-                .Select(workOrder => new ChatScheduledWorkOrder
-                {
-                    Id = Guid.Parse(workOrder.Id),
-                    Title = workOrder.Title,
-                    Status = workOrder.Status,
-                    Priority = workOrder.Priority,
-                    PlannedStartLocal = workOrder.PlannedStartLocal,
-                    EstimateMinutes = workOrder.EstimateMinutes,
-                    IsDelayed = workOrder.IsDelayed,
-                })
-                .ToList(),
+            Blocks =
+            [
+                .. day.Blocks
+                    .Select(block => new ChatScheduleBlock
+                    {
+                        StartLocal = block.StartLocal,
+                        EndLocal = block.EndLocal,
+                    }),
+            ],
+            WorkOrders =
+            [
+                .. day.WorkOrders
+                    .Select(workOrder => new ChatScheduledWorkOrder
+                    {
+                        Id = Guid.Parse(workOrder.Id),
+                        Title = workOrder.Title,
+                        Status = workOrder.Status,
+                        Priority = workOrder.Priority,
+                        PlannedStartLocal = workOrder.PlannedStartLocal,
+                        EstimateMinutes = workOrder.EstimateMinutes,
+                        IsDelayed = workOrder.IsDelayed,
+                    }),
+            ],
         };
 
     private CoreMachines.CoreMachinesClient Machines() =>

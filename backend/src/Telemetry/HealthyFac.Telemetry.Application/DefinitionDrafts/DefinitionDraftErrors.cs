@@ -19,6 +19,8 @@ public static class DefinitionDraftErrors
 
     public const string KindUnknown = "The kind filter holds a kind that does not exist.";
 
+    public const string GetScopeRequired = "Give exactly one of the ingest attempt and the chat.";
+
     public const string SearchScopeRequired =
         "Give exactly one of the machine, the ingest attempt, and the chat.";
 

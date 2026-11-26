@@ -1,4 +1,5 @@
 import { MachineActionType } from '@machines/machine-actions';
+import { DRAFT_ID_QUERY_PARAM, WORK_ORDER_DRAFTS_PATH } from '@work-orders/work-order-links';
 import {
   ChatActivity,
   type ChatDraft,
@@ -62,14 +63,12 @@ export function messageNoteKey(message: Pick<ChatMessage, 'kind' | 'state' | 'er
   return message.kind === null ? null : KIND_KEYS[message.kind];
 }
 
-const WORK_ORDER_DRAFTS_ROUTE = '/work-orders/drafts';
-
 /** How each kind of draft opens its review: the work order drafts page, or the machine drafts action of the chat. */
 const DRAFT_JUMPS: Readonly<Record<ChatDraftKind, (draft: ChatDraft, chatId: string) => NotificationJump>> = {
   [ChatDraftKind.WorkOrder]: (draft) => ({
     type: 'route',
-    commands: [WORK_ORDER_DRAFTS_ROUTE],
-    queryParams: { draftId: draft.draftId },
+    commands: [WORK_ORDER_DRAFTS_PATH],
+    queryParams: { [DRAFT_ID_QUERY_PARAM]: draft.draftId },
   }),
   [ChatDraftKind.Machine]: (_draft, chatId) => machineDraftsOfChat(chatId),
   [ChatDraftKind.Metric]: (_draft, chatId) => machineDraftsOfChat(chatId),

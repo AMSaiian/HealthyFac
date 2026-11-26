@@ -4,6 +4,7 @@ using HealthyFac.Core.Contracts.WorkOrders;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.WorkOrders;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Infrastructure.Rpc;
 
 namespace HealthyFac.Insights.Infrastructure.WorkOrders;
 
@@ -53,23 +54,17 @@ public sealed class CoreWorkOrderCatalog(GrpcClientFactory clientFactory, IDowns
                 },
                 cancellationToken: cancellationToken);
 
-            return reply.WorkOrders.Select(ToInfo).ToList();
+            return [.. reply.WorkOrders.Select(ToInfo)];
         }
-        catch (RpcException exception) when (IsCancelledByCaller(exception, cancellationToken))
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
         {
             throw new OperationCanceledException(exception.Message, exception, cancellationToken);
         }
-        catch (RpcException exception) when (IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }
     }
-
-    internal static bool IsCancelledByCaller(RpcException exception, CancellationToken cancellationToken) =>
-        exception.StatusCode is StatusCode.Cancelled && cancellationToken.IsCancellationRequested;
-
-    internal static bool IsOutage(RpcException exception) =>
-        exception.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded;
 
     private static OpenWorkOrderInfo ToInfo(WorkOrderRow row) =>
         new()

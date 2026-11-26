@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Insights.Application.Chats.Tools.Reads;
 
 /// <summary>The arguments that the model gives <c>get_machine_metric_history</c>.</summary>
-public sealed record GetMetricHistoryArguments
+public sealed record GetMachineMetricHistoryArguments
 {
     public required Guid MachineId { get; init; }
 
@@ -28,22 +28,27 @@ public sealed record GetMetricHistoryArguments
     IsRead = true,
     Permissions = [ChatToolPermissions.Telemetry.SignalsRead],
     Activity = "signals")]
-public sealed record GetMetricHistoryToolRequest
-    : IAgentToolRequest<GetMetricHistoryToolRequest, GetMetricHistoryArguments, GetMetricHistoryResponse>
+public sealed record GetMachineMetricHistoryToolRequest
+    : IAgentToolRequest<GetMachineMetricHistoryToolRequest, GetMachineMetricHistoryArguments,
+        GetMachineMetricHistoryResponse>
 {
     public const string ToolName = "get_machine_metric_history";
 
     public const string ToolDescription =
         "Reads the history of one metric of a machine as buckets with the average, the minimum, the maximum, and "
-        + "the sample count. Give the metric by its ID (get_machine lists the metric definitions of a machine).";
+        + "the sample count. Give the metric by its ID (get_machine lists the metric definitions of a machine). "
+        + AgentToolTexts.UtcTimes;
 
-    public required GetMetricHistoryArguments Arguments { get; init; }
+    public required GetMachineMetricHistoryArguments Arguments { get; init; }
 
-    public static GetMetricHistoryToolRequest Create(GetMetricHistoryArguments arguments, ToolContext context) =>
+    public static GetMachineMetricHistoryToolRequest Create(
+        GetMachineMetricHistoryArguments arguments,
+        ToolContext context
+    ) =>
         new() { Arguments = arguments };
 }
 
-public sealed record GetMetricHistoryResponse
+public sealed record GetMachineMetricHistoryResponse
 {
     public required IReadOnlyList<ChatMetricBucket> Buckets { get; init; }
 }
@@ -61,9 +66,9 @@ public sealed record ChatMetricBucket
     public required long Count { get; init; }
 }
 
-public sealed class GetMetricHistoryArgumentsValidator : AbstractValidator<GetMetricHistoryArguments>
+public sealed class GetMachineMetricHistoryArgumentsValidator : AbstractValidator<GetMachineMetricHistoryArguments>
 {
-    public GetMetricHistoryArgumentsValidator()
+    public GetMachineMetricHistoryArgumentsValidator()
     {
         this.AddIdRule(arguments => arguments.MachineId);
         this.AddIdRule(arguments => arguments.MetricDefinitionId);
@@ -71,15 +76,16 @@ public sealed class GetMetricHistoryArgumentsValidator : AbstractValidator<GetMe
     }
 }
 
-public sealed class GetMetricHistoryToolRequestValidator : AbstractValidator<GetMetricHistoryToolRequest>
+public sealed class GetMachineMetricHistoryToolRequestValidator : AbstractValidator<GetMachineMetricHistoryToolRequest>
 {
-    public GetMetricHistoryToolRequestValidator()
+    public GetMachineMetricHistoryToolRequestValidator()
     {
-        RuleFor(request => request.Arguments).SetValidator(new GetMetricHistoryArgumentsValidator());
+        RuleFor(request => request.Arguments).SetValidator(new GetMachineMetricHistoryArgumentsValidator());
     }
 }
 
-public sealed class GetMetricHistoryToolPreHandlerCheck : PassThroughPreHandlerCheck<GetMetricHistoryToolRequest>;
+public sealed class
+    GetMachineMetricHistoryToolPreHandlerCheck : PassThroughPreHandlerCheck<GetMachineMetricHistoryToolRequest>;
 
 /// <summary>
 /// Reads the history of one metric in <see cref="AgentOptions.PlannerHistoryBucketCount"/> buckets. A range above
@@ -87,14 +93,14 @@ public sealed class GetMetricHistoryToolPreHandlerCheck : PassThroughPreHandlerC
 /// </summary>
 /// <param name="reads">Reads the history with the token of the user.</param>
 /// <param name="options">Holds the bucket count and the range limit.</param>
-public sealed class GetMetricHistoryToolRequestHandler(IChatReads reads, IOptions<AgentOptions> options)
-    : IRequestHandler<GetMetricHistoryToolRequest, GetMetricHistoryResponse>
+public sealed class GetMachineMetricHistoryToolRequestHandler(IChatReads reads, IOptions<AgentOptions> options)
+    : IRequestHandler<GetMachineMetricHistoryToolRequest, GetMachineMetricHistoryResponse>
 {
     private readonly IChatReads _reads = reads;
     private readonly AgentOptions _options = options.Value;
 
-    public Task<GetMetricHistoryResponse> HandleAsync(
-        GetMetricHistoryToolRequest request,
+    public Task<GetMachineMetricHistoryResponse> HandleAsync(
+        GetMachineMetricHistoryToolRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {

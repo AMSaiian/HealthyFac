@@ -9,9 +9,11 @@ using HealthyFac.Insights.UnitTests.Files.Data;
 using HealthyFac.Shared.Application.DownstreamScopes;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Telemetry.Contracts.Definitions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Chats;
 
+[Feature(TestFeatures.Chat)]
 public sealed class GrpcChatReadsTests
 {
     private const string ReplyBody = "secret reply body of the service";
@@ -25,9 +27,9 @@ public sealed class GrpcChatReadsTests
     }
 
     [Theory]
-    [InlineData(StatusCode.NotFound)]
-    [InlineData(StatusCode.PermissionDenied)]
+    [MemberData(nameof(GrpcChatReadsTestData.DeniedStatuses), MemberType = typeof(GrpcChatReadsTestData))]
     public async Task GetWorkOrder_WhenTheServiceDeniesOrDoesNotFindIt_ThrowsTheFixedTextWithoutTheReplyBody(
+        string caseName,
         StatusCode code
     )
     {
@@ -38,7 +40,7 @@ public sealed class GrpcChatReadsTests
             TestContext.Current.CancellationToken);
 
         var exception = await act.Should().ThrowAsync<NotFoundException>();
-        exception.Which.Message.Should().Be(ChatToolErrors.NotFoundOrNotAllowed);
+        exception.Which.Message.Should().Be(ChatToolErrors.NotFoundOrNotAllowed, caseName);
         exception.Which.ToString().Should().NotContain(ReplyBody);
     }
 
@@ -71,6 +73,7 @@ public sealed class GrpcChatReadsTests
     {
         var machineId = Guid.CreateVersion7();
         SearchMachinesRequest? sent = null;
+
         _invoker.Respond = request =>
         {
             sent = (SearchMachinesRequest)request;
@@ -100,6 +103,7 @@ public sealed class GrpcChatReadsTests
     {
         var machineId = Guid.CreateVersion7();
         var metricId = Guid.CreateVersion7();
+
         _invoker.Respond = request => request switch
         {
             GetMachineRequest => new MachineReply { Id = machineId.ToString(), Description = "Main press" },

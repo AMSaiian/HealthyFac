@@ -25,7 +25,7 @@
           <a
             class="flex h-full min-w-0 flex-col justify-center gap-1 rounded px-2 hover:bg-emphasis"
             [class.bg-highlight]="slot.id === selectedId()"
-            [routerLink]="['/assistant', slot.id]"
+            [routerLink]="[assistantPath, slot.id]"
           >
             <span class="truncate font-semibold">{{ slot.title }}</span>
             <span class="text-muted-color text-sm">{{ slot.updatedAt | localDateTime }}</span>

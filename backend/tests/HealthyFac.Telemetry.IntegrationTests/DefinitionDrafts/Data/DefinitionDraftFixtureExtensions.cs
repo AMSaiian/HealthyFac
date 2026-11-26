@@ -67,8 +67,10 @@ public static class DefinitionDraftFixtureExtensions
         {
             var entry = new ProposalEntry(Guid.CreateVersion7(), DefinitionDraftTestData.CompanyId);
             var proposal = DefinitionDraftTestData.CreateProposal();
+
             var metric = DefinitionDraftTestData.CreateMetric(
                 Guid.CreateVersion7(), entry.Id, proposal.Id, tentativeMachineId);
+
             var status = DefinitionDraftTestData.CreateStatus(
                 Guid.CreateVersion7(), entry.Id, proposal.Id, tentativeMachineId);
 
@@ -111,10 +113,12 @@ public static class DefinitionDraftFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var category = typeof(THandler).FullName;
 
-            return scope.ServiceProvider.GetFakeLogCollector()
-                .GetSnapshot()
-                .Where(record => record.Level == LogLevel.Warning && record.Category == category)
-                .ToList();
+            return
+            [
+                .. scope.ServiceProvider.GetFakeLogCollector()
+                    .GetSnapshot()
+                    .Where(record => record.Level == LogLevel.Warning && record.Category == category),
+            ];
         }
 
         public async Task ResolveDraftsAsync(DraftsResolved message)
@@ -274,19 +278,22 @@ public static class DefinitionDraftFixtureExtensions
                 new GetAttemptDefinitionDraftsRequest { CompanyId = companyId, AttemptId = attemptId });
         }
 
-        public async Task<ChatDefinitionDraftsResponse> GetChatDefinitionDraftsAsync(Guid companyId, Guid chatId)
+        public async Task<AttemptDefinitionDraftsResponse> GetChatDefinitionDraftsAsync(Guid companyId, Guid chatId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
-                .GetRequiredService<IRequestHandler<GetChatDefinitionDraftsRequest, ChatDefinitionDraftsResponse>>();
+                .GetRequiredService<
+                    IRequestHandler<GetAttemptDefinitionDraftsRequest, AttemptDefinitionDraftsResponse>>();
 
             return await handler.HandleAsync(
-                new GetChatDefinitionDraftsRequest { CompanyId = companyId, ChatId = chatId });
+                new GetAttemptDefinitionDraftsRequest { CompanyId = companyId, ChatId = chatId });
         }
 
         public async Task<IReadOnlyList<Guid>> ReadChatDefinitionDraftsAsync(Guid companyId, Guid chatId)
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<SearchDefinitionDraftsRequest, KeysetGridResponse<DefinitionDraftGridItem>>>();
@@ -309,6 +316,7 @@ public static class DefinitionDraftFixtureExtensions
         )
         {
             using var scope = fixture.CreateUserScope(companyId);
+
             var handler = scope.ServiceProvider
                 .GetRequiredService<
                     IRequestHandler<DismissDefinitionDraftsRequest, DismissDefinitionDraftsResponse>>();

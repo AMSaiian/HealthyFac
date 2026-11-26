@@ -1,46 +1,27 @@
 using HealthyFac.Insights.Infrastructure.Telemetry;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
-using HealthyFac.Insights.UnitTests.WorkOrders.Data;
+using HealthyFac.Shared.Application.CurrentUser;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Extraction;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class TelemetryDefinitionsClientsTests
 {
     [Theory]
-    [InlineData(true, TelemetryClientNames.User.Definitions)]
-    [InlineData(false, TelemetryClientNames.Definitions)]
-    public void NameFor_ByTheTokenOfTheCall_PicksTheUserClientOrTheServiceClient(bool hasUserToken, string expected)
-    {
-        TelemetryDefinitionsClients.NameFor(hasUserToken).Should().Be(expected);
-    }
-
-    [Fact]
-    public void Create_WithARequestThatHoldsAUserToken_CreatesTheUserClient()
-    {
-        var factory = new RecordingGrpcClientFactory();
-
-        new TelemetryDefinitionsClients(factory, new UserTokenAccessor()).Create();
-
-        factory.RequestedNames.Should().Equal(TelemetryClientNames.User.Definitions);
-    }
-
-    [Fact]
-    public void Create_WithNoUserToken_CreatesTheServiceClient()
+    [MemberData(
+        nameof(TelemetryDefinitionsClientsTestData.Accessors),
+        MemberType = typeof(TelemetryDefinitionsClientsTestData))]
+    public void Create_ByTheTokenOfTheCall_CreatesTheUserClientOrTheServiceClient(
+        string caseName,
+        IIncomingAccessTokenAccessor? accessor,
+        string expected
+    )
     {
         var factory = new RecordingGrpcClientFactory();
 
-        new TelemetryDefinitionsClients(factory, new NoUserTokenAccessor()).Create();
+        new TelemetryDefinitionsClients(factory, accessor).Create();
 
-        factory.RequestedNames.Should().Equal(TelemetryClientNames.Definitions);
-    }
-
-    [Fact]
-    public void Create_WithNoAccessor_CreatesTheServiceClient()
-    {
-        var factory = new RecordingGrpcClientFactory();
-
-        new TelemetryDefinitionsClients(factory).Create();
-
-        factory.RequestedNames.Should().Equal(TelemetryClientNames.Definitions);
+        factory.RequestedNames.Should().Equal([expected], caseName);
     }
 }

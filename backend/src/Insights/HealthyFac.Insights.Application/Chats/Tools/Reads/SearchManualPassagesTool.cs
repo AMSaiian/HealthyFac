@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.Application.Chats.Tools.Reads;
 
-public sealed record SearchManualArguments
+public sealed record SearchManualPassagesArguments
 {
     public required Guid MachineId { get; init; }
 
@@ -27,8 +27,8 @@ public sealed record SearchManualArguments
     IsRead = true,
     Permissions = [ChatToolPermissions.Insights.IngestRead],
     Activity = "manuals")]
-public sealed record SearchManualToolRequest
-    : IAgentToolRequest<SearchManualToolRequest, SearchManualArguments, SearchManualResponse>
+public sealed record SearchManualPassagesToolRequest
+    : IAgentToolRequest<SearchManualPassagesToolRequest, SearchManualPassagesArguments, SearchManualPassagesResponse>
 {
     public const string ToolName = "search_manual_passages";
 
@@ -36,13 +36,16 @@ public sealed record SearchManualToolRequest
         "Searches the documents of one machine (manuals, procedures) and returns the passages that are nearest to "
         + "the query, each with its location. Give the machine by its ID.";
 
-    public required SearchManualArguments Arguments { get; init; }
+    public required SearchManualPassagesArguments Arguments { get; init; }
 
-    public static SearchManualToolRequest Create(SearchManualArguments arguments, ToolContext context) =>
+    public static SearchManualPassagesToolRequest Create(
+        SearchManualPassagesArguments arguments,
+        ToolContext context
+    ) =>
         new() { Arguments = arguments };
 }
 
-public sealed record SearchManualResponse
+public sealed record SearchManualPassagesResponse
 {
     public required IReadOnlyList<ChatManualPassage> Passages { get; init; }
 }
@@ -55,9 +58,9 @@ public sealed record ChatManualPassage
     public required string Text { get; init; }
 }
 
-public sealed class SearchManualArgumentsValidator : AbstractValidator<SearchManualArguments>
+public sealed class SearchManualPassagesArgumentsValidator : AbstractValidator<SearchManualPassagesArguments>
 {
-    public SearchManualArgumentsValidator()
+    public SearchManualPassagesArgumentsValidator()
     {
         this.AddIdRule(arguments => arguments.MachineId);
 
@@ -68,15 +71,16 @@ public sealed class SearchManualArgumentsValidator : AbstractValidator<SearchMan
     }
 }
 
-public sealed class SearchManualToolRequestValidator : AbstractValidator<SearchManualToolRequest>
+public sealed class SearchManualPassagesToolRequestValidator : AbstractValidator<SearchManualPassagesToolRequest>
 {
-    public SearchManualToolRequestValidator()
+    public SearchManualPassagesToolRequestValidator()
     {
-        RuleFor(request => request.Arguments).SetValidator(new SearchManualArgumentsValidator());
+        RuleFor(request => request.Arguments).SetValidator(new SearchManualPassagesArgumentsValidator());
     }
 }
 
-public sealed class SearchManualToolPreHandlerCheck : PassThroughPreHandlerCheck<SearchManualToolRequest>;
+public sealed class
+    SearchManualPassagesToolPreHandlerCheck : PassThroughPreHandlerCheck<SearchManualPassagesToolRequest>;
 
 /// <summary>
 /// Embeds the query and returns the nearest chunks of the documents that are tied to the machine inside the company
@@ -87,12 +91,12 @@ public sealed class SearchManualToolPreHandlerCheck : PassThroughPreHandlerCheck
 /// <param name="search">Finds the nearest chunks.</param>
 /// <param name="options">Holds the number of chunks.</param>
 /// <param name="currentUser">Provides the company of the user.</param>
-public sealed class SearchManualToolRequestHandler(
+public sealed class SearchManualPassagesToolRequestHandler(
     ChunkEmbedder embedder,
     IManualSearch search,
     IOptions<AgentOptions> options,
     ICurrentUserProvider currentUser
-) : IRequestHandler<SearchManualToolRequest, SearchManualResponse>
+) : IRequestHandler<SearchManualPassagesToolRequest, SearchManualPassagesResponse>
 {
     public const string ChunkTag = "manual_chunk";
 
@@ -101,29 +105,32 @@ public sealed class SearchManualToolRequestHandler(
     private readonly AgentOptions _options = options.Value;
     private readonly ICurrentUserProvider _currentUser = currentUser;
 
-    public async Task<SearchManualResponse> HandleAsync(
-        SearchManualToolRequest request,
+    public async Task<SearchManualPassagesResponse> HandleAsync(
+        SearchManualPassagesToolRequest request,
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
         var vectors = await _embedder.EmbedAsync([request.Arguments.Query], cancellationToken);
+
         var chunks = await ManualChunkFinder.FindAsync(
             _search,
             _currentUser.GetCompanyId(),
             request.Arguments.MachineId,
-            vectors[index: 0],
+            vectors[0],
             _options.ManualSearchChunks,
             cancellationToken);
 
-        return new SearchManualResponse
+        return new SearchManualPassagesResponse
         {
-            Passages = chunks
-                .Select(chunk => new ChatManualPassage
-                {
-                    Location = chunk.Location,
-                    Text = AgentDataBlocks.Wrap(ChunkTag, chunk.Text),
-                })
-                .ToList(),
+            Passages =
+            [
+                .. chunks
+                    .Select(chunk => new ChatManualPassage
+                    {
+                        Location = chunk.Location,
+                        Text = AgentDataBlocks.Wrap(ChunkTag, chunk.Text),
+                    }),
+            ],
         };
     }
 }

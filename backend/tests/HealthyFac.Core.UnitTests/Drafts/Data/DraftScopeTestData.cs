@@ -16,6 +16,8 @@ public static class DraftScopeTestData
         { "AllThree", Id, Id, Id, false },
         { "Neither", null, null, null, false },
         { "EmptyChat", null, null, Guid.Empty, false },
+        { "EmptyMachine", Guid.Empty, null, null, false },
+        { "EmptyAttempt", null, Guid.Empty, null, false },
     };
 
     /// <summary>The case name, the attempt ID, the chat ID, and whether the grouped read is valid.</summary>
@@ -26,5 +28,6 @@ public static class DraftScopeTestData
         { "Both", Id, Id, false },
         { "Neither", null, null, false },
         { "EmptyChat", null, Guid.Empty, false },
+        { "EmptyAttempt", Guid.Empty, null, false },
     };
 }

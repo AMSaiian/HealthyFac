@@ -23,8 +23,8 @@ public record AttemptDraftsResponse
 }
 
 /// <summary>
-/// The machine draft of one attempt for one machine: an existing machine (the target, or the machine that a create
-/// draft made), or the machine that a pending create draft proposes.
+/// The machine draft of one attempt or one chat for one machine: an existing machine (the target, or the machine that
+/// a create draft made), or the machine that a pending create draft proposes.
 /// </summary>
 public record AttemptDraftGroup
 {
@@ -44,14 +44,17 @@ public class GetAttemptDraftsRequestValidator : AbstractValidator<GetAttemptDraf
     public GetAttemptDraftsRequestValidator()
     {
         RuleFor(x => x.CompanyId).NotEmpty().WithMessage(DraftErrors.CompanyIdRequired);
+
         RuleFor(x => x.AttemptId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DraftErrors.AttemptIdRequired)
             .When(x => x.AttemptId is not null);
+
         RuleFor(x => x.ChatId)
             .NotEqual(Guid.Empty)
             .WithMessage(DraftErrors.ChatIdRequired)
             .When(x => x.ChatId is not null);
+
         RuleFor(x => x)
             .Must(x => x.AttemptId is null != x.ChatId is null)
             .WithMessage(DraftErrors.GetScopeRequired);

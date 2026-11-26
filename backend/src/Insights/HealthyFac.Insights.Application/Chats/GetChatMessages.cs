@@ -30,9 +30,11 @@ public sealed class GetChatMessagesRequestValidator : AbstractValidator<GetChatM
     {
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(ChatErrors.CompanyIdRequired);
         RuleFor(request => request.ChatId).NotEmpty().WithMessage(ChatErrors.ChatIdRequired);
+
         RuleFor(request => request.Limit)
             .InclusiveBetween(GridValidationConstants.MinLimit, GridValidationConstants.MaxLimit)
             .WithMessage(GridErrors.Validation.LimitOutOfRange);
+
         RuleFor(request => request.Before!.Value)
             .GreaterThanOrEqualTo(valueToCompare: 1)
             .WithMessage(ChatErrors.BeforeInvalid)
@@ -77,12 +79,14 @@ public sealed class GetChatMessagesRequestHandler(IInsightsDbContext dbContext, 
             .AnyAsync(
                 chat => chat.Id == request.ChatId && chat.OwnerUserId == ownerId && chat.CompanyId == request.CompanyId,
                 cancellationToken);
+
         if (!isOwned)
         {
             throw new NotFoundException(ChatErrors.ChatNotFound);
         }
 
         var query = _dbContext.ChatMessages.AsNoTracking().Where(message => message.ChatId == request.ChatId);
+
         if (request.Before is { } before)
         {
             query = query.Where(message => message.Sequence < before);
@@ -91,37 +95,7 @@ public sealed class GetChatMessagesRequestHandler(IInsightsDbContext dbContext, 
         var rows = await query
             .OrderByDescending(message => message.Sequence)
             .Take(request.Limit + 1)
-            .Select(message => new ChatMessageResponse
-            {
-                Id = message.Id,
-                Sequence = message.Sequence,
-                Role = message.Role,
-                Kind = message.Kind,
-                State = message.State,
-                Text = message.Text,
-                ErrorCode = message.ErrorCode,
-                Links = message.Links
-                    .OrderBy(link => link.Position)
-                    .Select(link => new ChatLinkResponse
-                    {
-                        Kind = link.Kind,
-                        EntityId = link.EntityId,
-                        Label = link.Label,
-                        Position = link.Position,
-                    })
-                    .ToList(),
-                Drafts = message.Drafts
-                    .OrderBy(draft => draft.CreatedAt)
-                    .Select(draft => new ChatDraftResponse
-                    {
-                        Kind = draft.Kind,
-                        DraftId = draft.DraftId,
-                        Title = draft.Title,
-                        TargetMachineId = draft.TargetMachineId,
-                        IsCommitted = draft.IsCommitted,
-                    })
-                    .ToList(),
-            })
+            .Select(ChatMessageMapping.ToResponseExpression)
             .ToListAsync(cancellationToken);
 
         var items = rows.Take(request.Limit).ToList();

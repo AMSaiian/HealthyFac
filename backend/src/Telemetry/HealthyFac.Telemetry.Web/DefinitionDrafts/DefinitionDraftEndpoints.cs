@@ -13,8 +13,6 @@ using ApplicationDismissDefinitionDraftRequest =
     HealthyFac.Telemetry.Application.DefinitionDrafts.DismissDefinitionDraftRequest;
 using ApplicationDismissDefinitionDraftsRequest =
     HealthyFac.Telemetry.Application.DefinitionDrafts.DismissDefinitionDraftsRequest;
-using ApplicationGetChatDefinitionDraftsRequest =
-    HealthyFac.Telemetry.Application.DefinitionDrafts.GetChatDefinitionDraftsRequest;
 using ApplicationGetAttemptDefinitionDraftsRequest =
     HealthyFac.Telemetry.Application.DefinitionDrafts.GetAttemptDefinitionDraftsRequest;
 using ApplicationGetPendingCountsRequest =
@@ -69,12 +67,15 @@ public static class DefinitionDraftEndpoints
             app.MapGroup(DefinitionDraftRoutes.AttemptDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.DismissAll, DismissAttemptDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);
+
             app.MapGroup(DefinitionDraftRoutes.ChatDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.Search, SearchChatDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
+
             app.MapGroup(DefinitionDraftRoutes.ChatDraftsRoute)
                 .MapGet(DefinitionDraftRoutes.Root, GetChatDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Read);
+
             app.MapGroup(DefinitionDraftRoutes.ChatDraftsRoute)
                 .MapPost(DefinitionDraftRoutes.DismissAll, DismissChatDraftsAsync)
                 .RequireAuthorization(TelemetryPermissions.DefinitionDrafts.Write);
@@ -131,16 +132,16 @@ public static class DefinitionDraftEndpoints
         return TypedResults.Ok(response);
     }
 
-    private static async Task<Ok<ChatDefinitionDraftsResponse>> GetChatDraftsAsync(
+    private static async Task<Ok<AttemptDefinitionDraftsResponse>> GetChatDraftsAsync(
         [FromRoute(Name = DefinitionDraftRoutes.ChatIdParameter)] string chatId,
         ICurrentUserProvider currentUser,
-        IRequestHandler<ApplicationGetChatDefinitionDraftsRequest, ChatDefinitionDraftsResponse> handler,
+        IRequestHandler<ApplicationGetAttemptDefinitionDraftsRequest, AttemptDefinitionDraftsResponse> handler,
         IIdEncryptor idEncryptor,
         CancellationToken cancellationToken
     )
     {
         var response = await handler.HandleAsync(
-            new ApplicationGetChatDefinitionDraftsRequest
+            new ApplicationGetAttemptDefinitionDraftsRequest
             {
                 CompanyId = currentUser.GetCompanyId(),
                 ChatId = DefinitionDraftRouteIds.Decrypt(chatId, idEncryptor),

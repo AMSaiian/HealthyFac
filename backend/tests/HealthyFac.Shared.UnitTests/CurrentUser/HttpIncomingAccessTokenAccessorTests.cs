@@ -64,11 +64,9 @@ public sealed class HttpIncomingAccessTokenAccessorTests
     }
 
     [Theory]
-    [InlineData("name", "Ann Owner", "preferred_username", "ann", "Ann Owner")]
-    [InlineData("preferred_username", "ann", "email", "ann@x.test", "ann")]
-    [InlineData("email", "ann@x.test", "other", "none", "ann@x.test")]
-    [InlineData("name", "  ", "preferred_username", "ann", "ann")]
+    [MemberData(nameof(NameClaimsTestData.NameClaims), MemberType = typeof(NameClaimsTestData))]
     public void TryGetUserName_WithSeveralNameClaims_ReadsNameThenPreferredUsernameThenEmail(
+        string caseName,
         string firstType,
         string firstValue,
         string secondType,
@@ -83,7 +81,7 @@ public sealed class HttpIncomingAccessTokenAccessorTests
 
         var name = accessor.TryGetUserName();
 
-        name.Should().Be(expected);
+        name.Should().Be(expected, caseName);
     }
 
     [Fact]

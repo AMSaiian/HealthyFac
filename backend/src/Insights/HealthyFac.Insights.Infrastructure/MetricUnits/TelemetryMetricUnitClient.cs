@@ -2,8 +2,8 @@ using Grpc.Core;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Application.MetricUnits;
 using HealthyFac.Insights.Infrastructure.Telemetry;
-using HealthyFac.Insights.Infrastructure.WorkOrders;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Shared.Infrastructure.Rpc;
 using HealthyFac.Telemetry.Contracts.Definitions;
 
 namespace HealthyFac.Insights.Infrastructure.MetricUnits;
@@ -36,20 +36,22 @@ public sealed class TelemetryMetricUnitClient(
                 new ListMetricUnitsRequest(),
                 cancellationToken: cancellationToken);
 
-            return reply.Kinds
-                .SelectMany(kind => kind.Units.Select(unit => new MetricUnit
-                {
-                    QuantityKind = kind.Name,
-                    Name = unit.Name,
-                    Abbreviation = unit.Abbreviation,
-                }))
-                .ToList();
+            return
+            [
+                .. reply.Kinds
+                    .SelectMany(kind => kind.Units.Select(unit => new MetricUnit
+                    {
+                        QuantityKind = kind.Name,
+                        Name = unit.Name,
+                        Abbreviation = unit.Abbreviation,
+                    })),
+            ];
         }
-        catch (RpcException exception) when (CoreWorkOrderCatalog.IsCancelledByCaller(exception, cancellationToken))
+        catch (RpcException exception) when (RpcFailures.IsCancelledByCaller(exception, cancellationToken))
         {
             throw new OperationCanceledException(exception.Message, exception, cancellationToken);
         }
-        catch (RpcException exception) when (GrpcTelemetrySignals.IsOutage(exception))
+        catch (RpcException exception) when (RpcFailures.IsOutage(exception))
         {
             throw new ProviderUnavailableException(UnavailableMessage, exception);
         }

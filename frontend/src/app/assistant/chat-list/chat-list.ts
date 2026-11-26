@@ -15,6 +15,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { Scroller, type ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { Skeleton } from 'primeng/skeleton';
 
+import { ASSISTANT_PATH } from '@assistant/assistant-paths';
 import { listSlots, needsNextPage } from '@assistant/chat-list/chat-list.utils';
 import type { ChatListItem } from '@shared/chat/chat';
 import { isEmptyResult } from '@shared/grid/table/grid-display';
@@ -42,6 +43,7 @@ export class ChatList {
   readonly nextPageRequested = output();
 
   protected readonly rowHeight = CHAT_ROW_HEIGHT;
+  protected readonly assistantPath = ASSISTANT_PATH;
   protected readonly showSkeleton = delayedLoading(computed(() => this.isLoading() || this.isLoadingNext()));
   protected readonly slots = computed(() => listSlots(this.items(), this.hasMore(), this.isLoading(), this.limit()));
   protected readonly showEmpty = computed(() =>

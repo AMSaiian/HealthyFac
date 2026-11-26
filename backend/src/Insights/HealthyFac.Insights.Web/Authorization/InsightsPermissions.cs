@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using HealthyFac.Insights.Application.Chats.Tools;
 
 namespace HealthyFac.Insights.Web.Authorization;
 
@@ -16,7 +17,7 @@ public static class InsightsPermissions
 
     public static class Ingest
     {
-        public const string Read = "ingest:read";
+        public const string Read = ChatToolPermissions.Insights.IngestRead;
         public const string Write = "ingest:write";
 
         /// <summary>
@@ -28,7 +29,7 @@ public static class InsightsPermissions
 
     public static class Cases
     {
-        public const string Read = "cases:read";
+        public const string Read = ChatToolPermissions.Insights.CasesRead;
         public const string Write = "cases:write";
 
         /// <summary>

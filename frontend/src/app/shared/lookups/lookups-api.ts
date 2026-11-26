@@ -3,7 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { map, type Observable } from 'rxjs';
 
 import { CASES_SEARCH_URL } from '@maintenance/cases-api';
-import { CaseSortColumn } from '@maintenance/case';
+import { CaseSortColumn, type SearchCasesBody } from '@maintenance/case';
+import { SortDirection } from '@shared/grid/requests/grid-request';
 import type { LookupOption } from '@shared/lookups/lookup-options';
 
 const EMPLOYEES_LOOKUP_URL = '/api/core/v1/employees/lookup';
@@ -61,14 +62,13 @@ export class LookupsApi {
 
   /** The newest cases of the machines: the ID, the machine, and the opening time. */
   casesOfMachines(machineIds: readonly string[]): Observable<MentionCase[]> {
-    return this._http
-      .post<{ items: MentionCase[] }>(CASES_SEARCH_URL, {
-        offset: 0,
-        limit: MENTION_CASES_LIMIT,
-        sort: { column: CaseSortColumn.OpenedAt, direction: 'desc' },
-        filter: { machineIds: { ids: machineIds } },
-      })
-      .pipe(map((page) => page.items));
+    const body: SearchCasesBody = {
+      offset: 0,
+      limit: MENTION_CASES_LIMIT,
+      sort: { column: CaseSortColumn.OpenedAt, direction: SortDirection.Descending },
+      filter: { machineIds: { ids: machineIds } },
+    };
+    return this._http.post<{ items: MentionCase[] }>(CASES_SEARCH_URL, body).pipe(map((page) => page.items));
   }
 
   private _lookup(url: string, search: string): Observable<LookupOption[]> {
