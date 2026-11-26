@@ -123,6 +123,7 @@ public sealed class SearchCasesToolRequestHandler(
     )
     {
         var arguments = request.Arguments;
+
         var page = await _cases.HandleAsync(
             new SearchCasesRequest
             {
@@ -134,21 +135,21 @@ public sealed class SearchCasesToolRequestHandler(
                 {
                     States = arguments.States is null
                         ? null
-                        : new SetFilter<CaseState> { Values = arguments.States.Select(CaseState.FromValue).ToList() },
+                        : new SetFilter<CaseState> { Values = [.. arguments.States.Select(CaseState.FromValue)] },
                     MachineIds = arguments.MachineIds is null
                         ? null
-                        : new SetFilter<Guid> { Values = arguments.MachineIds },
+                        : new IdSetFilter { Ids = arguments.MachineIds },
                     Severities = arguments.Severities is null
                         ? null
                         : new SetFilter<SignalSeverity>
                         {
-                            Values = arguments.Severities.Select(SignalSeverity.FromValue).ToList(),
+                            Values = [.. arguments.Severities.Select(SignalSeverity.FromValue)],
                         },
                 },
             },
             cancellationToken);
 
-        return new SearchCasesResponse { TotalCount = page.TotalCount, Cases = page.Items.Select(ToCase).ToList() };
+        return new SearchCasesResponse { TotalCount = page.TotalCount, Cases = [.. page.Items.Select(ToCase)] };
     }
 
     private static ChatCase ToCase(CaseListItemResponse item) =>

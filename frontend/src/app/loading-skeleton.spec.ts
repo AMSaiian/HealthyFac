@@ -43,6 +43,8 @@ const EMPTY_RESULT_GATES = ['showEmpty()', 'isEmptyResult'];
 /** The empty states that show no empty result, with the reason. Each path names its whole template. */
 const OTHER_EMPTY_STATES: Readonly<Record<string, string>> = {
   './assistant/chats-page/chats-page.html': 'the not-found state of a chat, not an empty result',
+  './shared/chat/chat-picker/chat-picker.html':
+    'the select empty slot, which PrimeNG shows only for an empty option list',
   './files/ingest/summary/ingest-summary-host/ingest-summary-host.html':
     'the not-found state of a summary, not an empty result',
   './machines/metrics/metric-example-dialog/metric-example-dialog.html':

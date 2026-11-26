@@ -7,9 +7,6 @@ public sealed class TelemetryClientOptions
 {
     public const string SectionName = "TelemetryClient";
 
-    /// <summary>The address of the HTTP port of Telemetry.</summary>
-    public required string BaseAddress { get; init; }
-
     /// <summary>The address of the gRPC port of Telemetry.</summary>
     public required string GrpcAddress { get; init; }
 }
@@ -18,10 +15,6 @@ public sealed class TelemetryClientOptionsValidator : AbstractValidator<Telemetr
 {
     public TelemetryClientOptionsValidator()
     {
-        RuleFor(options => options.BaseAddress)
-            .MustBeAbsoluteHttpUri()
-            .WithMessage(TelemetryClientMessages.BaseAddressInvalid);
-
         RuleFor(options => options.GrpcAddress)
             .MustBeAbsoluteHttpUri()
             .WithMessage(TelemetryClientMessages.GrpcAddressInvalid);

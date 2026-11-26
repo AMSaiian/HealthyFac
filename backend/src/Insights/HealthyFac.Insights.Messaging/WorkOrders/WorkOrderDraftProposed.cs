@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Application.Messaging;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
@@ -29,6 +30,9 @@ public sealed record WorkOrderDraftProposed : IIntegrationMessage, IRequest
     public Guid? ChatId { get; init; }
 
     public Guid? ChatMessageId { get; init; }
+
+    /// <summary>The display name of the chat owner. Required for the source chat, absent for the others.</summary>
+    public string? RequestedByName { get; init; }
 
     public required string Title { get; init; }
 
@@ -61,18 +65,26 @@ public class WorkOrderDraftProposedValidator : AbstractValidator<WorkOrderDraftP
             () =>
             {
                 RuleFor(message => message.MachineId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.CaseId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.RunId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.ChatId)
                     .Null()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
                 RuleFor(message => message.ChatMessageId)
+                    .Null()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RequestedByName)
                     .Null()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
             });
@@ -82,17 +94,27 @@ public class WorkOrderDraftProposedValidator : AbstractValidator<WorkOrderDraftP
             () =>
             {
                 RuleFor(message => message.ChatId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.ChatMessageId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.CaseId)
                     .Null()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
                 RuleFor(message => message.RunId)
                     .Null()
                     .WithMessage(WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RequestedByName)
+                    .NotEmpty()
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.RequestedByNameRequired)
+                    .SingleLineText()
+                    .MaximumLength(DraftMessageLimits.RequestedByNameMaxLength)
+                    .WithMessage(WorkOrderDraftMessageErrors.Validation.RequestedByNameTooLong);
             });
 
         RuleFor(message => message.Title)
@@ -124,6 +146,4 @@ public class WorkOrderDraftProposedValidator : AbstractValidator<WorkOrderDraftP
             .Must(estimate => estimate % WorkOrderDraftMessageLimits.EstimateStepMinutes == 0)
             .WithMessage(WorkOrderDraftMessageErrors.Validation.EstimateInvalid);
     }
-
-    private static bool IsSetId(Guid? id) => id is { } value && value != Guid.Empty;
 }

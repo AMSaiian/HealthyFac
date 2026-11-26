@@ -6,6 +6,7 @@ function options(overrides: Partial<DraftRowMenuOptions> = {}): DraftRowMenuOpti
   return {
     translate: (key) => `t:${key}`,
     isFromAttempt: true,
+    isFromChat: false,
     isReviewDisabled: false,
     applyReasonKey: null,
     isAwaitingTarget: false,
@@ -53,9 +54,14 @@ describe('draftRowMenuItems', { tags: ['Drafts'] }, () => {
     expect(items[0].tooltip).toBe('t:DRAFTS.REVIEW_AFTER_MACHINE');
   });
 
-  it('draftRowMenuItems_ForADraftWithoutAnAttempt_OffersOnlyDismiss', () => {
+  it('draftRowMenuItems_ForADraftOfNoAttemptAndNoChat_OffersOnlyDismiss', () => {
     const items = draftRowMenuItems(options({ isFromAttempt: false }));
     expect(items.map((item) => item.label)).toEqual(['t:DRAFTS.DISMISS']);
+  });
+
+  it('draftRowMenuItems_ForAChatDraft_OffersReviewAndDismiss', () => {
+    const items = draftRowMenuItems(options({ isFromAttempt: false, isFromChat: true }));
+    expect(items.map((item) => item.label)).toEqual(['t:DRAFTS.REVIEW', 't:DRAFTS.DISMISS']);
   });
   it('draftRowMenuItems_WhileAnApplyRuns_DisablesApplyAndDismiss', () => {
     const items = draftRowMenuItems(options({ isBusy: true }));

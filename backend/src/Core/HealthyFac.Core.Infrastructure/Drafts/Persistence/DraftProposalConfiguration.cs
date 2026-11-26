@@ -1,4 +1,5 @@
 using HealthyFac.Core.Domain.Drafts.Proposals;
+using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence;
 using HealthyFac.Shared.Infrastructure.Persistence.CheckConstraints;
@@ -38,6 +39,9 @@ public class DraftProposalConfiguration : IEntityTypeConfiguration<DraftProposal
 
         builder.Property(proposal => proposal.Source)
             .IsRequired();
+
+        builder.Property(proposal => proposal.RequestedByName)
+            .HasMaxLength(DraftMessageLimits.RequestedByNameMaxLength);
 
         builder.HasIndex(proposal => new { proposal.CompanyId, proposal.AttemptId })
             .IsUnique()

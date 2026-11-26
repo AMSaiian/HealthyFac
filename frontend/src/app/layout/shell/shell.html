@@ -34,6 +34,22 @@
           (jump)="notificationStore.jump($event)"
         />
       }
+      @if (shellStore.isChatButtonShown()) {
+        <button
+          pButton
+          [pTooltip]="'CHAT.DRAWER.OPEN' | translate"
+          tooltipPosition="bottom"
+          type="button"
+          iconOnly
+          severity="secondary"
+          [text]="true"
+          [attr.aria-label]="'CHAT.DRAWER.OPEN' | translate"
+          [attr.aria-expanded]="chatStore.isDrawerOpen()"
+          (click)="chatStore.toggleDrawer()"
+        >
+          <i class="pi pi-comments"></i>
+        </button>
+      }
       <button
         pButton
         [pTooltip]="'LANGUAGE.' + (languageStore.language() | uppercase) | translate"
@@ -147,7 +163,15 @@
     </nav>
   </p-drawer>
 }
-<p-toast position="bottom-right">
+@if (shellStore.isChatButtonShown() && chatStore.isDrawerOpen()) {
+  @defer {
+    <hf-chat-drawer />
+  }
+}
+<p-toast
+  position="bottom-right"
+  [class.hf-toast-with-drawer]="shellStore.isChatButtonShown() && chatStore.isDrawerOpen()"
+>
   <ng-template
     #message
     let-message

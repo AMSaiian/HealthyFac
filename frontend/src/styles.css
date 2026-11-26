@@ -53,6 +53,42 @@
     opacity: 0.35;
   }
 
+  :root {
+    --hf-chat-drawer-width: 26rem;
+  }
+
+  .hf-chat-drawer {
+    width: var(--hf-chat-drawer-width);
+  }
+
+  .hf-chat-picker-panel .p-virtualscroller:has(hf-empty-state) {
+    height: 9rem !important;
+  }
+
+  .hf-chat-picker-panel .p-select-list {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .hf-chat-picker-panel .p-select-option {
+    overflow: hidden;
+  }
+
+  .hf-chat-picker-panel li:has(hf-empty-state) {
+    height: auto !important;
+  }
+
+  .hf-chat-drawer .p-drawer-content {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .p-toast.hf-toast-with-drawer {
+    right: calc(var(--hf-chat-drawer-width) + 1.5rem) !important;
+  }
+
   .hf-backlog-hidden {
     visibility: hidden;
   }

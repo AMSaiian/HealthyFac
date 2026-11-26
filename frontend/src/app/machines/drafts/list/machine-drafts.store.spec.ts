@@ -544,15 +544,33 @@ describe('MachineDraftsStore', { tags: ['Drafts'] }, () => {
     });
   });
 
-  it('requestReview_ForADraftWithoutAnAttempt_OpensNothing', async () => {
-    const { store, http, actions } = setup();
+  it('requestReview_ForAMetricDraftOfAChat_NavigatesWithTheChatParameter', async () => {
+    const { store, http } = setup();
     await load(http, store);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
     store.requestReview({
       ...ITEM,
       kind: DraftKind.Metric,
       proposal: { source: DraftSource.Chat, attemptId: null, chatId: 'c1' },
     });
+
+    expect(navigate).toHaveBeenCalledWith(['/machines', 'machine-1', 'metrics'], {
+      queryParams: { draftChatId: 'c1' },
+    });
+  });
+
+  it('requestReview_ForADraftWithNoProposalScope_OpensNothing', async () => {
+    const { store, http, actions } = setup();
+    await load(http, store);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    store.requestReview({
+      ...ITEM,
+      kind: DraftKind.Metric,
+      proposal: { source: DraftSource.Case, attemptId: null, chatId: null },
+    });
+
     expect(navigate).not.toHaveBeenCalled();
     expect(actions.dispatchChild).not.toHaveBeenCalled();
   });

@@ -228,7 +228,6 @@ public sealed class SeederFixture : IAsyncLifetime, IResetBeforeEachTest
                 Set(key: "ServiceTokens:ClientId", value: "healthyfac-insights");
                 Set(key: "ServiceTokens:ClientSecret", SeederTestData.UnusedSecret);
                 Set(key: "DocumentClient:GrpcAddress", SeederTestData.UnusedUrl);
-                Set(key: "TelemetryClient:BaseAddress", SeederTestData.UnusedUrl);
                 Set(key: "TelemetryClient:GrpcAddress", SeederTestData.UnusedUrl);
                 Set(key: "CoreClient:GrpcAddress", SeederTestData.UnusedUrl);
                 Set(key: "Docling:BaseUrl", SeederTestData.UnusedUrl);

@@ -10,4 +10,5 @@ public static class GeminiMessages
     public const string EmbeddingDimensionsInvalid = "Gemini:EmbeddingDimensions must be above 0.";
     public const string MaxOutputTokensInvalid = "Gemini:MaxOutputTokens must be above 0.";
     public const string EmbeddingParallelismInvalid = "Gemini:EmbeddingParallelism must be above 0.";
+    public const string StreamIdleTimeoutInvalid = "Gemini:StreamIdleTimeoutSeconds must be above 0.";
 }

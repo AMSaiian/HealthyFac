@@ -1,5 +1,12 @@
-import { ChatActivity, ChatErrorCode, ChatMessageKind, ChatMessageState } from '@shared/chat/chat';
-import { activityKey, isClamped, messageNoteKey } from '@shared/chat/chat-message/chat-message.utils';
+import {
+  ChatActivity,
+  type ChatDraft,
+  ChatDraftKind,
+  ChatErrorCode,
+  ChatMessageKind,
+  ChatMessageState,
+} from '@shared/chat/chat';
+import { activityKey, chatDraftJumpOf, isClamped, messageNoteKey } from '@shared/chat/chat-message/chat-message.utils';
 
 describe('chat-message.utils', () => {
   it('isClamped_WithMoreContentThanBox_ReturnsTrue', () => {
@@ -52,5 +59,48 @@ describe('chat-message.utils', () => {
     });
 
     expect(key).toBeNull();
+  });
+
+  it('chatDraftJumpOf_WithACommittedWorkOrderDraft_OpensTheWorkOrderDraftsWithTheDraft', () => {
+    const draft: ChatDraft = {
+      kind: ChatDraftKind.WorkOrder,
+      draftId: 'd1',
+      title: 'Seal',
+      targetMachineId: null,
+      isCommitted: true,
+    };
+
+    expect(chatDraftJumpOf(draft, 'c1')).toEqual({
+      type: 'route',
+      commands: ['/work-orders/drafts'],
+      queryParams: { draftId: 'd1' },
+    });
+  });
+
+  it('chatDraftJumpOf_WithACommittedMetricDraft_OpensTheMachineDraftsOfTheChat', () => {
+    const draft: ChatDraft = {
+      kind: ChatDraftKind.Metric,
+      draftId: 'd2',
+      title: 'Bearing',
+      targetMachineId: 'm1',
+      isCommitted: true,
+    };
+
+    expect(chatDraftJumpOf(draft, 'c1')).toEqual({
+      type: 'action',
+      action: { type: 'machines.drafts', payload: { chatId: 'c1' } },
+    });
+  });
+
+  it('chatDraftJumpOf_WithAnUncommittedDraft_ReturnsNull', () => {
+    const draft: ChatDraft = {
+      kind: ChatDraftKind.Machine,
+      draftId: 'd3',
+      title: 'Pump',
+      targetMachineId: null,
+      isCommitted: false,
+    };
+
+    expect(chatDraftJumpOf(draft, 'c1')).toBeNull();
   });
 });

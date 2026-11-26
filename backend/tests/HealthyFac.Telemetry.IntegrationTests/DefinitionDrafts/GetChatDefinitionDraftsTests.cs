@@ -2,10 +2,14 @@ using HealthyFac.Telemetry.Domain.DefinitionDrafts.Proposals;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.DefinitionDrafts;
 
 [Collection(TelemetryDefinitionDraftsCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
+[Feature(TestFeatures.Chat)]
 public sealed class GetChatDefinitionDraftsTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -16,8 +20,10 @@ public sealed class GetChatDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         var companyId = DefinitionDraftTestData.CompanyId;
         var machineId = await _fixture.RegisterTenantMachineAsync(companyId);
         await _fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: false);
+
         await _fixture.StoreProposedDefinitionDraftsAsync(
             companyId, ProposalBuilder.ChatMessage(companyId, machineId));
+
         await _fixture.StoreProposedDefinitionDraftsAsync(
             companyId,
             ProposalBuilder.ChatMessage(companyId, machineId) with { ChatMessageId = Guid.CreateVersion7() });
@@ -27,6 +33,7 @@ public sealed class GetChatDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         response.Metrics.Should().HaveCount(expected: 2);
         response.Metrics.Should().OnlyContain(draft => draft.Proposal.Source == DraftSource.Chat);
         response.Metrics.Should().OnlyContain(draft => draft.Proposal.ChatId == DefinitionDraftTestData.ChatId);
+        response.Metrics.Should().OnlyContain(draft => draft.Proposal.RequestedByName == "Ann Owner");
         response.Statuses.Should().HaveCount(expected: 2);
     }
 
@@ -35,6 +42,7 @@ public sealed class GetChatDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
     {
         var companyId = DefinitionDraftTestData.CompanyId;
         var machineId = await _fixture.RegisterTenantMachineAsync(companyId);
+
         await _fixture.StoreProposedDefinitionDraftsAsync(
             companyId, ProposalBuilder.ChatMessage(companyId, machineId));
 
@@ -51,8 +59,10 @@ public sealed class GetChatDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
         var companyId = DefinitionDraftTestData.CompanyId;
         var machineId = await _fixture.RegisterTenantMachineAsync(companyId);
         await _fixture.StoreMetricDraftOnMachineAsync(companyId, machineId, isApplied: false);
+
         await _fixture.StoreProposedDefinitionDraftsAsync(
             companyId, ProposalBuilder.ChatMessage(companyId, machineId));
+
         await _fixture.StoreProposedDefinitionDraftsAsync(
             companyId,
             ProposalBuilder.ChatMessage(companyId, machineId) with
@@ -62,6 +72,7 @@ public sealed class GetChatDefinitionDraftsTests(TelemetryDatabaseFixture fixtur
             });
 
         var ownIds = await _fixture.ReadChatDefinitionDraftsAsync(companyId, DefinitionDraftTestData.ChatId);
+
         var foreignIds = await _fixture.ReadChatDefinitionDraftsAsync(
             Guid.CreateVersion7(), DefinitionDraftTestData.ChatId);
 

@@ -39,6 +39,7 @@ public static class WorkOrderDraftTestData
         new()
         {
             Source = WorkOrderProposalSource.Chat,
+            RequestedByName = "Ann Owner",
             DraftId = draftId,
             CompanyId = companyId,
             MachineId = machineId,

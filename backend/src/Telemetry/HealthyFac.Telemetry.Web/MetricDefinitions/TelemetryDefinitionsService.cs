@@ -10,6 +10,8 @@ using HealthyFac.Telemetry.Web.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using ApplicationListMetricDefinitionsRequest =
     HealthyFac.Telemetry.Application.MetricDefinitions.ListMetricDefinitionsRequest;
+using ApplicationListMetricUnitsRequest = HealthyFac.Telemetry.Application.MetricUnits.ListMetricUnitsRequest;
+using ApplicationListMetricUnitsResponse = HealthyFac.Telemetry.Application.MetricUnits.ListMetricUnitsResponse;
 using ApplicationSearchStatusDefinitionsRequest =
     HealthyFac.Telemetry.Application.StatusDefinitions.SearchStatusDefinitions.SearchStatusDefinitionsRequest;
 using RpcMetricDefinition = HealthyFac.Telemetry.Contracts.Definitions.MetricDefinition;
@@ -28,10 +30,12 @@ namespace HealthyFac.Telemetry.Web.MetricDefinitions;
 /// </remarks>
 /// <param name="metricsHandler">Lists the active metric definitions.</param>
 /// <param name="statusesHandler">Searches the status definitions.</param>
+/// <param name="unitsHandler">Lists the global unit catalog.</param>
 /// <param name="currentUser">Provides the company of the actor.</param>
 public sealed class TelemetryDefinitionsService(
     IRequestHandler<ApplicationListMetricDefinitionsRequest, ListMetricDefinitionsResponse> metricsHandler,
     IRequestHandler<ApplicationSearchStatusDefinitionsRequest, GridResponse<StatusDefinitionResponse>> statusesHandler,
+    IRequestHandler<ApplicationListMetricUnitsRequest, ApplicationListMetricUnitsResponse> unitsHandler,
     ICurrentUserProvider currentUser
 ) : TelemetryDefinitions.TelemetryDefinitionsBase
 {
@@ -40,6 +44,9 @@ public sealed class TelemetryDefinitionsService(
 
     private readonly IRequestHandler<ApplicationSearchStatusDefinitionsRequest, GridResponse<StatusDefinitionResponse>>
         _statusesHandler = statusesHandler;
+
+    private readonly IRequestHandler<ApplicationListMetricUnitsRequest, ApplicationListMetricUnitsResponse>
+        _unitsHandler = unitsHandler;
 
     private readonly ICurrentUserProvider _currentUser = currentUser;
 
@@ -56,16 +63,45 @@ public sealed class TelemetryDefinitionsService(
         var metrics = await _metricsHandler.HandleAsync(
             new ApplicationListMetricDefinitionsRequest { CompanyId = companyId, MachineId = machineId },
             context.CancellationToken);
+
         var statuses = await ReadStatusesAsync(companyId, machineId, context.CancellationToken);
 
         var reply = new ListDefinitionsReply();
         reply.Metrics.AddRange(metrics.Definitions.Select(ToMetric));
+
         reply.Statuses.AddRange(
             statuses.Select(status => new RpcStatusDefinition
             {
                 Id = status.Id.ToString(),
                 Code = status.Code,
                 Severity = status.Severity.Value,
+            }));
+
+        return reply;
+    }
+
+    [Authorize(Policy = TelemetryPermissions.MetricDefinitions.Read)]
+    public override async Task<ListMetricUnitsReply> ListMetricUnits(
+        ListMetricUnitsRequest request,
+        ServerCallContext context
+    )
+    {
+        var catalog = await _unitsHandler.HandleAsync(
+            new ApplicationListMetricUnitsRequest(),
+            context.CancellationToken);
+
+        var reply = new ListMetricUnitsReply();
+
+        reply.Kinds.AddRange(
+            catalog.Kinds.Select(kind =>
+            {
+                var message = new QuantityKind { Name = kind.Name };
+
+                message.Units.AddRange(
+                    kind.Units.Select(unit => new MeasurementUnit
+                        { Name = unit.Name, Abbreviation = unit.Abbreviation }));
+
+                return message;
             }));
 
         return reply;
@@ -90,6 +126,7 @@ public sealed class TelemetryDefinitionsService(
                     Limit = GridValidationConstants.MaxLimit,
                 },
                 cancellationToken);
+
             statuses.AddRange(page.Items);
 
             if (page.Items.Count < GridValidationConstants.MaxLimit)

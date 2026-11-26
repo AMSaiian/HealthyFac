@@ -2,6 +2,7 @@ using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.WorkOrders;
+using HealthyFac.Shared.Application.CurrentUser;
 using HealthyFac.Shared.Application.Messaging;
 
 namespace HealthyFac.Insights.Application.Chats.Drafts;
@@ -13,8 +14,12 @@ namespace HealthyFac.Insights.Application.Chats.Drafts;
 /// </summary>
 /// <param name="buffer">Holds the proposals of the turn.</param>
 /// <param name="outbox">Sends the proposals with the final save.</param>
-public sealed class ChatDraftCommit(ChatDraftBuffer buffer, IOutbox outbox)
+/// <param name="accessor">Gives the display name of the chat owner from the token of the turn.</param>
+public sealed class ChatDraftCommit(ChatDraftBuffer buffer, IOutbox outbox, IIncomingAccessTokenAccessor accessor)
 {
+    private const string UnknownOwnerName = "Unknown user";
+
+    private readonly IIncomingAccessTokenAccessor _accessor = accessor;
     private readonly ChatDraftBuffer _buffer = buffer;
     private readonly IOutbox _outbox = outbox;
 
@@ -46,6 +51,8 @@ public sealed class ChatDraftCommit(ChatDraftBuffer buffer, IOutbox outbox)
             return;
         }
 
+        var requestedByName = OwnerName();
+
         if (_buffer.Machines.Count + _buffer.Metrics.Count + _buffer.Statuses.Count + _buffer.Phases.Count > 0)
         {
             _outbox.Add(
@@ -55,6 +62,7 @@ public sealed class ChatDraftCommit(ChatDraftBuffer buffer, IOutbox outbox)
                     CompanyId = chat.CompanyId,
                     ChatId = chat.Id,
                     ChatMessageId = assistantMessage.Id,
+                    RequestedByName = requestedByName,
                     Machines = _buffer.Machines,
                     Metrics = _buffer.Metrics,
                     Statuses = _buffer.Statuses,
@@ -73,6 +81,7 @@ public sealed class ChatDraftCommit(ChatDraftBuffer buffer, IOutbox outbox)
                     MachineId = workOrder.MachineId,
                     ChatId = chat.Id,
                     ChatMessageId = assistantMessage.Id,
+                    RequestedByName = requestedByName,
                     Title = workOrder.Title,
                     Description = workOrder.Description,
                     Priority = workOrder.Priority,
@@ -80,5 +89,32 @@ public sealed class ChatDraftCommit(ChatDraftBuffer buffer, IOutbox outbox)
                     EstimateMinutes = workOrder.EstimateMinutes,
                 });
         }
+    }
+
+    /// <summary>
+    /// The name that the proposals carry. The messages need a name of 1 to
+    /// <see cref="DraftMessageLimits.RequestedByNameMaxLength"/> characters, and the consumers drop a message that
+    /// breaks it. The commit cuts a long name (not inside a
+    /// surrogate pair) and names a user whose token has no name <see cref="UnknownOwnerName"/>.
+    /// </summary>
+    private string OwnerName()
+    {
+        var name = _accessor.TryGetUserName()?.Trim();
+
+        if (string.IsNullOrEmpty(name))
+        {
+            return UnknownOwnerName;
+        }
+
+        if (name.Length <= DraftMessageLimits.RequestedByNameMaxLength)
+        {
+            return name;
+        }
+
+        var length = char.IsHighSurrogate(name[DraftMessageLimits.RequestedByNameMaxLength - 1])
+            ? DraftMessageLimits.RequestedByNameMaxLength - 1
+            : DraftMessageLimits.RequestedByNameMaxLength;
+
+        return name[..length];
     }
 }

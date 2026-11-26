@@ -12,6 +12,9 @@ namespace HealthyFac.Insights.Messaging.Drafts;
 /// </remarks>
 public static class DraftMessageLimits
 {
+    /// <summary>The longest display name of the chat owner. It equals the employee name limit of Core.</summary>
+    public const int RequestedByNameMaxLength = 100;
+
     public const int MaxMachines = 20;
     public const int MaxMetrics = 100;
     public const int MaxStatuses = 100;

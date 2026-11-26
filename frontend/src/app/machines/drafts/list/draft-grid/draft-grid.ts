@@ -33,6 +33,7 @@ import {
   type MachineDraftSort,
 } from '@machines/drafts/draft';
 import { draftRowMenuItems } from '@machines/drafts/draft-row-menu';
+import { DraftSource, draftSourceKey, draftSourceText } from '@shared/drafts/draft-proposal';
 import { isReviewDisabledOf, machineTitleOf, TEXT_COLUMNS } from '@machines/drafts/list/draft-grid/draft-grid.utils';
 
 const COLUMN_LABEL_KEYS: Readonly<Record<DraftColumn, string>> = {
@@ -145,6 +146,9 @@ export class DraftGrid {
   protected readonly showBusy = delayedLoading(this.hasApplyingIds);
   protected readonly menuItems = signal<MenuItem[]>([]);
   protected readonly DraftColumn = DraftColumn;
+  protected readonly DraftSource = DraftSource;
+  protected readonly draftSourceKey = draftSourceKey;
+  protected readonly draftSourceText = draftSourceText;
   protected readonly allColumns = Object.values(DraftColumn);
   protected readonly visibleColumns = computed(() =>
     this.allColumns.filter((column) => column !== DraftColumn.Machine || this.isMachineShown()),
@@ -235,6 +239,7 @@ export class DraftGrid {
       draftRowMenuItems({
         translate: (key) => this._translate.instant(key),
         isFromAttempt: draft.proposal.attemptId !== null,
+        isFromChat: draft.proposal.chatId !== null,
         isReviewDisabled: isReviewDisabledOf(draft),
         applyReasonKey: this.reasons()[draft.id],
         isAwaitingTarget: draft.state === DraftState.AwaitingTarget,

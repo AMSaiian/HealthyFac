@@ -20,4 +20,11 @@ public interface IIncomingAccessTokenAccessor
     /// <returns>The <c>sub</c> claim of the user. <see langword="null"/> in the same cases as
     /// <see cref="TryGetUserAccessToken"/>.</returns>
     Guid? TryGetUserId();
+
+    /// <summary>
+    /// Attempts to read the display name of the user of the token that <see cref="TryGetUserAccessToken"/> returns.
+    /// </summary>
+    /// <returns>The <c>name</c> claim, else <c>preferred_username</c>, else <c>email</c>. <see langword="null"/> in
+    /// the same cases as <see cref="TryGetUserAccessToken"/>, and when the token has none of the claims.</returns>
+    string? TryGetUserName();
 }

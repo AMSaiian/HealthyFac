@@ -6,6 +6,7 @@ using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.Infrastructure.Chats.Models;
@@ -13,16 +14,23 @@ namespace HealthyFac.Insights.Infrastructure.Chats.Models;
 /// <summary>
 /// Streams the answer of the main chat model (the default chat client). A provider error before or during the stream
 /// ends the stream with a <see cref="ProviderUnavailableException"/>. The stream is not repeated, because the user
-/// already saw a part of the text. The message of the exception holds the status only.
+/// already saw a part of the text. A request that stalls before its first update is sent once more
+/// (<see cref="StallGuardChatClient"/>). The message of the exception holds the status only.
 /// </summary>
 /// <param name="chatClient">The default chat client.</param>
 /// <param name="options">Holds the name of the model and the answer token limit.</param>
-public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptions> options) : IChatModel
+/// <param name="logger">Logs the finish reason, the kinds of the contents, and the tokens of each model call.</param>
+public sealed class GeminiChatModel(
+    IChatClient chatClient,
+    IOptions<GeminiOptions> options,
+    ILogger<GeminiChatModel> logger
+) : IChatModel
 {
     private const string UnavailableMessage = "The chat model stayed unavailable with the status {0}.";
 
     private readonly IChatClient _chatClient = chatClient;
     private readonly GeminiOptions _options = options.Value;
+    private readonly ILogger<GeminiChatModel> _logger = logger;
 
     public string ModelName => _options.ChatModel;
 
@@ -38,6 +46,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
                 message.Role == ChatMessageRole.User ? ChatRole.User : ChatRole.Assistant,
                 message.Text))
             .ToList();
+
         var totals = new UsageTotals();
         var tracked = new UsageTrackingChatClient(_chatClient, totals);
         var invoking = new FunctionInvokingChatClient(tracked);
@@ -47,6 +56,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
             invoking, messages, CreateOptions(systemPrompt, tools.Functions), cancellationToken))
         {
             updates.Add(update);
+            LogModelCall(update);
 
             yield return ToChunk(update);
         }
@@ -55,6 +65,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
         {
             messages.AddRange(updates.ToChatResponse().Messages);
             CompleteToolResults(messages);
+            messages.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, ChatTurnTools.AnswerNowText));
 
             await foreach (var update in StreamUpdatesAsync(
                 tracked, messages, CreateOptions(systemPrompt, []), cancellationToken))
@@ -64,6 +75,30 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
         }
 
         yield return new ChatModelChunk { InputTokens = (int)totals.Input, OutputTokens = (int)totals.Output };
+    }
+
+    /// <summary>
+    /// Logs the end of a model call: the finish reason, the kinds of the contents of the update, and the token counts.
+    /// It never logs the text or the arguments.
+    /// </summary>
+    /// <param name="update">The update of the stream.</param>
+    private void LogModelCall(ChatResponseUpdate update)
+    {
+        if (update.FinishReason is null)
+        {
+            return;
+        }
+
+        var kinds = string.Join(separator: ",", update.Contents.Select(content => content.GetType().Name));
+        var usage = update.Contents.OfType<UsageContent>().LastOrDefault()?.Details;
+
+        _logger.LogDebug(
+            "A chat model call ended with the finish reason {FinishReason}, the contents [{Kinds}], "
+            + "and {Input} input and {Output} output tokens.",
+            update.FinishReason,
+            kinds,
+            usage?.InputTokenCount,
+            usage?.OutputTokenCount);
     }
 
     /// <summary>
@@ -93,6 +128,7 @@ public sealed class GeminiChatModel(IChatClient chatClient, IOptions<GeminiOptio
             }
 
             var hasResultMessage = index + 1 < messages.Count && messages[index + 1].Role == ChatRole.Tool;
+
             if (hasResultMessage)
             {
                 foreach (var result in missing)

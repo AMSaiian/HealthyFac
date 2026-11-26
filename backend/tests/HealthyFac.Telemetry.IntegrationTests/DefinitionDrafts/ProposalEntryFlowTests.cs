@@ -128,9 +128,11 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
     {
         var entry = ProposalBuilder.Machine();
         var machineId = Guid.CreateVersion7();
+
         var message = ProposalBuilder.Message(DefinitionDraftTestData.CompanyId, entry) with
         {
             Source = ProposalSource.Chat,
+            RequestedByName = "Ann Owner",
             AttemptId = null,
             FileId = null,
             IsMachineFile = null,
@@ -138,6 +140,7 @@ public sealed class ProposalEntryFlowTests(TelemetryDatabaseFixture fixture)
             ChatId = DefinitionDraftTestData.ChatId,
             ChatMessageId = DefinitionDraftTestData.ChatMessageId,
         };
+
         await _fixture.StoreProposedDefinitionDraftsAsync(DefinitionDraftTestData.CompanyId, message);
 
         await _fixture.ApplyMachineDraftMessageAsync(

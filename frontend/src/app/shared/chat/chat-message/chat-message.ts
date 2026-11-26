@@ -15,8 +15,14 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
-import { type ChatActivity, type ChatMessage, ChatMessageRole, ChatMessageState } from '@shared/chat/chat';
-import { activityKey, isClamped, messageNoteKey } from '@shared/chat/chat-message/chat-message.utils';
+import {
+  type ChatActivity,
+  type ChatDraft,
+  type ChatMessage,
+  ChatMessageRole,
+  ChatMessageState,
+} from '@shared/chat/chat';
+import { activityKey, chatDraftJumpOf, isClamped, messageNoteKey } from '@shared/chat/chat-message/chat-message.utils';
 import { delayedLoading } from '@shared/loading/delayed-loading';
 
 /** The path of the avatar of the assistant. It is the app icon. */
@@ -38,7 +44,9 @@ export class ChatMessageView {
   readonly streamingText = input<string | null>(null);
   readonly activity = input<ChatActivity | null>(null);
   readonly canDelete = input(false);
+  readonly chatId = input<string | null>(null);
   readonly deleteRequested = output<ChatMessage>();
+  readonly draftJumpRequested = output<ChatDraft>();
 
   protected readonly isExpanded = signal(false);
   /** Tells whether the clamped text hides lines. It follows the rendered text, so a narrow box also counts. */
@@ -76,6 +84,11 @@ export class ChatMessageView {
         observer.disconnect();
       });
     });
+  }
+
+  protected hasDraftJump(draft: ChatDraft): boolean {
+    const chatId = this.chatId();
+    return chatId !== null && chatDraftJumpOf(draft, chatId) !== null;
   }
 
   protected toggleExpanded(): void {

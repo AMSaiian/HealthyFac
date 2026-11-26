@@ -1,3 +1,4 @@
+import type { ChatLinkInput } from '@shared/chat/chat';
 import { CHAT_TEXT_MAX_LENGTH } from '@shared/chat/chat-limits';
 
 /** The share of the limit from which the character count shows. */
@@ -27,4 +28,10 @@ export function sendDisabledReason(state: ComposerState): string | null {
 /** Tells whether the character count shows: near the limit and beyond it. */
 export function isCountShown(textLength: number): boolean {
   return textLength >= CHAT_TEXT_MAX_LENGTH * COUNT_SHOWN_FROM;
+}
+
+/** What the composer sends: the trimmed text and the links whose `@label` stays in it. */
+export interface ChatComposerSend {
+  readonly text: string;
+  readonly links: readonly ChatLinkInput[];
 }

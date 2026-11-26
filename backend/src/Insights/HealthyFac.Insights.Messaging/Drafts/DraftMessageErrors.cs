@@ -12,6 +12,11 @@ public static class DraftMessageErrors
         public const string QueuedAtRequired = "QueuedAt is required.";
         public const string IsMachineFileRequired = "IsMachineFile is required for an ingest.";
         public const string FieldsOfAnotherSource = "A field of the other source must be empty.";
+        public const string RequestedByNameRequired = "RequestedByName is required for a chat.";
+
+        public static readonly string RequestedByNameTooLong =
+            $"RequestedByName must have at most {DraftMessageLimits.RequestedByNameMaxLength} characters.";
+
         public const string MessageWithoutContent = "A message needs a machine, a metric, a status, or a phase.";
         public const string MachineDraftUnknown = "A MachineDraftId must name a create draft of the same message.";
         public const string UpdateWithoutContent = "An update draft needs a name, a serial number, or a description.";

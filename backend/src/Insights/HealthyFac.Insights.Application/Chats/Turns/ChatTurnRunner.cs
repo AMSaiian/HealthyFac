@@ -98,6 +98,7 @@ public sealed class ChatTurnRunner(
         run.Claim(now, now + limit);
         run.UseModel(_model.ModelName, prompt.Version, prompt.Hash);
         assistantMessage.AttachRun(run.Id);
+
         var throttle = new ChatSnapshotThrottle(
             _notifier,
             _timeProvider,
@@ -105,6 +106,7 @@ public sealed class ChatTurnRunner(
             chat.OwnerUserId,
             chat.Id,
             assistantMessage.Id);
+
         var counts = new TokenCounts();
         var buffer = new ChatToolCallBuffer(run.Id);
 
@@ -117,6 +119,7 @@ public sealed class ChatTurnRunner(
 
         throttle.Flush();
         Apply(ending, chat, assistantMessage, run, throttle.Text, counts);
+
         if (ending != TurnEnding.NoAnswer)
         {
             _draftCommit.Stage(chat, assistantMessage, ending == TurnEnding.Completed);
@@ -128,6 +131,7 @@ public sealed class ChatTurnRunner(
             chat.OwnerUserId,
             new ChatTurnEnd
                 { ChatId = chat.Id, MessageId = assistantMessage.Id, State = assistantMessage.State.Value });
+
         _notifier.Push();
     }
 
@@ -166,6 +170,7 @@ public sealed class ChatTurnRunner(
 
             var tools = BuildTools(chat, toolRun.Run, toolRun.Buffer, throttle);
             var isLengthLimited = false;
+
             await foreach (var chunk in _model.StreamAsync(prompt.Text, history, tools, cancellationToken))
             {
                 counts.ModelInput = Math.Max(counts.ModelInput, chunk.InputTokens);
@@ -178,6 +183,11 @@ public sealed class ChatTurnRunner(
             if (_state.IsNoAnswerReported)
             {
                 return TurnEnding.NoAnswer;
+            }
+
+            if (string.IsNullOrWhiteSpace(throttle.Text))
+            {
+                return TurnEnding.ProviderUnavailable;
             }
 
             return isLengthLimited ? TurnEnding.OutputLimit : TurnEnding.Completed;
@@ -212,6 +222,7 @@ public sealed class ChatTurnRunner(
             CurrentCallId = _toolCallIds.Current,
             EndLoop = _toolCallIds.EndLoop,
         };
+
         var functions = _registry.For(AgentRole.Chat, context, _permissions.Read(), _toolScopes);
 
         return ChatTurnTools.Create(functions, _options.MaxToolCalls, _toolCallIds.EndLoop, throttle.SetActivity);
@@ -233,32 +244,40 @@ public sealed class ChatTurnRunner(
             case TurnEnding.Completed:
                 assistantMessage.Complete(ChatMessageKind.Answer, text);
                 run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
+
                 break;
             case TurnEnding.NoAnswer:
                 assistantMessage.Complete(ChatMessageKind.Unanswerable, string.Empty);
                 run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
+
                 break;
             case TurnEnding.Refusal:
                 assistantMessage.Complete(ChatMessageKind.Refusal, string.Empty);
                 run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
+
                 break;
             case TurnEnding.Blocked:
                 assistantMessage.Complete(ChatMessageKind.BlockedNotice, string.Empty);
                 chat.Block();
                 run.Complete(now, verdict: null, verdictReason: null, counts.Input, counts.Output);
+
                 break;
             case TurnEnding.Cancelled:
                 assistantMessage.End(ChatMessageState.Cancelled, errorCode: null);
                 run.Interrupt(now, counts.Input, counts.Output);
+
                 break;
             case TurnEnding.TimeLimit:
                 Fail(assistantMessage, run, AgentRunErrorCode.TimeLimit, now, counts);
+
                 break;
             case TurnEnding.OutputLimit:
                 Fail(assistantMessage, run, AgentRunErrorCode.OutputLimit, now, counts);
+
                 break;
             default:
                 Fail(assistantMessage, run, AgentRunErrorCode.ProviderUnavailable, now, counts);
+
                 break;
         }
     }

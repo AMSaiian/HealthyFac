@@ -1,41 +1,62 @@
-<section class="border-surface flex min-h-0 w-80 flex-none flex-col rounded border">
-  <hf-chat-list
-    [items]="list.items()"
-    [hasMore]="list.hasMore()"
-    [isLoading]="list.isLoading()"
-    [isLoadingNext]="list.isLoadingNext()"
-    [hasLoaded]="list.hasLoaded()"
-    [limit]="pageSize"
-    [selectedId]="chatId() ?? null"
-    (nextPageRequested)="list.loadNext()"
-  />
-</section>
-<section class="flex min-h-0 min-w-0 flex-1 flex-col">
-  @if (chat.isNotFound()) {
-    <hf-empty-state
-      icon="pi pi-exclamation-circle"
-      messageKey="ASSISTANT.CHAT.NOT_FOUND"
-    />
-  } @else {
-    <hf-chat-view
-      [chat]="chat.chat()"
-      [messages]="chat.viewMessages()"
-      [running]="chat.runningTurn()"
-      [isLoading]="chat.isLoading()"
-      [isLoadingOlder]="chat.isLoadingOlder()"
-      [hasMore]="chat.nextBefore() !== null"
-      [hasLoaded]="chat.chat() !== null || chatId() === undefined"
-      [limit]="messagesPageSize"
-      [isRunning]="chat.isRunning()"
-      [isStopping]="chat.isStopping()"
-      [canStop]="chat.isSending()"
-      [unsentText]="chat.unsentText()"
-      [canWrite]="canWrite"
-      (olderRequested)="chat.loadOlder()"
-      (sendRequested)="chat.send($event, [])"
-      (stopRequested)="chat.stop()"
-      (deleteMessageRequested)="chat.requestDeleteMessage($event)"
-      (deleteChatRequested)="chat.requestDeleteChat()"
-    />
+<header class="flex flex-none items-center justify-between">
+  <h1 class="text-2xl font-bold">{{ 'ASSISTANT.TITLE' | translate }}</h1>
+  @if (chatId() !== undefined) {
+    <button
+      pButton
+      [pTooltip]="'CHAT.DRAWER.NEW_CHAT_TOOLTIP' | translate"
+      tooltipPosition="bottom"
+      type="button"
+      (click)="openNewChat()"
+    >
+      <i class="pi pi-plus"></i>
+      {{ 'CHAT.DRAWER.NEW_CHAT' | translate }}
+    </button>
   }
-</section>
+</header>
+<div class="flex min-h-0 min-w-0 flex-1 gap-4">
+  <section class="border-surface flex min-h-0 w-80 flex-none flex-col rounded border">
+    <hf-chat-list
+      [items]="list.items()"
+      [hasMore]="list.hasMore()"
+      [isLoading]="list.isLoading()"
+      [isLoadingNext]="list.isLoadingNext()"
+      [hasLoaded]="list.hasLoaded()"
+      [limit]="pageSize"
+      [selectedId]="chatId() ?? null"
+      (nextPageRequested)="list.loadNext()"
+    />
+  </section>
+  <section class="flex min-h-0 min-w-0 flex-1 flex-col">
+    @if (chat.isNotFound()) {
+      <hf-empty-state
+        icon="pi pi-exclamation-circle"
+        messageKey="ASSISTANT.CHAT.NOT_FOUND"
+      />
+    } @else {
+      <hf-chat-view
+        [chat]="chat.chat()"
+        [messages]="chat.viewMessages()"
+        [running]="chat.runningTurn()"
+        [isLoading]="chat.isLoading()"
+        [isLoadingOlder]="chat.isLoadingOlder()"
+        [hasMore]="chat.nextBefore() !== null"
+        [hasLoaded]="chat.chat() !== null || chatId() === undefined"
+        [limit]="messagesPageSize"
+        [isRunning]="chat.isRunning()"
+        [isStopping]="chat.isStopping()"
+        [canStop]="chat.isSending()"
+        [unsentText]="chat.unsentText()"
+        [canWrite]="canWrite"
+        (olderRequested)="chat.loadOlder()"
+        [mentionGroups]="chat.mentionGroups()"
+        [isMentionLoading]="chat.isMentionLoading()"
+        (sendRequested)="chat.send($event.text, $event.links)"
+        (mentionSearchRequested)="chat.searchMentions($event)"
+        (stopRequested)="chat.stop()"
+        (deleteMessageRequested)="chat.requestDeleteMessage($event)"
+        (deleteChatRequested)="chat.requestDeleteChat()"
+        (draftJumpRequested)="chat.jumpToDraft($event)"
+      />
+    }
+  </section>
+</div>

@@ -4,8 +4,10 @@ import { ButtonDirective } from 'primeng/button';
 import { Message } from 'primeng/message';
 import { Tooltip } from 'primeng/tooltip';
 
-import { type Chat, type ChatMessage, ChatState } from '@shared/chat/chat';
+import { type Chat, type ChatDraft, type ChatMessage, ChatState } from '@shared/chat/chat';
 import { ChatComposer } from '@shared/chat/chat-composer/chat-composer';
+import type { ChatComposerSend } from '@shared/chat/chat-composer/chat-composer.utils';
+import type { MentionGroup } from '@shared/chat/mention-picker/mention-picker.utils';
 import { ChatMessageList } from '@shared/chat/chat-message-list/chat-message-list';
 import type { RunningTurn } from '@shared/chat/chat.store.utils';
 
@@ -30,12 +32,16 @@ export class ChatView {
   readonly unsentText = input<string | null>(null);
   readonly hasLoaded = input.required<boolean>();
   readonly canWrite = input(false);
+  readonly mentionGroups = input<readonly MentionGroup[]>([]);
+  readonly isMentionLoading = input(false);
 
   readonly olderRequested = output();
-  readonly sendRequested = output<string>();
+  readonly sendRequested = output<ChatComposerSend>();
+  readonly mentionSearchRequested = output<string>();
   readonly stopRequested = output();
   readonly deleteMessageRequested = output<ChatMessage>();
   readonly deleteChatRequested = output();
+  readonly draftJumpRequested = output<ChatDraft>();
 
   protected readonly isBlocked = computed(() => this.chat()?.state === ChatState.Blocked);
 }

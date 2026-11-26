@@ -12,14 +12,14 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Insights.Infrastructure.Telemetry;
 
 /// <summary>
-/// Provides extension methods for registering the Telemetry HTTP client and the Telemetry gRPC client.
+/// Provides extension methods for registering the Telemetry gRPC clients.
 /// </summary>
 public static class TelemetryClientExtensions
 {
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registers the validated Telemetry client options, the named HTTP client, and the gRPC signals client with
+        /// Registers the validated Telemetry client options, the gRPC signals and definitions clients with
         /// retries, both with the service token and the actor headers, the user clients of signals and definitions
         /// with the exchanged token of the user and no actor headers, and the signal reader. The service must call
         /// <c>AddServiceTokens</c>, and the host must register the incoming token accessor.
@@ -32,11 +32,11 @@ public static class TelemetryClientExtensions
                 TelemetryClientOptions.SectionName,
                 configuration);
 
-            services.AddHttpClient(
-                    TelemetryClientNames.Client,
-                    (provider, client) =>
-                        client.BaseAddress = new Uri(
-                            provider.GetRequiredService<IOptions<TelemetryClientOptions>>().Value.BaseAddress))
+            services.AddGrpcClient<TelemetryDefinitions.TelemetryDefinitionsClient>(
+                    TelemetryClientNames.Definitions,
+                    ConfigureGrpcAddress)
+                .ConfigureChannel(options =>
+                    options.ServiceConfig = GrpcClientConfigurations.CreateResilientServiceConfig())
                 .AddClientCredentialsToken()
                 .AddActorHeaders();
 
@@ -63,6 +63,7 @@ public static class TelemetryClientExtensions
                 .AddUserDelegatedToken(TelemetryClientNames.UserToken.Audience, TelemetryClientNames.UserToken.Scope);
 
             services.AddScoped<ITelemetrySignals, GrpcTelemetrySignals>();
+            services.AddSingleton<ITelemetryDefinitionsClients, TelemetryDefinitionsClients>();
 
             return services;
         }

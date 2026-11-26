@@ -85,6 +85,7 @@ public record MachineDraftGridItem : IEntity<Guid>, IKeysetGridItem<MachineDraft
                     AttemptId = draft.Proposal.AttemptId,
                     CaseId = draft.Proposal.CaseId,
                     ChatId = draft.Proposal.ChatId,
+                    RequestedByName = draft.Proposal.RequestedByName,
                 },
                 ProposedAt = draft.CreatedAt,
                 SourceLocation = null,

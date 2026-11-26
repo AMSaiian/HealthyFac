@@ -22,6 +22,9 @@ import { withToasts } from '@shared/toasts/with-toasts';
 import {
   DraftColumn,
   DraftKind,
+  type DraftProposalScope,
+  draftScopeOf,
+  type DraftScopeRef,
   DraftSortColumn,
   DraftState,
   type MachineDraftFilter,
@@ -59,18 +62,14 @@ export const DRAFT_COLUMN_ORDER: readonly DraftColumn[] = [
 ];
 
 /**
- * The payload of the dialog: the machine whose drafts it lists (`machines.drafts`), or the ingest attempt whose drafts
- * it lists (`files.ingestSummary`).
+ * The payload of the dialog: the machine whose drafts it lists (`machines.drafts`), the ingest attempt whose drafts it
+ * lists (`files.ingestSummary`), or the chat whose drafts it lists (the draft jumps of a chat message).
  */
-interface DraftsScopePayload {
+interface DraftsScopePayload extends DraftScopeRef {
   readonly machineId?: string;
-  readonly attemptId?: string;
 }
 
-interface DraftsScope {
-  readonly kind: 'machine' | 'attempt';
-  readonly id: string;
-}
+type DraftsScope = DraftProposalScope | { readonly kind: 'machine'; readonly id: string };
 
 const PENDING_ONLY = { states: setFilter([DraftState.Pending]) };
 
@@ -105,16 +104,17 @@ export const MachineDraftsStore = signalStore(
     return {
       machineId: computed(() => (store.action()?.payload as DraftsScopePayload | undefined)?.machineId),
       attemptId: computed(() => (store.action()?.payload as DraftsScopePayload | undefined)?.attemptId),
+      chatId: computed(() => (store.action()?.payload as DraftsScopePayload | undefined)?.chatId),
       canWrite: computed(() => auth.hasPermission(Permission.DraftsWrite)),
     };
   }),
   withComputed((store) => ({
     scope: computed((): DraftsScope | undefined => {
-      const attemptId = store.attemptId();
-      const machineId = store.machineId();
-      if (attemptId !== undefined) {
-        return { kind: 'attempt', id: attemptId };
+      const proposalScope = draftScopeOf({ attemptId: store.attemptId(), chatId: store.chatId() });
+      if (proposalScope !== undefined) {
+        return proposalScope;
       }
+      const machineId = store.machineId();
       return machineId === undefined ? undefined : { kind: 'machine', id: machineId };
     }),
   })),
@@ -127,7 +127,9 @@ export const MachineDraftsStore = signalStore(
     ): Observable<MachineDraftsPage> =>
       scope.kind === 'attempt'
         ? api.searchForAttempt(scope.id, body, options)
-        : api.searchForMachine(scope.id, body, options);
+        : scope.kind === 'chat'
+          ? api.searchForChat(scope.id, body, options)
+          : api.searchForMachine(scope.id, body, options);
     const drafts = rxResource({
       params: () => {
         const scope = store.scope();
@@ -272,7 +274,9 @@ export const MachineDraftsStore = signalStore(
         exhaustMap((scope) =>
           (scope.kind === 'attempt'
             ? api.dismissForAttempt(scope.id, skipErrorToast())
-            : api.dismissForMachine(scope.id, skipErrorToast())
+            : scope.kind === 'chat'
+              ? api.dismissForChat(scope.id, skipErrorToast())
+              : api.dismissForMachine(scope.id, skipErrorToast())
           ).pipe(
             tap((response) => {
               patchState(store, { hasChanged: true, isDismissing: false });
@@ -352,21 +356,29 @@ export const MachineDraftsStore = signalStore(
           },
         });
       },
-      /** Opens the review of a draft. A metric draft opens the metrics page with all pending metric drafts of the attempt. */
+      /**
+       * Opens the review of a draft in the scope of its proposal. A metric draft opens the metrics page with all pending
+       * metric drafts of its attempt or chat.
+       */
       requestReview(item: MachineDraftGridItem): void {
-        const attemptId = item.proposal.attemptId;
-        if (attemptId === null) {
+        const proposalScope: DraftScopeRef | null =
+          item.proposal.attemptId !== null
+            ? { attemptId: item.proposal.attemptId }
+            : item.proposal.chatId !== null
+              ? { chatId: item.proposal.chatId }
+              : null;
+        if (proposalScope === null) {
           return;
         }
 
         if (item.kind === DraftKind.Machine) {
           reviewMachineDraft(actions, item.id, item.isCreate);
         } else if (item.kind === DraftKind.Status && item.machineId !== null) {
-          reviewStatusDraft(actions, { machineId: item.machineId, attemptId, draftId: item.id });
+          reviewStatusDraft(actions, { machineId: item.machineId, ...proposalScope, draftId: item.id });
         } else if (item.kind === DraftKind.Phase && item.machineId !== null) {
-          reviewPhaseDraft(actions, { machineId: item.machineId, attemptId, draftId: item.id });
+          reviewPhaseDraft(actions, { machineId: item.machineId, ...proposalScope, draftId: item.id });
         } else if (item.kind === DraftKind.Metric && item.machineId !== null) {
-          void reviewMetricDrafts(router, item.machineId, attemptId);
+          void reviewMetricDrafts(router, item.machineId, proposalScope);
         }
       },
       /** Applies one draft without the review screen. */

@@ -81,6 +81,7 @@ public static class DraftFixtureExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
 
             await EnsureProposalAsync(dbContext, companyId, attempt);
+
             dbContext.MachineDrafts.Add(
                 new MachineDraft(
                     Guid.CreateVersion7(),
@@ -103,11 +104,15 @@ public static class DraftFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
+
             var proposal = DraftProposal.ForChat(
                 chatMessageId ?? DraftTestData.ChatMessageId,
                 companyId,
-                chatId ?? DraftTestData.ChatId);
+                chatId ?? DraftTestData.ChatId,
+                DraftTestData.RequestedByName);
+
             dbContext.DraftProposals.Add(proposal);
+
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 companyId,
@@ -128,6 +133,7 @@ public static class DraftFixtureExtensions
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ICoreDbContext>();
             await EnsureProposalAsync(dbContext, companyId, DraftTestData.AttemptId);
+
             var draft = new MachineDraft(
                 Guid.CreateVersion7(),
                 companyId,

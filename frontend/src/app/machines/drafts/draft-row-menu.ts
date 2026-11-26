@@ -18,6 +18,8 @@ export interface DraftRowMenuOptions {
   readonly translate: (key: string) => string;
   /** True for a draft that belongs to an ingest attempt. A draft of another source has only **Dismiss**. */
   readonly isFromAttempt: boolean;
+  /** True for a draft of a chat proposal: it has **Review** and **Dismiss**, no **Apply** (a chat draft applies after its review). */
+  readonly isFromChat: boolean;
   /** True when a child draft waits for its create machine draft, so **Review** is off. */
   readonly isReviewDisabled: boolean;
   /** The translation key of the reason that **Apply** is off, or `null` when the draft applies as it is. */
@@ -78,7 +80,11 @@ export function draftRowMenuItems(options: DraftRowMenuOptions): MenuItem[] {
       disabled: options.isBusy,
     },
   ];
-  return options.isFromAttempt ? items : items.slice(-1);
+  if (options.isFromAttempt) {
+    return items;
+  }
+
+  return options.isFromChat ? [items[0], items[2]] : items.slice(-1);
 }
 
 function translatedLabels(options: DraftRowMenuOptions): Record<string, string> {

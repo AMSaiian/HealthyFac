@@ -9,6 +9,8 @@ public static class ChatTestData
     public const string Answer = "Check the filter.";
     public const int PageLimit = 4;
 
+    public const string OwnerName = "Ann Owner";
+
     public static readonly Guid OwnerId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f11");
     public static readonly Guid OtherUserId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f12");
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000f13");

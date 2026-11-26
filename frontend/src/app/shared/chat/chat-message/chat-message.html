@@ -3,6 +3,7 @@
   [class.flex-row-reverse]="isUser()"
 >
   <p-avatar
+    class="flex-none"
     shape="circle"
     [image]="isUser() ? userAvatar : assistantAvatar"
   />
@@ -33,10 +34,39 @@
     @if (message().links.length > 0) {
       <div class="flex flex-wrap gap-1">
         @for (link of message().links; track link.position) {
+          @if (link.label !== '') {
+            <p-tag
+              severity="secondary"
+              [value]="link.label"
+            />
+          }
+        }
+      </div>
+    }
+    @if (message().drafts.length > 0) {
+      <div class="flex flex-wrap items-center gap-1">
+        @for (draft of message().drafts; track draft.draftId) {
           <p-tag
             severity="secondary"
-            [value]="link.label"
+            [value]="draft.title"
           />
+          @if (hasDraftJump(draft)) {
+            <button
+              pButton
+              [pTooltip]="'CHAT.DRAFTS.JUMP' | translate"
+              tooltipPosition="bottom"
+              type="button"
+              iconOnly
+              severity="secondary"
+              [text]="true"
+              [attr.aria-label]="'CHAT.DRAFTS.JUMP' | translate"
+              (click)="draftJumpRequested.emit(draft)"
+            >
+              <i class="pi pi-arrow-right"></i>
+            </button>
+          } @else {
+            <span class="text-muted-color text-sm">{{ 'CHAT.DRAFTS.NOT_CREATED' | translate }}</span>
+          }
         }
       </div>
     }
@@ -59,6 +89,7 @@
   @if (canDelete()) {
     <button
       pButton
+      class="flex-none"
       [pTooltip]="'CHAT.DELETE.MESSAGE' | translate"
       tooltipPosition="bottom"
       type="button"

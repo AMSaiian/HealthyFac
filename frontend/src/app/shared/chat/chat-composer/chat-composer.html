@@ -8,8 +8,40 @@
     [attr.aria-label]="'CHAT.COMPOSER.PLACEHOLDER' | translate"
     [placeholder]="'CHAT.COMPOSER.PLACEHOLDER' | translate"
     [formField]="composerForm.text"
+    #textarea
     (keydown.enter)="onEnter($event)"
+    (input)="onTyping($event)"
   ></textarea>
+  @if (links().length > 0) {
+    <div class="flex flex-wrap gap-1">
+      @for (link of links(); track link) {
+        <p-tag severity="secondary">
+          <span class="flex items-center gap-1">
+            {{ link.label }}
+            <button
+              pButton
+              [pTooltip]="'CHAT.MENTION.REMOVE' | translate"
+              tooltipPosition="bottom"
+              type="button"
+              iconOnly
+              severity="secondary"
+              [text]="true"
+              size="small"
+              [attr.aria-label]="'CHAT.MENTION.REMOVE' | translate"
+              (click)="removeLink(link)"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </span>
+        </p-tag>
+      }
+    </div>
+  }
+  <hf-mention-picker
+    [groups]="mentionGroups()"
+    [isLoading]="isMentionLoading()"
+    (picked)="onPick($event)"
+  />
   @if (showCount()) {
     <small
       class="self-end"
@@ -20,35 +52,37 @@
   }
 </div>
 <div class="flex justify-end gap-2">
-  @if (canStop() && !isStopping()) {
+  @if (canStop()) {
     <button
       pButton
       [pTooltip]="'CHAT.COMPOSER.STOP_TOOLTIP' | translate"
       tooltipPosition="bottom"
       type="button"
       severity="secondary"
+      [disabled]="isStopping()"
       (click)="stopRequested.emit()"
     >
       <i class="pi pi-stop-circle"></i>
       {{ 'CHAT.COMPOSER.STOP' | translate }}
     </button>
-  }
-  <span
-    [pTooltip]="disabledReason() ?? 'CHAT.COMPOSER.SEND_TOOLTIP' | translate"
-    tooltipPosition="bottom"
-    [tooltipDisabled]="disabledReason() === null"
-  >
-    <button
-      pButton
-      [pTooltip]="'CHAT.COMPOSER.SEND_TOOLTIP' | translate"
+  } @else {
+    <span
+      [pTooltip]="disabledReason() ?? 'CHAT.COMPOSER.SEND_TOOLTIP' | translate"
       tooltipPosition="bottom"
-      [tooltipDisabled]="disabledReason() !== null"
-      type="button"
-      [disabled]="disabledReason() !== null"
-      (click)="onSend()"
+      [tooltipDisabled]="disabledReason() === null"
     >
-      <i class="pi pi-send"></i>
-      {{ 'CHAT.COMPOSER.SEND' | translate }}
-    </button>
-  </span>
+      <button
+        pButton
+        [pTooltip]="'CHAT.COMPOSER.SEND_TOOLTIP' | translate"
+        tooltipPosition="bottom"
+        [tooltipDisabled]="disabledReason() !== null"
+        type="button"
+        [disabled]="disabledReason() !== null"
+        (click)="onSend()"
+      >
+        <i class="pi pi-send"></i>
+        {{ 'CHAT.COMPOSER.SEND' | translate }}
+      </button>
+    </span>
+  }
 </div>

@@ -55,8 +55,10 @@ public sealed class ProposeStatusDraftToolRequestHandler(
     {
         var (buffer, machineKey) = await _targets.ResolveAsync(request.Proposal.MachineId, cancellationToken);
 
-        return await _proposals.HandleAsync(
+        var response = await _proposals.HandleAsync(
             request.Proposal with { Buffer = buffer, MachineId = machineKey },
             cancellationToken);
+
+        return response with { Note = DraftToolNotes.TellTheUser };
     }
 }

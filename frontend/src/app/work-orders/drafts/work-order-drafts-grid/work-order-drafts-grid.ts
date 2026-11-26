@@ -40,6 +40,7 @@ import {
   UNKNOWN_MACHINE_KEY,
   workOrderDraftMenuItems,
 } from '@work-orders/drafts/work-order-drafts-grid/work-order-drafts-grid.utils';
+import { draftSourceKey, draftSourceText } from '@shared/drafts/draft-proposal';
 import { CATEGORY_LABEL_KEYS, PRIORITY_LABEL_KEYS } from '@work-orders/list/work-order-grid/work-order-grid.utils';
 
 @Component({
@@ -83,6 +84,8 @@ export class WorkOrderDraftsGrid {
   readonly dismissRequested = output<WorkOrderDraft>();
 
   protected readonly WorkOrderDraftColumn = WorkOrderDraftColumn;
+  protected readonly draftSourceKey = draftSourceKey;
+  protected readonly draftSourceText = draftSourceText;
   protected readonly allColumns = Object.values(WorkOrderDraftColumn);
   protected readonly columnLabelKeys = COLUMN_LABEL_KEYS;
   protected readonly pageSizes = [...PAGE_SIZES];

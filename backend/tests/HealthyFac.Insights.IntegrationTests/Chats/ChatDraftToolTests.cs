@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HealthyFac.Insights.Application.Chats.Tools;
+using HealthyFac.Insights.Application.Chats.Tools.Writes;
 using HealthyFac.Insights.Application.Extraction.Proposals;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.IntegrationTests.Chats.Data;
@@ -7,10 +8,12 @@ using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats;
 
 [Collection(ChatTurnCollection.Name)]
+[Feature(TestFeatures.Chat)]
 public sealed class ChatDraftToolTests(ChatTurnFixture fixture)
 {
     private const string MetricArguments =
@@ -35,11 +38,23 @@ public sealed class ChatDraftToolTests(ChatTurnFixture fixture)
     }
 
     [Fact]
+    public async Task ProposeMetric_ForAnExistingMachine_TellsTheModelToAnswerTheUser()
+    {
+        using var session = await _fixture.StartToolSessionAsync();
+
+        var result = await session.CallAsync(toolName: "propose_metric_draft", MetricFor(ChatTestData.MachineId));
+
+        result.Should().Contain(DraftToolNotes.TellTheUser);
+    }
+
+    [Fact]
     public async Task ProposeMetric_ForACreateDraftOfTheTurn_MapsToTheMachineDraftId()
     {
         using var session = await _fixture.StartToolSessionAsync();
+
         var machineResult = await session.CallAsync(
             toolName: "propose_machine_draft", argumentsJson: """{"name":"Lathe 9"}""");
+
         var machineId = ReadMachineId(machineResult);
 
         await session.CallAsync(toolName: "propose_metric_draft", MetricArguments.Replace(oldValue: "%ID%", machineId));
@@ -133,6 +148,7 @@ public sealed class ChatDraftToolTests(ChatTurnFixture fixture)
     public async Task ProposeMachine_ForAnUpdateBeforeADefinitionOfTheSameMachine_KeepsBothOnTheSameEntry()
     {
         using var session = await _fixture.StartToolSessionAsync();
+
         await session.CallAsync(
             toolName: "propose_machine_draft", UpdateFor(ChatTestData.MachineId, name: "Lathe 7 B"));
 

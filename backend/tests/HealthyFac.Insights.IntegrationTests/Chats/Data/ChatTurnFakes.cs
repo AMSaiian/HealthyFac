@@ -5,6 +5,7 @@ using HealthyFac.Insights.Application.Chats.Tools;
 using HealthyFac.Insights.Application.Chats.Turns;
 using HealthyFac.Insights.Application.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
+using HealthyFac.Shared.Application.CurrentUser;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Chats.Data;
@@ -22,11 +23,14 @@ public sealed class ChatTurnFakes
 
     public FakeChatPermissions Permissions { get; } = new();
 
+    public FakeOwnerAccessor Owner { get; } = new();
+
     public void Register(IServiceCollection services)
     {
         services.AddSingleton<IChatTriageModel>(Triage);
         services.AddSingleton<IChatModel>(Model);
         services.AddSingleton<IChatReads>(Reads);
+        services.AddSingleton<IIncomingAccessTokenAccessor>(Owner);
         services.AddSingleton(Permissions);
         services.AddSingleton<IMetricUnitCatalog>(new FakeMetricUnitCatalog());
         services.AddScoped<IChatPermissions>(provider => provider.GetRequiredService<FakeChatPermissions>());
@@ -39,6 +43,7 @@ public sealed class ChatTurnFakes
         Reads.Reset();
         Permissions.Granted = null;
         Reads.MachineAnswer = ChatTestData.MachineAnswer();
+        Owner.Name = ChatTestData.OwnerName;
     }
 }
 
@@ -185,4 +190,16 @@ public sealed class FakeMetricUnitCatalog : IMetricUnitCatalog
     public Task<IReadOnlyList<MetricUnit>> GetAllAsync(CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MetricUnit>>(
             [new MetricUnit { QuantityKind = "Temperature", Name = "Celsius", Abbreviation = "C" }]);
+}
+
+/// <summary>Plays the token of the chat owner, so a turn knows the display name of the owner.</summary>
+public sealed class FakeOwnerAccessor : IIncomingAccessTokenAccessor
+{
+    public string? TryGetUserAccessToken() => null;
+
+    public Guid? TryGetUserId() => null;
+
+    public string? Name { get; set; } = ChatTestData.OwnerName;
+
+    public string? TryGetUserName() => Name;
 }

@@ -1,4 +1,14 @@
-import { ChatActivity, ChatErrorCode, type ChatMessage, ChatMessageKind, ChatMessageState } from '@shared/chat/chat';
+import { MachineActionType } from '@machines/machine-actions';
+import {
+  ChatActivity,
+  type ChatDraft,
+  ChatDraftKind,
+  ChatErrorCode,
+  type ChatMessage,
+  ChatMessageKind,
+  ChatMessageState,
+} from '@shared/chat/chat';
+import type { NotificationJump } from '@shared/notifications/notification.store.utils';
 
 const ACTIVITY_KEYS: Readonly<Record<ChatActivity, string>> = {
   [ChatActivity.Machines]: 'CHAT.ACTIVITY.MACHINES',
@@ -50,4 +60,31 @@ export function messageNoteKey(message: Pick<ChatMessage, 'kind' | 'state' | 'er
     return message.errorCode === null ? 'CHAT.NOTES.FAILED' : FAILURE_KEYS[message.errorCode];
   }
   return message.kind === null ? null : KIND_KEYS[message.kind];
+}
+
+const WORK_ORDER_DRAFTS_ROUTE = '/work-orders/drafts';
+
+/** How each kind of draft opens its review: the work order drafts page, or the machine drafts action of the chat. */
+const DRAFT_JUMPS: Readonly<Record<ChatDraftKind, (draft: ChatDraft, chatId: string) => NotificationJump>> = {
+  [ChatDraftKind.WorkOrder]: (draft) => ({
+    type: 'route',
+    commands: [WORK_ORDER_DRAFTS_ROUTE],
+    queryParams: { draftId: draft.draftId },
+  }),
+  [ChatDraftKind.Machine]: (_draft, chatId) => machineDraftsOfChat(chatId),
+  [ChatDraftKind.Metric]: (_draft, chatId) => machineDraftsOfChat(chatId),
+  [ChatDraftKind.Status]: (_draft, chatId) => machineDraftsOfChat(chatId),
+  [ChatDraftKind.OperatingPhase]: (_draft, chatId) => machineDraftsOfChat(chatId),
+};
+
+function machineDraftsOfChat(chatId: string): NotificationJump {
+  return { type: 'action', action: { type: MachineActionType.Drafts, payload: { chatId } } };
+}
+
+/** The kinds that have a jump. A test compares them with the kinds of the backend. */
+export const CHAT_DRAFT_JUMP_KINDS: readonly ChatDraftKind[] = Object.keys(DRAFT_JUMPS) as ChatDraftKind[];
+
+/** Where the jump of a draft chip goes, or `null` while the draft is not created (the turn did not complete). */
+export function chatDraftJumpOf(draft: ChatDraft, chatId: string): NotificationJump | null {
+  return draft.isCommitted ? DRAFT_JUMPS[draft.kind](draft, chatId) : null;
 }

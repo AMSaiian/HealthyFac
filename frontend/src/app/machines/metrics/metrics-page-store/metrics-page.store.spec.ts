@@ -144,7 +144,7 @@ type Spy = ReturnType<typeof vi.fn>;
 interface Setup {
   store: InstanceType<typeof MetricsPageStore>;
   api: { getDefinitions: Spy; apply: Spy; getSchema: Spy };
-  draftsApi: { listForAttempt: Spy };
+  draftsApi: { listForScope: Spy };
   actions: { complete: Spy };
   history: { canGoBack: WritableSignal<boolean>; back: Spy };
   resolveLinks: Spy;
@@ -155,7 +155,7 @@ interface Setup {
 async function setup(
   definitions: MetricDefinitionsResponse = LOADED,
   apply?: Spy,
-  overrides: { getDefinitions?: Spy; listForAttempt?: Spy; isHistoryReal?: boolean } = {},
+  overrides: { getDefinitions?: Spy; listForScope?: Spy; isHistoryReal?: boolean } = {},
 ): Promise<Setup> {
   const messages = { add: vi.fn() };
   const confirmation = { confirm: vi.fn((options: { accept: () => void }) => options.accept()) };
@@ -166,7 +166,7 @@ async function setup(
     getSchema: vi.fn(() => of({ revision: 3, schema: {} })),
   };
   const draftsApi = {
-    listForAttempt: overrides.listForAttempt ?? vi.fn(() => of(DRAFTS)),
+    listForScope: overrides.listForScope ?? vi.fn(() => of(DRAFTS)),
   };
   const actions = { complete: vi.fn() };
   const history = { canGoBack: signal(false), back: vi.fn(() => Promise.resolve()) };
@@ -418,6 +418,18 @@ describe('MetricsPageStore', { tags: ['SignalModel'] }, () => {
     expect(store.isEditedItemUnsaved()).toBe(expected);
   });
 
+  it('loadDrafts_WithAChat_ReadsTheChatDraftsAndStagesThem', async () => {
+    const { store, draftsApi } = await setup();
+
+    store.loadDrafts(null, 'chat-1');
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+    TestBed.tick();
+
+    expect(draftsApi.listForScope).toHaveBeenCalledWith({ kind: 'chat', id: 'chat-1' }, expect.anything());
+    expect(store.items().map((item) => item.draftId)).toContain('draft-key');
+  });
+
   it('loadDrafts_WithAttempt_StagesTheChangeAndTheNewItemOfThatMachineOnly', async () => {
     const { store, draftsApi } = await setup();
 
@@ -426,7 +438,7 @@ describe('MetricsPageStore', { tags: ['SignalModel'] }, () => {
     await TestBed.inject(ApplicationRef).whenStable();
     TestBed.tick();
 
-    expect(draftsApi.listForAttempt).toHaveBeenCalledWith('attempt-1', expect.anything());
+    expect(draftsApi.listForScope).toHaveBeenCalledWith({ kind: 'attempt', id: 'attempt-1' }, expect.anything());
     expect(store.items().map((item) => [item.localId, item.draftId])).toEqual([
       ['a', 'draft-key'],
       ['b', null],
@@ -458,8 +470,8 @@ describe('MetricsPageStore', { tags: ['SignalModel'] }, () => {
     const reloadedDefinitions = new Subject<MetricDefinitionsResponse>();
     const reloadedDrafts = new Subject<typeof DRAFTS>();
     const getDefinitions = vi.fn().mockReturnValueOnce(of(LOADED)).mockReturnValue(reloadedDefinitions);
-    const listForAttempt = vi.fn().mockReturnValueOnce(of(DRAFTS)).mockReturnValue(reloadedDrafts);
-    const { store } = await setup(LOADED, undefined, { getDefinitions, listForAttempt });
+    const listForScope = vi.fn().mockReturnValueOnce(of(DRAFTS)).mockReturnValue(reloadedDrafts);
+    const { store } = await setup(LOADED, undefined, { getDefinitions, listForScope });
     store.loadDrafts('attempt-1');
     TestBed.tick();
     await TestBed.inject(ApplicationRef).whenStable();

@@ -748,6 +748,11 @@
       "WAITING_TITLE": "Request limit",
       "WAITING": "Waiting {{seconds}} s for the request limit",
       "RATE_LIMITED": "The request limit is still reached. Try again in a minute"
+    },
+    "SOURCES": {
+      "INGEST": "File ingest",
+      "CASE": "Maintenance case",
+      "CHAT": "Chat"
     }
   },
   "WORK_ORDERS": {
@@ -1513,7 +1518,8 @@
     },
     "CHAT": {
       "NOT_FOUND": "This chat does not exist"
-    }
+    },
+    "TITLE": "Assistant"
   },
   "CHAT": {
     "EMPTY": "This conversation is empty. Start with your first message",
@@ -1572,6 +1578,28 @@
     "TOASTS": {
       "MESSAGE_DELETED": "The message is deleted",
       "CHAT_DELETED": "The chat is deleted"
+    },
+    "DRAWER": {
+      "OPEN": "Open the assistant",
+      "PICK": "Choose a chat",
+      "NEW_CHAT": "New chat",
+      "NEW_CHAT_TOOLTIP": "Start a new chat",
+      "OPEN_PAGE": "Open the chat page"
+    },
+    "MENTION": {
+      "EMPTY": "Nothing found",
+      "REMOVE": "Remove the link",
+      "KINDS": {
+        "MACHINE": "Machines",
+        "MAINTENANCE_CASE": "Cases",
+        "FILE": "Files",
+        "EMPLOYEE": "Employees",
+        "WORK_ORDER": "Work orders"
+      }
+    },
+    "DRAFTS": {
+      "JUMP": "Open the draft",
+      "NOT_CREATED": "Not created"
     }
   }
 }

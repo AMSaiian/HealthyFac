@@ -46,6 +46,7 @@ public static class ProposalBuilder
         new()
         {
             Source = ProposalSource.Chat,
+            RequestedByName = "Ann Owner",
             ChatId = DefinitionDraftTestData.ChatId,
             ChatMessageId = DefinitionDraftTestData.ChatMessageId,
             CompanyId = companyId,

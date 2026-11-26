@@ -72,6 +72,7 @@ public record WorkOrderDraftResponse
                 AttemptId = draft.Proposal.AttemptId,
                 CaseId = draft.Proposal.CaseId,
                 ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
             },
             Title = draft.Title,
             Description = draft.Description,

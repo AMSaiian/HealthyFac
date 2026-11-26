@@ -54,6 +54,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.Infrastructure;
@@ -165,7 +166,8 @@ public static class ConfigureServices
             services.AddScoped<IAgentRunner, TriageRunner>();
             services.AddSingleton<IChatModel>(provider => new GeminiChatModel(
                 provider.GetRequiredService<IChatClient>(),
-                provider.GetRequiredService<IOptions<GeminiOptions>>()));
+                provider.GetRequiredService<IOptions<GeminiOptions>>(),
+                provider.GetRequiredService<ILogger<GeminiChatModel>>()));
             services.AddSingleton<IChatTriageModel>(provider => new GeminiChatTriageModel(
                 provider.GetRequiredKeyedService<IChatClient>(AiClientKeys.Triage),
                 provider.GetRequiredService<IOptions<GeminiOptions>>(),

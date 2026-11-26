@@ -731,6 +731,12 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("file_id");
 
+                    b.Property<string>("RequestedByName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("requested_by_name")
+                        .UseCollation("case_insensitive");
+
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasMaxLength(6)

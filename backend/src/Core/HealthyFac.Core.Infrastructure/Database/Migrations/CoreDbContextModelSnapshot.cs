@@ -235,6 +235,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("queued_at");
 
+                    b.Property<string>("RequestedByName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("requested_by_name")
+                        .UseCollation("case_insensitive");
+
                     b.Property<Guid?>("RunId")
                         .HasColumnType("uuid")
                         .HasColumnName("run_id");

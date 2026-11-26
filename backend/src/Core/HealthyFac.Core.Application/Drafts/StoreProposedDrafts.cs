@@ -157,7 +157,8 @@ public sealed class StoreProposedDraftsRequestHandler(
             IsIngest(request)
                 ? DraftProposal.ForIngest(
                     ProposalIdOf(request), request.CompanyId, request.FileId!.Value, request.QueuedAt!.Value)
-                : DraftProposal.ForChat(ProposalIdOf(request), request.CompanyId, request.ChatId!.Value));
+                : DraftProposal.ForChat(
+                    ProposalIdOf(request), request.CompanyId, request.ChatId!.Value, request.RequestedByName));
     }
 
     private async Task<HashSet<Guid>> LoadExistingIdsAsync(DraftsProposed request, CancellationToken cancellationToken)

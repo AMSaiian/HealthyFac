@@ -6,17 +6,20 @@ using HealthyFac.Insights.Domain.Chats;
 using HealthyFac.Insights.Domain.Chats.Messages;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Chats.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Insights.UnitTests.Chats;
 
+[Feature(TestFeatures.Chat)]
 public sealed class ChatTurnRunnerTests
 {
     [Fact]
     public async Task RunAsync_ForAnInScopeMessage_CompletesTheReplyWithTheStreamedTextAndTheTokens()
     {
         var fixture = new TurnRunnerFixture();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece),
@@ -43,16 +46,20 @@ public sealed class ChatTurnRunnerTests
         {
             chat.AddTurn(text: "refused question", [], ChatTestData.Now)
                 .Assistant.Complete(ChatMessageKind.Refusal, string.Empty);
+
             chat.AddTurn(text: "failed question", [], ChatTestData.Now)
                 .Assistant.End(ChatMessageState.Failed, AgentRunErrorCode.ProviderUnavailable);
-            var answered = chat.AddTurn(text: "answered question", [], ChatTestData.Now);
-            answered.Assistant.Complete(ChatMessageKind.Answer, text: "the answer");
+
+            var (_, answered) = chat.AddTurn(text: "answered question", [], ChatTestData.Now);
+            answered.Complete(ChatMessageKind.Answer, text: "the answer");
         });
+
         fixture.Client.ScriptStream(ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece));
 
         await fixture.RunAsync(TestContext.Current.CancellationToken);
 
         var sent = fixture.Client.SentMessages.Should().ContainSingle().Subject;
+
         sent.Select(message => message.Text)
             .Should()
             .Equal("answered question", "the answer", ChatTestData.ShortText);
@@ -130,9 +137,11 @@ public sealed class ChatTurnRunnerTests
     {
         var fixture = new TurnRunnerFixture();
         using var request = new CancellationTokenSource();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece));
+
         fixture.Client.BeforeUpdate = index =>
         {
             if (index == 1)
@@ -155,9 +164,11 @@ public sealed class ChatTurnRunnerTests
     public async Task RunAsync_WhenAProviderErrorFollowsTheFirstPiece_FailsWithTheFirstPieceAsText()
     {
         var fixture = new TurnRunnerFixture();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece));
+
         fixture.Client.BeforeUpdate = index => index == 1
             ? Task.FromException(AgentProviderCallsTestData.Transient())
             : Task.CompletedTask;
@@ -174,9 +185,11 @@ public sealed class ChatTurnRunnerTests
     {
         var fixture = new TurnRunnerFixture();
         using var request = new CancellationTokenSource();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece));
+
         fixture.Client.BeforeUpdate = index =>
         {
             if (index == 1)
@@ -202,9 +215,11 @@ public sealed class ChatTurnRunnerTests
     public async Task RunAsync_WhenTheTimeLimitPasses_FailsWithTimeLimitAndKeepsThePartialText()
     {
         var fixture = new TurnRunnerFixture();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece));
+
         fixture.Client.BeforeUpdate = index =>
         {
             if (index == 1)
@@ -224,9 +239,22 @@ public sealed class ChatTurnRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_WhenTheModelStreamsNoText_FailsTheReplyWithProviderUnavailable()
+    {
+        var fixture = new TurnRunnerFixture();
+        fixture.Client.ScriptStream(ChatTurnRunnerTestData.Piece(text: "   "));
+
+        await fixture.RunAsync(TestContext.Current.CancellationToken);
+
+        fixture.Assistant.State.Should().Be(ChatMessageState.Failed);
+        fixture.Assistant.ErrorCode.Should().Be(AgentRunErrorCode.ProviderUnavailable);
+    }
+
+    [Fact]
     public async Task RunAsync_WhenTheModelHitsTheOutputLimit_FailsWithOutputLimitAndKeepsTheText()
     {
         var fixture = new TurnRunnerFixture();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.Length());
@@ -260,31 +288,50 @@ public sealed class ChatTurnRunnerTests
     public async Task RunAsync_WhenTheModelCallsMoreToolsThanTheLimit_NeverRunsTheExtraCallAndAsksOnceWithoutTools()
     {
         var fixture = new TurnRunnerFixture(maxToolCalls: 2);
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.ToolCall(callId: "call-1"),
             ChatTurnRunnerTestData.ToolCall(callId: "call-2"),
             ChatTurnRunnerTestData.ToolCall(callId: "call-3"));
+
         fixture.Client.ScriptStream(ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece));
 
         await fixture.RunAsync(TestContext.Current.CancellationToken);
 
         fixture.Saves.ToolCalls.Should().HaveCount(expected: 2);
         fixture.Client.CallCount.Should().Be(expected: 2);
-        fixture.Client.SentOptions[index: 0]!.Tools.Should().NotBeNullOrEmpty();
-        fixture.Client.SentOptions[index: 1]!.Tools.Should().BeNullOrEmpty();
+        fixture.Client.SentOptions[0]!.Tools.Should().NotBeNullOrEmpty();
+        fixture.Client.SentOptions[1]!.Tools.Should().BeNullOrEmpty();
         fixture.Assistant.Text.Should().Be(ChatTurnRunnerTestData.SecondPiece);
-        var results = fixture.Client.SentMessages[index: 1]
+
+        var results = fixture.Client.SentMessages[1]
             .SelectMany(message => message.Contents)
             .OfType<FunctionResultContent>()
             .ToDictionary(result => result.CallId, result => result.Result?.ToString());
+
         results.Keys.Should().BeEquivalentTo("call-1", "call-2", "call-3");
-        results[key: "call-3"].Should().Be(ChatTurnTools.LimitReachedText);
+        results["call-3"].Should().Be(ChatTurnTools.LimitReachedText);
+    }
+
+    [Fact]
+    public async Task RunAsync_WhenTheToolLimitIsReached_EndsTheFinalRequestWithAUserMessageThatAsksForTheAnswer()
+    {
+        var fixture = new TurnRunnerFixture(maxToolCalls: 1);
+        fixture.Client.ScriptStream(ChatTurnRunnerTestData.ToolCall(callId: "call-1"));
+        fixture.Client.ScriptStream(ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.SecondPiece));
+
+        await fixture.RunAsync(TestContext.Current.CancellationToken);
+
+        var last = fixture.Client.SentMessages[1][^1];
+        last.Role.Should().Be(ChatRole.User);
+        last.Text.Should().Be(ChatTurnTools.AnswerNowText);
     }
 
     [Fact]
     public async Task RunAsync_WhenTheNoAnswerCallIsTheCallAtTheLimit_MakesNoFinalModelCall()
     {
         var fixture = new TurnRunnerFixture(maxToolCalls: 1);
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.ToolCall(callId: "call-1", ReportNoAnswerToolRequest.ToolName));
 
@@ -299,6 +346,7 @@ public sealed class ChatTurnRunnerTests
     public async Task RunAsync_WhenTheModelReportsNoAnswer_CompletesUnanswerableWithoutTextAndEndsTheLoop()
     {
         var fixture = new TurnRunnerFixture();
+
         fixture.Client.ScriptStream(
             ChatTurnRunnerTestData.Piece(ChatTurnRunnerTestData.FirstPiece),
             ChatTurnRunnerTestData.ToolCall(callId: "call-1", ReportNoAnswerToolRequest.ToolName));
@@ -324,10 +372,12 @@ public sealed class ChatTurnRunnerTests
         fixture.Assistant.State.Should().Be(ChatMessageState.Completed);
         fixture.Assistant.Text.Should().Be(ChatTurnRunnerTestData.FirstPiece);
         fixture.Client.CallCount.Should().Be(expected: 2);
-        var result = fixture.Client.SentMessages[index: 1]
+
+        var result = fixture.Client.SentMessages[1]
             .SelectMany(message => message.Contents)
             .OfType<FunctionResultContent>()
             .Single();
+
         result.Result!.ToString().Should().Contain(ChatToolErrors.ServiceUnavailable);
         fixture.Saves.ToolCalls.Should().ContainSingle().Which.Outcome.Should().Be(ToolCallOutcome.Failed);
     }

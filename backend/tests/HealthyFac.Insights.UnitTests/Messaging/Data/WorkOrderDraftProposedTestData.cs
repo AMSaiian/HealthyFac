@@ -1,3 +1,4 @@
+using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.WorkOrders;
 
 namespace HealthyFac.Insights.UnitTests.Messaging.Data;
@@ -20,6 +21,15 @@ public static class WorkOrderDraftProposedTestData
                 Case() with { ChatMessageId = Guid.CreateVersion7() },
                 WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource
             },
+            { Chat() with { RequestedByName = null }, WorkOrderDraftMessageErrors.Validation.RequestedByNameRequired },
+            {
+                Chat() with { RequestedByName = new string(c: 'a', DraftMessageLimits.RequestedByNameMaxLength + 1) },
+                WorkOrderDraftMessageErrors.Validation.RequestedByNameTooLong
+            },
+            {
+                Case() with { RequestedByName = "Ann Owner" },
+                WorkOrderDraftMessageErrors.Validation.FieldsOfAnotherSource
+            },
             { Chat() with { ChatId = null }, WorkOrderDraftMessageErrors.Validation.IdRequired },
             { Chat() with { ChatMessageId = null }, WorkOrderDraftMessageErrors.Validation.IdRequired },
             {
@@ -34,12 +44,11 @@ public static class WorkOrderDraftProposedTestData
         };
 
     public static TheoryData<WorkOrderDraftProposed> ValidMessages =>
-        new()
-        {
-            Case(),
-            Chat(),
-            Chat() with { MachineId = Guid.CreateVersion7() },
-        };
+    [
+        Case(),
+        Chat(),
+        Chat() with { MachineId = Guid.CreateVersion7() },
+    ];
 
     public static WorkOrderDraftProposed Case() =>
         new()
@@ -63,6 +72,7 @@ public static class WorkOrderDraftProposedTestData
             DraftId = Guid.CreateVersion7(),
             CompanyId = Guid.CreateVersion7(),
             ChatId = Guid.CreateVersion7(),
+            RequestedByName = "Ann Owner",
             ChatMessageId = Guid.CreateVersion7(),
             Title = "Replace the filter",
             Priority = WorkOrderDraftMessageLimits.Priorities.High,

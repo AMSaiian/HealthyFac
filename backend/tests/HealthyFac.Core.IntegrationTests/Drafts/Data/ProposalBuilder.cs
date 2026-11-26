@@ -23,6 +23,7 @@ public static class ProposalBuilder
         new()
         {
             Source = ProposalSource.Chat,
+            RequestedByName = "Ann Owner",
             ChatId = DraftTestData.ChatId,
             ChatMessageId = DraftTestData.ChatMessageId,
             CompanyId = companyId,

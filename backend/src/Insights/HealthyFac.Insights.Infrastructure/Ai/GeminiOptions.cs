@@ -27,6 +27,11 @@ public sealed class GeminiOptions
 
     /// <summary>The most embedding calls that run at the same time.</summary>
     public int EmbeddingParallelism { get; init; } = 4;
+
+    /// <summary>
+    /// The longest wait for the next update of a chat model stream, in seconds. A longer silence counts as a stall.
+    /// </summary>
+    public int StreamIdleTimeoutSeconds { get; init; } = 15;
 }
 
 public sealed class GeminiOptionsValidator : AbstractValidator<GeminiOptions>
@@ -50,5 +55,8 @@ public sealed class GeminiOptionsValidator : AbstractValidator<GeminiOptions>
         RuleFor(options => options.EmbeddingParallelism)
             .GreaterThan(valueToCompare: 0)
             .WithMessage(GeminiMessages.EmbeddingParallelismInvalid);
+        RuleFor(options => options.StreamIdleTimeoutSeconds)
+            .GreaterThan(valueToCompare: 0)
+            .WithMessage(GeminiMessages.StreamIdleTimeoutInvalid);
     }
 }

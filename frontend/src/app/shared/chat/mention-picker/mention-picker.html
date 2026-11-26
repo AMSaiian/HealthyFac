@@ -1,0 +1,33 @@
+<p-popover appendTo="body">
+  <div class="flex max-h-72 w-80 flex-col gap-2 overflow-y-auto">
+    @if (isLoading() && showSkeleton() && isEmpty()) {
+      <p-skeleton
+        width="100%"
+        height="1.5rem"
+      />
+      <p-skeleton
+        width="70%"
+        height="1.5rem"
+      />
+    } @else if (isEmpty() && !isLoading()) {
+      <span class="text-muted-color">{{ 'CHAT.MENTION.EMPTY' | translate }}</span>
+    } @else {
+      <p-listbox
+        styleClass="hf-option-list"
+        optionLabel="label"
+        optionGroupLabel="labelKey"
+        optionGroupChildren="items"
+        [options]="listGroups()"
+        [group]="true"
+        (onChange)="onPick($event.value)"
+      >
+        <ng-template
+          #group
+          let-group
+        >
+          <span class="font-semibold">{{ group.labelKey | translate }}</span>
+        </ng-template>
+      </p-listbox>
+    }
+  </div>
+</p-popover>

@@ -5,8 +5,8 @@ namespace HealthyFac.Insights.Infrastructure.Telemetry;
 /// </summary>
 public static class TelemetryClientNames
 {
-    /// <summary>The name of the HTTP client that calls Telemetry with the service token and actor headers.</summary>
-    public const string Client = "telemetry";
+    /// <summary>The name of the gRPC client that reads the definitions and the units with the service token.</summary>
+    public const string Definitions = "telemetry-definitions";
 
     /// <summary>The name of the gRPC client that reads the signals from Telemetry.</summary>
     public const string Signals = "telemetry-signals";

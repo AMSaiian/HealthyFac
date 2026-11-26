@@ -1,16 +1,22 @@
 import { HttpStatusCode } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import {
+  debounceTime,
+  defaultIfEmpty,
   EMPTY,
   exhaustMap,
   filter,
   finalize,
   forkJoin,
   from,
+  map,
   mergeMap,
+  type Observable,
+  of,
   pipe,
   Subject,
   switchMap,
@@ -21,7 +27,9 @@ import { catchError } from 'rxjs/operators';
 
 import {
   type Chat,
+  type ChatDraft,
   type ChatLinkInput,
+  ChatLinkKind,
   type ChatMessage,
   ChatMessageState,
   type ChatTurn,
@@ -44,11 +52,23 @@ import {
   STOP_RELOAD_DELAY_MILLISECONDS,
   withoutSend,
 } from '@shared/chat/chat.store.utils';
+import {
+  caseLabel,
+  type MentionGroup,
+  mentionKinds,
+  type MentionOption,
+} from '@shared/chat/mention-picker/mention-picker.utils';
+import { chatDraftJumpOf } from '@shared/chat/chat-message/chat-message.utils';
+import { ActionStore } from '@shared/actions/action.store';
 import { withConfirm } from '@shared/confirm/with-confirm';
 import { withStoreDevtools } from '@shared/devtools/with-store-devtools';
 import { httpErrorKey, isHttpStatus, skipErrorToast } from '@shared/http/http-error-key';
+import { LOOKUP_DEBOUNCE_MILLISECONDS } from '@shared/lookups/lookup-options';
+import { LookupsApi } from '@shared/lookups/lookups-api';
 import { RealtimeConnection } from '@shared/realtime/realtime-connection';
 import { AuthStore } from '@shared/security/auth-store/auth.store';
+import { CLOCK } from '@shared/time/clock';
+import { Temporal } from '@shared/time/temporal';
 import { withToasts } from '@shared/toasts/with-toasts';
 
 interface ChatState {
@@ -74,6 +94,9 @@ interface ChatState {
   deletedChatId: string | null;
   /** Counts the ended turns, so a list can reload its order. */
   endedCount: number;
+  /** The entities that the `@` search found, grouped by kind. */
+  mentionGroups: readonly MentionGroup[];
+  isMentionLoading: boolean;
 }
 
 const INITIAL_STATE_CLOSED = {
@@ -98,6 +121,8 @@ const INITIAL_STATE: ChatState = {
   createdChatId: null,
   deletedChatId: null,
   endedCount: 0,
+  mentionGroups: [],
+  isMentionLoading: false,
 };
 
 /** Holds the open chat, its loaded messages, and the streaming turns that the realtime push reports. */
@@ -108,6 +133,10 @@ export const ChatStore = signalStore(
     _api: inject(ChatApi),
     _connection: inject(RealtimeConnection),
     _auth: inject(AuthStore),
+    _actions: inject(ActionStore),
+    _router: inject(Router),
+    _lookups: inject(LookupsApi),
+    _clock: inject(CLOCK),
   })),
   withToasts(),
   withConfirm(),
@@ -239,6 +268,63 @@ export const ChatStore = signalStore(
         }),
       ),
     );
+    const optionsOf = (rows: readonly { id: string; displayName: string }[], kind: ChatLinkKind): MentionOption[] =>
+      rows.map((row) => ({ kind, entityId: row.id, label: row.displayName }));
+    const findKind = (kind: ChatLinkKind, search: string): Observable<MentionOption[]> => {
+      if (kind === ChatLinkKind.Machine) {
+        return store._lookups.machines(search).pipe(map((rows) => optionsOf(rows, kind)));
+      }
+      if (kind === ChatLinkKind.Employee) {
+        return store._lookups.employees(search).pipe(map((rows) => optionsOf(rows, kind)));
+      }
+      if (kind === ChatLinkKind.WorkOrder) {
+        return store._lookups.workOrders(search).pipe(map((rows) => optionsOf(rows, kind)));
+      }
+      if (kind === ChatLinkKind.File) {
+        return store._lookups.files(search).pipe(map((rows) => optionsOf(rows, kind)));
+      }
+      return store._lookups.machines(search).pipe(
+        switchMap((machines) =>
+          machines.length === 0
+            ? of([])
+            : store._lookups.casesOfMachines(machines.map((machine) => machine.id)).pipe(
+                map((cases) =>
+                  cases.map((found) => ({
+                    kind,
+                    entityId: found.id,
+                    label: caseLabel(
+                      machines.find((machine) => machine.id === found.machineId)?.displayName ?? '',
+                      Temporal.Instant.from(found.openedAt)
+                        .toZonedDateTimeISO(store._clock.timeZoneId())
+                        .toPlainDate()
+                        .toString(),
+                    ),
+                  })),
+                ),
+              ),
+        ),
+      );
+    };
+    const searchMentionsCall = rxMethod<string>(
+      pipe(
+        debounceTime(LOOKUP_DEBOUNCE_MILLISECONDS),
+        tap(() => patchState(store, { isMentionLoading: true })),
+        switchMap((search) =>
+          forkJoin(
+            mentionKinds((permission) => store._auth.hasPermission(permission)).map((kind) =>
+              findKind(kind, search).pipe(
+                map((options): MentionGroup => ({ kind, options })),
+                catchError(() => of<MentionGroup>({ kind, options: [] })),
+              ),
+            ),
+          ).pipe(
+            defaultIfEmpty([] as MentionGroup[]),
+            tap((groups) => patchState(store, { mentionGroups: groups })),
+            finalize(() => patchState(store, { isMentionLoading: false })),
+          ),
+        ),
+      ),
+    );
     const sendCall = rxMethod<{ key: string; text: string; links: readonly ChatLinkInput[] }>(
       pipe(
         mergeMap(({ key, text, links }) => {
@@ -331,6 +417,23 @@ export const ChatStore = signalStore(
         }
         patchState(store, { createdChatId: null, deletedChatId: null, unsentText: null });
         load(chatId);
+      },
+      /** Opens the review of a draft of the open chat: a route, or an action over the page. The drawer stays open. */
+      jumpToDraft(draft: ChatDraft): void {
+        const chatId = store.openChatId();
+        const target = chatId === null ? null : chatDraftJumpOf(draft, chatId);
+        if (target === null) {
+          return;
+        }
+        if (target.type === 'route') {
+          void store._router.navigate([...target.commands], { queryParams: target.queryParams });
+          return;
+        }
+        void store._actions.dispatch(target.action);
+      },
+      /** Searches the entities that a mention can name for the typed text, one group per permitted kind. */
+      searchMentions(search: string): void {
+        searchMentionsCall(search);
       },
       /** Sends a message to the open chat, or creates a chat when none is open. */
       send(text: string, links: readonly ChatLinkInput[]): void {
@@ -455,6 +558,9 @@ export const ChatStore = signalStore(
       },
       openDrawer(): void {
         patchState(store, { isDrawerOpen: true });
+      },
+      toggleDrawer(): void {
+        patchState(store, { isDrawerOpen: !store.isDrawerOpen() });
       },
       closeDrawer(): void {
         patchState(store, { isDrawerOpen: false });

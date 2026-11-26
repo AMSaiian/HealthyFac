@@ -41,9 +41,9 @@ public sealed class ChatClientRegistrationHarness : IDisposable
     {
         var settings = new Dictionary<string, string?>(CoreClientRegistrationTestData.Settings)
         {
-            [key: "TelemetryClient:BaseAddress"] = "http://telemetry.test:8080",
-            [key: "TelemetryClient:GrpcAddress"] = "http://telemetry.test:8081",
+            ["TelemetryClient:GrpcAddress"] = "http://telemetry.test:8081",
         };
+
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
         var services = new ServiceCollection();
         services.AddLogging();
@@ -53,8 +53,10 @@ public sealed class ChatClientRegistrationHarness : IDisposable
         services.AddServiceTokens(configuration);
         services.AddCoreClient(configuration);
         services.AddTelemetryClient(configuration);
+
         services.AddHttpClient(ServiceTokenConstants.TokenClientName)
             .ConfigurePrimaryHttpMessageHandler(() => new ExchangeEndpointHandler());
+
         foreach (var name in UserClientNames)
         {
             services.AddHttpClient(name).ConfigurePrimaryHttpMessageHandler(() => Service);
@@ -74,6 +76,8 @@ public sealed class ChatClientRegistrationHarness : IDisposable
         public string? TryGetUserAccessToken() => UserToken;
 
         public Guid? TryGetUserId() => Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000d02");
+
+        public string? TryGetUserName() => null;
     }
 
     private sealed class ExchangeEndpointHandler : HttpMessageHandler

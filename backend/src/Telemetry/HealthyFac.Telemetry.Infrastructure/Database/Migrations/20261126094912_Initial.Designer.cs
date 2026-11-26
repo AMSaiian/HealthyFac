@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(TelemetryDbContext))]
-    [Migration("20261124233946_Initial")]
+    [Migration("20261126094912_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -733,6 +733,12 @@ namespace HealthyFac.Telemetry.Infrastructure.Database.Migrations
                     b.Property<Guid?>("FileId")
                         .HasColumnType("uuid")
                         .HasColumnName("file_id");
+
+                    b.Property<string>("RequestedByName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("requested_by_name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<string>("Source")
                         .IsRequired()

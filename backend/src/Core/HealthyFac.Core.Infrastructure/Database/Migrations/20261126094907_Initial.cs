@@ -60,6 +60,7 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     run_id = table.Column<Guid>(type: "uuid", nullable: true),
                     chat_id = table.Column<Guid>(type: "uuid", nullable: true),
                     chat_message_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    requested_by_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true, collation: "case_insensitive"),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     created_by = table.Column<Guid>(type: "uuid", nullable: false),

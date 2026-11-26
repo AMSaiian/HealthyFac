@@ -36,6 +36,7 @@ public record MachineDraftDetail
                 AttemptId = draft.Proposal.AttemptId,
                 CaseId = draft.Proposal.CaseId,
                 ChatId = draft.Proposal.ChatId,
+                RequestedByName = draft.Proposal.RequestedByName,
             },
             Name = draft.Name,
             SerialNumber = draft.SerialNumber,

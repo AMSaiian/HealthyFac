@@ -59,4 +59,30 @@ public sealed class ChatPromptTests
         oneLine.Should()
             .Contain(expected: "Never call the tool report_no_answer in a turn in which you proposed a draft");
     }
+
+    [Theory]
+    [InlineData("Never show an ID. Name a machine, a work order, a case, a person, or a file by its name or title.")]
+    [InlineData("Write plain text. Do not use Markdown.")]
+    public void ChatPrompt_HoldsTheRuleOfTheNamesAndThePlainText(string rule)
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should().Contain(rule);
+    }
+
+    [Fact]
+    public void ChatPrompt_TellsTheModelToAnswerAfterAProposal()
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should().Contain(expected: "After you propose drafts, always answer in 1 to 3 short sentences");
+    }
+
+    [Fact]
+    public void ChatPrompt_TellsTheModelToSendNoUnitPairThatItGuesses()
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should().Contain(expected: "Never retry a rejected metric draft with another guess");
+    }
 }

@@ -30,6 +30,9 @@ public class DraftProposal : IEntity, IAuditable, ISoftDeletable
     public Guid? ChatId { get; private set; }
     public Guid? ChatMessageId { get; private set; }
 
+    /// <summary>The display name of the chat owner. Set for the source chat only.</summary>
+    public string? RequestedByName { get; private set; }
+
     public DateTime CreatedAt { get; }
     public DateTime? UpdatedAt { get; private set; }
     public Guid CreatedBy { get; private set; }
@@ -83,15 +86,17 @@ public class DraftProposal : IEntity, IAuditable, ISoftDeletable
     /// <param name="id">The ID of the chat message.</param>
     /// <param name="companyId">The company of the chat.</param>
     /// <param name="chatId">The chat that the message belongs to.</param>
+    /// <param name="requestedByName">The display name of the chat owner.</param>
     /// <returns>The proposal.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown by <see cref="DraftProposalInvariantErrors"/> when an ID is empty.
     /// </exception>
-    public static DraftProposal ForChat(Guid id, Guid companyId, Guid chatId)
+    public static DraftProposal ForChat(Guid id, Guid companyId, Guid chatId, string? requestedByName = null)
     {
         EnsureIds((nameof(id), id), (nameof(companyId), companyId), (nameof(chatId), chatId));
 
-        return new DraftProposal(id, companyId, DraftSource.Chat) { ChatId = chatId, ChatMessageId = id };
+        return new DraftProposal(id, companyId, DraftSource.Chat)
+            { ChatId = chatId, ChatMessageId = id, RequestedByName = requestedByName };
     }
 
     private static void EnsureIds(params (string Name, Guid Value)[] ids)

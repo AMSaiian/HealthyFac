@@ -33,7 +33,7 @@
       [limit]="store.limit()"
       [sort]="store.sort()"
       [filter]="store.filter()"
-      [isMachineShown]="store.attemptId() !== undefined"
+      [isMachineShown]="store.scope()?.kind !== 'machine'"
       [canWrite]="store.canWrite()"
       [reasons]="store.quickReasons()"
       [applyingIds]="store.applyingIds()"

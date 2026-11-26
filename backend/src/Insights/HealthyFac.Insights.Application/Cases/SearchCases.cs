@@ -34,7 +34,7 @@ public sealed record CaseGridFilter : IFilter<MaintenanceCase>
 {
     public SetFilter<CaseState>? States { get; init; }
 
-    public SetFilter<Guid>? MachineIds { get; init; }
+    public IdSetFilter? MachineIds { get; init; }
 
     /// <summary>The highest open severity of the case. A case without an open signal matches no value.</summary>
     public SetFilter<SignalSeverity>? Severities { get; init; }
@@ -75,7 +75,9 @@ public sealed class CaseGridFilterValidator : AbstractValidator<CaseGridFilter>
     {
         When(filter => filter.States is not null, () => RuleFor(filter => filter.States!).IsSetFilter());
 
-        When(filter => filter.MachineIds is not null, () => RuleFor(filter => filter.MachineIds!).IsSetFilter());
+        When(
+            filter => filter.MachineIds is not null,
+            () => RuleFor(filter => filter.MachineIds!).SetValidator(new IdSetFilterValidator()));
 
         When(filter => filter.Severities is not null, () => RuleFor(filter => filter.Severities!).IsSetFilter());
 

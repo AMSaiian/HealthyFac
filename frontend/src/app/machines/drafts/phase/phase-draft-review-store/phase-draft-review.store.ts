@@ -12,6 +12,7 @@ import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 import { CLOCK } from '@shared/time/clock';
 import { withToasts } from '@shared/toasts/with-toasts';
 
+import { draftScopeOf } from '@machines/drafts/draft';
 import type { PhaseDraftReviewActionPayload } from '@machines/drafts/draft-action-payloads';
 import { DraftActionType } from '@machines/drafts/draft-actions';
 import { draftConflictKey } from '@machines/drafts/draft-conflict';
@@ -68,8 +69,8 @@ export const PhaseDraftReviewStore = signalStore(
   })),
   withProps((store) => ({
     drafts: rxResource({
-      params: () => store.payload()?.attemptId,
-      stream: ({ params }) => store._draftsApi.listForAttempt(params),
+      params: () => draftScopeOf(store.payload()),
+      stream: ({ params }) => store._draftsApi.listForScope(params),
     }),
     metrics: rxResource({
       params: () => store.payload()?.machineId,

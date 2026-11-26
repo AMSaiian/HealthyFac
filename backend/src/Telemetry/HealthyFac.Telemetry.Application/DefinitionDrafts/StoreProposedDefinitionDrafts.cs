@@ -195,6 +195,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
             .OfType<Guid>()
             .Distinct()
             .ToList();
+
         var found = new List<ProposalEntry>();
 
         foreach (var machineDraftId in machineDraftIds)
@@ -229,11 +230,13 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
     )
     {
         var definitionMachineIds = DefinitionMachineIdsOf(request);
+
         var machineIds = definitionMachineIds
             .Concat(entries.Select(entry => entry.MachineId).OfType<Guid>())
             .Distinct()
             .Order()
             .ToList();
+
         var isDeletedByMachineId = new Dictionary<Guid, bool>();
 
         foreach (var machineId in machineIds)
@@ -246,6 +249,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
                 .Where(candidate => candidate.Id == machineId)
                 .Select(candidate => new { candidate.CompanyId, candidate.DeletedAt })
                 .SingleOrDefaultAsync(cancellationToken);
+
             var isDefinitionMachine = definitionMachineIds.Contains(machineId);
 
             if (isDefinitionMachine && (registration is null || registration.CompanyId != request.CompanyId))
@@ -301,6 +305,7 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
     private async Task AddProposalAsync(DraftsProposed request, CancellationToken cancellationToken)
     {
         var proposalId = ProposalIdOf(request);
+
         var isProposalStored = await _dbContext.DraftProposals
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AnyAsync(proposal => proposal.Id == proposalId, cancellationToken);
@@ -313,7 +318,8 @@ public sealed class StoreProposedDefinitionDraftsRequestHandler(
         _dbContext.DraftProposals.Add(
             request.Source == ProposalSource.Ingest
                 ? DraftProposal.ForIngest(proposalId, request.CompanyId, request.FileId!.Value)
-                : DraftProposal.ForChat(proposalId, request.CompanyId, request.ChatId!.Value));
+                : DraftProposal.ForChat(
+                    proposalId, request.CompanyId, request.ChatId!.Value, request.RequestedByName));
     }
 
     private async Task<HashSet<Guid>> LoadExistingIdsAsync(DraftsProposed request, CancellationToken cancellationToken)

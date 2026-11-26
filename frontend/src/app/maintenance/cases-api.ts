@@ -14,7 +14,7 @@ import type {
 } from '@maintenance/case';
 
 const CASES_URL = '/api/insights/v1/cases';
-const SEARCH_URL = `${CASES_URL}/search`;
+export const CASES_SEARCH_URL = `${CASES_URL}/search`;
 const RUNS_SEGMENT = 'runs';
 const CLOSE_SEGMENT = 'close';
 const SIGNALS_SEARCH_SEGMENT = 'signals/search';
@@ -35,7 +35,7 @@ export class CasesApi {
   private readonly _http = inject(HttpClient);
 
   search(body: SearchCasesBody): Observable<CasesPage> {
-    return this._http.post<CasesPage>(SEARCH_URL, body);
+    return this._http.post<CasesPage>(CASES_SEARCH_URL, body);
   }
 
   get(id: string, options?: RequestOptions): Observable<CaseDetail> {

@@ -6,10 +6,14 @@ using HealthyFac.Telemetry.ApiTests.SignalEpisodes.Data;
 using HealthyFac.Telemetry.Contracts.Definitions;
 using HealthyFac.Telemetry.Contracts.Signals;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.Rpc;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Chat)]
+[Feature(TestFeatures.Platform)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifetime
 {
     private readonly TelemetryApiFixture _fixture = fixture;
@@ -95,6 +99,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
     public async Task ListDefinitions_WithMoreStatusesThanOnePage_ReturnsEveryStatus()
     {
         var arrangement = await _fixture.ArrangeSignalMachineAsync();
+
         await _fixture.ArrangeStatusDefinitionsAsync(
             arrangement.MachineId, TelemetryRpcTestData.MoreStatusesThanOnePage);
 
@@ -111,6 +116,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
     {
         var arrangement = await _fixture.ArrangeSignalMachineAsync();
         await _fixture.ArrangeStatusDefinitionAsync(arrangement.MachineId);
+
         var headers = TelemetryGrpcHost.BearerHeaders(
             _fixture.Tokens.CreateToken(
                 new TestTokenClaims
@@ -129,6 +135,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
             PhaseTimesRequest(arrangement.MachineId),
             headers,
             cancellationToken: TestContext.Current.CancellationToken);
+
         var definitions = await _host.Definitions.ListDefinitionsAsync(
             new ListDefinitionsRequest { MachineId = arrangement.MachineId.ToString() },
             headers,
@@ -137,6 +144,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
         (phases.Phases.Sum(phase => phase.Seconds) + phases.UnknownModeSeconds + phases.NoDataSeconds)
             .Should()
             .BeApproximately(TelemetryRpcTestData.RangeSeconds, precision: 1);
+
         definitions.Metrics.Should().ContainSingle();
         definitions.Statuses.Should().ContainSingle();
     }
@@ -173,6 +181,50 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
 
         var exception = await act.Should().ThrowAsync<RpcException>();
         exception.Which.StatusCode.Should().Be(StatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ListMetricUnits_WithAServiceTokenAndTheReadPermission_ReturnsTheCatalog()
+    {
+        var reply = await _host.Definitions.ListMetricUnitsAsync(
+            new ListMetricUnitsRequest(),
+            Headers([TelemetryRpcTestData.MetricDefinitionsRead]),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.Kinds.Should().NotBeEmpty();
+        reply.Kinds.SelectMany(kind => kind.Units).Should().OnlyContain(unit => unit.Name != string.Empty);
+    }
+
+    [Fact]
+    public async Task ListMetricUnits_WithAUserToken_ReturnsTheCatalog()
+    {
+        var headers = TelemetryGrpcHost.BearerHeaders(
+            _fixture.Tokens.CreateToken(
+                new TestTokenClaims
+                {
+                    Subject = Guid.CreateVersion7(),
+                    Organizations = [_fixture.CompanyId.ToString()],
+                    Permissions = [TelemetryRpcTestData.MetricDefinitionsRead],
+                }));
+
+        var reply = await _host.Definitions.ListMetricUnitsAsync(
+            new ListMetricUnitsRequest(),
+            headers,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        reply.Kinds.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ListMetricUnits_WithoutTheReadPermission_ReturnsPermissionDenied()
+    {
+        var act = async () => await _host.Definitions.ListMetricUnitsAsync(
+            new ListMetricUnitsRequest(),
+            Headers([TelemetryRpcTestData.SignalsRead]),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        var exception = await act.Should().ThrowAsync<RpcException>();
+        exception.Which.StatusCode.Should().Be(StatusCode.PermissionDenied);
     }
 
     private Metadata Headers(string[] permissions, Guid? companyId = null)

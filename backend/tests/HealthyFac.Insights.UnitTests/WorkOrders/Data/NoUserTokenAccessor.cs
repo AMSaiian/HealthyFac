@@ -10,4 +10,6 @@ public sealed class NoUserTokenAccessor : IIncomingAccessTokenAccessor
     public string? TryGetUserAccessToken() => null;
 
     public Guid? TryGetUserId() => null;
+
+    public string? TryGetUserName() => null;
 }

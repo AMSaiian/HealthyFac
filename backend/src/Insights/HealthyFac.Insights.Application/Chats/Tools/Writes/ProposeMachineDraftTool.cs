@@ -64,6 +64,8 @@ public sealed record ProposeMachineDraftResponse
     public required Guid MachineId { get; init; }
 
     public required string Status { get; init; }
+
+    public string Note { get; init; } = DraftToolNotes.TellTheUser;
 }
 
 public sealed class ProposeMachineDraftToolPreHandlerCheck : PassThroughPreHandlerCheck<ProposeMachineDraftToolRequest>;

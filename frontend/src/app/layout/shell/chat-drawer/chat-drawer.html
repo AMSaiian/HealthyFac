@@ -1,0 +1,74 @@
+<p-drawer
+  position="right"
+  appendTo="body"
+  styleClass="hf-chat-drawer"
+  [style]="drawerStyle"
+  [modal]="false"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  [blockScroll]="false"
+  [visible]="chat.isDrawerOpen()"
+  (onHide)="chat.closeDrawer()"
+>
+  <ng-template #header>
+    <div class="flex w-full min-w-0 items-center gap-2">
+      <hf-chat-picker
+        [items]="list.items()"
+        [selectedId]="chat.openChatId()"
+        [hasMore]="list.hasMore()"
+        [isLoading]="list.isLoading() || list.isLoadingNext()"
+        [hasLoaded]="list.hasLoaded()"
+        (chatSelected)="chat.openChat($event)"
+        (nextPageRequested)="list.loadNext()"
+      />
+      <button
+        pButton
+        [pTooltip]="'CHAT.DRAWER.NEW_CHAT_TOOLTIP' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        severity="secondary"
+        (click)="chat.openChat(null)"
+      >
+        <i class="pi pi-plus"></i>
+        {{ 'CHAT.DRAWER.NEW_CHAT' | translate }}
+      </button>
+      <button
+        pButton
+        [pTooltip]="'CHAT.DRAWER.OPEN_PAGE' | translate"
+        tooltipPosition="bottom"
+        type="button"
+        iconOnly
+        severity="secondary"
+        [text]="true"
+        [attr.aria-label]="'CHAT.DRAWER.OPEN_PAGE' | translate"
+        (click)="openPage()"
+      >
+        <i class="pi pi-external-link"></i>
+      </button>
+    </div>
+  </ng-template>
+  <hf-chat-view
+    [chat]="chat.chat()"
+    [messages]="chat.viewMessages()"
+    [running]="chat.runningTurn()"
+    [isLoading]="chat.isLoading()"
+    [isLoadingOlder]="chat.isLoadingOlder()"
+    [hasMore]="chat.nextBefore() !== null"
+    [hasLoaded]="chat.chat() !== null || chat.openChatId() === null"
+    [limit]="messagesPageSize"
+    [isRunning]="chat.isRunning()"
+    [isStopping]="chat.isStopping()"
+    [canStop]="chat.isSending()"
+    [unsentText]="chat.unsentText()"
+    [canWrite]="canWrite"
+    (olderRequested)="chat.loadOlder()"
+    [mentionGroups]="chat.mentionGroups()"
+    [isMentionLoading]="chat.isMentionLoading()"
+    (sendRequested)="chat.send($event.text, $event.links)"
+    (mentionSearchRequested)="chat.searchMentions($event)"
+    (stopRequested)="chat.stop()"
+    (deleteMessageRequested)="chat.requestDeleteMessage($event)"
+    (deleteChatRequested)="chat.requestDeleteChat()"
+    (draftJumpRequested)="chat.jumpToDraft($event)"
+  />
+</p-drawer>

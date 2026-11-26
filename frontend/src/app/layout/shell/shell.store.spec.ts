@@ -1,10 +1,11 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NavigationStart, Router } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { Subject } from 'rxjs';
 
+import { ChatStore } from '@shared/chat/chat.store';
 import { EmployeeStore } from '@shared/employee/employee.store';
 import { Language } from '@shared/i18n/i18n.constants';
 import { RealtimeConnection } from '@shared/realtime/realtime-connection';
@@ -19,14 +20,16 @@ const MACHINES_PATH = '/machines';
 
 interface Setup {
   store: InstanceType<typeof ShellStore>;
-  events: Subject<NavigationStart>;
+  events: Subject<NavigationStart | NavigationEnd>;
+  closeDrawer: ReturnType<typeof vi.fn>;
   confirm: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;
   stop: ReturnType<typeof vi.fn>;
 }
 
 function setup(options: { isAuthenticated: boolean; hasPermission: boolean; employeeId?: string | null }): Setup {
-  const events = new Subject<NavigationStart>();
+  const events = new Subject<NavigationStart | NavigationEnd>();
+  const closeDrawer = vi.fn();
   const confirm = vi.fn();
   const calls: string[] = [];
   const stop = vi.fn(() => {
@@ -39,7 +42,8 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean; empl
   TestBed.configureTestingModule({
     providers: [
       ShellStore,
-      { provide: Router, useValue: { events } },
+      { provide: Router, useValue: { events, url: '/' } },
+      { provide: ChatStore, useValue: { closeDrawer } },
       { provide: EmployeeStore, useValue: { id: signal(options.employeeId ?? null) } },
       provideFakeAuthStore({
         isAuthenticated: signal(options.isAuthenticated),
@@ -51,7 +55,7 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean; empl
       { provide: TranslateService, useValue: { instant: (key: string) => key } },
     ],
   });
-  return { store: TestBed.inject(ShellStore), events, confirm, logout, stop };
+  return { store: TestBed.inject(ShellStore), events, confirm, logout, stop, closeDrawer };
 }
 
 const FILES_PATH = '/files';
@@ -192,5 +196,35 @@ describe('languageMenuItems', { tags: ['Platform'] }, () => {
     items[1].command?.({ originalEvent: new Event('click'), item: items[1] });
 
     expect(choose).toHaveBeenCalledWith(Language.Ukrainian);
+  });
+
+  it('isChatButtonShown_WithTheChatPermissionOffTheAssistantPage_IsTrue', () => {
+    const { store } = setup({ isAuthenticated: true, hasPermission: true });
+
+    expect(store.isChatButtonShown()).toBe(true);
+  });
+
+  it('isChatButtonShown_WithoutThePermission_IsFalse', () => {
+    const { store } = setup({ isAuthenticated: true, hasPermission: false });
+
+    expect(store.isChatButtonShown()).toBe(false);
+  });
+
+  it('navigationEnd_OnAnAssistantRoute_HidesTheButtonAndClosesTheDrawer', () => {
+    const { store, events, closeDrawer } = setup({ isAuthenticated: true, hasPermission: true });
+
+    events.next(new NavigationEnd(1, '/assistant/c1', '/assistant/c1'));
+
+    expect(store.isChatButtonShown()).toBe(false);
+    expect(closeDrawer).toHaveBeenCalledOnce();
+  });
+
+  it('navigationEnd_OnAnotherRoute_KeepsTheDrawerOpen', () => {
+    const { store, events, closeDrawer } = setup({ isAuthenticated: true, hasPermission: true });
+
+    events.next(new NavigationEnd(1, MACHINES_PATH, MACHINES_PATH));
+
+    expect(store.isChatButtonShown()).toBe(true);
+    expect(closeDrawer).not.toHaveBeenCalled();
   });
 });

@@ -33,9 +33,11 @@ public sealed class ProposeWorkOrderDraftArgumentsValidator : AbstractValidator<
     public ProposeWorkOrderDraftArgumentsValidator()
     {
         RuleFor(arguments => arguments.Title).NotEmpty().SingleLineText();
+
         RuleFor(arguments => arguments.Description!)
             .MultilineText()
             .When(arguments => arguments.Description is not null);
+
         RuleFor(arguments => arguments.Priority).NotEmpty().SingleLineText();
         RuleFor(arguments => arguments.Category).NotEmpty().SingleLineText();
     }
@@ -59,7 +61,9 @@ public sealed record ProposeWorkOrderDraftToolRequest
 
     public required ProposeWorkOrderDraftArguments Arguments { get; init; }
 
-    /// <summary>The message as the save sends it, with placeholder chat IDs. It is checked only.</summary>
+    private const string CandidateOwnerName = "Chat owner";
+
+    /// <summary>The message as the save sends it, with placeholder chat IDs and name. It is checked only.</summary>
     [JsonIgnore]
     public required WorkOrderDraftProposed Candidate { get; init; }
 
@@ -77,6 +81,7 @@ public sealed record ProposeWorkOrderDraftToolRequest
                 Source = WorkOrderProposalSource.Chat,
                 ChatId = Guid.CreateVersion7(),
                 ChatMessageId = Guid.CreateVersion7(),
+                RequestedByName = CandidateOwnerName,
                 MachineId = arguments.MachineId,
                 Title = ProposalText.SingleLine(arguments.Title) ?? string.Empty,
                 Description = arguments.Description,
@@ -92,6 +97,8 @@ public sealed record ProposeWorkOrderDraftResponse
     public required Guid Id { get; init; }
 
     public required string Status { get; init; }
+
+    public string Note { get; init; } = DraftToolNotes.TellTheUser;
 }
 
 public sealed class ProposeWorkOrderDraftToolRequestValidator : AbstractValidator<ProposeWorkOrderDraftToolRequest>
@@ -123,6 +130,7 @@ public sealed class ProposeWorkOrderDraftToolRequestHandler(ChatDraftTargets tar
     )
     {
         var candidate = request.Candidate;
+
         if (candidate.MachineId is { } machineId)
         {
             await _targets.ResolveExistingAsync(machineId, cancellationToken);

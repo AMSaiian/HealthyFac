@@ -75,6 +75,7 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
 
         var isCase = request.Source == WorkOrderProposalSource.Case;
         var proposalId = (isCase ? request.RunId : request.ChatMessageId)!.Value;
+
         var isProposalStored = await _dbContext.DraftProposals
             .IgnoreQueryFilters([SoftDeleteConstants.QueryFilterName])
             .AnyAsync(proposal => proposal.Id == proposalId, cancellationToken);
@@ -84,7 +85,8 @@ public sealed class StoreProposedWorkOrderDraftRequestHandler(ICoreDbContext dbC
             _dbContext.DraftProposals.Add(
                 isCase
                     ? DraftProposal.ForCase(proposalId, request.CompanyId, request.CaseId!.Value)
-                    : DraftProposal.ForChat(proposalId, request.CompanyId, request.ChatId!.Value));
+                    : DraftProposal.ForChat(
+                        proposalId, request.CompanyId, request.ChatId!.Value, request.RequestedByName));
         }
 
         _dbContext.WorkOrderDrafts.Add(

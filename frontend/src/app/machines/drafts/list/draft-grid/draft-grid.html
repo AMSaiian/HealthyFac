@@ -179,7 +179,15 @@
                 <hf-cell-text [text]="draft.label ?? ('DRAFTS.UNNAMED' | translate)" />
               }
               @case (DraftColumn.SourceLocation) {
-                <hf-cell-text [text]="draft.sourceLocation" />
+                @if (draft.proposal.source === DraftSource.Chat) {
+                  <hf-cell-text
+                    [text]="
+                      draftSourceText(draftSourceKey(draft.proposal.source) | translate, draft.proposal.requestedByName)
+                    "
+                  />
+                } @else {
+                  <hf-cell-text [text]="draft.sourceLocation" />
+                }
               }
               @case (DraftColumn.ProposedAt) {
                 {{ draft.proposedAt | localDateTime }}

@@ -66,7 +66,7 @@ async function openAssistant(url: string, http: HttpTestingController): Promise<
   return harness;
 }
 
-describe('assistant routes', () => {
+describe('assistant routes', { tags: ['Chat'] }, () => {
   beforeEach(() => {
     confirm.mockClear();
     vi.stubGlobal(
@@ -106,6 +106,27 @@ describe('assistant routes', () => {
 
     expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(ChatsPage);
     expect(TestBed.inject(ChatStore).chat()?.id).toBe('c1');
+  });
+
+  it('assistantRoute_NewChatOnAnOpenChat_OpensTheEmptyAssistantPage', async () => {
+    const http = setup();
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/assistant/c1');
+    await vi.waitFor(() => {
+      http.expectOne(`${CHATS}/search`).flush(EMPTY_PAGE);
+      http.expectOne(`${CHATS}/c1`).flush(chat('c1'));
+      http.expectOne((request) => request.url === `${CHATS}/c1/messages`).flush({ items: [], nextBefore: null });
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    (harness.routeDebugElement?.componentInstance as { openNewChat: () => void }).openNewChat();
+    await vi.waitFor(() => {
+      expect(TestBed.inject(Router).url).toBe('/assistant');
+    });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(harness.routeDebugElement?.componentInstance).toBeInstanceOf(ChatsPage);
+    expect(TestBed.inject(ChatStore).openChatId()).toBeNull();
   });
 
   it('assistantRoute_WithAnUnknownChatId_EndsInTheNotFoundState', async () => {

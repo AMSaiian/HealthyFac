@@ -83,3 +83,11 @@ export function languageMenuItems(
     command: (): void => choose(language),
   }));
 }
+
+const ASSISTANT_PATH = '/assistant';
+
+/** Tells whether the URL is the assistant page or one of its chats. The chat drawer hides there. */
+export function isAssistantUrl(url: string): boolean {
+  const path = url.split(/[?#]/)[0];
+  return path === ASSISTANT_PATH || path.startsWith(`${ASSISTANT_PATH}/`);
+}

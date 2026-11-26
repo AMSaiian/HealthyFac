@@ -89,6 +89,21 @@ public static class DraftsProposedTestData
                 DraftMessageErrors.Validation.IsMachineFileRequired
             },
             {
+                Chat(metrics: [CreateMetric()]) with { RequestedByName = null },
+                DraftMessageErrors.Validation.RequestedByNameRequired
+            },
+            {
+                Chat(metrics: [CreateMetric()]) with
+                {
+                    RequestedByName = new string(c: 'a', DraftMessageLimits.RequestedByNameMaxLength + 1),
+                },
+                DraftMessageErrors.Validation.RequestedByNameTooLong
+            },
+            {
+                Ingest(isMachineFile: false, metrics: [CreateMetric()]) with { RequestedByName = "Ann Owner" },
+                DraftMessageErrors.Validation.FieldsOfAnotherSource
+            },
+            {
                 Ingest(isMachineFile: false, metrics: [CreateMetric()]) with { ChatId = Guid.CreateVersion7() },
                 DraftMessageErrors.Validation.FieldsOfAnotherSource
             },
@@ -102,6 +117,10 @@ public static class DraftsProposedTestData
             },
             {
                 Ingest(isMachineFile: false, metrics: [CreateMetric()]) with { QueuedAt = null },
+                DraftMessageErrors.Validation.QueuedAtRequired
+            },
+            {
+                Ingest(isMachineFile: false, metrics: [CreateMetric()]) with { QueuedAt = default(DateTime) },
                 DraftMessageErrors.Validation.QueuedAtRequired
             },
             {
@@ -161,21 +180,20 @@ public static class DraftsProposedTestData
         };
 
     public static TheoryData<DraftsProposed> ValidMessages =>
-        new()
-        {
-            Ingest(isMachineFile: false, CreateMachines(count: 20)),
-            Ingest(isMachineFile: false, metrics: CreateMetrics(count: 100)),
-            TwoCreateDraftsWithMetrics(count: 60),
-            Ingest(isMachineFile: false, metrics: [CreateMetric(min: 5, max: 6)]),
-            Ingest(isMachineFile: false, metrics: [CreateMetric(states: ["on", "off"])]),
-            Ingest(isMachineFile: true, [CreateMachine(TargetMachineId)]),
-            Ingest(isMachineFile: true, metrics: [CreateMetric()]),
-            Chat(metrics: [CreateMetric()]),
-            Chat(
-                [CreateMachine(hasContent: false) with { DraftId = CreateDraftId }],
-                [CreateMetric() with { MachineId = null, MachineDraftId = CreateDraftId }]),
-            Chat([CreateMachine(TargetMachineId)]),
-        };
+    [
+        Ingest(isMachineFile: false, CreateMachines(count: 20)),
+        Ingest(isMachineFile: false, metrics: CreateMetrics(count: 100)),
+        TwoCreateDraftsWithMetrics(count: 60),
+        Ingest(isMachineFile: false, metrics: [CreateMetric(min: 5, max: 6)]),
+        Ingest(isMachineFile: false, metrics: [CreateMetric(states: ["on", "off"])]),
+        Ingest(isMachineFile: true, [CreateMachine(TargetMachineId)]),
+        Ingest(isMachineFile: true, metrics: [CreateMetric()]),
+        Chat(metrics: [CreateMetric()]),
+        Chat(
+            [CreateMachine(hasContent: false) with { DraftId = CreateDraftId }],
+            [CreateMetric() with { MachineId = null, MachineDraftId = CreateDraftId }]),
+        Chat([CreateMachine(TargetMachineId)]),
+    ];
 
     private static DraftsProposed Ingest(
         bool isMachineFile,
@@ -205,6 +223,7 @@ public static class DraftsProposedTestData
             Source = ProposalSource.Chat,
             ChatId = Guid.CreateVersion7(),
             ChatMessageId = Guid.CreateVersion7(),
+            RequestedByName = "Ann Owner",
             CompanyId = Guid.CreateVersion7(),
             Machines = machines ?? [],
             Metrics = metrics ?? [],
@@ -225,6 +244,7 @@ public static class DraftsProposedTestData
     {
         var first = CreateMachine();
         var second = CreateMachine();
+
         return Ingest(
             isMachineFile: false, [first, second],
             [

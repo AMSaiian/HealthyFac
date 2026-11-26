@@ -20,7 +20,10 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
     {
         ScriptProposals();
 
-        var response = await _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question);
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         var drafts = await ReadDraftsAsync(response.Assistant.Id);
         var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
@@ -36,18 +39,69 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
         message.Source.Should().Be(ProposalSource.Chat);
         message.ChatId.Should().Be(response.Chat.Id);
         message.ChatMessageId.Should().Be(response.Assistant.Id);
+        message.RequestedByName.Should().Be(ChatTestData.OwnerName);
         message.Machines.Should().ContainSingle().Which.TargetMachineId.Should().Be(ChatTestData.MachineId);
         message.Metrics.Should().HaveCount(expected: 2);
         var workOrder = workOrders.Should().ContainSingle().Subject;
         new WorkOrderDraftProposedValidator().Validate(workOrder).IsValid.Should().BeTrue();
         workOrder.Source.Should().Be(WorkOrderProposalSource.Chat);
         workOrder.ChatMessageId.Should().Be(response.Assistant.Id);
+        workOrder.RequestedByName.Should().Be(ChatTestData.OwnerName);
+    }
+
+    [Theory]
+    [InlineData(150, 100)]
+    [InlineData(100, 100)]
+    public async Task Create_WithALongOwnerName_SendsMessagesThatPassTheirValidators(int nameLength, int expectedLength)
+    {
+        ScriptProposals();
+        _fixture.Fakes.Owner.Name = new string(c: 'n', nameLength);
+
+        await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        await AssertNameAsync(new string(c: 'n', expectedLength));
+    }
+
+    [Fact]
+    public async Task Create_WithAnOwnerNameThatCutsASurrogatePair_CutsBeforeThePair()
+    {
+        ScriptProposals();
+        _fixture.Fakes.Owner.Name = new string(c: 'n', DraftMessageLimits.RequestedByNameMaxLength - 1) + "😀";
+
+        await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        await AssertNameAsync(new string(c: 'n', DraftMessageLimits.RequestedByNameMaxLength - 1));
+    }
+
+    [Theory]
+    [InlineData(data: null)]
+    [InlineData("   ")]
+    public async Task Create_WithAnOwnerWithoutAName_SendsMessagesWithTheUnknownUserName(string? name)
+    {
+        ScriptProposals();
+        _fixture.Fakes.Owner.Name = name;
+
+        await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        await AssertNameAsync(expectedName: "Unknown user");
     }
 
     [Fact]
     public async Task Create_WithACompletedTurnThatProposedNothing_SendsNoMessage()
     {
-        var response = await _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question);
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         var drafts = await ReadDraftsAsync(response.Assistant.Id);
         var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
@@ -63,7 +117,10 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
         ScriptProposals();
         _fixture.Fakes.Model.FailureAfterTools = new InvalidOperationException(message: "The provider failed.");
 
-        var response = await _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question);
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         var drafts = await ReadDraftsAsync(response.Assistant.Id);
         var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
@@ -101,7 +158,10 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
         _fixture.Fakes.Model.ToolCalls.Add(("propose_machine_draft", """{"name":"Lathe 9"}"""));
         _fixture.Fakes.Model.ToolCalls.Add(("report_no_answer", "{}"));
 
-        var response = await _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question);
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId,
+            ChatTestData.Question,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         var drafts = await ReadDraftsAsync(response.Assistant.Id);
         var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
@@ -110,6 +170,19 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
         drafts.Should().BeEmpty();
         proposed.Should().BeEmpty();
         toolCalls.Select(call => call.ToolName).Should().Contain(["propose_machine_draft", "report_no_answer"]);
+    }
+
+    private async Task AssertNameAsync(string expectedName)
+    {
+        var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
+        var workOrders = await _fixture.ReadOutboxAsync<WorkOrderDraftProposed>();
+        var message = proposed.Should().ContainSingle().Subject;
+        var workOrder = workOrders.Should().ContainSingle().Subject;
+        var richTextPolicy = _fixture.Inner.GetSingleton<IRichTextPolicy>();
+        new DraftsProposedValidator(richTextPolicy).Validate(message).IsValid.Should().BeTrue();
+        new WorkOrderDraftProposedValidator().Validate(workOrder).IsValid.Should().BeTrue();
+        message.RequestedByName.Should().Be(expectedName);
+        workOrder.RequestedByName.Should().Be(expectedName);
     }
 
     private void ScriptProposals()

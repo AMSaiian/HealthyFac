@@ -63,6 +63,9 @@ public sealed record ProposeStatusToolResponse
     public required Guid Id { get; init; }
 
     public required string Status { get; init; }
+
+    /// <summary>A line for the model. The chat tools set it; the extraction tools leave it empty.</summary>
+    public string? Note { get; init; }
 }
 
 public class ProposeStatusToolRequestValidator : AbstractValidator<ProposeStatusToolRequest>

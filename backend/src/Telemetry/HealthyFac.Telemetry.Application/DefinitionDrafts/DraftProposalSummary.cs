@@ -12,4 +12,7 @@ public record DraftProposalSummary
     public Guid? AttemptId { get; init; }
 
     public Guid? ChatId { get; init; }
+
+    /// <summary>The display name of the chat owner. Set for the source chat only.</summary>
+    public string? RequestedByName { get; init; }
 }

@@ -2,6 +2,8 @@ namespace HealthyFac.Core.IntegrationTests.Drafts.Data;
 
 public static class DraftTestData
 {
+    public const string RequestedByName = "Ann Owner";
+
     public const string MachineName = "AX-200 Rotary Pump";
 
     public static readonly Guid AttemptId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000a01");

@@ -36,6 +36,9 @@ public sealed record DraftsProposed : IIntegrationMessage, IRequest
 
     public Guid? ChatMessageId { get; init; }
 
+    /// <summary>The display name of the chat owner. Required for the source chat, absent for the others.</summary>
+    public string? RequestedByName { get; init; }
+
     public IReadOnlyList<ProposedMachine> Machines { get; init; } = [];
 
     public IReadOnlyList<ProposedMetric> Metrics { get; init; } = [];
@@ -214,19 +217,28 @@ public class DraftsProposedValidator : AbstractValidator<DraftsProposed>
             () =>
             {
                 RuleFor(message => message.AttemptId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(DraftMessageErrors.Validation.IdRequired);
-                RuleFor(message => message.FileId).Must(IsSetId).WithMessage(DraftMessageErrors.Validation.IdRequired);
+
+                RuleFor(message => message.FileId).MustBeSetId().WithMessage(DraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.IsMachineFile)
                     .NotNull()
                     .WithMessage(DraftMessageErrors.Validation.IsMachineFileRequired);
+
                 RuleFor(message => message.QueuedAt)
-                    .NotEmpty()
+                    .Must(queuedAt => queuedAt is { } value && value != default(DateTime))
                     .WithMessage(DraftMessageErrors.Validation.QueuedAtRequired);
+
                 RuleFor(message => message.ChatId)
                     .Null()
                     .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+
                 RuleFor(message => message.ChatMessageId)
+                    .Null()
+                    .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RequestedByName)
                     .Null()
                     .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
             });
@@ -235,27 +247,40 @@ public class DraftsProposedValidator : AbstractValidator<DraftsProposed>
             message => message.Source == ProposalSource.Chat,
             () =>
             {
-                RuleFor(message => message.ChatId).Must(IsSetId).WithMessage(DraftMessageErrors.Validation.IdRequired);
+                RuleFor(message => message.ChatId).MustBeSetId().WithMessage(DraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.ChatMessageId)
-                    .Must(IsSetId)
+                    .MustBeSetId()
                     .WithMessage(DraftMessageErrors.Validation.IdRequired);
+
                 RuleFor(message => message.AttemptId)
                     .Null()
                     .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+
                 RuleFor(message => message.FileId)
                     .Null()
                     .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+
                 RuleFor(message => message.IsMachineFile)
                     .Null()
                     .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+
                 RuleFor(message => message.QueuedAt)
                     .Null()
                     .WithMessage(DraftMessageErrors.Validation.FieldsOfAnotherSource);
+
+                RuleFor(message => message.RequestedByName)
+                    .NotEmpty()
+                    .WithMessage(DraftMessageErrors.Validation.RequestedByNameRequired)
+                    .SingleLineText()
+                    .MaximumLength(DraftMessageLimits.RequestedByNameMaxLength)
+                    .WithMessage(DraftMessageErrors.Validation.RequestedByNameTooLong);
             });
 
         RuleFor(message => message.Machines.Count)
             .LessThanOrEqualTo(DraftMessageLimits.MaxMachines)
             .WithMessage(DraftMessageErrors.Validation.MachinesCount);
+
         RuleFor(message => message.Metrics)
             .Must(metrics => metrics.GroupBy(metric => metric.MachineId ?? metric.MachineDraftId)
                 .All(group => group.Count() <= DraftMessageLimits.MaxMetrics))
@@ -296,8 +321,6 @@ public class DraftsProposedValidator : AbstractValidator<DraftsProposed>
         RuleForEach(message => message.Statuses).SetValidator(new ProposedStatusValidator(richTextPolicy));
         RuleForEach(message => message.Phases).SetValidator(new ProposedPhaseValidator(richTextPolicy));
     }
-
-    private static bool IsSetId(Guid? id) => id is { } value && value != Guid.Empty;
 
     private void RuleForMachineOf<TDefinition>(
         Expression<Func<DraftsProposed, IEnumerable<TDefinition>>> definitions,

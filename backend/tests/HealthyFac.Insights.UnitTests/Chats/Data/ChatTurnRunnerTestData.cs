@@ -12,6 +12,7 @@ using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Chats.Models;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
+using HealthyFac.Insights.UnitTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using Microsoft.Extensions.AI;
@@ -38,6 +39,7 @@ public sealed class ScriptedChatTriageModel : IChatTriageModel
     )
     {
         CallCount++;
+
         if (Failure is not null)
         {
             throw Failure;
@@ -108,12 +110,14 @@ public sealed class TurnRunnerFixture
     public TurnRunnerFixture(Action<Chat>? arrange = null, int maxToolCalls = 8, Exception? toolFailure = null)
     {
         State = new ChatTurnState();
+
         var provider = new ServiceCollection()
             .AddSingleton<IRequestHandler<ChatEmployeesRequest, EchoResponse>>(
                 new ChatEmployeesHandler { Failure = toolFailure })
             .AddSingleton<IRequestHandler<ReportNoAnswerToolRequest, ReportNoAnswerResponse>>(
                 new ReportNoAnswerToolRequestHandler(State))
             .BuildServiceProvider();
+
         Time = new FakeTimeProvider(ChatTestData.Now);
         Client = new ScriptedChatClient();
         Triage = new ScriptedChatTriageModel();
@@ -124,6 +128,7 @@ public sealed class TurnRunnerFixture
         var turn = Chat.AddTurn(ChatTestData.ShortText, ChatTestData.Links, ChatTestData.Now);
         User = turn.User;
         Assistant = turn.Assistant;
+
         Runner = new ChatTurnRunner(
             Triage,
             new GeminiChatModel(
@@ -135,7 +140,8 @@ public sealed class TurnRunnerFixture
                         Location = "location",
                         ChatModel = "chat-model",
                         TriageModel = "triage-model",
-                    })),
+                    }),
+                new Microsoft.Extensions.Logging.Testing.FakeLogger<GeminiChatModel>()),
             new EmbeddedAgentPrompts(),
             Saves,
             Notifier,
@@ -152,7 +158,7 @@ public sealed class TurnRunnerFixture
             new FunctionToolCallIds(),
             State,
             new ChatHistoryBuilder(SummaryModel, SummaryLogger),
-            new ChatDraftCommit(new ChatDraftBuffer(), new RecordingOutbox()));
+            new ChatDraftCommit(new ChatDraftBuffer(), new RecordingOutbox(), new NoUserTokenAccessor()));
     }
 
     public ChatTurnState State { get; }
@@ -196,7 +202,7 @@ public static class ChatTurnRunnerTestData
     public static ChatResponseUpdate ToolCall(string callId, string toolName = ToolTestData.ChatEmployeesToolName) =>
         new(
             ChatRole.Assistant,
-            [new FunctionCallContent(callId, toolName, new Dictionary<string, object?> { [key: "text"] = "x" })]);
+            [new FunctionCallContent(callId, toolName, new Dictionary<string, object?> { ["text"] = "x" })]);
 
     public static ChatResponseUpdate Usage(int input, int output) =>
         new()

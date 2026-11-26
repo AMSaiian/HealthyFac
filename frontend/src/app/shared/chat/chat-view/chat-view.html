@@ -28,7 +28,9 @@
   [limit]="limit()"
   [canDelete]="canWrite() && !isBlocked()"
   (olderRequested)="olderRequested.emit()"
+  [chatId]="chat()?.id ?? null"
   (deleteRequested)="deleteMessageRequested.emit($event)"
+  (draftJumpRequested)="draftJumpRequested.emit($event)"
 />
 @if (isBlocked()) {
   <p-message
@@ -42,7 +44,10 @@
     [isStopping]="isStopping()"
     [canStop]="canStop()"
     [unsentText]="unsentText()"
+    [mentionGroups]="mentionGroups()"
+    [isMentionLoading]="isMentionLoading()"
     (sendRequested)="sendRequested.emit($event)"
+    (mentionSearchRequested)="mentionSearchRequested.emit($event)"
     (stopRequested)="stopRequested.emit()"
   />
 }

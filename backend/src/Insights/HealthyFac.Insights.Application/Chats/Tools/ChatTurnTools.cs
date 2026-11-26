@@ -12,6 +12,13 @@ public sealed class ChatTurnTools
 {
     public const string LimitReachedText = "The tool call limit of this turn is reached. Answer with what you have.";
 
+    /// <summary>
+    /// The last message of the request without tools. The provider answers with no text when the request ends with a
+    /// tool result, so this message asks for the answer.
+    /// </summary>
+    public const string AnswerNowText =
+        "Answer the question now with the data that the tools returned. Call no more tools.";
+
     private readonly int _maxCalls;
     private int _callCount;
 
@@ -47,9 +54,12 @@ public sealed class ChatTurnTools
     )
     {
         var tools = new ChatTurnTools([], maxCalls);
-        tools.Functions = functions
-            .Select(function => (AIFunction)new LimitedFunction(function, tools, endLoop, setActivity))
-            .ToList();
+
+        tools.Functions =
+        [
+            .. functions
+                .Select(function => (AIFunction)new LimitedFunction(function, tools, endLoop, setActivity)),
+        ];
 
         return tools;
     }
@@ -78,6 +88,7 @@ public sealed class ChatTurnTools
             }
 
             _tools._callCount++;
+
             if (AdditionalProperties.TryGetValue(AgentToolAttribute.ActivityProperty, out var activity)
                 && activity is string text)
             {
@@ -85,6 +96,7 @@ public sealed class ChatTurnTools
             }
 
             var result = await base.InvokeCoreAsync(arguments, cancellationToken);
+
             if (Name == ReportNoAnswerToolRequest.ToolName)
             {
                 _tools.IsNoAnswerReported = true;

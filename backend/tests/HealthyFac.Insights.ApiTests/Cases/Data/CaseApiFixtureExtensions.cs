@@ -50,22 +50,23 @@ public static class CaseApiFixtureExtensions
         public async Task<Guid> ArrangeCaseAsync(
             Guid? companyId = null,
             bool isClosed = false,
-            SignalSeverity? severity = null
+            SignalSeverity? severity = null,
+            Guid? machineId = null
         )
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<IInsightsDbContext>();
-            var machineId = Guid.CreateVersion7();
+            var caseMachineId = machineId ?? Guid.CreateVersion7();
 
             var maintenanceCase = new MaintenanceCase(
                 companyId ?? fixture.CompanyId,
-                machineId,
+                caseMachineId,
                 CaseApiTestData.Now);
 
             maintenanceCase.Add(
                 new MachineSignal(
                     Guid.CreateVersion7(),
-                    machineId,
+                    caseMachineId,
                     maintenanceCase.CompanyId,
                     new SignalChange
                     {

@@ -10,6 +10,7 @@ import { ActionStore } from '@shared/actions/action.store';
 import type { AppAction } from '@shared/actions/app-action';
 import { httpErrorKey, skipErrorToast } from '@shared/http/http-error-key';
 
+import { draftScopeOf } from '@machines/drafts/draft';
 import type { StatusDraftReviewActionPayload } from '@machines/drafts/draft-action-payloads';
 import { DraftActionType } from '@machines/drafts/draft-actions';
 import { draftConflictKey } from '@machines/drafts/draft-conflict';
@@ -54,8 +55,8 @@ export function withStatusDraftAction() {
       const draftsApi = inject(DraftsApi);
       return {
         drafts: rxResource({
-          params: () => store.payload()?.attemptId,
-          stream: ({ params }) => draftsApi.listForAttempt(params),
+          params: () => draftScopeOf(store.payload()),
+          stream: ({ params }) => draftsApi.listForScope(params),
         }),
       };
     }),

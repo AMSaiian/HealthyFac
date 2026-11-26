@@ -8,6 +8,25 @@ option csharp_namespace = "HealthyFac.Telemetry.Contracts.Definitions";
 // (Insights). The caller sends the machine ID as a plain GUID in text, never the encrypted ID of the public API.
 service TelemetryDefinitions {
   rpc ListDefinitions(ListDefinitionsRequest) returns (ListDefinitionsReply);
+
+  // Lists the global catalog of the quantity kinds and their units. It is the same data as `GET /v1/metric-units`.
+  rpc ListMetricUnits(ListMetricUnitsRequest) returns (ListMetricUnitsReply);
+}
+
+message ListMetricUnitsRequest {}
+
+message ListMetricUnitsReply {
+  repeated QuantityKind kinds = 1;
+}
+
+message QuantityKind {
+  string name = 1;
+  repeated MeasurementUnit units = 2;
+}
+
+message MeasurementUnit {
+  string name = 1;
+  string abbreviation = 2;
 }
 
 message ListDefinitionsRequest {

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthyFac.Core.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(CoreDbContext))]
-    [Migration("20261124233940_Initial")]
+    [Migration("20261126094907_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -237,6 +237,12 @@ namespace HealthyFac.Core.Infrastructure.Database.Migrations
                     b.Property<DateTime?>("QueuedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("queued_at");
+
+                    b.Property<string>("RequestedByName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("requested_by_name")
+                        .UseCollation("case_insensitive");
 
                     b.Property<Guid?>("RunId")
                         .HasColumnType("uuid")

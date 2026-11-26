@@ -1,0 +1,36 @@
+<p-select
+  class="min-w-0 flex-1"
+  appendTo="body"
+  panelStyleClass="hf-option-list hf-chat-picker-panel"
+  optionLabel="title"
+  optionValue="id"
+  [options]="options()"
+  [ngModel]="selectedId()"
+  [placeholder]="'CHAT.DRAWER.PICK' | translate"
+  [virtualScroll]="true"
+  [virtualScrollItemSize]="optionHeight"
+  [lazy]="true"
+  [loading]="showLoading()"
+  (onLazyLoad)="onLazyLoad($event)"
+  (ngModelChange)="onChange($event)"
+>
+  <ng-template
+    #item
+    let-chat
+  >
+    <span
+      class="block min-w-0 truncate"
+      [title]="chat.title"
+    >
+      {{ chat.title }}
+    </span>
+  </ng-template>
+  <ng-template #empty>
+    @if (hasLoaded() && !isLoading()) {
+      <hf-empty-state
+        icon="pi pi-inbox"
+        messageKey="ASSISTANT.CHATS.EMPTY"
+      />
+    }
+  </ng-template>
+</p-select>
