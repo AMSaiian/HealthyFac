@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.MetricDefinitions;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricLimitsApiTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;

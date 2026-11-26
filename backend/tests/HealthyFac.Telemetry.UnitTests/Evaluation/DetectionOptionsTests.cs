@@ -1,8 +1,10 @@
 using HealthyFac.Telemetry.Application.Evaluation;
 using HealthyFac.Telemetry.UnitTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Evaluation;
 
+[Feature(TestFeatures.Evaluation)]
 public sealed class DetectionOptionsTests
 {
     [Fact]

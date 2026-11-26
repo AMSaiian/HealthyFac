@@ -1,11 +1,13 @@
 using HealthyFac.Telemetry.Infrastructure.Evaluation;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class EvaluationWorkerTests(TelemetryEvaluationFixture fixture)
 {
     private const int MachineCount = 5;

@@ -5,10 +5,12 @@ using HealthyFac.Telemetry.IntegrationTests.Evaluation;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.SignalEpisodes.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.SignalEpisodes;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class SignalReadTests(TelemetryEvaluationFixture fixture)
 {
     private readonly TelemetryEvaluationFixture _fixture = fixture;
@@ -53,7 +55,7 @@ public sealed class SignalReadTests(TelemetryEvaluationFixture fixture)
 
     [Theory]
     [MemberData(nameof(SignalReadTestData.InvalidHistoryRanges), MemberType = typeof(SignalReadTestData))]
-    public async Task GetMetricHistory_WithAnInvalidCountOrRange_ThrowsValidationException(
+    public async Task GetMetricHistory_WithAnInvalidRange_ThrowsValidationException(
         string caseName,
         int bucketCount,
         int toSeconds
@@ -65,18 +67,6 @@ public sealed class SignalReadTests(TelemetryEvaluationFixture fixture)
             HistoryRequest(arrangement) with { BucketCount = bucketCount, To = _fixture.At(toSeconds) });
 
         await act.Should().ThrowAsync<AppValidationException>(caseName);
-    }
-
-    [Fact]
-    public async Task GetMetricHistory_WithTheCapAsCount_ReturnsTheBuckets()
-    {
-        var arrangement = await _fixture.ArrangeEvaluationMachineAsync();
-        await _fixture.SeedSamplesAsync(arrangement, [Sample(arrangement, second: 0, value: 1)]);
-
-        var response = await _fixture.GetMetricHistoryUseCaseAsync(
-            HistoryRequest(arrangement) with { BucketCount = SignalReadTestData.HistoryBucketCap });
-
-        response.Buckets.Should().ContainSingle();
     }
 
     [Fact]

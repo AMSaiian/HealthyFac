@@ -1,12 +1,14 @@
 using System.Collections.Concurrent;
 using System.Text;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 using MQTTnet;
 using MQTTnet.Protocol;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryMqttCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class MqttClientBehaviorTests(MqttIntakeFixture fixture)
 {
     private readonly MosquittoFixture _fixture = fixture.Mosquitto;

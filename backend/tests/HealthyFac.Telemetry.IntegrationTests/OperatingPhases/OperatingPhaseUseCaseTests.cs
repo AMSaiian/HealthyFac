@@ -6,10 +6,12 @@ using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.OperatingPhases;
 
 [Collection(TelemetryPhasesCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class OperatingPhaseUseCaseTests(TelemetryDatabaseFixture fixture)
 {
     private static readonly Guid CompanyId = MachineRegistrationTestData.CompanyId;

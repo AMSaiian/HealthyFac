@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MachineRegistrations;
 
 [Collection(TelemetryIntakeCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineStateFlowTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;

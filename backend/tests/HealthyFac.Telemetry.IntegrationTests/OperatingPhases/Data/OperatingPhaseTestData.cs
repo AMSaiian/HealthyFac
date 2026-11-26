@@ -1,6 +1,7 @@
 using HealthyFac.Telemetry.Application.OperatingPhases;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.OperatingPhases;
+using HealthyFac.Telemetry.Infrastructure.OperatingPhases.Persistence;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 
 namespace HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
@@ -18,6 +19,12 @@ public static class OperatingPhaseTestData
     public static readonly IReadOnlyList<string> StateMetricStates = ["off", "running"];
 
     public static readonly MetricLimits PhaseLimits = new() { WarningHigh = 80, AlarmHigh = 90 };
+
+    public static TheoryData<string, string, int, string> DuplicatePhases => new()
+    {
+        { "duplicate code", CuttingCode, 1, OperatingPhaseIndexNames.MachineCode },
+        { "duplicate priority", StoppedCode, 0, OperatingPhaseIndexNames.MachinePriority },
+    };
 
     public static TheoryData<string, Func<PhaseArrangement, CreateOperatingPhaseRequest>> InvalidBodies => new()
     {

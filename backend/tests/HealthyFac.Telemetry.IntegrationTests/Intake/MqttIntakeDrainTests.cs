@@ -1,6 +1,7 @@
 using System.Buffers;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using MQTTnet;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;
@@ -8,6 +9,7 @@ using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConst
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryMqttCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class MqttIntakeDrainTests(MqttIntakeFixture fixture)
 {
     private static readonly TimeSpan SlowSaveDelay = TimeSpan.FromSeconds(seconds: 3);

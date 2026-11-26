@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.SignalEpisodes.Data;
 using HealthyFac.Telemetry.Contracts.Signals;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.SignalEpisodes;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class SignalGrpcTests(TelemetryApiFixture fixture) : IAsyncLifetime
 {
     private readonly TelemetryApiFixture _fixture = fixture;

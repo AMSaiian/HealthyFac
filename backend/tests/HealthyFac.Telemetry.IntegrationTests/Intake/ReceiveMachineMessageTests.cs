@@ -3,10 +3,12 @@ using HealthyFac.Telemetry.Application.Intake;
 using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryIntakeCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -172,13 +174,18 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
     }
 
-    [Fact]
-    public async Task Receive_WithUnknownStatusCode_StoresErrorAndTheKnownStatus()
+    [Theory]
+    [MemberData(
+        nameof(ReceiveMachineMessageTestData.InvalidStatusLists), MemberType = typeof(ReceiveMachineMessageTestData))]
+    public async Task Receive_WithInvalidStatusList_StoresOneErrorAndOneStatus(
+        string caseName,
+        string[] statuses,
+        string expectedCode
+    )
     {
         var machine = await _fixture.ArrangeIntakeMachineAsync();
 
-        var message = ReceiveMachineMessageTestData.CreateMessage(
-            statuses: [ReceiveMachineMessageTestData.ErrorStatus, ReceiveMachineMessageTestData.UnknownStatus]);
+        var message = ReceiveMachineMessageTestData.CreateMessage(statuses: statuses);
 
         var response = await _fixture.ReceiveAsync(
             ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
@@ -186,27 +193,7 @@ public sealed class ReceiveMachineMessageTests(TelemetryDatabaseFixture fixture)
         var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
         var readings = await _fixture.LoadReadingsAsync(machine.MachineId);
 
-        stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.UnknownStatus);
-        readings.Statuses.Should().ContainSingle();
-
-        response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);
-    }
-
-    [Fact]
-    public async Task Receive_WithStatusTwice_StoresOneReadingAndError()
-    {
-        var machine = await _fixture.ArrangeIntakeMachineAsync();
-
-        var message = ReceiveMachineMessageTestData.CreateMessage(
-            statuses: [ReceiveMachineMessageTestData.ErrorStatus, ReceiveMachineMessageTestData.ErrorStatus]);
-
-        var response = await _fixture.ReceiveAsync(
-            ReceiveMachineMessageTestData.TopicFor(machine.GatewayId), ReceiveMachineMessageTestData.Bytes(message));
-
-        var stored = (await _fixture.LoadReceivedMessagesAsync(machine.MachineId)).Single();
-        var readings = await _fixture.LoadReadingsAsync(machine.MachineId);
-
-        stored.Errors.Should().ContainSingle().Which.Code.Should().Be(IntakeErrorCodes.DuplicateStatus);
+        stored.Errors.Should().ContainSingle(caseName).Which.Code.Should().Be(expectedCode);
         readings.Statuses.Should().ContainSingle();
 
         response.Result.Should().Be(ReceiveMachineMessageResult.StoredWithErrors);

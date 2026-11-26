@@ -1,7 +1,9 @@
 using HealthyFac.Telemetry.Domain.Evaluation.Phases;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Evaluation;
 
+[Feature(TestFeatures.Evaluation)]
 public sealed class PhaseIntervalLogTests
 {
     private static readonly Guid MachineId = Guid.Parse(input: "11111111-1111-1111-1111-111111111111");

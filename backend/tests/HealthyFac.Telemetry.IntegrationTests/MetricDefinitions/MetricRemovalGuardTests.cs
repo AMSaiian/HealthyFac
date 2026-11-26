@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.MetricDefinitions;
 
 [Collection(TelemetryPhasesCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricRemovalGuardTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;

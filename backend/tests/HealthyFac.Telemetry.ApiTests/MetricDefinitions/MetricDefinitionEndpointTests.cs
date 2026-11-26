@@ -3,10 +3,12 @@ using System.Text.Json.Nodes;
 using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.MetricDefinitions;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
@@ -110,19 +112,21 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture)
             .BeTrue();
     }
 
-    [Fact]
-    public async Task Apply_WithStaleRevision_Returns409()
+    [Theory]
+    [MemberData(
+        nameof(MetricDefinitionApiTestData.RejectedApplyBodies), MemberType = typeof(MetricDefinitionApiTestData))]
+    public async Task Apply_WithRejectedBody_ReturnsItsStatus(
+        string caseName,
+        string body,
+        HttpStatusCode expectedStatus
+    )
     {
         var machineId = await _fixture.ArrangeMachineAsync();
         var claims = _fixture.CreateClaims(MetricDefinitionApiTestData.WritePermission);
 
-        var response = await _fixture.SendAsync(
-            HttpMethod.Put,
-            _fixture.DefinitionsPath(machineId),
-            claims,
-            MetricDefinitionApiTestData.StaleBody);
+        var response = await _fixture.SendAsync(HttpMethod.Put, _fixture.DefinitionsPath(machineId), claims, body);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        response.StatusCode.Should().Be(expectedStatus, caseName);
     }
 
     [Fact]
@@ -141,21 +145,6 @@ public sealed class MetricDefinitionEndpointTests(TelemetryApiFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         body.Should().Contain(expected: "created[0].key");
-    }
-
-    [Fact]
-    public async Task Apply_WithInvalidDeletedId_Returns404()
-    {
-        var machineId = await _fixture.ArrangeMachineAsync();
-        var claims = _fixture.CreateClaims(MetricDefinitionApiTestData.WritePermission);
-
-        var response = await _fixture.SendAsync(
-            HttpMethod.Put,
-            _fixture.DefinitionsPath(machineId),
-            claims,
-            MetricDefinitionApiTestData.InvalidDeletedIdBody);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

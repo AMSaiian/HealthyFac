@@ -2,12 +2,14 @@ using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.Infrastructure.Intake.Persistence;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryIntakeCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class ReceivedMessageConstraintTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;

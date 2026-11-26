@@ -1,8 +1,10 @@
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.UnitTests.MetricDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.MetricDefinitions;
 
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricLimitsTests
 {
     [Theory]

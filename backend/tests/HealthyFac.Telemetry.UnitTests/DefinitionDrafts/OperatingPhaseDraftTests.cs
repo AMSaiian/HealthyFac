@@ -1,7 +1,10 @@
 using HealthyFac.Telemetry.UnitTests.DefinitionDrafts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.DefinitionDrafts;
 
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class OperatingPhaseDraftTests
 {
     [Fact]

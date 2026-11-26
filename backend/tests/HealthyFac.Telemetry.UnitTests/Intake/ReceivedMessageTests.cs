@@ -1,7 +1,9 @@
 using HealthyFac.Telemetry.UnitTests.Intake.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Intake;
 
+[Feature(TestFeatures.Intake)]
 public sealed class ReceivedMessageTests
 {
     [Theory]

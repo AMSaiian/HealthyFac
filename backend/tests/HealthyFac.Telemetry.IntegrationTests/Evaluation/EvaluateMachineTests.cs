@@ -3,11 +3,13 @@ using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class EvaluateMachineTests(TelemetryEvaluationFixture fixture)
 {
     private const double Tolerance = 1e-9;

@@ -2,12 +2,14 @@ using HealthyFac.Telemetry.Domain.Intake;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt;
 using HealthyFac.Telemetry.Infrastructure.Intake.Mqtt.Monitoring;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryMqttCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class MqttIntakeServiceTests(MqttIntakeFixture fixture) : IAsyncLifetime
 {
     private readonly MqttIntakeFixture _fixture = fixture;

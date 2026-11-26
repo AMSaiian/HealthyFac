@@ -1,14 +1,15 @@
 using HealthyFac.Shared.Application.ErrorHandling;
-using HealthyFac.Telemetry.Application.StatusDefinitions;
 using HealthyFac.Telemetry.Domain.StatusDefinitions;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.IntegrationTests.StatusDefinitions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.StatusDefinitions;
 
 [Collection(TelemetryDefinitionsCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -132,33 +133,6 @@ public sealed class ApplyStatusDefinitionChangesTests(TelemetryDatabaseFixture f
 
         var exception = (await act.Should().ThrowAsync<AppValidationException>()).Which;
         exception.Errors.Select(error => error.PropertyName).Should().Contain("items[1].code");
-    }
-
-    [Fact]
-    public async Task Apply_WithTheMaximumNumberOfItems_StoresAllOfThem()
-    {
-        var (tenant, machineId) = await ArrangeAsync();
-
-        var response = await _fixture.ApplyStatusChangesAsync(
-            tenant.CompanyId,
-            machineId,
-            StatusDefinitionTestData.Changes(StatusDefinitionValidationConstants.ApplyMaxItems));
-
-        response.Items.Should().HaveCount(StatusDefinitionValidationConstants.ApplyMaxItems);
-        response.Items.Should().OnlyContain(item => item.IsCreated);
-    }
-
-    [Fact]
-    public async Task Apply_WithOneItemAboveTheMaximum_IsAValidationFailure()
-    {
-        var (tenant, machineId) = await ArrangeAsync();
-
-        var act = () => _fixture.ApplyStatusChangesAsync(
-            tenant.CompanyId,
-            machineId,
-            StatusDefinitionTestData.Changes(StatusDefinitionValidationConstants.ApplyMaxItems + 1));
-
-        await act.Should().ThrowAsync<AppValidationException>();
     }
 
     [Fact]

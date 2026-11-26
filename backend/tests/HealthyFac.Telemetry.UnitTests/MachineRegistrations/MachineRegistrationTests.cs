@@ -1,8 +1,10 @@
 using HealthyFac.Telemetry.Domain.MachineRegistrations;
 using HealthyFac.Telemetry.UnitTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.MachineRegistrations;
 
+[Feature(TestFeatures.Machines)]
 public sealed class MachineRegistrationTests
 {
     [Theory]

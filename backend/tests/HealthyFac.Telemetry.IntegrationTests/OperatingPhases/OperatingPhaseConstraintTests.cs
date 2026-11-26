@@ -2,10 +2,12 @@ using EntityFramework.Exceptions.Common;
 using HealthyFac.Telemetry.Infrastructure.OperatingPhases.Persistence;
 using HealthyFac.Telemetry.IntegrationTests.Database.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.OperatingPhases;
 
 [Collection(TelemetryPhasesCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class OperatingPhaseConstraintTests(TelemetryDatabaseFixture fixture)
 {
     private readonly TelemetryDatabaseFixture _fixture = fixture;
@@ -23,30 +25,24 @@ public sealed class OperatingPhaseConstraintTests(TelemetryDatabaseFixture fixtu
         phase.Limits.Should().ContainSingle().Which.Limits.Should().Be(OperatingPhaseTestData.PhaseLimits);
     }
 
-    [Fact]
-    public async Task Save_WithDuplicateCodeOfActivePhases_ThrowsUniqueConstraint()
+    [Theory]
+    [MemberData(
+        nameof(OperatingPhaseTestData.DuplicatePhases), MemberType = typeof(OperatingPhaseTestData))]
+    public async Task Save_WithDuplicateOfActivePhases_ThrowsUniqueConstraint(
+        string caseName,
+        string secondCode,
+        int secondPriority,
+        string expectedIndexName
+    )
     {
         var arrangement = await _fixture.ArrangePhaseMachineAsync();
         await _fixture.AddPhaseAsync(arrangement, OperatingPhaseTestData.CuttingCode, priority: 0);
 
-        var act = () => _fixture.AddPhaseAsync(arrangement, OperatingPhaseTestData.CuttingCode, priority: 1);
+        var act = () => _fixture.AddPhaseAsync(arrangement, secondCode, secondPriority);
 
-        var exception = await act.Should().ThrowAsync<UniqueConstraintException>();
+        var exception = await act.Should().ThrowAsync<UniqueConstraintException>(caseName);
 
-        exception.Which.ConstraintName.Should().Be(OperatingPhaseIndexNames.MachineCode);
-    }
-
-    [Fact]
-    public async Task Save_WithDuplicatePriorityOfActivePhases_ThrowsUniqueConstraint()
-    {
-        var arrangement = await _fixture.ArrangePhaseMachineAsync();
-        await _fixture.AddPhaseAsync(arrangement, OperatingPhaseTestData.CuttingCode, priority: 0);
-
-        var act = () => _fixture.AddPhaseAsync(arrangement, OperatingPhaseTestData.StoppedCode, priority: 0);
-
-        var exception = await act.Should().ThrowAsync<UniqueConstraintException>();
-
-        exception.Which.ConstraintName.Should().Be(OperatingPhaseIndexNames.MachinePriority);
+        exception.Which.ConstraintName.Should().Be(expectedIndexName);
     }
 
     [Fact]

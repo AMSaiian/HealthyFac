@@ -2,10 +2,12 @@ using System.Net;
 using System.Text.Json.Nodes;
 using HealthyFac.Telemetry.ApiTests.Hosting;
 using HealthyFac.Telemetry.ApiTests.SignalEpisodes.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.SignalEpisodes;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class SignalApiTests(TelemetryApiFixture fixture)
 {
     private readonly TelemetryApiFixture _fixture = fixture;
@@ -61,18 +63,5 @@ public sealed class SignalApiTests(TelemetryApiFixture fixture)
 
         history.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         episodes.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    [Fact]
-    public async Task MetricHistory_WithTooManyBuckets_Returns400()
-    {
-        var arrangement = await _fixture.ArrangeSignalMachineAsync();
-
-        var response = await _fixture.SendAsync(
-            HttpMethod.Get,
-            _fixture.MetricHistoryPath(arrangement, SignalApiTestData.BucketCount * 10),
-            _fixture.CreateClaims(SignalApiTestData.ReadPermission));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

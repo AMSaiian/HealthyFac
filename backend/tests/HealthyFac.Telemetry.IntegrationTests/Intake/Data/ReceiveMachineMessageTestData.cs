@@ -25,6 +25,12 @@ public static class ReceiveMachineMessageTestData
 
     public static string TopicFor(string gatewayId) => $"healthyfac/gateways/{gatewayId}/messages";
 
+    public static TheoryData<string, string[], string> InvalidStatusLists => new()
+    {
+        { "unknown status code", [ErrorStatus, UnknownStatus], IntakeErrorCodes.UnknownStatus },
+        { "status twice", [ErrorStatus, ErrorStatus], IntakeErrorCodes.DuplicateStatus },
+    };
+
     public static JsonObject CreateMessage(
         DateTime? sampledAt = null,
         JsonNode? temperature = null,

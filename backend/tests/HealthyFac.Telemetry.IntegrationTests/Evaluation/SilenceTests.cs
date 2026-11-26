@@ -5,6 +5,7 @@ using HealthyFac.Telemetry.Application.Evaluation;
 using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Options;
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class SilenceTests(TelemetryEvaluationFixture fixture)
 {
     private const int SilenceLimitSeconds = 120;

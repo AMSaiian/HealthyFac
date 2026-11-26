@@ -7,10 +7,13 @@ using HealthyFac.Telemetry.ApiTests.MetricDefinitions.Data;
 using HealthyFac.Telemetry.ApiTests.MetricUnits.Data;
 using HealthyFac.Telemetry.ApiTests.StatusDefinitions.Data;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.ApiTests.ServiceCalls;
 
 [Collection(TelemetryApiCollection.Name)]
+[Feature(TestFeatures.Identity)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class InsightsServiceCallTests(TelemetryApiFixture fixture)
 {
     private const string SearchBody = "{\"offset\":0,\"limit\":100,\"filter\":{}}";

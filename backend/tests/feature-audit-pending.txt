@@ -15,7 +15,3 @@ HealthyFac.MachineSimulator.UnitTests
 HealthyFac.Seeder.ArchitectureTests
 HealthyFac.Seeder.IntegrationTests
 HealthyFac.Seeder.UnitTests
-HealthyFac.Telemetry.ApiTests
-HealthyFac.Telemetry.ArchitectureTests
-HealthyFac.Telemetry.IntegrationTests
-HealthyFac.Telemetry.UnitTests

@@ -2,10 +2,12 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using HealthyFac.Telemetry.Infrastructure.MetricSchemas;
 using HealthyFac.Telemetry.UnitTests.MetricSchemas.Data;
+using HealthyFac.Testing.Features;
 using Json.Schema;
 
 namespace HealthyFac.Telemetry.UnitTests.MetricSchemas;
 
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricSchemaGeneratorTests
 {
     [Fact]

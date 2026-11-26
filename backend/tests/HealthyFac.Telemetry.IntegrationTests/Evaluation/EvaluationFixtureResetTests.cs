@@ -1,10 +1,12 @@
 using HealthyFac.Telemetry.Application.Evaluation;
 using HealthyFac.Telemetry.Infrastructure.Evaluation;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class EvaluationFixtureResetTests(TelemetryEvaluationFixture fixture)
 {
     private readonly TelemetryEvaluationFixture _fixture = fixture;

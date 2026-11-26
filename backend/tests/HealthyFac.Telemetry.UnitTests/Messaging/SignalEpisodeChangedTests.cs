@@ -1,8 +1,11 @@
 using HealthyFac.Telemetry.Messaging.Signals;
 using HealthyFac.Telemetry.UnitTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class SignalEpisodeChangedTests
 {
     [Theory]

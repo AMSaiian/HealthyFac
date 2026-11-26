@@ -4,10 +4,12 @@ using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.OperatingPhases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.Evaluation;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class StateEffectTests(TelemetryEvaluationFixture fixture)
 {
     private readonly TelemetryEvaluationFixture _fixture = fixture;

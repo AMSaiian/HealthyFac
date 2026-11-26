@@ -1,9 +1,11 @@
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.OperatingPhases;
 using HealthyFac.Telemetry.UnitTests.OperatingPhases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.OperatingPhases;
 
+[Feature(TestFeatures.SignalModel)]
 public sealed class OperatingPhaseTests
 {
     [Theory]

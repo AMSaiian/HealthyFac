@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using HealthyFac.Telemetry.Application.Intake;
 using HealthyFac.Telemetry.IntegrationTests.Intake.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;
@@ -8,6 +9,7 @@ using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConst
 namespace HealthyFac.Telemetry.IntegrationTests.Intake;
 
 [Collection(TelemetryMqttCollection.Name)]
+[Feature(TestFeatures.Intake)]
 public sealed class IntakeObservabilityTests(MqttIntakeFixture fixture) : IAsyncLifetime
 {
     private const string TraceParentHeader = "traceparent";

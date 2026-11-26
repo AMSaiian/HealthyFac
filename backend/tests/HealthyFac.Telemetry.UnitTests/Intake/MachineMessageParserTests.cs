@@ -1,9 +1,11 @@
 using HealthyFac.Telemetry.Infrastructure.Intake;
 using HealthyFac.Telemetry.Infrastructure.MetricSchemas;
 using HealthyFac.Telemetry.UnitTests.Intake.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Intake;
 
+[Feature(TestFeatures.Intake)]
 public sealed class MachineMessageParserTests
 {
     private readonly MachineMessageParser _parser = new();

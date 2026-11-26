@@ -4,10 +4,13 @@ using HealthyFac.Telemetry.IntegrationTests.Evaluation;
 using HealthyFac.Telemetry.IntegrationTests.Evaluation.Data;
 using HealthyFac.Telemetry.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Telemetry.IntegrationTests.SignalEpisodes.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.IntegrationTests.SignalEpisodes;
 
 [Collection(TelemetryEvaluationCollection.Name)]
+[Feature(TestFeatures.Evaluation)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class PhaseTimesReadTests(TelemetryEvaluationFixture fixture)
 {
     private const int HourSeconds = 3600;

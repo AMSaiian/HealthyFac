@@ -3,9 +3,11 @@ using HealthyFac.Telemetry.Domain.Evaluation.Statistics;
 using HealthyFac.Telemetry.Domain.MetricDefinitions;
 using HealthyFac.Telemetry.Domain.SignalEpisodes;
 using HealthyFac.Telemetry.UnitTests.Evaluation.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Telemetry.UnitTests.Evaluation;
 
+[Feature(TestFeatures.Evaluation)]
 public sealed class DriftSpreadTests
 {
     private const int TwoHours = 7200;

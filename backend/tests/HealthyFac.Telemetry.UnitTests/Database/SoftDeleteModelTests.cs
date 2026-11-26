@@ -1,12 +1,14 @@
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Telemetry.Infrastructure.Database;
 using HealthyFac.Telemetry.UnitTests.Database.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Telemetry.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class SoftDeleteModelTests
 {
     private const string UnusedConnectionString = "Host=unused;Database=unused";
