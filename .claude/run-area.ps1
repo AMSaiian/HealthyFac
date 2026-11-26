@@ -46,9 +46,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
-$UnitModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll'
-$IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll'
-$IntegrationParallelModules = 4
 
 $script:OwnedLock = $null
 $script:LockStream = $null
@@ -123,20 +120,6 @@ function Stop-Lock([string] $holder) {
   exit 1
 }
 
-# The tooling area: the suites that the changed paths select (Get-ToolSuites) run at the same time, once each. The tree is
-# read before and after, like for the other areas.
-function Invoke-ToolingRun([string[]] $changed) {
-  $treeBefore = Get-TreeId -Repo $Repo -Area $Area
-  $suites = @(Get-ToolSuites $Repo $changed)
-  $run = Invoke-ToolSuites $Repo $suites $Area
-  $run.Lines
-  if ($run.Failure) { Stop-Run $run.Failure }
-
-  $treeAfter = Get-TreeId -Repo $Repo -Area $Area
-  if ($treeAfter -ne $treeBefore) { Stop-Run 'the tree changed during the run' }
-  $names = if ($suites.Count -gt 0) { @($suites | ForEach-Object { Split-Path $_ -Leaf }) -join ', ' } else { 'none' }
-  Complete-Run $treeBefore "Full run ${Area}: tree $treeBefore; suites $names -> passed"
-}
 # The steps of the header. Each failure prints its RUN FAILED line and exits; a throw (a tree ID, the format script,
 # a missing tool) reaches the catch below, so the last line is always a Full run or a RUN FAILED line.
 function Invoke-AreaRun {
@@ -146,14 +129,14 @@ function Invoke-AreaRun {
     if (-not $Base) { Stop-Run "no merge base of HEAD and $MainBranch. Pass -Base <ref>." }
   }
 
-  $changed = @(@((Get-GitLines $Repo @('diff', '--name-only', '--no-renames', $Base)).Lines) +
-    @((Get-GitLines $Repo @('ls-files', '--others', '--exclude-standard')).Lines) |
-      Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique |
-      Where-Object { Test-PathInArea $_ $Area })
+  $changed = @(Get-AreaChangedPaths $Repo $Base $Area)
   $existing = @($changed | Where-Object { Test-Path -LiteralPath (Join-Path $Repo $_) -PathType Leaf })
 
   if ($Area -eq 'tooling') {
-    Invoke-ToolingRun $changed
+    $run = Invoke-ToolingRun -Repo $Repo -Area $Area -Paths $changed -Mode full
+    $run.Lines
+    if ($run.Failure) { Stop-Run $run.Failure }
+    Complete-Run $run.Tree $run.LastLine
     return
   }
 
@@ -170,9 +153,9 @@ function Invoke-AreaRun {
   $commands = [Collections.Generic.List[object]]::new()
   if ($Area -eq 'backend') {
     $commands.Add(@{ Label = 'build'; Folder = '.'; Tool = 'dotnet'; Arguments = @('build', 'backend/HealthyFac.slnx') })
-    $commands.Add(@{ Label = 'unit+architecture command'; Folder = '.'; Tool = 'dotnet'; Arguments = @('test', '--test-modules', $UnitModules) })
+    $commands.Add(@{ Label = 'unit+architecture command'; Folder = '.'; Tool = 'dotnet'; Arguments = @('test', '--test-modules', $script:UnitModules) })
     $commands.Add(@{ Label = 'integration+API command'; Folder = '.'; Tool = 'dotnet'
-        Arguments = @('test', '--test-modules', $IntegrationModules, '--max-parallel-test-modules', "$IntegrationParallelModules") })
+        Arguments = @('test', '--test-modules', $script:IntegrationModules, '--max-parallel-test-modules', "$script:IntegrationParallelModules") })
   } else {
     $commands.Add(@{ Label = 'lint'; Folder = 'frontend'; Tool = 'npm'; Arguments = @('run', 'lint') })
     $commands.Add(@{ Label = 'ng build'; Folder = 'frontend'; Tool = 'npx'; Arguments = @('ng', 'build') })
@@ -192,28 +175,12 @@ function Invoke-AreaRun {
   foreach ($command in $commands) {
     $number++
     $log = Join-Path $logFolder "$Area-$stamp-$number.log"
-    $commandStartedAt = [DateTime]::UtcNow
-    Push-Location (Join-Path $Repo $command.Folder)
-    try {
-      & $command.Tool @($command.Arguments) *> $log
-      $exitCode = $LASTEXITCODE
-    }
-    finally { Pop-Location }
-    $lines = @(Get-Content -LiteralPath $log -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '\x1b\[[0-9;]*m', '' })
-    $count = Get-PassedCount $lines
-    if ($command.Label -eq 'build') { $buildLines = $lines }
-    $countText = if ($null -ne $count) { "$count passed" } else { 'no test count' }
-    $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
-    "$($command.Label): $result (exit $exitCode) -> $countText; log $log"
-    if ($exitCode -ne 0) {
-      if ($command.Label -eq 'build') {
-        $diagnostics = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $lines -Since $commandStartedAt)
-        $diagnostics | Where-Object { $_ -match ': error ' }
-        $diagnostics | Where-Object { $_ -notmatch ': error ' }
-      }
-      Get-FailedTests $lines
-      Stop-Run "$($command.Label) failed"
-    }
+    $run = Invoke-RunCommand -Repo $Repo -Label $command.Label -Folder $command.Folder -Tool $command.Tool `
+      -Arguments @($command.Arguments) -Log $log
+    $run.Lines
+    if ($command.Label -eq 'build') { $buildLines = $run.Output }
+    if ($run.ExitCode -ne 0) { Stop-Run "$($command.Label) failed" }
+    $count = $run.Count
     if ($null -ne $count) { $passed.Add($count) }
   }
 

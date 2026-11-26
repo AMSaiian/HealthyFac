@@ -14,9 +14,7 @@
 # A changed path of the area that matches no glob selects every feature. In the frontend, a path under
 # frontend/src/app/shared/ or a file directly in frontend/src/app/ selects every feature too.
 #
-# Backend: the quiet agent build runs first. After a failed build, the script prints the SARIF diagnostics without
-# the rules that the JetBrains cleanup fixes (cleanup-fixed-rules.txt) and the line "<n> items left for the cleanup".
-# It prints the count line after a passing build too, when the count is above 0. Then:
+# Backend: the quiet agent build runs first. After a failed build, the script prints the SARIF diagnostics. Then:
 # - unit: the unit and architecture test modules, no filter.
 # - integration: the integration and API test modules (4 projects at a time), one --filter-trait "Feature=<name>" for
 #   each selected feature (none when every feature is selected).
@@ -25,8 +23,8 @@
 # Frontend: npx ng test --watch=false in frontend/, with one --include <folder> for each frontend glob of the selected
 # features and HF_TEST_TAGS set to the names joined with " || " (the Vitest tag expression). No include and no tag
 # filter when every feature is selected. Selected features without a frontend glob start no frontend command. When a changed
-# path starts with keycloak-theme/, ng test is followed by npm run lint and npm test in keycloak-theme/ (labels keycloak lint
-# and keycloak test, as run-area.ps1 runs them); a failure prints RUN FAILED frontend: <label> failed.
+# path starts with keycloak-theme/, ng test is followed by npm run lint and npm test in keycloak-theme/ (labels keycloak-theme lint
+# and keycloak-theme test, as in run-area.ps1); a failure prints RUN FAILED frontend: <label> failed.
 #
 # Tooling: -Area tooling -Changed runs the script test suites that the changed tool files select (Get-ToolSuites), once each,
 # at the same time. Last line: "Affected run tooling: tree <id>; suites <names> -> passed" or "RUN FAILED tooling: <suite> - <first FAIL line>".
@@ -56,9 +54,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'hooks/checkout-helpers.ps1')
-$UnitModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll'
-$IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll'
-$IntegrationParallelModules = 4
 $FeatureFileName = 'test-features.json'
 
 function Stop-Run([string] $reason) {
@@ -76,14 +71,6 @@ function Read-Features {
   @((Get-Content -LiteralPath $path -Raw | ConvertFrom-Json).features | ForEach-Object {
       [pscustomobject]@{ Name = $_.name; Backend = @($_.backend); Frontend = @($_.frontend) }
     })
-}
-
-# The changed paths of the area since the base (git diff plus untracked files), with forward slashes.
-function Get-ChangedPaths {
-  @(@((Get-GitLines $Repo @('diff', '--name-only', '--no-renames', $Base)).Lines) +
-    @((Get-GitLines $Repo @('ls-files', '--others', '--exclude-standard')).Lines) |
-      Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique |
-      Where-Object { Test-PathInArea $_ $Area })
 }
 
 # The names of the features that the changed paths of the area select, in the order of the feature file.
@@ -107,52 +94,14 @@ function Complete-Run([string] $tree, [string] $line) {
   $line
 }
 
-# The tooling area: the suites that the changed paths select run at the same time, once each.
-function Invoke-ToolingRun {
-  $treeBefore = Get-TreeId -Repo $Repo -Area $Area
-  $paths = Get-ChangedPaths
-  $suites = @(Get-ToolSuites $Repo $paths)
-  $run = Invoke-ToolSuites $Repo $suites "$Area-affected"
-  $run.Lines
-  if ($run.Failure) { Stop-Run $run.Failure }
-
-  $treeAfter = Get-TreeId -Repo $Repo -Area $Area
-  if ($treeAfter -ne $treeBefore) { Stop-Run 'the tree changed during the run' }
-  $names = if ($suites.Count -gt 0) { @($suites | ForEach-Object { Split-Path $_ -Leaf }) -join ', ' } else { 'none' }
-  Complete-Run $treeBefore "Affected run ${Area}: tree $treeBefore; suites $names -> passed"
-}
-
 function Invoke-TestCommand([string] $label, [string] $folder, [string] $tool, [string[]] $arguments) {
   $script:CommandNumber++
   $log = Join-Path $script:LogFolder "$Area-affected-$script:Stamp-$script:CommandNumber.log"
-  $startedAt = [DateTime]::UtcNow
-  Push-Location (Join-Path $Repo $folder)
-  try {
-    & $tool @arguments *> $log
-    $exitCode = $LASTEXITCODE
-  }
-  finally { Pop-Location }
-  $lines = @(Get-Content -LiteralPath $log -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '\x1b\[[0-9;]*m', '' })
-  $count = Get-PassedCount $lines
-  $countText = if ($null -ne $count) { "$count passed" } else { 'no test count' }
-  $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
-  "${label}: $result (exit $exitCode) -> $countText; log $log"
-  if ($label -eq 'build') {
-    $script:BuildLines = $lines
-    $skipped = 0
-    $diagnostics = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $lines -Since $startedAt `
-        -SkipRules (Get-CleanupFixedRules $Repo) -SkippedCount ([ref]$skipped))
-    if ($exitCode -ne 0) {
-      $diagnostics | Where-Object { $_ -match ': error ' }
-      $diagnostics | Where-Object { $_ -notmatch ': error ' }
-    }
-    if ($skipped -gt 0) { "$skipped items left for the cleanup" }
-  }
-  if ($exitCode -ne 0) {
-    Get-FailedTests $lines
-    Stop-Run "$label failed"
-  }
-  if ($null -ne $count) { $script:Passed.Add($count) }
+  $run = Invoke-RunCommand -Repo $Repo -Label $label -Folder $folder -Tool $tool -Arguments $arguments -Log $log
+  $run.Lines
+  if ($label -eq 'build') { $script:BuildLines = $run.Output }
+  if ($run.ExitCode -ne 0) { Stop-Run "$label failed" }
+  if ($null -ne $run.Count) { $script:Passed.Add($run.Count) }
   $script:Labels.Add($label)
 }
 
@@ -166,12 +115,15 @@ function Invoke-TestRun {
   if ($Project -and $Area -ne 'backend') { Stop-Run '-Project works only for the backend area' }
   if ($Area -eq 'tooling') {
     if (-not $Changed) { Stop-Run '-Area tooling works only with -Changed' }
-    Invoke-ToolingRun
+    $run = Invoke-ToolingRun -Repo $Repo -Area $Area -Paths (Get-AreaChangedPaths $Repo $Base $Area) -Mode affected
+    $run.Lines
+    if ($run.Failure) { Stop-Run $run.Failure }
+    Complete-Run $run.Tree $run.LastLine
     return
   }
 
   $features = Read-Features
-  $changedPaths = Get-ChangedPaths
+  $changedPaths = Get-AreaChangedPaths $Repo $Base $Area
   $allNames = @($features | ForEach-Object { $_.Name })
   $names = if ($Project) { @() }
   elseif ($Changed) { Get-ChangedFeatureNames $features $changedPaths }
@@ -206,13 +158,13 @@ function Invoke-TestRun {
       Invoke-TestCommand 'project tests' '.' 'dotnet' $arguments
     } else {
       if ($Kind -in 'unit', 'all') {
-        Invoke-TestCommand 'unit+architecture command' '.' 'dotnet' @('test', '--test-modules', $UnitModules)
+        Invoke-TestCommand 'unit+architecture command' '.' 'dotnet' @('test', '--test-modules', $script:UnitModules)
       }
       if ($Kind -in 'integration', 'all') {
         $traitArguments = if ($isEveryFeature) { @() } else { @($names | ForEach-Object { @('--filter-trait', "Feature=$_") }) }
         $zeroTestArguments = if ($traitArguments.Count -gt 0) { @('--ignore-exit-code', '8') } else { @() }
-        Invoke-TestCommand 'integration+API command' '.' 'dotnet' (@('test', '--test-modules', $IntegrationModules,
-            '--max-parallel-test-modules', "$IntegrationParallelModules") + $traitArguments + $zeroTestArguments)
+        Invoke-TestCommand 'integration+API command' '.' 'dotnet' (@('test', '--test-modules', $script:IntegrationModules,
+            '--max-parallel-test-modules', "$script:IntegrationParallelModules") + $traitArguments + $zeroTestArguments)
       }
     }
   } else {
@@ -232,8 +184,8 @@ function Invoke-TestRun {
       finally { Remove-Item Env:HF_TEST_TAGS -ErrorAction SilentlyContinue }
     }
     if (@($changedPaths | Where-Object { $_ -like 'keycloak-theme/*' }).Count -gt 0) {
-      Invoke-TestCommand 'keycloak lint' 'keycloak-theme' 'npm' @('run', 'lint')
-      Invoke-TestCommand 'keycloak test' 'keycloak-theme' 'npm' @('test')
+      Invoke-TestCommand 'keycloak-theme lint' 'keycloak-theme' 'npm' @('run', 'lint')
+      Invoke-TestCommand 'keycloak-theme test' 'keycloak-theme' 'npm' @('test')
     }
   }
 

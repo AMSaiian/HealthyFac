@@ -1856,6 +1856,11 @@ $showStale = Invoke-Script 'run-tests.ps1' @('-ShowResults', '-Repo', $fullRepo)
 Assert-That (($showStale.Output | Where-Object { $_ -like 'Full run backend: tree *; pass; stale' }).Count -eq 1) `
   '-ShowResults marks a result stale after a change of its area'
 
+Push-Location $fullRepo
+try { $showRelative = Invoke-Script 'run-tests.ps1' @('-ShowResults', '-Repo', '.') } finally { Pop-Location }
+Assert-That ($showRelative.Exit -eq 0 -and ($showRelative.Output | Where-Object { $_ -like 'Full run backend: tree *; pass; stale' }).Count -eq 1) `
+  '-ShowResults -Repo . run from the root of the checkout prints the stored results and exits 0'
+
 # --- hook state after a run (Step 80) ---
 function New-StateRepo([string] $name) {
   $dir = New-Repo $name
@@ -1887,6 +1892,16 @@ Assert-That ($warnRun.Exit -eq 0 -and @($warnRun.Output | Where-Object { $_ -lik
   -not (Test-Path (Join-Path $warnRepo '.git/claude-verify-backend-tree.txt')) -and $warnResult.status -eq 'pass' -and
   $warnRun.Last -like 'Affected run backend:*') 'a SARIF warning in a changed file prints Hook check: and writes no state; the run result stays pass'
 
+$namedRepo = New-StateRepo 'rt-state-named'
+Add-Content (Join-Path $namedRepo 'backend/App/A.cs') 'class B { int F(int[] list) => list[index: 0]; }'
+$namedRun = Invoke-Tests $namedRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed')
+$namedResult = Read-StoredResult $namedRepo 'backend' 'affected'
+Assert-That ($namedRun.Exit -eq 0 -and
+  @($namedRun.Output | Where-Object { $_ -like 'Hook check: backend/App/A.cs(*): error NAMED_INDEX:*' }).Count -eq 1 -and
+  -not (Test-Path (Join-Path $namedRepo '.git/claude-verify-backend-tree.txt')) -and $namedResult.status -eq 'pass' -and
+  $namedRun.Last -like 'Affected run backend:*') `
+  'a named index argument in a changed file prints Hook check: and writes no backend state; the run result stays pass'
+
 $stateFailRepo = New-StateRepo 'rt-state-fail'
 $null = Invoke-Tests $stateFailRepo @('-Area', 'backend', '-Kind', 'unit', '-Changed') @{ FAKE_UNIT_FAIL = '1' }
 Assert-That (-not (Test-Path (Join-Path $stateFailRepo '.git/claude-verify-backend-tree.txt'))) 'a failing run writes no hook state'
@@ -1894,11 +1909,11 @@ Assert-That (-not (Test-Path (Join-Path $stateFailRepo '.git/claude-verify-backe
 # --- keycloak theme in the frontend run (Step 107) ---
 $themeRun = Invoke-Tests (New-TestsRepo 'rt-theme' @('keycloak-theme/src/x.ts', 'frontend/src/app/alpha/y.ts')) @('-Area', 'frontend', '-Changed')
 Assert-That ($themeRun.Exit -eq 0 -and ($themeRun.Log -join '|') -like '*npx ng test*|npm run lint @ keycloak-theme|npm test @ keycloak-theme*' -and
-  $themeRun.Last -like '*keycloak lint, keycloak test*') 'a changed keycloak-theme path runs npm run lint and npm test in keycloak-theme/ after ng test'
+  $themeRun.Last -like '*keycloak-theme lint, keycloak-theme test*') 'a changed keycloak-theme path runs npm run lint and npm test in keycloak-theme/ after ng test'
 $themeFailRepo = New-TestsRepo 'rt-theme-fail' @('keycloak-theme/src/x.ts', 'frontend/src/app/alpha/y.ts')
 $themeFail = Invoke-Tests $themeFailRepo @('-Area', 'frontend', '-Changed') @{ FAKE_NPM_FAIL = 'run lint' }
 $themeFailResult = Read-StoredResult $themeFailRepo 'frontend' 'affected'
-Assert-That ($themeFail.Exit -eq 1 -and $themeFail.Last -eq 'RUN FAILED frontend: keycloak lint failed' -and $themeFailResult.status -eq 'fail') `
+Assert-That ($themeFail.Exit -eq 1 -and $themeFail.Last -eq 'RUN FAILED frontend: keycloak-theme lint failed' -and $themeFailResult.status -eq 'fail') `
   'a failing npm run lint in keycloak-theme/ prints RUN FAILED frontend and stores no pass'
 $plainFrontend = Invoke-Tests (New-TestsRepo 'rt-theme-none' @('frontend/src/app/alpha/x.ts')) @('-Area', 'frontend', '-Changed')
 Assert-That ($plainFrontend.Exit -eq 0 -and @($plainFrontend.Log | Where-Object { $_ -like '*@ keycloak-theme' }).Count -eq 0) `

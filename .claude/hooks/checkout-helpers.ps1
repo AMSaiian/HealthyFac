@@ -3,7 +3,8 @@
 # definition of the tree ID and the area paths, the main branch ref, the default base, the feature base, the state paths,
 # the checkout mutex, the run results of run-area.ps1 and run-tests.ps1 (Write-RunResult, Get-RunResults), the Stop hook
 # state after a run (Get-StepChanges, Save-StepState, Write-HookState), and the tool suites (Get-ToolSuites,
-# Invoke-ToolSuites). Git only.
+# Invoke-ToolSuites), and the run parts of both run scripts (the test module constants, Get-AreaChangedPaths,
+# Invoke-RunCommand, Invoke-ToolingRun). Git only.
 # cleanup-changed.ps1 keeps its own copy of the mutex name (Artur, 2026-11-21: the cleanup stays unchanged); both must
 # build the same name, so the mutex is re-entrant for the hook and the cleanup in one thread.
 
@@ -117,7 +118,7 @@ function Get-GitLines([string] $Repo, [string[]] $Arguments) {
 # The absolute path of a state file in the git directory of the checkout (relative in the main checkout, absolute in a
 # worktree).
 function Get-GitStatePath([string] $repo, [string] $name) {
-  [IO.Path]::GetFullPath((git -C $repo rev-parse --git-path $name), $repo)
+  [IO.Path]::GetFullPath((git -C $repo rev-parse --git-path $name), (Resolve-Path -LiteralPath $repo).ProviderPath)
 }
 
 # The file that holds the tree ID of a session at the start of its turn.
@@ -152,18 +153,16 @@ function New-CheckoutMutex([string] $repo) {
 # level than warning or error (the SARIF also holds the info and hidden diagnostics). The path is relative to -Repo with
 # forward slashes. -Files keeps only the results of those repo paths. Each line of -BuildOutput with an NU or MSB
 # warning or error is added without its trailing [<project>] (NuGet and MSBuild write no SARIF); with
-# -BuildOutputLevel error, only the errors of those lines. -SkipRules leaves
-# those rule IDs out and writes their count to $SkippedCount. -Since reads only the *.sarif files that were written at
+# -BuildOutputLevel error, only the errors of those lines. -Since reads only the *.sarif files that were written at
 # or after that time: after a failed build, MSBuild does not rewrite the file of a project that it skipped, so an old
 # file holds results of an earlier build. Without -Since, every file counts.
 function Get-SarifDiagnostics(
-  [string] $Repo, [string] $Root, [string[]] $BuildOutput = @(), [string[]] $SkipRules = @(), [string[]] $Files = @(),
-  [ref] $SkippedCount, [ValidateSet('error', 'all')] [string] $BuildOutputLevel = 'all', [object] $Since = $null) {
+  [string] $Repo, [string] $Root, [string[]] $BuildOutput = @(), [string[]] $Files = @(),
+  [ValidateSet('error', 'all')] [string] $BuildOutputLevel = 'all', [object] $Since = $null) {
   $sinceUtc = if ($null -ne $Since) { ([datetime]$Since).ToUniversalTime() }
   $repoFull = [IO.Path]::GetFullPath($Repo).TrimEnd('\', '/').Replace('\', '/')
   $wanted = @($Files | ForEach-Object { $_.Replace('\', '/').ToLowerInvariant() })
   $lines = [Collections.Generic.HashSet[string]]::new()
-  $skipped = 0
 
   $sarifFiles = if (Test-Path -LiteralPath $Root -PathType Container) {
     @(Get-ChildItem -LiteralPath $Root -Filter '*.sarif' -File -Recurse |
@@ -180,7 +179,6 @@ function Get-SarifDiagnostics(
       $path = [Uri]::new($uri).LocalPath.Replace('\', '/')
       if ($path.StartsWith("$repoFull/", [StringComparison]::OrdinalIgnoreCase)) { $path = $path.Substring($repoFull.Length + 1) }
       if ($wanted.Count -gt 0 -and $wanted -notcontains $path.ToLowerInvariant()) { continue }
-      if ($SkipRules -contains $result.ruleId) { $skipped++; continue }
       $message = $result.message.text -replace '\s*[\r\n]+\s*', ' '
       [void]$lines.Add("$path($($location.region.startLine),$($location.region.startColumn)): $($result.level) $($result.ruleId): $message")
     }
@@ -194,16 +192,7 @@ function Get-SarifDiagnostics(
     if ($text -match '^(?<path>.*?)(?<rest> ?: (warning|error) .*)$') { $text = $Matches.path.Replace('\', '/') + $Matches.rest }
     [void]$lines.Add($text)
   }
-  if ($SkippedCount) { $SkippedCount.Value = $skipped }
   @($lines | Sort-Object { $_ })
-}
-
-# The rule IDs that the JetBrains cleanup fixes. Only a build without a cleanup (run-tests.ps1) leaves them out of the
-# build diagnostics. The Stop hook and run-area.ps1 run the cleanup first and pass no skip list.
-function Get-CleanupFixedRules([string] $Repo) {
-  $path = Join-Path $Repo '.claude/hooks/cleanup-fixed-rules.txt'
-  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @() }
-  @(Get-Content -LiteralPath $path | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 }
 
 # The file patterns of the hook steps (the backend step and the web projects).
@@ -235,7 +224,7 @@ function Save-StepState([string] $repo, [string] $step, [string] $tree) {
 
 # Writes the Stop hook state after a passing run of a run script, so the hook finds the verified tree and formats and
 # builds nothing (verify-changed.ps1). The backend step needs a clean hook check first: the SARIF diagnostics of the
-# changed backend files that the build wrote. Else the lines print as "Hook check: <line>" and no state is written. The
+# changed backend files that the build wrote, and their named index arguments (NAMED_INDEX). Else the lines print as "Hook check: <line>" and no state is written. The
 # frontend step has no check here (run-area.ps1 ran its lint); keycloak-theme gets its state when -RanKeycloakTheme is
 # set or none of its files changed since its state. Run it before the last line of the run.
 function Write-HookState([string] $Repo, [string] $Area, [string[]] $BuildOutput = @(), [switch] $RanKeycloakTheme) {
@@ -246,6 +235,7 @@ function Write-HookState([string] $Repo, [string] $Area, [string[]] $BuildOutput
     if ($changed.Count -gt 0) {
       $lines = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $BuildOutput `
           -BuildOutputLevel error -Files $changed)
+      $lines += @(Get-NamedIndexArguments -Repo $Repo -Files $changed)
       if ($lines.Count -gt 0) {
         foreach ($line in $lines) { "Hook check: $line" }
         return
@@ -354,6 +344,67 @@ function Get-PassedCount([string[]] $Lines) {
 function Get-FailedTests([string[]] $Lines) {
   @($Lines | Where-Object { $_ -match '^\s*failed\s+\S' -and $_ -notmatch '^\s*failed:' -or $_ -match '^\s*(FAIL|×)\s' } |
     ForEach-Object { $_.Trim() })
+}
+
+# The test modules of the backend commands and the number of integration projects that run at the same time (the
+# commands of CLAUDE.md, Build and Test), defined once for run-area.ps1 and run-tests.ps1.
+$script:UnitModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.UnitTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ArchitectureTests.dll'
+$script:IntegrationModules = 'backend/tests/**/bin/Debug/net10.0/HealthyFac.*.IntegrationTests.dll;backend/tests/**/bin/Debug/net10.0/HealthyFac.*.ApiTests.dll'
+$script:IntegrationParallelModules = 4
+
+# The changed paths of the test area since the base (git diff plus untracked files), with forward slashes.
+function Get-AreaChangedPaths([string] $Repo, [string] $Base, [string] $Area) {
+  @(@((Get-GitLines $Repo @('diff', '--name-only', '--no-renames', $Base)).Lines) +
+    @((Get-GitLines $Repo @('ls-files', '--others', '--exclude-standard')).Lines) |
+      Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique |
+      Where-Object { Test-PathInArea $_ $Area })
+}
+
+# Runs one command of a run script in its folder and writes its output to $Log. It returns an object with Lines (what the
+# run script prints, in order: "<label>: passed|failed (exit <n>) -> <count> passed|no test count; log <path>", and for
+# a failing command the failed tests; for a failing build also its SARIF diagnostics, errors first, before the failed
+# tests), ExitCode, Count (the passed count or $null), and Output (the log lines without ANSI codes).
+function Invoke-RunCommand([string] $Repo, [string] $Label, [string] $Folder, [string] $Tool, [string[]] $Arguments,
+  [string] $Log) {
+  $startedAt = [DateTime]::UtcNow
+  Push-Location (Join-Path $Repo $Folder)
+  try {
+    & $Tool @Arguments *> $Log
+    $exitCode = $LASTEXITCODE
+  }
+  finally { Pop-Location }
+  $output = @(Get-Content -LiteralPath $Log -ErrorAction SilentlyContinue | ForEach-Object { $_ -replace '\x1b\[[0-9;]*m', '' })
+  $count = Get-PassedCount $output
+  $countText = if ($null -ne $count) { "$count passed" } else { 'no test count' }
+  $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
+  $lines = [Collections.Generic.List[string]]::new()
+  $lines.Add("${Label}: $result (exit $exitCode) -> $countText; log $Log")
+  if ($Label -eq 'build' -and $exitCode -ne 0) {
+    $diagnostics = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $output -Since $startedAt)
+    foreach ($line in @($diagnostics | Where-Object { $_ -match ': error ' })) { $lines.Add($line) }
+    foreach ($line in @($diagnostics | Where-Object { $_ -notmatch ': error ' })) { $lines.Add($line) }
+  }
+  if ($exitCode -ne 0) { foreach ($line in @(Get-FailedTests $output)) { $lines.Add($line) } }
+  [pscustomobject]@{ Lines = $lines; ExitCode = $exitCode; Count = $count; Output = $output }
+}
+
+# The tooling run: the suites that the changed paths select (Get-ToolSuites) run at the same time, once each; the tree
+# of the area is read before and after. Mode is "full" (run-area.ps1) or "affected" (run-tests.ps1). It returns an
+# object with Lines (the suite lines to print), Failure (the reason of a failed run, else $null), Tree, and LastLine
+# (the line of a passing run).
+function Invoke-ToolingRun([string] $Repo, [string] $Area, [string[]] $Paths, [ValidateSet('full', 'affected')] [string] $Mode) {
+  $treeBefore = Get-TreeId -Repo $Repo -Area $Area
+  $suites = @(Get-ToolSuites $Repo $Paths)
+  $logPrefix = if ($Mode -eq 'full') { $Area } else { "$Area-affected" }
+  $run = Invoke-ToolSuites $Repo $suites $logPrefix
+  $failure = $run.Failure
+  if (-not $failure -and (Get-TreeId -Repo $Repo -Area $Area) -ne $treeBefore) { $failure = 'the tree changed during the run' }
+  $names = if ($suites.Count -gt 0) { @($suites | ForEach-Object { Split-Path $_ -Leaf }) -join ', ' } else { 'none' }
+  $kind = if ($Mode -eq 'full') { 'Full run' } else { 'Affected run' }
+  [pscustomobject]@{
+    Lines = $run.Lines; Failure = $failure; Tree = $treeBefore
+    LastLine = "$kind ${Area}: tree $treeBefore; suites $names -> passed"
+  }
 }
 
 # The regex of a glob of a Files line or of test-features.json: "**/" any folders (or none), "**" any path, "*" a name

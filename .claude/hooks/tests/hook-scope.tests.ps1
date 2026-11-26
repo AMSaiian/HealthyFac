@@ -40,7 +40,7 @@
 # - cleanup-changed: the private copy, the lost update, the deleted file, the guard, and the lock.
 # - record-turn-start: the turn tree of non-ASCII paths and the stale turn trees.
 # - command-line-batches: the long file lists.
-# - sarif-reader: Get-SarifDiagnostics and Get-CleanupFixedRules.
+# - sarif-reader: Get-SarifDiagnostics.
 # - line-length: the maximumLineLength of backend/SonarLint.xml equals max_line_length of .editorconfig.
 # - named-index: Get-NamedIndexArguments (the NAMED_INDEX check): named index arguments are found; attribute targets,
 #   strings, comments, and positional indexes are not.
@@ -736,9 +736,6 @@ try {
   $slashText = @(Get-SarifDiagnostics -Repo $sarifRepo.Replace('\', '/') -Root $sarifRoot -BuildOutput $buildText)
   Assert-That ($slashText -contains "backend/App/App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability.") `
     'The text line of a backslash path loses the repo prefix of a forward-slash -Repo'
-  $skipped = 0
-  $without = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -SkipRules 'IDE0007' -SkippedCount ([ref]$skipped))
-  Assert-That ($without.Count -eq 3 -and -not ($without -match 'IDE0007') -and $skipped -eq 1) '-SkipRules IDE0007 drops the line and counts 1'
   $oldFile = Join-Path $sarifRoot 'two-projects-a.sarif'
   (Get-Item $oldFile).LastWriteTimeUtc = [DateTime]::UtcNow.AddDays(-2)
   $sinceLines = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Since ([DateTime]::UtcNow.AddDays(-1)))
@@ -747,10 +744,6 @@ try {
   (Get-Item $oldFile).LastWriteTimeUtc = [DateTime]::UtcNow
   $onlyA = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Files 'backend/App/A.cs')
   Assert-That ($onlyA.Count -eq 2 -and -not ($onlyA -match 'B\.cs|Util\.cs')) '-Files keeps only the results of the named file'
-  $sarifRepo2 = New-TestRepo 'cleanup-rules'
-  New-Item -ItemType Directory -Force (Join-Path $sarifRepo2 '.claude/hooks') | Out-Null
-  "IDE0007`n`nIDE0008`n" | Set-Content (Join-Path $sarifRepo2 '.claude/hooks/cleanup-fixed-rules.txt')
-  Assert-That ((@(Get-CleanupFixedRules $sarifRepo2) -join ',') -eq 'IDE0007,IDE0008') 'The cleanup-fixed rules are the non-empty lines of the file'
 
   }
 
