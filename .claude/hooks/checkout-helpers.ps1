@@ -1,7 +1,7 @@
 # checkout-helpers.ps1 - dot-sourced by verify-changed.ps1, record-turn-start.ps1, tree-id.ps1, check-handoff.ps1,
 # check-plan.ps1, commit-cycle.ps1, run-area.ps1, format-changed.ps1, and start-feature.ps1: the one definition of the
 # tree ID and the area paths, the main branch ref, the default base, the feature base, the state paths, the checkout
-# mutex, and the long-line check. Git only.
+# mutex. Git only.
 # cleanup-changed.ps1 keeps its own copy of the mutex name (Artur, 2026-11-21: the cleanup stays unchanged); both must
 # build the same name, so the mutex is re-entrant for the hook and the cleanup in one thread.
 
@@ -142,28 +142,6 @@ function New-CheckoutMutex([string] $repo) {
   [Threading.Mutex]::new($false, "Local\HealthyFac-verify-$($repoHash.Substring(0, 16))")
 }
 
-# One object (File, Line, Length, Limit) for each line of the given C# files (repository-relative) that is longer than
-# max_line_length of .editorconfig. The JetBrains cleanup wraps only at syntax points, so a long string literal or a
-# one-line XML doc comment stays too long. Files under Migrations/ are skipped, because EF Core generates them.
-function Get-LongLines([string] $Repo, [string[]] $Files) {
-  $editorConfig = Join-Path $Repo '.editorconfig'
-  if (-not (Test-Path -LiteralPath $editorConfig)) { return }
-  $setting = Select-String -LiteralPath $editorConfig -Pattern '^\s*max_line_length\s*=\s*(\d+)' | Select-Object -First 1
-  if (-not $setting) { return }
-  $limit = [int]$setting.Matches[0].Groups[1].Value
-
-  foreach ($file in @($Files | Where-Object { $_ -like '*.cs' -and $_ -notmatch '(^|/)Migrations/' })) {
-    $path = Join-Path $Repo $file
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
-    $number = 0
-    foreach ($line in [IO.File]::ReadLines($path)) {
-      $number++
-      if ($line.Length -le $limit) { continue }
-      [pscustomobject]@{ File = $file; Line = $number; Length = $line.Length; Limit = $limit }
-    }
-  }
-}
-
 # The diagnostics of the build as typed lines, one per warning or error:
 #   <repo path>(<line>,<column>): <level> <rule>: <message>
 # The lines come from every *.sarif file under -Root (the compiler writes one per project into obj/, see
@@ -224,4 +202,141 @@ function Get-CleanupFixedRules([string] $Repo) {
   $path = Join-Path $Repo '.claude/hooks/cleanup-fixed-rules.txt'
   if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @() }
   @(Get-Content -LiteralPath $path | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+# The text of a C# file with every comment, string literal, and character literal replaced by spaces (line breaks stay),
+# so a pattern over the result keeps the line and the column of the original. It reads //, /* */, "...", @"...",
+# $"...", $@"...", raw """...""" strings ($$"""...""" too), and 'x'. The text parts of an interpolated string are
+# masked, but each interpolation hole is code: it stays, and the strings and comments inside it are masked as before.
+function Get-MaskedCSharp([string] $Text) {
+  $state = @{ Text = $Text; Position = 0; Output = [Text.StringBuilder]::new($Text.Length) }
+  Read-CSharpCode $state $false
+  $state.Output.ToString()
+}
+
+function Add-MaskedRange([hashtable] $State, [int] $Start, [int] $End) {
+  foreach ($char in $State.Text.Substring($Start, $End - $Start).ToCharArray()) {
+    [void]$State.Output.Append($(if ($char -eq "`r" -or $char -eq "`n") { $char } else { ' ' }))
+  }
+}
+
+# True when the "@" and "$" characters from $Position are followed by a double quote (a string prefix).
+function Test-StringPrefix([string] $Text, [int] $Position) {
+  while ($Position -lt $Text.Length -and $Text[$Position] -in '@', '$') { $Position++ }
+  $Position -lt $Text.Length -and $Text[$Position] -eq '"'
+}
+
+# Copies code to the output until the end of the text, or (in a hole) until the "}" that closes the hole. The "}" stays
+# at $State.Position. Strings, character literals, and comments are masked.
+function Read-CSharpCode([hashtable] $State, [bool] $IsHole) {
+  $text = $State.Text
+  $length = $text.Length
+  $depth = 0
+  while ($State.Position -lt $length) {
+    $position = $State.Position
+    $current = $text[$position]
+    $next = if ($position + 1 -lt $length) { $text[$position + 1] } else { [char]0 }
+    if ($current -eq '/' -and $next -eq '/') {
+      $end = $text.IndexOf("`n", $position); if ($end -lt 0) { $end = $length }
+      Add-MaskedRange $State $position $end; $State.Position = $end
+    } elseif ($current -eq '/' -and $next -eq '*') {
+      $end = $text.IndexOf('*/', $position + 2); $end = if ($end -lt 0) { $length } else { $end + 2 }
+      Add-MaskedRange $State $position $end; $State.Position = $end
+    } elseif ($current -eq '"' -or (($current -eq '@' -or $current -eq '$') -and $next -in '"', '@', '$' -and
+        (Test-StringPrefix $text $position))) {
+      Read-CSharpString $State
+    } elseif ($current -eq "'") {
+      $end = $position + 1
+      while ($end -lt $length -and $text[$end] -ne "'" -and $text[$end] -ne "`n") {
+        if ($text[$end] -eq '\') { $end++ }
+        $end++
+      }
+      $end = [Math]::Min($end + 1, $length)
+      Add-MaskedRange $State $position $end; $State.Position = $end
+    } else {
+      if ($current -eq '{') { $depth++ }
+      if ($current -eq '}') {
+        if ($IsHole -and $depth -eq 0) { return }
+        $depth--
+      }
+      [void]$State.Output.Append($current); $State.Position++
+    }
+  }
+}
+
+# Masks one string literal that starts at $State.Position. An interpolation hole is read as code.
+function Read-CSharpString([hashtable] $State) {
+  $text = $State.Text
+  $length = $text.Length
+  $start = $State.Position
+  $quoteStart = $start
+  while ($text[$quoteStart] -ne '"') { $quoteStart++ }
+  $prefix = $text.Substring($start, $quoteStart - $start)
+  $isVerbatim = $prefix.Contains('@')
+  $dollars = ($prefix.ToCharArray() | Where-Object { $_ -eq '$' }).Count
+  $quotes = 0
+  while ($quoteStart + $quotes -lt $length -and $text[$quoteStart + $quotes] -eq '"') { $quotes++ }
+  $isRaw = $quotes -ge 3
+  $holeBraces = if ($isRaw) { [Math]::Max($dollars, 1) } else { 1 }
+  $position = $quoteStart + $(if ($isRaw) { $quotes } else { 1 })
+  $maskedFrom = $start
+  while ($position -lt $length) {
+    $current = $text[$position]
+    if ($isRaw) {
+      if ($current -eq '"' -and $text.Substring($position).StartsWith('"' * $quotes)) { $position += $quotes; break }
+    } elseif ($current -eq '"') {
+      if ($isVerbatim -and $position + 1 -lt $length -and $text[$position + 1] -eq '"') { $position += 2; continue }
+      $position++; break
+    } elseif ($current -eq '\' -and -not $isVerbatim) { $position += 2; continue }
+    if ($dollars -gt 0 -and $current -eq '{') {
+      $openAt = $position
+      if ($isRaw) {
+        $run = 0
+        while ($position + $run -lt $length -and $text[$position + $run] -eq '{') { $run++ }
+        if ($run -lt $holeBraces) { $position += $run; continue }
+        $openAt = $position + $run - $holeBraces
+      } elseif ($position + 1 -lt $length -and $text[$position + 1] -eq '{') {
+        $position += 2
+        continue
+      }
+      $holeStart = $openAt + $holeBraces
+      Add-MaskedRange $State $maskedFrom $holeStart
+      $State.Position = $holeStart
+      Read-CSharpCode $State $true
+      $maskedFrom = $State.Position
+      $position = $State.Position + $holeBraces
+      continue
+    }
+    $position++
+  }
+  $position = [Math]::Min($position, $length)
+  Add-MaskedRange $State $maskedFrom $position
+  $State.Position = $position
+}
+
+# One typed line for each element access with a named argument (list[index: 0], map[key: "x"], { [key: "z"] = 4 }) in
+# the given C# files (repository-relative) outside Migrations/:
+#   <repo path>(<line>,<column>): error NAMED_INDEX: <message>
+# The column is the one of the argument name. The JetBrains cleanup never writes such a name for a single argument
+# (resharper_arguments_skip_single), so a name comes from a hand edit. Attribute targets ([return: ...], [assembly: ...]),
+# strings, and comments never match. White space and line breaks may sit between the receiver and "[".
+# A "[" after return, yield, in, is, case, or await starts a collection expression, not an index.
+function Get-NamedIndexArguments([string] $Repo, [string[]] $Files) {
+  $attributeTargets = 'assembly|module|return|field|property|param|method|type|event'
+  $pattern = "(?:(?<=[\w)\]?!]\s*)|(?<=[{,]\s*))\[(?!(?:$attributeTargets):)\s*(?<name>[A-Za-z_]\w*):\s"
+  $collectionKeywords = 'return', 'yield', 'in', 'is', 'case', 'await'
+  foreach ($file in @($Files | Where-Object { $_ -like '*.cs' -and $_ -notmatch '(^|/)Migrations/' })) {
+    $path = Join-Path $Repo $file
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+    $masked = Get-MaskedCSharp ([IO.File]::ReadAllText($path))
+    foreach ($match in [regex]::Matches($masked, $pattern)) {
+      $group = $match.Groups['name']
+      $before = $masked.Substring(0, $group.Index)
+      $word = [regex]::Match($before.Substring(0, $match.Index).TrimEnd(), '\w+$').Value
+      if ($word -in $collectionKeywords) { continue }
+      $line = ($before.Split("`n").Count)
+      $column = $group.Index - $before.LastIndexOf("`n")
+      "$file($line,$column): error NAMED_INDEX: the index access names its argument; write list[0], not list[index: 0]."
+    }
+  }
 }

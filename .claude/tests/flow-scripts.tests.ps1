@@ -16,7 +16,7 @@
 #   with its line; a problem in cycle 1 does not fail a check of cycle 2.
 # - check-handoff: a clean case passes; each problem fails alone with its line; each TDD step is checked on its own;
 #   the area full runs (backend only, stale, frontend missing, frontend of an earlier cycle); the cycle Deviations;
-#   a Proof: line or a "done" log in the Deviations; a long C# line (Migrations/ skipped); a formatter change;
+#   a Proof: line or a "done" log in the Deviations; a formatter change;
 #   the default base (merge base with the main branch); a failing script test of a changed flow script; an old
 #   "Full run: tree" line and an old plan-wide "## Deviations" count for nothing; the browser flow lines (a pass line
 #   without seen:, a pass line with a caveat, a transient fail without retried: fail; a retry note and step prose pass).
@@ -25,7 +25,7 @@
 # - format-changed: a second call at the same tree formats nothing again; a new file at the same tree is formatted
 #   alone; a changed tree formats every given file again.
 # - run-area: the backend order (format, build, unit, integration) and the Full run line with the tree after the
-#   format step; a failing unit command, a long line, and a change during the run fail it; the frontend commands with
+#   format step; a named index argument, a failing unit command, and a change during the run fail it; the frontend commands with
 #   and without a keycloak-theme change.
 # - commit-cycle: an approved cycle is committed as one commit for each group (tooling, docs, code) with the subject
 #   only, nothing is pushed, a rerun makes no commit; each refusal (no APPROVE, another cycle, a changed tree, a changed
@@ -616,16 +616,10 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
   $repoDir = New-Repo "$name-repo"
   New-Item -ItemType Directory -Force (Join-Path $repoDir 'src') | Out-Null
   Set-Content (Join-Path $repoDir 'src/a.cs') 'class A {}'
-  if ($change.LongLine) { Set-Content (Join-Path $repoDir '.editorconfig') @('root = true', '[*]', 'max_line_length = 40') }
   Save-Commit $repoDir 'base'
   git -C $repoDir tag base
   Add-Content (Join-Path $repoDir 'src/a.cs') '// edit'
   Set-Content (Join-Path $repoDir 'src/b.cs') 'class B {}'
-  if ($change.LongLine) {
-    Add-Content (Join-Path $repoDir 'src/b.cs') ('// ' + ('x' * 50))
-    New-Item -ItemType Directory -Force (Join-Path $repoDir 'src/Migrations') | Out-Null
-    Set-Content (Join-Path $repoDir 'src/Migrations/m.cs') ('// ' + ('m' * 50))
-  }
   if ($change.FrontendFile) {
     New-Item -ItemType Directory -Force (Join-Path $repoDir 'frontend') | Out-Null
     Set-Content (Join-Path $repoDir 'frontend/app.ts') 'export const a = 1;'
@@ -657,7 +651,7 @@ function New-HandoffCase([string] $name, [hashtable] $change = @{}) {
     $lines += ''
   }
   $lines += '### Cycle 1', '', 'Spec: **Feature A**, AC1.', ''
-  $lines += '- [x] Step 1: Change the code with a TDD red step.', '    *   Files: `src/a.cs`, `src/b.cs`, `src/Migrations/m.cs`, `frontend/app.ts`, `.claude/tree-id.ps1`, `.claude/tests/flow-scripts.tests.ps1`'
+  $lines += '- [x] Step 1: Change the code with a TDD red step.', '    *   Files: `src/a.cs`, `src/b.cs`, `frontend/app.ts`, `.claude/tree-id.ps1`, `.claude/tests/flow-scripts.tests.ps1`'
   if (-not $change.NoRedLine) { $lines += '    *   Red: the new test fails first with `Expected 1, found 0`.' }
   $step2Text = if ($change.Step2Tdd) { 'Document it with a TDD red step.' } elseif ($change.Step2ProofRequired) { 'Test it. Proof required.' } else { 'Document it.' }
   $step2Line = if ($change.Step2Line) { $change.Step2Line } else { "- [$step2Mark] Step 2: $step2Text" }
@@ -761,6 +755,12 @@ Assert-That ($extra.Exit -eq 1 -and $extra.Output.Count -eq 2 -and $extra.Output
 $logged = Invoke-Handoff (New-HandoffCase 'ho-logged' @{ ExtraFile = 'src/extra.cs'; DeviationFile = 'src/extra.cs' })
 Assert-That ($logged.Exit -eq 0 -and $logged.Output.Count -eq 0) 'a changed file in a Deviations entry passes'
 
+$globFile = Invoke-Handoff (New-HandoffCase 'ho-glob' @{ ExtraFile = 'src/extra.cs'; EarlierFilesLine = 'src/**/*.cs' })
+Assert-That ($globFile.Exit -eq 0 -and $globFile.Output.Count -eq 0) 'a changed file under a Files: glob passes'
+
+$otherGlob = Invoke-Handoff (New-HandoffCase 'ho-glob-other' @{ ExtraFile = 'src/extra.cs'; EarlierFilesLine = 'other/**/*.cs' })
+Assert-That ($otherGlob.Exit -eq 1 -and $otherGlob.Output[0] -match 'src/extra.cs is in no Files') 'a changed file outside a Files: glob fails with its line'
+
 $noRun = Invoke-Handoff (New-HandoffCase 'ho-norun' @{ NoFullRun = $true })
 Assert-That ($noRun.Exit -eq 1 -and $noRun.Output.Count -eq 1 -and $noRun.Output[0] -match "no 'Full run backend") `
   'a missing Full run backend line fails with its line'
@@ -821,11 +821,6 @@ Assert-That ($devDone.Exit -eq 1 -and $devDone.Output.Count -eq 2 -and $devDone.
 $proofRequired = Invoke-Handoff (New-HandoffCase 'ho-proof-required' @{Step2ProofRequired = $true })
 Assert-That ($proofRequired.Exit -eq 1 -and $proofRequired.Output.Count -eq 2 -and $proofRequired.Output[1] -like 'Text checks failed*' -and $proofRequired.Output[0] -match 'Step 2 names TDD, Red, or Proof required') `
   'a Proof required step without a Red: or Proof: line fails with its line'
-
-$longLine = Invoke-Handoff (New-HandoffCase 'ho-long' @{LongLine = $true })
-Assert-That ($longLine.Exit -eq 1 -and $longLine.Output.Count -eq 1 -and $longLine.Output[0] -match '^src/b.cs:2 has 53 characters') `
-  'a long line of a changed C# file fails with its line; a long line in Migrations/ passes'
-
 $defaultBase = Invoke-Handoff (New-HandoffCase 'ho-default-base' @{}) @() @('-MainBranch', 'main')
 Assert-That ($defaultBase.Exit -eq 0 -and $defaultBase.Output.Count -eq 0) 'without -Base, the merge base of HEAD and the main branch is the base'
 
@@ -1444,12 +1439,11 @@ function New-AreaRepo([string] $name, [hashtable] $change = @{}) {
   Set-Content (Join-Path $dir 'src/a.cs') 'class A {}'
   Set-Content (Join-Path $dir 'frontend/app.ts') 'export const a = 1;'
   Set-Content (Join-Path $dir 'keycloak-theme/theme.ts') 'export const t = 1;'
-  if ($change.LongLine) { Set-Content (Join-Path $dir '.editorconfig') @('root = true', '[*]', 'max_line_length = 40') }
   Save-Commit $dir 'base'
   git -C $dir tag base
   Add-Content (Join-Path $dir 'src/a.cs') '// edit'
   Set-Content (Join-Path $dir 'src/b.cs') 'class B {}'
-  if ($change.LongLine) { Add-Content (Join-Path $dir 'src/b.cs') ('// ' + ('x' * 50)) }
+  if ($change.NamedIndex) { Add-Content (Join-Path $dir 'src/b.cs') 'var a = list[index: 0];' }
   Add-Content (Join-Path $dir 'frontend/app.ts') '// edit'
   if ($change.ThemeChange) { Add-Content (Join-Path $dir 'keycloak-theme/theme.ts') '// edit' }
   return $dir
@@ -1522,9 +1516,10 @@ Assert-That ($sharedTreeBefore -ne $sharedTreeAfter -and (@(Get-Content $sharedL
   ("$(@($sharedOutput)[-1])" -eq "Full run frontend: tree $sharedTreeRun; lint, ng build, ng test -> 3 passed, 0 failed")) `
   'a path added only to the shared frontend path list changes the tree ID and the files of the run'
 
-$longRun = Invoke-Area (New-AreaRepo 'ra-long' @{ LongLine = $true }) 'backend'
-Assert-That ($longRun.Exit -eq 1 -and ($longRun.Output -contains 'src/b.cs:2 has 53 characters; max_line_length is 40.') -and
-  $longRun.Last -like 'RUN FAILED backend:*' -and ($longRun.Log -notcontains 'dotnet build')) 'a long line fails the run before the build'
+
+$namedRun = Invoke-Area (New-AreaRepo 'ra-named' @{ NamedIndex = $true }) 'backend'
+Assert-That ($namedRun.Exit -eq 1 -and ($namedRun.Output -contains 'src/b.cs(2,14): error NAMED_INDEX: the index access names its argument; write list[0], not list[index: 0].') -and
+  $namedRun.Last -like 'RUN FAILED backend:*' -and ($namedRun.Log -notcontains 'dotnet build')) 'a named index argument fails the run before the build'
 
 $touchRepo = New-AreaRepo 'ra-touch'
 $touchRun = Invoke-Area $touchRepo 'backend' @{ FAKE_TOUCH = (Join-Path $touchRepo 'src/a.cs') }

@@ -75,7 +75,7 @@ ACs take the next free numbers (`check-plan.ps1` fails on a duplicate).
   base takes in the files of that feature. After a rebase, change or remove the line.
 - A step that corrects code of an earlier commit of the branch gets a line
   `Fixup: <subject of that commit>`. The rules are in `.claude/rules/git-commits.md`,
-  **History**. `check-plan.ps1` checks the line.
+  **History** (also for the target commit of a fixup that adds a shared helper). `check-plan.ps1` checks the line.
 - Split the feature into functional cycles. Each cycle is one review and one commit group.
   Plan every cycle before the handoff when you can; my approval of plan.md covers every
   planned cycle. The `Cycle:` line names the open cycle; the scripts read it.

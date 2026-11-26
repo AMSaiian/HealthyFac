@@ -12,14 +12,14 @@
 # and deletes the file when the run ends (also after RUN FAILED and an exception). A lock file that no run holds open
 # is stale: the next run deletes it. When a run holds the file open, the next run prints "RUN FAILED <area>: another
 # run of <area> is active (pid <id>)", leaves the lock, and exits 1 at once.
-# Area tooling (.claude/, CLAUDE.md, scripts/): no format step, no long line check, no build. It runs each script test
+# Area tooling (.claude/, CLAUDE.md, scripts/): no format step, no named index check, no build. It runs each script test
 # suite whose pattern matches a path that changed since the base, once (the table $ScriptTests below; the suites run
 # at the same time, each with its own log). Last line: "Full run tooling: tree <id>; suites <names> -> passed" (or
 # "suites none" when no pattern matches), or "RUN FAILED tooling: <suite> - <first FAIL line>". The lock applies to it.
 # Steps of the other areas, in order; the first failure ends the run:
 # 1. The format script on the existing files of the area that changed since the base (tracked and untracked). Its notes
 #    are printed as "Formatter: <note>".
-# 2. The line length check of the changed C# files outside Migrations/ (hooks/checkout-helpers.ps1, Get-LongLines).
+# 2. The named index argument check of the changed C# files outside Migrations/ (hooks/checkout-helpers.ps1, Get-NamedIndexArguments).
 # 3. The tree ID of the area (tree-id.ps1 -Area).
 # 4. The full commands of the area (CLAUDE.md, Build and Test). Backend: the build, the unit and architecture command,
 #    and the integration and API command (only when the unit command passes). Frontend: lint, ng build, and ng test in
@@ -198,9 +198,9 @@ function Invoke-AreaRun {
     foreach ($note in @(& $FormatScript -Repo $Repo -Files $existing)) { "Formatter: $note" }
   }
 
-  $longLines = @(Get-LongLines -Repo $Repo -Files $existing)
-  foreach ($line in $longLines) { "$($line.File):$($line.Line) has $($line.Length) characters; max_line_length is $($line.Limit)." }
-  if ($longLines.Count -gt 0) { Stop-Run "$($longLines.Count) long lines" }
+  $namedIndexes = @(Get-NamedIndexArguments -Repo $Repo -Files $existing)
+  foreach ($line in $namedIndexes) { $line }
+  if ($namedIndexes.Count -gt 0) { Stop-Run "$($namedIndexes.Count) named index arguments" }
 
   $treeBefore = Get-TreeId -Repo $Repo -Area $Area
 

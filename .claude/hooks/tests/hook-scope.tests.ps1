@@ -41,6 +41,9 @@
 # - record-turn-start: the turn tree of non-ASCII paths and the stale turn trees.
 # - command-line-batches: the long file lists.
 # - sarif-reader: Get-SarifDiagnostics and Get-CleanupFixedRules.
+# - line-length: the maximumLineLength of backend/SonarLint.xml equals max_line_length of .editorconfig.
+# - named-index: Get-NamedIndexArguments (the NAMED_INDEX check): named index arguments are found; attribute targets,
+#   strings, comments, and positional indexes are not.
 # -Only <names> (comma-separated) runs the shared setup and only the named sections; an unknown name exits 1 before any
 # check. The last line names the sections that ran.
 # Run:  pwsh .claude/hooks/tests/hook-scope.tests.ps1 [-Only <names>]
@@ -48,7 +51,7 @@
 param([string]$Only = '')
 
 $SectionNames = @('verify-changed', 'reviewer-write-scope', 'handoff-write-guard', 'executor-run-foreground',
-  'cleanup-changed', 'record-turn-start', 'command-line-batches', 'sarif-reader')
+  'cleanup-changed', 'record-turn-start', 'command-line-batches', 'sarif-reader', 'line-length', 'named-index')
 $onlyNames = @($Only -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 foreach ($name in $onlyNames) {
   if ($name -notin $SectionNames) {
@@ -742,6 +745,37 @@ try {
 
   }
 
+  if (Test-Section 'line-length') {
+  Write-Host 'Line length'
+  $repoRoot = Split-Path (Split-Path $HooksDir -Parent) -Parent
+  $sonarLimit = [regex]::Match((Get-Content (Join-Path $repoRoot 'backend/SonarLint.xml') -Raw),
+    '(?s)<Key>maximumLineLength</Key>\s*<Value>(\d+)</Value>').Groups[1].Value
+  $editorConfigLimit = [regex]::Match((Get-Content (Join-Path $repoRoot '.editorconfig') -Raw),
+    '(?m)^max_line_length\s*=\s*(\d+)').Groups[1].Value
+  Assert-That ($sonarLimit -ne '' -and $sonarLimit -eq $editorConfigLimit) `
+    'The maximumLineLength of backend/SonarLint.xml equals max_line_length of .editorconfig'
+  }
+
+  if (Test-Section 'named-index') {
+  Write-Host 'Named index arguments'
+  $namedRepo = Join-Path $work 'named-index'
+  New-Item -ItemType Directory -Force (Join-Path $namedRepo 'src/Migrations') | Out-Null
+  $found = @{
+    'Found.cs'  = @('var a = list[index: 0];', 'var b = map[key: "x"];', 'var c = new Dictionary<string, int> { [key: "z"] = 4 };',
+      'var d = items?[index: 1];', 'var e = Get()[index: 2];', 'var f = $"v{list[index: 0]}";',
+      'var g = $@"x{map[key: ""y""]}";', 'var j = rows["a"]!', '    [propertyName: "at"] = 1;')
+    'Clean.cs'  = @('[assembly: InternalsVisibleTo("X")]', '[return: NotNull]', 'var a = list[0];', 'var b = "a[b: c]";',
+      '// x[y: 1]', 'var c = @"x[y: 1]";', 'var d = $"v{list[0]}";', '/* x[y: 1] */', 'var e = M(name: 1);', 'var h = $"{{list[index: 0]}}";', 'var i = $"{list[0]}";', '[Fact]', '[return: NotNull]', 'return [first: 1];', '[field: Obsolete]')
+  }
+  foreach ($name in $found.Keys) { $found[$name] | Set-Content (Join-Path $namedRepo "src/$name") }
+  'var m = list[index: 0];' | Set-Content (Join-Path $namedRepo 'src/Migrations/M.cs')
+  $hits = @(Get-NamedIndexArguments -Repo $namedRepo -Files @('src/Found.cs', 'src/Clean.cs', 'src/Migrations/M.cs', 'src/Missing.cs'))
+  Assert-That ($hits.Count -eq 8) "eight named index arguments are found, nothing in strings, comments, attributes, or Migrations (found $($hits.Count))"
+  Assert-That ($hits[0] -eq 'src/Found.cs(1,14): error NAMED_INDEX: the index access names its argument; write list[0], not list[index: 0].') `
+    'the NAMED_INDEX line names the path, the line, and the column'
+  Assert-That (@($hits | Where-Object { $_ -notlike 'src/Found.cs(*' }).Count -eq 0) 'every hit is in the file with the named arguments'
+  }
+
   if (Test-Section 'verify-changed') {
   Write-Host 'Stop hook reads SARIF'
   $repo = New-TestRepo 'hook-sarif'
@@ -762,6 +796,15 @@ try {
   Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(3,5): warning CS0219: Message of CS0219')) `
     "The hook reports the SARIF warning of a changed file when the build compiles nothing (output: $($result.Output))"
   Assert-That (-not $result.Output.Contains('Z.cs')) 'The hook reports no SARIF warning of an unchanged file'
+
+  $repo = New-TestRepo 'hook-named-index'
+  'namespace Test; public class A { int M(int[] list) => list[index: 0]; }' | Set-Content (Join-Path $repo 'backend/App/A.cs')
+  $env:FAKE_DOTNET_BUILD = '1'
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(1,') -and $result.Output.Contains('error NAMED_INDEX:')) `
+    "The hook reports a named index argument of a changed file (output: $($result.Output))"
+  Assert-That (-not $result.Output.Contains('B.cs')) 'The hook reports no named index argument of a file without one'
 
   $repo = New-TestRepo 'hook-sarif-failed'
   $sarifObj = Join-Path $repo 'artifacts/claude-verify/obj/App'

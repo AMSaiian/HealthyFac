@@ -2,8 +2,9 @@
 # Stop and SubagentStop hook: formats the backend changed files, builds the solution, and reports build
 # warnings and errors in those files back to the agent that stops. The diagnostics come from the SARIF files of the
 # build (Get-SarifDiagnostics), so a changed file of a project that MSBuild skipped as up to date still reports its
-# warnings. Build text warnings (NU and MSB) are left out; restore and MSBuild errors count. It also reports
-# C# lines longer than max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
+# warnings. Build text warnings (NU and MSB) are left out; restore and MSBuild errors count. A line over
+# max_line_length is the build warning S103 (backend/SonarLint.xml). It also reports a named index argument
+# (NAMED_INDEX, Get-NamedIndexArguments). Exit code 2 blocks the stop and sends stderr to
 # that agent, so a subagent fixes its own diagnostics before it reports to the main session.
 # The hook uses git only. It verifies the checkout (the main one or a git worktree) that holds this script file:
 # "git -C <script folder> rev-parse --show-toplevel". Claude Code runs the script of the project root in which the
@@ -165,13 +166,9 @@ function Invoke-Verification([string] $repo, [string] $currentTree) {
           Where-Object { $_ -match '\): error ' }) | Sort-Object -Unique)
     }
 
-    $longLines = @(Get-LongLines -Repo $repo -Files $touchedCode | ForEach-Object {
-        "$($_.File.Replace('/', '\'))($($_.Line),$($_.Limit + 1)): error LINE_LENGTH: the line has $($_.Length) " +
-        "characters; .editorconfig max_line_length is $($_.Limit). Split the line."
-      })
-
     if ($buildFailed -and $diagnostics.Count -eq 0) { $diagnostics = @($output | Select-Object -Last 20) }
-    $result.Problems = @($diagnostics + $longLines)
+    $namedIndexes = @(Get-NamedIndexArguments -Repo $repo -Files $touchedCode)
+    $result.Problems = @($diagnostics + $namedIndexes)
     return $result
   }
   finally {
@@ -233,7 +230,7 @@ $results | Where-Object Notice | ForEach-Object { Write-Output $_.Notice }
 if ($failed.Count -eq 0) { exit 0 }
 
 $report = @(
-  'The build, the line length check, or the frontend lint reports problems in the changed files of the checkout. ' +
+  'The build, the named index check, or the frontend lint reports problems in the changed files of the checkout. ' +
     'Fix every item before you finish.'
   foreach ($result in $failed) {
     "Changed files in $($result.Repo):"

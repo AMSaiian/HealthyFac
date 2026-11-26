@@ -12,18 +12,18 @@
 # WAITING marks, the Deviations entries, the Files: lines. When phase 1 has a problem, the script prints the problems,
 # then "Text checks failed: the format pass and the run lines were not checked.", and exits 1.
 # Phase 2 runs the format script on the changed files, so it can change files: each changed file is a problem. After
-# run-area.ps1, the format script skips the files that it formatted at the same tree. Then it checks the long lines and
-# the Full run lines. It runs no script test suite: run-area.ps1 -Area tooling does (CLAUDE.md, Build and Test).
+# run-area.ps1, the format script skips the files that it formatted at the same tree. Then it checks the
+# Full run lines. It runs no script test suite: run-area.ps1 -Area tooling does (CLAUDE.md, Build and Test).
 # Problems:
 # - a step of the cycle that is not [x] or [~] (a browser check step marked [!] with WAITING: and retried: passes);
 # - a step whose text says TDD, Red, or "Proof required", with no Red: or Proof: line in its own block (under the step);
 # - a TDD step (TDD on its first line) whose block has a line that starts with Proof: but none that starts with Red: (a
 #   "Proof required" step keeps the Red: or Proof: rule);
 # - a Deviations entry of the cycle that holds a Red: or Proof: line, or that only logs a run ("Step N: done");
-# - a changed or untracked file whose path or file name is in no "Files:" line and no "#### Deviations" entry of any
+# - a changed or untracked file whose path or file name is in no "Files:" line (a backticked entry with * is a glob) and no
+#   "#### Deviations" entry of any
 #   cycle (the base holds the earlier cycles of the branch too);
 # - a file that the format script changed, and each note of a skipped cleanup;
-# - a line of a changed C# file (outside Migrations/) that is longer than max_line_length of .editorconfig;
 # - a test area (tree-id.ps1 -Area backend|frontend|tooling) that differs from the base and has no "Full run <area>:
 #   tree <id>" line with its current tree in plan.md (also for tooling, in every cycle);
 # - a browser flow line of a step (.claude/browser-checks.md, Flow Lines): a "pass" line without "seen:", or with a
@@ -128,8 +128,13 @@ foreach ($line in $planLines) {
 $knownText = ($planFilesText + "`n" + ($planDeviationLines -join "`n")).Replace('\', '/')
 $changed = @(@(git -C $Repo diff --name-only $Base) + @(git -C $Repo ls-files --others --exclude-standard) |
     Where-Object { $_ } | ForEach-Object { $_.Replace('\', '/') } | Sort-Object -Unique)
+# A backticked entry with a star is a glob: "**" matches any path, "*" matches a name part (for a bulk change of many files).
+$globs = @([regex]::Matches($knownText, '`([^`\s]*\*[^`\s]*)`') | ForEach-Object {
+    '^' + ([regex]::Escape($_.Groups[1].Value) -replace '\\\*\\\*/', '(.*/)?' -replace '\\\*\\\*', '.*' -replace '\\\*', '[^/]*') + '$'
+  })
 foreach ($path in $changed) {
   $name = Split-Path $path -Leaf
+  if (@($globs | Where-Object { $path -match $_ }).Count -gt 0) { continue }
   if (-not $knownText.Contains($path, [StringComparison]::OrdinalIgnoreCase) -and
     -not $knownText.Contains($name, [StringComparison]::OrdinalIgnoreCase)) {
     $problems.Add("File $path is in no Files: line and no Deviations entry of plan.md.")
@@ -153,10 +158,6 @@ if ($existing.Count -gt 0 -and $FormatScript -and (Test-Path -LiteralPath $Forma
       $problems.Add("The formatter changed $path. Run the tests of its area again and write a new Full run line.")
     }
   }
-}
-
-foreach ($line in @(Get-LongLines -Repo $Repo -Files $existing)) {
-  $problems.Add("$($line.File):$($line.Line) has $($line.Length) characters; max_line_length is $($line.Limit). Split the line.")
 }
 
 $areaRuns = [regex]::Matches(($planLines -join "`n"), 'Full run (backend|frontend|tooling):\s*tree\s+([0-9a-f]{40})')
