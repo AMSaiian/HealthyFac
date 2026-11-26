@@ -13,6 +13,7 @@ public static class TelemetryRpcFixtureExtensions
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
+
             for (var index = 0; index < count; index++)
             {
                 dbContext.StatusDefinitions.Add(
@@ -26,17 +27,21 @@ public static class TelemetryRpcFixtureExtensions
             await dbContext.SaveChangesAsync();
         }
 
-        public async Task ArrangeStatusDefinitionAsync(Guid machineId)
+        public async Task<Guid> ArrangeStatusDefinitionAsync(Guid machineId)
         {
             using var scope = fixture.ScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<ITelemetryDbContext>();
-            dbContext.StatusDefinitions.Add(
-                new StatusDefinition(
-                    machineId,
-                    TelemetryRpcTestData.StatusCode,
-                    StatusSeverity.Error,
-                    description: null));
+
+            var status = new StatusDefinition(
+                machineId,
+                TelemetryRpcTestData.StatusCode,
+                StatusSeverity.Error,
+                description: null);
+
+            dbContext.StatusDefinitions.Add(status);
             await dbContext.SaveChangesAsync();
+
+            return status.Id;
         }
     }
 }

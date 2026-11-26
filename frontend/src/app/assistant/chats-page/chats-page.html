@@ -1,0 +1,22 @@
+<section class="border-surface flex min-h-0 w-80 flex-none flex-col rounded border">
+  <hf-chat-list
+    [items]="list.items()"
+    [hasMore]="list.hasMore()"
+    [isLoading]="list.isLoading()"
+    [isLoadingNext]="list.isLoadingNext()"
+    [hasLoaded]="list.hasLoaded()"
+    [limit]="pageSize"
+    [selectedId]="chatId() ?? null"
+    (nextPageRequested)="list.loadNext()"
+  />
+</section>
+<section class="flex min-h-0 min-w-0 flex-1 flex-col">
+  @if (chat.isNotFound()) {
+    <hf-empty-state
+      icon="pi pi-exclamation-circle"
+      messageKey="ASSISTANT.CHAT.NOT_FOUND"
+    />
+  } @else if (chat.chat(); as current) {
+    <h1 class="truncate text-xl font-semibold">{{ current.title }}</h1>
+  }
+</section>

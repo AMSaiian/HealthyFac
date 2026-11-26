@@ -71,7 +71,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
     public async Task ListDefinitions_WithBothReadPermissions_ReturnsTheMetricsAndTheStatuses()
     {
         var arrangement = await _fixture.ArrangeSignalMachineAsync();
-        await _fixture.ArrangeStatusDefinitionAsync(arrangement.MachineId);
+        var statusId = await _fixture.ArrangeStatusDefinitionAsync(arrangement.MachineId);
 
         var reply = await _host.Definitions.ListDefinitionsAsync(
             new ListDefinitionsRequest { MachineId = arrangement.MachineId.ToString() },
@@ -86,7 +86,7 @@ public sealed class TelemetryRpcTests(TelemetryApiFixture fixture) : IAsyncLifet
         metric.Unit.Should().Be(TelemetryRpcTestData.MetricUnit);
         metric.Min.Should().Be(expected: -20);
         metric.Max.Should().Be(expected: 200);
-        Guid.Parse(status.Id).Should().NotBeEmpty();
+        status.Id.Should().Be(statusId.ToString());
         status.Code.Should().Be(TelemetryRpcTestData.StatusCode);
         status.Severity.Should().Be(TelemetryRpcTestData.StatusSeverity);
     }

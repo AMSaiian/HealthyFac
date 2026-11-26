@@ -88,6 +88,7 @@ describe('ShellStore', { tags: ['Platform'] }, () => {
       MACHINES_PATH,
       '/work-orders',
       '/maintenance/cases',
+      '/assistant',
       '/employees',
       '/employees/e%201/schedule',
       FILES_PATH,

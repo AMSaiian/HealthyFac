@@ -103,6 +103,34 @@ public sealed class ExtractionBuffer
     }
 
     /// <summary>
+    /// Sets the values of a machine that <see cref="AddMachine"/> added without values (a machine that only holds
+    /// definitions so far). The values of a machine can be set once.
+    /// </summary>
+    /// <param name="machineDraftId">The draft ID that <see cref="AddMachine"/> returned.</param>
+    /// <param name="name">The name, or <see langword="null"/>.</param>
+    /// <param name="serialNumber">The serial number, or <see langword="null"/>.</param>
+    /// <param name="description">The description as HTML, or <see langword="null"/>.</param>
+    /// <returns>The draft ID of the machine.</returns>
+    /// <exception cref="HealthyFac.Shared.Application.ErrorHandling.UnprocessableException">
+    /// Thrown by <see cref="ExtractionErrors"/> for an unknown machine, or when the machine has values already.
+    /// </exception>
+    public Guid UpdateMachine(Guid machineDraftId, string? name, string? serialNumber, string? description)
+    {
+        var machine = Find(machineDraftId);
+
+        if (machine.HasValues)
+        {
+            throw ExtractionErrors.Rejected(ExtractionErrors.MachineValuesSetOnce);
+        }
+
+        machine.Name = name;
+        machine.SerialNumber = serialNumber;
+        machine.Description = description;
+
+        return machine.DraftId;
+    }
+
+    /// <summary>
     /// Adds a metric to a machine.
     /// </summary>
     /// <param name="machineDraftId">The draft ID that <see cref="AddMachine"/> returned.</param>
@@ -250,11 +278,13 @@ public sealed class ExtractionBuffer
     {
         public Guid DraftId { get; } = Guid.CreateVersion7();
 
-        public string? Name { get; init; }
+        public string? Name { get; set; }
 
-        public string? SerialNumber { get; init; }
+        public string? SerialNumber { get; set; }
 
-        public string? Description { get; init; }
+        public string? Description { get; set; }
+
+        public bool HasValues => Name is not null || SerialNumber is not null || Description is not null;
 
         public List<ProposedMetric> Metrics { get; } = [];
 

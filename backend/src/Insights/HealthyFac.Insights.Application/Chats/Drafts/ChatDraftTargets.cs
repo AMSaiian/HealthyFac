@@ -33,15 +33,12 @@ public sealed class ChatDraftTargets(ChatDraftBuffer buffer, IChatReads reads, I
     }
 
     /// <summary>
-    /// Finds the buffer and the machine entry for the <c>machineId</c> of a definition tool.
+    /// Finds the buffer and the machine entry for the <c>machineId</c> of a definition tool. The read of the machine
+    /// rejects an ID that is no create draft of this turn and that the user may not read.
     /// </summary>
     /// <param name="machineId">The ID that the model gave.</param>
     /// <param name="cancellationToken">The token that cancels the reads.</param>
     /// <returns>The buffer, and the ID that the buffer knows the machine by.</returns>
-    /// <exception cref="HealthyFac.Shared.Application.ErrorHandling.NotFoundException">
-    /// Thrown with <see cref="ChatToolErrors.NotFoundOrNotAllowed"/> when the ID is no create draft of this turn and
-    /// the user may not read a machine with it.
-    /// </exception>
     public async Task<(ExtractionBuffer Buffer, Guid MachineKey)> ResolveAsync(
         Guid machineId,
         CancellationToken cancellationToken
@@ -59,20 +56,19 @@ public sealed class ChatDraftTargets(ChatDraftBuffer buffer, IChatReads reads, I
     }
 
     /// <summary>
-    /// Finds the buffer of an existing machine, and adds it when the turn did not touch the machine yet.
+    /// Finds the buffer of an existing machine, and adds it when the turn did not touch the machine yet. The read of
+    /// the machine rejects a machine that the user may not read.
     /// </summary>
     /// <param name="machineId">The ID of the existing machine.</param>
     /// <param name="cancellationToken">The token that cancels the reads.</param>
     /// <returns>The entry of the machine.</returns>
-    /// <exception cref="HealthyFac.Shared.Application.ErrorHandling.NotFoundException">
-    /// Thrown with <see cref="ChatToolErrors.NotFoundOrNotAllowed"/> when the user may not read the machine.
-    /// </exception>
-    public async Task<ChatDraftBuffer.ExistingMachine> ResolveExistingAsync(
+    public async Task<ExistingMachine> ResolveExistingAsync(
         Guid machineId,
         CancellationToken cancellationToken
     )
     {
         var known = _buffer.FindExisting(machineId);
+
         if (known is not null)
         {
             return known;
@@ -81,7 +77,9 @@ public sealed class ChatDraftTargets(ChatDraftBuffer buffer, IChatReads reads, I
         var machine = await _reads.GetMachineAsync(
             new GetMachineArguments { MachineId = machineId },
             cancellationToken);
+
         var units = await _unitCatalog.GetAllAsync(cancellationToken);
+
         var signals = new MachineSignals
         {
             Metrics = [.. machine.Metrics.Select(metric => new SignalReference { Id = metric.Id, Key = metric.Key })],

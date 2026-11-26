@@ -25,7 +25,7 @@ public sealed class EmbeddedAgentPrompts : IAgentPrompts
     public const string ChatSummaryResourceName =
         "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSummarySystemPrompt.md";
 
-    public const string ChatVersion = "chat-v2";
+    public const string ChatVersion = "chat-v3";
     public const string ChatResourceName = "HealthyFac.Insights.Infrastructure.Agents.Prompts.ChatSystemPrompt.md";
     public const string PlannerVersion = "planner-v4";
     public const string ScreenerVersion = "screener-v1";

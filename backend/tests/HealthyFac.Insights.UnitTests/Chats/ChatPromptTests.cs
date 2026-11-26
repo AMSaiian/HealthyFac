@@ -31,4 +31,32 @@ public sealed class ChatPromptTests
     {
         _text.Should().Contain(expected: "report_no_answer").And.Contain(expected: "<tool_result>");
     }
+
+    [Fact]
+    public void ChatPrompt_TellsTheModelToAskAFollowUpQuestionInsteadOfReportingNoAnswer()
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should().Contain(expected: "ask one short follow-up question as your answer");
+        oneLine.Should().Contain(expected: "Do not call the tool report_no_answer for it");
+    }
+
+    [Fact]
+    public void ChatPrompt_LimitsADraftToValuesFromTheDataOrTheUser()
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should()
+            .Contain(expected: "Propose a draft only with values from the data of the company or from the user");
+        oneLine.Should().Contain(expected: "Leave a field empty when you do not know its value");
+    }
+
+    [Fact]
+    public void ChatPrompt_ForbidsNoAnswerInATurnThatProposedADraft()
+    {
+        var oneLine = Regex.Replace(_text, pattern: @"\s+", replacement: " ");
+
+        oneLine.Should()
+            .Contain(expected: "Never call the tool report_no_answer in a turn in which you proposed a draft");
+    }
 }

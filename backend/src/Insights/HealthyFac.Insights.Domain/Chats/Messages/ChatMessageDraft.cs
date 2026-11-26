@@ -41,7 +41,7 @@ public class ChatMessageDraft : IEntity, IAuditable, ISoftDeletable
 
     public Guid? TargetMachineId { get; private set; }
 
-    /// <summary>Tells whether a user applied the draft.</summary>
+    /// <summary>Tells whether the completed turn of the reply sent the proposal to Core or Telemetry.</summary>
     public bool IsCommitted { get; private set; }
 
     public DateTime CreatedAt { get; }
@@ -57,7 +57,7 @@ public class ChatMessageDraft : IEntity, IAuditable, ISoftDeletable
     public Guid? DeletedBy { get; private set; }
 
     /// <summary>
-    /// Marks the draft as applied.
+    /// Marks the draft as sent: the completed turn calls it when it sends the proposal.
     /// </summary>
     public void Commit() => IsCommitted = true;
 }

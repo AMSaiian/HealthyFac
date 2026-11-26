@@ -140,6 +140,6 @@ public sealed class ProposeWorkOrderDraftToolRequestHandler(ChatDraftTargets tar
                 EstimateMinutes = candidate.EstimateMinutes,
             });
 
-        return new ProposeWorkOrderDraftResponse { Id = candidate.DraftId, Status = "proposed" };
+        return new ProposeWorkOrderDraftResponse { Id = candidate.DraftId, Status = ProposalToolStatus.Proposed };
     }
 }

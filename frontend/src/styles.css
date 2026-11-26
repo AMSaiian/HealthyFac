@@ -14,11 +14,11 @@
 @custom-variant dark (&:where(.app-dark, .app-dark *));
 
 @layer components {
-  .hf-board-scroller {
+  .hf-lazy-scroller {
     overflow-x: hidden;
   }
 
-  .hf-board-scroller .p-virtualscroller-content {
+  .hf-lazy-scroller .p-virtualscroller-content {
     width: 100%;
     min-width: 0;
   }

@@ -1,7 +1,10 @@
 using System.Text.Json;
 using HealthyFac.Insights.Application.Chats.Tools;
+using HealthyFac.Insights.Application.Extraction.Proposals;
 using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.IntegrationTests.Chats.Data;
+using HealthyFac.Insights.Messaging.Drafts;
+using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.IdEncryption;
 
@@ -66,10 +69,11 @@ public sealed class ChatDraftToolTests(ChatTurnFixture fixture)
         using var session = await _fixture.StartToolSessionAsync();
         var arguments = MetricFor(ChatTestData.MachineId).Replace(oldValue: "numeric", newValue: "nonsense");
 
-        await session.CallAsync(toolName: "propose_metric_draft", arguments);
+        var result = await session.CallAsync(toolName: "propose_metric_draft", arguments);
 
         var calls = await _fixture.ReadToolCallsAsync(session.RunId);
         session.Buffer.IsEmpty.Should().BeTrue();
+        result.Should().Contain(DraftMessageErrors.Validation.ValueKindInvalid);
         calls.Should().ContainSingle().Which.Outcome.Should().Be(ToolCallOutcome.Rejected);
     }
 
@@ -89,11 +93,12 @@ public sealed class ChatDraftToolTests(ChatTurnFixture fixture)
     {
         using var session = await _fixture.StartToolSessionAsync();
 
-        await session.CallAsync(
+        var result = await session.CallAsync(
             toolName: "propose_work_order_draft",
             WorkOrderArguments.Replace(oldValue: "%PRIORITY%", newValue: "urgent"));
 
         session.Buffer.IsEmpty.Should().BeTrue();
+        result.Should().Contain(WorkOrderDraftMessageErrors.Validation.PriorityInvalid);
     }
 
     [Fact]
@@ -108,6 +113,52 @@ public sealed class ChatDraftToolTests(ChatTurnFixture fixture)
         workOrder.Title.Should().Be(expected: "Replace the filter");
         session.Buffer.DraftRows.Should().ContainSingle().Which.DraftId.Should().Be(workOrder.DraftId);
     }
+
+    [Fact]
+    public async Task ProposeMachine_ForAnUpdateAfterADefinitionOfTheSameMachine_SetsTheValuesOnTheSameEntry()
+    {
+        using var session = await _fixture.StartToolSessionAsync();
+        await session.CallAsync(toolName: "propose_metric_draft", MetricFor(ChatTestData.MachineId));
+
+        await session.CallAsync(
+            toolName: "propose_machine_draft", UpdateFor(ChatTestData.MachineId, name: "Lathe 7 B"));
+
+        var machine = session.Buffer.Machines.Should().ContainSingle().Subject;
+        machine.TargetMachineId.Should().Be(ChatTestData.MachineId);
+        machine.Name.Should().Be(expected: "Lathe 7 B");
+        session.Buffer.Metrics.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task ProposeMachine_ForAnUpdateBeforeADefinitionOfTheSameMachine_KeepsBothOnTheSameEntry()
+    {
+        using var session = await _fixture.StartToolSessionAsync();
+        await session.CallAsync(
+            toolName: "propose_machine_draft", UpdateFor(ChatTestData.MachineId, name: "Lathe 7 B"));
+
+        await session.CallAsync(toolName: "propose_metric_draft", MetricFor(ChatTestData.MachineId));
+
+        session.Buffer.Machines.Should().ContainSingle().Which.Name.Should().Be(expected: "Lathe 7 B");
+        session.Buffer.Metrics.Should().ContainSingle().Which.MachineId.Should().Be(ChatTestData.MachineId);
+    }
+
+    [Fact]
+    public async Task ProposeMachine_ForASecondUpdateOfTheSameMachine_IsRejectedAndKeepsTheFirstValues()
+    {
+        using var session = await _fixture.StartToolSessionAsync();
+        await session.CallAsync(toolName: "propose_machine_draft", UpdateFor(ChatTestData.MachineId, name: "First"));
+
+        var result = await session.CallAsync(
+            toolName: "propose_machine_draft", UpdateFor(ChatTestData.MachineId, name: "Second"));
+
+        result.Should().Contain(ExtractionErrors.MachineValuesSetOnce);
+        session.Buffer.Machines.Should().ContainSingle().Which.Name.Should().Be(expected: "First");
+    }
+
+    private string UpdateFor(Guid machineId, string name) =>
+        $$"""{"targetMachineId":"{{EncryptedId(machineId)}}","name":"{{name}}"}""";
+
+    private string EncryptedId(Guid id) => _fixture.Inner.GetSingleton<IIdEncryptor>().Encrypt(id);
 
     private string MetricFor(Guid machineId) =>
         MetricArguments.Replace(oldValue: "%ID%", _fixture.Inner.GetSingleton<IIdEncryptor>().Encrypt(machineId));

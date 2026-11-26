@@ -52,6 +52,11 @@ public sealed class ChatDraftBuffer
     public bool IsEmpty =>
         Machines.Count + Metrics.Count + Statuses.Count + Phases.Count + _workOrders.Count == 0;
 
+    private IEnumerable<ExtractionBuffer> Buffers =>
+        _created is null
+            ? _existing.Values.Select(machine => machine.Buffer)
+            : [_created, .. _existing.Values.Select(machine => machine.Buffer)];
+
     /// <summary>
     /// The draft links of the reply: one row for each proposal, in the order machine, metric, status, phase, and work
     /// order.
@@ -84,14 +89,6 @@ public sealed class ChatDraftBuffer
             Title(workOrder.Title, WorkOrderTitle),
             workOrder.MachineId)),
     ];
-
-    private static string Title(string? text, string fallback) =>
-        string.IsNullOrWhiteSpace(text) ? fallback : text;
-
-    private IEnumerable<ExtractionBuffer> Buffers =>
-        _created is null
-            ? _existing.Values.Select(machine => machine.Buffer)
-            : [_created, .. _existing.Values.Select(machine => machine.Buffer)];
 
     /// <summary>
     /// Tells whether the ID is a create draft that <see cref="RegisterCreateDraft"/> stored in this turn.
@@ -134,7 +131,9 @@ public sealed class ChatDraftBuffer
     /// <returns>The new entry.</returns>
     public ExistingMachine AddExisting(Guid machineId, IReadOnlyList<MetricUnit> units, MachineSignals signals)
     {
-        var machine = new ExistingMachine(new ExtractionBuffer(isMachineFile: true, machineId, units, signals));
+        var machine = new ExistingMachine
+            { Buffer = new ExtractionBuffer(isMachineFile: true, machineId, units, signals) };
+
         _existing[machineId] = machine;
 
         return machine;
@@ -146,15 +145,6 @@ public sealed class ChatDraftBuffer
     /// <param name="workOrder">The work order with its draft ID.</param>
     public void AddWorkOrder(ChatWorkOrderProposal workOrder) => _workOrders.Add(workOrder);
 
-    /// <summary>
-    /// The buffer of one existing machine. The container is the machine entry of the buffer: it carries the update
-    /// values of the machine, and the definitions of the machine hang on it.
-    /// </summary>
-    public sealed class ExistingMachine(ExtractionBuffer buffer)
-    {
-        public ExtractionBuffer Buffer { get; } = buffer;
-
-        /// <summary>The draft ID of the machine entry, or <see langword="null"/> before the first call.</summary>
-        public Guid? ContainerId { get; set; }
-    }
+    private static string Title(string? text, string fallback) =>
+        string.IsNullOrWhiteSpace(text) ? fallback : text;
 }

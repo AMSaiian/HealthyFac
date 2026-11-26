@@ -20,6 +20,7 @@
     "OPERATING_PHASES": "Operating phases",
     "SIGNALS": "Dashboards",
     "MAINTENANCE": "Maintenance",
+    "ASSISTANT": "Assistant",
     "CASE": "Case",
     "WORK_ORDER_DRAFTS": "Work order drafts"
   },
@@ -1504,6 +1505,14 @@
     },
     "CONFLICTS": {
       "CHANGED": "The draft changed. The list is loaded again"
+    }
+  },
+  "ASSISTANT": {
+    "CHATS": {
+      "EMPTY": "No chats yet. Start a new chat with your first message"
+    },
+    "CHAT": {
+      "NOT_FOUND": "This chat does not exist"
     }
   }
 }

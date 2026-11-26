@@ -34,6 +34,7 @@ export const SHELL_NAV_ITEMS: readonly ShellNavItem[] = [
     path: '/maintenance/cases',
     permission: Permission.CasesRead,
   },
+  { labelKey: 'TITLES.ASSISTANT', icon: 'pi pi-comments', path: '/assistant', permission: Permission.ChatsRead },
   { labelKey: 'TITLES.EMPLOYEES', icon: 'pi pi-users', path: '/employees', permission: Permission.EmployeesRead },
   {
     labelKey: 'TITLES.MY_SCHEDULE',

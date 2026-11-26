@@ -31,6 +31,8 @@ export const Permission = {
   SignalsRead: 'signals:read',
   CasesRead: 'cases:read',
   CasesWrite: 'cases:write',
+  ChatsRead: 'chats:read',
+  ChatsWrite: 'chats:write',
 } as const;
 
 export type Permission = (typeof Permission)[keyof typeof Permission];

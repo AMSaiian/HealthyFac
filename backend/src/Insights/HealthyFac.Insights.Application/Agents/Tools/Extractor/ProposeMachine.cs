@@ -35,6 +35,13 @@ public sealed record ProposeMachineToolRequest
     [JsonIgnore]
     public ExtractionBuffer? Buffer { get; init; }
 
+    /// <summary>
+    /// The machine entry whose values this call sets, or <see langword="null"/> to add a machine. The chat uses it
+    /// when a definition added the entry of an existing machine first.
+    /// </summary>
+    [JsonIgnore]
+    public Guid? MachineDraftId { get; init; }
+
     public string? Name { get; init; }
 
     public string? SerialNumber { get; init; }
@@ -77,7 +84,8 @@ public class ProposeMachineToolRequestValidator : AbstractValidator<ProposeMachi
 public sealed class ProposeMachineToolPreHandlerCheck : PassThroughPreHandlerCheck<ProposeMachineToolRequest>;
 
 /// <summary>
-/// Adds the machine to the buffer of the run. The machine file rule and the count limit reject the call to the model.
+/// Adds the machine to the buffer of the run, or sets the values of the entry that the request names. The machine
+/// file rule, the count limit, and the set-once rule reject the call to the model.
 /// </summary>
 public sealed class ProposeMachineToolRequestHandler
     : IRequestHandler<ProposeMachineToolRequest, ProposeMachineToolResponse>
@@ -87,7 +95,9 @@ public sealed class ProposeMachineToolRequestHandler
         CancellationToken cancellationToken = default(CancellationToken)
     )
     {
-        var machineId = request.Buffer!.AddMachine(request.Name, request.SerialNumber, request.Description);
+        var machineId = request.MachineDraftId is { } machineDraftId
+            ? request.Buffer!.UpdateMachine(machineDraftId, request.Name, request.SerialNumber, request.Description)
+            : request.Buffer!.AddMachine(request.Name, request.SerialNumber, request.Description);
 
         return Task.FromResult(
             new ProposeMachineToolResponse { MachineId = machineId, Status = ProposalToolStatus.Proposed });

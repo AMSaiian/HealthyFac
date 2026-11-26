@@ -4,6 +4,7 @@ import { companyGuard } from '@shared/company/company.guard';
 import { NETWORK_ERROR_PATH } from '@shared/http/fallback-urls';
 import { authGuard } from '@shared/security/auth.guard';
 import { permissionGuard } from '@shared/security/permission.guard';
+import { Permission } from '@shared/security/permissions';
 import { NetworkErrorPage } from '@fallback/network-error/network-error-page';
 import { CASES_RETURN_TARGET } from '@maintenance/maintenance-return-target';
 import { WORK_ORDERS_RETURN_TARGET } from '@work-orders/work-orders-return-target';
@@ -35,6 +36,11 @@ export const routes: Routes = [
     path: 'maintenance',
     canActivate: [authGuard, companyGuard, permissionGuard(CASES_RETURN_TARGET.permission)],
     loadChildren: () => import('@maintenance/maintenance.routes').then((m) => m.MAINTENANCE_ROUTES),
+  },
+  {
+    path: 'assistant',
+    canActivate: [authGuard, companyGuard, permissionGuard(Permission.ChatsRead)],
+    loadChildren: () => import('@assistant/assistant.routes').then((m) => m.ASSISTANT_ROUTES),
   },
   {
     path: 'employees',

@@ -86,6 +86,9 @@ public sealed class ScriptedChatModel : IChatModel
     /// <summary>Tool calls that the model makes, in order, before it answers (name and arguments as JSON).</summary>
     public List<(string Name, string ArgumentsJson)> ToolCalls { get; } = [];
 
+    /// <summary>A source that the model cancels after its tool calls, like a user. Null means none.</summary>
+    public CancellationTokenSource? CancelSource { get; set; }
+
     /// <summary>An error that the model throws after its tool calls. Null means no error.</summary>
     public Exception? FailureAfterTools { get; set; }
 
@@ -97,6 +100,7 @@ public sealed class ScriptedChatModel : IChatModel
         ToolName = null;
         ToolCalls.Clear();
         FailureAfterTools = null;
+        CancelSource = null;
         LastHistory = [];
         Answer = ChatTestData.Answer;
         ConcurrentStreamCount = 0;
@@ -141,6 +145,12 @@ public sealed class ScriptedChatModel : IChatModel
                 System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(argumentsJson));
 
             await scripted.InvokeAsync(arguments, cancellationToken);
+        }
+
+        if (CancelSource is not null)
+        {
+            await CancelSource.CancelAsync();
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         if (FailureAfterTools is not null)

@@ -3,7 +3,6 @@ using HealthyFac.Insights.Application.Agents.Tools;
 using HealthyFac.Insights.Application.Agents.Tools.Extractor;
 using HealthyFac.Insights.Application.Agents.Tools.Invocation;
 using HealthyFac.Insights.Application.Chats.Drafts;
-using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Application.UseCases.PreHandlerChecks;
 
@@ -70,9 +69,9 @@ public sealed record ProposeMachineDraftResponse
 public sealed class ProposeMachineDraftToolPreHandlerCheck : PassThroughPreHandlerCheck<ProposeMachineDraftToolRequest>;
 
 /// <summary>
-/// Adds a create draft or an update draft of a machine to the buffer of the turn through the extraction tool. An
-/// update of an existing machine must come before the definitions of that machine in the same turn, because the
-/// machine entry of the buffer takes its values only once.
+/// Adds a create draft or an update draft of a machine to the buffer of the turn through the extraction tool. The
+/// update of an existing machine can come before or after the definitions of that machine, and a second update of the
+/// same machine in one turn is rejected.
 /// </summary>
 /// <param name="targets">Finds the buffer of the machine.</param>
 /// <param name="buffer">Holds the proposals of the turn.</param>
@@ -102,14 +101,11 @@ public sealed class ProposeMachineDraftToolRequestHandler(
         }
 
         var existing = await _targets.ResolveExistingAsync(targetMachineId, cancellationToken);
-        if (existing.ContainerId is not null)
-        {
-            throw new UnprocessableException(ChatDraftErrors.MachineUpdateAfterDefinitions);
-        }
+        existing.ContainerId ??= existing.Buffer.AddMachine(name: null, serialNumber: null, description: null);
 
         var updated = await _proposals.HandleAsync(
-            request.Proposal with { Buffer = existing.Buffer }, cancellationToken);
-        existing.ContainerId = updated.MachineId;
+            request.Proposal with { Buffer = existing.Buffer, MachineDraftId = existing.ContainerId },
+            cancellationToken);
 
         return new ProposeMachineDraftResponse { MachineId = targetMachineId, Status = updated.Status };
     }

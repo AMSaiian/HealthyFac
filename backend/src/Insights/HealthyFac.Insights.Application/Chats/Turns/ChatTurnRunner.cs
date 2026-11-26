@@ -117,7 +117,11 @@ public sealed class ChatTurnRunner(
 
         throttle.Flush();
         Apply(ending, chat, assistantMessage, run, throttle.Text, counts);
-        _draftCommit.Stage(chat, assistantMessage, ending == TurnEnding.Completed);
+        if (ending != TurnEnding.NoAnswer)
+        {
+            _draftCommit.Stage(chat, assistantMessage, ending == TurnEnding.Completed);
+        }
+
         await _saves.SaveAsync(run, buffer.Rows, CancellationToken.None);
 
         _notifier.AddChatTurnEnd(

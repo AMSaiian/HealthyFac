@@ -1,0 +1,42 @@
+@if (showEmpty()) {
+  <hf-empty-state
+    icon="pi pi-inbox"
+    messageKey="ASSISTANT.CHATS.EMPTY"
+  />
+} @else {
+  <p-scroller
+    scrollHeight="100%"
+    styleClass="hf-lazy-scroller h-full w-full min-w-0"
+    [items]="slots()"
+    [itemSize]="rowHeight"
+    [lazy]="true"
+    [delay]="150"
+    (onLazyLoad)="onLazyLoad($event)"
+  >
+    <ng-template
+      #item
+      let-slot
+    >
+      <div
+        class="border-surface min-w-0 border-b px-3 py-2"
+        [style.height.px]="rowHeight"
+      >
+        @if (slot && !(isLoading() && showSkeleton())) {
+          <a
+            class="flex h-full min-w-0 flex-col justify-center gap-1 rounded px-2 hover:bg-emphasis"
+            [class.bg-highlight]="slot.id === selectedId()"
+            [routerLink]="['/assistant', slot.id]"
+          >
+            <span class="truncate font-semibold">{{ slot.title }}</span>
+            <span class="text-muted-color text-sm">{{ slot.updatedAt | localDateTime }}</span>
+          </a>
+        } @else if (showSkeleton()) {
+          <p-skeleton
+            height="100%"
+            borderRadius="0.25rem"
+          />
+        }
+      </div>
+    </ng-template>
+  </p-scroller>
+}

@@ -4,6 +4,7 @@ using HealthyFac.Insights.IntegrationTests.Chats.Data;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.WorkOrders;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Shared.Application.RichText;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,12 +31,15 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
                 [ChatDraftKind.Machine, ChatDraftKind.Metric, ChatDraftKind.Metric, ChatDraftKind.WorkOrder]);
         drafts.Should().OnlyContain(draft => draft.IsCommitted);
         var message = proposed.Should().ContainSingle().Subject;
+        var richTextPolicy = _fixture.Inner.GetSingleton<IRichTextPolicy>();
+        new DraftsProposedValidator(richTextPolicy).Validate(message).IsValid.Should().BeTrue();
         message.Source.Should().Be(ProposalSource.Chat);
         message.ChatId.Should().Be(response.Chat.Id);
         message.ChatMessageId.Should().Be(response.Assistant.Id);
         message.Machines.Should().ContainSingle().Which.TargetMachineId.Should().Be(ChatTestData.MachineId);
         message.Metrics.Should().HaveCount(expected: 2);
         var workOrder = workOrders.Should().ContainSingle().Subject;
+        new WorkOrderDraftProposedValidator().Validate(workOrder).IsValid.Should().BeTrue();
         workOrder.Source.Should().Be(WorkOrderProposalSource.Chat);
         workOrder.ChatMessageId.Should().Be(response.Assistant.Id);
     }
@@ -69,6 +73,43 @@ public sealed class ChatDraftCommitTests(ChatTurnFixture fixture)
         drafts.Should().OnlyContain(draft => !draft.IsCommitted);
         proposed.Should().BeEmpty();
         workOrders.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Create_WithACancelledTurnThatProposed_StoresUncommittedRowsAndSendsNothing()
+    {
+        ScriptProposals();
+        using var source = new CancellationTokenSource();
+        _fixture.Fakes.Model.CancelSource = source;
+
+        var response = await _fixture.CreateAsync(
+            ChatTestData.OwnerId, ChatTestData.Question, cancellationToken: source.Token);
+
+        var drafts = await ReadDraftsAsync(response.Assistant.Id);
+        var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
+        var workOrders = await _fixture.ReadOutboxAsync<WorkOrderDraftProposed>();
+        response.Assistant.State.Should().Be(ChatMessageState.Cancelled);
+        drafts.Should().HaveCount(expected: 4);
+        drafts.Should().OnlyContain(draft => !draft.IsCommitted);
+        proposed.Should().BeEmpty();
+        workOrders.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Create_WithATurnThatProposedThenReportedNoAnswer_StoresNoDraftRowsAndSendsNothing()
+    {
+        _fixture.Fakes.Model.ToolCalls.Add(("propose_machine_draft", """{"name":"Lathe 9"}"""));
+        _fixture.Fakes.Model.ToolCalls.Add(("report_no_answer", "{}"));
+
+        var response = await _fixture.CreateAsync(ChatTestData.OwnerId, ChatTestData.Question);
+
+        var drafts = await ReadDraftsAsync(response.Assistant.Id);
+        var proposed = await _fixture.ReadOutboxAsync<DraftsProposed>();
+        var toolCalls = await _fixture.ReadAllToolCallsAsync();
+        response.Assistant.Kind.Should().Be(ChatMessageKind.Unanswerable);
+        drafts.Should().BeEmpty();
+        proposed.Should().BeEmpty();
+        toolCalls.Select(call => call.ToolName).Should().Contain(["propose_machine_draft", "report_no_answer"]);
     }
 
     private void ScriptProposals()
