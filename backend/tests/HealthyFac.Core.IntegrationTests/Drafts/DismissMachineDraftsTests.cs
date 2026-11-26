@@ -7,10 +7,13 @@ using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Machines)]
 public sealed class DismissMachineDraftsTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

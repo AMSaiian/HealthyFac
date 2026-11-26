@@ -3,10 +3,12 @@ using System.Text;
 using HealthyFac.Core.ApiTests.Drafts.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Drafts;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;

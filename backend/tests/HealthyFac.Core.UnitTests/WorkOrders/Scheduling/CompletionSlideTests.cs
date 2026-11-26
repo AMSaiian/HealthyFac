@@ -1,9 +1,11 @@
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders.Scheduling;
 using HealthyFac.Core.UnitTests.WorkOrders.Scheduling.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.WorkOrders.Scheduling;
 
+[Feature(TestFeatures.WorkOrders)]
 public sealed class CompletionSlideTests
 {
     private static IReadOnlyList<SlideMove> Plan(
@@ -21,34 +23,20 @@ public sealed class CompletionSlideTests
     private static SlideWorkOrder Completed() =>
         SchedulingTestData.Order(number: 1, WorkOrderStatus.InProgress, start: "08:00", minutes: 60);
 
-    [Fact]
-    public void Plan_WithOnTimeCompletion_MovesNothing()
+    [Theory]
+    [MemberData(
+        nameof(CompletionSlideTestData.CompletionsThatMoveNothing), MemberType = typeof(CompletionSlideTestData))]
+    public void Plan_WithCompletionThatDisturbsNoOrder_MovesNothing(
+        string caseName,
+        string completedAt,
+        string nextStart
+    )
     {
-        var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "09:00", minutes: 60);
+        var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, nextStart, minutes: 60);
 
-        var moves = Plan(Completed(), completedAt: "09:00", next);
+        var moves = Plan(Completed(), completedAt, next);
 
-        moves.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Plan_WithEarlyCompletion_MovesNothing()
-    {
-        var next = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "09:00", minutes: 60);
-
-        var moves = Plan(Completed(), completedAt: "08:30", next);
-
-        moves.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Plan_WithEarlyCompletionAndStagedOrderInsideItsWindow_MovesNothing()
-    {
-        var inside = SchedulingTestData.Order(number: 2, WorkOrderStatus.Staged, start: "08:15", minutes: 60);
-
-        var moves = Plan(Completed(), completedAt: "08:30", inside);
-
-        moves.Should().BeEmpty();
+        moves.Should().BeEmpty(caseName);
     }
 
     [Fact]

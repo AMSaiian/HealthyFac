@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Shifts;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Shifts)]
 public sealed class ShiftAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;

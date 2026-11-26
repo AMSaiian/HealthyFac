@@ -3,10 +3,12 @@ using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
 using HealthyFac.Core.Web.Authorization;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.WorkOrders;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrderAuthorizationTests(CoreApiFixture fixture)
 {
     private const string StartTime = "09:00:00";

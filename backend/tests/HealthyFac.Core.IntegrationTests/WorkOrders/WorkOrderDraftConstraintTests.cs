@@ -3,10 +3,13 @@ using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Drafts)]
 public sealed class WorkOrderDraftConstraintTests(CoreDatabaseFixture fixture)
 {
     private const string ValidState = "'dismissed'";

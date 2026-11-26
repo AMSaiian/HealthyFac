@@ -5,10 +5,13 @@ using HealthyFac.Core.IntegrationTests.Drafts.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Machines)]
 public sealed class SearchMachineDraftsTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

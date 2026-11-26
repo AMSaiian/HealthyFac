@@ -4,10 +4,12 @@ using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Companies.Data;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Companies;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class CompanyApiTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;

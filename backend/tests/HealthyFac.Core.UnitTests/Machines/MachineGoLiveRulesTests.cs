@@ -1,8 +1,10 @@
 using HealthyFac.Core.Application.Machines;
 using HealthyFac.Core.UnitTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Machines;
 
+[Feature(TestFeatures.Machines)]
 public sealed class MachineGoLiveRulesTests
 {
     [Theory]

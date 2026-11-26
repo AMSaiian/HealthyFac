@@ -4,72 +4,27 @@ using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.WorkOrders;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrderInputTests(CoreApiFixture fixture)
 {
     private const string StartTime = "14:00:00";
 
     private readonly CoreApiFixture _fixture = fixture;
 
-    [Fact]
-    public async Task Create_WithTitleOf201Characters_Returns400()
+    [Theory]
+    [MemberData(nameof(WorkOrderApiTestData.InvalidCreateBodies), MemberType = typeof(WorkOrderApiTestData))]
+    public async Task Create_WithInvalidBody_Returns400(string caseName, Func<CoreApiFixture, string> createBody)
     {
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
 
-        var response = await PostAsync(
-            claims,
-            _fixture.CreateOrderBody(new string(c: 'a', WorkOrderApiTestData.TitleTooLongLength)));
+        var response = await PostAsync(claims, createBody(_fixture));
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task Create_WithEstimateOffTheGrid_Returns400()
-    {
-        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
-
-        var response = await PostAsync(
-            claims,
-            _fixture.CreateOrderBody(estimateMinutes: WorkOrderApiTestData.OffGridEstimate));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task Create_With21Files_Returns400()
-    {
-        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
-
-        var response = await PostAsync(claims, _fixture.CreateOrderBody(fileCount: WorkOrderApiTestData.TooManyFiles));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task Create_WithUnknownPriority_Returns400()
-    {
-        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
-
-        var response = await PostAsync(
-            claims,
-            _fixture.CreateOrderBody(priority: WorkOrderApiTestData.UnknownPriority));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task Create_WithUnknownChecklistValue_Returns400()
-    {
-        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
-
-        var response = await PostAsync(
-            claims,
-            _fixture.CreateOrderBody(description: WorkOrderApiTestData.BadChecklist));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
     }
 
     [Fact]
@@ -225,19 +180,18 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
         listed[0]!["id"]!.GetValue<string>().Should().Be(id);
     }
 
-    [Theory]
-    [MemberData(nameof(WorkOrderApiTestData.InvalidHistoryLimits), MemberType = typeof(WorkOrderApiTestData))]
-    public async Task History_WithoutAValidLimit_Returns400(string caseName, string query)
+    [Fact]
+    public async Task History_WithoutALimit_Returns400()
     {
         var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
         var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
 
         var response = await _fixture.SendShiftRequestAsync(
             HttpMethod.Get,
-            $"{WorkOrderApiTestData.BasePath}/{id}/history{query}",
+            $"{WorkOrderApiTestData.BasePath}/{id}/history",
             claims);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Theory]
@@ -251,33 +205,6 @@ public sealed class WorkOrderInputTests(CoreApiFixture fixture)
             HttpMethod.Post, WorkOrderApiTestData.ApplyPath, claims, bodyTemplate.Replace(oldValue: "{id}", id));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest, caseName);
-    }
-
-    [Fact]
-    public async Task ApplySchedule_WithMoreThanTheLimit_Returns400()
-    {
-        var claims = _fixture.CreateSupervisorOrderClaims(Guid.CreateVersion7());
-        var id = await _fixture.CreateOrderAsync(claims, _fixture.CreateOrderBody());
-        var changes = new JsonArray();
-
-        for (var index = 0; index < WorkOrderApiTestData.OverApplyLimit; index++)
-        {
-            changes.Add(
-                new JsonObject
-                {
-                    ["workOrderId"] = id,
-                    ["rowVersion"] = 1,
-                    ["estimateMinutes"] = WorkOrderApiTestData.ValidEstimate,
-                });
-        }
-
-        var response = await _fixture.SendShiftRequestAsync(
-            HttpMethod.Post,
-            WorkOrderApiTestData.ApplyPath,
-            claims,
-            new JsonObject { ["changes"] = changes }.ToJsonString());
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

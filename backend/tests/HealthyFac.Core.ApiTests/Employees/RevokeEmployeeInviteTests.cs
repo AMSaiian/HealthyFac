@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class RevokeEmployeeInviteTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;

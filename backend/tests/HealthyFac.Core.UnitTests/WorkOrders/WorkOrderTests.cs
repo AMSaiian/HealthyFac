@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.UnitTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.WorkOrders;
 
+[Feature(TestFeatures.WorkOrders)]
 public sealed class WorkOrderTests
 {
     [Fact]

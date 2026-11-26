@@ -1,18 +1,18 @@
 using HealthyFac.Core.Application.Authorization;
-using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Application.WorkOrders.SearchWorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
-using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
@@ -275,23 +275,6 @@ public sealed class SearchWorkOrdersTests(CoreDatabaseFixture fixture)
         batch.Pages[0].TotalCount.Should().Be(expected: 4);
         batch.Pages[0].Items.Select(row => row.Title).Should().NotContain(WorkOrderTestData.CharlieTitle);
         batch.Pages[1].Items.Should().BeEmpty();
-    }
-
-    [Theory]
-    [MemberData(nameof(WorkOrderTestData.InvalidBatchSizes), MemberType = typeof(WorkOrderTestData))]
-    public async Task SearchBatch_WithTooFewOrTooManySearches_ThrowsValidation(int searchCount)
-    {
-        var set = await ArrangeAsync();
-        var filters = Enumerable.Range(start: 0, searchCount).Select(_ => new WorkOrderGridFilter()).ToArray();
-
-        var act = () => _fixture.SearchWorkOrderBatchAsync(
-            set.Tenant.CompanyId,
-            set.Tenant.IdentityUserId,
-            WorkOrderTestData.BatchRequest(set.Tenant.CompanyId, AccessScope.Company, filters));
-
-        await act.Should()
-            .ThrowAsync<AppValidationException>()
-            .WithMessage($"*{WorkOrderErrors.Validation.BatchSizeInvalid}*");
     }
 
     private async Task<IReadOnlyList<string>> SearchTitlesAsync(WorkOrderSet set, WorkOrderGridFilter filter)

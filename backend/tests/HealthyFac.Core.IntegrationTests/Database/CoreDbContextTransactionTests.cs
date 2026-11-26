@@ -5,12 +5,14 @@ using HealthyFac.Core.Infrastructure.Database;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Shared.Infrastructure.Persistence;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class CoreDbContextTransactionTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

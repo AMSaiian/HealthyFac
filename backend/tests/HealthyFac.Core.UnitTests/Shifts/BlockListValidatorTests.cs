@@ -1,8 +1,10 @@
 using HealthyFac.Core.Application.Shifts.BlockInput;
 using HealthyFac.Core.UnitTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Shifts;
 
+[Feature(TestFeatures.Shifts)]
 public sealed class BlockListValidatorTests
 {
     private readonly BlockListValidator _validator = new();

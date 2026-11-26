@@ -4,12 +4,14 @@ using HealthyFac.Core.Infrastructure.Database.Initialization;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Employees;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Database;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class CoreDbInitializerTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

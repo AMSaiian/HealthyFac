@@ -4,10 +4,12 @@ using HealthyFac.Core.Domain.Shifts.DaySchedules;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Shifts;
 
 [Collection(CoreShiftsCollection.Name)]
+[Feature(TestFeatures.Shifts)]
 public sealed class DayScheduleTests(CoreDatabaseFixture fixture)
 {
     private static readonly DateOnly SpringDstDate = new(year: 2027, month: 3, day: 28);

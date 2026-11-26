@@ -1,10 +1,13 @@
 using System.Collections.Concurrent;
 using HealthyFac.Core.IntegrationTests.Concurrency.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Persistence;
 
 namespace HealthyFac.Core.IntegrationTests.Concurrency;
 
 [Collection(CoreSaveGateCollection.Name)]
+[Feature(TestFeatures.Persistence)]
+[Feature(TestFeatures.Conventions)]
 public sealed class ConcurrentSaveGateTests(GateDatabaseFixture fixture)
 {
     private readonly GateDatabaseFixture _fixture = fixture;

@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class MachineAuthorizationTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;

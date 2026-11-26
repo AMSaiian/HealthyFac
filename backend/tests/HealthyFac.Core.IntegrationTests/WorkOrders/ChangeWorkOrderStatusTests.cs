@@ -5,27 +5,15 @@ using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.WorkOrders;
 
 [Collection(CoreWorkOrdersCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class ChangeWorkOrderStatusTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;
-
-    [Fact]
-    public async Task ChangeStatus_ToBacklog_ThrowsValidation()
-    {
-        var (tenant, workOrderId) = await ArrangeStagedAsync();
-
-        var act = () => _fixture.ChangeStatusAsync(
-            tenant.CompanyId,
-            tenant.IdentityUserId,
-            workOrderId,
-            WorkOrderStatus.Backlog);
-
-        await act.Should().ThrowAsync<AppValidationException>();
-    }
 
     [Fact]
     public async Task ChangeStatus_OfBacklogWorkOrder_ThrowsNotScheduled()

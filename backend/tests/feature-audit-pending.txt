@@ -1,9 +1,5 @@
 HealthyFac.Auth.ArchitectureTests
 HealthyFac.Auth.IntegrationTests
-HealthyFac.Core.ApiTests
-HealthyFac.Core.ArchitectureTests
-HealthyFac.Core.IntegrationTests
-HealthyFac.Core.UnitTests
 HealthyFac.Document.ApiTests
 HealthyFac.Document.ArchitectureTests
 HealthyFac.Document.IntegrationTests

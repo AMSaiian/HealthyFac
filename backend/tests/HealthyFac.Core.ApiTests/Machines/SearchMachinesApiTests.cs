@@ -4,10 +4,12 @@ using HealthyFac.Core.ApiTests.Drafts.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Machines;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class SearchMachinesApiTests(CoreApiFixture fixture)
 {
     private const string WithoutFilterBody = "{\"offset\":0,\"limit\":25}";

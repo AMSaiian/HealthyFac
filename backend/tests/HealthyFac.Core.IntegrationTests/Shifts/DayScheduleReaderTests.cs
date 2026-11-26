@@ -2,12 +2,14 @@ using HealthyFac.Core.Application;
 using HealthyFac.Core.Application.Shifts.DaySchedules;
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.IntegrationTests.Shifts;
 
 [Collection(CoreShiftsCollection.Name)]
+[Feature(TestFeatures.Shifts)]
 public sealed class DayScheduleReaderTests(CoreDatabaseFixture fixture)
 {
     private const string JanuaryBlock = "08:00-12:00";

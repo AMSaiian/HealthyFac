@@ -1,8 +1,10 @@
 using HealthyFac.Core.Application.Machines.States;
 using HealthyFac.Core.Domain.Machines;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Machines;
 
+[Feature(TestFeatures.Machines)]
 public sealed class MachineStateTimeCalculatorTests
 {
     private static readonly DateTime From = new(

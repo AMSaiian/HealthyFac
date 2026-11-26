@@ -1,9 +1,11 @@
 using HealthyFac.Core.Infrastructure.Employees.InviteTokens;
 using HealthyFac.Core.UnitTests.Employees.InviteTokens.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Core.UnitTests.Employees.InviteTokens;
 
+[Feature(TestFeatures.Companies)]
 public sealed class HmacInviteTokenServiceTests
 {
     private const int SaltByteCount = 32;

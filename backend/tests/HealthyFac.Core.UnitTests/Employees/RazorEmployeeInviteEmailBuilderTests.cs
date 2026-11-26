@@ -3,11 +3,13 @@ using HealthyFac.Core.UnitTests.Employees.Data;
 using HealthyFac.Core.Web.Employees.Emails;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Web.Rendering;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Core.UnitTests.Employees;
 
+[Feature(TestFeatures.Companies)]
 public sealed class RazorEmployeeInviteEmailBuilderTests : IDisposable
 {
     private readonly ServiceProvider _services;

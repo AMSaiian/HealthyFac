@@ -5,10 +5,13 @@ using HealthyFac.Core.IntegrationTests.Employees.Data;
 using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.Messaging.Drafts;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Drafts;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Ingest)]
 public sealed class StoreProposedDraftsTests(CoreDatabaseFixture fixture)
 {
     private const string SerialNumber = "SN-100";

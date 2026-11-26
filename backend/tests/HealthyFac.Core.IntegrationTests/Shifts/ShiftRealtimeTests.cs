@@ -1,10 +1,13 @@
 using HealthyFac.Core.IntegrationTests.Database.Data;
 using HealthyFac.Core.IntegrationTests.Shifts.Data;
 using HealthyFac.Shared.Application.Realtime;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Shifts;
 
 [Collection(CoreShiftsCollection.Name)]
+[Feature(TestFeatures.Shifts)]
+[Feature(TestFeatures.Realtime)]
 public sealed class ShiftRealtimeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

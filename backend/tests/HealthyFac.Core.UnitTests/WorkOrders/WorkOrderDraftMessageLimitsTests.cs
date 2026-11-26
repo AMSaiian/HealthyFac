@@ -1,9 +1,12 @@
 using HealthyFac.Core.Application.WorkOrders;
 using HealthyFac.Core.Domain.WorkOrders;
 using HealthyFac.Insights.Messaging.WorkOrders;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.WorkOrders;
 
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Drafts)]
 public sealed class WorkOrderDraftMessageLimitsTests
 {
     [Fact]

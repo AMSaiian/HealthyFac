@@ -1,11 +1,13 @@
 using HealthyFac.Core.UnitTests.Employees.InviteTokens.Data;
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Testing.Features;
 using Serilog;
 using Serilog.Events;
 
 namespace HealthyFac.Core.UnitTests.Employees.InviteTokens;
 
+[Feature(TestFeatures.Companies)]
 public sealed class InviteTokenLoggingTests
 {
     [Theory]

@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.Roles;
 using HealthyFac.Core.UnitTests.Authorization.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Authorization;
 
+[Feature(TestFeatures.Identity)]
 public sealed class RoleCodesTests
 {
     [Fact]

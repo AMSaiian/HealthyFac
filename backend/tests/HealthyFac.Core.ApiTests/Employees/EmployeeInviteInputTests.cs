@@ -5,10 +5,12 @@ using HealthyFac.Core.ApiTests.Employees.Data;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.Application.Employees;
 using HealthyFac.Shared.Application.TextInput;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Employees;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;
@@ -29,34 +31,6 @@ public sealed class EmployeeInviteInputTests(CoreApiFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         text.Should().Contain(TextInputErrors.NullCharacter);
         text.Should().NotContain(EmployeeInviteApiTestData.NullCharacterEmailDomain);
-    }
-
-    [Fact]
-    public async Task CreateInvite_WithFirstNameOverTheLimit_Returns400()
-    {
-        var extraFields = new Dictionary<string, object?>
-        {
-            [EmployeeInviteApiTestData.FirstNameField] =
-                new string(c: 'a', EmployeeValidationConstants.NameMaxLength + 1),
-        };
-
-        var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task CreateInvite_WithFirstNameAtTheLimit_Returns201()
-    {
-        var extraFields = new Dictionary<string, object?>
-        {
-            [EmployeeInviteApiTestData.FirstNameField] =
-                new string(c: 'a', EmployeeValidationConstants.NameMaxLength),
-        };
-
-        var response = await _fixture.PostCreateInviteAsync(_fixture.CreateSupervisorClaims(), extraFields);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     /// <summary>

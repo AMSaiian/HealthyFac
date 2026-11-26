@@ -4,10 +4,13 @@ using System.Text.Json.Nodes;
 using HealthyFac.Core.ApiTests.Hosting;
 using HealthyFac.Core.ApiTests.Shifts.Data;
 using HealthyFac.Core.ApiTests.WorkOrders.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.WorkOrders;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Drafts)]
 public sealed class WorkOrderDraftApiTests(CoreApiFixture fixture)
 {
     private readonly CoreApiFixture _fixture = fixture;

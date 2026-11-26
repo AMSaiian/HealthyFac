@@ -1,4 +1,5 @@
 using HealthyFac.Core.Infrastructure.Database;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Core.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class RowVersionModelTests
 {
     private const string UnusedConnectionString = "Host=unused;Database=unused";

@@ -11,9 +11,11 @@ using HealthyFac.Core.Infrastructure.Machines.Seeding;
 using HealthyFac.Core.Infrastructure.WorkOrders.Seeding;
 using HealthyFac.Core.UnitTests.Fakers.Data;
 using HealthyFac.Shared.Infrastructure.RichText;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Fakers;
 
+[Feature(TestFeatures.Seeding)]
 public sealed class FakerInvariantTests
 {
     private readonly HtmlSanitizerRichTextPolicy _richTextPolicy = new();

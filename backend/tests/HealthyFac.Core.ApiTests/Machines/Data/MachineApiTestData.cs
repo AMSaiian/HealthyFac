@@ -7,7 +7,6 @@ public static class MachineApiTestData
     public const string SearchPath = "v1/machines/search";
     public const string LookupPath = "v1/machines/lookup";
     public const string NamesPath = "v1/machines/names";
-    public const int NameLookupTooManyIds = 101;
     public const string LookupEmptyBody = "{}";
     public const string ReadPermission = "machines:read";
     public const string WritePermission = "machines:write";
@@ -63,13 +62,15 @@ public static class MachineApiTestData
     public const string SearchNullStatesBody =
         "{\"offset\":0,\"limit\":25,\"filter\":{\"states\":{\"values\":null}}}";
 
-    public static TheoryData<string> BadFilterBodies =>
-    [
-        SearchOffsetDateBoundBody,
-        SearchUnspecifiedDateBoundBody,
-        SearchNullTextValueBody,
-        SearchNullStatesBody,
-    ];
+    public static TheoryData<string, string> BadFilterBodies => new()
+    {
+        { "offset date bound", SearchOffsetDateBoundBody },
+        { "unspecified date bound", SearchUnspecifiedDateBoundBody },
+        { "null text value", SearchNullTextValueBody },
+        { "null states", SearchNullStatesBody },
+        { "go-live range from after to", SearchWithBackwardsGoLiveRangeBody },
+        { "sort on state", SearchSortedByStateBody },
+    };
 
     public static TheoryData<string, string> BadStateBodies => new()
     {

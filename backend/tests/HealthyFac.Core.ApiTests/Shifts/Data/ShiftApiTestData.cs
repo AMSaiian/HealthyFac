@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json.Nodes;
 
 namespace HealthyFac.Core.ApiTests.Shifts.Data;
@@ -54,6 +55,19 @@ public static class ShiftApiTestData
         $"v1/employees/{employeeId}/shift-overrides?from={Date}&to={Date}";
 
     public static string OverridePath(string employeeId) => $"v1/employees/{employeeId}/shift-overrides/{Date}";
+
+    public static TheoryData<string, IReadOnlyList<string>, HttpStatusCode> VersionBlockBoundaries => new()
+    {
+        { "block ending at midnight", [MidnightEndBlock], HttpStatusCode.BadRequest },
+        { "block ending at 23:55", [LatestEndBlock], HttpStatusCode.Created },
+        { "seven blocks on a day", SevenBlocks, HttpStatusCode.Created },
+    };
+
+    public static TheoryData<string, string, string> InvalidDayRanges => new()
+    {
+        { "end before start", Date, EarlierDate },
+        { "malformed date", MalformedDate, Date },
+    };
 
     public static string ScheduleDaysPath(string employeeId, string from, string to) =>
         $"v1/employees/{employeeId}/schedule/days?from={from}&to={to}";

@@ -5,6 +5,7 @@ using HealthyFac.Core.IntegrationTests.Machines;
 using HealthyFac.Core.IntegrationTests.Machines.Data;
 using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -12,6 +13,7 @@ using Npgsql;
 namespace HealthyFac.Core.IntegrationTests.Database;
 
 [Collection(CoreMachinesCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class AggregateCascadeTests(CoreDatabaseFixture fixture)
 {
     private readonly CoreDatabaseFixture _fixture = fixture;

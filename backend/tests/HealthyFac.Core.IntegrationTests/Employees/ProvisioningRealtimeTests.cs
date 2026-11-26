@@ -7,10 +7,14 @@ using HealthyFac.Core.IntegrationTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.IntegrationTests.Employees;
 
 [Collection(CoreEmployeesCollection.Name)]
+[Feature(TestFeatures.Companies)]
+[Feature(TestFeatures.Realtime)]
+[Feature(TestFeatures.Identity)]
 public sealed class ProvisioningRealtimeTests(CoreDatabaseFixture fixture)
 {
     private const string Reason = "the realm refused the user";

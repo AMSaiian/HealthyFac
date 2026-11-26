@@ -63,18 +63,10 @@ public static class WorkOrderApiFixtureExtensions
             int estimateMinutes = WorkOrderApiTestData.ValidEstimate,
             string priority = "high",
             string? description = null,
-            int fileCount = 0,
             string? encryptedAssigneeId = null,
             string? plannedStartLocal = null
         )
         {
-            var fileIds = new JsonArray();
-
-            for (var index = 0; index < fileCount; index++)
-            {
-                fileIds.Add(fixture.IdEncryptor.Encrypt(Guid.CreateVersion7()));
-            }
-
             var body = new JsonObject
             {
                 ["title"] = title ?? WorkOrderApiTestData.Title,
@@ -82,7 +74,7 @@ public static class WorkOrderApiFixtureExtensions
                 ["priority"] = priority,
                 ["category"] = "repair",
                 ["estimateMinutes"] = estimateMinutes,
-                ["fileIds"] = fileIds,
+                ["fileIds"] = new JsonArray(),
             };
 
             if (encryptedAssigneeId is not null)

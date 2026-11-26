@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.Employees;
 using HealthyFac.Core.UnitTests.Employees.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Employees;
 
+[Feature(TestFeatures.Companies)]
 public sealed class EmployeeInviteTests
 {
     [Theory]

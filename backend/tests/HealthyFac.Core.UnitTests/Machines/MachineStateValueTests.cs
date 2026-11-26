@@ -1,8 +1,10 @@
 using HealthyFac.Core.Domain.Machines;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.UnitTests.Machines;
 
+[Feature(TestFeatures.Machines)]
 public sealed class MachineStateValueTests
 {
     [Fact]

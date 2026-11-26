@@ -6,10 +6,13 @@ using HealthyFac.Core.ApiTests.Machines.Data;
 using HealthyFac.Core.Domain.Drafts;
 using HealthyFac.Core.Messaging.Drafts;
 using HealthyFac.Core.Messaging.Machines;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Core.ApiTests.Drafts;
 
 [Collection(CoreApiCollection.Name)]
+[Feature(TestFeatures.Drafts)]
+[Feature(TestFeatures.Machines)]
 public sealed class ApplyMachineDraftApiTests(CoreApiFixture fixture)
 {
     private const string TakenSerialNumber = "TAKEN-SERIAL";

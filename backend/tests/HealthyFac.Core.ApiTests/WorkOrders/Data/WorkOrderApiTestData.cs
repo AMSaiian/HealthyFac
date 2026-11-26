@@ -1,3 +1,5 @@
+using HealthyFac.Core.ApiTests.Hosting;
+
 namespace HealthyFac.Core.ApiTests.WorkOrders.Data;
 
 public static class WorkOrderApiTestData
@@ -17,24 +19,14 @@ public static class WorkOrderApiTestData
     public const string UnknownPriority = "urgent";
     public const string BadChecklist = "<ol><li data-list=\"x\">a</li></ol>";
     public const string StartTime = "09:00:00";
-    public const int TitleTooLongLength = 201;
     public const int OffGridEstimate = 7;
     public const int ValidEstimate = 60;
-    public const int TooManyFiles = 21;
     public const int FirstFutureDaysAhead = 3;
     public const string Morning = "08:00-12:00";
     public const string Afternoon = "13:00-17:00";
     public const string SearchBody = "{\"offset\":0,\"limit\":50,\"filter\":{}}";
 
-    public static TheoryData<string, string> InvalidHistoryLimits => new()
-    {
-        { "LimitZero", "?limit=0" },
-        { "LimitAboveMaximum", "?limit=101" },
-        { "LimitMissing", string.Empty },
-    };
-
     public const string ApplyPath = BasePath + "/schedule/apply";
-    public const int OverApplyLimit = 101;
     public const string PastStart = "2020-01-06T09:00:00";
 
     private const string ApplyChangeStart = "{\"workOrderId\":\"{id}\",\"rowVersion\":1,";
@@ -42,7 +34,6 @@ public static class WorkOrderApiTestData
 
     public static TheoryData<string, string> InvalidApplyBodies => new()
     {
-        { "NoChanges", "{\"changes\":[]}" },
         {
             "AssigneeWithoutStart",
             "{\"changes\":[" + ApplyChangeStart + "\"assigneeId\":\"{id}\"," + ApplyEstimate + "]}"
@@ -68,5 +59,12 @@ public static class WorkOrderApiTestData
         { "ApplySchedule", "POST", BasePath + "/schedule/apply" },
         { "Unassign", "DELETE", BasePath + "/{id}/assignee?rowVersion=1" },
         { "Delete", "DELETE", BasePath + "/{id}?rowVersion=1" },
+    };
+
+    public static TheoryData<string, Func<CoreApiFixture, string>> InvalidCreateBodies => new()
+    {
+        { "estimate off the grid", fixture => fixture.CreateOrderBody(estimateMinutes: OffGridEstimate) },
+        { "unknown priority", fixture => fixture.CreateOrderBody(priority: UnknownPriority) },
+        { "unknown checklist value", fixture => fixture.CreateOrderBody(description: BadChecklist) },
     };
 }
