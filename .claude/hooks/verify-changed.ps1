@@ -1,7 +1,9 @@
 #Requires -Version 7
 # Stop and SubagentStop hook: formats the backend changed files, builds the solution, and reports build
-# warnings and errors in those files back to the agent that stops. It also reports C# lines longer than
-# max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
+# warnings and errors in those files back to the agent that stops. The diagnostics come from the SARIF files of the
+# build (Get-SarifDiagnostics), so a changed file of a project that MSBuild skipped as up to date still reports its
+# warnings. Build text warnings (NU and MSB) are left out; restore and MSBuild errors count. It also reports
+# C# lines longer than max_line_length in .editorconfig (Migrations excluded). Exit code 2 blocks the stop and sends stderr to
 # that agent, so a subagent fixes its own diagnostics before it reports to the main session.
 # The hook uses git only. It verifies the checkout (the main one or a git worktree) that holds this script file:
 # "git -C <script folder> rev-parse --show-toplevel". Claude Code runs the script of the project root in which the
@@ -40,7 +42,7 @@ $isExecutorInFlight = $hookInput.hook_event_name -eq 'Stop' -and
   @($hookInput.background_tasks | Where-Object { $_.type -eq 'subagent' -and $_.agent_type -eq 'executor' }).Count -gt 0
 if ($isExecutorInFlight) { exit 0 }
 $solutionPath = 'backend/HealthyFac.slnx'
-$BackendPatterns = @('*.cs', '*.csproj', '*.props')
+$BackendPatterns = @('*.cs', '*.csproj', '*.props', '*.targets')
 $WebPatterns = @('*.ts', '*.html', '*.css', '*.json', '*.webmanifest')
 
 # The checkout (main or worktree) that holds the directory, in the backslash form that the build diagnostics use,
@@ -148,12 +150,15 @@ function Invoke-Verification([string] $repo, [string] $currentTree) {
       ForEach-Object { "$_" }
     $buildFailed = $LASTEXITCODE -ne 0
 
-    $touchedPaths = $touched | ForEach-Object { (Join-Path $repo $_).Replace('/', '\').ToLowerInvariant() }
-    $diagnostics = @($output |
-      Where-Object { $_ -match '^(?<file>.+?)\(\d+,\d+\): (warning|error) ' } |
-      Where-Object { $buildFailed -or $touchedPaths -contains $Matches.file.ToLowerInvariant() } |
-      ForEach-Object { ($_ -replace ' \[[^\]]+\]$', '').Replace("$repo\", '') } |
-      Sort-Object -Unique)
+    $sarifRoot = Join-Path $artifacts 'obj'
+    $diagnostics = @(Get-SarifDiagnostics -Repo $repo -Root $sarifRoot -BuildOutput $output -BuildOutputLevel error `
+        -Files $touched)
+    if ($buildFailed) {
+      # A failed build reports the errors of every file (a changed signature breaks a caller in an unchanged file) and
+      # the warnings of the changed files.
+      $diagnostics = @($diagnostics + @(Get-SarifDiagnostics -Repo $repo -Root $sarifRoot |
+          Where-Object { $_ -match '\): error ' }) | Sort-Object -Unique)
+    }
 
     $longLines = @(Get-LongLines -Repo $repo -Files $touchedCode | ForEach-Object {
         "$($_.File.Replace('/', '\'))($($_.Line),$($_.Limit + 1)): error LINE_LENGTH: the line has $($_.Length) " +

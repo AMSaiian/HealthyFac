@@ -1101,6 +1101,7 @@ Set-Content (Join-Path $fakeBin 'fake-dotnet.ps1') @(
   '$line = $args -join '' ''',
   '$kind = if ($args[0] -eq ''build'') { ''build'' } elseif ($line -match ''UnitTests'') { ''unit'' } else { ''integration'' }',
   'if ($env:FAKE_LOG) { Add-Content $env:FAKE_LOG "dotnet $kind" }',
+  'if ($kind -eq ''build'' -and $env:FAKE_BUILD_FAIL) { $folder = Join-Path $env:FAKE_BUILD_FAIL ''backend/App/obj/Debug''; New-Item -ItemType Directory -Force $folder | Out-Null; $uri = ''file:///'' + $env:FAKE_BUILD_FAIL.Replace(''\'', ''/'') + ''/backend/App/A.cs''; @{ version = ''2.1.0''; runs = @(@{ results = @(@{ ruleId = ''CS0103''; level = ''error''; message = @{ text = ''The name x does not exist'' }; locations = @(@{ physicalLocation = @{ artifactLocation = @{ uri = $uri }; region = @{ startLine = 7; startColumn = 9 } } }) }) }) } | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $folder ''App.sarif''); exit 1 }',
   'if ($kind -eq ''unit'' -and $env:FAKE_UNIT_FAIL) { ''failed SampleTests.Unit_Fails (1ms)'', ''  total: 5'', ''  failed: 1'', ''  succeeded: 4''; exit 2 }',
   'if ($kind -eq ''build'' -and $env:FAKE_PROBE_LOCK) { try { Remove-Item -LiteralPath $env:FAKE_PROBE_LOCK -Force -ErrorAction Stop; Add-Content $env:FAKE_LOG ''lock delete worked'' } catch { Add-Content $env:FAKE_LOG ''lock delete blocked'' } }',
   'if ($kind -eq ''unit'') { ''  total: 5'', ''  failed: 0'', ''  succeeded: 5'' }',
@@ -1188,6 +1189,12 @@ $unitFail = Invoke-Area (New-AreaRepo 'ra-unit-fail') 'backend' @{ FAKE_UNIT_FAI
 Assert-That ($unitFail.Exit -eq 1 -and $unitFail.Last -eq 'RUN FAILED backend: unit+architecture command failed' -and
   ($unitFail.Output -match 'failed SampleTests\.Unit_Fails').Count -ge 1 -and ($unitFail.Log -notcontains 'dotnet integration')) `
   'a failing unit command fails the run, names the failing test, and runs no integration command'
+
+$buildRepo = New-AreaRepo 'ra-build-fail'
+$buildFail = Invoke-Area $buildRepo 'backend' @{ FAKE_BUILD_FAIL = $buildRepo }
+Assert-That ($buildFail.Exit -eq 1 -and $buildFail.Last -eq 'RUN FAILED backend: build failed' -and
+  ($buildFail.Output -contains 'backend/App/A.cs(7,9): error CS0103: The name x does not exist') -and
+  ($buildFail.Log -notcontains 'dotnet unit')) 'a failing build prints its SARIF errors as typed lines before the RUN FAILED line'
 
 $longRun = Invoke-Area (New-AreaRepo 'ra-long' @{ LongLine = $true }) 'backend'
 Assert-That ($longRun.Exit -eq 1 -and ($longRun.Output -contains 'src/b.cs:2 has 53 characters; max_line_length is 40.') -and

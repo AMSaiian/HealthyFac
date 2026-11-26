@@ -21,7 +21,8 @@
 #    and the integration and API command (only when the unit command passes). Frontend: lint, ng build, and ng test in
 #    frontend/, plus lint and test in keycloak-theme/ when keycloak-theme/ changed since the base. Each command writes
 #    its output to a log file in the git directory (claude-runs/) and prints one line with its result and the log path,
-#    then the names of its failing tests.
+#    then the names of its failing tests. A failed backend build prints its diagnostics first as typed lines from the
+#    SARIF files under backend/ (Get-SarifDiagnostics), errors first.
 # 5. The area tree again: a change during the run fails it.
 # Last line: "Full run <area>: tree <id>; <commands> -> <passed counts> passed, 0 failed" (exit code 0), or
 # "RUN FAILED <area>: <reason>" (exit code 1). The executor copies the Full run line into plan.md with the Edit tool;
@@ -184,6 +185,11 @@ function Invoke-AreaRun {
     $result = if ($exitCode -eq 0) { 'passed' } else { 'failed' }
     "$($command.Label): $result (exit $exitCode) -> $countText; log $log"
     if ($exitCode -ne 0) {
+      if ($command.Label -eq 'build') {
+        $diagnostics = @(Get-SarifDiagnostics -Repo $Repo -Root (Join-Path $Repo 'backend') -BuildOutput $lines)
+        $diagnostics | Where-Object { $_ -match ': error ' }
+        $diagnostics | Where-Object { $_ -notmatch ': error ' }
+      }
       Get-FailedTests $lines
       Stop-Run "$($command.Label) failed"
     }

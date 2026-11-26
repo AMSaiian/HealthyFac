@@ -123,3 +123,61 @@ function Get-LongLines([string] $Repo, [string[]] $Files) {
     }
   }
 }
+
+# The diagnostics of the build as typed lines, one per warning or error:
+#   <repo path>(<line>,<column>): <level> <rule>: <message>
+# The lines come from every *.sarif file under -Root (the compiler writes one per project into obj/, see
+# backend/Directory.Build.props), sorted, without duplicates (a shared file shows in the SARIF of each project that
+# compiles it). A suppressed result and a result under /obj/ (generated code) are out, and so is a result of another
+# level than warning or error (the SARIF also holds the info and hidden diagnostics). The path is relative to -Repo with
+# forward slashes. -Files keeps only the results of those repo paths. Each line of -BuildOutput with an NU or MSB
+# warning or error is added without its trailing [<project>] (NuGet and MSBuild write no SARIF); with
+# -BuildOutputLevel error, only the errors of those lines. -SkipRules leaves
+# those rule IDs out and writes their count to $SkippedCount.
+function Get-SarifDiagnostics(
+  [string] $Repo, [string] $Root, [string[]] $BuildOutput = @(), [string[]] $SkipRules = @(), [string[]] $Files = @(),
+  [ref] $SkippedCount, [ValidateSet('error', 'all')] [string] $BuildOutputLevel = 'all') {
+  $repoFull = [IO.Path]::GetFullPath($Repo).TrimEnd('\', '/').Replace('\', '/')
+  $wanted = @($Files | ForEach-Object { $_.Replace('\', '/').ToLowerInvariant() })
+  $lines = [Collections.Generic.HashSet[string]]::new()
+  $skipped = 0
+
+  $sarifFiles = if (Test-Path -LiteralPath $Root -PathType Container) {
+    @(Get-ChildItem -LiteralPath $Root -Filter '*.sarif' -File -Recurse)
+  } else { @() }
+  foreach ($sarifFile in $sarifFiles) {
+    $log = Get-Content -LiteralPath $sarifFile.FullName -Raw | ConvertFrom-Json
+    foreach ($result in @($log.runs[0].results)) {
+      if (-not $result -or $result.suppressions -or $result.level -notin 'warning', 'error') { continue }
+      $location = @($result.locations)[0].physicalLocation
+      if (-not $location) { continue }
+      $uri = $location.artifactLocation.uri
+      if ($uri -match '/obj/') { continue }
+      $path = [Uri]::new($uri).LocalPath.Replace('\', '/')
+      if ($path.StartsWith("$repoFull/", [StringComparison]::OrdinalIgnoreCase)) { $path = $path.Substring($repoFull.Length + 1) }
+      if ($wanted.Count -gt 0 -and $wanted -notcontains $path.ToLowerInvariant()) { continue }
+      if ($SkipRules -contains $result.ruleId) { $skipped++; continue }
+      $message = $result.message.text -replace '\s*[\r\n]+\s*', ' '
+      [void]$lines.Add("$path($($location.region.startLine),$($location.region.startColumn)): $($result.level) $($result.ruleId): $message")
+    }
+  }
+  $repoPrefix = '^' + [regex]::Escape($repoFull).Replace('/', '[\\/]') + '[\\/]'
+  foreach ($line in $BuildOutput) {
+    $levels = if ($BuildOutputLevel -eq 'error') { 'error' } else { 'warning|error' }
+    if ($line -notmatch ": ($levels) (NU|MSB)\d+") { continue }
+    $text = $line -replace ' \[[^\]]+\]$', ''
+    $text = $text -replace $repoPrefix
+    if ($text -match '^(?<path>.*?)(?<rest> ?: (warning|error) .*)$') { $text = $Matches.path.Replace('\', '/') + $Matches.rest }
+    [void]$lines.Add($text)
+  }
+  if ($SkippedCount) { $SkippedCount.Value = $skipped }
+  @($lines | Sort-Object { $_ })
+}
+
+# The rule IDs that the JetBrains cleanup fixes: the Stop hook, run-area.ps1, and run-tests.ps1 do not report them as
+# build diagnostics.
+function Get-CleanupFixedRules([string] $Repo) {
+  $path = Join-Path $Repo '.claude/hooks/cleanup-fixed-rules.txt'
+  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return @() }
+  @(Get-Content -LiteralPath $path | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}

@@ -85,6 +85,23 @@ exit 0
 '@ | Set-Content (Join-Path $fakeBin 'fake-npm.ps1')
 '@pwsh -NoProfile -File "%~dp0fake-npx.ps1" %*' | Set-Content (Join-Path $fakeBin 'npx.cmd') -Encoding ascii
 '@pwsh -NoProfile -File "%~dp0fake-npm.ps1" %*' | Set-Content (Join-Path $fakeBin 'npm.cmd') -Encoding ascii
+@'
+param()
+if ($args[0] -eq 'build') {
+  if ($env:FAKE_DOTNET_TEXT) { Write-Output ($env:FAKE_DOTNET_TEXT -split '\|') }
+  exit ($env:FAKE_DOTNET_BUILD -eq 'fail' ? 1 : 0)
+}
+& $env:HF_REAL_DOTNET @args
+exit $LASTEXITCODE
+'@ | Set-Content (Join-Path $fakeBin 'fake-dotnet.ps1')
+@'
+@if "%FAKE_DOTNET_BUILD%"=="" goto real
+@pwsh -NoProfile -File "%~dp0fake-dotnet.ps1" %*
+@exit /b %errorlevel%
+:real
+@"%HF_REAL_DOTNET%" %*
+'@ | Set-Content (Join-Path $fakeBin 'dotnet.cmd') -Encoding ascii
+$env:HF_REAL_DOTNET = (Get-Command dotnet -CommandType Application | Select-Object -First 1).Source
 $env:PATH = "$fakeBin$([IO.Path]::PathSeparator)$env:PATH"
 
 function New-TestRepo([string] $name) {
@@ -549,6 +566,124 @@ try {
   $repo = New-LongListRepo 'proof-one-prettier-call'
   [void](Invoke-Hook $repo 'test' $onePrettierCall)
   Assert-That ((Get-UnmarkedCount $repo 'frontend/src/generated*/*.ts' '// PRETTIER') -eq 400) 'Proof: with one Prettier call for all files, no file is formatted'
+
+  Write-Host 'SARIF reader'
+  function New-SarifRoot([string] $repo, [string] $name) {
+    $root = Join-Path $work $name
+    New-Item -ItemType Directory -Force $root | Out-Null
+    $repoUri = $repo.Replace('\', '/')
+    foreach ($sample in Get-ChildItem (Join-Path $PSScriptRoot 'sarif') -Filter '*.sarif') {
+      (Get-Content $sample.FullName -Raw).Replace('@REPO@', $repoUri) | Set-Content (Join-Path $root $sample.Name)
+    }
+    $root
+  }
+  $sarifRepo = Join-Path $work 'sarif-repo'
+  $sarifRoot = New-SarifRoot $sarifRepo 'sarif-root'
+  $sarifLines = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot)
+  Assert-That ($sarifLines.Count -eq 4) "The reader returns the 4 reported diagnostics of the two sample files ($($sarifLines.Count))"
+  Assert-That (-not ($sarifLines -match 'CA1822')) 'The reader skips a suppressed result'
+  Assert-That (-not ($sarifLines -match 'CS8618')) 'The reader skips a result under /obj/'
+  Assert-That (-not ($sarifLines -match 'IDE0058')) 'The reader skips a result of the level note'
+  Assert-That (@($sarifLines -match 'CS0219').Count -eq 1) 'The same result in both files is one line'
+  Assert-That ($sarifLines -contains 'backend/Other/B.cs(20,9): warning CS0162: Unreachable code detected') `
+    'The path is relative to the repo, and the line has the typed form'
+  Assert-That ($sarifLines -contains "backend/App/A.cs(12,4): error CS0168: The variable 'e' is declared but never used") `
+    'A message of several lines is one line'
+  $buildText = @(
+    "$sarifRepo\backend\App\App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability. [$sarifRepo\backend\App\App.csproj]",
+    'noise: warning CS0000: not an NU or MSB line')
+  $withText = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -BuildOutput $buildText)
+  Assert-That ($withText.Count -eq 5 -and (@($withText -match 'NU1903').Count -eq 1)) 'An NU1903 text line is in, without its [project] suffix'
+  Assert-That (-not ($withText -match '\[')) 'The text line has no trailing [project]'
+  Assert-That ($withText -contains "backend/App/App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability.") `
+    'The text line of a backslash path loses the backslash repo prefix'
+  $slashText = @(Get-SarifDiagnostics -Repo $sarifRepo.Replace('\', '/') -Root $sarifRoot -BuildOutput $buildText)
+  Assert-That ($slashText -contains "backend/App/App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability.") `
+    'The text line of a backslash path loses the repo prefix of a forward-slash -Repo'
+  $skipped = 0
+  $without = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -SkipRules 'IDE0007' -SkippedCount ([ref]$skipped))
+  Assert-That ($without.Count -eq 3 -and -not ($without -match 'IDE0007') -and $skipped -eq 1) '-SkipRules IDE0007 drops the line and counts 1'
+  $onlyA = @(Get-SarifDiagnostics -Repo $sarifRepo -Root $sarifRoot -Files 'backend/App/A.cs')
+  Assert-That ($onlyA.Count -eq 2 -and -not ($onlyA -match 'B\.cs|Util\.cs')) '-Files keeps only the results of the named file'
+  $sarifRepo2 = New-TestRepo 'cleanup-rules'
+  New-Item -ItemType Directory -Force (Join-Path $sarifRepo2 '.claude/hooks') | Out-Null
+  "IDE0007`n`nIDE0008`n" | Set-Content (Join-Path $sarifRepo2 '.claude/hooks/cleanup-fixed-rules.txt')
+  Assert-That ((@(Get-CleanupFixedRules $sarifRepo2) -join ',') -eq 'IDE0007,IDE0008') 'The cleanup-fixed rules are the non-empty lines of the file'
+
+  Write-Host 'Stop hook reads SARIF'
+  $repo = New-TestRepo 'hook-sarif'
+  $sarifObj = Join-Path $repo 'artifacts/claude-verify/obj/App'
+  New-Item -ItemType Directory -Force $sarifObj | Out-Null
+  $repoUri = $repo.Replace('\', '/')
+  $sarifResult = {
+    param($rule, $file, $line)
+    @{ ruleId = $rule; level = 'warning'; message = @{ text = "Message of $rule" }; locations = @(@{ physicalLocation = @{
+          artifactLocation = @{ uri = "file:///$repoUri/backend/App/$file" }; region = @{ startLine = $line; startColumn = 5 } } }) }
+  }
+  @{ version = '2.1.0'; runs = @(@{ results = @(
+          (& $sarifResult 'CS0219' 'A.cs' 3), (& $sarifResult 'CS0168' 'Z.cs' 4)) }) } |
+    ConvertTo-Json -Depth 10 | Set-Content (Join-Path $sarifObj 'App.sarif')
+  $env:FAKE_DOTNET_BUILD = '1'
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(3,5): warning CS0219: Message of CS0219')) `
+    "The hook reports the SARIF warning of a changed file when the build compiles nothing (output: $($result.Output))"
+  Assert-That (-not $result.Output.Contains('Z.cs')) 'The hook reports no SARIF warning of an unchanged file'
+
+  $repo = New-TestRepo 'hook-sarif-failed'
+  $sarifObj = Join-Path $repo 'artifacts/claude-verify/obj/App'
+  New-Item -ItemType Directory -Force $sarifObj | Out-Null
+  $repoUri = $repo.Replace('\', '/')
+  $failedResult = {
+    param($rule, $level, $file, $line)
+    @{ ruleId = $rule; level = $level; message = @{ text = "Message of $rule" }; locations = @(@{ physicalLocation = @{
+          artifactLocation = @{ uri = "file:///$repoUri/backend/App/$file" }; region = @{ startLine = $line; startColumn = 5 } } }) }
+  }
+  @{ version = '2.1.0'; runs = @(@{ results = @(
+          (& $failedResult 'CS0219' 'warning' 'A.cs' 3), (& $failedResult 'CS0168' 'warning' 'Z.cs' 4),
+          (& $failedResult 'CS0103' 'error' 'Z.cs' 9)) }) } |
+    ConvertTo-Json -Depth 10 | Set-Content (Join-Path $sarifObj 'App.sarif')
+  $env:FAKE_DOTNET_BUILD = 'fail'
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('backend/App/A.cs(3,5): warning CS0219: Message of CS0219') -and
+    $result.Output.Contains('backend/App/Z.cs(9,5): error CS0103: Message of CS0103')) `
+    "A failed build reports the warning of a changed file and the error of an unchanged file (output: $($result.Output))"
+  Assert-That (-not $result.Output.Contains('CS0168')) 'A failed build reports no warning of an unchanged file'
+
+  Write-Host 'Stop hook build text'
+  $nuText = "$work\hook-text\backend\App\App.csproj : warning NU1903: Package 'X' 1.0 has a known vulnerability. [x.csproj]"
+  $repo = New-TestRepo 'hook-text-warning'
+  Add-Content (Join-Path $repo 'backend/App/App.csproj') '<!-- edited -->'
+  $env:FAKE_DOTNET_BUILD = '1'
+  $env:FAKE_DOTNET_TEXT = $nuText
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TEXT
+  Assert-That ($result.ExitCode -eq 0 -and -not $result.Output.Contains('NU1903')) `
+    "An NU1903 build text warning does not block the stop, also when a .csproj changed (output: $($result.Output))"
+
+  $repo = New-TestRepo 'hook-text-error'
+  $textSarifObj = Join-Path $repo 'artifacts/claude-verify/obj/App'
+  New-Item -ItemType Directory -Force $textSarifObj | Out-Null
+  $repoUri = $repo.Replace('\', '/')
+  @{ version = '2.1.0'; runs = @(@{ results = @(& $sarifResult 'CS0219' 'A.cs' 3) }) } |
+    ConvertTo-Json -Depth 10 | Set-Content (Join-Path $textSarifObj 'App.sarif')
+  $env:FAKE_DOTNET_BUILD = 'fail'
+  $env:FAKE_DOTNET_TEXT = 'D:\x\Directory.Build.targets(3,5): error MSB4057: The target "X" does not exist in the project. [y.csproj]'
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TEXT
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('error MSB4057')) `
+    "An MSB error of a failed build is reported (output: $($result.Output))"
+
+  $repo = New-TestRepo 'hook-targets'
+  git -C $repo checkout -q -- backend 2>&1 | Out-Null
+  '<Project />' | Set-Content (Join-Path $repo 'backend/Directory.Build.targets')
+  $env:FAKE_DOTNET_BUILD = 'fail'
+  $env:FAKE_DOTNET_TEXT = 'D:\x\y.targets(1,1): error MSB4025: The project could not be loaded. [y.csproj]'
+  $result = Invoke-Hook $repo
+  Remove-Item Env:FAKE_DOTNET_BUILD, Env:FAKE_DOTNET_TEXT
+  Assert-That ($result.ExitCode -eq 2 -and $result.Output.Contains('MSB4025')) `
+    "A changed .targets file starts the build (output: $($result.Output))"
 
   Write-Host 'Stale turn trees'
   $repo = New-TestRepo 'stale-turns'
