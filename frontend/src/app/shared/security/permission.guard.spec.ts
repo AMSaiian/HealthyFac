@@ -5,7 +5,7 @@ import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 import { permissionGuard } from './permission.guard';
 import { Permission } from './permissions';
 
-describe('permissionGuard', () => {
+describe('permissionGuard', { tags: ['Identity'] }, () => {
   function run(hasPermission: boolean): unknown {
     TestBed.configureTestingModule({
       providers: [

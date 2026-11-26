@@ -14,7 +14,7 @@ import { EmployeesApi } from '@employees/employees-api';
 import { InvitesGridStore } from './invites-grid.store';
 import { INITIAL_FILTER, toSearchBody } from './invites-grid.store.utils';
 
-describe('toSearchBody (invites)', () => {
+describe('toSearchBody (invites)', { tags: ['Companies'] }, () => {
   it('toSearchBody_WithEmptyEmail_LeavesTheFilterOut', () => {
     const body = toSearchBody({ offset: 0, limit: 10, sort: null, filter: INITIAL_FILTER });
 
@@ -28,7 +28,7 @@ describe('toSearchBody (invites)', () => {
   });
 });
 
-describe('InvitesGridStore', () => {
+describe('InvitesGridStore', { tags: ['Companies'] }, () => {
   const lastResult = signal<ActionResult | null>(null);
   const searchInvites = vi.fn();
   const dispatch = vi.fn();
@@ -75,15 +75,6 @@ describe('InvitesGridStore', () => {
   });
 
   it('activate_AfterSetup_SendsOneRequest', async () => {
-    const store = await setup(false);
-
-    store.activate();
-    await settle();
-
-    expect(searchInvites).toHaveBeenCalledTimes(1);
-  });
-
-  it('activate_CalledOnce_SendsOneSearch', async () => {
     const store = await setup(false);
 
     store.activate();

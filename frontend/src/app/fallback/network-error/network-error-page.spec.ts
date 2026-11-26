@@ -7,7 +7,7 @@ import { HistoryStore } from '@shared/history/history.store';
 
 import { NetworkErrorPage } from './network-error-page';
 
-describe('NetworkErrorPage', () => {
+describe('NetworkErrorPage', { tags: ['Platform'] }, () => {
   it('retry_NavigatesToTheBrowserUrl', () => {
     const navigateByUrl = vi.fn(() => Promise.resolve(true));
     TestBed.configureTestingModule({

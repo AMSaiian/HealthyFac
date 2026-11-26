@@ -36,7 +36,7 @@ function signal(id: string, coverage: SignalCoverage, extra: Partial<CaseSignal>
   };
 }
 
-describe('case signals utils', () => {
+describe('case signals utils', { tags: ['Cases'] }, () => {
   it.each([
     ['a resolved signal that no run reviewed', SignalCoverage.New, SignalState.Resolved, RESOLVED_BEFORE_REVIEW],
     ['an open new signal', SignalCoverage.New, SignalState.Open, SignalCoverage.New],
@@ -71,14 +71,11 @@ describe('case signals utils', () => {
     expect(seconds).toBe(630);
   });
 
-  it('chartQueryOf_OfAResolvedSignal_WidensItByTenPercentOnEachSide', () => {
-    const query = chartQueryOf(signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: T12 }), NOW);
-
-    expect(query).toEqual({ from: '2026-01-01T09:48:00Z', to: '2026-01-01T12:12:00Z' });
-  });
-
-  it('chartQueryOf_OfAnOpenSignal_RunsToNowWithTenPercentOnEachSide', () => {
-    const query = chartQueryOf(signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: null }), NOW);
+  it.each([
+    ['AResolvedSignal_WidensItByTenPercentOnEachSide', T12],
+    ['AnOpenSignal_RunsToNowWithTenPercentOnEachSide', null],
+  ])('chartQueryOf_Of%s', (_name, resolvedAt) => {
+    const query = chartQueryOf(signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt }), NOW);
 
     expect(query).toEqual({ from: '2026-01-01T09:48:00Z', to: '2026-01-01T12:12:00Z' });
   });
@@ -99,28 +96,32 @@ describe('case signals utils', () => {
     );
   });
 
-  it('chartQueryOf_OfASignalWhoseTenPercentIsNotAWholeMillisecond_RoundsTheRangeToMilliseconds', () => {
-    const query = chartQueryOf(
-      signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: '2026-01-01T19:09:07.003Z' }),
+  it.each([
+    [
+      'ASignalWhoseTenPercentIsNotAWholeMillisecond',
+      T10,
+      '2026-01-01T19:09:07.003Z',
       NOW,
-    );
-
-    expect(query).toEqual({ from: '2026-01-01T09:05:05.3Z', to: '2026-01-01T20:04:01.703Z' });
-  });
-
-  it('chartQueryOf_OfAnOpenSignalAndAnOddNow_RoundsTheRangeToMilliseconds', () => {
-    const query = chartQueryOf(signal('a', SignalCoverage.New, { openedAt: T10, resolvedAt: null }), NOW + 7_003);
-
-    expect(query).toEqual({ from: '2026-01-01T09:47:59.3Z', to: '2026-01-01T12:12:07.703Z' });
-  });
-
-  it('chartQueryOf_OfAShortSignalWithAnOddCenter_RoundsTheHourToMilliseconds', () => {
-    const query = chartQueryOf(
-      signal('a', SignalCoverage.New, { openedAt: '2026-01-01T10:00:00.001Z', resolvedAt: '2026-01-01T10:00:00.004Z' }),
+      { from: '2026-01-01T09:05:05.3Z', to: '2026-01-01T20:04:01.703Z' },
+    ],
+    [
+      'AnOpenSignalAndAnOddNow',
+      T10,
+      null,
+      NOW + 7_003,
+      { from: '2026-01-01T09:47:59.3Z', to: '2026-01-01T12:12:07.703Z' },
+    ],
+    [
+      'AShortSignalWithAnOddCenter',
+      '2026-01-01T10:00:00.001Z',
+      '2026-01-01T10:00:00.004Z',
       NOW,
-    );
+      { from: '2026-01-01T09:30:00.003Z', to: '2026-01-01T10:30:00.003Z' },
+    ],
+  ])('chartQueryOf_Of%s_RoundsTheRangeToMilliseconds', (_name, openedAt, resolvedAt, now, expected) => {
+    const query = chartQueryOf(signal('a', SignalCoverage.New, { openedAt, resolvedAt }), now);
 
-    expect(query).toEqual({ from: '2026-01-01T09:30:00.003Z', to: '2026-01-01T10:30:00.003Z' });
+    expect(query).toEqual(expected);
   });
 
   it('chartQueryOf_OfASignalWithAMetric_CarriesTheMetricKey', () => {

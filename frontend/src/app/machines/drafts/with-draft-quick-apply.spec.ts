@@ -183,7 +183,7 @@ async function setup(entries: readonly AttemptDraftsEntry[]): Promise<Setup> {
   return { store, http, messages };
 }
 
-describe('withDraftQuickApply', () => {
+describe('withDraftQuickApply', { tags: ['Drafts'] }, () => {
   it('applyDraft_ForAPhaseDraftThatNamesOnlyDefinitions_SendsTheApplyToTelemetryWithTheDraftValues', async () => {
     const group = { ...EXISTING_GROUP, metrics: [], statuses: [], phases: [PHASE_DRAFT] };
     const { store, http, messages } = await setup([{ attemptId: 'a1', drafts: { groups: [group] } }]);

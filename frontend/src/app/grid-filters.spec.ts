@@ -217,7 +217,7 @@ function allTemplates(): Record<string, string> {
   return import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 }
 
-describe('grid and filter conventions', () => {
+describe('grid and filter conventions', { tags: ['Conventions'] }, () => {
   it('everyTable_SetsStripedRows', () => {
     const templates = allTemplates();
 

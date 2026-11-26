@@ -3,7 +3,7 @@ import { provideRouter, Router } from '@angular/router';
 
 import { formatCompose, parseCompose, withCompose, withoutCompose } from './history.store.utils';
 
-describe('history.store.utils', () => {
+describe('history.store.utils', { tags: ['Platform'] }, () => {
   it.each([
     ['machine', { name: 'machine', id: null }],
     ['machine:m1', { name: 'machine', id: 'm1' }],

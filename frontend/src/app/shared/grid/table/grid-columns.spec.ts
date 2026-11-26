@@ -8,7 +8,7 @@ const COLUMNS: readonly GridColumnState<TestColumn>[] = [
   { column: 'c', isVisible: true },
 ];
 
-describe('visibleColumns', () => {
+describe('visibleColumns', { tags: ['Persistence'] }, () => {
   it('visibleColumns_WithHiddenColumn_ListsVisibleOnesInOrder', () => {
     const result = visibleColumns(COLUMNS);
 
@@ -16,21 +16,18 @@ describe('visibleColumns', () => {
   });
 });
 
-describe('toggleColumn', () => {
-  it('toggleColumn_WhenShown_AppendsColumn', () => {
-    const result = toggleColumn<TestColumn>(['a'], 'c', true);
+describe('toggleColumn', { tags: ['Persistence'] }, () => {
+  it.each([
+    ['WhenShown_AppendsColumn', ['a'], 'c', true, ['a', 'c']],
+    ['WhenHidden_RemovesColumn', ['a', 'c'], 'a', false, ['c']],
+  ] as const)('toggleColumn_%s', (_name, columns, column, isShown, expected) => {
+    const result = toggleColumn<TestColumn>([...columns], column, isShown);
 
-    expect(result).toEqual(['a', 'c']);
-  });
-
-  it('toggleColumn_WhenHidden_RemovesColumn', () => {
-    const result = toggleColumn<TestColumn>(['a', 'c'], 'a', false);
-
-    expect(result).toEqual(['c']);
+    expect(result).toEqual(expected);
   });
 });
 
-describe('reorderColumns', () => {
+describe('reorderColumns', { tags: ['Persistence'] }, () => {
   it('reorderColumns_WithHiddenColumn_ReordersOnlyVisibleSlots', () => {
     const result = reorderColumns(COLUMNS, ['c', 'a']);
 

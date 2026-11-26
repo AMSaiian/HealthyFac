@@ -63,7 +63,7 @@ async function load(store: InstanceType<typeof MachineStateStore>): Promise<void
   await TestBed.inject(ApplicationRef).whenStable();
 }
 
-describe('MachineStateStore', () => {
+describe('MachineStateStore', { tags: ['Machines'] }, () => {
   it('selectedState_AfterLoad_IsTheCurrentStateAndSaveIsDisabled', async () => {
     const { store } = setup();
 

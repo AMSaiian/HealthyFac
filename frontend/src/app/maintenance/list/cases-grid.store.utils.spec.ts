@@ -7,7 +7,7 @@ import {
   toLastRunFilter,
 } from '@maintenance/list/cases-grid/cases-grid.utils';
 
-describe('cases grid store utils', () => {
+describe('cases grid store utils', { tags: ['Cases'] }, () => {
   it('toSearchBody_NoFilter_LeavesTheFilterEmptyAndKeepsTheSort', () => {
     const body = toSearchBody({ offset: 0, limit: 25, sort: INITIAL_GRID.sort, filter: INITIAL_FILTER });
 

@@ -11,7 +11,7 @@ function parts(local: string): { date: Temporal.PlainDate; time: Temporal.PlainT
   return { date: dateTime.toPlainDate(), time: dateTime.toPlainTime() };
 }
 
-describe('zoned times', () => {
+describe('zoned times', { tags: ['Platform'] }, () => {
   it.each(dstCases)('toInstant_WithSharedCase_GivesTheUtcValue ($local)', ({ local, utc }) => {
     const { date, time } = parts(local);
 

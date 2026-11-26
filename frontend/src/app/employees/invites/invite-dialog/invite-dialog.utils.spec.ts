@@ -10,7 +10,7 @@ const VALID: InviteFormValue = {
   lastName: '',
 };
 
-describe('inviteSaveReason', () => {
+describe('inviteSaveReason', { tags: ['Companies'] }, () => {
   it('inviteSaveReason_WithAValidForm_GivesNoReason', () => {
     expect(inviteSaveReason(VALID, true)).toBeNull();
   });

@@ -3,21 +3,22 @@ import { markChecklistItems, toggleChecklistItem } from './rich-text-checklist';
 const LIST =
   '<p>Steps</p><ol><li data-list="unchecked">Open</li><li data-list="checked">Clean</li><li data-list="unchecked">Close</li></ol>';
 
-describe('toggleChecklistItem', () => {
-  it('toggleChecklistItem_WithUncheckedItem_ChecksOnlyThatItem', () => {
-    const result = toggleChecklistItem(LIST, 0);
-
-    expect(result).toBe(
+describe('toggleChecklistItem', { tags: ['Platform'] }, () => {
+  it.each([
+    [
+      'UncheckedItem_ChecksOnlyThatItem',
+      0,
       '<p>Steps</p><ol><li data-list="checked">Open</li><li data-list="checked">Clean</li><li data-list="unchecked">Close</li></ol>',
-    );
-  });
-
-  it('toggleChecklistItem_WithCheckedItem_UnchecksOnlyThatItem', () => {
-    const result = toggleChecklistItem(LIST, 1);
-
-    expect(result).toBe(
+    ],
+    [
+      'CheckedItem_UnchecksOnlyThatItem',
+      1,
       '<p>Steps</p><ol><li data-list="unchecked">Open</li><li data-list="unchecked">Clean</li><li data-list="unchecked">Close</li></ol>',
-    );
+    ],
+  ])('toggleChecklistItem_With%s', (_name, index, expected) => {
+    const result = toggleChecklistItem(LIST, index);
+
+    expect(result).toBe(expected);
   });
 
   it('toggleChecklistItem_CalledTwice_RoundTripsTheHtml', () => {
@@ -41,7 +42,7 @@ describe('toggleChecklistItem', () => {
   });
 });
 
-describe('markChecklistItems', () => {
+describe('markChecklistItems', { tags: ['Platform'] }, () => {
   it('markChecklistItems_WithBothStates_AddsAClassForEach', () => {
     const result = markChecklistItems(
       '<ol><li data-list="checked">A</li><li data-list="unchecked">B</li><li>C</li></ol>',

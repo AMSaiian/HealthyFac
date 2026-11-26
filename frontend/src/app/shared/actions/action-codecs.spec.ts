@@ -9,7 +9,7 @@ import { FILE_EDIT_COMPOSE, FileActionType } from '@files/file-actions';
 import { MACHINE_COMPOSE, MACHINE_DRAFTS_COMPOSE, MachineActionType } from '@machines/machine-actions';
 import { WORK_ORDER_COMPOSE, WorkOrderActionType } from '@work-orders/work-order-actions';
 
-describe('compose codecs', () => {
+describe('compose codecs', { tags: ['Platform'] }, () => {
   it.each([
     ['work-order', WORK_ORDER_COMPOSE, { type: WorkOrderActionType.Open, payload: {} }, 'work-order', null],
     [

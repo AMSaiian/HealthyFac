@@ -45,7 +45,7 @@ const DAY: DaySchedule = {
   ],
 };
 
-describe('EmployeeDayStore', () => {
+describe('EmployeeDayStore', { tags: ['Shifts'] }, () => {
   const realtime = createFakeRealtimeConnection();
   const lastResult = signal<ActionResult | null>(null);
   const employeeDay = vi.fn();

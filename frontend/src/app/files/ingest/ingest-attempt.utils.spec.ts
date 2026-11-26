@@ -21,7 +21,7 @@ const ATTEMPT: IngestAttempt = {
   proposedDraftCount: null,
 };
 
-describe('ingest attempt utils', () => {
+describe('ingest attempt utils', { tags: ['Ingest'] }, () => {
   it('toKeySegment_WithCamelCase_ReturnsCapitalizedSnakeCase', () => {
     expect(toKeySegment('leaseExpired')).toBe('LEASE_EXPIRED');
     expect(toKeySegment('noText')).toBe('NO_TEXT');

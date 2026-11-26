@@ -3,7 +3,7 @@ import { collectFileIds, imageAltOf, MISSING_IMAGE_CLASS, toDisplayHtml } from '
 const ID_A = 'v1_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const ID_B = 'v1_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
 
-describe('collectFileIds', () => {
+describe('collectFileIds', { tags: ['Platform'] }, () => {
   it('collectFileIds_WithNoImages_ReturnsNothing', () => {
     expect(collectFileIds('<p>text</p>')).toEqual([]);
     expect(collectFileIds(null)).toEqual([]);
@@ -16,7 +16,7 @@ describe('collectFileIds', () => {
   });
 });
 
-describe('toDisplayHtml', () => {
+describe('toDisplayHtml', { tags: ['Platform'] }, () => {
   it('toDisplayHtml_WithLink_SetsSrcAndRemovesTheFileId', () => {
     const html = toDisplayHtml(
       `<p><img data-file-id="${ID_A}" alt="pump"></p>`,
@@ -42,7 +42,7 @@ describe('toDisplayHtml', () => {
   });
 });
 
-describe('toDisplayHtml with a missing image that has no alt', () => {
+describe('toDisplayHtml with a missing image that has no alt', { tags: ['Platform'] }, () => {
   it('toDisplayHtml_WithoutLinkAndAlt_UsesTheFallbackText', () => {
     const html = toDisplayHtml(`<p><img data-file-id="${ID_A}"></p>`, new Map(), 'not available');
 
@@ -50,7 +50,7 @@ describe('toDisplayHtml with a missing image that has no alt', () => {
   });
 });
 
-describe('imageAltOf', () => {
+describe('imageAltOf', { tags: ['Platform'] }, () => {
   it('imageAltOf_WithLongName_DropsTheExtensionAndCutsTo255', () => {
     const alt = imageAltOf(`${'a'.repeat(300)}.png`);
 

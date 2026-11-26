@@ -6,7 +6,7 @@ import { CLOCK } from './clock';
 import { LocalDateTimePipe } from './local-date-time.pipe';
 import { Temporal } from './temporal';
 
-describe('LocalDateTimePipe', () => {
+describe('LocalDateTimePipe', { tags: ['Platform'] }, () => {
   function createPipe(timeZoneId: string): LocalDateTimePipe {
     TestBed.configureTestingModule({
       providers: [

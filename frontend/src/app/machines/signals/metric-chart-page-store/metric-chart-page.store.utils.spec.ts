@@ -13,7 +13,7 @@ import { Temporal } from '@shared/time/temporal';
 
 const KYIV = 'Europe/Kyiv';
 
-describe('metric chart page store utils', () => {
+describe('metric chart page store utils', { tags: ['Evaluation'] }, () => {
   it.each([
     [0, 1],
     [0.4, 1],

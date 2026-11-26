@@ -20,7 +20,7 @@ function phase(id: string, priority: number): OperatingPhase {
   };
 }
 
-describe('operating phases page store utils', () => {
+describe('operating phases page store utils', { tags: ['SignalModel'] }, () => {
   it('sortByPriority_UnorderedPhases_PutsTheLowestPriorityFirstWithoutChangingTheInput', () => {
     const input = [phase('a', 1), phase('b', 5), phase('c', 3)];
 
@@ -30,12 +30,11 @@ describe('operating phases page store utils', () => {
     expect(input.map((item) => item.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('movedOrder_RowMovedDown_PlacesTheIdAtTheTargetPosition', () => {
-    expect(movedOrder([phase('a', 3), phase('b', 2), phase('c', 1)], 0, 2)).toEqual(['b', 'c', 'a']);
-  });
-
-  it('movedOrder_RowMovedUp_PlacesTheIdAtTheTargetPosition', () => {
-    expect(movedOrder([phase('a', 3), phase('b', 2), phase('c', 1)], 2, 0)).toEqual(['c', 'a', 'b']);
+  it.each([
+    ['Down', 0, 2, ['b', 'c', 'a']],
+    ['Up', 2, 0, ['c', 'a', 'b']],
+  ])('movedOrder_RowMoved%s_PlacesTheIdAtTheTargetPosition', (_direction, from, to, expected) => {
+    expect(movedOrder([phase('a', 3), phase('b', 2), phase('c', 1)], from, to)).toEqual(expected);
   });
 
   it.each([
@@ -47,7 +46,7 @@ describe('operating phases page store utils', () => {
   });
 });
 
-describe('toPhaseEditor', () => {
+describe('toPhaseEditor', { tags: ['SignalModel'] }, () => {
   it.each([
     ['WithoutCompose', null, null],
     ['WithTheNewName', 'phase', { phaseId: null }],

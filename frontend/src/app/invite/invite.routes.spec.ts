@@ -16,7 +16,7 @@ import { INVITE_ROUTES } from '@invite/invite.routes';
 
 const VERIFY_URL = '/api/core/v1/employee-invites/verify';
 
-describe('invite routes', () => {
+describe('invite routes', { tags: ['Identity'] }, () => {
   const login = vi.fn();
   const isAuthenticated = vi.fn();
   const accessToken = vi.fn();

@@ -54,7 +54,7 @@ function newItem(id: string, value: Partial<MetricFormValue> = {}, isDeleted = f
   };
 }
 
-describe('netChanges', () => {
+describe('netChanges', { tags: ['SignalModel'] }, () => {
   it('netChanges_WithEditBackToSavedValue_HasNoChange', () => {
     const changes = netChanges([savedItem('a', { max: 50 }), savedItem('b', { max: 100 })]);
 
@@ -81,7 +81,7 @@ describe('netChanges', () => {
   });
 });
 
-describe('toApplyBody', () => {
+describe('toApplyBody', { tags: ['SignalModel'] }, () => {
   it('toApplyBody_WithMixedChanges_SendsOnlyChangedItems', () => {
     const items = [
       savedItem('a', { name: 'Renamed ' }),
@@ -168,7 +168,7 @@ describe('toApplyBody', () => {
   });
 });
 
-describe('mapServerErrors', () => {
+describe('mapServerErrors', { tags: ['SignalModel'] }, () => {
   it('mapServerErrors_WithCreatedAndUpdatedPaths_MapsToItems', () => {
     const changes = netChanges([savedItem('a', { max: 50 }), newItem('new-0'), newItem('new-1')]);
 
@@ -181,27 +181,17 @@ describe('mapServerErrors', () => {
   });
 });
 
-describe('nextKey', () => {
-  it('nextKey_WithUkrainianName_FollowsTheSlug', () => {
-    const key = nextKey('', '', 'Температура шпинделя');
-
-    expect(key).toBe('temperatura_shpyndelya');
-  });
-
-  it('nextKey_AfterKeyEditedByHand_KeepsTheKey', () => {
-    const key = nextKey('Температура шпинделя', 'my.key', 'Температура');
-
-    expect(key).toBe('my.key');
-  });
-
-  it('nextKey_WhileKeyEqualsPreviousSlug_FollowsTheName', () => {
-    const key = nextKey('Spindle', 'spindle', 'Spindle speed');
-
-    expect(key).toBe('spindle_speed');
+describe('nextKey', { tags: ['SignalModel'] }, () => {
+  it.each([
+    ['WithUkrainianName_FollowsTheSlug', '', '', 'Температура шпинделя', 'temperatura_shpyndelya'],
+    ['AfterKeyEditedByHand_KeepsTheKey', 'Температура шпинделя', 'my.key', 'Температура', 'my.key'],
+    ['WhileKeyEqualsPreviousSlug_FollowsTheName', 'Spindle', 'spindle', 'Spindle speed', 'spindle_speed'],
+  ])('nextKey_%s', (_name, previousName, key, name, expected) => {
+    expect(nextKey(previousName, key, name)).toBe(expected);
   });
 });
 
-describe('unit values', () => {
+describe('unit values', { tags: ['SignalModel'] }, () => {
   it('parseUnitValue_AfterUnitValue_RoundTrips', () => {
     const reference = { quantityKind: 'Temperature', name: 'Degree Celsius' };
 
@@ -210,7 +200,7 @@ describe('unit values', () => {
   });
 });
 
-describe('buildExamplePayload', () => {
+describe('buildExamplePayload', { tags: ['SignalModel'] }, () => {
   const item = (key: string, value: Partial<MetricFormValue>, overrides: Partial<MetricItem> = {}): MetricItem => ({
     localId: key,
     savedId: null,
@@ -286,7 +276,7 @@ describe('buildExamplePayload', () => {
   });
 });
 
-describe('stageMetricDrafts', () => {
+describe('stageMetricDrafts', { tags: ['SignalModel'] }, () => {
   const CATALOG = {
     kinds: [{ name: 'Pressure', units: [{ name: 'Bar', abbreviation: 'bar' }] }],
   };

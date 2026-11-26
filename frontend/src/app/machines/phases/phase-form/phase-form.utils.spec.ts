@@ -49,7 +49,7 @@ function condition(sourceId: string, operator: PhaseConditionOperator): PhaseCon
   return { sourceId, operator, value: 5, upperValue: 9, states: ['a'] };
 }
 
-describe('phase form utils', () => {
+describe('phase form utils', { tags: ['SignalModel'] }, () => {
   it('normalizedCondition_OperatorOfAnotherKind_ChangesToTheFirstOperatorAndClearsTheValues', () => {
     const result = normalizedCondition(condition('s1', PhaseConditionOperator.GreaterThan), OPTIONS);
 
@@ -205,7 +205,7 @@ describe('phase form utils', () => {
   });
 });
 
-describe('hasNoLimitValues', () => {
+describe('hasNoLimitValues', { tags: ['SignalModel'] }, () => {
   it.each([
     ['all four empty', { warningLow: null, warningHigh: null, alarmLow: null, alarmHigh: null }, true],
     ['an alarm high only', { warningLow: null, warningHigh: null, alarmLow: null, alarmHigh: 8.5 }, false],

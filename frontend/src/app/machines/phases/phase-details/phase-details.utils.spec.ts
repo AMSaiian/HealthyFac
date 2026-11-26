@@ -13,41 +13,39 @@ const OPTIONS: readonly ConditionSourceOption[] = [
 
 const METRICS = [{ id: 'metric-1', name: 'Temperature' }] as unknown as readonly MetricDefinition[];
 
-describe('sourceLabel', () => {
-  it('sourceLabel_WithKnownId_ReturnsTheOptionLabel', () => {
-    expect(sourceLabel('status-1', OPTIONS)).toBe('E-101');
-  });
-
-  it('sourceLabel_WithUnknownId_ReturnsEmptyCell', () => {
-    expect(sourceLabel('missing', OPTIONS)).toBe(EMPTY_CELL);
-  });
-});
-
-describe('metricName', () => {
-  it('metricName_WithKnownId_ReturnsTheMetricName', () => {
-    expect(metricName('metric-1', METRICS)).toBe('Temperature');
-  });
-
-  it('metricName_WithUnknownId_ReturnsEmptyCell', () => {
-    expect(metricName('missing', METRICS)).toBe(EMPTY_CELL);
+describe('sourceLabel', { tags: ['SignalModel'] }, () => {
+  it.each([
+    ['KnownId_ReturnsTheOptionLabel', 'status-1', 'E-101'],
+    ['UnknownId_ReturnsEmptyCell', 'missing', EMPTY_CELL],
+  ])('sourceLabel_With%s', (_name, id, expected) => {
+    expect(sourceLabel(id, OPTIONS)).toBe(expected);
   });
 });
 
-describe('numberText', () => {
-  it('numberText_WithNull_ReturnsEmptyCell', () => {
-    expect(numberText(null)).toBe(EMPTY_CELL);
-  });
-
-  it('numberText_WithSevenFractionDigits_RoundsToSix', () => {
-    expect(numberText(1.2345678)).toBe(new Intl.NumberFormat(undefined, { maximumFractionDigits: 6 }).format(1.234568));
-  });
-
-  it('numberText_WithZero_ShowsZero', () => {
-    expect(numberText(0)).toBe('0');
+describe('metricName', { tags: ['SignalModel'] }, () => {
+  it.each([
+    ['KnownId_ReturnsTheMetricName', 'metric-1', 'Temperature'],
+    ['UnknownId_ReturnsEmptyCell', 'missing', EMPTY_CELL],
+  ])('metricName_With%s', (_name, id, expected) => {
+    expect(metricName(id, METRICS)).toBe(expected);
   });
 });
 
-describe('statesText', () => {
+describe('numberText', { tags: ['SignalModel'] }, () => {
+  it.each([
+    ['Null_ReturnsEmptyCell', null, EMPTY_CELL],
+    [
+      'SevenFractionDigits_RoundsToSix',
+      1.2345678,
+      new Intl.NumberFormat(undefined, { maximumFractionDigits: 6 }).format(1.234568),
+    ],
+    ['Zero_ShowsZero', 0, '0'],
+  ])('numberText_With%s', (_name, value, expected) => {
+    expect(numberText(value)).toBe(expected);
+  });
+});
+
+describe('statesText', { tags: ['SignalModel'] }, () => {
   it('statesText_WithStates_JoinsThemWithCommas', () => {
     expect(statesText(['Idle', 'Run'])).toBe('Idle, Run');
   });

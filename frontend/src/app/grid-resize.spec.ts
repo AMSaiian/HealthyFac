@@ -31,7 +31,7 @@ export function headerCellsWithoutResize(source: string): number[] {
     .map((match) => lineOf(source, match.index));
 }
 
-describe('grid resize', () => {
+describe('grid resize', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string

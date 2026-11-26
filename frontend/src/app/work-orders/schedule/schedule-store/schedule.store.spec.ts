@@ -66,7 +66,7 @@ const COMPANY_DAY: CompanyDaySchedule = {
   ],
 };
 
-describe('ScheduleStore', () => {
+describe('ScheduleStore', { tags: ['WorkOrders'] }, () => {
   const realtime = createFakeRealtimeConnection();
   const lastResult = signal<ActionResult | null>(null);
   const companyDay = vi.fn();

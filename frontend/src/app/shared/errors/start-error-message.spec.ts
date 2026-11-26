@@ -4,7 +4,7 @@ import { startErrorMessage } from './start-error-message';
 
 const PROBLEM = 'Invalid authUrl: must be an absolute https URL.';
 
-describe('startErrorMessage', () => {
+describe('startErrorMessage', { tags: ['Platform'] }, () => {
   it('startErrorMessage_InDevelopmentWithConfigError_NamesTheProblem', () => {
     const result = startErrorMessage(new AppConfigError(PROBLEM), true);
 

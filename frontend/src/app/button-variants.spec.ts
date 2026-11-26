@@ -106,7 +106,7 @@ const isOutlinedNotDanger = (startTag: string): boolean =>
 const isDangerNotOutlined = (startTag: string): boolean =>
   startTag.includes('severity="danger"') && !startTag.includes('[outlined]="true"');
 
-describe('button variants', () => {
+describe('button variants', { tags: ['Conventions'] }, () => {
   it('everyPButton_IsFilledOrOutlined_NeverTextOrLink', () => {
     const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
       string,

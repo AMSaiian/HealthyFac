@@ -21,7 +21,7 @@ const DETAILS: InviteDetails = {
   expiresAt: '2027-06-20T10:00:00Z',
 };
 
-describe('InviteStore', () => {
+describe('InviteStore', { tags: ['Identity'] }, () => {
   const verify = vi.fn();
   const accept = vi.fn();
   const readToken = vi.fn();
@@ -100,22 +100,16 @@ describe('InviteStore', () => {
     expect(store.isSaving()).toBe(false);
   });
 
-  it('accept_With409_ShowsTheEmployedView', () => {
-    accept.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.Conflict })));
+  it.each([
+    ['409_ShowsTheEmployedView', HttpStatusCode.Conflict, 'employed'],
+    ['404_ShowsTheInvalidView', HttpStatusCode.NotFound, 'invalid'],
+  ])('accept_With%s', (_name, status, view) => {
+    accept.mockReturnValue(throwError(() => new HttpErrorResponse({ status })));
     const store = setup();
 
     store.accept({ firstName: 'Ann', lastName: 'Lee' });
 
-    expect(store.view()).toBe('employed');
-  });
-
-  it('accept_With404_ShowsTheInvalidView', () => {
-    accept.mockReturnValue(throwError(() => new HttpErrorResponse({ status: HttpStatusCode.NotFound })));
-    const store = setup();
-
-    store.accept({ firstName: 'Ann', lastName: 'Lee' });
-
-    expect(store.view()).toBe('invalid');
+    expect(store.view()).toBe(view);
   });
 
   it('start_WithASession_ShowsTheSignedInViewAndSendsNoRequest', () => {

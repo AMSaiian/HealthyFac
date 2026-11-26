@@ -30,7 +30,7 @@ const ATTEMPT = {
   proposedDraftCount: null,
 };
 
-describe('IngestSummaryStore', () => {
+describe('IngestSummaryStore', { tags: ['Ingest'] }, () => {
   function setup(): { store: InstanceType<typeof IngestSummaryStore>; http: HttpTestingController } {
     TestBed.configureTestingModule({
       providers: [IngestSummaryStore, IngestApi, provideHttpClient(), provideHttpClientTesting()],

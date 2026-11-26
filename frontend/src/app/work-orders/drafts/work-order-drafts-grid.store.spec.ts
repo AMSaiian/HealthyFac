@@ -14,7 +14,7 @@ import {
 import { WorkOrderDraftsApi } from '@work-orders/drafts/work-order-drafts-api';
 import { WorkOrderDraftsGridStore } from './work-order-drafts-grid.store';
 
-describe('WorkOrderDraftsGridStore', () => {
+describe('WorkOrderDraftsGridStore', { tags: ['WorkOrders', 'Drafts'] }, () => {
   const realtime = createFakeRealtimeConnection();
   const search = vi.fn();
 

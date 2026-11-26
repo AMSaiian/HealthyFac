@@ -13,7 +13,7 @@ import { Temporal } from '@shared/time/temporal';
 
 import { FilePickerGridHost } from './file-picker-grid-host';
 
-describe('FilePickerGridHost', () => {
+describe('FilePickerGridHost', { tags: ['WorkOrders'] }, () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [

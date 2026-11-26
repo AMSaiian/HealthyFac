@@ -17,7 +17,7 @@ function setup(): InstanceType<typeof TestStore> {
   return TestBed.inject(TestStore);
 }
 
-describe('withDetailsMode', () => {
+describe('withDetailsMode', { tags: ['Platform'] }, () => {
   it('startMode_ForUpdate_IsView', () => {
     const store = setup();
 

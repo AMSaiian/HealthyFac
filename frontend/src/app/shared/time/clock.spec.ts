@@ -11,7 +11,7 @@ function setup(timeZoneId: string | null): void {
   });
 }
 
-describe('CLOCK', () => {
+describe('CLOCK', { tags: ['Platform'] }, () => {
   it('timeZoneId_AfterCompanyLoaded_ReturnsCompanyZone', () => {
     setup('Europe/Kyiv');
 

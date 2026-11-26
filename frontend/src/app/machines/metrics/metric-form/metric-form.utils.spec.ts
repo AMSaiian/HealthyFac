@@ -1,6 +1,6 @@
 import { quantityKindKey, toUnitGroups } from '@machines/metrics/metric-form/metric-form.utils';
 
-describe('toUnitGroups', () => {
+describe('toUnitGroups', { tags: ['SignalModel'] }, () => {
   it('toUnitGroups_WithUnitWithoutAbbreviation_MarksItUnitless', () => {
     const groups = toUnitGroups({
       kinds: [
@@ -20,7 +20,7 @@ describe('toUnitGroups', () => {
   });
 });
 
-describe('quantityKindKey', () => {
+describe('quantityKindKey', { tags: ['SignalModel'] }, () => {
   it('quantityKindKey_WithCamelCaseName_ReturnsUpperSnakeKey', () => {
     expect(quantityKindKey('RotationalSpeed')).toBe('METRICS.QUANTITY_KINDS.ROTATIONAL_SPEED');
     expect(quantityKindKey('Temperature')).toBe('METRICS.QUANTITY_KINDS.TEMPERATURE');

@@ -30,7 +30,7 @@ const FILE: FileGridItem = {
 
 const ALL = { canIngestWrite: true, canIngestRead: true, canTie: true };
 
-describe('visibleRowActions', () => {
+describe('visibleRowActions', { tags: ['Files'] }, () => {
   it('visibleRowActions_ForUntiedFileWithoutAttempt_OffersIngestAndTie', () => {
     expect(visibleRowActions(FILE, ALL)).toEqual([FileRowAction.Ingest, FileRowAction.Tie]);
   });
@@ -64,7 +64,7 @@ describe('visibleRowActions', () => {
   });
 });
 
-describe('filter value mapping', () => {
+describe('filter value mapping', { tags: ['Files'] }, () => {
   it('toMachineFilter_WithNotTiedAndIds_SplitsThePseudoValue', () => {
     expect(toMachineFilter([NOT_TIED_OPTION, 'm1'])).toEqual({ machineIds: ['m1'], isUntiedIncluded: true });
     expect(toMachineValues({ machineIds: ['m1'], isUntiedIncluded: true })).toEqual([NOT_TIED_OPTION, 'm1']);

@@ -40,7 +40,7 @@ class ResizeObserverStub {
   disconnect = vi.fn();
 }
 
-describe('files routes', () => {
+describe('files routes', { tags: ['Files', 'Ingest'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

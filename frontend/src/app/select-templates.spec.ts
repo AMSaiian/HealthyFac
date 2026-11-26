@@ -91,7 +91,7 @@ export function mixedSelects(source: string): string[] {
     );
 }
 
-describe('select templates', () => {
+describe('select templates', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string

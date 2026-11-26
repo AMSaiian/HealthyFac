@@ -16,7 +16,7 @@ import { Temporal } from '@shared/time/temporal';
 
 const KYIV = 'Europe/Kyiv';
 
-describe('picker date range conversion', () => {
+describe('picker date range conversion', { tags: ['Platform'] }, () => {
   it('pickerDatesToPlainDateRange_WithTwoDates_GivesFromAndTo', () => {
     const range = pickerDatesToPlainDateRange([new Date(2026, 10, 3, 18), new Date(2026, 10, 9, 2)]);
 
@@ -63,7 +63,7 @@ describe('picker date range conversion', () => {
   });
 });
 
-describe('picker date conversion', () => {
+describe('picker date conversion', { tags: ['Platform'] }, () => {
   it('pickerDateToPlainDate_WithDate_KeepsCalendarFields', () => {
     const result = pickerDateToPlainDate(new Date(2026, 10, 3, 23, 30));
 
@@ -113,7 +113,7 @@ describe('picker date conversion', () => {
   });
 });
 
-describe('picker time conversion', () => {
+describe('picker time conversion', { tags: ['Platform'] }, () => {
   it('plainTimeToPickerDate_AndBack_KeepsHourAndMinute', () => {
     const time = pickerDateToPlainTime(plainTimeToPickerDate(Temporal.PlainTime.from('23:55')));
 
@@ -132,7 +132,7 @@ describe('picker time conversion', () => {
   });
 });
 
-describe('picker date equality', () => {
+describe('picker date equality', { tags: ['Platform'] }, () => {
   it('isSameDate_WithTwoDatesOfOneMoment_IsTrue', () => {
     expect(isSameDate(new Date(2026, 10, 3, 8, 5), new Date(2026, 10, 3, 8, 5))).toBe(true);
   });

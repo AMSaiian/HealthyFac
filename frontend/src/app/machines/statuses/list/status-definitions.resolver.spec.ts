@@ -40,7 +40,7 @@ function resolve(openMachine: (id: string) => Observable<Machine>): Promise<unkn
   return firstValueFrom((result as Observable<unknown>).pipe(toArray()));
 }
 
-describe('statusDefinitionsResolver', () => {
+describe('statusDefinitionsResolver', { tags: ['SignalModel'] }, () => {
   beforeEach(() => {
     messages.add.mockClear();
   });

@@ -29,7 +29,7 @@ function setup(initial: AssignmentValue): {
   return { fixture, days, validity };
 }
 
-describe('AssignDialog', () => {
+describe('AssignDialog', { tags: ['WorkOrders'] }, () => {
   it('opening_WithAnAssignee_SendsOneDaysRequest', () => {
     const { days } = setup({ assigneeId: 'e1', start: Temporal.PlainDateTime.from('2027-06-02T10:00') });
 

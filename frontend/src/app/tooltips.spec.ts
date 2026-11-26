@@ -35,7 +35,7 @@ function elementsWithoutTooltip(path: string, source: string): string[] {
   return found;
 }
 
-describe('tooltips', () => {
+describe('tooltips', { tags: ['Conventions'] }, () => {
   it('everyPButtonAndTab_BindsATooltip', () => {
     const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
       string,

@@ -1,6 +1,6 @@
 import { themeSerializer } from './theme-serializer';
 
-describe('themeSerializer', () => {
+describe('themeSerializer', { tags: ['Platform'] }, () => {
   it('read_WithDark_ReturnsDark', () => {
     const result = themeSerializer.read('dark');
 

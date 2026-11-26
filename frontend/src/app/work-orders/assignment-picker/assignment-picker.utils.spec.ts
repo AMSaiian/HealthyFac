@@ -17,7 +17,7 @@ function span(startLocal: string, endLocal: string, startUtc: string, endUtc: st
 
 const AFTERNOON = span('2027-06-01T13:00:00', '2027-06-01T17:00:00', '2027-06-01T10:00:00Z', '2027-06-01T14:00:00Z');
 
-describe('dayLabelOf', () => {
+describe('dayLabelOf', { tags: ['WorkOrders'] }, () => {
   it.each([
     { name: 'noBlocks', hasBlocks: false, free: 0, expected: DayLabel.DayOff },
     { name: 'blocksWithoutFreeTime', hasBlocks: true, free: 0, expected: DayLabel.Busy },
@@ -29,19 +29,15 @@ describe('dayLabelOf', () => {
   });
 });
 
-describe('shownRange', () => {
-  it('shownRange_MonthStartingOnMonday_StartsOnItsFirstDayWithMondayAsFirstWeekday', () => {
-    const range = shownRange(Temporal.PlainYearMonth.from('2027-02'), MONDAY);
+describe('shownRange', { tags: ['WorkOrders'] }, () => {
+  it.each([
+    ['MonthStartingOnMonday_StartsOnItsFirstDayWithMondayAsFirstWeekday', '2027-02', '2027-02-01', '2027-03-14'],
+    ['MonthStartingOnSunday_StartsOnTheMondayBeforeItWhenMondayIsFirst', '2027-08', '2027-07-26', '2027-09-05'],
+  ])('shownRange_%s', (_name, month, from, to) => {
+    const range = shownRange(Temporal.PlainYearMonth.from(month), MONDAY);
 
-    expect(range.from.toString()).toBe('2027-02-01');
-    expect(range.to.toString()).toBe('2027-03-14');
-  });
-
-  it('shownRange_MonthStartingOnSunday_StartsOnTheMondayBeforeItWhenMondayIsFirst', () => {
-    const range = shownRange(Temporal.PlainYearMonth.from('2027-08'), MONDAY);
-
-    expect(range.from.toString()).toBe('2027-07-26');
-    expect(range.to.toString()).toBe('2027-09-05');
+    expect(range.from.toString()).toBe(from);
+    expect(range.to.toString()).toBe(to);
   });
 
   it('shownRange_MonthStartingOnSunday_StartsOnItsFirstDayWhenSundayIsFirst', () => {
@@ -51,7 +47,7 @@ describe('shownRange', () => {
   });
 });
 
-describe('spanStateOf', () => {
+describe('spanStateOf', { tags: ['WorkOrders'] }, () => {
   it.each([
     { name: 'equal', estimate: 240, expected: SpanState.Fits },
     { name: 'longer', estimate: 120, expected: SpanState.Fits },
@@ -61,19 +57,15 @@ describe('spanStateOf', () => {
   });
 });
 
-describe('startBounds', () => {
-  it('startBounds_SpanOfFourHoursAndTwoHourEstimate_GivesThirteenToFifteen', () => {
-    const bounds = startBounds(AFTERNOON, 120);
+describe('startBounds', { tags: ['WorkOrders'] }, () => {
+  it.each([
+    ['SpanOfFourHoursAndTwoHourEstimate_GivesThirteenToFifteen', 120, '15:00:00'],
+    ['SpanEqualToTheEstimate_GivesOneStart', 240, '13:00:00'],
+  ])('startBounds_%s', (_name, estimate, latest) => {
+    const bounds = startBounds(AFTERNOON, estimate);
 
     expect(bounds?.earliest.toString()).toBe('13:00:00');
-    expect(bounds?.latest.toString()).toBe('15:00:00');
-  });
-
-  it('startBounds_SpanEqualToTheEstimate_GivesOneStart', () => {
-    const bounds = startBounds(AFTERNOON, 240);
-
-    expect(bounds?.earliest.toString()).toBe('13:00:00');
-    expect(bounds?.latest.toString()).toBe('13:00:00');
+    expect(bounds?.latest.toString()).toBe(latest);
   });
 
   it('startBounds_SpanShorterThanTheEstimate_GivesNull', () => {

@@ -47,7 +47,7 @@ const EXISTING = {
   updatedAt: null,
 };
 
-describe('StatusDraftReviewStore', () => {
+describe('StatusDraftReviewStore', { tags: ['Drafts'] }, () => {
   function setup(): {
     store: InstanceType<typeof StatusDraftReviewStore>;
     http: HttpTestingController;

@@ -16,7 +16,7 @@ function row(revision: number, estimateMinutes: number): WorkOrderHistoryRow {
   };
 }
 
-describe('toHistoryEntries', () => {
+describe('toHistoryEntries', { tags: ['WorkOrders'] }, () => {
   it('toHistoryEntries_WithAChangedEstimate_CarriesTheOldAndTheNewOneOnTheNewerRow', () => {
     const entries = toHistoryEntries([row(1, 60), row(2, 90)]);
 

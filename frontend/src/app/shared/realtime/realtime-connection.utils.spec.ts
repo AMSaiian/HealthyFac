@@ -1,6 +1,6 @@
 import { retryDelay } from './realtime-connection.utils';
 
-describe('retryDelay', () => {
+describe('retryDelay', { tags: ['Realtime'] }, () => {
   it('retryDelay_WithZeroJitter_GivesTheBaseDelays', () => {
     const delays = [0, 1, 2, 3, 4, 5].map((attempt) => retryDelay(attempt, () => 0));
 

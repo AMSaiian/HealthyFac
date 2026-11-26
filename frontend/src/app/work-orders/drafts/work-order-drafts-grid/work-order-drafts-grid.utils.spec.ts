@@ -33,7 +33,7 @@ function itemsOf(canApply: boolean, canDismiss: boolean): MenuItem[] {
   });
 }
 
-describe('workOrderDraftMenuItems', () => {
+describe('workOrderDraftMenuItems', { tags: ['WorkOrders', 'Drafts'] }, () => {
   it('menuItems_WithBothRights_EnablesBothItems', () => {
     const [apply, dismiss] = itemsOf(true, true);
 

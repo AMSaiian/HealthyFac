@@ -1,7 +1,7 @@
 import { SortDirection } from '@shared/grid/requests/grid-request';
 import { toSortDirection, toSortOrder } from './grid-sort-order';
 
-describe('grid sort order', () => {
+describe('grid sort order', { tags: ['Persistence'] }, () => {
   it.each([
     { name: 'WithDescending_ReturnsMinusOne', direction: SortDirection.Descending, expected: -1 },
     { name: 'WithoutDirection_ReturnsAscending', direction: undefined, expected: 1 },

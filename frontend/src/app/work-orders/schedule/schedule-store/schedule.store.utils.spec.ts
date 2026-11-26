@@ -45,7 +45,7 @@ function row(id: string, bars: ScheduleBar[]): ScheduleRow {
   return { id, label: id, blocks: [{ start: at('08:00:00'), end: at('12:00:00') }], bars };
 }
 
-describe('schedule store utils', () => {
+describe('schedule store utils', { tags: ['WorkOrders'] }, () => {
   describe('withTarget', () => {
     const first = known('w1', 'e1', '09:00:00');
 
@@ -189,14 +189,11 @@ describe('schedule store utils', () => {
   });
 
   describe('conflictsOf', () => {
-    it('conflictsOf_ForABarOutsideEveryBlock_IsAConflict', () => {
-      const rows = [row('e1', [bar('w1', '12:00', '13:00')])];
-
-      expect([...conflictsOf(rows, new Set(['w1']))]).toEqual(['w1']);
-    });
-
-    it('conflictsOf_ForABarThatReachesPastTheBlockEnd_IsAConflict', () => {
-      const rows = [row('e1', [bar('w1', '11:30', '12:30')])];
+    it.each([
+      ['ABarOutsideEveryBlock', '12:00', '13:00'],
+      ['ABarThatReachesPastTheBlockEnd', '11:30', '12:30'],
+    ])('conflictsOf_For%s_IsAConflict', (_name, start, end) => {
+      const rows = [row('e1', [bar('w1', start, end)])];
 
       expect([...conflictsOf(rows, new Set(['w1']))]).toEqual(['w1']);
     });

@@ -1,6 +1,6 @@
 import { type KeysetMove, toKeysetMove, toPaginator } from './grid-paginator';
 
-describe('toKeysetMove', () => {
+describe('toKeysetMove', { tags: ['Persistence'] }, () => {
   it.each([
     ['OneStepForward', { page: 2, rows: 25, pageIndex: 1, limit: 25 }, 'next'],
     ['OneStepBack', { page: 0, rows: 25, pageIndex: 1, limit: 25 }, 'previous'],
@@ -13,7 +13,7 @@ describe('toKeysetMove', () => {
   });
 });
 
-describe('toPaginator', () => {
+describe('toPaginator', { tags: ['Persistence'] }, () => {
   it('toPaginator_WithoutAPageIndex_KeepsTheOffsetDefaults', () => {
     expect(toPaginator(null, 25)).toEqual({
       first: null,

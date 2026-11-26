@@ -112,7 +112,7 @@ async function openCase(
   return harness.routeDebugElement?.injector.get(CasePageStore) as InstanceType<typeof CasePageStore>;
 }
 
-describe('maintenance routes', () => {
+describe('maintenance routes', { tags: ['Cases'] }, () => {
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',

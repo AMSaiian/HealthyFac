@@ -12,7 +12,7 @@ const VALID_CONFIG = {
 const URL_FIELDS = ['apiBaseUrl', 'authUrl'] as const;
 const TEXT_FIELDS = ['authRealm', 'authClientId', 'primeUiLicenseKey'] as const;
 
-describe('parseAppConfig', () => {
+describe('parseAppConfig', { tags: ['Platform'] }, () => {
   it('parseAppConfig_WithValidConfig_ReturnsConfig', () => {
     const result = parseAppConfig(VALID_CONFIG);
 

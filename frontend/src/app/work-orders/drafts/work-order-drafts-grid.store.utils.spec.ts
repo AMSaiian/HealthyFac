@@ -1,7 +1,7 @@
 import { DraftState } from '@work-orders/drafts/work-order-draft';
 import { INITIAL_GRID, toSearchBody } from '@work-orders/drafts/work-order-drafts-grid.store.utils';
 
-describe('work order drafts grid store utils', () => {
+describe('work order drafts grid store utils', { tags: ['WorkOrders', 'Drafts'] }, () => {
   it('toSearchBody_InitialGrid_AsksForThePendingDraftsNewestFirst', () => {
     const body = toSearchBody({ offset: 0, limit: 25, sort: INITIAL_GRID.sort, filter: INITIAL_GRID.filter });
 

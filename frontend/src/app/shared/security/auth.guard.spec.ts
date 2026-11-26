@@ -7,7 +7,7 @@ import { provideFakeAuthStore } from '@shared/security/testing/fake-auth-store';
 
 const REQUESTED_URL = '/some/path?x=1';
 
-describe('authGuard', () => {
+describe('authGuard', { tags: ['Identity'] }, () => {
   const isAuthenticated = signal(false);
   const login = vi.fn().mockResolvedValue(undefined);
 

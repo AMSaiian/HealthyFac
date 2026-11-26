@@ -57,7 +57,7 @@ function setup(options: { isAuthenticated: boolean; hasPermission: boolean; empl
 const FILES_PATH = '/files';
 const SIGN_OUT_HEADER_KEY = 'SHELL.SIGN_OUT_CONFIRM.HEADER';
 
-describe('ShellStore', () => {
+describe('ShellStore', { tags: ['Platform'] }, () => {
   it('isMenuShown_WithoutASession_IsFalse', () => {
     const { store } = setup({ isAuthenticated: false, hasPermission: true });
 
@@ -142,7 +142,7 @@ describe('ShellStore', () => {
   });
 });
 
-describe('visibleNavItems', () => {
+describe('visibleNavItems', { tags: ['Platform'] }, () => {
   const only =
     (...allowed: Permission[]) =>
     (permission: Permission): boolean =>
@@ -171,7 +171,7 @@ describe('visibleNavItems', () => {
   });
 });
 
-describe('languageMenuItems', () => {
+describe('languageMenuItems', { tags: ['Platform'] }, () => {
   it('languageMenuItems_WithTwoLanguages_MarksTheCurrentOneAndKeepsTheNameKeys', () => {
     const items = languageMenuItems(
       [Language.English, Language.Ukrainian],

@@ -6,7 +6,7 @@ import { WorkOrderCategory, WorkOrderPriority } from '@work-orders/work-order';
 
 import { WorkOrdersApi } from './work-orders-api';
 
-describe('WorkOrdersApi', () => {
+describe('WorkOrdersApi', { tags: ['WorkOrders'] }, () => {
   let api: WorkOrdersApi;
   let http: HttpTestingController;
 

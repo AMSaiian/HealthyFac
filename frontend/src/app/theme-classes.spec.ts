@@ -20,7 +20,7 @@ function lightOnlyLists(source: string): string[] {
   });
 }
 
-describe('theme classes', () => {
+describe('theme classes', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true });
   const components = import.meta.glob(['./**/*.ts', '!./**/*.spec.ts'], {
     query: '?raw',

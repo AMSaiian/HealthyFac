@@ -18,21 +18,18 @@ import {
 const TODAY = Temporal.PlainDate.from('2027-06-01');
 const RANGE = { from: TODAY, to: TODAY };
 
-describe('windowRequest', () => {
-  it('windowRequest_WithSmallRange_AddsTheBuffer', () => {
-    const request = windowRequest({ first: 20, last: 30 });
+describe('windowRequest', { tags: ['WorkOrders'] }, () => {
+  it.each([
+    ['WithSmallRange_AddsTheBuffer', { first: 20, last: 30 }, { offset: 20, limit: 20 }],
+    ['WithBigRange_CapsTheLimitAt100', { first: 0, last: 500 }, { offset: 0, limit: 100 }],
+  ])('windowRequest_%s', (_name, range, expected) => {
+    const request = windowRequest(range);
 
-    expect(request).toEqual({ offset: 20, limit: 20 });
-  });
-
-  it('windowRequest_WithBigRange_CapsTheLimitAt100', () => {
-    const request = windowRequest({ first: 0, last: 500 });
-
-    expect(request).toEqual({ offset: 0, limit: 100 });
+    expect(request).toEqual(expected);
   });
 });
 
-describe('slotsOf', () => {
+describe('slotsOf', { tags: ['WorkOrders'] }, () => {
   it('slotsOf_WithWindowInTheMiddle_FillsOnlyTheLoadedPositions', () => {
     const row = { id: 'r1' } as WorkOrderRow;
 
@@ -42,7 +39,7 @@ describe('slotsOf', () => {
   });
 });
 
-describe('columnBody', () => {
+describe('columnBody', { tags: ['WorkOrders'] }, () => {
   it('columnBody_WithScheduledStatus_FiltersTheStatusAndTheDateRange', () => {
     const body = columnBody(WorkOrderStatus.Staged, { first: 0, last: 10 }, INITIAL_FILTER, RANGE, 'Europe/Kyiv');
 
@@ -68,7 +65,7 @@ describe('columnBody', () => {
   });
 });
 
-describe('dropDecision', () => {
+describe('dropDecision', { tags: ['WorkOrders'] }, () => {
   const S = WorkOrderStatus;
 
   it.each([
@@ -93,7 +90,7 @@ describe('dropDecision', () => {
   });
 });
 
-describe('touchedColumns', () => {
+describe('touchedColumns', { tags: ['WorkOrders'] }, () => {
   it('touchedColumns_ForAStatusDrop_AreTheSourceAndTheTarget', () => {
     const columns = touchedColumns(WorkOrderStatus.Staged, WorkOrderStatus.Blocked);
 
@@ -107,7 +104,7 @@ describe('touchedColumns', () => {
   });
 });
 
-describe('statusTargets', () => {
+describe('statusTargets', { tags: ['WorkOrders'] }, () => {
   it('statusTargets_ForAWorkerOnAScheduledCard_LeaveOutTheBacklog', () => {
     const targets = statusTargets(WorkOrderStatus.Staged, false);
 
@@ -126,7 +123,7 @@ describe('statusTargets', () => {
   });
 });
 
-describe('canEnterColumn', () => {
+describe('canEnterColumn', { tags: ['WorkOrders'] }, () => {
   it('canEnterColumn_WhileTheColumnLoads_RefusesTheCard', () => {
     const result = canEnterColumn(WorkOrderStatus.Staged, WorkOrderStatus.Blocked, true, true);
 

@@ -14,7 +14,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-describe('isDialogTopmost', () => {
+describe('isDialogTopmost', { tags: ['Platform'] }, () => {
   it('isDialogTopmost_WithAConfirmationAbove_ReturnsFalse', () => {
     const container = dialogAt(CONTAINER_Z_INDEX);
     dialogAt(CONTAINER_Z_INDEX + 1);
@@ -42,7 +42,7 @@ describe('isDialogTopmost', () => {
   });
 });
 
-describe('hasOpenPanel', () => {
+describe('hasOpenPanel', { tags: ['Platform'] }, () => {
   it('hasOpenPanel_WithoutAnOverlay_ReturnsFalse', () => {
     const hasPanel = hasOpenPanel(document);
 

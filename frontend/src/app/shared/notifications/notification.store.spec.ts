@@ -26,7 +26,7 @@ function notification(id: string, actorSubject: string | null = null): RealtimeN
   } as RealtimeNotification;
 }
 
-describe('NotificationStore', () => {
+describe('NotificationStore', { tags: ['Realtime'] }, () => {
   let notifications$: Subject<RealtimeNotification>;
   let sessionEnded$: Subject<void>;
   let stop: ReturnType<typeof vi.fn>;

@@ -109,7 +109,7 @@ async function openPhases(http: HttpTestingController, url = '/machines/m1/phase
   return harness;
 }
 
-describe('phases route', () => {
+describe('phases route', { tags: ['SignalModel'] }, () => {
   it('phasesRoute_AfterOpening_AsksForTheStatusesWithAPageThatTheApiAccepts', async () => {
     const http = setup();
 

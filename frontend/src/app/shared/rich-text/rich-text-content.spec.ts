@@ -29,7 +29,7 @@ async function readContentStylesheet(): Promise<string> {
   return fs.readFileSync(CONTENT_STYLESHEET, 'utf8');
 }
 
-describe('rich text content style', () => {
+describe('rich text content style', { tags: ['Platform'] }, () => {
   it('contentRules_EveryRule_NamesTheEditorAndTheView', async () => {
     const css = await readContentStylesheet();
 

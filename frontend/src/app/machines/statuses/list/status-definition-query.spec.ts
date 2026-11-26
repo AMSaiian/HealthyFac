@@ -20,7 +20,7 @@ const EMPTY_FILTER: StatusDefinitionFilter = {
   updatedAt: EMPTY_RANGE,
 };
 
-describe('toSearchBody', () => {
+describe('toSearchBody', { tags: ['SignalModel'] }, () => {
   it('toSearchBody_WithEmptyFilter_SendsNoActiveFilter', () => {
     const state: StatusDefinitionGridState = { offset: 0, limit: 25, sort: null, filter: EMPTY_FILTER };
 

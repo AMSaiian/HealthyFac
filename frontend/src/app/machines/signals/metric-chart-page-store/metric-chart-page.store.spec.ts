@@ -19,7 +19,7 @@ const MACHINE_ID = 'machine-1';
 const FROM = '2027-06-01T08:00:00Z';
 const TO = '2027-06-01T09:00:00Z';
 
-describe('MetricChartPageStore', () => {
+describe('MetricChartPageStore', { tags: ['Evaluation'] }, () => {
   const getHistory = vi.fn();
   const getEpisodes = vi.fn();
   const getPhaseTimes = vi.fn();

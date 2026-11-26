@@ -136,7 +136,7 @@ async function openSignals(http: HttpTestingController): Promise<InstanceType<ty
   return harness.routeDebugElement?.injector.get(MetricChartPageStore) as InstanceType<typeof MetricChartPageStore>;
 }
 
-describe('signals route', () => {
+describe('signals route', { tags: ['Evaluation'] }, () => {
   beforeEach(() => {
     vi.stubGlobal('ResizeObserver', ResizeObserverStub);
   });

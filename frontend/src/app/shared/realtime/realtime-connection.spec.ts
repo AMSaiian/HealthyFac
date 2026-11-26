@@ -70,7 +70,7 @@ const NOW = Temporal.Instant.from('2026-11-21T10:00:00Z');
 const TOKEN_LIFETIME_MS = 300_000;
 const RENEW_LEAD_MS = 30_000;
 
-describe('RealtimeConnection', () => {
+describe('RealtimeConnection', { tags: ['Realtime'] }, () => {
   let hubs: FakeHub[];
   let startErrors: (Error | null | 'pending')[];
   let isAuthenticated: boolean;

@@ -58,7 +58,7 @@ const reviewRegistration: ActionHostRegistration = {
   },
 };
 
-describe('ActionStore', () => {
+describe('ActionStore', { tags: ['Platform'] }, () => {
   function createStore(startState?: unknown): InstanceType<typeof ActionStore> {
     TestBed.configureTestingModule({
       providers: [

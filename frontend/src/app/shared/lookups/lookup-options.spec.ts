@@ -16,7 +16,7 @@ const lathe: LookupOption = { id: 'm1', displayName: 'Lathe', isDeleted: false }
 const press: LookupOption = { id: 'm2', displayName: 'Press', isDeleted: true };
 const mill: LookupOption = { id: 'm3', displayName: 'Mill', isDeleted: false };
 
-describe('mergeLookupOptions', () => {
+describe('mergeLookupOptions', { tags: ['Platform'] }, () => {
   it('mergeLookupOptions_WithSelectedOptionInTheFoundPage_ListsItOnceFirst', () => {
     const merged = mergeLookupOptions([press], [lathe, press, mill]);
 
@@ -24,7 +24,7 @@ describe('mergeLookupOptions', () => {
   });
 });
 
-describe('keepSelectedOptions', () => {
+describe('keepSelectedOptions', { tags: ['Platform'] }, () => {
   it('keepSelectedOptions_WhenALaterPageLacksTheSelectedOption_KeepsTheRememberedObject', () => {
     const page = signal<LookupOption[]>([lathe, press]);
     const selected = signal<readonly string[]>([]);
@@ -48,7 +48,7 @@ describe('keepSelectedOptions', () => {
   });
 });
 
-describe('createLookup', () => {
+describe('createLookup', { tags: ['Platform'] }, () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -89,13 +89,12 @@ describe('createLookup', () => {
   });
 });
 
-describe('machineLabelOf', () => {
-  it('machineLabelOf_KnownDeletedName_KeepsTheNameAndTheDeletedFlag', () => {
-    expect(machineLabelOf('Lathe', true, 'Unknown')).toEqual({ name: 'Lathe', isDeleted: true });
-  });
-
-  it('machineLabelOf_KnownLiveName_IsNotDeleted', () => {
-    expect(machineLabelOf('Lathe', false, 'Unknown')).toEqual({ name: 'Lathe', isDeleted: false });
+describe('machineLabelOf', { tags: ['Platform'] }, () => {
+  it.each([
+    ['KnownDeletedName_KeepsTheNameAndTheDeletedFlag', true],
+    ['KnownLiveName_IsNotDeleted', false],
+  ])('machineLabelOf_%s', (_name, isDeleted) => {
+    expect(machineLabelOf('Lathe', isDeleted, 'Unknown')).toEqual({ name: 'Lathe', isDeleted });
   });
 
   it.each([null, undefined])('machineLabelOf_Name%s_ShowsTheUnknownNameWithoutTheDeletedFlag', (name) => {
@@ -103,7 +102,7 @@ describe('machineLabelOf', () => {
   });
 });
 
-describe('labelsById', () => {
+describe('labelsById', { tags: ['Platform'] }, () => {
   it('labelsById_Options_MapsEachIdToItsNameAndItsDeletedFlag', () => {
     const labels = labelsById([lathe, press]);
 

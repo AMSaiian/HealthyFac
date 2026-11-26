@@ -65,7 +65,7 @@ function openMenu(grid: GridAccess): void {
   grid.openMenu(new Event('click'), FILE, { toggle: vi.fn() } as unknown as Menu);
 }
 
-describe('FileGrid', () => {
+describe('FileGrid', { tags: ['Files'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

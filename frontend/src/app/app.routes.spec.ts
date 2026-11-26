@@ -44,7 +44,7 @@ function setup(): HttpTestingController {
   return TestBed.inject(HttpTestingController);
 }
 
-describe('app routes', { timeout: ROUTE_LOAD_TIMEOUT * 2 }, () => {
+describe('app routes', { tags: ['Platform', 'Machines', 'Cases', 'Files'], timeout: ROUTE_LOAD_TIMEOUT * 2 }, () => {
   it('networkErrorRoute_IsNotLazy', () => {
     const [first] = routes;
 

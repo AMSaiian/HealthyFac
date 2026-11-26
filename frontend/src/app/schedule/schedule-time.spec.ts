@@ -27,7 +27,7 @@ const DAY: DaySchedule = {
   ],
 };
 
-describe('toRow', () => {
+describe('toRow', { tags: ['Shifts'] }, () => {
   it('toRow_WithDay_MapsBlocksAndBarsToInstants', () => {
     const row = toRow('e1', 'Ann Lee', DAY);
 
@@ -40,7 +40,7 @@ describe('toRow', () => {
   });
 });
 
-describe('followToday', () => {
+describe('followToday', { tags: ['Shifts'] }, () => {
   const yesterday = Temporal.PlainDate.from('2027-06-01');
   const today = Temporal.PlainDate.from('2027-06-02');
 
@@ -71,7 +71,7 @@ describe('followToday', () => {
   });
 });
 
-describe('plainDateOrNull', () => {
+describe('plainDateOrNull', { tags: ['Shifts'] }, () => {
   it('plainDateOrNull_WithAnIsoDate_ReturnsThePlainDate', () => {
     expect(plainDateOrNull('2026-11-21')?.toString()).toBe('2026-11-21');
   });

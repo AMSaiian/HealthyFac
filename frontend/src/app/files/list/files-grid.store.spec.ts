@@ -60,7 +60,7 @@ interface Setup {
   dispatch: ReturnType<typeof vi.fn>;
 }
 
-describe('FilesGridStore', () => {
+describe('FilesGridStore', { tags: ['Files'] }, () => {
   async function setup(
     options: {
       permissions?: readonly string[];

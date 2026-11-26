@@ -1,7 +1,7 @@
 import { Language } from './i18n.constants';
 import { languageSerializer } from './language-serializer';
 
-describe('languageSerializer', () => {
+describe('languageSerializer', { tags: ['Platform'] }, () => {
   it('read_WithUk_ReturnsUk', () => {
     const result = languageSerializer.read('uk');
 

@@ -80,7 +80,7 @@ function group(overrides: Partial<AttemptDraftGroup> = {}): AttemptDraftGroup {
   };
 }
 
-describe('machineReason', () => {
+describe('machineReason', { tags: ['Drafts'] }, () => {
   it.each([
     [{ name: null }, QuickReason.MachineValues],
     [{ name: '  ' }, QuickReason.MachineValues],
@@ -92,7 +92,7 @@ describe('machineReason', () => {
   });
 });
 
-describe('metricReason', () => {
+describe('metricReason', { tags: ['Drafts'] }, () => {
   it.each([
     [{}, CATALOG, null],
     [{ name: null }, CATALOG, QuickReason.MetricValues],
@@ -109,7 +109,7 @@ describe('metricReason', () => {
   });
 });
 
-describe('statusReason', () => {
+describe('statusReason', { tags: ['Drafts'] }, () => {
   it('statusReason_WithoutCode_NeedsReview', () => {
     expect(statusReason({ ...STATUS, code: null })).toBe(QuickReason.StatusValues);
   });
@@ -119,7 +119,7 @@ describe('statusReason', () => {
   });
 });
 
-describe('needsReviewReasons', () => {
+describe('needsReviewReasons', { tags: ['Drafts'] }, () => {
   it('needsReviewReasons_ForAwaitingTargetDrafts_GiveTheAwaitingReasonAndNeverApplyThem', () => {
     const drafts = {
       groups: [
@@ -171,7 +171,7 @@ describe('needsReviewReasons', () => {
   });
 });
 
-describe('groupReason', () => {
+describe('groupReason', { tags: ['Drafts'] }, () => {
   it('groupReason_WithPendingMachineWithoutName_ReturnsTheMachineReason', () => {
     const value = group({ machineId: null, machineDraft: { ...MACHINE, name: null }, metrics: [METRIC] });
 
@@ -197,7 +197,7 @@ describe('groupReason', () => {
   });
 });
 
-describe('applicableMetrics', () => {
+describe('applicableMetrics', { tags: ['Drafts'] }, () => {
   it('applicableMetrics_WithMixedDrafts_KeepsPendingDraftsWithoutAReason', () => {
     const value = group({
       metrics: [
@@ -211,7 +211,7 @@ describe('applicableMetrics', () => {
   });
 });
 
-describe('machineSyncDelayMs', () => {
+describe('machineSyncDelayMs', { tags: ['Drafts'] }, () => {
   it('machineSyncDelayMs_ForRetriesOneToFive_DoublesFromHalfASecond', () => {
     const delays = [1, 2, 3, 4, 5].map(machineSyncDelayMs);
 
@@ -219,19 +219,18 @@ describe('machineSyncDelayMs', () => {
   });
 });
 
-describe('retryAfterSeconds', () => {
+describe('retryAfterSeconds', { tags: ['Drafts'] }, () => {
   const tooMany = (headers: Record<string, string>): HttpErrorResponse =>
     new HttpErrorResponse({
       status: HttpStatusCode.TooManyRequests,
       headers: new HttpHeaders(headers),
     });
 
-  it('retryAfterSeconds_WithAWholeNumberHeader_ReturnsIt', () => {
-    expect(retryAfterSeconds(tooMany({ 'Retry-After': '2' }))).toBe(2);
-  });
-
-  it('retryAfterSeconds_WithAFractionHeader_RoundsUp', () => {
-    expect(retryAfterSeconds(tooMany({ 'Retry-After': '1.2' }))).toBe(2);
+  it.each([
+    ['AWholeNumberHeader', '2', 2],
+    ['AFractionHeader', '1.2', 2],
+  ])('retryAfterSeconds_With%s_ReturnsTheRoundedUpSeconds', (_name, header, expected) => {
+    expect(retryAfterSeconds(tooMany({ 'Retry-After': header }))).toBe(expected);
   });
 
   it('retryAfterSeconds_WithoutAReadableHeader_ReturnsTheWholeWindow', () => {
@@ -241,17 +240,16 @@ describe('retryAfterSeconds', () => {
   });
 });
 
-describe('chunk', () => {
-  it('chunk_WithMoreItemsThanTheSize_KeepsTheOrderAndTheLastPartShort', () => {
-    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
-  });
-
-  it('chunk_WithNoItems_ReturnsNoParts', () => {
-    expect(chunk([], 200)).toEqual([]);
+describe('chunk', { tags: ['Drafts'] }, () => {
+  it.each([
+    ['WithMoreItemsThanTheSize_KeepsTheOrderAndTheLastPartShort', [1, 2, 3, 4, 5], 2, [[1, 2], [3, 4], [5]]],
+    ['WithNoItems_ReturnsNoParts', [], 200, []],
+  ])('chunk_%s', (_name, items, size, expected) => {
+    expect(chunk(items, size)).toEqual(expected);
   });
 });
 
-describe('needsReviewReasons phase drafts', () => {
+describe('needsReviewReasons phase drafts', { tags: ['Drafts'] }, () => {
   const PHASE = {
     id: 'ph',
     state: DraftState.Pending,

@@ -16,7 +16,7 @@ import { EmployeesApi } from '@employees/employees-api';
 import { EmployeesGridStore } from './employees-grid.store';
 import { INITIAL_FILTER, isRetryable, toSearchBody } from './employees-grid.store.utils';
 
-describe('toSearchBody', () => {
+describe('toSearchBody', { tags: ['Companies'] }, () => {
   it('toSearchBody_WithEmptyFilter_LeavesEveryFilterOut', () => {
     const body = toSearchBody({ offset: 0, limit: 10, sort: null, filter: INITIAL_FILTER });
 
@@ -47,7 +47,7 @@ describe('toSearchBody', () => {
   });
 });
 
-describe('isRetryable', () => {
+describe('isRetryable', { tags: ['Companies'] }, () => {
   it.each([
     [EmployeeStatus.Provisioning, true],
     [EmployeeStatus.ProvisioningFailed, true],
@@ -60,7 +60,7 @@ describe('isRetryable', () => {
   });
 });
 
-describe('EmployeesGridStore', () => {
+describe('EmployeesGridStore', { tags: ['Companies'] }, () => {
   const lastResult = signal<ActionResult | null>(null);
   const searchEmployees = vi.fn();
   const dispatch = vi.fn();

@@ -34,7 +34,7 @@ function duplicatedOrHoverShades(shades: readonly string[], buttonHover: string)
   return shades.filter((shade) => shade === buttonHover || shades.indexOf(shade) !== shades.lastIndexOf(shade));
 }
 
-describe('healthyfac preset', () => {
+describe('healthyfac preset', { tags: ['Platform'] }, () => {
   it('headerCellShades_InBothThemes_DifferFromEachOtherAndFromTheFilterButtonHover', () => {
     const buttonHover = shadesOf(buttonTextSecondaryHover());
     const sorted = shadesOf(sortedHeaderCellBackground());

@@ -6,7 +6,7 @@ import { SPINNER_MIN_VISIBLE_MS, SPINNER_SHOW_AFTER_MS } from './loading-constan
 
 const LOAD_AFTER_SHOWN_MS = 50;
 
-describe('delayedLoading', () => {
+describe('delayedLoading', { tags: ['Platform'] }, () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

@@ -23,7 +23,7 @@ function stateWith(filter: Partial<MachineFilter>): MachineGridState {
   return { offset: 0, limit: 25, sort: null, filter: { ...EMPTY_FILTER, ...filter } };
 }
 
-describe('toSearchBody', () => {
+describe('toSearchBody', { tags: ['Machines'] }, () => {
   it('toSearchBody_WithEmptyFilter_SendsNoActiveFilter', () => {
     const body = toSearchBody(stateWith({}), ZONE);
 

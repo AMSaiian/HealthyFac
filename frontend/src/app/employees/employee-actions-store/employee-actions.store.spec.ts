@@ -14,7 +14,7 @@ import { EmployeeActionType, OPEN_INVITE_EXISTS_DETAIL } from '@employees/employ
 import { EmployeeActionsStore } from '@employees/employee-actions-store/employee-actions.store';
 import { EmployeesApi } from '@employees/employees-api';
 
-describe('EmployeeActionsStore', () => {
+describe('EmployeeActionsStore', { tags: ['Companies'] }, () => {
   const createInvite = vi.fn();
   const resendInvite = vi.fn();
   const retryProvisioning = vi.fn();

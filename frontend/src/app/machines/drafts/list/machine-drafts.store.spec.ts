@@ -62,7 +62,7 @@ interface SetupOptions {
   readonly isAttempt?: boolean;
 }
 
-describe('MachineDraftsStore', () => {
+describe('MachineDraftsStore', { tags: ['Drafts'] }, () => {
   const realtime = createFakeRealtimeConnection();
   function setup(options: SetupOptions = {}): {
     store: InstanceType<typeof MachineDraftsStore>;

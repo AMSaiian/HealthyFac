@@ -22,7 +22,7 @@ function deferred(): { promise: Promise<boolean>; resolve: () => void } {
   return { promise, resolve };
 }
 
-describe('AuthStore', () => {
+describe('AuthStore', { tags: ['Identity'] }, () => {
   let keycloak: FakeKeycloak;
 
   function createStore(): InstanceType<typeof AuthStore> {

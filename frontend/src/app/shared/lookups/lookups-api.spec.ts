@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { LookupsApi } from '@shared/lookups/lookups-api';
 
-describe('LookupsApi', () => {
+describe('LookupsApi', { tags: ['Platform'] }, () => {
   it('machinesByIds_WithIds_PostsTheIdsAndReturnsTheOptions', () => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     const http = TestBed.inject(HttpTestingController);

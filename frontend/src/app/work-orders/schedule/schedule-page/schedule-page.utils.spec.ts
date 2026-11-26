@@ -8,7 +8,7 @@ import {
   stagingCardOf,
 } from './schedule-page.utils';
 
-describe('stagingCardOf', () => {
+describe('stagingCardOf', { tags: ['WorkOrders'] }, () => {
   it('stagingCardOf_ForAHighPriorityWorkOrder_GivesTheLabelKeyAndTheColorClass', () => {
     const card = stagingCardOf({ id: 'w1', title: 'Fix', estimateMinutes: 45, priority: WorkOrderPriority.High });
 
@@ -22,7 +22,7 @@ describe('stagingCardOf', () => {
   });
 });
 
-describe('backlogDrawerStateOf', () => {
+describe('backlogDrawerStateOf', { tags: ['WorkOrders'] }, () => {
   it.each([
     ['OpenWithoutADrag', true, false, false, true, false],
     ['ClosedWithoutADrag', false, false, false, false, false],
@@ -35,7 +35,7 @@ describe('backlogDrawerStateOf', () => {
   });
 });
 
-describe('isBacklogOpenAfterDrag', () => {
+describe('isBacklogOpenAfterDrag', { tags: ['WorkOrders'] }, () => {
   it.each([
     ['BacklogDragStartedWhileOpen', true, 'backlogDragStarted', false],
     ['BoardDragStartedWhileOpen', true, 'boardDragStarted', false],
@@ -47,7 +47,7 @@ describe('isBacklogOpenAfterDrag', () => {
   });
 });
 
-describe('isReturnBandShown', () => {
+describe('isReturnBandShown', { tags: ['WorkOrders'] }, () => {
   it.each([
     ['ADragOfABoardBarByAManager', true, true, true],
     ['NoDrag', false, true, false],
@@ -57,7 +57,7 @@ describe('isReturnBandShown', () => {
   });
 });
 
-describe('backlogPointerActionOf', () => {
+describe('backlogPointerActionOf', { tags: ['WorkOrders'] }, () => {
   it.each([
     ['InsideTheDrawer', true, false, 'stay'],
     ['OnTheToggleButton', false, true, 'toggle'],

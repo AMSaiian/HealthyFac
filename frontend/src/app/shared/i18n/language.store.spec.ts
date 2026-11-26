@@ -11,7 +11,7 @@ import { Language } from './i18n.constants';
 import { LanguageStore } from './language.store';
 import { LocaleApi } from './locale-api';
 
-describe('LanguageStore', () => {
+describe('LanguageStore', { tags: ['Platform'] }, () => {
   const isAuthenticated = signal(true);
   const signInLocale = signal<string | null>(null);
   const setUiLocale = vi.fn();

@@ -32,7 +32,7 @@ function localTime(instant: Temporal.Instant): string {
   return instant.toZonedDateTimeISO(ZONE).toPlainDateTime().toString({ smallestUnit: 'minute' });
 }
 
-describe('schedule board edit utils', () => {
+describe('schedule board edit utils', { tags: ['Platform'] }, () => {
   describe('instantAt and snapToGrid', () => {
     it.each([
       ['NormalDay', '2027-06-01', 37.5, '2027-06-01T09:00'],
@@ -124,12 +124,11 @@ describe('schedule board edit utils', () => {
     };
     const onTime = { ...overdue, overrunStartPercent: null };
 
-    it('resizeHandleRightPercent_ForAnOverdueBar_SitsAtTheOverrunStart', () => {
-      expect(resizeHandleRightPercent(overdue)).toBe(60);
-    });
-
-    it('resizeHandleRightPercent_ForABarWithoutOverrun_SitsAtTheRightEdge', () => {
-      expect(resizeHandleRightPercent(onTime)).toBe(0);
+    it.each([
+      ['AnOverdueBar_SitsAtTheOverrunStart', overdue, 60],
+      ['ABarWithoutOverrun_SitsAtTheRightEdge', onTime, 0],
+    ])('resizeHandleRightPercent_For%s', (_name, bar, expected) => {
+      expect(resizeHandleRightPercent(bar)).toBe(expected);
     });
 
     it('resizeShownOf_ForAPointerBeforeNow_KeepsTheDrawnEndAndMovesTheOverrunStartAndTheHandle', () => {
@@ -282,7 +281,7 @@ describe('schedule board edit utils', () => {
   });
 });
 
-describe('drop and drag decisions', () => {
+describe('drop and drag decisions', { tags: ['Platform'] }, () => {
   const axis = axisOf(Temporal.PlainDate.from('2027-06-01'), ZONE);
   const area = { left: 100, width: 2400 };
   const now = Temporal.Instant.from('2027-06-01T05:00:00Z');
@@ -318,16 +317,12 @@ describe('drop and drag decisions', () => {
   });
 
   describe('shownWhileHolding', () => {
-    it('shownWhileHolding_WhileADragHoldsTheBoard_KeepsThePreviousRows', () => {
-      expect(shownWhileHolding(['new'], ['old'], true)).toEqual(['old']);
-    });
-
-    it('shownWhileHolding_WithoutADrag_ShowsTheNextRows', () => {
-      expect(shownWhileHolding(['new'], ['old'], false)).toEqual(['new']);
-    });
-
-    it('shownWhileHolding_WithNoPreviousRows_ShowsTheNextRows', () => {
-      expect(shownWhileHolding(['new'], undefined, true)).toEqual(['new']);
+    it.each([
+      ['WhileADragHoldsTheBoard_KeepsThePreviousRows', ['old'], true, ['old']],
+      ['WithoutADrag_ShowsTheNextRows', ['old'], false, ['new']],
+      ['WithNoPreviousRows_ShowsTheNextRows', undefined, true, ['new']],
+    ])('shownWhileHolding_%s', (_name, previous, isHeld, expected) => {
+      expect(shownWhileHolding(['new'], previous, isHeld)).toEqual(expected);
     });
   });
 

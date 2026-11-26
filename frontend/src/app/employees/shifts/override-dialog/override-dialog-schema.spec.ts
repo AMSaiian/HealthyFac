@@ -2,7 +2,7 @@ import { Temporal } from '@shared/time/temporal';
 
 import { createOverrideFormSchema, type OverrideTodayContext } from './override-dialog-schema';
 
-describe('createOverrideFormSchema', () => {
+describe('createOverrideFormSchema', { tags: ['Shifts'] }, () => {
   const TODAY = Temporal.PlainDate.from('2027-04-12');
   const CONTEXT: OverrideTodayContext = {
     now: TODAY.toPlainDateTime('13:02').toZonedDateTime('Europe/Kyiv').toInstant(),

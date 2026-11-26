@@ -27,7 +27,7 @@ function setup(): InstanceType<typeof TestStore> {
   return TestBed.inject(TestStore);
 }
 
-describe('withGridState', () => {
+describe('withGridState', { tags: ['Persistence'] }, () => {
   it('setFilter_Always_ResetsOffset', () => {
     const store = setup();
     store.setPage(PAGE_OFFSET, PAGE_LIMIT);
@@ -98,7 +98,7 @@ describe('withGridState', () => {
   });
 });
 
-describe('withGridState keyset paging', () => {
+describe('withGridState keyset paging', { tags: ['Persistence'] }, () => {
   const FIRST = toKeysetPosition({ sortValue: 1, id: 'a' });
   const SECOND = toKeysetPosition({ sortValue: 2, id: 'b' });
 

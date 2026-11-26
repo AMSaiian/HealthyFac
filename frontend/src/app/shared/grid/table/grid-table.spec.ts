@@ -104,7 +104,7 @@ function setup(
   return { table: gridTable, sort, filterChange, pageChange, columns };
 }
 
-describe('createGridTable', () => {
+describe('createGridTable', { tags: ['Persistence'] }, () => {
   it('columns_WhenTheColumnsChange_ResetsTheWidths', () => {
     const { table, destroyStyleElement, element } = fakeTable();
     const { columns } = setup(undefined, table);
@@ -195,7 +195,7 @@ describe('createGridTable', () => {
   });
 });
 
-describe('createGridTable keyset paging', () => {
+describe('createGridTable keyset paging', { tags: ['Persistence'] }, () => {
   interface KeysetHarness {
     readonly table: GridTable<'name'>;
     readonly next: Mock;

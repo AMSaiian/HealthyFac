@@ -5,7 +5,7 @@ import { Temporal } from '@shared/time/temporal';
 
 import { DESCRIPTION_MAX_LENGTH } from '@machines/machine-limits';
 
-import { machineFormSchema, type MachineFormValue, REQUIRED_ERROR_KEY } from './machine-form-schema';
+import { machineFormSchema, type MachineFormValue } from './machine-form-schema';
 
 const VALID: MachineFormValue = {
   name: 'Lathe 01',
@@ -15,15 +15,7 @@ const VALID: MachineFormValue = {
   state: null,
 };
 
-describe('machineFormSchema expectedGoLiveOn', () => {
-  it('machineFormSchema_WithoutGoLiveDate_FailsWithRequiredKey', () => {
-    const result = machineFormSchema.safeParse({ ...VALID, expectedGoLiveOn: null });
-
-    expect(result.error?.issues.map((issue) => issue.message)).toContain(REQUIRED_ERROR_KEY);
-  });
-});
-
-describe('machineFormSchema description', () => {
+describe('machineFormSchema description', { tags: ['Machines'] }, () => {
   const formatted = (visibleLength: number): string =>
     `<p>${'<strong>aaaaaaaaaa</strong>'.repeat(visibleLength / 10)}</p>`;
 

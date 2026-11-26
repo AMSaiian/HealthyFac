@@ -27,7 +27,7 @@ async function readStylesheets(): Promise<Record<string, string>> {
   return Object.fromEntries(paths.map((path) => [path, fs.readFileSync(path, 'utf8')]));
 }
 
-describe('component css tokens', () => {
+describe('component css tokens', { tags: ['Conventions'] }, () => {
   it('componentCssTokens_EveryStylesheet_UsesOnlyGlobalTokens', async () => {
     const stylesheets = await readStylesheets();
     expect(Object.keys(stylesheets)).not.toHaveLength(0);

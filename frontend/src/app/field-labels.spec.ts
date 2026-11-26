@@ -77,7 +77,7 @@ async function readStylesheet(): Promise<string> {
   return fs.readFileSync(FIELD_LABEL_STYLESHEET, 'utf8');
 }
 
-describe('field labels', () => {
+describe('field labels', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string

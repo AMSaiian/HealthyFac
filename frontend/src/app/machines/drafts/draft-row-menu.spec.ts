@@ -16,7 +16,7 @@ function options(overrides: Partial<DraftRowMenuOptions> = {}): DraftRowMenuOpti
   };
 }
 
-describe('draftRowMenuItems', () => {
+describe('draftRowMenuItems', { tags: ['Drafts'] }, () => {
   it('draftRowMenuItems_ForAPendingDraft_ReturnsReviewApplyAndDismissEnabled', () => {
     const items = draftRowMenuItems(options());
 

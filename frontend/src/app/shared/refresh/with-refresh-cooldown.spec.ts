@@ -16,7 +16,7 @@ const CooldownStore = signalStore(
   })),
 );
 
-describe('withRefreshCooldown', () => {
+describe('withRefreshCooldown', { tags: ['Platform'] }, () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

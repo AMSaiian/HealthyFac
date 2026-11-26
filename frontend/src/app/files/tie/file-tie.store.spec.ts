@@ -14,7 +14,7 @@ import { FileTieStore } from './file-tie.store';
 const MACHINE_ID = 'encrypted-machine-id';
 const ITEM = { id: 'file-id', fileName: 'manual', rowVersion: 9 };
 
-describe('FileTieStore', () => {
+describe('FileTieStore', { tags: ['Files'] }, () => {
   function setup(): {
     store: InstanceType<typeof FileTieStore>;
     http: HttpTestingController;

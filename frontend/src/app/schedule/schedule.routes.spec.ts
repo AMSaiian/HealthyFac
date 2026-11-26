@@ -63,7 +63,7 @@ function setup(hasPermission = true): HttpTestingController {
   return TestBed.inject(HttpTestingController);
 }
 
-describe('schedule routes', () => {
+describe('schedule routes', { tags: ['Shifts'] }, () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

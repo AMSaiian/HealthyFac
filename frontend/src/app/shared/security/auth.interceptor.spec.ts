@@ -29,7 +29,7 @@ interface FakeStore {
   login: ReturnType<typeof vi.fn>;
 }
 
-describe('authInterceptor', () => {
+describe('authInterceptor', { tags: ['Identity'] }, () => {
   let store: FakeStore;
   let http: HttpClient;
   let controller: HttpTestingController;

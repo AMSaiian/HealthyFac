@@ -19,7 +19,7 @@ export function menuLines(source: string): number[] {
   return [...source.matchAll(MENU_OPEN)].map((match) => lineOf(source, match.index));
 }
 
-describe('row menus', () => {
+describe('row menus', { tags: ['Conventions'] }, () => {
   const templates = import.meta.glob('./**/*.html', { query: '?raw', import: 'default', eager: true }) as Record<
     string,
     string

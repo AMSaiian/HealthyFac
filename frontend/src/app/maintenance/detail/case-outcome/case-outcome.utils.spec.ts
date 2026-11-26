@@ -5,7 +5,7 @@ function outcome(kind: CaseOutcomeKind, extra: Partial<CaseOutcome> = {}): CaseO
   return { kind, workOrderDraftId: null, workOrderId: null, title: null, reason: null, ...extra };
 }
 
-describe('case outcome utils', () => {
+describe('case outcome utils', { tags: ['Cases'] }, () => {
   it.each([
     [CaseOutcomeKind.ProposedWorkOrder, 'MAINTENANCE.OUTCOME.PROPOSED_WORK_ORDER', OutcomeLink.Draft],
     [CaseOutcomeKind.LinkedWorkOrder, 'MAINTENANCE.OUTCOME.LINKED_WORK_ORDER', OutcomeLink.WorkOrder],

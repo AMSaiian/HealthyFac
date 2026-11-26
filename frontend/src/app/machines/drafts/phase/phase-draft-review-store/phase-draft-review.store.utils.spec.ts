@@ -54,7 +54,7 @@ const DRAFT: PhaseDraftDetail = {
 const WAITING_CONDITION = { ...CONDITION, metricDefinitionId: null, metricDraftId: 'dm1' };
 const WAITING_LIMIT = { ...LIMIT, metricDefinitionId: null, metricDraftId: 'dm1' };
 
-describe('phaseApplyBlock', () => {
+describe('phaseApplyBlock', { tags: ['Drafts'] }, () => {
   it('phaseApplyBlock_CompleteDraftOfDefinitions_ReturnsNull', () => {
     expect(phaseApplyBlock(DRAFT)).toBeNull();
   });
@@ -89,17 +89,16 @@ describe('phaseApplyBlock', () => {
   });
 });
 
-describe('waitsForDrafts', () => {
-  it('waitsForDrafts_DraftOfDefinitions_IsFalse', () => {
-    expect(waitsForDrafts(DRAFT)).toBe(false);
-  });
-
-  it('waitsForDrafts_LimitRowOnDraft_IsTrue', () => {
-    expect(waitsForDrafts({ ...DRAFT, limits: [WAITING_LIMIT] })).toBe(true);
+describe('waitsForDrafts', { tags: ['Drafts'] }, () => {
+  it.each([
+    ['DraftOfDefinitions_IsFalse', DRAFT, false],
+    ['LimitRowOnDraft_IsTrue', { ...DRAFT, limits: [WAITING_LIMIT] }, true],
+  ])('waitsForDrafts_%s', (_name, draft, expected) => {
+    expect(waitsForDrafts(draft)).toBe(expected);
   });
 });
 
-describe('toPhaseBody', () => {
+describe('toPhaseBody', { tags: ['Drafts'] }, () => {
   it('toPhaseBody_CompleteDraft_BuildsTheBodyWithTrimmedValues', () => {
     expect(toPhaseBody(DRAFT)).toEqual({
       code: 'cutting',
@@ -126,7 +125,7 @@ describe('toPhaseBody', () => {
   });
 });
 
-describe('findPhaseDraft', () => {
+describe('findPhaseDraft', { tags: ['Drafts'] }, () => {
   const DRAFTS: AttemptDrafts = {
     groups: [
       { machineId: 'a', machineName: null, machineDraft: null, metrics: [], statuses: [], phases: [] },
@@ -143,7 +142,7 @@ describe('findPhaseDraft', () => {
   });
 });
 
-describe('toSourceNames', () => {
+describe('toSourceNames', { tags: ['Drafts'] }, () => {
   it('toSourceNames_DefinitionsAndDrafts_NamesBothByTheirIds', () => {
     const drafts: AttemptDrafts = {
       groups: [
@@ -169,7 +168,7 @@ describe('toSourceNames', () => {
   });
 });
 
-describe('editable phase draft review', () => {
+describe('editable phase draft review', { tags: ['Drafts'] }, () => {
   const NO_PRIORITY: PhaseDraftDetail = { ...DRAFT, priority: null, isTracked: null, conditions: [CONDITION] };
 
   it('phaseReviewBlock_ForADraftWithoutAPriority_NeedsValuesUntilAPriorityIsSet', () => {
