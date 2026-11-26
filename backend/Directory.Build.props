@@ -12,4 +12,9 @@
       Include="$(MSBuildThisFileDirectory)BannedSymbols.Reflection.txt"
       Condition="'$(MSBuildProjectName)' != 'HealthyFac.Testing'" />
   </ItemGroup>
+  <Target Name="SetSarifErrorLog" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <ErrorLog>$(IntermediateOutputPath)$(MSBuildProjectName).sarif,version=2.1</ErrorLog>
+    </PropertyGroup>
+  </Target>
 </Project>
