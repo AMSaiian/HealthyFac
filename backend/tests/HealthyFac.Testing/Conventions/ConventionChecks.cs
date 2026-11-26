@@ -280,6 +280,15 @@ public static class ConventionChecks
         TextRuleInspection.FindViolations(assemblies);
 
     /// <summary>
+    /// Finds the validator rules that use <c>NotEmpty</c> on a nullable value property. On such a property
+    /// <c>NotEmpty</c> compares with <c>null</c>, so <c>Guid.Empty</c>, <c>0</c>, and <c>default</c> pass.
+    /// </summary>
+    /// <param name="assemblies">The Application assemblies to inspect.</param>
+    /// <returns>One line <c>&lt;validator&gt;.&lt;property&gt;</c> for each such rule.</returns>
+    public static IReadOnlyList<string> FindNotEmptyOnNullableValues(IEnumerable<Assembly> assemblies) =>
+        NullableRuleInspection.FindNotEmptyOnNullableValues(assemblies);
+
+    /// <summary>
     /// Finds the integration messages (types that implement <c>IIntegrationMessage</c>) that no
     /// <c>HealthyFac.&lt;Service&gt;.Messaging</c> assembly declares.
     /// </summary>

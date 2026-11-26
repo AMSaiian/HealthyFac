@@ -152,6 +152,21 @@ public sealed class ConventionTests
     }
 
     [Fact]
+    public void NullableValueRules_InAssemblies_UseNoNotEmpty()
+    {
+        var violations = string.Join(
+            Environment.NewLine,
+            ConventionChecks.FindNotEmptyOnNullableValues(
+                ConventionTestData.AllAssemblies.Select(row => row.Data)
+                    .Concat(ConventionTestData.MessageAssemblies)
+                    .Concat(ConventionTestData.UseCaseAssemblies)
+                    .Distinct()
+                    .Select(LayerDependencyTestData.Resolve)));
+
+        violations.Should().BeEmpty();
+    }
+
+    [Fact]
     public void UseCaseParts_InAssemblies_ShareTheRequestNamespace()
     {
         var violations = string.Join(

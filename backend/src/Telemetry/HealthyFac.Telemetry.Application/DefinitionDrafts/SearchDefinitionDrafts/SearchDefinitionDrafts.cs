@@ -33,12 +33,12 @@ public sealed class SearchDefinitionDraftsRequestValidator
         RuleFor(request => request.CompanyId).NotEmpty().WithMessage(DefinitionDraftErrors.CompanyIdRequired);
 
         RuleFor(request => request.MachineId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.MachineIdRequired)
             .When(request => request.MachineId is not null);
 
         RuleFor(request => request.AttemptId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(DefinitionDraftErrors.AttemptIdRequired)
             .When(request => request.AttemptId is not null);
 

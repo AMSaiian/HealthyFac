@@ -8,6 +8,7 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.TextInput;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Domain.Enumerations;
+using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Testing.Conventions;
 
@@ -16,6 +17,8 @@ namespace HealthyFac.Testing.Conventions;
 /// </summary>
 internal static class TextRuleInspection
 {
+    private const int PositiveLimit = 100;
+
     public static IReadOnlyList<string> FindViolations(IEnumerable<Assembly> assemblies)
     {
         ValidationNames.UseJsonNames();
@@ -70,7 +73,7 @@ internal static class TextRuleInspection
         return [.. violations];
     }
 
-    private static Dictionary<Type, Type> FindValidatorTypes(IEnumerable<Type> types)
+    internal static Dictionary<Type, Type> FindValidatorTypes(IEnumerable<Type> types)
     {
         var validatorTypes = new Dictionary<Type, Type>();
 
@@ -95,7 +98,7 @@ internal static class TextRuleInspection
         type is { IsClass: true, IsAbstract: false, ContainsGenericParameters: false }
         && type.ImplementsGeneric(typeof(IRequest<>));
 
-    private static IValidator CreateValidator(Type validatorType)
+    internal static IValidator CreateValidator(Type validatorType)
     {
         var constructor = validatorType.GetConstructors().Single();
 
@@ -107,6 +110,35 @@ internal static class TextRuleInspection
     }
 
     private static object CreateStub(Type interfaceType) =>
+        interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IOptions<>)
+            ? CreateOptions(interfaceType.GetGenericArguments()[0])
+            : CreateProxy(interfaceType);
+
+    /// <summary>
+    /// Builds options with a positive number in each zero <c>int</c> property, because a validator can read a limit
+    /// from the options and build a range rule with it (<c>InclusiveBetween(1, limit)</c> throws for 0).
+    /// </summary>
+    /// <param name="optionsType">The options class that the validator reads.</param>
+    /// <returns>The <c>IOptions&lt;T&gt;</c> that wraps the options.</returns>
+    private static object CreateOptions(Type optionsType)
+    {
+        var options = Activator.CreateInstance(optionsType)!;
+
+        foreach (var property in optionsType.GetProperties()
+            .Where(property => property is { CanWrite: true }
+                && property.PropertyType == typeof(int)
+                && (int)property.GetValue(options)! == 0))
+        {
+            property.SetValue(options, PositiveLimit);
+        }
+
+        return typeof(Options)
+            .GetMethod(nameof(Options.Create))!
+            .MakeGenericMethod(optionsType)
+            .Invoke(obj: null, [options])!;
+    }
+
+    private static object CreateProxy(Type interfaceType) =>
         typeof(DispatchProxy)
             .GetMethods()
             .Single(method => method.Name == nameof(DispatchProxy.Create) && method.GetGenericArguments().Length == 2)

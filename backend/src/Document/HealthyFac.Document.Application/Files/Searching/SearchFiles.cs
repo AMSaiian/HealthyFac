@@ -30,7 +30,7 @@ public sealed class SearchFilesRequestValidator
             .WithMessage(FileErrors.CompanyIdRequired);
 
         RuleFor(request => request.MachineId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(FileErrors.MachineIdRequired)
             .When(request => request.MachineId.HasValue);
 

@@ -28,7 +28,7 @@ public class UploadFileRequestValidator : AbstractValidator<UploadFileRequest>
         RuleFor(x => x.CompanyId).NotEmpty().WithMessage(FileErrors.CompanyIdRequired);
 
         RuleFor(x => x.MachineId)
-            .NotEmpty()
+            .NotEqual(Guid.Empty)
             .WithMessage(FileErrors.MachineIdRequired)
             .When(x => x.MachineId.HasValue);
 
