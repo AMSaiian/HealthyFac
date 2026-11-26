@@ -2,9 +2,11 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Health.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Health;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class HealthTests : IAsyncLifetime
 {
     private const string UnusedCoreAddress = "http://127.0.0.1:1/";

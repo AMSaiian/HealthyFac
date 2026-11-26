@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Infrastructure.RichText;
 using HealthyFac.Shared.UnitTests.RichText.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.RichText;
 
+[Feature(TestFeatures.Platform)]
 public sealed class HtmlSanitizerRichTextPolicyTests
 {
     private readonly HtmlSanitizerRichTextPolicy _policy = new();

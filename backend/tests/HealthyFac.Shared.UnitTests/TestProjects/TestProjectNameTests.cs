@@ -1,7 +1,9 @@
 using HealthyFac.Shared.UnitTests.TestProjects.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.TestProjects;
 
+[Feature(TestFeatures.Conventions)]
 public sealed class TestProjectNameTests
 {
     [Fact]

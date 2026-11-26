@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.UnitTests.Grids.Keyset.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Grids.Keyset;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class KeysetSortKeyTests
 {
     [Theory]

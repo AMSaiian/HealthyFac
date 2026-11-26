@@ -1,9 +1,11 @@
 using System.Net;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens;
 
+[Feature(TestFeatures.Identity)]
 public sealed class ClientCredentialsHandlerTests
 {
     private const string BearerPrefix = "Bearer ";

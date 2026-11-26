@@ -4,10 +4,12 @@ using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Shared.Infrastructure.Messaging.Transport;
 using HealthyFac.Shared.UnitTests.Messaging.Data;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Shared.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class IntegrationMessageValidationTests
 {
     [Fact]

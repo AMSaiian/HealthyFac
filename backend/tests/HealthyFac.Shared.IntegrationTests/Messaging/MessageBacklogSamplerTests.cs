@@ -1,6 +1,7 @@
 using System.Diagnostics.Metrics;
 using HealthyFac.Shared.Infrastructure.Messaging.Backlog;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,6 +16,7 @@ namespace HealthyFac.Shared.IntegrationTests.Messaging;
 /// its own rows in either order.
 /// </summary>
 [Collection(MessagingStorageCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MessageBacklogSamplerTests(PostgreSqlFixture fixture)
 {
     private readonly PostgreSqlFixture _fixture = fixture;

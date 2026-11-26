@@ -1,10 +1,13 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using HealthyFac.Spa.IntegrationTests.Hosting.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Net.Http.Headers;
 
 namespace HealthyFac.Spa.IntegrationTests.Hosting;
 
+[Feature(TestFeatures.Platform)]
 public sealed partial class SpaHostTests
 {
     [Fact]
@@ -128,27 +131,16 @@ public sealed partial class SpaHostTests
         response.Headers.GetValues(name: "Permissions-Policy").Should().Equal("camera=(self)");
     }
 
-    [Fact]
-    public async Task GetFileWithHashLikeNameButNoDot_ReturnsNoCache()
+    [Theory]
+    [MemberData(nameof(SpaHostTestData.NoCacheFileNames), MemberType = typeof(SpaHostTestData))]
+    public async Task GetFileWithoutImmutableName_ReturnsNoCache(string caseName, string fileName)
     {
         await using var spa = new SpaFactory();
         using var client = spa.CreateClient();
 
-        var response = await client.GetAsync($"/{SpaFactory.LookalikeFileName}", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync($"/{fileName}", TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        response.Headers.CacheControl?.ToString().Should().Be(expected: "no-cache");
-    }
-
-    [Fact]
-    public async Task GetUnhashedFile_ReturnsNoCache()
-    {
-        await using var spa = new SpaFactory();
-        using var client = spa.CreateClient();
-
-        var response = await client.GetAsync($"/{SpaFactory.UnhashedFileName}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, caseName);
         response.Headers.CacheControl?.ToString().Should().Be(expected: "no-cache");
     }
 

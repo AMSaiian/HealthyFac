@@ -2,12 +2,14 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using HealthyFac.Shared.Web.Rpc;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 
 namespace HealthyFac.Shared.IntegrationTests.Rpc;
 
+[Feature(TestFeatures.Platform)]
 public sealed class GrpcPortTests : IAsyncLifetime
 {
     private const string CallPath = "/test.Service/Call";

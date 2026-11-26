@@ -1,9 +1,11 @@
 using System.Text.Json;
 using HealthyFac.Shared.Infrastructure.Messaging;
 using HealthyFac.Shared.UnitTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class MessagingJsonOptionsTests
 {
     [Fact]

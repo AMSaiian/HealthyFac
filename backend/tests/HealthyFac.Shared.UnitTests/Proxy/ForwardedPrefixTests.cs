@@ -1,8 +1,10 @@
 using HealthyFac.Shared.UnitTests.Proxy.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.TestHost;
 
 namespace HealthyFac.Shared.UnitTests.Proxy;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class ForwardedPrefixTests
 {
     private const string PublicPrefix = "/api/core";

@@ -6,6 +6,7 @@ using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
 using HealthyFac.Gateway.Web.Proxy;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Logging;
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class ProxyFailureTests(GatewayEnvironment environment)
 {
     private readonly GatewayEnvironment _environment = environment;

@@ -3,10 +3,13 @@ using System.Net.Mime;
 using System.Text;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class CompositionFailureTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;

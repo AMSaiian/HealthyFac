@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Domain.Emails;
 using HealthyFac.Shared.UnitTests.Emails.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Emails;
 
+[Feature(TestFeatures.Companies)]
 public sealed class EmailAddressesTests
 {
     [Theory]

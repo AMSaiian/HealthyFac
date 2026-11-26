@@ -1,9 +1,11 @@
 using System.Text.Json;
 using HealthyFac.Shared.Infrastructure.TextInput;
 using HealthyFac.Shared.UnitTests.TextInput.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.TextInput;
 
+[Feature(TestFeatures.Platform)]
 public sealed class TextInputJsonTests
 {
     private static readonly JsonSerializerOptions Options = CreateOptions();

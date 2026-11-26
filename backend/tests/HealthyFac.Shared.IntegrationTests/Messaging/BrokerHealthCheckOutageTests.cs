@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingBrokerOutageCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class BrokerHealthCheckOutageTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;

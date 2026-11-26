@@ -1,9 +1,11 @@
 using HealthyFac.Shared.IntegrationTests.SharedRedis;
 using HealthyFac.Shared.IntegrationTests.SharedRedis.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Revocation;
 
 [Collection(SharedRedisCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class RedisTokenRevocationStoreTests(SharedRedisFixture fixture)
 {
     private static readonly TimeSpan TimeToLive = TimeSpan.FromMinutes(minutes: 6);

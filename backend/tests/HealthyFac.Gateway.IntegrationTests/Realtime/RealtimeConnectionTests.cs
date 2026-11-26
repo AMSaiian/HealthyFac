@@ -5,11 +5,14 @@ using HealthyFac.Gateway.IntegrationTests.Health.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Realtime.Data;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.Net.Http.Headers;
 
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeConnectionTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string UnusedCoreAddress = "http://127.0.0.1:1/";

@@ -1,6 +1,7 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;
 using Instruments = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Messaging.Instruments;
@@ -9,6 +10,7 @@ using Tags = HealthyFac.Shared.Application.Observability.ObservabilityConstants.
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingTransportCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class MessagingMetricsTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;

@@ -1,11 +1,13 @@
 using HealthyFac.Shared.Application.Logging;
 using HealthyFac.Shared.UnitTests.Logging.Data;
 using HealthyFac.Shared.Web.Logging;
+using HealthyFac.Testing.Features;
 using Serilog;
 using Serilog.Events;
 
 namespace HealthyFac.Shared.UnitTests.Logging;
 
+[Feature(TestFeatures.Platform)]
 public sealed class SensitiveDataDestructuringPolicyTests
 {
     [Theory]

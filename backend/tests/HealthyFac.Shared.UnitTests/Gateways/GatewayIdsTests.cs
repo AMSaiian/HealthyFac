@@ -1,8 +1,11 @@
 using HealthyFac.Shared.Domain.Gateways;
 using HealthyFac.Shared.UnitTests.Gateways.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Gateways;
 
+[Feature(TestFeatures.Machines)]
+[Feature(TestFeatures.Intake)]
 public sealed class GatewayIdsTests
 {
     [Fact]

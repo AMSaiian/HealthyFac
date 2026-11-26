@@ -1,8 +1,10 @@
 using HealthyFac.Shared.UnitTests.CrossOrigin.Data;
 using HealthyFac.Shared.Web.CrossOrigin;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.CrossOrigin;
 
+[Feature(TestFeatures.Platform)]
 public sealed class CorsPolicyOptionsValidatorTests
 {
     private readonly CorsPolicyOptionsValidator _validator = new();

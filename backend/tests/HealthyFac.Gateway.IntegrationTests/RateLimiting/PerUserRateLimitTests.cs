@@ -2,10 +2,12 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class PerUserRateLimitTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {

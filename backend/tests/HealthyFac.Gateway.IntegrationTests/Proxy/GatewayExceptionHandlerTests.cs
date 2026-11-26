@@ -1,11 +1,13 @@
 using System.Net.Mime;
 using HealthyFac.Gateway.Web.Proxy;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class GatewayExceptionHandlerTests
 {
     private const string SecretDetail = "secret exception detail";

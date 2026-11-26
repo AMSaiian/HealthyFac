@@ -3,11 +3,14 @@ using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Realtime.Data;
 using HealthyFac.Gateway.IntegrationTests.Revocation.Data;
 using HealthyFac.Shared.Infrastructure.Revocation;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Gateway.IntegrationTests.Realtime;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeAuthenticationTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string Rejected = "*401*";

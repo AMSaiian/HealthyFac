@@ -3,12 +3,14 @@ using System.Net.Http.Json;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Gateway.Web.Proxy;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class RateLimitTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private readonly GatewayEnvironment _environment = environment;

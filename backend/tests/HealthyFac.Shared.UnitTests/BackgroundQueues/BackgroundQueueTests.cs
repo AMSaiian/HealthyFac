@@ -2,12 +2,14 @@ using System.Diagnostics;
 using HealthyFac.Shared.Application.BackgroundQueues;
 using HealthyFac.Shared.Infrastructure.BackgroundQueues;
 using HealthyFac.Shared.UnitTests.BackgroundQueues.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 namespace HealthyFac.Shared.UnitTests.BackgroundQueues;
 
+[Feature(TestFeatures.Platform)]
 public sealed class BackgroundQueueTests
 {
     [Fact]

@@ -1,8 +1,11 @@
 using HealthyFac.Gateway.Web.Composition.Drafts.AttemptDrafts;
+using HealthyFac.Testing.Features;
 using static HealthyFac.Gateway.UnitTests.Composition.Data.AttemptDraftGrouperTestData;
 
 namespace HealthyFac.Gateway.UnitTests.Composition;
 
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class AttemptDraftGrouperTests
 {
     [Fact]

@@ -1,9 +1,12 @@
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.UnitTests.Composition.Data;
 using HealthyFac.Gateway.Web.Composition.Drafts.Search;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.UnitTests.Composition;
 
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftSearchRequestTests
 {
     [Theory]

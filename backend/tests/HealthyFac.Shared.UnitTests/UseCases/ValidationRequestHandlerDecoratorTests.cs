@@ -1,11 +1,13 @@
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.UnitTests.UseCases;
 
+[Feature(TestFeatures.Platform)]
 public sealed class ValidationRequestHandlerDecoratorTests
 {
     private const string ErrorsKey = "@Errors";

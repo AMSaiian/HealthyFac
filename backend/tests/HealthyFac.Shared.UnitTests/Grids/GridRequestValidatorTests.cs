@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.UnitTests.Grids.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Grids;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class GridRequestValidatorTests
 {
     [Theory]

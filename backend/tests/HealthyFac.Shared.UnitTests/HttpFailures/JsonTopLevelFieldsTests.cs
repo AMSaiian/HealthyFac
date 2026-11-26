@@ -1,9 +1,11 @@
 using System.Text.Json;
 using HealthyFac.Shared.Infrastructure.HttpFailures.ReasonReaders;
 using HealthyFac.Shared.UnitTests.HttpFailures.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.HttpFailures;
 
+[Feature(TestFeatures.Platform)]
 public sealed class JsonTopLevelFieldsTests
 {
     [Theory]

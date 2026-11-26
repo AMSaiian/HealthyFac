@@ -4,11 +4,13 @@ using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.Application.Grids.Keyset;
 using HealthyFac.Shared.IntegrationTests.Grids.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids;
 
 [Collection(GridDatabaseCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class KeysetQueryTests(GridDatabaseFixture fixture)
 {
     private readonly GridDatabaseFixture _fixture = fixture;

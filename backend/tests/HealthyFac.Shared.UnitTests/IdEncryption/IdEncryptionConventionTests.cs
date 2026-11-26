@@ -5,9 +5,12 @@ using HealthyFac.Shared.Application.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Shared.Infrastructure.IdEncryption.Json;
 using HealthyFac.Shared.UnitTests.IdEncryption.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.IdEncryption;
 
+[Feature(TestFeatures.Platform)]
+[Feature(TestFeatures.Conventions)]
 public sealed class IdEncryptionConventionTests
 {
     private readonly IIdEncryptor _encryptor = new AesKwIdEncryptor(IdEncryptionConventionTestData.PrimaryKey);

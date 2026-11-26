@@ -2,9 +2,11 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class RateLimitRedisOutageTests : IAsyncLifetime
 {
     private const string ClientAddress = "203.0.113.150";

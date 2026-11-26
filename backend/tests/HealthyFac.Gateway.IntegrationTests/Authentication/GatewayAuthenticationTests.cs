@@ -2,10 +2,13 @@ using System.Net;
 using HealthyFac.Gateway.IntegrationTests.Authentication.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Authentication;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Identity)]
 public sealed class GatewayAuthenticationTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {

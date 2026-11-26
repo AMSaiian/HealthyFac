@@ -2,9 +2,11 @@ using System.Net;
 using System.Web;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens;
 
+[Feature(TestFeatures.Identity)]
 public sealed class TokenExchangeHandlerTests
 {
     private const string BearerPrefix = "Bearer ";

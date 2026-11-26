@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens;
 
+[Feature(TestFeatures.Identity)]
 public sealed class ServiceTokenOptionsValidatorTests
 {
     private readonly ServiceTokenOptionsValidator _validator = new();

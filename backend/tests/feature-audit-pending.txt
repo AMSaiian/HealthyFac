@@ -8,8 +8,6 @@ HealthyFac.Document.ApiTests
 HealthyFac.Document.ArchitectureTests
 HealthyFac.Document.IntegrationTests
 HealthyFac.Document.UnitTests
-HealthyFac.Gateway.IntegrationTests
-HealthyFac.Gateway.UnitTests
 HealthyFac.Identity.IntegrationTests
 HealthyFac.Insights.ApiTests
 HealthyFac.Insights.ArchitectureTests
@@ -21,9 +19,6 @@ HealthyFac.MachineSimulator.UnitTests
 HealthyFac.Seeder.ArchitectureTests
 HealthyFac.Seeder.IntegrationTests
 HealthyFac.Seeder.UnitTests
-HealthyFac.Shared.IntegrationTests
-HealthyFac.Shared.UnitTests
-HealthyFac.Spa.IntegrationTests
 HealthyFac.Telemetry.ApiTests
 HealthyFac.Telemetry.ArchitectureTests
 HealthyFac.Telemetry.IntegrationTests

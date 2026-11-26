@@ -1,8 +1,11 @@
 using HealthyFac.Shared.UnitTests.Grids.Keyset.Data;
 using HealthyFac.Testing.Conventions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Grids.Keyset;
 
+[Feature(TestFeatures.Persistence)]
+[Feature(TestFeatures.Conventions)]
 public sealed class KeysetSortMapConventionTests
 {
     [Theory]

@@ -4,10 +4,13 @@ using System.Text;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class CompositionRateLimitTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string MachineSearchBody = """{"offset":0,"limit":25,"filter":{}}""";

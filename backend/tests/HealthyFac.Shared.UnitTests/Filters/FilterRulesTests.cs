@@ -2,9 +2,11 @@ using System.Globalization;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.UnitTests.Filters.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Filters;
 
+[Feature(TestFeatures.Platform)]
 public sealed class FilterRulesTests
 {
     [Fact]

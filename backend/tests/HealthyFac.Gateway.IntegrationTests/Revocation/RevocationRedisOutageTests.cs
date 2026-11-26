@@ -5,6 +5,7 @@ using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Shared.Infrastructure.Revocation;
 using HealthyFac.Testing.Caching;
 using HealthyFac.Testing.Containers;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
@@ -12,6 +13,8 @@ using Microsoft.Extensions.Time.Testing;
 namespace HealthyFac.Gateway.IntegrationTests.Revocation;
 
 [Collection(GatewayLimitsCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Identity)]
 public sealed class RevocationRedisOutageTests(GatewayEnvironment environment)
     : IAsyncLifetime
 {

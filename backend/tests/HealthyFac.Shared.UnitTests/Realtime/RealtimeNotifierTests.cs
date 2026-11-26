@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.UnitTests.Realtime.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeNotifierTests
 {
     [Theory]

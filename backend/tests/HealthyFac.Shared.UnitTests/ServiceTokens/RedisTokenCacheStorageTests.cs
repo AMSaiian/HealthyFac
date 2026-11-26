@@ -2,10 +2,12 @@ using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.Infrastructure.ServiceTokens.Storage;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 using HealthyFac.Testing.Caching;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens;
 
+[Feature(TestFeatures.Identity)]
 public sealed class RedisTokenCacheStorageTests
 {
     [Fact]

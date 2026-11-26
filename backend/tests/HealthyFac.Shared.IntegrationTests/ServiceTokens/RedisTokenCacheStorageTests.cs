@@ -1,10 +1,12 @@
 using HealthyFac.Shared.IntegrationTests.ServiceTokens.Data;
 using HealthyFac.Shared.IntegrationTests.SharedRedis;
 using HealthyFac.Shared.IntegrationTests.SharedRedis.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.ServiceTokens;
 
 [Collection(SharedRedisCollection.Name)]
+[Feature(TestFeatures.Identity)]
 public sealed class RedisTokenCacheStorageTests(SharedRedisFixture fixture)
 {
     private readonly SharedRedisFixture _fixture = fixture;

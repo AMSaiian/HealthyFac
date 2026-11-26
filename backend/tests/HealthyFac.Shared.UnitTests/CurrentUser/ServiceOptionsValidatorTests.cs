@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Infrastructure.CurrentUser.ServiceIdentity;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;
 
+[Feature(TestFeatures.Identity)]
 public sealed class ServiceOptionsValidatorTests
 {
     private readonly ServiceOptionsValidator _validator = new();

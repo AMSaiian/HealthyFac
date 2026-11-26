@@ -1,8 +1,10 @@
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;
 
+[Feature(TestFeatures.Identity)]
 public sealed class KnownActorsTests
 {
     [Fact]

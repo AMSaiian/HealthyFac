@@ -1,8 +1,10 @@
 using HealthyFac.Shared.IntegrationTests.TestReset.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.TestReset;
 
 [Collection(ResetCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class ResetBeforeEachTestTests(ResetFixture fixture)
 {
     private readonly ResetFixture _fixture = fixture;

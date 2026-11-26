@@ -1,4 +1,5 @@
 using HealthyFac.Shared.UnitTests.Persistence.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -6,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Shared.UnitTests.Persistence;
 
+[Feature(TestFeatures.Persistence)]
+[Feature(TestFeatures.Conventions)]
 public sealed class AggregateRelationModelChecksTests
 {
     [Fact]

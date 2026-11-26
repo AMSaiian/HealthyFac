@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using HealthyFac.Shared.UnitTests.Conventions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Conventions;
 
+[Feature(TestFeatures.Conventions)]
 public sealed class OptionsValidatorPlacementTests
 {
     private static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];

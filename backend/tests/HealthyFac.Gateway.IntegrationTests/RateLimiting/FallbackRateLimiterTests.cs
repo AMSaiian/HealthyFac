@@ -2,11 +2,13 @@ using HealthyFac.Gateway.IntegrationTests.RateLimiting.Data;
 using HealthyFac.Gateway.Web.RateLimiting.Fallback;
 using HealthyFac.Shared.Infrastructure.Caching;
 using HealthyFac.Testing.Caching;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Time.Testing;
 using Polly.CircuitBreaker;
 
 namespace HealthyFac.Gateway.IntegrationTests.RateLimiting;
 
+[Feature(TestFeatures.Gateway)]
 public sealed class FallbackRateLimiterTests
 {
     private readonly RedisResiliencePipeline _redis = TestRedisPipeline.Create(new FakeTimeProvider());

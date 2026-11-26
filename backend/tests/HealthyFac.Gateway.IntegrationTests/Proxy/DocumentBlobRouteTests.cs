@@ -2,12 +2,14 @@ using System.Net;
 using System.Text.RegularExpressions;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
 using HealthyFac.Gateway.IntegrationTests.Proxy.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Trace;
 
 namespace HealthyFac.Gateway.IntegrationTests.Proxy;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
 public sealed class DocumentBlobRouteTests(GatewayEnvironment environment, AzuriteBlobFixture storage)
     : IClassFixture<AzuriteBlobFixture>, IAsyncLifetime
 {

@@ -2,9 +2,11 @@ using System.Text.Json;
 using HealthyFac.Shared.Application.Serialization;
 using HealthyFac.Shared.UnitTests.Enumerations.Data;
 using HealthyFac.Shared.UnitTests.Serialization.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.Serialization;
 
+[Feature(TestFeatures.Platform)]
 public sealed class EnumerationJsonConverterTests
 {
     private readonly JsonSerializerOptions _options = CreateOptions();

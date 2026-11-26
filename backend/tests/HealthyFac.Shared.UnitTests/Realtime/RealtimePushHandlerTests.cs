@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.UnitTests.Realtime.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -8,6 +9,7 @@ using Polly.CircuitBreaker;
 
 namespace HealthyFac.Shared.UnitTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimePushHandlerTests
 {
     [Fact]

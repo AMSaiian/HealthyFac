@@ -3,9 +3,11 @@ using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.Infrastructure.ServiceTokens;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.ServiceTokens;
 
+[Feature(TestFeatures.Identity)]
 public sealed class ActorHeadersHandlerTests
 {
     private readonly ActorContextHolder _holder = new();

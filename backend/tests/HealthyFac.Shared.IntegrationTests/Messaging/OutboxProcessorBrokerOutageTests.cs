@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Sending;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
 [Collection(MessagingBrokerOutageCollection.Name)]
+[Feature(TestFeatures.Messaging)]
 public sealed class OutboxProcessorBrokerOutageTests(TransportCollectionFixture fixture)
 {
     private readonly TransportCollectionFixture _fixture = fixture;

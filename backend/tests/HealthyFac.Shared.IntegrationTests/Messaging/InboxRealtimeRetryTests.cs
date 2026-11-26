@@ -1,8 +1,11 @@
 using HealthyFac.Shared.Infrastructure.Messaging.Receiving;
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
+[Feature(TestFeatures.Realtime)]
 public sealed class InboxRealtimeRetryTests(InboxRealtimeRetryFixture fixture)
     : IClassFixture<InboxRealtimeRetryFixture>
 {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using HealthyFac.Shared.UnitTests.Realtime.Data;
 using HealthyFac.Shared.Web.Realtime;
+using HealthyFac.Testing.Features;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using StackExchange.Redis;
 
 namespace HealthyFac.Shared.UnitTests.Realtime;
 
+[Feature(TestFeatures.Realtime)]
 public sealed class RealtimeHubGroupsTests
 {
     [Fact]

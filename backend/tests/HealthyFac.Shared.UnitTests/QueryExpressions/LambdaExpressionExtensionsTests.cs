@@ -1,9 +1,11 @@
 using System.Linq.Expressions;
 using HealthyFac.Shared.Application.QueryExpressions;
 using HealthyFac.Shared.UnitTests.QueryExpressions.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.QueryExpressions;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class LambdaExpressionExtensionsTests
 {
     [Fact]

@@ -2,12 +2,14 @@ using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Application.UseCases.Decorators;
 using HealthyFac.Shared.UnitTests.UseCases.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Shared.UnitTests.UseCases;
 
+[Feature(TestFeatures.Platform)]
 public sealed class LoggingRequestHandlerDecoratorTests
 {
     [Theory]

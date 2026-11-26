@@ -1,8 +1,10 @@
 using System.Net;
 using HealthyFac.Shared.UnitTests.CrossOrigin.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.CrossOrigin;
 
+[Feature(TestFeatures.Platform)]
 public sealed class CorsTests
 {
     private const string AllowOriginHeader = "Access-Control-Allow-Origin";
@@ -34,28 +36,19 @@ public sealed class CorsTests
         response.Headers.GetValues(ExposeHeadersHeader).Should().Equal("Retry-After");
     }
 
-    [Fact]
-    public async Task Preflight_FromOtherOrigin_HasNoAllowOrigin()
+    [Theory]
+    [MemberData(nameof(CorsTestData.RejectedPreflights), MemberType = typeof(CorsTestData))]
+    public async Task Preflight_WithoutAMatchingPolicyOrOrigin_HasNoAllowOrigin(
+        string caseName,
+        string endpoint,
+        string origin
+    )
     {
         using var host = await CorsHostFactory.StartAsync();
 
-        using var response = await host.SendPreflightAsync(
-            CorsHostFactory.EndpointWithPolicy,
-            CorsHostFactory.OtherOrigin);
+        using var response = await host.SendPreflightAsync(endpoint, origin);
 
-        response.Headers.Contains(AllowOriginHeader).Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Preflight_OnEndpointWithoutPolicy_HasNoAllowOrigin()
-    {
-        using var host = await CorsHostFactory.StartAsync();
-
-        using var response = await host.SendPreflightAsync(
-            CorsHostFactory.EndpointWithoutPolicy,
-            CorsHostFactory.AllowedOrigin);
-
-        response.Headers.Contains(AllowOriginHeader).Should().BeFalse();
+        response.Headers.Contains(AllowOriginHeader).Should().BeFalse(caseName);
     }
 
     [Fact]

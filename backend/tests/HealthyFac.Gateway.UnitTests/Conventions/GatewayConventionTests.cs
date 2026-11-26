@@ -1,5 +1,6 @@
 using HealthyFac.Gateway.Web;
 using HealthyFac.Testing.Conventions;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.UnitTests.Conventions;
 
@@ -7,6 +8,7 @@ namespace HealthyFac.Gateway.UnitTests.Conventions;
 /// Runs the reflection checks of <see cref="ConventionChecks"/> over the Gateway assembly. The Gateway has no
 /// architecture test project, so these checks keep the shared rules for it.
 /// </summary>
+[Feature(TestFeatures.Conventions)]
 public sealed class GatewayConventionTests
 {
     [Fact]

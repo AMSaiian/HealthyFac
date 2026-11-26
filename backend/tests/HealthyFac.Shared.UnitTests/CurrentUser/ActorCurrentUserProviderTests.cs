@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Infrastructure.CurrentUser;
 using HealthyFac.Shared.UnitTests.CurrentUser.Data;
+using HealthyFac.Testing.Features;
 using UnauthorizedAccessException = HealthyFac.Shared.Application.ErrorHandling.UnauthorizedAccessException;
 
 namespace HealthyFac.Shared.UnitTests.CurrentUser;
 
+[Feature(TestFeatures.Identity)]
 public sealed class ActorCurrentUserProviderTests
 {
     [Fact]

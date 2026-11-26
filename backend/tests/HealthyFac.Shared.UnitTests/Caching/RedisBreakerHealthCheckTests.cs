@@ -3,11 +3,13 @@ using HealthyFac.Shared.Infrastructure.Caching.BreakerHealth;
 using HealthyFac.Shared.UnitTests.Caching.Data;
 using HealthyFac.Shared.UnitTests.ServiceTokens.Data;
 using HealthyFac.Testing.Caching;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Shared.UnitTests.Caching;
 
+[Feature(TestFeatures.Platform)]
 public sealed class RedisBreakerHealthCheckTests
 {
     private readonly FakeTimeProvider _time = new();

@@ -2,10 +2,13 @@ using System.Net;
 using System.Text.Json.Nodes;
 using HealthyFac.Gateway.IntegrationTests.Composition.Data;
 using HealthyFac.Gateway.IntegrationTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Gateway.IntegrationTests.Composition;
 
 [Collection(GatewayProxyCollection.Name)]
+[Feature(TestFeatures.Gateway)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DismissAllCompositionTests(GatewayEnvironment environment) : IAsyncLifetime
 {
     private const string CountsCoreTwo = """{"dismissedCount":2}""";

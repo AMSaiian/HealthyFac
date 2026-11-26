@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.IntegrationTests.Email.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.Shared.IntegrationTests.Email;
 
+[Feature(TestFeatures.Companies)]
 public sealed class SmtpEmailSenderTests(MailpitFixture fixture) : IClassFixture<MailpitFixture>
 {
     private readonly MailpitFixture _fixture = fixture;

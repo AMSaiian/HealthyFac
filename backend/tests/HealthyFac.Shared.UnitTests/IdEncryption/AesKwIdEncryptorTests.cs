@@ -2,9 +2,11 @@ using System.Buffers.Text;
 using System.Security.Cryptography;
 using HealthyFac.Shared.Infrastructure.IdEncryption;
 using HealthyFac.Shared.UnitTests.IdEncryption.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.UnitTests.IdEncryption;
 
+[Feature(TestFeatures.Platform)]
 public sealed class AesKwIdEncryptorTests
 {
     [Theory]

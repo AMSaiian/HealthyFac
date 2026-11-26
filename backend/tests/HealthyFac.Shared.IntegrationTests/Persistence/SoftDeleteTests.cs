@@ -1,10 +1,12 @@
 using HealthyFac.Shared.Domain.Entities;
 using HealthyFac.Shared.Infrastructure.Persistence.SoftDelete;
 using HealthyFac.Shared.IntegrationTests.Persistence.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Persistence;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class SoftDeleteTests(SoftDeleteFixture fixture) : IClassFixture<SoftDeleteFixture>
 {
     private readonly SoftDeleteFixture _fixture = fixture;

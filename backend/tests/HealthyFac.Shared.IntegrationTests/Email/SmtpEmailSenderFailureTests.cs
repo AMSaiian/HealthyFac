@@ -3,6 +3,7 @@ using System.Net;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Infrastructure.Email;
 using HealthyFac.Shared.IntegrationTests.Email.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Logging;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Shared.IntegrationTests.Email;
 
+[Feature(TestFeatures.Companies)]
 public sealed class SmtpEmailSenderFailureTests
 {
     [Fact]

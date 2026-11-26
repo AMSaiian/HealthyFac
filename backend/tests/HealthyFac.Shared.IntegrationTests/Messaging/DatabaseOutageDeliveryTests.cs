@@ -1,7 +1,9 @@
 using HealthyFac.Shared.IntegrationTests.Messaging.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Shared.IntegrationTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
 public sealed class DatabaseOutageDeliveryTests(DatabaseOutageFixture fixture) : IClassFixture<DatabaseOutageFixture>
 {
     private readonly DatabaseOutageFixture _fixture = fixture;

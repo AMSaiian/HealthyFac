@@ -1,11 +1,13 @@
 using HealthyFac.Shared.Application.Filters;
 using HealthyFac.Shared.Application.Grids;
 using HealthyFac.Shared.IntegrationTests.Grids.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Shared.IntegrationTests.Grids;
 
 [Collection(GridDatabaseCollection.Name)]
+[Feature(TestFeatures.Persistence)]
 public sealed class GridQueryTests(GridDatabaseFixture fixture)
 {
     private readonly GridDatabaseFixture _fixture = fixture;

@@ -1,9 +1,11 @@
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.UnitTests.Observability.Data;
+using HealthyFac.Testing.Features;
 using Attributes = HealthyFac.Shared.Application.Observability.ObservabilityConstants.Resource.Attributes;
 
 namespace HealthyFac.Shared.UnitTests.Observability;
 
+[Feature(TestFeatures.Platform)]
 public sealed class TelemetryResourceTests
 {
     [Fact]
