@@ -6,4 +6,23 @@
   <ItemGroup Condition="'$(XunitTestProject)' == 'true'">
     <Content Include="$(MSBuildThisFileDirectory)tests/xunit.runner.json" Link="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <PropertyGroup>
+    <TestProjectNamePattern>^HealthyFac\.(.+)\.(Unit|Architecture|Integration|Api)Tests$</TestProjectNamePattern>
+    <IsTraitedTestProject Condition="'$(XunitTestProject)' == 'true' And $([System.Text.RegularExpressions.Regex]::IsMatch('$(MSBuildProjectName)', '$(TestProjectNamePattern)'))">true</IsTraitedTestProject>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsTraitedTestProject)' == 'true'">
+    <TestKindTrait>$([System.Text.RegularExpressions.Regex]::Replace('$(MSBuildProjectName)', '$(TestProjectNamePattern)', '$2'))</TestKindTrait>
+    <TestServiceTrait>$([System.Text.RegularExpressions.Regex]::Replace('$(MSBuildProjectName)', '$(TestProjectNamePattern)', '$1'))</TestServiceTrait>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsTraitedTestProject)' == 'true'">
+    <AssemblyAttribute Include="Xunit.TraitAttribute">
+      <_Parameter1>Kind</_Parameter1>
+      <_Parameter2>$(TestKindTrait)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="Xunit.TraitAttribute">
+      <_Parameter1>Service</_Parameter1>
+      <_Parameter2>$(TestServiceTrait)</_Parameter2>
+    </AssemblyAttribute>
+    <Compile Include="$(MSBuildThisFileDirectory)tests/HealthyFac.Testing/Conventions/TestTraitConventionTests.cs" Link="Conventions/TestTraitConventionTests.cs" />
+  </ItemGroup>
 </Project>

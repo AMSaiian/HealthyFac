@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Conventions/TestTraitConventionTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Shared\HealthyFac.Shared.Web\HealthyFac.Shared.Web.csproj" />
   </ItemGroup>
 
