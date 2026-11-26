@@ -7,10 +7,12 @@ using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class CaseReadTests(InsightsFixture fixture)
 {
     private const string FinalText = "The pressure rises for three days.";
@@ -40,6 +42,8 @@ public sealed class CaseReadTests(InsightsFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Drafts)]
+    [Feature(TestFeatures.WorkOrders)]
     public async Task GetCase_AfterTheDraftBecameAWorkOrder_ReturnsWorkOrderCreatedWithTheWorkOrderId()
     {
         var maintenanceCase = CaseTestData.CreateOpenCase();
@@ -65,6 +69,8 @@ public sealed class CaseReadTests(InsightsFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Drafts)]
+    [Feature(TestFeatures.WorkOrders)]
     public async Task GetCase_AfterTheDraftWasDismissed_ReturnsProposalDismissed()
     {
         var maintenanceCase = CaseTestData.CreateOpenCase();

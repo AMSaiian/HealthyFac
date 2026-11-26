@@ -12,6 +12,7 @@ using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
@@ -22,6 +23,7 @@ namespace HealthyFac.Insights.UnitTests.Extraction;
 /// Sends one extraction through the real Google client against a recording handler, so the request shows what Gemini
 /// receives: the system prompt, the settings, and the declarations of the four tools.
 /// </summary>
+[Feature(TestFeatures.Ingest)]
 public sealed class GeminiStructuredOutputTests
 {
     private const string Model = "gemini-test-model";

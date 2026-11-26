@@ -4,10 +4,13 @@ using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.Files)]
 public sealed class IngestFileDeletedRaceTests(InsightsFixture fixture)
 {
     private static readonly TimeSpan LockWaitLimit = TimeSpan.FromSeconds(seconds: 30);

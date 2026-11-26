@@ -5,6 +5,7 @@ using HealthyFac.Insights.Infrastructure.Ingest;
 using HealthyFac.Insights.IntegrationTests.Database;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConstants;
@@ -12,6 +13,8 @@ using Constants = HealthyFac.Shared.Application.Observability.ObservabilityConst
 namespace HealthyFac.Insights.IntegrationTests.Observability;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Platform)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestTelemetryTests(InsightsFixture fixture)
 {
     private const string StartSourceName = "HealthyFac.Insights.Tests.Start";

@@ -2,9 +2,12 @@ using Grpc.Core;
 using HealthyFac.Insights.Infrastructure.Files;
 using HealthyFac.Insights.UnitTests.Files.Data;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Files;
 
+[Feature(TestFeatures.Files)]
+[Feature(TestFeatures.Ingest)]
 public sealed class DocumentGrpcFileCatalogTests
 {
     private const string WorkerScope = "files";

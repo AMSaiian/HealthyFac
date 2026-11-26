@@ -2,10 +2,12 @@ using System.Net;
 using System.Text.Json.Nodes;
 using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class GetFileApiTests(DocumentApiFixture fixture)
 {
     private const string ReadPermission = "files:read";

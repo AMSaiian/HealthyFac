@@ -6,12 +6,14 @@ using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.Infrastructure.Agents.Tools;
 using HealthyFac.Insights.UnitTests.Agents.Data;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
 namespace HealthyFac.Insights.UnitTests.Agents;
 
+[Feature(TestFeatures.Cases)]
 public sealed class ToolRegistryTests
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "22222222-2222-2222-2222-222222222222");
@@ -21,26 +23,17 @@ public sealed class ToolRegistryTests
     private readonly List<AgentToolCall> _rows = [];
     private readonly FakeLogger _logger = new();
 
-    [Fact]
-    public void For_WithTheRolePlanner_ReturnsOnlyThePlannerTools()
+    [Theory]
+    [MemberData(nameof(ToolTestData.ToolsOfRole), MemberType = typeof(ToolTestData))]
+    public void For_WithARole_ReturnsOnlyTheToolsOfThatRole(
+        string caseName,
+        AgentRole role,
+        string[] expectedNames
+    )
     {
-        var functions = CreateRegistry().For(AgentRole.Planner, CreateContext());
+        var functions = CreateRegistry().For(role, CreateContext());
 
-        functions.Select(function => function.Name)
-            .Should()
-            .BeEquivalentTo(
-                ToolTestData.PlannerToolName,
-                ToolTestData.RejectedToolName,
-                ToolTestData.FailedToolName,
-                ToolTestData.EpisodeToolName);
-    }
-
-    [Fact]
-    public void For_WithTheRoleExtractor_ReturnsOnlyTheExtractorTools()
-    {
-        var functions = CreateRegistry().For(AgentRole.Extractor, CreateContext());
-
-        functions.Select(function => function.Name).Should().BeEquivalentTo(ToolTestData.ExtractorToolName);
+        functions.Select(function => function.Name).Should().BeEquivalentTo(expectedNames, caseName);
     }
 
     [Fact]

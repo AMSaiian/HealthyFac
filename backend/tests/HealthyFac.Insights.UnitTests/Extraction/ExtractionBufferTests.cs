@@ -2,9 +2,11 @@ using HealthyFac.Insights.Application.Extraction.Proposals;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Extraction;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class ExtractionBufferTests
 {
     private static readonly Guid FileMachineId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000101");

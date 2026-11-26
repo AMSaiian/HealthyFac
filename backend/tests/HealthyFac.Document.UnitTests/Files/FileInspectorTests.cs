@@ -4,10 +4,12 @@ using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.Infrastructure.Files.Inspection;
 using HealthyFac.Document.UnitTests.Files.Data;
 using HealthyFac.Shared.Application.Observability;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 
 namespace HealthyFac.Document.UnitTests.Files;
 
+[Feature(TestFeatures.Files)]
 public sealed class FileInspectorTests
 {
     private readonly FileSignaturesFileInspector _inspector = new();

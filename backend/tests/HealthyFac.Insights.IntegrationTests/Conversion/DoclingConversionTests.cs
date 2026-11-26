@@ -1,6 +1,9 @@
+using HealthyFac.Testing.Features;
+
 namespace HealthyFac.Insights.IntegrationTests.Conversion;
 
 [Collection(DoclingCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class DoclingConversionTests(DoclingFixture fixture)
 {
     private const string ScanFile = "sample-scan.pdf";

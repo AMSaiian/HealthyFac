@@ -4,10 +4,12 @@ using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class GetFileTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -183,6 +185,7 @@ public sealed class GetFileTests(DocumentDatabaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Machines)]
     public async Task GetMachineFile_WithDeletedMachine_Throws404()
     {
         var machineId = await _fixture.RegisterMachineAsync(UpdateFileTestData.CompanyId);

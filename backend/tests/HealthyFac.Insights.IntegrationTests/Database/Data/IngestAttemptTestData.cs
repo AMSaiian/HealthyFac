@@ -1,6 +1,7 @@
 using HealthyFac.Insights.Domain.Documents;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Infrastructure.Database;
+using HealthyFac.Insights.Infrastructure.Ingest.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,6 +9,12 @@ namespace HealthyFac.Insights.IntegrationTests.Database.Data;
 
 public static class IngestAttemptTestData
 {
+    public static TheoryData<string, Func<IngestAttempt>, string> DuplicateAttempts => new()
+    {
+        { "second active attempt", () => CreateQueued(), IngestIndexNames.ActiveFile },
+        { "second completed attempt", () => CreateCompleted(), IngestIndexNames.CompletedFile },
+    };
+
     public const int EmbeddingDimensions = 1536;
 
     public static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000001");

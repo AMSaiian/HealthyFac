@@ -4,9 +4,11 @@ using HealthyFac.Insights.Application.Extraction.Signals;
 using HealthyFac.Insights.Infrastructure.Extraction;
 using HealthyFac.Insights.UnitTests.Extraction.Data;
 using HealthyFac.Shared.Application.DownstreamScopes;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Extraction;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class TelemetryMachineSignalCatalogTests
 {
     private const int PageSize = 100;

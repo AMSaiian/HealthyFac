@@ -1,7 +1,9 @@
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Persistence;
 
 namespace HealthyFac.Insights.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class AggregateRelationModelTests
 {
     [Fact]

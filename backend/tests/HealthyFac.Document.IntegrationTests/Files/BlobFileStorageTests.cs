@@ -5,11 +5,13 @@ using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class BlobFileStorageTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;

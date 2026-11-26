@@ -5,10 +5,14 @@ using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
+[Feature(TestFeatures.Machines)]
+[Feature(TestFeatures.Drafts)]
 public sealed class AutomaticTieTests(DocumentDatabaseFixture fixture)
 {
     private static readonly Guid CompanyId = MachineRegistrationTestData.CompanyId;

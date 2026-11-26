@@ -2,12 +2,15 @@ using System.Net;
 using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
 using HealthyFac.Document.Application.Files.Inspection;
+using HealthyFac.Document.Infrastructure.Files.Storage;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class UploadFileApiTests(DocumentApiFixture fixture)
 {
     private readonly DocumentApiFixture _fixture = fixture;
@@ -210,7 +213,10 @@ public sealed class UploadFileApiTests(DocumentApiFixture fixture)
     [Fact]
     public async Task UploadCompanyFile_WithStorageDown_Returns503AndStoresNoRef()
     {
-        await using var factory = _fixture.CreateFactoryWithStorage(DocumentApiTestData.UnreachableStorageConnection);
+        await using var factory = _fixture.CreateFactoryWithFailingStorage(
+            DocumentApiTestData.UnreachableStorageConnection,
+            FileStorageConstants.RetryMaxCount);
+
         using var client = factory.CreateClient();
         var claims = _fixture.CreateClaims(UploadFileApiTestData.CompanyWritePermission);
 

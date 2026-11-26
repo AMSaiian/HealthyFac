@@ -5,12 +5,14 @@ using HealthyFac.Insights.Application.Ingest.Processing.ProviderCalls;
 using HealthyFac.Insights.Infrastructure.Conversion;
 using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Conversion.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.UnitTests.Conversion;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class DoclingDocumentConverterTests
 {
     private const string PdfExtension = "pdf";

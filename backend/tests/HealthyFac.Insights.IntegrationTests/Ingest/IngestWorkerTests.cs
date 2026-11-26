@@ -7,11 +7,13 @@ using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestWorkerTests(InsightsFixture fixture)
 {
     private const int ShortLimitSeconds = 1;

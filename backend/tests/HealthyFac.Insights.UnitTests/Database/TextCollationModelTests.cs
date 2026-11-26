@@ -1,10 +1,12 @@
 using HealthyFac.Insights.UnitTests.Database.Data;
 using HealthyFac.Shared.Infrastructure.Persistence.Collations;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HealthyFac.Insights.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class TextCollationModelTests
 {
     private const string JsonbColumnType = "jsonb";

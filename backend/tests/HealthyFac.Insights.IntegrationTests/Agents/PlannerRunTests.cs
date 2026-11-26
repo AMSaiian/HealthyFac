@@ -13,12 +13,14 @@ using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Insights.Messaging.WorkOrders;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.AI;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class PlannerRunTests(SignalCaseFixture fixture)
 {
     private const int InputTokens = 100;

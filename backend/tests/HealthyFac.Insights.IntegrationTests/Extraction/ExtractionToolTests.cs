@@ -7,11 +7,13 @@ using HealthyFac.Insights.IntegrationTests.Documents.Data;
 using HealthyFac.Insights.IntegrationTests.Extraction.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Insights.Messaging.Drafts;
+using HealthyFac.Testing.Features;
 using static HealthyFac.Insights.IntegrationTests.Extraction.Data.ExtractionToolTestData;
 
 namespace HealthyFac.Insights.IntegrationTests.Extraction;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ExtractionToolTests(InsightsFixture fixture)
 {
     private const string Final = "Done.";

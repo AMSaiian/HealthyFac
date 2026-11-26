@@ -6,12 +6,14 @@ using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class StartIngestAttemptRaceTests(InsightsFixture fixture)
 {
     private const int RaceParticipantCount = 2;

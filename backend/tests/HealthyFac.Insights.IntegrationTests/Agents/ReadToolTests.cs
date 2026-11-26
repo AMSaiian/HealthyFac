@@ -7,11 +7,13 @@ using HealthyFac.Insights.Domain.Agents.ToolCalls;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class ReadToolTests(SignalCaseFixture fixture)
 {
     private const string OwnText = "Replace the filter every 500 hours.";

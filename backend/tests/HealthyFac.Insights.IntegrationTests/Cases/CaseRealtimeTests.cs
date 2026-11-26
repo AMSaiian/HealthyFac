@@ -10,11 +10,13 @@ using HealthyFac.Shared.Application.CurrentUser.Actors;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
 using HealthyFac.Telemetry.Messaging.Signals;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
 {
     private const string CloseReason = "The machine was replaced.";
@@ -22,6 +24,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     private readonly SignalCaseFixture _fixture = fixture;
 
     [Fact]
+    [Feature(TestFeatures.Evaluation)]
     public async Task Receive_WithAnEpisodeThatOpensACase_RecordsCaseOpenedAndTheCasesHint()
     {
         var outcome = await _fixture.ReceiveSignalThroughInboxAsync(
@@ -48,6 +51,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Evaluation)]
     public async Task Receive_WithAnEpisodeThatJoinsTheOpenCase_RecordsNoCaseOpened()
     {
         await _fixture.ReceiveSignalThroughInboxAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));
@@ -61,6 +65,7 @@ public sealed class CaseRealtimeTests(SignalCaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Evaluation)]
     public async Task Receive_WithTheLastEpisodeResolved_RecordsTheCasesHintWithTheCase()
     {
         await _fixture.ReceiveSignalThroughInboxAsync(CaseTestData.Message(CaseTestData.FirstEpisodeId, sequence: 1));

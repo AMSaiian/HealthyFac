@@ -4,10 +4,12 @@ using HealthyFac.Insights.ApiTests.Hosting;
 using HealthyFac.Insights.ApiTests.Ingest.Data;
 using HealthyFac.Insights.Application.Ingest;
 using HealthyFac.Insights.Domain.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.ApiTests.Ingest;
 
 [Collection(InsightsApiCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ReadIngestAttemptsApiTests(InsightsApiFixture fixture)
 {
     private const string ItemsProperty = "items";

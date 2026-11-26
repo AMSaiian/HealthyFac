@@ -1,9 +1,13 @@
 using HealthyFac.Insights.Messaging.Drafts;
 using HealthyFac.Insights.UnitTests.Messaging.Data;
 using HealthyFac.Shared.Infrastructure.RichText;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Messaging;
 
+[Feature(TestFeatures.Messaging)]
+[Feature(TestFeatures.Ingest)]
+[Feature(TestFeatures.Drafts)]
 public sealed class DraftsProposedValidatorTests
 {
     private readonly DraftsProposedValidator _validator = new(new HtmlSanitizerRichTextPolicy());

@@ -1,8 +1,10 @@
 using HealthyFac.Insights.UnitTests.Database.Data;
 using HealthyFac.Shared.Domain.Entities;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Database;
 
+[Feature(TestFeatures.Persistence)]
 public sealed class EntityBaseModelTests
 {
     [Fact]

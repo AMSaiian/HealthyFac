@@ -2,10 +2,12 @@ using HealthyFac.Insights.Application.Ingest.Processing;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Ingest.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.UnitTests.Ingest;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class ProviderResilienceTests
 {
     private readonly ProviderResilience _providers = new(

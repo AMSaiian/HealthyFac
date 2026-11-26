@@ -1,10 +1,14 @@
 using HealthyFac.Core.Messaging.WorkOrders;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
+[Feature(TestFeatures.WorkOrders)]
+[Feature(TestFeatures.Drafts)]
 public sealed class WorkOrderDraftResultTests(SignalCaseFixture fixture)
 {
     private static readonly Guid DraftId = Guid.Parse(input: "66666666-6666-6666-6666-666666666666");

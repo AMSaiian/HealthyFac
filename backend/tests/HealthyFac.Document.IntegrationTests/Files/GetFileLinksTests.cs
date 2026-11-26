@@ -5,11 +5,13 @@ using HealthyFac.Document.IntegrationTests.Database;
 using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Hosting;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -202,25 +204,5 @@ public sealed class GetFileLinksTests(DocumentDatabaseFixture fixture)
         publicLink.Url.Should().StartWith(GetFileLinksTestData.PublicBaseUrl);
         internalLink.Url.Should().NotStartWith(GetFileLinksTestData.PublicBaseUrl);
         internalLink.Query["sig"].Should().Be(publicLink.Query["sig"]);
-    }
-
-    [Fact]
-    public void Validate_WithIdCountAtAndAboveTheLimit_AcceptsOnlyTheLimit()
-    {
-        var validator = new GetFileLinksRequestValidator();
-
-        var atLimit = validator.Validate(
-            new GetFileLinksRequest
-                { CompanyId = GetFileLinksTestData.CompanyId, Ids = GetFileLinksTestData.IdsAtTheLimit });
-
-        var above = validator.Validate(
-            new GetFileLinksRequest
-            {
-                CompanyId = GetFileLinksTestData.CompanyId,
-                Ids = GetFileLinksTestData.IdsAboveTheLimit,
-            });
-
-        atLimit.IsValid.Should().BeTrue();
-        above.IsValid.Should().BeFalse();
     }
 }

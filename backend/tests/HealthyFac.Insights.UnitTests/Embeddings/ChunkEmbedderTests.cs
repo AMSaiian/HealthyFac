@@ -2,10 +2,12 @@ using HealthyFac.Insights.Application.Embeddings;
 using HealthyFac.Insights.Application.Ingest.Processing;
 using HealthyFac.Insights.Infrastructure.Ingest.ProviderCalls;
 using HealthyFac.Insights.UnitTests.Embeddings.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 
 namespace HealthyFac.Insights.UnitTests.Embeddings;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class ChunkEmbedderTests
 {
     private const int ShortVectorSize = 768;

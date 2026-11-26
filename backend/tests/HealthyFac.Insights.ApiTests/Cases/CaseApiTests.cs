@@ -5,10 +5,12 @@ using HealthyFac.Insights.ApiTests.Hosting;
 using HealthyFac.Insights.Domain.Agents.Runs;
 using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.ApiTests.Cases;
 
 [Collection(InsightsApiCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class CaseApiTests(InsightsApiFixture fixture)
 {
     private const string Reason = "No work is needed.";

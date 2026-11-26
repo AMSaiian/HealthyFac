@@ -2,11 +2,13 @@ using HealthyFac.Insights.Application.MetricUnits;
 using HealthyFac.Insights.Infrastructure.MetricUnits;
 using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.MetricUnits.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Logging;
 
 namespace HealthyFac.Insights.IntegrationTests.MetricUnits;
 
 [Collection(MetricUnitOutageCollection.Name)]
+[Feature(TestFeatures.SignalModel)]
 public sealed class MetricUnitCacheOutageTests(InsightsFixture fixture)
 {
     private readonly InsightsFixture _fixture = fixture;

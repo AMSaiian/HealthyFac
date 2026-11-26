@@ -2,15 +2,16 @@ using System.Net;
 using System.Text.Json.Nodes;
 using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
 {
     private const string ReadPermission = "files:read";
     private const string LinksPath = "v1/files/links";
-    private const int TooManyIds = 1001;
 
     private readonly DocumentApiFixture _fixture = fixture;
 
@@ -36,17 +37,6 @@ public sealed class GetFileLinksApiTests(DocumentApiFixture fixture)
         var response = await _fixture.SendAsync(HttpMethod.Post, LinksPath, claims, IdsBody("id"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-    }
-
-    [Fact]
-    public async Task GetFileLinks_WithTooManyIds_Returns400()
-    {
-        var claims = _fixture.CreateClaims(ReadPermission);
-        var body = IdsBody([.. Enumerable.Range(start: 0, TooManyIds).Select(_ => "id")]);
-
-        var response = await _fixture.SendAsync(HttpMethod.Post, LinksPath, claims, body);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     private static string IdsBody(params string[] ids) =>

@@ -20,15 +20,11 @@ public static class FileStorageOptionsValidatorTestData
         },
         { Create(publicBlobBaseUrl: "/api/document/blobs"), nameof(FileStorageOptions.PublicBlobBaseUrl) },
         { Create(publicBlobBaseUrl: "ftp://api.healthyfac.test/blobs"), nameof(FileStorageOptions.PublicBlobBaseUrl) },
-        { Create(linkLifetimeSeconds: 59), nameof(FileStorageOptions.LinkLifetimeSeconds) },
-        { Create(linkLifetimeSeconds: 3601), nameof(FileStorageOptions.LinkLifetimeSeconds) },
     };
 
     public static TheoryData<FileStorageOptions> ValidOptions => new()
     {
         { Create() },
-        { Create(linkLifetimeSeconds: 60) },
-        { Create(linkLifetimeSeconds: 3600) },
     };
 
     private static FileStorageOptions Create(

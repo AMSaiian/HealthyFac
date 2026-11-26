@@ -1,10 +1,12 @@
 using Google.GenAI.Types;
 using HealthyFac.Insights.Infrastructure.Ai;
 using HealthyFac.Insights.UnitTests.Embeddings.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 
 namespace HealthyFac.Insights.UnitTests.Embeddings;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class RetrievalDocumentEmbeddingGeneratorTests
 {
     [Fact]

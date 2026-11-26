@@ -6,10 +6,12 @@ using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
 using HealthyFac.Document.Contracts.Files;
 using HealthyFac.Testing.Authentication;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class DocumentFilesRpcTests(DocumentApiFixture fixture) : IAsyncLifetime
 {
     private const string ReadPermission = "files:read";

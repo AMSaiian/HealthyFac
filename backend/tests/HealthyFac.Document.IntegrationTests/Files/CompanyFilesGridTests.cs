@@ -5,10 +5,12 @@ using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Insights.Messaging.Ingest;
 using HealthyFac.Shared.Application.Grids;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
 {
     private static readonly Guid CompanyId = CompanyFilesGridTestData.CompanyId;
@@ -63,6 +65,7 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Ingest)]
     public async Task SearchCompanyFiles_WithNeverFilter_ReturnsOnlyFilesWithoutIngest()
     {
         var ids = await _fixture.SeedFilesAsync(CompanyId, CompanyFilesGridTestData.CreateSeeds(tiedMachineId: null));
@@ -75,6 +78,7 @@ public sealed class CompanyFilesGridTests(DocumentDatabaseFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Ingest)]
     public async Task SearchCompanyFiles_WithFailedFilter_ReturnsOnlyFailedFiles()
     {
         var ids = await _fixture.SeedFilesAsync(CompanyId, CompanyFilesGridTestData.CreateSeeds(tiedMachineId: null));

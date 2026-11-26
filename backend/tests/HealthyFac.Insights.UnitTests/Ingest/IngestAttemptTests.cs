@@ -1,8 +1,10 @@
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.UnitTests.Ingest.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Ingest;
 
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestAttemptTests
 {
     [Fact]

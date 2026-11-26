@@ -6,10 +6,13 @@ using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Insights.Messaging.Ingest;
 using HealthyFac.Shared.Infrastructure.Messaging;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
+[Feature(TestFeatures.Ingest)]
 public sealed class ApplyIngestStateTests(DocumentDatabaseFixture fixture)
 {
     private static readonly Guid CompanyId = Guid.Parse(input: "0190f3a0-0000-7000-8000-000000000b01");

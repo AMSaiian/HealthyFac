@@ -7,11 +7,13 @@ using HealthyFac.Insights.IntegrationTests.Database.Data;
 using HealthyFac.Insights.IntegrationTests.Ingest.Data;
 using HealthyFac.Shared.Application.Realtime;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Insights.IntegrationTests.Ingest;
 
 [Collection(InsightsCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class IngestRealtimeTests(InsightsFixture fixture)
 {
     private const string FileName = "manual";
@@ -91,6 +93,7 @@ public sealed class IngestRealtimeTests(InsightsFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Files)]
     public async Task FileDeleted_WithAnActiveAttempt_RecordsIngestFinishedInterruptedForTheCreator()
     {
         _fixture.ArrangeFile();
@@ -103,6 +106,7 @@ public sealed class IngestRealtimeTests(InsightsFixture fixture)
     }
 
     [Fact]
+    [Feature(TestFeatures.Files)]
     public async Task FileDeleted_WithoutAnAttempt_RecordsNothing()
     {
         _fixture.RealtimeQueue.Clear();

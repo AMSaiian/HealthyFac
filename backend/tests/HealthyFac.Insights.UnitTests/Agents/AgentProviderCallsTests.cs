@@ -3,11 +3,13 @@ using HealthyFac.Insights.Application.Agents;
 using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.Agents.Models;
 using HealthyFac.Insights.UnitTests.Agents.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace HealthyFac.Insights.UnitTests.Agents;
 
+[Feature(TestFeatures.Cases)]
 public sealed class AgentProviderCallsTests
 {
     private readonly FakeTimeProvider _time = new(AgentProviderCallsTestData.Start);

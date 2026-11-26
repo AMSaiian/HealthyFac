@@ -5,10 +5,12 @@ using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Document.Messaging.Files;
 using HealthyFac.Shared.Application.ErrorHandling;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.IntegrationTests.MachineRegistrations;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Machines)]
 public sealed class UnregisterMachineTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;

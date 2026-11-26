@@ -5,11 +5,13 @@ using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.IntegrationTests.Agents.Data;
 using HealthyFac.Insights.IntegrationTests.Cases;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.AI;
 
 namespace HealthyFac.Insights.IntegrationTests.Agents;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
 public sealed class TriageRunTests(SignalCaseFixture fixture)
 {
     private readonly SignalCaseFixture _fixture = fixture;

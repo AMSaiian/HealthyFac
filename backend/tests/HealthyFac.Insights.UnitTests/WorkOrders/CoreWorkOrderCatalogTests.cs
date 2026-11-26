@@ -3,9 +3,12 @@ using HealthyFac.Insights.Application.Ingest.Processing.Failures;
 using HealthyFac.Insights.Infrastructure.WorkOrders;
 using HealthyFac.Insights.UnitTests.WorkOrders.Data;
 using HealthyFac.Shared.Application.IdEncryption;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.WorkOrders;
 
+[Feature(TestFeatures.Cases)]
+[Feature(TestFeatures.WorkOrders)]
 public sealed class CoreWorkOrderCatalogTests
 {
     private static readonly Guid MachineId = Guid.Parse(input: "33333333-3333-3333-3333-333333333333");
@@ -26,24 +29,15 @@ public sealed class CoreWorkOrderCatalogTests
         await act.Should().ThrowAsync<ProviderUnavailableException>();
     }
 
-    [Fact]
-    public async Task ListOpen_WhenCoreCannotBeReached_ThrowsProviderUnavailable()
+    [Theory]
+    [MemberData(nameof(CoreWorkOrderCatalogTestData.NetworkFaults), MemberType = typeof(CoreWorkOrderCatalogTestData))]
+    public async Task ListOpen_WhenTheCallFails_ThrowsProviderUnavailable(string caseName, Func<Exception> createFault)
     {
-        _respond = _ => throw new HttpRequestException(message: "refused");
+        _respond = _ => throw createFault();
 
         var act = () => ListAsync(TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<ProviderUnavailableException>();
-    }
-
-    [Fact]
-    public async Task ListOpen_WhenTheCallTimesOut_ThrowsProviderUnavailable()
-    {
-        _respond = _ => throw new TaskCanceledException(message: "timeout");
-
-        var act = () => ListAsync(TestContext.Current.CancellationToken);
-
-        await act.Should().ThrowAsync<ProviderUnavailableException>();
+        await act.Should().ThrowAsync<ProviderUnavailableException>(caseName);
     }
 
     [Fact]

@@ -3,11 +3,14 @@ using HealthyFac.Insights.Domain.Cases;
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.IntegrationTests.Cases.Data;
 using HealthyFac.Telemetry.Messaging.Signals;
+using HealthyFac.Testing.Features;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthyFac.Insights.IntegrationTests.Cases;
 
 [Collection(SignalCaseCollection.Name)]
+[Feature(TestFeatures.Cases)]
+[Feature(TestFeatures.Evaluation)]
 public sealed class RecordSignalEpisodeTests(SignalCaseFixture fixture)
 {
     private readonly SignalCaseFixture _fixture = fixture;

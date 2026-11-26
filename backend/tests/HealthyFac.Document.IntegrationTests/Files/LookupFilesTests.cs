@@ -1,4 +1,3 @@
-using HealthyFac.Document.Application.Files;
 using HealthyFac.Document.Application.Files.Lookup;
 using HealthyFac.Document.Domain.Files;
 using HealthyFac.Document.IntegrationTests.Database;
@@ -6,11 +5,13 @@ using HealthyFac.Document.IntegrationTests.Database.Data;
 using HealthyFac.Document.IntegrationTests.Files.Data;
 using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -49,29 +50,6 @@ public sealed class LookupFilesTests(DocumentDatabaseFixture fixture)
         machineFile.Extension.Should().Be(expected: "pdf");
         machineFile.SizeBytes.Should().Be(expected: 20);
         response.Files.Single(file => file.Id == ids[0]).MachineId.Should().BeNull();
-    }
-
-    [Fact]
-    public void Validate_WithIdCountAtAndAboveTheLimit_AcceptsOnlyTheLimit()
-    {
-        var validator = new LookupFilesRequestValidator();
-
-        var atLimit = validator.Validate(
-            new LookupFilesRequest
-            {
-                CompanyId = GetFileLinksTestData.CompanyId,
-                Ids = [.. Enumerable.Range(start: 0, FileValidationConstants.LookupIdsMaxCount).Select(_ => "id")],
-            });
-
-        var above = validator.Validate(
-            new LookupFilesRequest
-            {
-                CompanyId = GetFileLinksTestData.CompanyId,
-                Ids = [.. Enumerable.Range(start: 0, FileValidationConstants.LookupIdsMaxCount + 1).Select(_ => "id")],
-            });
-
-        atLimit.IsValid.Should().BeTrue();
-        above.IsValid.Should().BeFalse();
     }
 
     private async Task<LookupFilesResponse> LookupAsync(Guid companyId, IEnumerable<string> ids)

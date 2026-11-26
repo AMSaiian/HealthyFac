@@ -9,4 +9,10 @@ public static class CoreWorkOrderCatalogTestData
         HttpStatusCode.InternalServerError,
         HttpStatusCode.ServiceUnavailable,
     ];
+
+    public static TheoryData<string, Func<Exception>> NetworkFaults => new()
+    {
+        { "core cannot be reached", () => new HttpRequestException(message: "refused") },
+        { "the call times out", () => new TaskCanceledException(message: "timeout") },
+    };
 }

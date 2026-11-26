@@ -1,10 +1,12 @@
 using System.Net;
 using HealthyFac.Document.ApiTests.Files.Data;
 using HealthyFac.Document.ApiTests.Hosting;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Document.ApiTests.Files;
 
 [Collection(DocumentApiCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class TieFileApiTests(DocumentApiFixture fixture)
 {
     private readonly DocumentApiFixture _fixture = fixture;

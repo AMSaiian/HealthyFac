@@ -4,10 +4,12 @@ using HealthyFac.Insights.ApiTests.Ingest.Data;
 using HealthyFac.Insights.Application.Ingest;
 using HealthyFac.Insights.Domain.Ingest;
 using HealthyFac.Insights.Messaging.Ingest;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.ApiTests.Ingest;
 
 [Collection(InsightsApiCollection.Name)]
+[Feature(TestFeatures.Ingest)]
 public sealed class CancelIngestAttemptApiTests(InsightsApiFixture fixture)
 {
     private readonly InsightsApiFixture _fixture = fixture;

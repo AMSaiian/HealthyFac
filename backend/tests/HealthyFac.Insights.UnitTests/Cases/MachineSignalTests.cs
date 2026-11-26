@@ -1,8 +1,10 @@
 using HealthyFac.Insights.Domain.Cases.Signals;
 using HealthyFac.Insights.UnitTests.Cases.Data;
+using HealthyFac.Testing.Features;
 
 namespace HealthyFac.Insights.UnitTests.Cases;
 
+[Feature(TestFeatures.Cases)]
 public sealed class MachineSignalTests
 {
     private const double CrossingValue = 91;

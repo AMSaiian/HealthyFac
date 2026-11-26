@@ -14,6 +14,7 @@ using HealthyFac.Document.IntegrationTests.MachineRegistrations.Data;
 using HealthyFac.Shared.Application.ErrorHandling;
 using HealthyFac.Shared.Application.Observability;
 using HealthyFac.Shared.Application.UseCases;
+using HealthyFac.Testing.Features;
 using HealthyFac.Testing.Tracing;
 using Microsoft.Extensions.DependencyInjection;
 using Cases = HealthyFac.Document.IntegrationTests.Files.Data.UploadFileTestData.OutOfScopeCases;
@@ -21,6 +22,7 @@ using Cases = HealthyFac.Document.IntegrationTests.Files.Data.UploadFileTestData
 namespace HealthyFac.Document.IntegrationTests.Files;
 
 [Collection(DocumentDatabaseCollection.Name)]
+[Feature(TestFeatures.Files)]
 public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
 {
     private readonly DocumentDatabaseFixture _fixture = fixture;
@@ -104,6 +106,7 @@ public sealed class UploadFileTests(DocumentDatabaseFixture fixture)
 
     [Theory]
     [MemberData(nameof(UploadFileTestData.OutOfScopeMachines), MemberType = typeof(UploadFileTestData))]
+    [Feature(TestFeatures.Machines)]
     public async Task UploadMachineFile_OutsideScope_Throws404AndStoresNothing(string scenario)
     {
         var machineId = await ArrangeMachineAsync(scenario);
